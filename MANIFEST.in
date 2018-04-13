@@ -1,0 +1,5 @@
+include README.rst
+include LICENSE
+recursive-include bims/static *
+recursive-include bims/templates *
+recursive-include docs *

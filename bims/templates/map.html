@@ -1,0 +1,80 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load grunt %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/map.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        var bingMapKey = '{{ bing_map_key }}';
+    </script>
+{% endblock %}
+
+{% block body_content %}
+    <div id="map-container"></div>
+
+    <script type='text/html' id='map-template'>
+        <div id="map" class="map"></div>
+        <div class="map-control-panel">
+            <div class="search-control sub-control-panel">
+                <i class="fa fa-search" aria-hidden="true"></i>
+            </div>
+            <div class="layer-control sub-control-panel">
+                <i class="fa fa-map" aria-hidden="true"></i>
+            </div>
+            <div class="location-control sub-control-panel">
+                <i class="fa fa-info" aria-hidden="true"></i>
+            </div>
+        </div>
+        <div class="zoom-control row">
+            <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
+            <div class="col-lg-6 sub-zoom-control zoom-in"><i class="fa fa-minus" aria-hidden="true"></i></div>
+        </div>
+    </script>
+
+    <script type='text/html' id='side-panel-template'>
+        <div class="right-panel">
+            <div class="right-panel-title">
+                <i class="fa fa-map-marker"></i> <span class="site-name"> Site #number </span>
+                <i class="fa fa-times close-panel"></i>
+           </div>
+            <div class="row side-panel">
+                <div class="col-lg-6" id="content-panel"></div>
+            </div>
+            <div class="row side-panel panel-icons">
+              <div class="col-lg-3 ml-auto text-center">
+                  <img src="static/img/x_icon_white.svg" class="right-panel-icon">
+                  <p class="data-fish text-bold">0</p>
+                  <p>X species</p>
+              </div>
+              <div class="col-lg-3 text-center">
+                  <img src="static/img/y_icon_white.svg" class="right-panel-icon">
+                  <p id="data-invertebra" class="text-bold">0</p>
+                  <p>Y species</p>
+              </div>
+              <div class="col-lg-3 mr-auto text-center">
+                  <img src="static/img/z_icon_white.svg" class="right-panel-icon">
+                  <p id="data-algae" class="text-bold">0</p>
+                  <p>Z Species</p>
+              </div>
+            </div>
+        </div>
+    </script>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+
+    {% grunt_module "map_view" %}
+
+{% endblock %}
