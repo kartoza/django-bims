@@ -11,14 +11,6 @@ Quick start
 1. Add "bims" to your INSTALLED_APPS setting like this:
 
     INSTALLED_APPS = [
-        'allauth',
-        'allauth.account',
-        'allauth.socialaccount',
-        'allauth.socialaccount.providers.google',
-        'allauth.socialaccount.providers.github',
-        'easyaudit',
-        'rolepermissions',
-        'rest_framework',
         'bims',
     ]
 

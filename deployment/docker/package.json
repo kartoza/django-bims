@@ -1,0 +1,17 @@
+{
+  "name": "django_project",
+  "version": "1.0.0",
+  "description": "Package for django app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dimas Ciputra",
+  "license": "ISC",
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-requirejs": "^1.0.0",
+    "grunt-contrib-uglify": "^3.3.0"
+  }
+}

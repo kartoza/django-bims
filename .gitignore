@@ -102,3 +102,15 @@ ENV/
 
 # Pycharm
 .idea
+
+# Pg cluster for docker
+deployment/pg/postgres_data/9.3
+deployment/pg/postgres_staging_data/9.3
+deployment/pg/postgres_dev_data/9.3
+deployment/sql/healthyrivers-old.sql
+# Template for apt-cacher
+# static and media dirs
+deployment/static
+deployment/media
+deployment/docker/71-apt-cacher-ng
+core/settings/secret.py
