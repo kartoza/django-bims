@@ -14,6 +14,15 @@ def grunt_module(module):
     :param module:Script filename of js
     :return: Template to render
     """
+    if not settings.DEBUG:
+        return mark_safe(
+            """<script type="text/javascript"
+            src={optimized}></script>""".format(
+                optimized=staticfiles_storage.url(
+                        grunt_settings.GRUNT_MODULES[module]["optimized"]),
+            )
+        )
+
     return mark_safe(
         """<script data-main={main} src={requirejs}></script>""".format(
             main=staticfiles_storage.url(
