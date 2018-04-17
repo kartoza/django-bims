@@ -13,6 +13,7 @@ from .contrib import *  # noqa
 # Project apps
 INSTALLED_APPS += (
     'bims',
+    'example',
 )
 
 # Set languages which want to be translated

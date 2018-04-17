@@ -23,7 +23,7 @@ class BiologicalCollectionRecord(models.Model):
     site = models.ForeignKey(
         LocationSite,
         models.CASCADE,
-        related_name='fish_collection_records',
+        related_name='biological_collection_record',
     )
     original_species_name = models.CharField(
         max_length=100,
@@ -71,10 +71,21 @@ class BiologicalCollectionRecord(models.Model):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
-        abstract = True
 
     def on_post_save(self):
         update_fish_collection_record(self)
+
+    def get_children(self):
+        rel_objs = [
+            f for f in self._meta.get_fields()
+            if (f.one_to_many or f.one_to_one)
+               and f.auto_created and not f.concrete
+        ]
+        rel_obj = rel_objs[0]
+        if rel_obj.related_model == type(self):
+            return None
+        else:
+            return getattr(self, rel_obj.get_accessor_name())
 
 
 @receiver(models.signals.post_save)
