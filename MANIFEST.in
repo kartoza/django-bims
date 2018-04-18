@@ -4,3 +4,4 @@ recursive-include bims/static *
 recursive-include bims/templates *
 recursive-include docs *
 recursive-exclude core *
+recursive-exclude example *
