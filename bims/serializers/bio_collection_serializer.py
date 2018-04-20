@@ -16,6 +16,9 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     def get_children_fields(self, obj):
         children_records = {}
         children = obj.get_children()
+        if not children:
+            return children_records
+
         children_records['name'] = children._meta.verbose_name
         fields = children._meta.get_fields(include_parents=False)
         for field in fields:

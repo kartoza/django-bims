@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
-from fish.tests.model_factories import (
-    FishCollectionRecordF,
+from bims.tests.model_factories import (
+    BiologicalCollectionRecordF,
 )
 from bims.tests.model_factories import (
     LocationSiteF,
@@ -25,12 +25,12 @@ class TestApiView(TestCase):
         self.location_site = LocationSiteF.create(
             pk=1
         )
-        self.fish_collection_1 = FishCollectionRecordF.create(
+        self.fish_collection_1 = BiologicalCollectionRecordF.create(
             pk=1,
             original_species_name=u'Test fish species name 1',
             site=self.location_site
         )
-        self.fish_collection_2 = FishCollectionRecordF.create(
+        self.fish_collection_2 = BiologicalCollectionRecordF.create(
             pk=2,
             original_species_name=u'Test fish species name 2',
             site=self.location_site
@@ -48,7 +48,7 @@ class TestApiView(TestCase):
         request = self.factory.get('/api/location-site/' + pk)
         response = view(request, pk)
         self.assertTrue(
-            len(response.data['fish_collection_records']) > 1
+            len(response.data['biological_collection_record']) > 1
         )
 
     def test_get_taxon_by_id(self):

@@ -2,8 +2,7 @@
 """Tests for models."""
 
 from django.test import TestCase
-from bims.tests.model_factories import ProfileF
-from core.tests.model_factories import UserF
+from bims.tests.model_factories import ProfileF, UserF
 
 
 class TestProfile(TestCase):
