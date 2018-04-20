@@ -39,4 +39,3 @@ LOGGING = {
     }
 }
 
-ROLEPERMISSIONS_MODULE = 'roles.settings.roles_test'
