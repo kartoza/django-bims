@@ -17,4 +17,4 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'geometry',
             'location_type',
             'biological_collection_record',
-            ]
+        ]
