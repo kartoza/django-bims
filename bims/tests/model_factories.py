@@ -13,6 +13,7 @@ from bims.models import (
     Taxon,
     Survey,
     LocationContext,
+    BiologicalCollectionRecord,
 )
 
 
@@ -116,3 +117,52 @@ class SurveyF(factory.django.DjangoModelFactory):
             # A list of groups were passed in, use them
             for site in extracted:
                 self.sites.add(site)
+
+
+class UserF(factory.DjangoModelFactory):
+    class Meta:
+        model = User
+
+    username = factory.Sequence(lambda n: "username%s" % n)
+    first_name = factory.Sequence(lambda n: "first_name%s" % n)
+    last_name = factory.Sequence(lambda n: "last_name%s" % n)
+    email = factory.Sequence(lambda n: "email%s@example.com" % n)
+    password = ''
+    is_staff = False
+    is_active = True
+    is_superuser = False
+    last_login = timezone.datetime(2000, 1, 1).replace(tzinfo=timezone.utc)
+    date_joined = timezone.datetime(1999, 1, 1).replace(
+        tzinfo=timezone.utc)
+
+    @classmethod
+    def _prepare(cls, create, **kwargs):
+        password = kwargs.pop('password', None)
+        user = super(UserF, cls)._prepare(create, **kwargs)
+        if password:
+            user.set_password(password)
+            if create:
+                user.save()
+        return user
+
+
+@factory.django.mute_signals(signals.post_save)
+class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
+    """
+    Biological collection record factory
+    """
+    class Meta:
+        model = BiologicalCollectionRecord
+
+    site = factory.SubFactory(LocationSiteF)
+    original_species_name = factory.Sequence(
+            lambda n: u'Test original species name %s' % n)
+    category = 'alien'
+    present = True
+    collection_date = timezone.now()
+    collector = factory.Sequence(
+            lambda n: u'Test collector %s' % n)
+    owner = factory.SubFactory(UserF)
+    notes = factory.Sequence(
+            lambda n: u'Test notes %s' % n)
+    taxon_gbif_id = factory.SubFactory(TaxonF)
