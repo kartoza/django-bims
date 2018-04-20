@@ -26,5 +26,5 @@ class ExampleCollectionRecord(BiologicalCollectionRecord):
     class Meta:
         """Meta class for project."""
         app_label = 'example'
-        verbose_name = 'fish'
-        verbose_name_plural = 'fishes'
+        verbose_name = 'example'
+        verbose_name_plural = 'examples'
