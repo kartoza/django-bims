@@ -38,4 +38,3 @@ LOGGING = {
         'handlers': ['nullhandler'],
     }
 }
-
