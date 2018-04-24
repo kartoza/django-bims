@@ -11,6 +11,7 @@ define([
         className: 'map-wrapper',
         map: null,
         locationSiteVectorSource: null,
+        locationSiteViews: {},
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
@@ -50,7 +51,10 @@ define([
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
-            Shared.Dispatcher.trigger('sidePanel:openSidePanel', properties);
+            if(this.locationSiteViews.hasOwnProperty(properties.id)) {
+                var locationSiteView = this.locationSiteViews[properties.id];
+                locationSiteView.clicked();
+            }
         },
         layerControlClicked: function (e) {
         },
@@ -160,7 +164,8 @@ define([
                 })
             });
         },
-        addLocationSiteFeatures: function (features) {
+        addLocationSiteFeatures: function (view, features) {
+            this.locationSiteViews[view.id] = view;
             this.locationSiteVectorSource.addFeatures(features);
         }
     })
