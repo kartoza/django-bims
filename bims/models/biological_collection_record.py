@@ -66,6 +66,9 @@ class BiologicalCollectionRecord(models.Model):
         blank=True,
         verbose_name='Taxon GBIF ',
     )
+    validated = models.BooleanField(
+        default=False,
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:
