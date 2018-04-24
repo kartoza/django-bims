@@ -39,7 +39,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                         if(!collections.hasOwnProperty(recordName)) {
                             collections[recordName] = 1;
                             $panelIcons.append(
-                                '<div class="col-lg-3 mr-auto text-center">'+
+                                '<div class="col-lg-3 text-center">'+
                                     '<img src="static/img/'+ recordName +'.svg" class="right-panel-icon">' +
                                     '<p class="data-'+ recordName +' text-bold">'+collections[recordName]+'</p>'+
                                     '<p>'+ recordName +' species</p>'+
@@ -47,7 +47,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                             )
                         } else {
                             collections[recordName] += 1;
-                            this.$el.find('data-'+recordName).html(collections[recordName]);
+                            this.$el.find('.data-'+recordName).html(collections[recordName]);
                         }
                     }
                 }
