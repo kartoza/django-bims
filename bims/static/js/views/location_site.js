@@ -7,11 +7,17 @@ define(['backbone', 'models/location_site', 'openlayers', 'shared'], function (B
         },
         clicked: function() {
             var self = this;
-            self.model.fetch({
+            Shared.Dispatcher.trigger('sidePanel:openSidePanel', self.model.toJSON());
+            if(Shared.LocationSiteDetailXHRRequest) {
+                Shared.LocationSiteDetailXHRRequest.abort();
+                Shared.LocationSiteDetailXHRRequest = null;
+            }
+            Shared.LocationSiteDetailXHRRequest = self.model.fetch({
                 success: function (data) {
-                    Shared.Dispatcher.trigger('sidePanel:openSidePanel', self.model.toJSON());
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', self.model.toJSON());
+                    Shared.LocationSiteDetailXHRRequest = null;
                 }
-            })
+            });
         },
         render: function () {
             var modelJson = this.model.toJSON();

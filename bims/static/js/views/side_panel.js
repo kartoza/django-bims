@@ -10,6 +10,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             // Events
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
+            Shared.Dispatcher.on('sidePanel:updateSidePanelDetail', this.updateSidePanelDetail, this);
         },
         render: function() {
             this.$el.html(this.template());
@@ -25,30 +26,35 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             this.rightPanel.show('slide', { direction: 'right'}, 200);
             if(properties) {
                 this.clearSidePanel();
+                this.$el.find('.panel-loading').show();
                 this.setSiteName(properties['name']);
                 if(properties.hasOwnProperty('location_type')) {
                     this.fillSidePanel(properties['location_type']);
                 }
-                if(properties.hasOwnProperty('biological_collection_record')) {
-                    var biologicalCollectionRecords = properties['biological_collection_record'];
-                    var collections = {};
-                    var $panelIcons = this.$el.find('.panel-icons');
-                    for(var i=0; i<biologicalCollectionRecords.length; i++) {
-                        var record = biologicalCollectionRecords[i];
-                        var recordName = record['children_fields']['name'];
-                        if(!collections.hasOwnProperty(recordName)) {
-                            collections[recordName] = 1;
-                            $panelIcons.append(
-                                '<div class="col-lg-3 text-center">'+
-                                    '<img src="static/img/'+ recordName +'.svg" class="right-panel-icon">' +
-                                    '<p class="data-'+ recordName +' text-bold">'+collections[recordName]+'</p>'+
-                                    '<p>'+ recordName +' species</p>'+
-                                '</div>'
-                            )
-                        } else {
-                            collections[recordName] += 1;
-                            this.$el.find('.data-'+recordName).html(collections[recordName]);
-                        }
+            }
+        },
+        updateSidePanelDetail: function(data) {
+            $('.panel-icons').html('');
+            this.$el.find('.panel-loading').hide();
+            if(data.hasOwnProperty('biological_collection_record')) {
+                var biologicalCollectionRecords = data['biological_collection_record'];
+                var collections = {};
+                var $panelIcons = this.$el.find('.panel-icons');
+                for(var i=0; i<biologicalCollectionRecords.length; i++) {
+                    var record = biologicalCollectionRecords[i];
+                    var recordName = record['children_fields']['name'];
+                    if(!collections.hasOwnProperty(recordName)) {
+                        collections[recordName] = 1;
+                        $panelIcons.append(
+                            '<div class="col-lg-3 text-center">'+
+                                '<img src="static/img/'+ recordName +'.svg" class="right-panel-icon">' +
+                                '<p class="data-'+ recordName +' text-bold">'+collections[recordName]+'</p>'+
+                                '<p>'+ recordName +' species</p>'+
+                            '</div>'
+                        )
+                    } else {
+                        collections[recordName] += 1;
+                        this.$el.find('.data-'+recordName).html(collections[recordName]);
                     }
                 }
             }
