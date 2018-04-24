@@ -166,3 +166,4 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     notes = factory.Sequence(
             lambda n: u'Test notes %s' % n)
     taxon_gbif_id = factory.SubFactory(TaxonF)
+    validated = True

@@ -8,6 +8,7 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     """
     owner = serializers.SerializerMethodField()
     children_fields = serializers.SerializerMethodField()
+    validated = serializers.BooleanField(required=True)
 
     def get_owner(self, obj):
         if obj.owner:
