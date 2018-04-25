@@ -1,14 +1,27 @@
-define(['backbone', 'models/location_site', 'openlayers'], function (Backbone, LocationSite, ol) {
+define(['backbone', 'models/location_site', 'openlayers', 'shared'], function (Backbone, LocationSite, ol, Shared) {
    return Backbone.View.extend({
+        id: 0,
         initialize: function (options) {
             this.parent = options.parent;
-            _.bindAll(this, 'render');
-            this.model.fetch({
-                success: this.render
+            this.render();
+        },
+        clicked: function() {
+            var self = this;
+            Shared.Dispatcher.trigger('sidePanel:openSidePanel', self.model.toJSON());
+            if(Shared.LocationSiteDetailXHRRequest) {
+                Shared.LocationSiteDetailXHRRequest.abort();
+                Shared.LocationSiteDetailXHRRequest = null;
+            }
+            Shared.LocationSiteDetailXHRRequest = self.model.fetch({
+                success: function (data) {
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', self.model.toJSON());
+                    Shared.LocationSiteDetailXHRRequest = null;
+                }
             });
         },
         render: function () {
             var modelJson = this.model.toJSON();
+            this.id = modelJson['id'];
             var geometry = JSON.parse(modelJson['geometry']);
             delete modelJson['geometry'];
             var geojson = {
@@ -36,7 +49,7 @@ define(['backbone', 'models/location_site', 'openlayers'], function (Backbone, L
                 featureProjection: 'EPSG:3857'
             });
 
-            this.parent.addLocationSiteFeatures(features);
+            this.parent.addLocationSiteFeatures(this, features);
         }
    })
 });

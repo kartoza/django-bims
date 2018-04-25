@@ -164,3 +164,13 @@ html, body, .map, .map-wrapper, #map-container {
 .dropdown-toggle {
     color: transparent;
 }
+
+.panel-loading {
+    margin-top: 50px;
+}
+
+.panel-loading img {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
