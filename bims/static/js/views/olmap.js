@@ -5,7 +5,8 @@ define([
     'shared',
     'models/location_site',
     'views/location_site',
-    'openlayers'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, ol) {
+    'views/map_control_panel',
+    'openlayers'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -81,6 +82,12 @@ define([
             this.map.on('click', function (e) {
                self.mapClicked(e);
             });
+
+            this.mapControlPanel = new MapControlPanelView({
+                parent: this
+            });
+
+            this.$el.append(this.mapControlPanel.render().$el);
 
             return this;
         },
