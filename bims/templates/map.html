@@ -56,6 +56,38 @@
             <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
             <div class="col-lg-6 sub-zoom-control zoom-in"><i class="fa fa-minus" aria-hidden="true"></i></div>
         </div>
+        <div class="map-search-box">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="map-search-title">
+                        SEARCH
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="map-search-close">
+                        X
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="search-box">
+                    <div class="container-1">
+                        <span class="icon"><i class="fa fa-search"></i></span>
+                        <input type="search" id="search" placeholder="Search..." />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12 map-filter-title">
+                    FILTER
+                </div>
+            </div>
+            <div class="row">
+                <div class="slide-container">
+                    <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+                </div>
+            </div>
+        </div>
     </script>
 
 {% endblock %}
