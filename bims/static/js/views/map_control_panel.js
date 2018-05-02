@@ -7,7 +7,7 @@ define(['backbone', 'underscore'], function (Backbone, _) {
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
             'click .location-control': 'locationClicked',
-            'click .map-search-close': 'searchCloseClicked',
+            'click .map-search-close': 'closeSearchPanel',
             'keypress #search': 'searchEnter'
         },
         initialize: function (options) {
@@ -28,18 +28,10 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         searchClicked: function (e) {
             // show search div
             if(!this.searchBoxOpen) {
-                this.$el.find('.search-control').addClass('control-panel-selected');
-                this.searchBox.show();
-                this.$el.find('#search').focus();
-                this.searchBoxOpen = true;
+                this.openSearchPanel();
             } else {
-                this.$el.find('.search-control').removeClass('control-panel-selected');
-                this.searchBox.hide();
-                this.searchBoxOpen = false;
+                this.closeSearchPanel();
             }
-        },
-        searchCloseClicked: function (e) {
-            this.searchBox.hide();
         },
         filterClicked: function (e) {
         },
@@ -50,6 +42,17 @@ define(['backbone', 'underscore'], function (Backbone, _) {
             this.searchBox = this.$el.find('.map-search-box');
             this.searchBox.hide();
             return this;
+        },
+        openSearchPanel: function () {
+            this.$el.find('.search-control').addClass('control-panel-selected');
+            this.searchBox.show();
+            this.$el.find('#search').focus();
+            this.searchBoxOpen = true;
+        },
+        closeSearchPanel: function () {
+            this.$el.find('.search-control').removeClass('control-panel-selected');
+            this.searchBox.hide();
+            this.searchBoxOpen = false;
         }
     })
 });

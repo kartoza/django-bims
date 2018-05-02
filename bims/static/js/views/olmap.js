@@ -44,6 +44,7 @@ define([
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
+            this.mapControlPanel.closeSearchPanel();
             if (features) {
                 self.featureClicked(features[0]);
             } else {
