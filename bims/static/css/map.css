@@ -129,6 +129,11 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 0 !important;
 }
 
+.control-panel-selected {
+    background-color: yellow;
+    padding-right: 0;
+}
+
 .sub-control-panel:hover, .sub-zoom-control:hover {
     cursor: pointer;
     color: #323437;
