@@ -129,6 +129,11 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 0 !important;
 }
 
+.control-panel-selected {
+    background-color: yellow;
+    padding-right: 0;
+}
+
 .sub-control-panel:hover, .sub-zoom-control:hover {
     cursor: pointer;
     color: #323437;
@@ -173,4 +178,104 @@ html, body, .map, .map-wrapper, #map-container {
     margin-left: auto;
     margin-right: auto;
     display: block;
+}
+
+.map-search-box {
+    height: 400px;
+    width: 350px;
+    background-color: rgba(0, 0, 0, 0.6);
+    position: absolute;
+    top: 0;
+    margin-left: 80px;
+    margin-top: 60px;
+    color: white;
+    padding: 15px;
+    border: 1px solid #e0d441;
+}
+
+.map-filter-title {
+    margin-top: 20px;
+}
+
+.map-search-close {
+    float: right;
+    cursor: pointer;
+}
+
+.search-box {
+    margin-top: 15px;
+    width: 100%;
+    height: 50px;
+}
+
+.container-1{
+    padding-left: 20px;
+    padding-right: 20px;
+    width: 100%;
+    vertical-align: middle;
+    white-space: nowrap;
+    position: relative;
+}
+
+.container-1 input#search{
+    width: 100%;
+    height: 45px;
+    background: #ffffff;
+    border: none;
+    font-size: 12pt;
+    float: left;
+    color: #596775;
+    padding-left: 45px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+.container-1 .icon{
+    position: absolute;
+    margin-left: 17px;
+    margin-top: 10px;
+    z-index: 1;
+    color: #4f5b66;
+}
+
+.slide-container {
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-top: 15px;
+}
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+
+.slider:hover {
+    opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #e0d441;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #e0d441;
+    cursor: pointer;
 }
