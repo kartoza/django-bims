@@ -4,7 +4,7 @@ module.exports = function(config) {
     config.set({
 
         // base path, that will be used to resolve files and exclude
-        basePath: '/home/web/django_project/',
+        basePath: '/home/web/django_project/bims/static/js/',
 
         // frameworks to use
         frameworks: ['jasmine', 'requirejs'],
@@ -17,26 +17,27 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'bims/static/test-main.js',
-            {pattern: 'bims/static/js/libs/jquery/*', included: false},
-            {pattern: 'bims/static/js/libs/bootstrap-4.0.0/js/*.js', included: false},
-            {pattern: 'bims/static/js/libs/openlayers-4.6.4/*.js', included: false},
-            {pattern: 'bims/static/js/libs/requirejs-2.3.5/*.js', included: false},
-            {pattern: 'bims/static/js/libs/underscore-1.8.3/*', included: false},
-            {pattern: 'bims/static/js/libs/backbone-1.3.3/*.js', included: false},
-            {pattern: 'bims/static/js/libs/jquery-ui-1.12.1/*.js', included: false},
-            {pattern: 'bims/static/js/collections/*.js', included: false},
-            {pattern: 'bims/static/js/forms/*.js', included: false},
-            {pattern: 'bims/static/js/models/*.js', included: false},
-            {pattern: 'bims/static/js/views/*.js', included: false},
-            {pattern: 'bims/static/tests/*Spec.js', included: false}
+            'test-main.js',
+            {pattern: 'libs/jquery/*', included: false},
+            {pattern: 'libs/bootstrap-4.0.0/js/*.js', included: false},
+            {pattern: 'libs/openlayers-4.6.4/*.js', included: false},
+            {pattern: 'libs/requirejs-2.3.5/*.js', included: false},
+            {pattern: 'libs/underscore-1.8.3/*', included: false},
+            {pattern: 'libs/backbone-1.3.3/*.js', included: false},
+            {pattern: 'libs/jquery-ui-1.12.1/*.js', included: false},
+            {pattern: 'shared.js', included: false},
+            {pattern: 'collections/*.js', included: false},
+            {pattern: 'forms/*.js', included: false},
+            {pattern: 'models/*.js', included: false},
+            {pattern: 'views/*.js', included: false},
+            {pattern: 'tests/*Spec.js', included: false}
         ],
 
-        // list of files to exclude
+       // list of files to exclude
         exclude: [
-            'bims/static/js/app.js',
-            'bims/static/js/views/donut-chart.js',
-            'bims/static/js/views/generate-donut-chart.js'
+            'app.js',
+            'views/donut-chart.js',
+            'views/generate-donut-chart.js'
         ],
 
         // test results reporter to use

@@ -12,16 +12,17 @@ Object.keys(window.__karma__.files).forEach(function(file) {
     }
 });
 
+console.log(allTestFiles);
 
 require.config({
     baseUrl: "/base",
     paths: {
-        jquery: '/base/bims/static/js/libs/jquery/jquery-3.3.1.min',
-        bootstrap: '/base/bims/static/js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
-        openlayers: '/base/bims/static/js/libs/openlayers-4.6.4/ol',
-        underscore: '/base/bims/static/js/libs/underscore-1.8.3/underscore-min',
-        backbone: '/base/bims/static/js/libs/backbone-1.3.3/backbone-min',
-        jqueryUi: '/base/bims/static/js/libs/jquery-ui-1.12.1/jquery-ui.min'
+        jquery: '/base/libs/jquery/jquery-3.3.1.min',
+        bootstrap: '/base/libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
+        openlayers: '/base/libs/openlayers-4.6.4/ol',
+        underscore: '/base/libs/underscore-1.8.3/underscore-min',
+        backbone: '/base/libs/backbone-1.3.3/backbone-min',
+        jqueryUi: '/base/libs/jquery-ui-1.12.1/jquery-ui.min'
     },
     shim: {
         openlayers: {
