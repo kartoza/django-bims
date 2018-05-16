@@ -134,6 +134,8 @@ devweb:
     - "63302:8080"
     # for ssh
     - "63303:22"
+    # for karma tests
+    - "63304:9876"
 
 rabbitmq:
   image: library/rabbitmq
