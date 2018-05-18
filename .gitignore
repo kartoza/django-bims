@@ -114,3 +114,4 @@ deployment/static
 deployment/media
 deployment/docker/71-apt-cacher-ng
 core/settings/secret.py
+deployment/backups

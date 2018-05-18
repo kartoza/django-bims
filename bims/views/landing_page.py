@@ -1,9 +1,16 @@
 # coding=utf-8
 from django.views.generic import TemplateView
+import os
+
 try:
     from core.settings.secret import BING_MAP_KEY
 except ImportError:
     BING_MAP_KEY = ''
+
+try:
+    GEOCONTEX_URL = os.environ['GEOCONTEXT_URL']
+except KeyError:
+    GEOCONTEX_URL = ''
 
 
 class LandingPageView(TemplateView):
@@ -21,4 +28,5 @@ class LandingPageView(TemplateView):
         """
         context = super(LandingPageView, self).get_context_data(**kwargs)
         context['bing_map_key'] = BING_MAP_KEY
+        context['geocontext_url'] = GEOCONTEX_URL
         return context

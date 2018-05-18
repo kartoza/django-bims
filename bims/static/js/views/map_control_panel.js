@@ -3,6 +3,7 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         template: _.template($('#map-control-panel').html()),
         searchBox: null,
         searchBoxOpen: false,
+        locationControlActive: false,
         events: {
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
@@ -16,13 +17,12 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         },
         searchEnter: function (e) {
             if(e.which === 13) {
-                var searchValue = $(e.target).val();
+                let searchValue = $(e.target).val();
                 if(searchValue.length < 3) {
                     console.log('Minimal 3 characters');
                     return false;
                 }
                 // Do search
-                console.log(searchValue);
             }
         },
         searchClicked: function (e) {
@@ -36,6 +36,18 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         filterClicked: function (e) {
         },
         locationClicked: function (e) {
+            let target = $(e.target);
+            if(!target.hasClass('location-control')) {
+                target = target.parent();
+            }
+            // Activate function
+            if(!this.locationControlActive) {
+                this.locationControlActive = true;
+                target.addClass('control-panel-selected');
+            } else {
+                this.locationControlActive = false;
+                target.removeClass('control-panel-selected');
+            }
         },
         render: function () {
             this.$el.html(this.template());
@@ -53,6 +65,9 @@ define(['backbone', 'underscore'], function (Backbone, _) {
             this.$el.find('.search-control').removeClass('control-panel-selected');
             this.searchBox.hide();
             this.searchBoxOpen = false;
+        },
+        closeAllPanel: function () {
+            this.closeSearchPanel();
         }
     })
 });
