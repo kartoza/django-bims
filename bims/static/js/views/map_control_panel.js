@@ -47,6 +47,7 @@ define(['backbone', 'underscore'], function (Backbone, _) {
             } else {
                 this.locationControlActive = false;
                 target.removeClass('control-panel-selected');
+                this.parent.hideGeoContext();
             }
         },
         render: function () {

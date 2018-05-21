@@ -14,6 +14,7 @@ define([
         map: null,
         locationSiteVectorSource: null,
         geocontextOverlay: null,
+        geocontextOverlayDisplayed: false,
         locationSiteViews: {},
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -57,14 +58,25 @@ define([
             this.mapControlPanel.closeAllPanel();
 
             if(this.mapControlPanel.locationControlActive) {
-                this.showGeoContext(e.coordinate);
+                if(this.geocontextOverlayDisplayed === false) {
+                    this.showGeoContext(e.coordinate);
+                } else {
+                    this.hideGeoContext();
+                }
             }
+        },
+        hideGeoContext: function () {
+            this.geoOverlayContent.innerHTML = '';
+            this.geocontextOverlay.setPosition(undefined);
+            this.geocontextOverlayDisplayed = false;
         },
         showGeoContext: function (coordinate) {
 
             if(!geocontextUrl) {
                 return false;
             }
+
+            this.geocontextOverlayDisplayed = true;
 
             let lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
 
@@ -85,7 +97,13 @@ define([
                 url: url,
                 dataType: 'json',
                 success: function (data) {
-                    self.geoOverlayContent.innerHTML = JSON.stringify(data);
+                    let contentDiv = '<div>';
+                    for(let i=0; i<data.length; i++) {
+                        contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
+                        contentDiv += '<br>';
+                    }
+                    contentDiv += '</div>';
+                    self.geoOverlayContent.innerHTML = contentDiv;
                 },
                 error: function(req, err){ console.log(err); }
             });
