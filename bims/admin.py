@@ -9,6 +9,9 @@ from bims.models import (
     Taxon,
     Survey,
     LocationContext,
+    Boundary,
+    BoundaryType,
+    BiologicalCollectionCluster
 )
 
 
@@ -35,9 +38,24 @@ class TaxonAdmin(admin.ModelAdmin):
     list_display = ('common_name', 'author', 'iucn_status')
 
 
+class BoundaryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'type')
+    list_filter = ('type',)
+
+
+class BiologicalCollectionClusterAdmin(admin.ModelAdmin):
+    list_display = ('boundary', 'module')
+    list_filter = ('boundary', 'module')
+
+
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Survey)
 admin.site.register(LocationContext)
+
+admin.site.register(Boundary, BoundaryAdmin)
+admin.site.register(BoundaryType, admin.ModelAdmin)
+admin.site.register(
+    BiologicalCollectionCluster, BiologicalCollectionClusterAdmin)
