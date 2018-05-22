@@ -6,12 +6,15 @@ define([
     'models/location_site',
     'views/location_site',
     'views/map_control_panel',
-    'openlayers'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol) {
+    'openlayers',
+    'jquery'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
         locationSiteVectorSource: null,
+        geocontextOverlay: null,
+        geocontextOverlayDisplayed: false,
         locationSiteViews: {},
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -23,38 +26,92 @@ define([
             _.bindAll(this, 'render');
             this.collection.fetch({
                 success: this.render
-            })
+            });
         },
         zoomInMap: function (e) {
-            var view = this.map.getView();
-            var zoom = view.getZoom();
+            let view = this.map.getView();
+            let zoom = view.getZoom();
             view.animate({
                 zoom: zoom-1,
                 duration: 250
             })
         },
         zoomOutMap: function (e) {
-            var view = this.map.getView();
-            var zoom = view.getZoom();
+            let view = this.map.getView();
+            let zoom = view.getZoom();
             view.animate({
                 zoom: zoom+1,
                 duration: 250
             })
         },
         mapClicked: function (e) {
-            var self = this;
-            var features = self.map.getFeaturesAtPixel(e.pixel);
-            this.mapControlPanel.closeSearchPanel();
+            let self = this;
+            let features = self.map.getFeaturesAtPixel(e.pixel);
+
             if (features) {
                 self.featureClicked(features[0]);
             } else {
                Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             }
+
+            // Close opened control panel
+            this.mapControlPanel.closeAllPanel();
+
+            if(this.mapControlPanel.locationControlActive) {
+                if(this.geocontextOverlayDisplayed === false) {
+                    this.showGeoContext(e.coordinate);
+                } else {
+                    this.hideGeoContext();
+                }
+            }
+        },
+        hideGeoContext: function () {
+            this.geoOverlayContent.innerHTML = '';
+            this.geocontextOverlay.setPosition(undefined);
+            this.geocontextOverlayDisplayed = false;
+        },
+        showGeoContext: function (coordinate) {
+
+            if(!geocontextUrl) {
+                return false;
+            }
+
+            this.geocontextOverlayDisplayed = true;
+
+            let lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
+
+            // Show popup
+            let hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
+                coordinate, "EPSG:3857", "EPSG:4326"
+            ));
+
+            this.geoOverlayContent.innerHTML = '<div class=small-loading></div>';
+            this.geocontextOverlay.setPosition(coordinate);
+            let lon = lonlat[0];
+            let lan = lonlat[1];
+            let self = this;
+
+            let url = geocontextUrl + "/geocontext/value/list/"+lon+"/"+lan+"/?with-geometry=False";
+
+            $.get({
+                url: url,
+                dataType: 'json',
+                success: function (data) {
+                    let contentDiv = '<div>';
+                    for(let i=0; i<data.length; i++) {
+                        contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
+                        contentDiv += '<br>';
+                    }
+                    contentDiv += '</div>';
+                    self.geoOverlayContent.innerHTML = contentDiv;
+                },
+                error: function(req, err){ console.log(err); }
+            });
         },
         featureClicked: function (feature) {
-            var properties = feature.getProperties();
+            let properties = feature.getProperties();
             if(this.locationSiteViews.hasOwnProperty(properties.id)) {
-                var locationSiteView = this.locationSiteViews[properties.id];
+                let locationSiteView = this.locationSiteViews[properties.id];
                 locationSiteView.clicked();
             }
         },
@@ -63,7 +120,7 @@ define([
         renderCollection: function () {
             var self = this;
 
-            for(var i=0; i < this.collection.length; i++) {
+            for(let i=0; i < this.collection.length; i++) {
                 var locationSiteModel = this.collection.models[i];
                 var locationSiteView = new LocationSiteView({
                     model: locationSiteModel,
@@ -155,6 +212,24 @@ define([
                 style: styleFunction
             });
 
+            this.geoOverlayContainer = document.getElementById('geocontext-popup');
+            this.geoOverlayContent = document.getElementById('geocontext-content');
+            this.geoOverlayCloser = document.getElementById('geocontext-closer');
+
+            this.geocontextOverlay = new ol.Overlay({
+                element: this.geoOverlayContainer,
+                autoPan: true,
+                autoPanAnimation: {
+                    duration: 250
+                }
+            });
+
+            this.geoOverlayCloser.onclick = function () {
+                self.geocontextOverlay.setPosition(undefined);
+                self.geoOverlayCloser.blur();
+                return false;
+            };
+
             return new ol.Map({
                 target: 'map',
                 layers: [
@@ -169,7 +244,8 @@ define([
                 }),
                 controls: ol.control.defaults({
                     zoom: false
-                })
+                }),
+                overlays: [this.geocontextOverlay]
             });
         },
         addLocationSiteFeatures: function (view, features) {
