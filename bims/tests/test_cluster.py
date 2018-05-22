@@ -5,7 +5,7 @@ from django.test import TestCase
 from bims.tests.model_factories import (
     BoundaryF,
     BoundaryTypeF,
-    BiologicalCollectionClusterF
+    ClusterF
 )
 
 
@@ -129,7 +129,7 @@ class TestBoundary(TestCase):
         self.assertTrue(boundary.pk is None)
 
 
-class TestBiologicalCollectionCluster(TestCase):
+class TestCluster(TestCase):
     """ Tests CURD cluster.
     """
 
@@ -143,7 +143,7 @@ class TestBiologicalCollectionCluster(TestCase):
         """
         Tests creation
         """
-        cluster = BiologicalCollectionClusterF.create()
+        cluster = ClusterF.create()
 
         # check if pk exists
         self.assertTrue(cluster.pk is not None)
@@ -159,7 +159,7 @@ class TestBiologicalCollectionCluster(TestCase):
             name='South Africa',
             type=boundary_type
         )
-        cluster = BiologicalCollectionClusterF.create(
+        cluster = ClusterF.create(
             boundary=boundary,
             site_count=10,
             survey_count=11,
@@ -192,7 +192,7 @@ class TestBiologicalCollectionCluster(TestCase):
             'module': 'rock',
             'boundary': boundary
         }
-        cluster = BiologicalCollectionClusterF.create()
+        cluster = ClusterF.create()
         cluster.__dict__.update(cluster_data)
         cluster.boundary = boundary
         cluster.save()
@@ -205,7 +205,7 @@ class TestBiologicalCollectionCluster(TestCase):
         """
         Tests cluster model delete
         """
-        cluster = BiologicalCollectionClusterF.create()
+        cluster = ClusterF.create()
         cluster.delete()
 
         # check if deleted

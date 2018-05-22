@@ -16,7 +16,7 @@ from bims.models import (
     BiologicalCollectionRecord,
     Boundary,
     BoundaryType,
-    BiologicalCollectionCluster
+    Cluster
 )
 
 
@@ -193,12 +193,12 @@ class BoundaryF(factory.django.DjangoModelFactory):
     type = factory.SubFactory(BoundaryTypeF)
 
 
-class BiologicalCollectionClusterF(factory.django.DjangoModelFactory):
+class ClusterF(factory.django.DjangoModelFactory):
     """
-    BiologicalCollectionCluster factory
+    Cluster factory
     """
     class Meta:
-        model = BiologicalCollectionCluster
+        model = Cluster
 
     boundary = factory.SubFactory(BoundaryF)
     module = factory.Sequence(lambda n: u'Test module %s' % n)

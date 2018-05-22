@@ -7,10 +7,9 @@ from bims.management.commands.update_boundary import (
 
 
 class Command(UpdateBoundary, BaseCommand):
-    help = 'Import countries from CSV file'
+    help = 'Import provinces from shp file'
 
     def handle(self, *args, **options):
         self.save_data(
-            shapefile='bims/data/province/province_boundary.shp',
-            boundary_type='province',
-            column_name='provname')
+            'bims/data/province/province_boundary.shp',
+            'province', 'provname')

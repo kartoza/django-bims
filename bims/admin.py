@@ -11,7 +11,7 @@ from bims.models import (
     LocationContext,
     Boundary,
     BoundaryType,
-    BiologicalCollectionCluster
+    Cluster
 )
 
 
@@ -43,7 +43,7 @@ class BoundaryAdmin(admin.ModelAdmin):
     list_filter = ('type',)
 
 
-class BiologicalCollectionClusterAdmin(admin.ModelAdmin):
+class ClusterAdmin(admin.ModelAdmin):
     list_display = ('boundary', 'module')
     list_filter = ('boundary', 'module')
 
@@ -58,4 +58,4 @@ admin.site.register(LocationContext)
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
 admin.site.register(
-    BiologicalCollectionCluster, BiologicalCollectionClusterAdmin)
+    Cluster, ClusterAdmin)

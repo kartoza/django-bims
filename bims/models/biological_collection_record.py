@@ -10,7 +10,7 @@ from django.dispatch import receiver
 
 from bims.models.location_site import LocationSite
 from bims.utils.gbif import update_fish_collection_record
-from bims.utils.cluster import update_biological_collection_cluster
+from bims.utils.cluster import update_cluster
 from bims.models.taxon import Taxon
 
 
@@ -100,10 +100,10 @@ def collection_post_save_handler(sender, instance, **kwargs):
         return
 
     models.signals.post_save.disconnect(
-            collection_post_save_handler,
+        collection_post_save_handler,
     )
     instance.on_post_save()
-    update_biological_collection_cluster(instance)
+    update_cluster(instance)
     models.signals.post_save.connect(
-            collection_post_save_handler,
+        collection_post_save_handler,
     )
