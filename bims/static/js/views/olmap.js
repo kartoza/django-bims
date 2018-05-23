@@ -29,24 +29,24 @@ define([
             });
         },
         zoomInMap: function (e) {
-            let view = this.map.getView();
-            let zoom = view.getZoom();
+            var view = this.map.getView();
+            var zoom = view.getZoom();
             view.animate({
                 zoom: zoom-1,
                 duration: 250
             })
         },
         zoomOutMap: function (e) {
-            let view = this.map.getView();
-            let zoom = view.getZoom();
+            var view = this.map.getView();
+            var zoom = view.getZoom();
             view.animate({
                 zoom: zoom+1,
                 duration: 250
             })
         },
         mapClicked: function (e) {
-            let self = this;
-            let features = self.map.getFeaturesAtPixel(e.pixel);
+            var self = this;
+            var features = self.map.getFeaturesAtPixel(e.pixel);
 
             if (features) {
                 self.featureClicked(features[0]);
@@ -78,27 +78,27 @@ define([
 
             this.geocontextOverlayDisplayed = true;
 
-            let lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
+            var lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
 
             // Show popup
-            let hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
+            var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
                 coordinate, "EPSG:3857", "EPSG:4326"
             ));
 
             this.geoOverlayContent.innerHTML = '<div class=small-loading></div>';
             this.geocontextOverlay.setPosition(coordinate);
-            let lon = lonlat[0];
-            let lan = lonlat[1];
-            let self = this;
+            var lon = lonlat[0];
+            var lan = lonlat[1];
+            var self = this;
 
-            let url = geocontextUrl + "/geocontext/value/list/"+lon+"/"+lan+"/?with-geometry=False";
+            var url = geocontextUrl + "/geocontext/value/list/"+lon+"/"+lan+"/?with-geometry=False";
 
             $.get({
                 url: url,
                 dataType: 'json',
                 success: function (data) {
-                    let contentDiv = '<div>';
-                    for(let i=0; i<data.length; i++) {
+                    var contentDiv = '<div>';
+                    for(var i=0; i<data.length; i++) {
                         contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
                         contentDiv += '<br>';
                     }
@@ -109,9 +109,9 @@ define([
             });
         },
         featureClicked: function (feature) {
-            let properties = feature.getProperties();
+            var properties = feature.getProperties();
             if(this.locationSiteViews.hasOwnProperty(properties.id)) {
-                let locationSiteView = this.locationSiteViews[properties.id];
+                var locationSiteView = this.locationSiteViews[properties.id];
                 locationSiteView.clicked();
             }
         },
@@ -120,7 +120,7 @@ define([
         renderCollection: function () {
             var self = this;
 
-            for(let i=0; i < this.collection.length; i++) {
+            for(var i=0; i < this.collection.length; i++) {
                 var locationSiteModel = this.collection.models[i];
                 var locationSiteView = new LocationSiteView({
                     model: locationSiteModel,

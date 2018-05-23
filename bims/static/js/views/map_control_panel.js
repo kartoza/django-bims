@@ -17,7 +17,7 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         },
         searchEnter: function (e) {
             if(e.which === 13) {
-                let searchValue = $(e.target).val();
+                var searchValue = $(e.target).val();
                 if(searchValue.length < 3) {
                     console.log('Minimal 3 characters');
                     return false;
@@ -36,7 +36,7 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         filterClicked: function (e) {
         },
         locationClicked: function (e) {
-            let target = $(e.target);
+            var target = $(e.target);
             if(!target.hasClass('location-control')) {
                 target = target.parent();
             }
