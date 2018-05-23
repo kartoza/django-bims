@@ -41,6 +41,7 @@ class TaxonAdmin(admin.ModelAdmin):
 class BoundaryAdmin(admin.ModelAdmin):
     list_display = ('name', 'type')
     list_filter = ('type',)
+    ordering = ('type', 'name')
 
 
 class ClusterAdmin(admin.ModelAdmin):
