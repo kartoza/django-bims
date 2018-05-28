@@ -29,3 +29,5 @@ pygbif==0.2.0
 
 # Django BIMS
 # git+https://github.com/dimasciput/django-bims.git
+
+Pillow==5.1.0
