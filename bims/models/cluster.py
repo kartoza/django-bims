@@ -27,8 +27,7 @@ class Cluster(models.Model):
         max_length=128
     )
     site_count = models.IntegerField(default=0)
-    survey_count = models.IntegerField(default=0)
-    record_count = models.IntegerField(default=0)
+    details = models.TextField(default='')
 
     def __str__(self):
         return u'%s' % self.id

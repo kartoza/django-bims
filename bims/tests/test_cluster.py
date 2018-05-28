@@ -162,8 +162,7 @@ class TestCluster(TestCase):
         cluster = ClusterF.create(
             boundary=boundary,
             site_count=10,
-            survey_count=11,
-            record_count=12,
+            details='{}',
             module='fish'
         )
 
@@ -171,8 +170,7 @@ class TestCluster(TestCase):
         self.assertTrue(cluster.boundary.type.name == 'country')
         self.assertTrue(cluster.site_count == 10)
         self.assertTrue(cluster.module == 'fish')
-        self.assertTrue(cluster.survey_count == 11)
-        self.assertTrue(cluster.record_count == 12)
+        self.assertTrue(cluster.details == '{}')
 
     def test_cluster_update(self):
         """
@@ -187,8 +185,7 @@ class TestCluster(TestCase):
         )
         cluster_data = {
             'site_count': 1,
-            'survey_count': 2,
-            'record_count': 3,
+            'details': '{}',
             'module': 'rock',
             'boundary': boundary
         }

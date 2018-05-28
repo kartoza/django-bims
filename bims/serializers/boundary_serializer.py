@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from bims.models import Boundary
 from bims.models.cluster import Cluster
+from bims.serializers.cluster_serializer import ClusterSerializer
 
 
 class BoundarySerializer(serializers.ModelSerializer):
@@ -14,11 +15,7 @@ class BoundarySerializer(serializers.ModelSerializer):
         data = {}
         clusters = Cluster.objects.filter(boundary=obj)
         for cluster in clusters:
-            data[cluster.module] = {
-                'site_count': cluster.site_count,
-                'survey_count': cluster.survey_count,
-                'record_count': cluster.record_count
-            }
+            data[cluster.module] = ClusterSerializer(cluster).data
         return data
 
     def get_point(self, obj):

@@ -203,5 +203,4 @@ class ClusterF(factory.django.DjangoModelFactory):
     boundary = factory.SubFactory(BoundaryF)
     module = factory.Sequence(lambda n: u'Test module %s' % n)
     site_count = 1
-    survey_count = 1
-    record_count = 1
+    details = ''
