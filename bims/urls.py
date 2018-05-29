@@ -2,8 +2,8 @@
 
 from django.conf.urls import url
 from django.urls import path
-from django.views.generic import TemplateView
 from rest_framework.documentation import include_docs_urls
+from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
 from bims.api_views.location_site import (
     LocationSiteList,
@@ -26,7 +26,7 @@ api_urls = [
 ]
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name="landing_page.html")),
-    path('map', LandingPageView.as_view()),
+    path('', LandingPageView.as_view()),
+    path('map', MapPageView.as_view()),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
 ] + api_urls
