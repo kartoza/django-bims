@@ -4,9 +4,10 @@
 """
 
 from django.db import models
+from ordered_model.models import OrderedModel
 
 
-class CarouselHeader(models.Model):
+class CarouselHeader(OrderedModel):
     """Carousel header model."""
 
     banner = models.ImageField(

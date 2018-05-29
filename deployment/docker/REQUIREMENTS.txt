@@ -31,3 +31,4 @@ pygbif==0.2.0
 # git+https://github.com/dimasciput/django-bims.git
 
 Pillow==5.1.0
+django-ordered-model==1.4.3

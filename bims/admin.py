@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from django.contrib.gis import admin
+from ordered_model.admin import OrderedModelAdmin
 from django import forms
 from bims.models import (
     LocationType,
@@ -36,8 +37,8 @@ class TaxonAdmin(admin.ModelAdmin):
     list_display = ('common_name', 'author', 'iucn_status')
 
 
-class CarouselHeaderAdmin(admin.ModelAdmin):
-    list_display = ('banner', 'description')
+class CarouselHeaderAdmin(OrderedModelAdmin):
+    list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
 
 admin.site.register(LocationSite, LocationSiteAdmin)

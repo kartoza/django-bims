@@ -43,6 +43,7 @@ setup(
             'coreapi==2.3.3',
             'pygbif==0.2.0',
             'Pillow==5.1.0',
+            'django-ordered-model==1.4.3',
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',
