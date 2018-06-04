@@ -8,7 +8,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0004_biologicalcollectionrecord_validated'),
+        ('bims', '0006_auto_20180529_0449'),
     ]
 
     operations = [
