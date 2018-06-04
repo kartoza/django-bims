@@ -1,4 +1,3 @@
-
 define([
     'backbone',
     'underscore',
@@ -7,7 +6,7 @@ define([
     'views/location_site',
     'views/map_control_panel',
     'openlayers',
-    'jquery'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $) {
+    'jquery'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, OpenLayers, $) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -32,7 +31,7 @@ define([
             var view = this.map.getView();
             var zoom = view.getZoom();
             view.animate({
-                zoom: zoom-1,
+                zoom: zoom - 1,
                 duration: 250
             })
         },
@@ -40,7 +39,7 @@ define([
             var view = this.map.getView();
             var zoom = view.getZoom();
             view.animate({
-                zoom: zoom+1,
+                zoom: zoom + 1,
                 duration: 250
             })
         },
@@ -51,14 +50,14 @@ define([
             if (features) {
                 self.featureClicked(features[0]);
             } else {
-               Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
+                Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             }
 
             // Close opened control panel
             this.mapControlPanel.closeAllPanel();
 
-            if(this.mapControlPanel.locationControlActive) {
-                if(this.geocontextOverlayDisplayed === false) {
+            if (this.mapControlPanel.locationControlActive) {
+                if (this.geocontextOverlayDisplayed === false) {
                     this.showGeoContext(e.coordinate);
                 } else {
                     this.hideGeoContext();
@@ -72,16 +71,16 @@ define([
         },
         showGeoContext: function (coordinate) {
 
-            if(!geocontextUrl) {
+            if (!geocontextUrl) {
                 return false;
             }
 
             this.geocontextOverlayDisplayed = true;
 
-            var lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
+            var lonlat = OpenLayers.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
 
             // Show popup
-            var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
+            var hdms = OpenLayers.coordinate.toStringHDMS(ol.proj.transform(
                 coordinate, "EPSG:3857", "EPSG:4326"
             ));
 
@@ -91,26 +90,28 @@ define([
             var lan = lonlat[1];
             var self = this;
 
-            var url = geocontextUrl + "/geocontext/value/list/"+lon+"/"+lan+"/?with-geometry=False";
+            var url = geocontextUrl + "/geocontext/value/list/" + lon + "/" + lan + "/?with-geometry=False";
 
             $.get({
                 url: url,
                 dataType: 'json',
                 success: function (data) {
                     var contentDiv = '<div>';
-                    for(var i=0; i<data.length; i++) {
+                    for (var i = 0; i < data.length; i++) {
                         contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
                         contentDiv += '<br>';
                     }
                     contentDiv += '</div>';
                     self.geoOverlayContent.innerHTML = contentDiv;
                 },
-                error: function(req, err){ console.log(err); }
+                error: function (req, err) {
+                    console.log(err);
+                }
             });
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
-            if(this.locationSiteViews.hasOwnProperty(properties.id)) {
+            if (this.locationSiteViews.hasOwnProperty(properties.id)) {
                 var locationSiteView = this.locationSiteViews[properties.id];
                 locationSiteView.clicked();
             }
@@ -120,7 +121,7 @@ define([
         renderCollection: function () {
             var self = this;
 
-            for(var i=0; i < this.collection.length; i++) {
+            for (var i = 0; i < this.collection.length; i++) {
                 var locationSiteModel = this.collection.models[i];
                 var locationSiteView = new LocationSiteView({
                     model: locationSiteModel,
@@ -128,17 +129,17 @@ define([
                 });
             }
         },
-        render: function() {
+        render: function () {
             var self = this;
 
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
-            this.map = this.loadMap();
+            this.loadMap();
 
             self.renderCollection();
 
             this.map.on('click', function (e) {
-               self.mapClicked(e);
+                self.mapClicked(e);
             });
 
             this.mapControlPanel = new MapControlPanelView({
@@ -147,25 +148,29 @@ define([
 
             this.$el.append(this.mapControlPanel.render().$el);
 
+            // add layer switcher
+            var layerSwitcher = new ol.control.LayerSwitcher();
+            this.map.addControl(layerSwitcher);
+
             return this;
         },
-        loadMap: function() {
+        loadMap: function () {
             var baseSourceLayer;
             var self = this;
 
-            if(bingMapKey) {
-                baseSourceLayer = new ol.source.BingMaps({
+            if (bingMapKey) {
+                baseSourceLayer = new OpenLayers.source.BingMaps({
                     key: bingMapKey,
                     imagerySet: 'AerialWithLabels'
                 })
             } else {
-                baseSourceLayer = new ol.source.OSM();
+                baseSourceLayer = new OpenLayers.source.OSM();
             }
 
-            self.locationSiteVectorSource = new ol.source.Vector({});
+            self.locationSiteVectorSource = new OpenLayers.source.Vector({});
 
-            var iconStyle = new ol.style.Style({
-                image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+            var iconStyle = new OpenLayers.style.Style({
+                image: new OpenLayers.style.Icon(/** @type {olx.style.IconOptions} */ ({
                     anchor: [0.5, 46],
                     anchorXUnits: 'fraction',
                     anchorYUnits: 'pixels',
@@ -176,38 +181,38 @@ define([
 
             var styles = {
                 'Point': iconStyle,
-                'LineString': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
+                'LineString': new OpenLayers.style.Style({
+                    stroke: new OpenLayers.style.Stroke({
                         color: 'green',
                         width: 1
                     })
                 }),
-                'MultiPolygon': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
+                'MultiPolygon': new OpenLayers.style.Style({
+                    stroke: new OpenLayers.style.Stroke({
                         color: 'yellow',
                         width: 1
                     }),
-                    fill: new ol.style.Fill({
+                    fill: new OpenLayers.style.Fill({
                         color: 'rgba(255, 255, 0, 0.1)'
                     })
                 }),
-                'Polygon': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
+                'Polygon': new OpenLayers.style.Style({
+                    stroke: new OpenLayers.style.Stroke({
                         color: 'blue',
                         lineDash: [4],
                         width: 3
                     }),
-                    fill: new ol.style.Fill({
+                    fill: new OpenLayers.style.Fill({
                         color: 'rgba(0, 0, 255, 0.1)'
                     })
                 })
             };
 
-            var styleFunction = function(feature) {
+            var styleFunction = function (feature) {
                 return styles[feature.getGeometry().getType()];
             };
 
-            var locationSiteVectorLayer = new ol.layer.Vector({
+            var locationSiteVectorLayer = new OpenLayers.layer.Vector({
                 source: self.locationSiteVectorSource,
                 style: styleFunction
             });
@@ -216,7 +221,7 @@ define([
             this.geoOverlayContent = document.getElementById('geocontext-content');
             this.geoOverlayCloser = document.getElementById('geocontext-closer');
 
-            this.geocontextOverlay = new ol.Overlay({
+            this.geocontextOverlay = new OpenLayers.Overlay({
                 element: this.geoOverlayContainer,
                 autoPan: true,
                 autoPanAnimation: {
@@ -230,27 +235,47 @@ define([
                 return false;
             };
 
-            return new ol.Map({
+            this.map = new OpenLayers.Map({
                 target: 'map',
-                layers: [
-                    new ol.layer.Tile({
-                        source: baseSourceLayer
-                    }),
-                    locationSiteVectorLayer
-                ],
-                view: new ol.View({
-                    center: ol.proj.fromLonLat([22.937506, -30.559482]),
+                layers: self.getBaseMaps(),
+                view: new OpenLayers.View({
+                    center: OpenLayers.proj.fromLonLat([22.937506, -30.559482]),
                     zoom: 7
                 }),
-                controls: ol.control.defaults({
+                controls: OpenLayers.control.defaults({
                     zoom: false
                 }),
                 overlays: [this.geocontextOverlay]
             });
+            this.map.addLayer(locationSiteVectorLayer);
         },
         addLocationSiteFeatures: function (view, features) {
             this.locationSiteViews[view.id] = view;
             this.locationSiteVectorSource.addFeatures(features);
+        },
+        getBaseMaps: function () {
+            return [
+                new ol.layer.Tile({
+                    title: 'OSM mapsurfer roads',
+                    type: 'base',
+                    visible: true,
+                    baseLayer: true,
+                    preload: Infinity,
+                    source: new ol.source.OSM()
+                }),
+
+                new ol.layer.Tile({
+                    title: 'NGI OSM aerial photographs',
+                    type: 'base',
+                    visible: false,
+                    baseLayer: true,
+                    preload: Infinity,
+                    source: new ol.source.XYZ({
+                        attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
+                        url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
+                    })
+                })
+            ];
         }
     })
 });
