@@ -10,7 +10,10 @@ from bims.models import (
     Taxon,
     Survey,
     LocationContext,
-    CarouselHeader,
+    Boundary,
+    BoundaryType,
+    Cluster,
+    CarouselHeader
 )
 
 
@@ -37,6 +40,17 @@ class TaxonAdmin(admin.ModelAdmin):
     list_display = ('common_name', 'author', 'iucn_status')
 
 
+class BoundaryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'type')
+    list_filter = ('type',)
+    ordering = ('type', 'name')
+
+
+class ClusterAdmin(admin.ModelAdmin):
+    list_display = ('boundary', 'module')
+    list_filter = ('boundary', 'module')
+
+
 class CarouselHeaderAdmin(OrderedModelAdmin):
     list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
@@ -47,4 +61,8 @@ admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Survey)
 admin.site.register(LocationContext)
+
+admin.site.register(Boundary, BoundaryAdmin)
+admin.site.register(BoundaryType, admin.ModelAdmin)
+admin.site.register(Cluster, ClusterAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)

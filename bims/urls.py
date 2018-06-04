@@ -13,6 +13,7 @@ from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
 )
 from bims.api_views.taxon import TaxonDetail
+from bims.api_views.cluster import ClusterList
 
 
 api_urls = [
@@ -23,6 +24,8 @@ api_urls = [
         LocationSiteDetail.as_view()),
     url(r'^api/taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
+    url(r'^api/cluster/(?P<administrative_level>\w+)/$',
+        ClusterList.as_view()),
 ]
 
 urlpatterns = [
