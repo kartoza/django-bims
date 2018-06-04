@@ -9,3 +9,4 @@ from bims.models.profile import Profile
 from bims.models.cluster import *  # noqa
 from bims.models.boundary import *  # noqa
 from bims.models.boundary_type import *  # noqa
+from bims.models.carousel_header import CarouselHeader

@@ -6,12 +6,15 @@ define([
     'models/location_site',
     'views/location_site',
     'views/map_control_panel',
-    'openlayers'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol) {
+    'openlayers',
+    'jquery'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
         locationSiteVectorSource: null,
+        geocontextOverlay: null,
+        geocontextOverlayDisplayed: false,
         locationSiteViews: {},
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -23,7 +26,7 @@ define([
             _.bindAll(this, 'render');
             this.collection.fetch({
                 success: this.render
-            })
+            });
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -44,12 +47,66 @@ define([
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
-            this.mapControlPanel.closeSearchPanel();
+
             if (features) {
                 self.featureClicked(features[0]);
             } else {
                Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             }
+
+            // Close opened control panel
+            this.mapControlPanel.closeAllPanel();
+
+            if(this.mapControlPanel.locationControlActive) {
+                if(this.geocontextOverlayDisplayed === false) {
+                    this.showGeoContext(e.coordinate);
+                } else {
+                    this.hideGeoContext();
+                }
+            }
+        },
+        hideGeoContext: function () {
+            this.geoOverlayContent.innerHTML = '';
+            this.geocontextOverlay.setPosition(undefined);
+            this.geocontextOverlayDisplayed = false;
+        },
+        showGeoContext: function (coordinate) {
+
+            if(!geocontextUrl) {
+                return false;
+            }
+
+            this.geocontextOverlayDisplayed = true;
+
+            var lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
+
+            // Show popup
+            var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
+                coordinate, "EPSG:3857", "EPSG:4326"
+            ));
+
+            this.geoOverlayContent.innerHTML = '<div class=small-loading></div>';
+            this.geocontextOverlay.setPosition(coordinate);
+            var lon = lonlat[0];
+            var lan = lonlat[1];
+            var self = this;
+
+            var url = geocontextUrl + "/geocontext/value/list/"+lon+"/"+lan+"/?with-geometry=False";
+
+            $.get({
+                url: url,
+                dataType: 'json',
+                success: function (data) {
+                    var contentDiv = '<div>';
+                    for(var i=0; i<data.length; i++) {
+                        contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
+                        contentDiv += '<br>';
+                    }
+                    contentDiv += '</div>';
+                    self.geoOverlayContent.innerHTML = contentDiv;
+                },
+                error: function(req, err){ console.log(err); }
+            });
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
@@ -155,6 +212,24 @@ define([
                 style: styleFunction
             });
 
+            this.geoOverlayContainer = document.getElementById('geocontext-popup');
+            this.geoOverlayContent = document.getElementById('geocontext-content');
+            this.geoOverlayCloser = document.getElementById('geocontext-closer');
+
+            this.geocontextOverlay = new ol.Overlay({
+                element: this.geoOverlayContainer,
+                autoPan: true,
+                autoPanAnimation: {
+                    duration: 250
+                }
+            });
+
+            this.geoOverlayCloser.onclick = function () {
+                self.geocontextOverlay.setPosition(undefined);
+                self.geoOverlayCloser.blur();
+                return false;
+            };
+
             return new ol.Map({
                 target: 'map',
                 layers: [
@@ -169,7 +244,8 @@ define([
                 }),
                 controls: ol.control.defaults({
                     zoom: false
-                })
+                }),
+                overlays: [this.geocontextOverlay]
             });
         },
         addLocationSiteFeatures: function (view, features) {
