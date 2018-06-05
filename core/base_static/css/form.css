@@ -213,3 +213,8 @@ h1 {
     color: #436461 !important;
     border-bottom: 1px solid #436461;
 }
+
+.password-message {
+    font-size: 11pt !important;
+    padding-bottom: 0 !important;
+}
