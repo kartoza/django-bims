@@ -5,8 +5,8 @@ define([
     'models/location_site',
     'views/location_site',
     'views/map_control_panel',
-    'openlayers',
-    'jquery'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, OpenLayers, $) {
+    'ol',
+    'jquery', 'layerSwitcher'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $, LayerSwitcher) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -77,10 +77,10 @@ define([
 
             this.geocontextOverlayDisplayed = true;
 
-            var lonlat = OpenLayers.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
+            var lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
 
             // Show popup
-            var hdms = OpenLayers.coordinate.toStringHDMS(ol.proj.transform(
+            var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
                 coordinate, "EPSG:3857", "EPSG:4326"
             ));
 
@@ -149,7 +149,7 @@ define([
             this.$el.append(this.mapControlPanel.render().$el);
 
             // add layer switcher
-            var layerSwitcher = new ol.control.LayerSwitcher();
+            var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
 
             return this;
@@ -159,18 +159,18 @@ define([
             var self = this;
 
             if (bingMapKey) {
-                baseSourceLayer = new OpenLayers.source.BingMaps({
+                baseSourceLayer = new ol.source.BingMaps({
                     key: bingMapKey,
                     imagerySet: 'AerialWithLabels'
                 })
             } else {
-                baseSourceLayer = new OpenLayers.source.OSM();
+                baseSourceLayer = new ol.source.OSM();
             }
 
-            self.locationSiteVectorSource = new OpenLayers.source.Vector({});
+            self.locationSiteVectorSource = new ol.source.Vector({});
 
-            var iconStyle = new OpenLayers.style.Style({
-                image: new OpenLayers.style.Icon(/** @type {olx.style.IconOptions} */ ({
+            var iconStyle = new ol.style.Style({
+                image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
                     anchor: [0.5, 46],
                     anchorXUnits: 'fraction',
                     anchorYUnits: 'pixels',
@@ -181,28 +181,28 @@ define([
 
             var styles = {
                 'Point': iconStyle,
-                'LineString': new OpenLayers.style.Style({
-                    stroke: new OpenLayers.style.Stroke({
+                'LineString': new ol.style.Style({
+                    stroke: new ol.style.Stroke({
                         color: 'green',
                         width: 1
                     })
                 }),
-                'MultiPolygon': new OpenLayers.style.Style({
-                    stroke: new OpenLayers.style.Stroke({
+                'MultiPolygon': new ol.style.Style({
+                    stroke: new ol.style.Stroke({
                         color: 'yellow',
                         width: 1
                     }),
-                    fill: new OpenLayers.style.Fill({
+                    fill: new ol.style.Fill({
                         color: 'rgba(255, 255, 0, 0.1)'
                     })
                 }),
-                'Polygon': new OpenLayers.style.Style({
-                    stroke: new OpenLayers.style.Stroke({
+                'Polygon': new ol.style.Style({
+                    stroke: new ol.style.Stroke({
                         color: 'blue',
                         lineDash: [4],
                         width: 3
                     }),
-                    fill: new OpenLayers.style.Fill({
+                    fill: new ol.style.Fill({
                         color: 'rgba(0, 0, 255, 0.1)'
                     })
                 })
@@ -212,7 +212,7 @@ define([
                 return styles[feature.getGeometry().getType()];
             };
 
-            var locationSiteVectorLayer = new OpenLayers.layer.Vector({
+            var locationSiteVectorLayer = new ol.layer.Vector({
                 source: self.locationSiteVectorSource,
                 style: styleFunction
             });
@@ -221,7 +221,7 @@ define([
             this.geoOverlayContent = document.getElementById('geocontext-content');
             this.geoOverlayCloser = document.getElementById('geocontext-closer');
 
-            this.geocontextOverlay = new OpenLayers.Overlay({
+            this.geocontextOverlay = new ol.Overlay({
                 element: this.geoOverlayContainer,
                 autoPan: true,
                 autoPanAnimation: {
@@ -235,14 +235,14 @@ define([
                 return false;
             };
 
-            this.map = new OpenLayers.Map({
+            this.map = new ol.Map({
                 target: 'map',
                 layers: self.getBaseMaps(),
-                view: new OpenLayers.View({
-                    center: OpenLayers.proj.fromLonLat([22.937506, -30.559482]),
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([22.937506, -30.559482]),
                     zoom: 7
                 }),
-                controls: OpenLayers.control.defaults({
+                controls: ol.control.defaults({
                     zoom: false
                 }),
                 overlays: [this.geocontextOverlay]
