@@ -1,0 +1,17 @@
+<div id="captcha-info"><span id="warning-captcha">Please verify that you are not a bot first.</span><br/></div>
+<div class="g-recaptcha" data-callback="enableBtn"></div>
+
+<script src="https://www.google.com/recaptcha/api.js?onload=CaptchaCallback&render=explicit&hl=en"></script>
+<script type="text/javascript">
+    var CaptchaCallback = function(){
+      $('.g-recaptcha').each(function(){
+        grecaptcha.render(this,{'sitekey' : '6LfuEF0UAAAAAPfKni-Wm7i95P3pxHMPINfGW64a'} );
+      })
+    };
+
+    function enableBtn(){
+        $('.btn-login').show();
+        $('#warning-captcha').html('Verified');
+    }
+
+</script>
