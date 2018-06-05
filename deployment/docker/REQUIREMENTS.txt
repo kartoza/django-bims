@@ -32,3 +32,5 @@ pygbif==0.2.0
 
 Pillow==5.1.0
 django-ordered-model==1.4.3
+django-elasticsearch-dsl
+elasticsearch-dsl>=6.0,<7.0

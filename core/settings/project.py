@@ -12,6 +12,7 @@ from .contrib import *  # noqa
 
 # Project apps
 INSTALLED_APPS += (
+    'django_elasticsearch_dsl',
     'bims',
     'example',
 )
@@ -55,3 +56,10 @@ GRUNT_MODULES = {
         'optimized': 'js/optimized.js',
     }
 }
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'bims-elasticsearch'
+    },
+}
+
