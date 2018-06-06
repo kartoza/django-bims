@@ -16,6 +16,7 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from reports.views.stats import view_pdf
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -24,6 +25,7 @@ urlpatterns = [
     url(r'^', include('bims.urls')),
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
+    url(r'^report/', view_pdf, name='report'),
 ]
 
 if settings.DEBUG:
