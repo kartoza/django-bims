@@ -7,5 +7,5 @@ from django.views.generic import TemplateView
 
 class CaptchaTestView(TemplateView):
     """View to test including captcha template."""
-    
+
     template_name = 'captcha-test.html'
