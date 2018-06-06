@@ -16,7 +16,6 @@ def create_pdf(pathname, current_site):
     width, height = A4
     center = height * 0.5
 
-    margin_right = height - 50
     margin_left = 50
     margin_bottom = 50
 
