@@ -19,15 +19,9 @@ class LinksPageView(TemplateView):
 
 		context['data_list'] = []
 		for category in categories:
-			# category_list.append(category)
 			category_links = {'category': category, 'links': []}
 
-			# cleaned = {}
-			# for category, links in 
-			# category_links['category'] = category
-
 			links_qs = Link.objects.filter(category=category.pk)
-			links = []
 			for link in links_qs:
 				category_links['links'].append(link)
 			context['data_list'].append(category_links)
@@ -35,7 +29,5 @@ class LinksPageView(TemplateView):
 
 			context['category_links'] = category_links
 			context['categoriez'] = categories
-			# context['links'] = links_qs
 
 		return context
-
