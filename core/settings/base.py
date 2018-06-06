@@ -114,6 +114,7 @@ TEMPLATES = [
 
                 # `allauth` needs this from django
                 'django.template.context_processors.request',
+                'core.context_processor.add_recaptcha_key'
             ],
         },
     },

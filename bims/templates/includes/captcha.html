@@ -1,12 +1,13 @@
 <div id="captcha-info"><span id="warning-captcha">Please verify that you are not a bot first.</span><br/></div>
 <div class="g-recaptcha" data-callback="enableBtn"></div>
 
-{% if site_key != '' %}
+{% if recaptcha_site_key %}
     <script src="https://www.google.com/recaptcha/api.js?onload=CaptchaCallback&render=explicit&hl=en"></script>
  {% else %}
     <script>
         $(document).ready(function () {
             enableBtn();
+            $('#captcha-info').hide();
         })
     </script>
 {% endif %}
@@ -14,12 +15,12 @@
 <script type="text/javascript">
     var CaptchaCallback = function(){
       $('.g-recaptcha').each(function(){
-        grecaptcha.render(this,{'sitekey' : '{{ site_key }}' } );
+        grecaptcha.render(this,{'sitekey' : '{{ recaptcha_site_key }}' } );
       })
     };
 
     function enableBtn(){
-        $('.btn-login').show();
+        $('.btn-recaptcha-verified').show();
         $('#warning-captcha').html('Verified');
     }
 
