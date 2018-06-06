@@ -1,0 +1,18 @@
+{% load i18n %}
+{% load static from staticfiles %}
+
+{% block js_head %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+{% endblock %}
+
+{% block container %}
+    <div id="captcha-wrapper" style="text-align: center; margin: 50px auto; width: 300px;"></div>
+{% endblock %}
+
+{% include 'includes/captcha.html' %}
+
+{% block foot %}
+    <script>
+        $('#captcha-wrapper').append($('#captcha-info')).append($('.g-recaptcha'));
+    </script>
+{% endblock %}
