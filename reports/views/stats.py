@@ -2,14 +2,11 @@ __author__ = 'Alison Mukoma <alison@kartoza.com'
 __copywrite__ = 'kartoza.com'
 
 import os
-from io import BytesIO
 
 from django.http import HttpResponse
 
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import (
-    A4, 
-    landscape)
+from reportlab.lib.pagesizes import A4, landscape
 
 
 def create_pdf(
@@ -19,25 +16,23 @@ def create_pdf(
     page = canvas.Canvas(pathname, pagesize=landscape(A4))
     width, height = A4
     center = height * 0.5
-    
 
     margin_right = height - 50
     margin_left = 50
     margin_bottom = 50
-    max_left = margin_right - 100
+    # max_left = margin_right - 100
 
     # we start to draw staff on the PDF
     page.setFillColorRGB(0.1, 0.1, 0.1)
     page.setFont('Times-Roman', 18)
 
-    
     page.setFont('Times-Bold', 26)
     page.drawCentredString(center, 480, 'Ledet Report')
-    
+
     page.setFont('Times-Roman', 16)
     page.drawCentredString(
         center, 370, 'Here we shall count some things like fish.. maybe more')
-    
+
     # footer information.
     page.setFont('Times-Roman', 14)
     page.drawString(
@@ -45,7 +40,7 @@ def create_pdf(
         margin_bottom - 10,
         'We are still adding staff to this report.')
     page.setFont('Times-Roman', 8)
-    
+
     # closing the PDF with content
     page.showPage()
     page.save()
