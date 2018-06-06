@@ -14,47 +14,7 @@
 {% endblock %}
 
 {% block body_content %}
-<div id="section-wrapper">
-    <header class="masthead text-center text-white d-flex" id="header">
-        <div id="carouselIndicators" class="carousel slide" data-ride="carousel">
-            <ol class="carousel-indicators">
-                <li data-target="#carouselIndicators" data-slide-to="0" class="active"></li>
-                <li data-target="#carouselIndicators" data-slide-to="1"></li>
-                <li data-target="#carouselIndicators" data-slide-to="2"></li>
-            </ol>
-            <div class="carousel-inner">
-                <div class="carousel-item active">
-                 <div class="carousel-title">
-                      BIMS Slide 1
-                  </div>
-                  <img class="d-block w-100" src="static/img/Banner1.jpg" alt="First slide">
-                </div>
-                <div class="carousel-item">
-                    <div class="carousel-title">
-                       BIMS Slide 2
-                    </div>
-                  <img class="d-block w-100" src="static/img/Banner2.jpg" alt="Second slide">
-                </div>
-                <div class="carousel-item">
-                    <div class="carousel-title">
-                        BIMS Slide 3
-                    </div>
-                  <img class="d-block w-100" src="static/img/Banner3.jpg" alt="Third slide">
-                </div>
-            </div>
-        </div>
-      <div id="title-header">
-            <div class="title-header-buttons">
-                {% if not user.is_authenticated %}
-                    <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
-                    <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
-                {% else %}
-                    <a class="btn btn-account btn-l js-scroll-trigger" href="/map">OPEN MAP</a>
-                {% endif %}
-            </div>
-      </div>
-    </header>
-
+<div id="section-wrapper" style="padding-top: 6%;">
         <section id="fish-data" style="position: relative">
           <div class="container" style="margin-bottom: 25px">
             <div class="row">
@@ -64,30 +24,44 @@
             </div>
             <div class="row">
               <div class="col-lg-8">
-                    {% get_link_list "bims-projects" as links, category %}
+                {% for category in categoriez %}
+                    {% get_link_list "{{category.slug}}" as links, category %}
+                    
+                            <div class="container">
+                                {% if links %}
+                                <ul>
+                                            <li class="nav-header title" style="list-style-type: none;"><h3>{{ category.slug }}</h3></li>
 
-                    {% if links %}
-                        <div class="container">
-                            <ul>
-                                        <li class="nav-header title" style="list-style-type: none;"><h3>{{ category.title }}</h3></li>
+                                    {% for link in links %}
+                                        <div class="list-group borderless">
+                                              <a href="{{ link.href }}" target="_blank" class="list-group-item list-group-item-action flex-column align-items-start">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                  <h5 class="mb-1">{{ link.title }}</h5>
+                                                </div>
+                                                <p class="mb-1 pull-left">{{ link.description }}</p>
+                                              </a>
+                                          </div>
+                                    {% endfor %}
 
-                                {% for link in links %}
-                                    <div class="list-group borderless">
-                                          <a href="{{ link.href }}" target="_blank" class="list-group-item list-group-item-action flex-column align-items-start">
-                                            <div class="d-flex w-100 justify-content-between">
-                                              <h5 class="mb-1">{{ link.title }}</h5>
-                                            </div>
-                                            <p class="mb-1 pull-left">{{ link.description }}</p>
-                                          </a>
-                                      </div>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            
               </div>
               <div class="col-lg-4">
-                    <div class="header"><h1>Manage Categories</h1></div>
-                </div>
+                    <div class="header pull-right"><h1>Categories</h1>
+                    {% for item in categoriez %}
+                        {% if item.is_active %}
+                            <ul class="list-group">
+                                <div class="list-group-item">
+                                    {{ item }}
+                                </div>
+                            </ul>
+                        {% endif %}
+                    {% endfor %}
+
+                    </div>
             </div>
           </div>
         </section>
@@ -97,7 +71,7 @@
                 <div class="row">
                     <div class="col-lg-10 pull-left kartoza-icon">
                         <a href="http://kartoza.com/en/">
-                            <img src="static/img/kartoza-logo-only.png" style="width: 55px">
+                            <img src="{% static 'img/kartoza-logo-only.png' %}" style="width: 55px">
                         </a>
                     </div>
                     <div class="col-lg-2 pull-right about-links">
