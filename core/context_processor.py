@@ -6,7 +6,7 @@ Our custom context processors
 
 # noinspection PyPep8Naming
 def add_recaptcha_key(request):
-    """Add our Intercom.io app ID to the context
+    """Add recaptcha site key to the context
 
     :param request: Http Request obj
 
