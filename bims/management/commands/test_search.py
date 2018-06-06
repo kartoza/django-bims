@@ -3,7 +3,7 @@ __author__ = 'Anita Hapsari <anita@kartoza.com>'
 __date__ = '05/06/18'
 
 from django.core.management.base import BaseCommand
-from core.documents import BiologicalCollectionRecordDocument
+from bims.documents import BiologicalCollectionRecordDocument
 
 
 class Command(BaseCommand):

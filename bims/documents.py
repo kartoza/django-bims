@@ -2,7 +2,7 @@
 __author__ = 'Anita Hapsari <anita@kartoza.com>'
 __date__ = '05/06/18'
 
-from django_elasticsearch_dsl import DocType, Index
+from django_elasticsearch_dsl import DocType, Index, fields
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from example.models.rock_collection_record import RockCollectionRecord
 
@@ -16,11 +16,12 @@ biological_collection_record.settings(
 
 @biological_collection_record.doc_type
 class BiologicalCollectionRecordDocument(DocType):
+    original_species_name = fields.TextField()
+
     class Meta:
-        model = RockCollectionRecord
+        model = BiologicalCollectionRecord
 
         # The fields of the model you want to be indexed in Elasticsearch
         fields = [
-            'rock_name',
             'original_species_name',
         ]
