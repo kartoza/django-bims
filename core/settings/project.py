@@ -62,4 +62,3 @@ ELASTICSEARCH_DSL = {
         'hosts': 'bims-elasticsearch'
     },
 }
-

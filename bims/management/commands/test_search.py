@@ -8,7 +8,7 @@ from bims.documents import BiologicalCollectionRecordDocument
 
 class Command(BaseCommand):
     """Command to test elasticsearch."""
-    
+
     def add_arguments(self, parser):
         parser.add_argument(
             '--name',
