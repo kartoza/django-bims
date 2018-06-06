@@ -155,17 +155,7 @@ define([
             return this;
         },
         loadMap: function () {
-            var baseSourceLayer;
             var self = this;
-
-            if (bingMapKey) {
-                baseSourceLayer = new ol.source.BingMaps({
-                    key: bingMapKey,
-                    imagerySet: 'AerialWithLabels'
-                })
-            } else {
-                baseSourceLayer = new ol.source.OSM();
-            }
 
             self.locationSiteVectorSource = new ol.source.Vector({});
 
@@ -253,29 +243,122 @@ define([
             this.locationSiteViews[view.id] = view;
             this.locationSiteVectorSource.addFeatures(features);
         },
-        getBaseMaps: function () {
-            return [
-                new ol.layer.Tile({
-                    title: 'OSM mapsurfer roads',
-                    type: 'base',
-                    visible: true,
-                    baseLayer: true,
-                    preload: Infinity,
-                    source: new ol.source.OSM()
-                }),
 
-                new ol.layer.Tile({
-                    title: 'NGI OSM aerial photographs',
-                    type: 'base',
-                    visible: false,
-                    baseLayer: true,
-                    preload: Infinity,
-                    source: new ol.source.XYZ({
-                        attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
-                        url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
-                    })
+        // TODO : When this functions moved to other js, the mapbox style broken (doesn't call style)
+        // ------------------------------ BASEMAP ---------------------------------
+        getVectorTileMapBoxStyle: function (url, styleUrl, layerName, attributions) {
+            var tilegrid = ol.tilegrid.createXYZ({tileSize: 512, maxZoom: 14});
+            var layer = new ol.layer.VectorTile({
+                source: new ol.source.VectorTile({
+                    attributions: attributions,
+                    format: new ol.format.MVT(),
+                    tileGrid: tilegrid,
+                    tilePixelRatio: 8,
+                    url: url
                 })
-            ];
+            });
+            fetch(styleUrl).then(function (response) {
+                response.json().then(function (glStyle) {
+                    olms.applyStyle(layer, glStyle, layerName).then(function () {
+                    });
+                });
+            });
+            return layer
+        },
+        getOpenMapTilesTile: function (styleUrl) {
+            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
+                '© <a href="http://www.openstreetmap.org/copyright">' +
+                'OpenStreetMap contributors</a>';
+            return this.getVectorTileMapBoxStyle(
+                'https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                styleUrl,
+                'openmaptiles',
+                attributions
+            );
+        },
+        getKlokantechTerrainBasemap: function () {
+            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
+                '© <a href="http://www.openstreetmap.org/copyright">' +
+                'OpenStreetMap contributors</a>';
+            var openMapTiles = this.getOpenMapTilesTile(staticURL + 'mapbox-style/klokantech-terrain-gl-style.json');
+            var contours = this.getVectorTileMapBoxStyle(
+                'https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                staticURL + 'mapbox-style/klokantech-terrain-gl-style.json',
+                'contours',
+                attributions
+            );
+            var hillshading = new ol.layer.Tile({
+                opacity: 0.1,
+                source: new ol.source.XYZ({
+                    url: 'https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
+                })
+            });
+            return new ol.layer.Group({
+                title: 'Klokantech Terrain',
+                layers: [openMapTiles, hillshading, contours]
+            });
+        },
+        getPositronBasemap: function () {
+            var layer = this.getOpenMapTilesTile(
+                staticURL + 'mapbox-style/positron-gl-style.json');
+            layer.set('title', 'Positron Map');
+            return layer
+        },
+        getDarkMatterBasemap: function () {
+            var layer = this.getOpenMapTilesTile(
+                staticURL + 'mapbox-style/dark-matter-gl-style.json');
+            layer.set('title', 'Dark Matter');
+            return layer
+        },
+        getBaseMaps: function () {
+            var baseDefault = null;
+            var baseSourceLayers = [];
+
+            // TOPOSHEET MAP
+            var toposheet = new ol.layer.Tile({
+                title: 'South Africa 1:50k Toposheets',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'Toposheets'],
+                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+                })
+            });
+            baseSourceLayers.push(toposheet);
+
+
+            // NGI MAP
+            var ngiMap = new ol.layer.Tile({
+                title: 'NGI OSM aerial photographs',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
+                    url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
+                })
+            });
+            baseSourceLayers.push(ngiMap);
+            // add bing
+            if (bingMapKey) {
+                var bingMap = new ol.layer.Tile({
+                    title: 'Bing',
+                    source: new ol.source.BingMaps({
+                        key: bingMapKey,
+                        imagerySet: 'AerialWithLabels'
+                    })
+                });
+                baseSourceLayers.push(bingMap);
+            }
+
+            // OPENMAPTILES
+            if (mapTilerKey) {
+                baseSourceLayers.push(this.getPositronBasemap());
+                baseSourceLayers.push(this.getDarkMatterBasemap());
+                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
+            }
+            $.each(baseSourceLayers, function (index, layer) {
+                layer.set('type', 'base');
+                layer.set('visible', true);
+                layer.set('preload', Infinity);
+            });
+
+            return baseSourceLayers
         }
     })
 });

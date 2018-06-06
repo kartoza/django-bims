@@ -358,3 +358,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-left: 0 !important;
     margin-bottom: 0 !important;
 }
+
+.layer-switcher input {
+    cursor: pointer;
+}

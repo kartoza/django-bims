@@ -13,8 +13,13 @@
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.6.2/ol.js"></script>
+    <script src="{% static "js/libs/ol-mapbox-style/olms.js" %}"></script>
+
     <script type="text/javascript">
         const bingMapKey = '{{ bing_map_key }}';
+        const mapTilerKey = '{{ map_tiler_key }}';
+        const staticURL = "{% static "" %}";
         const geocontextUrl = '{{ geocontext_url }}';
     </script>
 {% endblock %}

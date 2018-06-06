@@ -286,8 +286,7 @@ var LayerSwitcher = function (_Control) {
             var lyrId = LayerSwitcher.uuid();
 
             var label = document.createElement('label');
-
-            if (lyr.getLayers && !lyr.get('combine')) {
+            if (lyr.get('type') !== 'base' && lyr.getLayers && !lyr.get('combine')) {
 
                 li.className = 'group';
                 label.innerHTML = lyrTitle;
