@@ -9,8 +9,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 
 
-def create_pdf(
-        pathname, current_site):
+def create_pdf(pathname, current_site):
 
     # initialising the PDF for drawing content on it
     page = canvas.Canvas(pathname, pagesize=landscape(A4))
@@ -20,7 +19,6 @@ def create_pdf(
     margin_right = height - 50
     margin_left = 50
     margin_bottom = 50
-    # max_left = margin_right - 100
 
     # we start to draw staff on the PDF
     page.setFillColorRGB(0.1, 0.1, 0.1)
@@ -47,8 +45,6 @@ def create_pdf(
 
 
 def view_pdf(request, **kwargs):
-    # response = HttpResponse(content_type='application/pdf')
-    # response['Content-Disposition'] = 'attachment;'
 
     current_site = request.META['HTTP_HOST']
 
