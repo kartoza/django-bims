@@ -10,9 +10,11 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/map.css" %}" rel="stylesheet">
+    <link href="{% static "css/loading.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
-        var bingMapKey = '{{ bing_map_key }}';
+        const bingMapKey = '{{ bing_map_key }}';
+        const geocontextUrl = '{{ geocontext_url }}';
     </script>
 {% endblock %}
 
@@ -21,6 +23,10 @@
 
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
+        <div id="geocontext-popup" class="ol-popup">
+            <a href="#" id="geocontext-closer" class="ol-popup-closer"></a>
+            <div id="geocontext-content"></div>
+        </div>
     </script>
 
     <script type='text/html' id='side-panel-template'>

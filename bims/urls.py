@@ -2,8 +2,8 @@
 
 from django.conf.urls import url
 from django.urls import path
-from django.views.generic import TemplateView
 from rest_framework.documentation import include_docs_urls
+from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
 from bims.views.links import LinksPageView
 from bims.api_views.location_site import (
@@ -14,6 +14,7 @@ from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
 )
 from bims.api_views.taxon import TaxonDetail
+from bims.api_views.cluster import ClusterList
 
 
 api_urls = [
@@ -24,6 +25,8 @@ api_urls = [
         LocationSiteDetail.as_view()),
     url(r'^api/taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
+    url(r'^api/cluster/(?P<administrative_level>\w+)/$',
+        ClusterList.as_view()),
 ]
 
 urlpatterns = [

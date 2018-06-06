@@ -307,6 +307,13 @@ build-devweb: db
 	@echo "------------------------------------------------------------------"
 	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build devweb
 
+devweb-test:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running karma tests in devweb"
+	@echo "------------------------------------------------------------------"
+	@docker exec bims-dev-web bash -c 'cd / ; karma start --single-run'
+
 # Run pep8 style checking
 #http://pypi.python.org/pypi/pep8
 pep8:

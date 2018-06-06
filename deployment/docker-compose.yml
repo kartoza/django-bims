@@ -49,6 +49,7 @@ uwsgi:
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
     - RABBITMQ_HOST=rabbitmq
+    - GEOCONTEXT_URL=http://localhost:65402
   volumes:
     - ../../django-bims:/home/web/django_project
     - ./static:/home/web/static:rw
@@ -120,6 +121,7 @@ devweb:
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
     - RABBITMQ_HOST=rabbitmq
+    - GEOCONTEXT_URL=http://localhost:65402
   volumes:
     - ../../django-bims:/home/web/django_project
     - ./static:/home/web/static
@@ -134,6 +136,8 @@ devweb:
     - "63302:8080"
     # for ssh
     - "63303:22"
+    # for karma tests
+    - "63304:9876"
 
 rabbitmq:
   image: library/rabbitmq
