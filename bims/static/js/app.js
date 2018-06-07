@@ -7,6 +7,7 @@ require.config({
         backbone: 'libs/backbone-1.3.3/backbone-min',
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
+        olMapboxStyle: 'libs/ol-mapbox-style/olms',
     },
     shim: {
         ol: {
@@ -28,6 +29,10 @@ require.config({
         layerSwitcher: {
             deps: ['ol'],
             exports: 'LayerSwitcher'
+        },
+        olMapboxStyle: {
+            deps: ['ol'],
+            exports: 'OlMapboxStyle'
         }
     }
 });

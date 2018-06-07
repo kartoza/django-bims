@@ -6,7 +6,7 @@ define([
     'views/location_site',
     'views/map_control_panel',
     'ol',
-    'jquery', 'layerSwitcher'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $, LayerSwitcher) {
+    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -259,7 +259,7 @@ define([
             });
             fetch(styleUrl).then(function (response) {
                 response.json().then(function (glStyle) {
-                    olms.applyStyle(layer, glStyle, layerName).then(function () {
+                    OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
                     });
                 });
             });
