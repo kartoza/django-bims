@@ -11,5 +11,5 @@ class Command(UpdateBoundary, BaseCommand):
 
     def handle(self, *args, **options):
         self.save_data(
-            'bims/data/district/district.shp',
+            '/home/web/django_project/bims/data/district/district.shp',
             'district', 'district_n')

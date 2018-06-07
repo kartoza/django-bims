@@ -11,5 +11,5 @@ class Command(UpdateBoundary, BaseCommand):
 
     def handle(self, *args, **options):
         self.save_data(
-            'bims/data/country/ne_10m_admin_0_countries.shp',
+            '/home/web/django_project/bims/data/country/ne_10m_admin_0_countries.shp',
             'country', 'NAME')

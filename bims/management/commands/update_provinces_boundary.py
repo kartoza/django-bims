@@ -11,5 +11,5 @@ class Command(UpdateBoundary, BaseCommand):
 
     def handle(self, *args, **options):
         self.save_data(
-            'bims/data/province/province_boundary.shp',
+            '/home/web/django_project/bims/data/province/province_boundary.shp',
             'province', 'provname')
