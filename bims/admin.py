@@ -1,6 +1,10 @@
 # coding=utf-8
-
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from django.contrib.gis import admin
+from django.core.mail import send_mail
+from django.shortcuts import redirect
 from ordered_model.admin import OrderedModelAdmin
 from django import forms
 from bims.models import (
@@ -64,6 +68,64 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'validated',
     )
 
+
+class UserCreateForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email')
+
+    def __init__(self, *args, **kwargs):
+        super(UserCreateForm, self).__init__(*args, **kwargs)
+        self.fields['email'].required = True
+
+
+class CustomUserAdmin(UserAdmin):
+    add_form = UserCreateForm
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'first_name',
+                       'last_name', 'email', 'is_staff', 'is_superuser',
+                       'user_permissions'),
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if obj.pk is None:
+            obj.is_active = False
+        super(CustomUserAdmin, self).save_model(request, obj, form, change)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        scheme = request.scheme
+        site = request.get_host()
+        data = {
+            'firstname': obj.first_name,
+            'lastname': obj.last_name,
+            'scheme': scheme,
+            'site': site,
+            'username': obj.username
+        }
+        send_mail(
+            '[BIMS] Activate your new account',
+            'Dear {firstname} {lastname},\n\nPlease follow this link '
+            'to change your password and to activate your account:\n'
+            '{scheme}://{site}/activate-user/{username}/\n\n'
+            'Here are your information:\n'
+            'Username: {username}\n\n'
+            'Kind regards,\nBIMS Team.'.format(
+                **data
+            ),
+            obj.email,
+            [obj.email],
+            fail_silently=False
+        )
+        return redirect('/admin/auth/user/')
+
+
+    # Re-register UserAdmin
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
 
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
