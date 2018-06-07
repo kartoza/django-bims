@@ -14,6 +14,7 @@ from bims.api_views.location_type import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
+from bims.api_views.search import SearchObjects
 
 
 api_urls = [
@@ -26,6 +27,8 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
+    url(r'^api/search/(?P<original_species_name>\w+)/$',
+        SearchObjects.as_view(), name='search-api'),
 ]
 
 urlpatterns = [

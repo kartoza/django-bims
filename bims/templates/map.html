@@ -79,7 +79,7 @@
                 <div class="search-box">
                     <div class="container-1">
                         <span class="icon"><i class="fa fa-search"></i></span>
-                        <input type="search" id="search" placeholder="Search..." />
+                        <input type="search" id="search" placeholder="Search..." onchange="search()">
                     </div>
                 </div>
             </div>
@@ -93,6 +93,9 @@
                     <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
                 </div>
             </div>
+            <div class="row">
+                <div id="search-results" class="container-1" style="word-break: break-all"></div>
+            </div>
         </div>
     </script>
 
@@ -103,6 +106,27 @@
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script>
+        function search() {
+            var original_species_name = $('#search').val();
+            $.ajax({
+                type: 'GET',
+                url: '/api/search/' + original_species_name + '/',
+                success: function (data) {
+                    $('#search-results').html('');
+                    console.log(data)
+                    if(data['results']){
+                        $('#search-results').html(data['results'])
+                    }else {
+                        $('#search-results').append('' +
+                            '<p><span>Original species name: ' + data['original_species_name'] + '</span><br/>' +
+                            '<span>Collector: ' + data['collector'] + '</span><br/>' +
+                            '<apanp>Collection Date: ' + data['collection_date'] + '</span></p>')
+                    }
+                }
+            })
+        }
+    </script>
 
     {% grunt_module "map_view" %}
 
