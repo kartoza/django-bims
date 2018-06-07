@@ -1,4 +1,4 @@
-(function(_g){(function(f){var r=(typeof require==='function'?require:function(name){return {"_":null,"ol/observable":ol.Observable,"ol/proj":ol.proj,"ol/tilegrid":ol.tilegrid,"ol/map":ol.Map,"ol/format/geojson":ol.format.GeoJSON,"ol/format/mvt":ol.format.MVT,"ol/layer/tile":ol.layer.Tile,"ol/layer/vector":ol.layer.Vector,"ol/layer/vectortile":ol.layer.VectorTile,"ol/source/tilejson":ol.source.TileJSON,"ol/source/vector":ol.source.Vector,"ol/source/xyz":ol.source.XYZ,"ol/source/vectortile":ol.source.VectorTile,"ol/style/style":ol.style.Style,"ol/style/fill":ol.style.Fill,"ol/style/stroke":ol.style.Stroke,"ol/style/circle":ol.style.Circle,"ol/style/icon":ol.style.Icon,"ol/style/text":ol.style.Text}[name];});if (typeof exports==='object'&&typeof module!=='undefined'){module.exports=f(r)}else if(typeof define==='function'&&define.amd){define(["_","ol/observable","ol/proj","ol/tilegrid","ol/map","ol/format/geojson","ol/format/mvt","ol/layer/tile","ol/layer/vector","ol/layer/vectortile","ol/source/tilejson","ol/source/vector","ol/source/xyz","ol/source/vectortile","ol/style/style","ol/style/fill","ol/style/stroke","ol/style/circle","ol/style/icon","ol/style/text"],f.bind(_g,r))}else{f(r)}})(function(require,define,module,exports){var _m=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(_g){(function(f){var r=(typeof require==='function'?require:function(name){return {"_":null,"ol/observable":ol.Observable,"ol/proj":ol.proj,"ol/tilegrid":ol.tilegrid,"ol/map":ol.Map,"ol/format/geojson":ol.format.GeoJSON,"ol/format/mvt":ol.format.MVT,"ol/layer/tile":ol.layer.Tile,"ol/layer/vector":ol.layer.Vector,"ol/layer/vectortile":ol.layer.VectorTile,"ol/source/tilejson":ol.source.TileJSON,"ol/source/vector":ol.source.Vector,"ol/source/xyz":ol.source.XYZ,"ol/source/vectortile":ol.source.VectorTile,"ol/style/style":ol.style.Style,"ol/style/fill":ol.style.Fill,"ol/style/stroke":ol.style.Stroke,"ol/style/circle":ol.style.Circle,"ol/style/icon":ol.style.Icon,"ol/style/text":ol.style.Text}[name];});if (typeof exports==='object'&&typeof module!=='undefined'){module.exports=f(r)}else if(typeof define==='function'&&define.amd){define(["ol"],f.bind(_g,r))}else{f(r)}})(function(require,ol,module,exports){var _m=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31,55 +31,55 @@ var _google = require('webfont-matcher/lib/fonts/google');
 
 var _google2 = _interopRequireDefault(_google);
 
-var _proj = require('ol/proj');
+var _proj = ol.proj;
 
 var _proj2 = _interopRequireDefault(_proj);
 
-var _tilegrid = require('ol/tilegrid');
+var _tilegrid = ol.tilegrid;
 
 var _tilegrid2 = _interopRequireDefault(_tilegrid);
 
-var _map = require('ol/map');
+var _map = ol.Map;
 
 var _map2 = _interopRequireDefault(_map);
 
-var _geojson = require('ol/format/geojson');
+var _geojson = ol.format.GeoJSON;
 
 var _geojson2 = _interopRequireDefault(_geojson);
 
-var _mvt = require('ol/format/mvt');
+var _mvt = ol.format.MVT;
 
 var _mvt2 = _interopRequireDefault(_mvt);
 
-var _observable = require('ol/observable');
+var _observable = ol.Observable;
 
 var _observable2 = _interopRequireDefault(_observable);
 
-var _tile = require('ol/layer/tile');
+var _tile = ol.layer.Tile;
 
 var _tile2 = _interopRequireDefault(_tile);
 
-var _vector = require('ol/layer/vector');
+var _vector = ol.layer.Vector;
 
 var _vector2 = _interopRequireDefault(_vector);
 
-var _vectortile = require('ol/layer/vectortile');
+var _vectortile = ol.layer.VectorTile;
 
 var _vectortile2 = _interopRequireDefault(_vectortile);
 
-var _tilejson = require('ol/source/tilejson');
+var _tilejson = ol.source.TileJSON;
 
 var _tilejson2 = _interopRequireDefault(_tilejson);
 
-var _vector3 = require('ol/source/vector');
+var _vector3 = ol.source.Vector;
 
 var _vector4 = _interopRequireDefault(_vector3);
 
-var _vectortile3 = require('ol/source/vectortile');
+var _vectortile3 = ol.source.VectorTile;
 
 var _vectortile4 = _interopRequireDefault(_vectortile3);
 
-var _xyz = require('ol/source/xyz');
+var _xyz = ol.source.XYZ;
 
 var _xyz2 = _interopRequireDefault(_xyz);
 
@@ -1813,31 +1813,31 @@ exports.default = function (olLayer, glStyle, source, resolutions, spriteData, s
   return styleFunction;
 };
 
-var _style = require('ol/style/style');
+var _style = ol.style.Style;
 
 var _style2 = _interopRequireDefault(_style);
 
-var _fill = require('ol/style/fill');
+var _fill = ol.style.Fill;
 
 var _fill2 = _interopRequireDefault(_fill);
 
-var _stroke = require('ol/style/stroke');
+var _stroke = ol.style.Stroke;
 
 var _stroke2 = _interopRequireDefault(_stroke);
 
-var _icon = require('ol/style/icon');
+var _icon = ol.style.Icon;
 
 var _icon2 = _interopRequireDefault(_icon);
 
-var _text = require('ol/style/text');
+var _text = ol.style.Text;
 
 var _text2 = _interopRequireDefault(_text);
 
-var _circle = require('ol/style/circle');
+var _circle = ol.style.Circle;
 
 var _circle2 = _interopRequireDefault(_circle);
 
-var _point = require('ol/geom/point');
+var _point = ol.geom.Point;
 
 var _point2 = _interopRequireDefault(_point);
 
