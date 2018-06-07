@@ -12,10 +12,6 @@ class Command(UpdateBoundary, BaseCommand):
     help = 'Import provinces from shp file'
 
     def handle(self, *args, **options):
-        print(os.path.join(
-            settings.STATIC_ROOT,
-            'data/province/province_boundary.shp'
-        ))
         self.save_data(
             os.path.join(
                 settings.STATIC_ROOT,
