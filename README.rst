@@ -66,6 +66,18 @@ Install as a Django Package
 3. Run `python manage.py migrate` to create the bims models.
 
 
+Optional keys on project
+---------------------------
+To use some feature, there are keys that needs to be included on the project.
+Please put the keys on the secret.py
+
+The keys are:
+
+1. To show bing map, use your key of bing (https://www.bingmapsportal.com/) and put it in `core/settings/secret.py` with key BING_MAP_KEY
+
+2. To show openmaptile map (terrain and other style), use your key of maptile (https://www.maptiler.com/cloud/) and put it in `core/settings/secret.py` with key MAP_TILER_KEY
+
+
 Thank you
 _________
 

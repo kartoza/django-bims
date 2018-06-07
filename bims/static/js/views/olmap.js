@@ -1,4 +1,3 @@
-
 define([
     'backbone',
     'underscore',
@@ -6,8 +5,8 @@ define([
     'models/location_site',
     'views/location_site',
     'views/map_control_panel',
-    'openlayers',
-    'jquery'], function(Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $) {
+    'ol',
+    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -32,7 +31,7 @@ define([
             var view = this.map.getView();
             var zoom = view.getZoom();
             view.animate({
-                zoom: zoom-1,
+                zoom: zoom - 1,
                 duration: 250
             })
         },
@@ -40,7 +39,7 @@ define([
             var view = this.map.getView();
             var zoom = view.getZoom();
             view.animate({
-                zoom: zoom+1,
+                zoom: zoom + 1,
                 duration: 250
             })
         },
@@ -51,14 +50,14 @@ define([
             if (features) {
                 self.featureClicked(features[0]);
             } else {
-               Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
+                Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             }
 
             // Close opened control panel
             this.mapControlPanel.closeAllPanel();
 
-            if(this.mapControlPanel.locationControlActive) {
-                if(this.geocontextOverlayDisplayed === false) {
+            if (this.mapControlPanel.locationControlActive) {
+                if (this.geocontextOverlayDisplayed === false) {
                     this.showGeoContext(e.coordinate);
                 } else {
                     this.hideGeoContext();
@@ -72,7 +71,7 @@ define([
         },
         showGeoContext: function (coordinate) {
 
-            if(!geocontextUrl) {
+            if (!geocontextUrl) {
                 return false;
             }
 
@@ -91,26 +90,28 @@ define([
             var lan = lonlat[1];
             var self = this;
 
-            var url = geocontextUrl + "/geocontext/value/list/"+lon+"/"+lan+"/?with-geometry=False";
+            var url = geocontextUrl + "/geocontext/value/list/" + lon + "/" + lan + "/?with-geometry=False";
 
             $.get({
                 url: url,
                 dataType: 'json',
                 success: function (data) {
                     var contentDiv = '<div>';
-                    for(var i=0; i<data.length; i++) {
+                    for (var i = 0; i < data.length; i++) {
                         contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
                         contentDiv += '<br>';
                     }
                     contentDiv += '</div>';
                     self.geoOverlayContent.innerHTML = contentDiv;
                 },
-                error: function(req, err){ console.log(err); }
+                error: function (req, err) {
+                    console.log(err);
+                }
             });
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
-            if(this.locationSiteViews.hasOwnProperty(properties.id)) {
+            if (this.locationSiteViews.hasOwnProperty(properties.id)) {
                 var locationSiteView = this.locationSiteViews[properties.id];
                 locationSiteView.clicked();
             }
@@ -120,7 +121,7 @@ define([
         renderCollection: function () {
             var self = this;
 
-            for(var i=0; i < this.collection.length; i++) {
+            for (var i = 0; i < this.collection.length; i++) {
                 var locationSiteModel = this.collection.models[i];
                 var locationSiteView = new LocationSiteView({
                     model: locationSiteModel,
@@ -128,17 +129,17 @@ define([
                 });
             }
         },
-        render: function() {
+        render: function () {
             var self = this;
 
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
-            this.map = this.loadMap();
+            this.loadMap();
 
             self.renderCollection();
 
             this.map.on('click', function (e) {
-               self.mapClicked(e);
+                self.mapClicked(e);
             });
 
             this.mapControlPanel = new MapControlPanelView({
@@ -147,20 +148,14 @@ define([
 
             this.$el.append(this.mapControlPanel.render().$el);
 
+            // add layer switcher
+            var layerSwitcher = new LayerSwitcher();
+            this.map.addControl(layerSwitcher);
+
             return this;
         },
-        loadMap: function() {
-            var baseSourceLayer;
+        loadMap: function () {
             var self = this;
-
-            if(bingMapKey) {
-                baseSourceLayer = new ol.source.BingMaps({
-                    key: bingMapKey,
-                    imagerySet: 'AerialWithLabels'
-                })
-            } else {
-                baseSourceLayer = new ol.source.OSM();
-            }
 
             self.locationSiteVectorSource = new ol.source.Vector({});
 
@@ -203,7 +198,7 @@ define([
                 })
             };
 
-            var styleFunction = function(feature) {
+            var styleFunction = function (feature) {
                 return styles[feature.getGeometry().getType()];
             };
 
@@ -230,14 +225,9 @@ define([
                 return false;
             };
 
-            return new ol.Map({
+            this.map = new ol.Map({
                 target: 'map',
-                layers: [
-                    new ol.layer.Tile({
-                        source: baseSourceLayer
-                    }),
-                    locationSiteVectorLayer
-                ],
+                layers: self.getBaseMaps(),
                 view: new ol.View({
                     center: ol.proj.fromLonLat([22.937506, -30.559482]),
                     zoom: 7
@@ -247,10 +237,128 @@ define([
                 }),
                 overlays: [this.geocontextOverlay]
             });
+            this.map.addLayer(locationSiteVectorLayer);
         },
         addLocationSiteFeatures: function (view, features) {
             this.locationSiteViews[view.id] = view;
             this.locationSiteVectorSource.addFeatures(features);
+        },
+
+        // TODO : When this functions moved to other js, the mapbox style broken (doesn't call style)
+        // ------------------------------ BASEMAP ---------------------------------
+        getVectorTileMapBoxStyle: function (url, styleUrl, layerName, attributions) {
+            var tilegrid = ol.tilegrid.createXYZ({tileSize: 512, maxZoom: 14});
+            var layer = new ol.layer.VectorTile({
+                source: new ol.source.VectorTile({
+                    attributions: attributions,
+                    format: new ol.format.MVT(),
+                    tileGrid: tilegrid,
+                    tilePixelRatio: 8,
+                    url: url
+                })
+            });
+            fetch(styleUrl).then(function (response) {
+                response.json().then(function (glStyle) {
+                    OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
+                    });
+                });
+            });
+            return layer
+        },
+        getOpenMapTilesTile: function (styleUrl) {
+            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
+                '© <a href="http://www.openstreetmap.org/copyright">' +
+                'OpenStreetMap contributors</a>';
+            return this.getVectorTileMapBoxStyle(
+                'https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                styleUrl,
+                'openmaptiles',
+                attributions
+            );
+        },
+        getKlokantechTerrainBasemap: function () {
+            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
+                '© <a href="http://www.openstreetmap.org/copyright">' +
+                'OpenStreetMap contributors</a>';
+            var openMapTiles = this.getOpenMapTilesTile(staticURL + 'mapbox-style/klokantech-terrain-gl-style.json');
+            var contours = this.getVectorTileMapBoxStyle(
+                'https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                staticURL + 'mapbox-style/klokantech-terrain-gl-style.json',
+                'contours',
+                attributions
+            );
+            var hillshading = new ol.layer.Tile({
+                opacity: 0.1,
+                source: new ol.source.XYZ({
+                    url: 'https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
+                })
+            });
+            return new ol.layer.Group({
+                title: 'Klokantech Terrain',
+                layers: [openMapTiles, hillshading, contours]
+            });
+        },
+        getPositronBasemap: function () {
+            var layer = this.getOpenMapTilesTile(
+                staticURL + 'mapbox-style/positron-gl-style.json');
+            layer.set('title', 'Positron Map');
+            return layer
+        },
+        getDarkMatterBasemap: function () {
+            var layer = this.getOpenMapTilesTile(
+                staticURL + 'mapbox-style/dark-matter-gl-style.json');
+            layer.set('title', 'Dark Matter');
+            return layer
+        },
+        getBaseMaps: function () {
+            var baseDefault = null;
+            var baseSourceLayers = [];
+
+            // TOPOSHEET MAP
+            var toposheet = new ol.layer.Tile({
+                title: 'South Africa 1:50k Toposheets',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'Toposheets'],
+                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+                })
+            });
+            baseSourceLayers.push(toposheet);
+
+
+            // NGI MAP
+            var ngiMap = new ol.layer.Tile({
+                title: 'NGI OSM aerial photographs',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
+                    url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
+                })
+            });
+            baseSourceLayers.push(ngiMap);
+            // add bing
+            if (bingMapKey) {
+                var bingMap = new ol.layer.Tile({
+                    title: 'Bing',
+                    source: new ol.source.BingMaps({
+                        key: bingMapKey,
+                        imagerySet: 'AerialWithLabels'
+                    })
+                });
+                baseSourceLayers.push(bingMap);
+            }
+
+            // OPENMAPTILES
+            if (mapTilerKey) {
+                baseSourceLayers.push(this.getPositronBasemap());
+                baseSourceLayers.push(this.getDarkMatterBasemap());
+                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
+            }
+            $.each(baseSourceLayers, function (index, layer) {
+                layer.set('type', 'base');
+                layer.set('visible', true);
+                layer.set('preload', Infinity);
+            });
+
+            return baseSourceLayers
         }
     })
 });

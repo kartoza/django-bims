@@ -16,7 +16,7 @@
     margin-bottom: 0 !important;
 }
 
-.text-yellow{
+.text-yellow {
     color: #e0d441;
 }
 
@@ -59,7 +59,7 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     height: 100%;
     width: 27.5%;
-    background:rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     color: white;
     z-index: 2000;
 }
@@ -70,7 +70,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 5px;
     padding-left: 50px;
     height: 80px;
-    background:rgba(0,0,0,0.40);
+    background: rgba(0, 0, 0, 0.40);
 }
 
 .close-panel {
@@ -117,12 +117,12 @@ html, body, .map, .map-wrapper, #map-container {
     padding-right: 5px !important;
 }
 
-.sub-zoom-control:hover{
+.sub-zoom-control:hover {
     color: #323437 !important;
 }
 
 .sub-control-panel {
-   padding-top: 8px;
+    padding-top: 8px;
 }
 
 .search-control {
@@ -208,7 +208,7 @@ html, body, .map, .map-wrapper, #map-container {
     height: 50px;
 }
 
-.container-1{
+.container-1 {
     padding-left: 20px;
     padding-right: 20px;
     width: 100%;
@@ -217,7 +217,7 @@ html, body, .map, .map-wrapper, #map-container {
     position: relative;
 }
 
-.container-1 input#search{
+.container-1 input#search {
     width: 100%;
     height: 45px;
     background: #ffffff;
@@ -231,7 +231,7 @@ html, body, .map, .map-wrapper, #map-container {
     border-radius: 5px;
 }
 
-.container-1 .icon{
+.container-1 .icon {
     position: absolute;
     margin-left: 17px;
     margin-top: 10px;
@@ -283,8 +283,8 @@ html, body, .map, .map-wrapper, #map-container {
 .ol-popup {
     position: absolute;
     background-color: white;
-    -webkit-filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
-    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+    -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
     padding: 15px;
     border-radius: 10px;
     border: 1px solid #cccccc;
@@ -326,4 +326,39 @@ html, body, .map, .map-wrapper, #map-container {
 
 .ol-popup-closer:after {
     content: "✖";
+}
+
+.layer-switcher {
+    position: absolute;
+    top: 258px !important;
+    left: 0;
+    right: auto !important;
+    text-align: left;
+    margin-left: 30px;
+    cursor: pointer;
+    padding: 0 !important;
+}
+
+.layer-switcher button {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    width: 41px !important;
+    height: 41px !important;
+    background-position: 6px !important;
+    background-size: 32px;
+}
+
+.layer-switcher .panel {
+    background-color: white;
+    border: none !important;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    padding: 9px !important;
+}
+
+.layer-switcher ul {
+    padding-left: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.layer-switcher input {
+    cursor: pointer;
 }

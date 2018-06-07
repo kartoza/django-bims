@@ -13,7 +13,8 @@ from bims.models import (
     Boundary,
     BoundaryType,
     Cluster,
-    CarouselHeader
+    CarouselHeader,
+    BiologicalCollectionRecord,
 )
 
 
@@ -55,6 +56,15 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
     list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
 
+class BiologicalCollectionAdmin(admin.ModelAdmin):
+    list_display = (
+        'original_species_name',
+        'category',
+        'collection_date',
+        'validated',
+    )
+
+
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
@@ -66,3 +76,4 @@ admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
 admin.site.register(Cluster, ClusterAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)
+admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
