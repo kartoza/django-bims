@@ -116,4 +116,4 @@ def update_cluster_by_site(site):
 
     # Update cluster from that boundaries
     for boundary in boundaries:
-        update_cluster(boundary, type(site))
+        update_cluster(boundary)
