@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def update_cluster(boundary, CollectionModel=None):
-    """ Updating cluster in boundary. It will get all 
+    """
+    Updating cluster in boundary. It will get all
     biological collection childrenand generate clustering from that
 
     :param boundary: boundary that will be checked
