@@ -9,13 +9,18 @@
     <style>
         .block-container {
             text-align: center;
-            width: 500px;
+            width: 550px;
             margin: 0 auto;
             border: 1px solid grey;
             margin-top: 50px;
             padding: 20px;
             border-radius: 3px;
             background: #f7f7f7;
+        }
+
+        .password-input {
+            width: 200px;
+            height: 30px;
         }
         .btn-login {
             background-color: white;
@@ -43,11 +48,11 @@
                 {% csrf_token %}
                 <div style="text-align: left; margin: 0 auto; width: 350px">
                     <label for="password1">New Password: </label>
-                    <input name="password1" type="text" class="pull-right"><br/>
+                    <input name="password1" type="password" class="password-input pull-right"><br/>
                     <label for="password2">Confirm Password: </label>
-                    <input name="password2" type="text" class="pull-right"><br/>
-                    <p id="error" style="color: red; font-weight: bold"></p>
+                    <input name="password2" type="password" class="password-input pull-right"><br/>
                 </div>
+                <p id="error" style="color: red; font-weight: bold"></p>
                 <input class="btn btn-primary btn-login" type="submit" value="Submit"/>
             </form>
         </div>
