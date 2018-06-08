@@ -111,7 +111,7 @@ class CustomUserAdmin(UserAdmin):
             'Dear {firstname} {lastname},\n\nPlease follow this link '
             'to change your password and to activate your account:\n'
             '{scheme}://{site}/activate-user/{username}/\n\n'
-            'Here are your information:\n'
+            'Here is your information:\n'
             'Username: {username}\n\n'
             'Kind regards,\nBIMS Team.'.format(
                 **data
