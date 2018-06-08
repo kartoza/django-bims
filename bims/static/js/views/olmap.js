@@ -2,11 +2,11 @@ define([
     'backbone',
     'underscore',
     'shared',
-    'models/location_site',
-    'views/location_site',
+    'collections/location_site',
+    'collections/cluster',
     'views/map_control_panel',
     'ol',
-    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteModel, LocationSiteView, MapControlPanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
+    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, MapControlPanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -14,18 +14,24 @@ define([
         locationSiteVectorSource: null,
         geocontextOverlay: null,
         geocontextOverlayDisplayed: false,
-        locationSiteViews: {},
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
             'click .layer-control': 'layerControlClicked'
         },
+        clusterLevel: {
+            5: 'country',
+            7: 'province',
+            8: 'district',
+            9: 'municipal'
+        }, // note that this is the max level for cluster level
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
-            this.collection.fetch({
-                success: this.render
-            });
+            Shared.Dispatcher.on('map:addLocationSiteFeatures', this.addLocationSiteFeatures, this);
+            this.locationSiteCollection = new LocationSiteCollection();
+            this.clusterCollection = new ClusterCollection();
+            this.render();
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -111,23 +117,42 @@ define([
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
-            if (this.locationSiteViews.hasOwnProperty(properties.id)) {
-                var locationSiteView = this.locationSiteViews[properties.id];
-                locationSiteView.clicked();
-            }
+            Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
         },
         layerControlClicked: function (e) {
         },
-        renderCollection: function () {
+        checkAdministrativeLevel: function () {
             var self = this;
-
-            for (var i = 0; i < this.collection.length; i++) {
-                var locationSiteModel = this.collection.models[i];
-                var locationSiteView = new LocationSiteView({
-                    model: locationSiteModel,
-                    parent: this
+            var zoomLevel = this.map.getView().getZoom();
+            var administrative = 'detail';
+            $.each(Object.keys(this.clusterLevel), function (index, value) {
+                if (zoomLevel <= value) {
+                    administrative = self.clusterLevel[value];
+                    return false;
+                }
+            });
+            return administrative;
+        },
+        refetchCollection: function () {
+            var self = this;
+            var administrative = this.checkAdministrativeLevel();
+            if (administrative != 'detail') {
+                this.clusterCollection.updateAdministrative(administrative);
+                this.clusterCollection.fetch({
+                    success: function () {
+                        self.locationSiteVectorSource.clear();
+                        self.clusterCollection.renderCollection()
+                    }
+                });
+            } else {
+                this.locationSiteCollection.fetch({
+                    success: function () {
+                        self.locationSiteVectorSource.clear();
+                        self.locationSiteCollection.renderCollection()
+                    }
                 });
             }
+
         },
         render: function () {
             var self = this;
@@ -135,8 +160,6 @@ define([
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
             this.loadMap();
-
-            self.renderCollection();
 
             this.map.on('click', function (e) {
                 self.mapClicked(e);
@@ -152,6 +175,9 @@ define([
             var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
 
+            this.map.on('moveend', function (evt) {
+                self.refetchCollection()
+            });
             return this;
         },
         loadMap: function () {
@@ -166,7 +192,13 @@ define([
                     anchorYUnits: 'pixels',
                     opacity: 0.75,
                     src: 'static/img/map-marker.png'
-                }))
+                })),
+                text: new ol.style.Text({
+                    scale: 1,
+                    fill: new ol.style.Fill({
+                        color: '#000000'
+                    })
+                })
             });
 
             var styles = {
@@ -199,7 +231,11 @@ define([
             };
 
             var styleFunction = function (feature) {
-                return styles[feature.getGeometry().getType()];
+                var style = styles[feature.getGeometry().getType()];
+                if (feature.getProperties()['text']) {
+                    style.getText().setText(feature.getProperties()['text'])
+                }
+                return style;
             };
 
             var locationSiteVectorLayer = new ol.layer.Vector({
@@ -239,8 +275,7 @@ define([
             });
             this.map.addLayer(locationSiteVectorLayer);
         },
-        addLocationSiteFeatures: function (view, features) {
-            this.locationSiteViews[view.id] = view;
+        addLocationSiteFeatures: function (features) {
             this.locationSiteVectorSource.addFeatures(features);
         },
 
