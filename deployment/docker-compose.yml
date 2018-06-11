@@ -35,6 +35,16 @@ db:
 #  ports:
 #    - "25432:5432"
 
+elasticsearch:
+  # Note you cannot scale if you use conteiner_name
+  container_name: bims-elasticsearch
+  restart: on-failure:5
+  #  read_only: true
+  image: elasticsearch:5.5.2
+  hostname: elasticsearch
+  ports:
+    - "9200:9200"
+
 uwsgi:
   # Note you cannot scale if you use container_name
   container_name: bims-uwsgi
@@ -59,6 +69,7 @@ uwsgi:
   links:
     - smtp:smtp
     - db:db
+    - elasticsearch:elasticsearch
   restart: on-failure:5
   user: root
 
@@ -131,6 +142,7 @@ devweb:
   links:
     - smtp:smtp
     - db:db
+    - elasticsearch:elasticsearch
   ports:
     # for django test server
     - "63302:8080"
