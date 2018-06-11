@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from bims.management.commands.update_boundary import (
     UpdateBoundary
@@ -11,5 +13,8 @@ class Command(UpdateBoundary, BaseCommand):
 
     def handle(self, *args, **options):
         self.save_data(
-            'bims/data/municipal/municipal.shp',
+            os.path.join(
+                settings.STATIC_ROOT,
+                'data/municipal/municipal.shp'
+            ),
             'municipal', 'municname')

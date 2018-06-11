@@ -40,15 +40,11 @@ require.config({
 require( [
     'views/olmap',
     'views/side_panel',
-    'collections/location_site',
     'shared',
     'app'
-], function(olmap, side_panel, LocationSiteCollection, Shared, App) {
+], function(olmap, side_panel, Shared, App) {
     // Display the map
-    var locationSiteCollection = new LocationSiteCollection();
-    var map = new olmap({
-        collection: locationSiteCollection
-    });
+    var map = new olmap();
 
     var panel = new side_panel();
     panel.render();
