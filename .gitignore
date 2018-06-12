@@ -102,6 +102,7 @@ ENV/
 
 # Pycharm
 .idea
+.pycharm_helpers
 
 # Pg cluster for docker
 deployment/pg/postgres_data/9.3

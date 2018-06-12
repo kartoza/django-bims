@@ -1,0 +1,114 @@
+{% extends "td_biblio/layouts/two_cols_left_sidebar.html" %}
+{% load i18n %}
+
+{% block page_title %}{% trans "Publications" %}{% endblock page_title %}
+
+{% block page_class %}page biblio{% endblock page_class %}
+
+{% block left_sidebar_extras %}
+
+<h3>{% trans "Metrics" %}</h3>
+
+<div id="publications-stats">
+    <table>
+        <tr class="metric">
+            <td>{% trans "Publications" %}</td>
+            <td><span class="counter">{{ n_publications_filter }}</span></td>
+            <td>{{ n_publications_total }}</td>
+        </tr>
+        <tr class="metric">
+            <td>{% trans "Authors" %}</td>
+            <td><span class="counter">{{ n_authors_filter }}</span></td>
+            <td>{{ n_authors_total }}</td>
+        </tr>
+        <tr class="metric">
+            <td>{% trans "Journals" %}</td>
+            <td><span class="counter">{{ n_journals_filter }}</span></td>
+            <td>{{ n_journals_total }}</td>
+        </tr>
+    </table>
+
+    <div class="legend">
+        <span class="counter">XX</span> {% trans "after filtering" %}
+    </div>
+</div>
+
+<h3>{% trans "Filters" %}</h3>
+
+<form method="get" action="" id="publication-list-filters" class="custom">
+
+    <label for="filter-year">{% trans "Year" %}</label>
+    <select name="year" id="filter-year">
+        <option value="">
+            {% trans "All" %}
+        </option>
+        {% for publication_year in publication_years %}
+        <option value="{{ publication_year.year }}" {% if publication_year.year == current_publication_year.year %}selected="selected"{% endif %}>
+            {{ publication_year.year }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <label for="filter-author">{% trans "Author" %}</label>
+    <select name="author" id="filter-author">
+        <option value="">
+            {% trans "All" %}
+        </option>
+        {% for author in publication_authors %}
+        <option value="{{ author.id }}" {% if author.id == current_publication_author %}selected="selected"{% endif %}>
+            {{ author.get_formatted_name }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <label for="filter-collection">{% trans "Collection" %}</label>
+    <select name="collection" id="filter-collection">
+        <option value="">
+            {% trans "All" %}
+        </option>
+        {% for collection in publication_collections %}
+        <option value="{{ collection.id }}" {% if collection.id == current_publication_collection %}selected="selected"{% endif %}>
+            {{ collection.name }}
+        </option>
+        {% endfor %}
+    </select>
+</form>
+{% endblock left_sidebar_extras %}
+
+{% block main_content %}
+
+<h2>{% trans "Publications" %}</h2>
+
+{% if request.user.is_superuser %}
+<div class="import-message">
+  Hi <strong>{{ request.user.username }}</strong>!
+  {% blocktrans %}
+  As an adminstrator of this application you can import new references with
+  DOIs or PubMed ids.
+  {% endblocktrans %}
+  <a href="{% url 'td_biblio:import' %}" class="button import">
+    Add references
+  </a>
+</div>
+{% endif %}
+
+{% include "td_biblio/partials/publication_list_by_year.html" with publications=entry_list %}
+
+{% if is_paginated %}
+<div class="pagination-centered">
+
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="arrow"><a href="?page={{ page_obj.previous_page_number }}" class="pagination">&laquo;</a></li>
+        {% endif %}
+        <li class="current">
+            <a href="">{{ page_obj.number }}</a>
+            {{ page_obj.start_index }} - {{ page_obj.end_index }}</li>
+        {% if page_obj.has_next %}
+        <li class="arrow"><a href="?page={{ page_obj.next_page_number }}" class="pagination">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endif %}
+
+{% endblock main_content %}

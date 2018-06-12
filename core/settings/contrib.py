@@ -48,7 +48,6 @@ INSTALLED_APPS += (
     'rest_framework',
     'celery',
     'pipeline',
-    'td_biblio',
 )
 
 MIDDLEWARE += (

@@ -32,3 +32,8 @@ pygbif==0.2.0
 
 # bibliography management
 django-tailordev-biblio==1.1.0
+
+# bibliography
+bibtexparser
+eutils
+habanero>=0.3.0
