@@ -84,5 +84,4 @@ class EntryBatchImportForm(forms.Form):
 
         if not len(dois) and not len(pmids):
             raise forms.ValidationError(
-                    _("You need to submit at least one valid DOI or PMID")
-                )
+                    _("You need to submit at least one valid DOI or PMID"))

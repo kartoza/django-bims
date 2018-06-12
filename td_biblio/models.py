@@ -18,9 +18,11 @@ class AbstractHuman(models.Model):
     )
 
     # This is a django user
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-        blank=True, null=True,
-        on_delete=models.CASCADE)
+    user = models.ForeignKey(
+            settings.AUTH_USER_MODEL,
+            blank=True,
+            null=True,
+            on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
