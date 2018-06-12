@@ -10,7 +10,7 @@ import pytest
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase
 
 from ..factories import (CollectionFactory, EntryWithAuthorsFactory)
