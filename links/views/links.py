@@ -7,7 +7,7 @@ class LinksCategoryView(ListView):
 
     template_name = 'links/links.html'
     context_object_name = 'categories'
-    paginate_by = 2
+    paginate_by = 10
     queryset = Category.objects.all()
 
     def get_context_data(self, **kwargs):
