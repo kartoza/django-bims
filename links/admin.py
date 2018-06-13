@@ -6,6 +6,6 @@ class LinkAdmin(admin.ModelAdmin):
     list_display = ('name', 'category')
     list_filter = ('category',)
 
+
 admin.site.register(Category)
 admin.site.register(Link, LinkAdmin)
-

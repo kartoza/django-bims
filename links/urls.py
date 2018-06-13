@@ -7,5 +7,5 @@ from .views.links import LinksCategoryView
 
 
 urlpatterns = [
-    url(r'^$', LinksCategoryView.as_view(), name='link_list' ),
+    url(r'^$', LinksCategoryView.as_view(), name='link_list'),
 ]
