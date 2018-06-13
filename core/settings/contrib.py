@@ -10,6 +10,9 @@ try:
 except ImportError:
     IUCN_API_KEY = ''
 
+from .secret import CONTACT_US_EMAIL_SET
+
+
 STOP_WORDS = (
     'a', 'an', 'and', 'if', 'is', 'the', 'in', 'i', 'you', 'other',
     'this', 'that', 'to',
@@ -89,4 +92,5 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 
-CONTACT_US_EMAIL = 'dimas@kartoza.com'
+# contact us email
+CONTACT_US_EMAIL = CONTACT_US_EMAIL_SET
