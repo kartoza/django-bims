@@ -48,6 +48,7 @@ INSTALLED_APPS += (
     'rest_framework',
     'celery',
     'pipeline',
+    'contactus',
 )
 
 MIDDLEWARE += (
@@ -87,3 +88,5 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+
+CONTACT_US_EMAIL = 'dimas@kartoza.com'
