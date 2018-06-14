@@ -82,8 +82,7 @@
                 <div class="search-box">
                     <div class="container-1">
                         <span class="icon"><i class="fa fa-search"></i></span>
-                        <input type="search" id="search" placeholder="Search..." onchange="search()">
-
+                        <input type="search" id="search" placeholder="Search...">
                     </div>
                 </div>
             </div>
@@ -110,30 +109,6 @@
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
-    <script>
-        function search() {
-            var original_species_name = $('#search').val();
-            $('#search-results-wrapper').html('');
-            if(original_species_name !== '') {
-                $.ajax({
-                    type: 'GET',
-                    url: '/api/search/' + original_species_name + '/',
-                    success: function (data) {
-                        if (data['results']) {
-                            $('#search-results-wrapper').html(data['results'])
-                        } else {
-                            $.each(data, function (key, value) {
-                                $('#search-results-wrapper').append('' +
-                                    '<p class="result-search"><span>Original species name: ' + value['original_species_name'] + '</span><br/>' +
-                                    '<span>Collector: ' + value['collector'] + '</span><br/>' +
-                                    '<apanp>Collection Date: ' + value['collection_date'] + '</span></p>')
-                            });
-                        }
-                    }
-                })
-            }
-        }
-    </script>
 
     {% grunt_module "map_view" %}
 

@@ -1,4 +1,4 @@
-define(['backbone', 'underscore'], function (Backbone, _) {
+define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         searchBox: null,
@@ -17,12 +17,30 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         },
         searchEnter: function (e) {
             if(e.which === 13) {
+                $('#search-results-wrapper').html('');
                 var searchValue = $(e.target).val();
                 if(searchValue.length < 3) {
                     console.log('Minimal 3 characters');
+                    $('#search-results-wrapper').html('Minimal 3 characters');
                     return false;
                 }
-                // Do search
+
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/search/' + searchValue + '/',
+                    success: function (data) {
+                        if (data['results']) {
+                            $('#search-results-wrapper').html(data['results'])
+                        } else {
+                            $.each(data, function (key, value) {
+                                $('#search-results-wrapper').append('' +
+                                    '<p class="result-search"><span>Original species name: ' + value['original_species_name'] + '</span><br/>' +
+                                    '<span>Collector: ' + value['collector'] + '</span><br/>' +
+                                    '<apanp>Collection Date: ' + value['collection_date'] + '</span></p>')
+                            });
+                        }
+                    }
+                })
             }
         },
         searchClicked: function (e) {
