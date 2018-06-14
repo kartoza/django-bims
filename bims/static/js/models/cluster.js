@@ -4,6 +4,5 @@ define(['backbone'], function (Backbone) {
             this.unbind();
             delete this;
         }
-
     })
 });
