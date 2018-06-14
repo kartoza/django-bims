@@ -10,9 +10,14 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/map.css" %}" rel="stylesheet">
+    <link href="{% static "css/loading.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
-        var bingMapKey = '{{ bing_map_key }}';
+        const bingMapKey = '{{ bing_map_key }}';
+        const mapTilerKey = '{{ map_tiler_key }}';
+        const staticURL = "{% static "" %}";
+        const geocontextUrl = '{{ geocontext_url }}';
     </script>
 {% endblock %}
 
@@ -21,6 +26,10 @@
 
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
+        <div id="geocontext-popup" class="ol-popup">
+            <a href="#" id="geocontext-closer" class="ol-popup-closer"></a>
+            <div id="geocontext-content"></div>
+        </div>
     </script>
 
     <script type='text/html' id='side-panel-template'>
@@ -28,7 +37,7 @@
             <div class="right-panel-title">
                 <i class="fa fa-map-marker"></i> <span class="site-name"> Site #number </span>
                 <i class="fa fa-times close-panel"></i>
-           </div>
+            </div>
             <div class="row side-panel">
                 <div class="col-lg-6" id="content-panel"></div>
             </div>
@@ -73,7 +82,7 @@
                 <div class="search-box">
                     <div class="container-1">
                         <span class="icon"><i class="fa fa-search"></i></span>
-                        <input type="search" id="search" placeholder="Search..." />
+                        <input type="search" id="search" placeholder="Search...">
                     </div>
                 </div>
             </div>
@@ -86,6 +95,9 @@
                 <div class="slide-container">
                     <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
                 </div>
+            </div>
+            <div class="row">
+                <div id="search-results-wrapper" class="container-1"></div>
             </div>
         </div>
     </script>

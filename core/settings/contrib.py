@@ -50,6 +50,7 @@ INSTALLED_APPS += (
     'celery',
     'pipeline',
     'contactus',
+    'haystack',
 )
 
 MIDDLEWARE += (
@@ -92,3 +93,5 @@ BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 
 # contact us email
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
+
+ELASTIC_MIN_SCORE = 0.5
