@@ -42,6 +42,7 @@ setup(
             'django-filter==1.1.0',
             'coreapi==2.3.3',
             'pygbif==0.2.0',
+            'django-modelsdoc==0.1.9',
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',
