@@ -27,7 +27,7 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
-    url(r'^api/search/(?P<original_species_name>\w+)/$',
+    url(r'^api/search/(?P<query_value>\w+)/$',
         SearchObjects.as_view(), name='search-api'),
 ]
 

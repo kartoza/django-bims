@@ -8,15 +8,12 @@ from rest_framework import serializers
 
 
 class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
-    collection_date = serializers.SerializerMethodField()
 
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
             'original_species_name',
-            'collection_date',
             'collector',
+            'category',
+            'collection_date'
         ]
-
-    def get_collection_date(self, obj):
-        return obj.collection_date

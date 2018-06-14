@@ -1,10 +1,10 @@
 # coding=utf-8
-__author__ = 'Anita Hapsari <anita@kartoza.com>'
-__date__ = '07/06/18'
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from bims.documents import BiologicalCollectionRecordDocument
+from haystack.query import SearchQuerySet, SQ
+from bims.models.biological_collection_record import \
+    BiologicalCollectionRecord
 from bims.serializers.bio_collection_record_doc_serializer import \
     BiologicalCollectionRecordDocSerializer
 
@@ -12,14 +12,27 @@ from bims.serializers.bio_collection_record_doc_serializer import \
 class SearchObjects(APIView):
     """API for searching using elasticsearch."""
 
-    def get(self, request, original_species_name):
-        results = BiologicalCollectionRecordDocument.search().query(
-            "match", original_species_name=original_species_name)
+    def get(self, request, query_value):
+        sqs = SearchQuerySet()
+        clean_query = sqs.query.clean(query_value)
+        results = []
+        results.extend(
+                sqs.filter(
+                        original_species_name=clean_query
+                ).models(BiologicalCollectionRecord)
+        )
+
+        results.extend(
+                sqs.filter(
+                        collector=clean_query
+                ).models(BiologicalCollectionRecord)
+        )
 
         data = {}
-        if results.count() > 0:
+        if len(results) > 0:
             serializer = \
-                BiologicalCollectionRecordDocSerializer(results, many=True)
+                BiologicalCollectionRecordDocSerializer(
+                        [result.object for result in results], many=True)
             return Response(serializer.data)
         else:
             data['results'] = 'Not Found'

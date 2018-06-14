@@ -3,7 +3,9 @@ __author__ = 'Anita Hapsari <anita@kartoza.com>'
 __date__ = '05/06/18'
 
 from django.core.management.base import BaseCommand
-from bims.documents import BiologicalCollectionRecordDocument
+from bims.models.biological_collection_record import \
+    BiologicalCollectionRecord
+from haystack.query import SearchQuerySet
 
 
 class Command(BaseCommand):
@@ -18,20 +20,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print('test searching')
-        s = BiologicalCollectionRecordDocument.search().query(
-            "match", original_species_name=options['name'])
+
+        s = SearchQuerySet().filter(
+                original_species_name=options['name']
+        ).models(BiologicalCollectionRecord)
+
+        print(s.count())
 
         if s.count() > 0:
             for hit in s:
-                print(
-                    "Object name : {}"
-                    "\ncollection_date: {}\n"
-                    "collector: {}\n".format(
-                        hit.original_species_name,
-                        hit.collection_date,
-                        hit.collector,
-                    )
-                )
+                print(hit.original_species_name)
         else:
             print(
                 'No object with original species name: {} is found'.format(
