@@ -2,7 +2,7 @@
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from haystack.query import SearchQuerySet, SQ
+from haystack.query import SearchQuerySet
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.serializers.bio_collection_record_doc_serializer import \

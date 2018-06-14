@@ -41,5 +41,7 @@ class FuzzyElasticBackend(ElasticsearchSearchBackend):
         return search_kwargs
 
     def search(self, query_string, **kwargs):
-        search = super(FuzzyElasticBackend, self).search(query_string, **kwargs)
+        search = super(
+                FuzzyElasticBackend, self
+        ).search(query_string, **kwargs)
         return search
