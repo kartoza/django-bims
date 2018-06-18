@@ -15,6 +15,8 @@ from bims.models import (
     Cluster,
     CarouselHeader,
     BiologicalCollectionRecord,
+    Category,
+    Link,
 )
 
 
@@ -64,6 +66,14 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'validated',
     )
 
+
+class LinkAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category')
+    list_filter = ('category',)
+
+
+admin.site.register(Category)
+admin.site.register(Link, LinkAdmin)
 
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)

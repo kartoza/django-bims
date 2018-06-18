@@ -1,12 +1,16 @@
-from ..models.links import Category
+# coding: utf-8
+__author__ = 'Alison Mukoma <alison@kartoza.com>'
+__copyright__ = 'kartoza.com'
+
 from django.views.generic import ListView
+
+from bims.models import Category
 
 
 class LinksCategoryView(ListView):
     """Returns all  link categories."""
 
     template_name = 'links/links.html'
-    context_object_name = 'categories'
     paginate_by = 10
     queryset = Category.objects.all()
 

@@ -24,7 +24,6 @@ urlpatterns = [
     url(r'^', include('bims.urls')),
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
-    url(r'^links/', include('links.urls')),
 ]
 
 if settings.DEBUG:
