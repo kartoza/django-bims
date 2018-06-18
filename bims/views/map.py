@@ -8,6 +8,12 @@ except ImportError:
     BING_MAP_KEY = ''
 
 try:
+    # Get the key from here : https://www.maptiler.com/cloud/
+    from core.settings.secret import MAP_TILER_KEY
+except ImportError:
+    MAP_TILER_KEY = ''
+
+try:
     GEOCONTEX_URL = os.environ['GEOCONTEXT_URL']
 except KeyError:
     GEOCONTEX_URL = ''
@@ -28,5 +34,6 @@ class MapPageView(TemplateView):
         """
         context = super(MapPageView, self).get_context_data(**kwargs)
         context['bing_map_key'] = BING_MAP_KEY
+        context['map_tiler_key'] = MAP_TILER_KEY
         context['geocontext_url'] = GEOCONTEX_URL
         return context
