@@ -14,6 +14,7 @@ from bims.api_views.location_type import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
+from bims.views.links import LinksCategoryView
 from bims.api_views.search import SearchObjects
 from bims.views.activate_user import activate_user
 
@@ -35,6 +36,7 @@ api_urls = [
 urlpatterns = [
     path('', LandingPageView.as_view(), name='landing-page'),
     path('map', MapPageView.as_view()),
+    url(r'^links/', LinksCategoryView.as_view(), name = 'link_list'),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user')

@@ -19,6 +19,8 @@ from bims.models import (
     Cluster,
     CarouselHeader,
     BiologicalCollectionRecord,
+    Category,
+    Link,
 )
 
 
@@ -67,6 +69,15 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'collection_date',
         'validated',
     )
+
+
+class LinkAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category')
+    list_filter = ('category',)
+
+
+admin.site.register(Category)
+admin.site.register(Link, LinkAdmin)
 
 
 class UserCreateForm(UserCreationForm):
@@ -126,6 +137,7 @@ class CustomUserAdmin(UserAdmin):
     # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
+
 
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
