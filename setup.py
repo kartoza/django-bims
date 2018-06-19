@@ -45,6 +45,7 @@ setup(
             'Pillow==5.1.0',
             'django-ordered-model==1.4.3',
             'django-haystack==2.8.1',
+            'elasticsearch==5.0.1',
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',
