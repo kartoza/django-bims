@@ -1,12 +1,13 @@
 {% extends "td_biblio/layouts/one_col.html" %}
+{% load static from staticfiles %}
 {% load i18n %}
 
-{% block title %}{% trans "Import publications" %}{% endblock title %}
+{% block page_title %}{% trans "Import publications" %}{% endblock page_title %}
 
-{% block head %}page biblio import{% endblock head %}
+{% block page_class %}page biblio import{% endblock page_class %}
 
-{% block body_content %}
-{% block content %}
+{% block main_content %}
+
 <h2>{% trans "Import new publications" %}</h2>
 
 <form
@@ -33,5 +34,5 @@
     >
   </div>
 </form>
-{% endblock content %}
-{% endblock body_content %}
+
+{% endblock main_content %}

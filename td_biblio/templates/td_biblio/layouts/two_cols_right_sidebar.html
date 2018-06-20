@@ -1,8 +1,9 @@
 {% extends "_layouts/base.html" %}
 
-{% load static from staticfiles %}
+{% load static %}
 
 {% block content %}
+
 <div id="content-wrapper">
     <div id="main-content" class="{% block main_content_class %}{% endblock main_content_class %}">
         {% block main_content %}{% endblock main_content %}
