@@ -345,6 +345,12 @@ pep8:
 	@pep8 --version
 	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128,E402  --exclude='../django_project/.pycharm_helpers','../django_project/*/migrations/','../django_project/*/urls.py','../django_project/core/settings/secret.py' ../django_project || true
 
+status:
+	@echo
+	@echo "--------------------------"
+	@echo "Show status of all containers"
+	@echo "--------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) ps
 
 # --------------- help --------------------------------
 
@@ -385,4 +391,5 @@ help:
 	@echo "* **update-migrations** - freshen all migration definitions to match the current code base."
 	@echo "* **web** - same as **run** - runs the production site."
 	@echo "* **pep8** - Run Python PEP8 check."
+	@echo "* **status** - show status for all containers."
 
