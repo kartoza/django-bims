@@ -30,6 +30,7 @@ define([
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             Shared.Dispatcher.on('map:addLocationSiteFeatures', this.addLocationSiteFeatures, this);
+            Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.render();
@@ -49,6 +50,10 @@ define([
                 zoom: zoom + 1,
                 duration: 250
             })
+        },
+        zoomToCoordinates: function(coordinates, zoomLevel) {
+            this.map.getView().setCenter(coordinates);
+            this.map.getView().setZoom(zoomLevel);
         },
         mapClicked: function (e) {
             var self = this;

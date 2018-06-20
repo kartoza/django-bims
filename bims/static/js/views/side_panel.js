@@ -65,10 +65,6 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             var $siteName = this.$el.find('.site-name');
             $siteName.html(name);
         },
-        setTotalFish: function(total) {
-            var $dataFish = this.$el.find('.data-fish');
-            $dataFish.html(total);
-        },
         closeSidePanel: function (e) {
             var self = this;
             this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
