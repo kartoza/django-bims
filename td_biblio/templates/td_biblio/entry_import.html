@@ -4,12 +4,13 @@
 
 {% block page_title %}{% trans "Import publications" %}{% endblock page_title %}
 
-{% block page_class %}page biblio import{% endblock page_class %}
+{% block page_class %}bibliography import{% endblock page_class %}
 
 {% block main_content %}
 
-<h2>{% trans "Import new publications" %}</h2>
+{% block content %}
 
+<h2>{% trans "Import new publications" %}</h2>
 <form
   class="batch-import-form"
   action="{% url 'td_biblio:import' %}"
@@ -35,4 +36,5 @@
   </div>
 </form>
 
+{% endblock content %}
 {% endblock main_content %}

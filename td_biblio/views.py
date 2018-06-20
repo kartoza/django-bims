@@ -59,7 +59,7 @@ class EntryListView(ListView):
         year = self.request.GET.get('year', None)
         # Is it an integer?
         try:
-            self.current_publication_date = datetime.date(int(year), 1, 1)
+            self.current_publication_date = datetime.date(year, 1, 1)
         except TypeError:
             self.current_publication_date = None
 
@@ -67,7 +67,7 @@ class EntryListView(ListView):
         author = self.request.GET.get('author', None)
         # Is it an integer?
         try:
-            self.current_publication_author = int(author)
+            self.current_publication_author = author
         except TypeError:
             self.current_publication_author = None
 
@@ -75,7 +75,7 @@ class EntryListView(ListView):
         collection = self.request.GET.get('collection', None)
         # Is it an integer?
         try:
-            self.current_publication_collection = int(collection)
+            self.current_publication_collection = collection
         except TypeError:
             self.current_publication_collection = None
 

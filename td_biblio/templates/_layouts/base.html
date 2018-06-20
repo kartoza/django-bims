@@ -2,7 +2,7 @@
 {% load static from staticfiles %}
 
 {% block title %}
-    Links
+    Bibliography
 {% endblock %}
 
 {% block head %}
@@ -17,29 +17,34 @@
     <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
     <!-- Override styles -->
     <link rel="stylesheet" href="{% static "css/styles.css" %}">
-
-
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
 {% endblock %}
 
 {% block body_content %}
 
+  <title>Bibliography{% block page_title %}{% endblock %}</title>
 
-  <title>TailorDev Biblio - {% block page_title %}{% endblock %}</title>
-
-
-  <body class="{% block page_class %}demo{% endblock page_class %}">
+        <style>
+             body {
+                   margin-top: 8%;
+             }
+        .not-active {
+              pointer-events: none;
+              cursor: default;
+              text-decoration: none;
+            }
+        </style>
+  <body class="{% block page_class %}Bibliography ma
+  nagement{% endblock page_class %}">
     {% block body %}
     <header id="page-header">
       <h1>
-        <a href="{% url 'td_biblio:entry_list' %}">
-          TailorDev Biblio
+        <a href="#" class="not-active">
+          Bibliography
         </a>
         <span>
-          // a Django app to manage your references.
+          Manage your references.
         </span>
       </h1>
     </header>
@@ -58,11 +63,6 @@
       {% block content %}{% endblock content %}
     </div>
 
-    <footer id="page-footer">
-      Brought to you by <a href="https://tailordev.fr">TailorDev</a> &mdash;
-      Licensed under the MIT License.
-    </footer>
-
     {% block javascripts %}{% endblock javascripts %}
     {% endblock %}
   </body>
@@ -70,7 +70,6 @@
 {% endblock %}
 
 {% block foot %}
-
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>

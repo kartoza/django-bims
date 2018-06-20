@@ -6,6 +6,7 @@ body {
 
 body > * {
   max-width: 1024px;
+
 }
 
 header#page-header {
