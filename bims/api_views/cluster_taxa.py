@@ -1,17 +1,12 @@
 # coding=utf8
 
-from django.db.models import Q
 from django.http import HttpResponseBadRequest, Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from haystack.query import SearchQuerySet
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from bims.models.location_site import LocationSite
 from bims.serializers.bio_collection_record_doc_serializer import \
     BiologicalCollectionRecordDocSerializer
-from bims.serializers.location_type_serializer import \
-    LocationTypeSerializer
 from bims.utils.cluster_point import (
     within_bbox,
     overlapping_area,
