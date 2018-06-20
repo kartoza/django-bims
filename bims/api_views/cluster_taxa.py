@@ -1,5 +1,7 @@
 # coding=utf8
 
+from django.contrib.gis.geos import Polygon
+from django.db.models import Q
 from django.http import HttpResponseBadRequest, Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,8 +23,7 @@ class ClusterTaxaList(APIView):
     """
 
     def clustering_process(
-            self, records, zoom, pix_x, pix_y,
-            SERIALIZER, mapbbox=None):
+            self, records, zoom, pix_x, pix_y, SERIALIZER):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
@@ -43,12 +44,6 @@ class ClusterTaxaList(APIView):
         :type pix_y: int
 
         :param SERIALIZER: SERIALIZER to be used for this clustering
-
-        :param module: filter records by module
-        :type module: str
-
-        :param mapbbox: filter records by current mapbbox
-        :type mapbbox: tuple
         """
 
         cluster_points = []
@@ -56,10 +51,6 @@ class ClusterTaxaList(APIView):
             # get x,y of site
             x = record.site.geometry_point.x
             y = record.site.geometry_point.y
-
-            if mapbbox:
-                if not within_bbox((x, y), mapbbox):
-                    continue
 
             # check every point in cluster_points
             for pt in cluster_points:
@@ -111,15 +102,27 @@ class ClusterTaxaList(APIView):
             record = BiologicalCollectionRecord.objects.get(pk=pk)
         except BiologicalCollectionRecord.DoesNotExist:
             raise Http404
-        # get records by query
-        bbox = request.GET.get('bbox', None)
 
+        # get records with same taxon
         queryset = BiologicalCollectionRecord.objects.filter(
             taxon_gbif_id=record.taxon_gbif_id
         )
+        # get by bbox
+        bbox = request.GET.get('bbox', None)
+        if bbox:
+            geom_bbox = Polygon.from_bbox(
+                tuple([float(edge) for edge in bbox.split(',')]))
+            print(queryset.count())
+            queryset = queryset.filter(
+                Q(site__geometry_point__intersects=geom_bbox) |
+                Q(site__geometry_line__intersects=geom_bbox) |
+                Q(site__geometry_polygon__intersects=geom_bbox) |
+                Q(site__geometry_multipolygon__intersects=geom_bbox)
+            )
+            print(queryset.count())
 
         cluster = self.clustering_process(
             queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y),
-            BiologicalCollectionRecordDocSerializer,
-            tuple([float(edge) for edge in bbox.split(',')]))
+            BiologicalCollectionRecordDocSerializer
+        )
         return Response(geo_serializer(cluster))
