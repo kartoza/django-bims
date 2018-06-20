@@ -53,15 +53,23 @@ define([
         },
         zoomToCoordinates: function(coordinates, zoomLevel) {
             this.map.getView().setCenter(coordinates);
-            this.map.getView().setZoom(zoomLevel);
+            if(typeof zoomLevel !== 'undefined') {
+                this.map.getView().setZoom(zoomLevel);
+            }
         },
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
-
-            if (features) {
-                self.featureClicked(features[0]);
-            } else {
+            if(features) {
+                var geometry = features[0].getGeometry();
+                var geometryType = geometry.getType();
+                if (geometryType === 'Point') {
+                    self.featureClicked(features[0]);
+                    var coordinates = geometry.getCoordinates();
+                    self.zoomToCoordinates(coordinates);
+                }
+            }
+            else {
                 Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             }
 
