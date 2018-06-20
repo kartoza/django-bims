@@ -9,11 +9,18 @@ from rest_framework import serializers
 
 class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
 
+    geometry = serializers.SerializerMethodField()
+
+    def get_geometry(self, object):
+        return object.site.get_geometry().geojson
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
+            'id',
             'original_species_name',
             'collector',
             'category',
-            'collection_date'
+            'collection_date',
+            'geometry'
         ]

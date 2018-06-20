@@ -13,6 +13,7 @@ define([
         map: null,
         locationSiteVectorSource: null,
         geocontextOverlay: null,
+        previousZoom:0,
         geocontextOverlayDisplayed: false,
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -160,6 +161,7 @@ define([
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
             this.loadMap();
+            self.refetchCollection();
 
             this.map.on('click', function (e) {
                 self.mapClicked(e);
@@ -175,8 +177,15 @@ define([
             var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
 
+            this.previousZoom = self.map.getView().getZoom();
+
             this.map.on('moveend', function (evt) {
-                self.refetchCollection()
+                var zoomLevel = self.map.getView().getZoom();
+                if(zoomLevel !== self.previousZoom) {
+                    self.previousZoom = zoomLevel;
+                    self.refetchCollection();
+                }
+
             });
             return this;
         },
