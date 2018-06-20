@@ -1,5 +1,6 @@
 # coding=utf8
 
+from django.db.models import Q
 from django.http import HttpResponseBadRequest
 import math
 from rest_framework.response import Response
@@ -80,13 +81,15 @@ class ClusterModuleList(APIView):
         :return: point of center of bbox
         :rtype: list
         """
-        return (((bbox[2] - bbox[0]) / 2) + bbox[0], bbox[1])
+        return (((bbox[2] - bbox[0]) / 2) + bbox[0],
+                ((bbox[3] - bbox[1]) / 2) + bbox[1])
 
     def overlapping_area(self, zoom, pix_x, pix_y, lat):
         """
-        Calculate an area (lng_deg, lat_deg) in degrees for an icon and a zoom
-        Since we are using a World Mercator projection deformation is uniform in
-        all directions and depends only on latitude
+        Calculate an area (lng_deg, lat_deg) in degrees for an icon
+        and a zoom
+        Since we are using a World Mercator projection deformation is
+        uniform in all directions and depends only on latitude
 
         :param zoom: zoom level of map
         :type zoom: int
@@ -108,13 +111,14 @@ class ClusterModuleList(APIView):
         return (lng_deg, lat_deg)
 
     def clustering_process(
-            self, records, zoom, pix_x, pix_y, SERIALIZER, module=None, mapbbox=None):
+            self, records, zoom, pix_x, pix_y, SERIALIZER,
+            module=None, mapbbox=None):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
         cluster, calculate it's 'catchment' area and add it to the cluster
-        If a point is within a cluster 'catchment' area increase point count for
-        that cluster and recalculate clusters minimum bbox
+        If a point is within a cluster 'catchment' area increase point
+        count for that cluster and recalculate clusters minimum bbox
 
         :param records: list of records.
         :type records: list
@@ -139,13 +143,15 @@ class ClusterModuleList(APIView):
 
         cluster_points = []
         for record in records:
-            # get actual object from elasticsearch query
-            record = record.object
             # get x,y of site
-            x = record.site.geometry_point.x
-            y = record.site.geometry_point.y
+            if module != 'location_site':
+                x = record.site.geometry_point.x
+                y = record.site.geometry_point.y
+            else:
+                x = record.geometry_point.x
+                y = record.geometry_point.y
 
-            if module and module != 'location_site':
+            if module and module != 'location_site' and module != 'taxa':
                 result_module = record.get_children()._meta.verbose_name
                 if result_module != module:
                     continue
@@ -245,42 +251,29 @@ class ClusterModuleList(APIView):
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
 
-        results = []
         # get records by query
         query_value = request.GET.get('query', '')
         bbox = request.GET.get('bbox', None)
         module_filters = request.GET.get('module', 'location_site')
 
         if module_filters != 'location_site':
+            queryset = BiologicalCollectionRecord.objects.all()
             if query_value:
-                clean_query = sqs.query.clean(query_value)
-                # TODO : Need OR in here or there will be duplicated records
-                sqs = sqs.filter(
-                    original_species_name=clean_query
+                queryset = queryset.filter(
+                    Q(original_species_name__icontains=query_value) |
+                    Q(collector__icontains=query_value)
                 )
-                # results.extend(
-                #     sqs.filter(
-                #         collector=clean_query
-                #     ).models(BiologicalCollectionRecord)
-                # )
-            results.extend(
-                sqs.models(BiologicalCollectionRecord)
-            )
             SERIALIZER = BiologicalCollectionRecordDocSerializer
 
         else:
+            queryset = LocationSite.objects.all()
             if query_value:
-                clean_query = sqs.query.clean(query_value)
-                sqs = sqs.filter(
-                    name=clean_query
-                )
-            results.extend(
-                sqs.models(LocationSite)
-            )
+                queryset = queryset.filter(
+                    name__icontains=query_value)
             SERIALIZER = LocationTypeSerializer
 
         cluster = self.clustering_process(
-            results, int(zoom), int(icon_pixel_x), int(icon_pixel_y),
+            queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y),
             SERIALIZER,
             module_filters, tuple([float(edge) for edge in bbox.split(',')]))
         return Response(self.geo_serializer(cluster))
