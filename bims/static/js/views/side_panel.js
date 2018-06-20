@@ -57,6 +57,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                         this.$el.find('.data-'+recordName).html(collections[recordName]);
                     }
                 }
+            } else{
+                $('#content-panel').html(JSON.stringify(data));
             }
         },
         setSiteName: function(name) {

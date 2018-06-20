@@ -87,6 +87,9 @@ celerybeat-schedule
 venv/
 ENV/
 
+# pycharm helpers
+.pycharm_helpers/
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -115,3 +118,4 @@ deployment/static
 deployment/media
 deployment/docker/71-apt-cacher-ng
 core/settings/secret.py
+deployment/backups

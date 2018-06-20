@@ -10,6 +10,7 @@ try:
 except ImportError:
     IUCN_API_KEY = ''
 
+
 STOP_WORDS = (
     'a', 'an', 'and', 'if', 'is', 'the', 'in', 'i', 'you', 'other',
     'this', 'that', 'to',
@@ -48,6 +49,8 @@ INSTALLED_APPS += (
     'rest_framework',
     'celery',
     'pipeline',
+    'contactus',
+    'haystack',
 )
 
 MIDDLEWARE += (
@@ -87,3 +90,8 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+
+# contact us email
+CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
+
+ELASTIC_MIN_SCORE = 0.5

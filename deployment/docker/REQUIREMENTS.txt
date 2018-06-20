@@ -30,10 +30,16 @@ pygbif==0.2.0
 # Django BIMS
 # git+https://github.com/dimasciput/django-bims.git
 
-# bibliography management
-django-tailordev-biblio==1.1.0
-
 # bibliography
 bibtexparser
 eutils
 habanero>=0.3.0
+# contacts page
+django-contact-us==0.4.1
+Pillow==5.1.0
+django-ordered-model==1.4.3
+
+# KBIMS-fish
+git+https://github.com/kartoza/kbims-fish
+django-haystack==2.8.1
+elasticsearch==5.0.1

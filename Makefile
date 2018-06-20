@@ -114,6 +114,20 @@ reload:
 	# no -it flag so we can run over remote shell
 	@docker exec $(PROJECT_ID)-uwsgi uwsgi --reload  /tmp/django.pid
 
+rebuildindex:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running rebuild_index in production mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py rebuild_index
+
+updateindex:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running update_index in production mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py update_index
+
 kill:
 	@echo
 	@echo "------------------------------------------------------------------"
@@ -306,6 +320,20 @@ build-devweb: db
 	@echo "Building devweb"
 	@echo "------------------------------------------------------------------"
 	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build devweb
+
+devweb-test:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running karma tests in devweb"
+	@echo "------------------------------------------------------------------"
+	@docker exec bims-dev-web bash -c 'cd / ; karma start --single-run'
+
+rebuildindex-devweb:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running rebuild_index in DEVELOPMENT mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run devweb python manage.py rebuild_index
 
 # Run pep8 style checking
 #http://pypi.python.org/pypi/pep8

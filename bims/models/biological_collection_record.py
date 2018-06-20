@@ -10,6 +10,10 @@ from django.dispatch import receiver
 
 from bims.models.location_site import LocationSite
 from bims.utils.gbif import update_fish_collection_record
+from bims.utils.cluster import (
+    update_cluster_by_collection,
+    update_cluster_by_site
+)
 from bims.models.taxon import Taxon
 
 
@@ -89,6 +93,17 @@ class BiologicalCollectionRecord(models.Model):
             except AttributeError:
                 continue
 
+    @staticmethod
+    def get_children_model():
+        rel_objs = [f for f in BiologicalCollectionRecord._meta.get_fields(
+            include_parents=False)
+                    if (f.one_to_many or f.one_to_one) and
+                    f.auto_created and not f.concrete]
+        related_models = []
+        for rel_obj in rel_objs:
+            related_models.append(rel_obj.related_model)
+        return related_models
+
 
 @receiver(models.signals.post_save)
 def collection_post_save_handler(sender, instance, **kwargs):
@@ -99,9 +114,21 @@ def collection_post_save_handler(sender, instance, **kwargs):
         return
 
     models.signals.post_save.disconnect(
-            collection_post_save_handler,
+        collection_post_save_handler,
     )
     instance.on_post_save()
+    update_cluster_by_collection(instance)
     models.signals.post_save.connect(
-            collection_post_save_handler,
+        collection_post_save_handler,
     )
+
+
+@receiver(models.signals.post_delete)
+def cluster_post_delete_handler(sender, instance, using, **kwargs):
+    if not issubclass(sender, BiologicalCollectionRecord) and \
+            not issubclass(sender, LocationSite):
+        return
+    if issubclass(sender, BiologicalCollectionRecord):
+        update_cluster_by_collection(instance)
+    if issubclass(sender, LocationSite):
+        update_cluster_by_site(instance)
