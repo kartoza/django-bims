@@ -34,8 +34,8 @@ pygbif==0.2.0
 django-contact-us==0.4.1
 Pillow==5.1.0
 django-ordered-model==1.4.3
-django-elasticsearch-dsl==0.5
 
 # KBIMS-fish
 git+https://github.com/kartoza/kbims-fish
 django-haystack==2.8.1
+elasticsearch==5.0.1

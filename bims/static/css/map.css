@@ -366,6 +366,12 @@ html, body, .map, .map-wrapper, #map-container {
 .result-search {
     background-color: rgba(255, 255, 255, 0.5);
     padding: 5px;
+    margin-bottom: 10px;
+    overflow-x: hidden;
+}
+
+.result-search:hover {
+    cursor: pointer;
 }
 
 #search-results-wrapper {

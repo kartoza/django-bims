@@ -138,6 +138,7 @@ devweb:
     - VIRTUAL_PORT=8080
     - RABBITMQ_HOST=rabbitmq
     - GEOCONTEXT_URL=http://localhost:65402
+    - CONTACT_US_EMAIL=dimas@kartoza.com
   volumes:
     - ../../django-bims:/home/web/django_project
     - ./static:/home/web/static
