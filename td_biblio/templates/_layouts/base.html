@@ -2,13 +2,13 @@
 {% load static from staticfiles %}
 
 {% block title %}
-    Bibliography
+    Links
 {% endblock %}
 
 {% block head %}
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="viewport" content="width=device-width">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/landing_page.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
     <!-- Google Fonts -->
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
     <!-- CSS Reset -->
@@ -19,28 +19,32 @@
     <link rel="stylesheet" href="{% static "css/styles.css" %}">
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
+
 {% endblock %}
 
 {% block body_content %}
 
-  <title>Bibliography{% block page_title %}{% endblock %}</title>
+    <style>
+        body {
+            margin-top: 5%;
+            padding-bottom: 5%;
+        }
 
-        <style>
-             body {
-                   margin-top: 8%;
-             }
         .not-active {
-              pointer-events: none;
-              cursor: default;
-              text-decoration: none;
-            }
-        </style>
+            pointer-events: none;
+            cursor: default;
+            text-decoration: none;
+        }
+        #mainNav {
+            margin-left: 10%;
+        }
+    </style>
   <body class="{% block page_class %}Bibliography ma
   nagement{% endblock page_class %}">
     {% block body %}
     <header id="page-header">
       <h1>
-        <a href="#" class="not-active">
+        <a href="#" class="not-active" style="color: #526B43 !important;">
           Bibliography
         </a>
         <span>
@@ -67,9 +71,11 @@
     {% endblock %}
   </body>
 
+
 {% endblock %}
 
 {% block foot %}
+
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
@@ -83,4 +89,3 @@
     <!-- Custom scripts for this template -->
     <script src="{% static "js/creative.js" %}"></script>
 {% endblock %}
-

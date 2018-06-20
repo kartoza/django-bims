@@ -13,7 +13,8 @@ header#page-header {
   width: 100%;
   margin-bottom: 2rem;
   padding: 1rem;
-  border-bottom: 3px solid #9b4dca;
+  /*border-bottom: 3px solid #9b4dca;*/
+  border-bottom: 3px solid #526B43 !important;
 }
 
 header#page-header h1 span {
@@ -82,7 +83,7 @@ div[role="main"] {
   left: 0;
   min-width: 100%;
   padding: 1rem;
-  background-color: #9b4dca;
+  background-color: #526B43 !important;
   color: white;
   text-align: center;
 }
@@ -90,11 +91,11 @@ div[role="main"] {
 .import-message a.button.import {
   margin-left: 1rem;
   background-color: #fff;
-  color: #9b4dca;
+  color: #526B43 !important;
 }
 
 .import-message a.button.import:hover {
-  background-color: #9b4dca;
+  background-color: #526B43 !important;
   border-color: #fff;
   color: #fff;
 }
@@ -142,7 +143,7 @@ ul.pagination li a {
 
 ul.pagination li.current a {
   font-weight: bold;
-  background-color: #9b4dca;
+  background-color: #526B43 !important;
   border-radius: 3rem;
   padding: 0.3rem 0.8rem;
   color: #fff;
@@ -170,8 +171,8 @@ form.batch-import-form .form-actions {
 }
 
 form.batch-import-form .form-actions .cancel {
-  background-color: #fff;
-  color: #9b4dca;
+  color: #fff;
+  background-color: #526B43 !important;
 }
 
 form.batch-import-form .errorlist {

@@ -9,8 +9,19 @@
 {% block main_content %}
 
 {% block content %}
+    <style>
+        .button, button,
+        input[type="button"],
+        input[type="reset"],
+        input[type="submit"] {
+                background-color: #526B43 !important;
+                border: 0.1rem solid #526B43 !important;
+            }
 
-<h2>{% trans "Import new publications" %}</h2>
+
+    </style>
+
+    <h2>{% trans "Import new publications" %}</h2>
 <form
   class="batch-import-form"
   action="{% url 'td_biblio:import' %}"
@@ -25,14 +36,13 @@
       type="reset"
       name="{% trans "Cancel" %}"
       value="{% trans "cancel" %}"
-      class="cancel"
-    >
+      class="cancel">
     <input
       type="submit"
       name="{% trans "Import" %}"
       value="{% trans "submit" %}"
       class="submit"
-    >
+    style="color: white;">
   </div>
 </form>
 

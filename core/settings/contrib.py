@@ -89,43 +89,9 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-# BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
-BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 
 # contact us email
-# CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
-CONTACT_US_EMAIL = 'alison@kartoza.com'
+CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
 ELASTIC_MIN_SCORE = 0.5
-
-
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.solr_backend.SolrEngine',
-        'URL': 'http://localhost:9001/solr/default',
-        'TIMEOUT': 60 * 5,
-        'INCLUDE_SPELLING': True,
-        'BATCH_SIZE': 100,
-        'EXCLUDED_INDEXES': ['thirdpartyapp.search_indexes.BarIndex'],
-    },
-    'autocomplete': {
-        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
-        'PATH': '/home/search/whoosh_index',
-        'STORAGE': 'file',
-        'POST_LIMIT': 128 * 1024 * 1024,
-        'INCLUDE_SPELLING': True,
-        'BATCH_SIZE': 100,
-        'EXCLUDED_INDEXES': ['thirdpartyapp.search_indexes.BarIndex'],
-    },
-    'slave': {
-        'ENGINE': 'xapian_backend.XapianEngine',
-        'PATH': '/home/search/xapian_index',
-        'INCLUDE_SPELLING': True,
-        'BATCH_SIZE': 100,
-        'EXCLUDED_INDEXES': ['thirdpartyapp.search_indexes.BarIndex'],
-    },
-    'db': {
-        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
-        'EXCLUDED_INDEXES': ['thirdpartyapp.search_indexes.BarIndex'],
-    }
-}
