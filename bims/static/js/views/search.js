@@ -1,5 +1,5 @@
 
-define(['backbone', 'underscore', 'shared', 'ol'], function (Backbone, _, Shared, ol) {
+define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], function (Backbone, _, Shared, ol, SearchResultCollection) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -13,34 +13,23 @@ define(['backbone', 'underscore', 'shared', 'ol'], function (Backbone, _, Shared
         searchEnter: function (e) {
             var self = this;
             if(e.which === 13) {
+                var $searchResultsContainer = $("<div id='search-results-container'></div>");
+                this.sidePanel.openSidePanel();
+
                 $('#search-results-wrapper').html('');
                 var searchValue = $(e.target).val();
                 if(searchValue.length < 3) {
-                    $('#search-results-wrapper').html('Minimal 3 characters');
+                    $searchResultsContainer.html('Minimal 3 characters');
+                    Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $searchResultsContainer.html());
                     return false;
                 }
 
-                $.ajax({
-                    type: 'GET',
-                    url: '/api/search/' + searchValue + '/',
-                    success: function (data) {
-                        self.searchResults = {};
-                        if (data['results']) {
-                            $('#search-results-wrapper').html(data['results'])
-                        } else {
-                            $.each(data, function (key, value) {
-                                self.searchResults[value['id']] = value;
-                                $('#search-results-wrapper').append(
-                                    '<div class="result-search" data-search-result-id="' + value['id'] + '" >' +
-                                    '<span>Original species name: ' + value['original_species_name'] + '</span><br/>' +
-                                    '<span>Collector: ' + value['collector'] + '</span><br/>' +
-                                    '<span>Collection Date: ' + value['collection_date'] + '</span>' +
-                                    '<div/>'
-                                )
-                            });
-                        }
+                this.searchResultCollection.search(searchValue, this.sidePanel);
+                this.searchResultCollection.fetch({
+                    success: function () {
+                        self.searchResultCollection.renderCollection()
                     }
-                })
+                });
             }
         },
         searchResultClicked: function (e) {
@@ -59,6 +48,8 @@ define(['backbone', 'underscore', 'shared', 'ol'], function (Backbone, _, Shared
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
+            this.sidePanel = options.sidePanel;
+            this.searchResultCollection = new SearchResultCollection();
         },
         render: function () {
             this.$el.html(this.template());

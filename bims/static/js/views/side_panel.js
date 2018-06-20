@@ -11,10 +11,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelDetail', this.updateSidePanelDetail, this);
+            Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
+            Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
         },
         render: function() {
             this.$el.html(this.template());
-            $('#map-container').append(this.$el);
+            // $('#map-container').append(this.$el);
 
             // Hide the side panel
             this.rightPanel = this.$el.find('.right-panel');
@@ -24,7 +26,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
         },
         openSidePanel: function (properties) {
             this.rightPanel.show('slide', { direction: 'right'}, 200);
-            if(properties) {
+            if(typeof properties !== 'undefined') {
                 this.clearSidePanel();
                 this.$el.find('.panel-loading').show();
                 this.setSiteName(properties['name']);
@@ -77,6 +79,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                     $('#content-panel').append('<p>'+ key.charAt(0).toUpperCase() + key.substring(1) +' : '+ contents[key] +'</p>');
                 }
             }
+        },
+        fillSidePanelHtml: function (htmlData) {
+            $('#content-panel').html(htmlData);
+        },
+        appendSidePanelContent: function (htmlData) {
+            $('#content-panel').append(htmlData);
         },
         clearSidePanel: function () {
             $('#content-panel').html('');

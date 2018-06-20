@@ -4,12 +4,18 @@
     max-width: 100% !important;
 }
 
+.row.side-panel {
+    height: 100%;
+}
+
 #content-panel {
     margin: 15px 10px 10px 15px;
     font-size: 8pt;
     font-weight: normal;
     padding: 15px 30px 15px 15px;
     word-wrap: break-word;
+    max-height: 85%;
+    overflow-y: auto;
 }
 
 #content-panel p, .side-panel p {
@@ -176,6 +182,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .panel-loading {
+    display: none;
     margin-top: 50px;
 }
 
@@ -186,7 +193,6 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-search-box {
-    height: 400px;
     width: 350px;
     background-color: rgba(0, 0, 0, 0.6);
     position: absolute;
@@ -369,7 +375,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .result-search {
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(188, 188, 188, 0.15);
     padding: 5px;
     margin-bottom: 10px;
     overflow-x: hidden;

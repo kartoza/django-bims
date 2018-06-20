@@ -42,7 +42,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             this.$el.html(this.template());
 
             this.searchView = new SearchView({
-                parent: this
+                parent: this,
+                sidePanel: this.parent.sidePanelView
             });
 
             this.$el.append(this.searchView.render().$el);

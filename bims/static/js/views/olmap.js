@@ -5,8 +5,9 @@ define([
     'collections/location_site',
     'collections/cluster',
     'views/map_control_panel',
+    'views/side_panel',
     'ol',
-    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, MapControlPanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
+    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, MapControlPanelView, SidePanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -14,6 +15,7 @@ define([
         locationSiteVectorSource: null,
         geocontextOverlay: null,
         previousZoom:0,
+        sidePanelView: null,
         geocontextOverlayDisplayed: false,
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -180,11 +182,14 @@ define([
                 self.mapClicked(e);
             });
 
+            this.sidePanelView = new SidePanelView();
+
             this.mapControlPanel = new MapControlPanelView({
                 parent: this
             });
 
             this.$el.append(this.mapControlPanel.render().$el);
+            this.$el.append(this.sidePanelView.render().$el);
 
             // add layer switcher
             var layerSwitcher = new LayerSwitcher();
@@ -200,6 +205,7 @@ define([
                 }
 
             });
+
             return this;
         },
         loadMap: function () {

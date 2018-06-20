@@ -39,13 +39,9 @@ require.config({
 
 require( [
     'views/olmap',
-    'views/side_panel',
     'shared',
     'app'
-], function(olmap, side_panel, Shared, App) {
+], function(olmap, Shared, App) {
     // Display the map
     var map = new olmap();
-
-    var panel = new side_panel();
-    panel.render();
 });
