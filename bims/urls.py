@@ -14,6 +14,9 @@ from bims.api_views.location_type import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
+from bims.api_views.cluster_collection_by_taxon import (
+    ClusterCollectionByTaxon
+)
 from bims.views.links import LinksCategoryView
 from bims.api_views.search import SearchObjects
 from bims.views.activate_user import activate_user
@@ -29,6 +32,8 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
+    url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/$',
+        ClusterCollectionByTaxon.as_view()),
     url(r'^api/search/(?P<query_value>\w+)/$',
         SearchObjects.as_view(), name='search-api'),
 ]
