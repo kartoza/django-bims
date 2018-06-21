@@ -5,8 +5,9 @@ define([
     'collections/location_site',
     'collections/cluster',
     'views/map_control_panel',
+    'views/side_panel',
     'ol',
-    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, MapControlPanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
+    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, MapControlPanelView, SidePanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -14,6 +15,7 @@ define([
         locationSiteVectorSource: null,
         geocontextOverlay: null,
         previousZoom:0,
+        sidePanelView: null,
         geocontextOverlayDisplayed: false,
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -30,6 +32,7 @@ define([
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             Shared.Dispatcher.on('map:addLocationSiteFeatures', this.addLocationSiteFeatures, this);
+            Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.render();
@@ -50,14 +53,28 @@ define([
                 duration: 250
             })
         },
+        zoomToCoordinates: function(coordinates, zoomLevel) {
+            this.map.getView().setCenter(coordinates);
+            if(typeof zoomLevel !== 'undefined') {
+                this.map.getView().setZoom(zoomLevel);
+            }
+        },
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
-
-            if (features) {
-                self.featureClicked(features[0]);
-            } else {
-                Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
+            if(features) {
+                var geometry = features[0].getGeometry();
+                var geometryType = geometry.getType();
+                if (geometryType === 'Point') {
+                    self.featureClicked(features[0]);
+                    var coordinates = geometry.getCoordinates();
+                    self.zoomToCoordinates(coordinates);
+                } else {
+                    this.sidePanelView.closeSidePanel();
+                }
+            }
+            else {
+                this.sidePanelView.closeSidePanel();
             }
 
             // Close opened control panel
@@ -167,11 +184,14 @@ define([
                 self.mapClicked(e);
             });
 
+            this.sidePanelView = new SidePanelView();
+
             this.mapControlPanel = new MapControlPanelView({
                 parent: this
             });
 
             this.$el.append(this.mapControlPanel.render().$el);
+            this.$el.append(this.sidePanelView.render().$el);
 
             // add layer switcher
             var layerSwitcher = new LayerSwitcher();
@@ -187,6 +207,7 @@ define([
                 }
 
             });
+
             return this;
         },
         loadMap: function () {
