@@ -162,19 +162,26 @@ define([
                 return
             }
             var self = this;
+            if (self.fetchXhr) {
+                self.fetchXhr.abort();
+            }
+            $('#loading-warning').show();
             var administrative = this.checkAdministrativeLevel();
             if (administrative != 'detail') {
                 this.clusterCollection.updateAdministrative(administrative);
-                this.clusterCollection.fetch({
+
+                self.fetchXhr = this.clusterCollection.fetch({
                     success: function () {
+                        $('#loading-warning').hide();
                         self.clusterSource.clear();
                         self.locationSiteVectorSource.clear();
                         self.clusterCollection.renderCollection()
                     }
                 });
             } else {
-                this.locationSiteCollection.fetch({
+                self.fetchXhr = this.locationSiteCollection.fetch({
                     success: function () {
+                        $('#loading-warning').hide();
                         self.clusterSource.clear();
                         self.locationSiteVectorSource.clear();
                         self.locationSiteCollection.renderCollection()
@@ -185,6 +192,11 @@ define([
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID) {
             this.clusterBiologicalCollection.updateTaxon(taxonID);
+            if (!this.clusterBiologicalCollection.taxonID) {
+                this.clusterSource.clear();
+                this.refetchCollection();
+                return
+            }
             this.refetchClusterBiologicalCollection();
         },
         updateClusterBiologicalCollectionZoomExt: function () {
@@ -196,13 +208,16 @@ define([
         },
         refetchClusterBiologicalCollection: function () {
             if (!this.clusterBiologicalCollection.taxonID) {
-                this.clusterSource.clear();
-                this.refetchCollection();
                 return
             }
             var self = this;
-            this.clusterBiologicalCollection.fetch({
+            if (self.fetchXhr) {
+                self.fetchXhr.abort();
+            }
+            $('#loading-warning').show();
+            self.fetchXhr = this.clusterBiologicalCollection.fetch({
                 success: function () {
+                    $('#loading-warning').hide();
                     self.locationSiteVectorSource.clear();
                     self.clusterSource.clear();
                     self.clusterBiologicalCollection.renderCollection()
@@ -298,9 +313,19 @@ define([
             };
 
             var styleFunction = function (feature) {
-                var style = styles[feature.getGeometry().getType()];
-                if (feature.getProperties()['text']) {
-                    style.getText().setText(feature.getProperties()['text'])
+                var style = null;
+                if (!feature.getProperties()['boundary_type']) {
+                    style = styles[feature.getGeometry().getType()];
+
+                } else {
+                    var count = 0;
+                    try {
+                        count = feature.getProperties()['cluster_data']['location site']['details']['records'];
+                    }
+                    catch (err) {
+                    }
+                    style = self.getClusterStyle(count);
+                    style.getText().setText('' + count)
                 }
                 return style;
             };
@@ -366,31 +391,19 @@ define([
             var smallCluster = new ol.style.Circle({
                 radius: 15,
                 fill: new ol.style.Fill({
-                    color: [255, 0, 0, 0.5]
-                }),
-                stroke: new ol.style.Stroke({
-                    color: [255, 0, 0, 0.7],
-                    width: 1
+                    color: 'red'
                 })
             });
             var mediumCluster = new ol.style.Circle({
                 radius: 30,
                 fill: new ol.style.Fill({
-                    color: [255, 255, 0, 0.5]
-                }),
-                stroke: new ol.style.Stroke({
-                    color: [255, 255, 0, 0.7],
-                    width: 1
+                    color: 'yellow'
                 })
             });
             var largeCluster = new ol.style.Circle({
                 radius: 45,
                 fill: new ol.style.Fill({
-                    color: [0, 255, 0, 0.5]
-                }),
-                stroke: new ol.style.Stroke({
-                    color: [0, 255, 0, 0.7],
-                    width: 1
+                    color: 'green'
                 })
             });
             var image = null
