@@ -1,12 +1,13 @@
 LEDET-BIMS documentation
 ==============================
 
-## Technical documentation for LEDET-BIMS Project.
+## Technical documentation for the Project.
 
-## Firstly you need to be in the base project directory where the management
- command is run from.
+## Firstly you need to be in django-bims folder and then access the management command in the docker container
+ with.
 
-```docs/docs/```
+ ```make shell```
+
 
 **Then to generated the documentation run **
 ```python manage.py listing_models --output docs/docs/index.rst
