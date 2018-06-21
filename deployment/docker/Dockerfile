@@ -37,8 +37,7 @@ RUN rpl "env node" "env nodejs" /usr/lib/node_modules/yuglify/bin/yuglify
 RUN npm install -g grunt-cli
 ADD package.json /package.json
 ADD Gruntfile.js /Gruntfile.js
-RUN cd / && npm install grunt grunt-contrib-concat grunt-contrib-uglify
-RUN cd / && npm install grunt-contrib-requirejs
+RUN cd / && npm install
 
 #USER www-data
 WORKDIR /home/web/django_project

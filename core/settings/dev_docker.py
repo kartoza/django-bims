@@ -24,3 +24,12 @@ DATABASES = {
         'TEST_NAME': 'unittests',
     }
 }
+
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'bims.search_backends.fuzzy_elastic_search_engine'
+                  '.FuzzyElasticSearchEngine',
+        'URL': 'http://elasticsearch:9200/',
+        'INDEX_NAME': 'haystack',
+    },
+}

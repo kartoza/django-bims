@@ -35,6 +35,20 @@ db:
 #  ports:
 #    - "25432:5432"
 
+elasticsearch:
+  # Note you cannot scale if you use conteiner_name
+  container_name: bims-elasticsearch
+  restart: on-failure:5
+  #  read_only: true
+  image: elasticsearch:2.4.2
+  hostname: elasticsearch
+  environment:
+    - cluster.name=docker-cluster
+    - bootstrap.memory_lock=true
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  ports:
+    - "9200:9200"
+
 uwsgi:
   # Note you cannot scale if you use container_name
   container_name: bims-uwsgi
@@ -49,6 +63,8 @@ uwsgi:
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
     - RABBITMQ_HOST=rabbitmq
+    - HAYSTACK_HOST=elasticsearch
+    - GEOCONTEXT_URL=http://localhost:65402
   volumes:
     - ../../django-bims:/home/web/django_project
     - ./static:/home/web/static:rw
@@ -58,6 +74,7 @@ uwsgi:
   links:
     - smtp:smtp
     - db:db
+    - elasticsearch:elasticsearch
   restart: on-failure:5
   user: root
 
@@ -115,11 +132,13 @@ devweb:
     - DATABASE_USERNAME=docker
     - DATABASE_PASSWORD=docker
     - DATABASE_HOST=db
-    - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+    - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
     - PYTHONPATH=/home/web/django_project
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
     - RABBITMQ_HOST=rabbitmq
+    - GEOCONTEXT_URL=http://localhost:65402
+    - CONTACT_US_EMAIL=dimas@kartoza.com
   volumes:
     - ../../django-bims:/home/web/django_project
     - ./static:/home/web/static
@@ -129,11 +148,14 @@ devweb:
   links:
     - smtp:smtp
     - db:db
+    - elasticsearch:elasticsearch
   ports:
     # for django test server
     - "63302:8080"
     # for ssh
     - "63303:22"
+    # for karma tests
+    - "63304:9876"
 
 rabbitmq:
   image: library/rabbitmq

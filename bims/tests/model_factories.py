@@ -14,6 +14,9 @@ from bims.models import (
     Survey,
     LocationContext,
     BiologicalCollectionRecord,
+    Boundary,
+    BoundaryType,
+    Cluster
 )
 
 
@@ -167,3 +170,37 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
             lambda n: u'Test notes %s' % n)
     taxon_gbif_id = factory.SubFactory(TaxonF)
     validated = True
+
+
+class BoundaryTypeF(factory.django.DjangoModelFactory):
+    """
+    Boundary type factory
+    """
+    class Meta:
+        model = BoundaryType
+
+    name = factory.Sequence(lambda n: u'Test name %s' % n)
+
+
+class BoundaryF(factory.django.DjangoModelFactory):
+    """
+    Boundary factory
+    """
+    class Meta:
+        model = Boundary
+
+    name = factory.Sequence(lambda n: u'Test name %s' % n)
+    type = factory.SubFactory(BoundaryTypeF)
+
+
+class ClusterF(factory.django.DjangoModelFactory):
+    """
+    Cluster factory
+    """
+    class Meta:
+        model = Cluster
+
+    boundary = factory.SubFactory(BoundaryF)
+    module = factory.Sequence(lambda n: u'Test module %s' % n)
+    site_count = 1
+    details = ''
