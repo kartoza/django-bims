@@ -15,7 +15,7 @@ INSTALLED_APPS += (
     'bims',
     'fish',
     'example',
-    'td_biblio',
+    # 'td_biblio',
 )
 
 # Set languages which want to be translated

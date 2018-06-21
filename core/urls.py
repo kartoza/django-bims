@@ -26,7 +26,6 @@ urlpatterns = [
     url(r'^', include('fish.urls')),
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
-    url(r'^bibliography/', include('td_biblio.urls', namespace = 'td_biblio')),
 ]
 
 if settings.DEBUG:

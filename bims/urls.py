@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.urls import path
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
@@ -15,6 +15,10 @@ from bims.api_views.location_type import (
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
 from bims.views.links import LinksCategoryView
+from bims.views.bibliography import (
+    EntryListView,
+    EntryBatchImportView,
+)
 from bims.api_views.search import SearchObjects
 from bims.views.activate_user import activate_user
 
@@ -33,10 +37,17 @@ api_urls = [
         SearchObjects.as_view(), name='search-api'),
 ]
 
+bibliography_urls = [
+    url('^$', EntryListView.as_view(), name='entry_list'),
+    url('^import/$', EntryBatchImportView.as_view(), name='import'),
+]
+
 urlpatterns = [
     path('', LandingPageView.as_view(), name='landing-page'),
     path('map', MapPageView.as_view()),
-    url(r'^links/', LinksCategoryView.as_view(), name = 'link_list'),
+    url(r'^links/', LinksCategoryView.as_view(), name='link_list'),
+    url(r'^bibliography/',
+        include((bibliography_urls, 'bims'), namespace='td_biblio')),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user')

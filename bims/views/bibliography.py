@@ -1,3 +1,7 @@
+# coding: utf-8
+__author__ = 'Alison Mukoma <alison@kartoza.com>'
+__copyright__ = 'kartoza.com'
+
 # -*- coding: utf-8 -*-
 import datetime
 import logging
@@ -11,12 +15,12 @@ except:
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, ListView
 
-from .exceptions import DOILoaderError, PMIDLoaderError
-from .forms import EntryBatchImportForm
-from .models import Author, Collection, Entry, Journal
-from .utils.loaders import DOILoader, PubmedLoader
+from bims.exceptions import DOILoaderError, PMIDLoaderError
+from bims.forms.bibliography import EntryBatchImportForm
+from bims.models import Author, Collection, Entry, Journal
+from bims.utils.loaders import DOILoader, PubmedLoader
 
-logger = logging.getLogger('td_biblio')
+logger = logging.getLogger('bims')
 
 
 def superuser_required(function=None):
@@ -50,7 +54,7 @@ class EntryListView(ListView):
     """Entry list view"""
     model = Entry
     paginate_by = 20
-    template = 'td_biblio/entry_list.html'
+    template_name = 'td_biblio/entry_list.html'
 
     def get(self, request, *args, **kwargs):
         """Check GET request parameters validity and store them"""
@@ -145,7 +149,8 @@ class EntryListView(ListView):
 
         # Publication collection
         ctx['publication_collections'] = Collection.objects.all()
-        ctx['current_publication_collection'] = self.current_publication_collection  # noqa
+        ctx['current_publication_collection'] = \
+	        self.current_publication_collection  # noqa
 
         return ctx
 

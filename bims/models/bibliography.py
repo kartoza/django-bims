@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
+__author__ = 'Alison Mukoma <alison@kartoza.com>'
+__copyright__ = 'kartoza.com'
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models

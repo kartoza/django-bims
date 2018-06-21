@@ -20,8 +20,8 @@ from bibtexparser.latexenc import string_to_latex
 from django.utils.translation import ugettext_lazy as _
 from habanero import cn
 
-from ..exceptions import DOILoaderError, PMIDLoaderError
-from ..models import Author, Journal, Entry, AuthorEntryRank
+from bims.exceptions import DOILoaderError, PMIDLoaderError
+from bims.models import Author, Journal, Entry, AuthorEntryRank
 
 
 logger = logging.getLogger('td_biblio')

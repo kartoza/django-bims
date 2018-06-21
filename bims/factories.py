@@ -6,7 +6,7 @@ import random
 from factory.django import DjangoModelFactory
 from factory.fuzzy import BaseFuzzyAttribute
 
-from . import models
+from bims.models import bibliography as models
 
 
 JOURNAL_CHOICES = [

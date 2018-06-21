@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from operator import methodcaller
 
 from django import forms
