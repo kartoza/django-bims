@@ -4,12 +4,15 @@ define(['jquery', 'backbone', 'models/search', 'views/search_result'], function 
         url: "/api/search/",
         viewCollection: [],
         sidePanel: null,
+        searchValue: '',
         search: function (searchValue, sidePanel) {
+            this.searchValue = searchValue;
             this.url = this.url + searchValue;
             this.sidePanel = sidePanel;
         },
         renderCollection: function () {
             var self = this;
+            this.sidePanel.updateSidePanelTitle('Search results for ' + this.searchValue);
             $.each(this.viewCollection, function (index, view) {
                 view.destroy();
             });

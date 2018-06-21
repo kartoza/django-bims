@@ -69,10 +69,12 @@ define([
                     self.featureClicked(features[0]);
                     var coordinates = geometry.getCoordinates();
                     self.zoomToCoordinates(coordinates);
+                } else {
+                    this.sidePanelView.closeSidePanel();
                 }
             }
             else {
-                Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
+                this.sidePanelView.closeSidePanel();
             }
 
             // Close opened control panel

@@ -75,19 +75,24 @@ html, body, .map, .map-wrapper, #map-container {
 
 }
 
-.right-panel-title {
-    font-size: 20pt;
+.right-panel-header {
+    font-size: 17pt;
     padding-top: 15px;
     padding-bottom: 5px;
     padding-left: 50px;
     height: 80px;
-    background: rgba(104, 104, 104, 0.4);
+    background: rgba(190, 190, 190, 0.4);
+}
+
+.right-panel-title {
+    padding-top: 10px;
+    padding-left: 0;
 }
 
 .close-panel {
     float: right;
     padding-right: 30px;
-    padding-top: 10px;
+    padding-top: 15px;
 }
 
 .close-panel:hover {

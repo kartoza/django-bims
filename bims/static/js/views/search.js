@@ -7,20 +7,18 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
         searchBoxOpen: false,
         searchResults: {},
         events: {
-            'keypress #search': 'searchEnter',
-            'click .result-search': 'searchResultClicked',
+            'keypress #search': 'searchEnter'
         },
         searchEnter: function (e) {
             var self = this;
             if(e.which === 13) {
-                var $searchResultsContainer = $("<div id='search-results-container'></div>");
                 this.sidePanel.openSidePanel();
+                this.sidePanel.clearSidePanel();
 
                 $('#search-results-wrapper').html('');
                 var searchValue = $(e.target).val();
                 if(searchValue.length < 3) {
-                    $searchResultsContainer.html('Minimal 3 characters');
-                    Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $searchResultsContainer.html());
+                    this.sidePanel.fillSidePanelHtml("<div id='search-results-container'>Minimal 3 characters</div>");
                     return false;
                 }
 
@@ -31,19 +29,6 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
                     }
                 });
             }
-        },
-        searchResultClicked: function (e) {
-            var id = $(e.target).data('search-result-id');
-            if(typeof id === "undefined") {
-                return false;
-            }
-
-            var searchResult = this.searchResults[id];
-            var geometry = JSON.parse(searchResult['geometry']);
-            var coordinates = ol.proj.transform(geometry['coordinates'], "EPSG:4326", "EPSG:3857");
-            var zoomLevel = 15;
-            Shared.Dispatcher.trigger('map:zoomToCoordinates', coordinates, zoomLevel);
-
         },
         initialize: function (options) {
             _.bindAll(this, 'render');

@@ -29,7 +29,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             if(typeof properties !== 'undefined') {
                 this.clearSidePanel();
                 this.$el.find('.panel-loading').show();
-                this.setSiteName(properties['name']);
+                this.updateSidePanelTitle('<i class="fa fa-map-marker"></i> '+ properties['name'] +'</span>');
                 if(properties.hasOwnProperty('location_type')) {
                     this.fillSidePanel(properties['location_type']);
                 }
@@ -63,9 +63,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                 $('#content-panel').html(JSON.stringify(data));
             }
         },
-        setSiteName: function(name) {
-            var $siteName = this.$el.find('.site-name');
-            $siteName.html(name);
+        updateSidePanelTitle: function(title) {
+            var $rightPanelTitle = this.$el.find('.right-panel-title');
+            $rightPanelTitle.html(title);
         },
         closeSidePanel: function (e) {
             var self = this;
@@ -89,6 +89,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
         clearSidePanel: function () {
             $('#content-panel').html('');
             $('.panel-icons').html('');
+            this.updateSidePanelTitle('');
         }
     })
 });
