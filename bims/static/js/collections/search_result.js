@@ -1,13 +1,14 @@
 define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], function ($, Backbone, SearchModel, SearchResultView) {
     return Backbone.Collection.extend({
         model: SearchModel,
-        url: "/api/search/",
+        url: "",
+        searchUrl: "/api/search/",
         viewCollection: [],
         sidePanel: null,
         searchValue: '',
         search: function (searchValue, sidePanel) {
             this.searchValue = searchValue;
-            this.url = this.url + searchValue;
+            this.url = this.searchUrl + searchValue;
             this.sidePanel = sidePanel;
         },
         hideAll: function (e) {
@@ -23,6 +24,13 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         renderCollection: function () {
             var self = this;
             this.sidePanel.updateSidePanelTitle('Search results for ' + this.searchValue);
+
+            if(this.models.length === 1) {
+                if(this.models[0]['attributes'].hasOwnProperty('results')) {
+                    self.sidePanel.fillSidePanelHtml(this.models[0]['attributes']['results']);
+                    return false;
+                }
+            }
 
             var $searchResultsWrapper = $('<div class="search-results-wrapper"></div>');
             $searchResultsWrapper.append('<div class="search-results-total" data-visibility="true"> Biological Collection Records (' + this.models.length + ') </div>');
