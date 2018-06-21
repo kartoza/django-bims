@@ -54,6 +54,5 @@ setup(
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',
-            'django-tailordev-biblio==1.1.0',
         ]
 )
