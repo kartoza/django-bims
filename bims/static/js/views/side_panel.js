@@ -72,6 +72,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
                 self.clearSidePanel();
             });
+            Shared.Dispatcher.trigger('searchResult:clicked', null);
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {

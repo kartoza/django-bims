@@ -121,4 +121,4 @@ class ClusterCollectionByTaxon(APIView):
         cluster = self.clustering_process(
             queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y)
         )
-        return Response(geo_serializer(cluster))
+        return Response(geo_serializer(cluster)['features'])
