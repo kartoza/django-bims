@@ -30,6 +30,9 @@ pygbif==0.2.0
 # Django BIMS
 # git+https://github.com/dimasciput/django-bims.git
 
+# documentation generation
+django-modelsdoc==0.1.9
+
 # contacts page
 django-contact-us==0.4.1
 Pillow==5.1.0
@@ -39,3 +42,4 @@ django-ordered-model==1.4.3
 git+https://github.com/kartoza/kbims-fish
 django-haystack==2.8.1
 elasticsearch==5.0.1
+
