@@ -7,8 +7,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from bims.serializers.bio_collection_record_doc_serializer import \
-    BiologicalCollectionRecordDocSerializer
+from bims.models.taxon import Taxon
+from bims.serializers.bio_collection_serializer import \
+    BioCollectionSerializer
 from bims.utils.cluster_point import (
     within_bbox,
     overlapping_area,
@@ -17,13 +18,13 @@ from bims.utils.cluster_point import (
 )
 
 
-class ClusterTaxaList(APIView):
+class ClusterCollectionByTaxon(APIView):
     """
-    List of all cluster in module group
+    Clustering collection with same taxon
     """
 
     def clustering_process(
-            self, records, zoom, pix_x, pix_y, SERIALIZER):
+            self, records, zoom, pix_x, pix_y):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
@@ -42,8 +43,6 @@ class ClusterTaxaList(APIView):
 
         :param pix_y: pixel y of icon
         :type pix_y: int
-
-        :param SERIALIZER: SERIALIZER to be used for this clustering
         """
 
         cluster_points = []
@@ -72,7 +71,7 @@ class ClusterTaxaList(APIView):
                     x - x_range * 1.5, y - y_range * 1.5,
                     x + x_range * 1.5, y + y_range * 1.5
                 )
-                serializer = SERIALIZER(
+                serializer = BioCollectionSerializer(
                     record)
                 new_cluster = {
                     'count': 1,
@@ -99,30 +98,27 @@ class ClusterTaxaList(APIView):
                 'icon_pixel_y: size y of icon in pixel. ')
 
         try:
-            record = BiologicalCollectionRecord.objects.get(pk=pk)
-        except BiologicalCollectionRecord.DoesNotExist:
+            taxon = Taxon.objects.get(pk=pk)
+        except Taxon.DoesNotExist:
             raise Http404
 
         # get records with same taxon
         queryset = BiologicalCollectionRecord.objects.filter(
-            taxon_gbif_id=record.taxon_gbif_id
+            taxon_gbif_id=taxon
         )
         # get by bbox
         bbox = request.GET.get('bbox', None)
         if bbox:
             geom_bbox = Polygon.from_bbox(
                 tuple([float(edge) for edge in bbox.split(',')]))
-            print(queryset.count())
             queryset = queryset.filter(
                 Q(site__geometry_point__intersects=geom_bbox) |
                 Q(site__geometry_line__intersects=geom_bbox) |
                 Q(site__geometry_polygon__intersects=geom_bbox) |
                 Q(site__geometry_multipolygon__intersects=geom_bbox)
             )
-            print(queryset.count())
 
         cluster = self.clustering_process(
-            queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y),
-            BiologicalCollectionRecordDocSerializer
+            queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster))
