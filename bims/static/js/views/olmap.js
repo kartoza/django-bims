@@ -13,7 +13,7 @@ define([
         map: null,
         locationSiteVectorSource: null,
         geocontextOverlay: null,
-        previousZoom: 0,
+        previousZoom:0,
         geocontextOverlayDisplayed: false,
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -181,13 +181,11 @@ define([
 
             this.map.on('moveend', function (evt) {
                 var zoomLevel = self.map.getView().getZoom();
-                if (zoomLevel !== self.previousZoom) {
+                if(zoomLevel !== self.previousZoom) {
                     self.previousZoom = zoomLevel;
                     self.refetchCollection();
                 }
-                var ext = self.map.getView().calculateExtent(self.map.getSize())
-                ext = ol.proj.transformExtent(ext, ol.proj.get('EPSG:3857'), ol.proj.get('EPSG:4326'));
-                console.log('http://localhost:63302/api/cluster-module/?icon_pixel_x=30&icon_pixel_y=30&module=fish' + '&zoom=' + self.map.getView().getZoom() + '&bbox=' + ext);
+
             });
             return this;
         },
