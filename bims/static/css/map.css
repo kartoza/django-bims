@@ -419,3 +419,16 @@ div:hover::-webkit-scrollbar {
 ::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.8);
 }
+
+.search-results-total {
+    font-weight: bold;
+    font-size: 9pt;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    background-color: rgba(216, 219, 224, 0.6);
+    padding-left: 5px;
+}
+
+.search-results-total:hover {
+    cursor: pointer;
+}

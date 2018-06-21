@@ -2,13 +2,11 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
     return Backbone.View.extend({
         id: 0,
         data: null,
-        sidePanel: null,
         template: _.template($('#search-result-template').html()),
         events: {
             'click': 'clicked'
         },
         initialize: function (options) {
-            this.sidePanel = options.sidePanel;
             this.render();
         },
         clicked: function (e) {
@@ -20,7 +18,6 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
         render: function () {
             this.data = this.model.toJSON();
             this.$el.html(this.template(this.model.attributes));
-            this.sidePanel.appendSidePanelContent(this.$el);
         },
         destroy: function () {
             this.unbind();
