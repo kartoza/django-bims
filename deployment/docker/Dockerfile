@@ -7,13 +7,7 @@ RUN export DEBIAN_FRONTEND=noninteractive
 ENV DEBIAN_FRONTEND noninteractive
 RUN dpkg-divert --local --rename --add /sbin/initctl
 
-RUN apt-get update -y
-
-RUN apt-get install -y python3-pip \
-    python-gdal \
-    python-geoip \
-    python3-setuptools \
-    rpl
+RUN apt-get update -y && apt-get install -y python3-pip python-gdal python-geoip python3-setuptools rpl
 
 RUN apt-get -y --force-yes install yui-compressor
 
