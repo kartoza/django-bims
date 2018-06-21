@@ -1,4 +1,4 @@
-define(['jquery', 'backbone', 'models/search', 'views/search_result'], function ($, Backbone, SearchModel, SearchResultView) {
+define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], function ($, Backbone, SearchModel, SearchResultView) {
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "/api/search/",
