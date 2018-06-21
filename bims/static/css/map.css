@@ -4,12 +4,18 @@
     max-width: 100% !important;
 }
 
+.row.side-panel {
+    height: 100%;
+}
+
 #content-panel {
-    margin: 20px 10px 10px 40px;
+    margin: 15px 10px 10px 15px;
     font-size: 8pt;
     font-weight: normal;
-    border: 1px solid #e0d441;
-    padding: 15px;
+    padding: 15px 30px 15px 15px;
+    word-wrap: break-word;
+    max-height: 85%;
+    overflow-y: auto;
 }
 
 #content-panel p, .side-panel p {
@@ -59,24 +65,34 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     height: 100%;
     width: 27.5%;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 1);
+    color: #4e4e4e;
     z-index: 2000;
+    -webkit-box-shadow: 3px 3px 5px 6px rgba(0, 0, 0, 0.3);  /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+    -moz-box-shadow:    3px 3px 5px 6px rgba(0, 0, 0, 0.3);  /* Firefox 3.5 - 3.6 */
+    box-shadow:         3px 3px 5px 6px rgba(0, 0, 0, 0.3);  /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+
 }
 
-.right-panel-title {
-    font-size: 20pt;
-    padding-top: 12px;
+.right-panel-header {
+    font-size: 17pt;
+    padding-top: 15px;
     padding-bottom: 5px;
     padding-left: 50px;
     height: 80px;
-    background: rgba(0, 0, 0, 0.40);
+    background: rgba(190, 190, 190, 0.4);
+}
+
+.right-panel-title {
+    padding-top: 10px;
+    padding-left: 0;
 }
 
 .close-panel {
     float: right;
     padding-right: 30px;
-    padding-top: 10px;
+    padding-top: 15px;
 }
 
 .close-panel:hover {
@@ -171,6 +187,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .panel-loading {
+    display: none;
     margin-top: 50px;
 }
 
@@ -181,7 +198,6 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-search-box {
-    height: 400px;
     width: 350px;
     background-color: rgba(0, 0, 0, 0.6);
     position: absolute;
@@ -364,7 +380,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .result-search {
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(188, 188, 188, 0.15);
     padding: 5px;
     margin-bottom: 10px;
     overflow-x: hidden;
@@ -402,4 +418,17 @@ div:hover::-webkit-scrollbar {
 
 ::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.8);
+}
+
+.search-results-total {
+    font-weight: bold;
+    font-size: 9pt;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    background-color: rgba(216, 219, 224, 0.6);
+    padding-left: 5px;
+}
+
+.search-results-total:hover {
+    cursor: pointer;
 }

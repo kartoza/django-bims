@@ -49,6 +49,7 @@ INSTALLED_APPS += (
     'rest_framework',
     'celery',
     'pipeline',
+    'modelsdoc',
     'contactus',
     'haystack',
 )
@@ -90,6 +91,14 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+
+# django modelsdoc settings
+MODELSDOC_APPS = ('bims',)
+
+MODELSDOC_OUTPUT_FORMAT = 'rst'
+MODELSDOC_MODEL_WRAPPER = 'modelsdoc.wrappers.ModelWrapper'
+MODELSDOC_FIELD_WRAPPER = 'modelsdoc.wrappers.FieldWrapper'
+MODELSDOC_INCLUDE_AUTO_CREATED = True
 
 # contact us email
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
