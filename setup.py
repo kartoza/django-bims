@@ -47,6 +47,9 @@ setup(
             'django-ordered-model==1.4.3',
             'django-haystack==2.8.1',
             'elasticsearch==5.0.1',
+            'bibtexparser==1.0.1',
+            'eutils==0.4.0',
+            'habanero==0.3.0',
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',
