@@ -150,7 +150,7 @@ class EntryListView(ListView):
         # Publication collection
         ctx['publication_collections'] = Collection.objects.all()
         ctx['current_publication_collection'] = \
-	        self.current_publication_collection  # noqa
+            self.current_publication_collection  # noqa
 
         return ctx
 

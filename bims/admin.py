@@ -232,7 +232,7 @@ admin.site.register(Publisher, PublisherAdmin)
 admin.site.register(Entry, EntryAdmin)
 admin.site.register(Collection, CollectionAdmin)
 
-    # Re-register UserAdmin
+# Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 
