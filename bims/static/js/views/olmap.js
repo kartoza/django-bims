@@ -375,6 +375,9 @@ define([
             if (!this.sidePanelView.isSidePanelOpen()) {
                 return
             }
+            if (!taxonID && !this.clusterBiologicalCollection.taxonID) {
+                return
+            }
             this.clusterBiologicalCollection.updateTaxon(taxonID);
             if (!this.clusterBiologicalCollection.taxonID) {
                 // clear all data for taxon records

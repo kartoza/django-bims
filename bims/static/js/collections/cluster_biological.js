@@ -4,9 +4,6 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         clusterAPI: _.template("/api/cluster/collection/taxon/<%= taxonID %>/?icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>"),
         url: "",
         viewCollection: [],
-        initialize: function (options) {
-            Shared.Dispatcher.on('searchResult:clicked', this.updateTaxon, this);
-        },
         updateTaxon: function (taxonID) {
             this.taxonID = taxonID;
             this.refresh();
