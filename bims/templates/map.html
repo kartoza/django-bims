@@ -35,14 +35,17 @@
     <script type='text/html' id='side-panel-template'>
         <div class="right-panel">
             <div class="right-panel-header">
+                <div class="pull-right">
+                    <i class="fa fa-times close-panel"></i>
+                </div>
                 <div class="row">
-                    <div class="col-lg-10 right-panel-title">
-                    </div>
-                    <div class="col-lg-2">
-                        <i class="fa fa-times close-panel"></i>
+                    <div class="col-lg-10">
+                        <span class="title-side-panel">Search Results:</span> <br><span class="right-panel-title"></span>
                     </div>
                 </div>
-
+            </div>
+            <div class="search-result-info">
+                Select an item to find more detailed information.
             </div>
             <div class="row side-panel">
                 <div class="col-lg-12" id="content-panel">
@@ -59,13 +62,11 @@
     <script type="text/html" id="map-search-container">
         <div class="map-search-box">
             <div class="row">
-                <div class="col-lg-6">
-                    <div class="map-search-title">
+                <div class="col-lg-12" style="padding-right: 0">
+                    <span class="map-search-title">
                         SEARCH
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="map-search-close">
+                    </span>
+                    <div class="map-search-close pull-right">
                         X
                     </div>
                 </div>
@@ -73,19 +74,53 @@
             <div class="row">
                 <div class="search-box">
                     <div class="container-1">
-                        <span class="icon"><i class="fa fa-search"></i></span>
-                        <input type="search" id="search" placeholder="Search...">
+                        <input type="search" id="search" placeholder="Search..."><span class="search-arrow"><i class="fa fa-angle-right"></i></span>
                     </div>
                 </div>
             </div>
             <div class="row">
+                <div class="col-lg-12 search-info">
+                    Refine your search by using the filters below.
+                </div>
+            </div>
+            <div class="row">
                 <div class="col-lg-12 map-filter-title">
-                    FILTER
+                    FILTERS
+                </div>
+            </div>
+            <div class="row sub-filter">
+                <div class="col-lg-12 map-filter-subtitle">
+                    DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
                 </div>
             </div>
             <div class="row">
                 <div class="slide-container">
                     <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+                </div>
+            </div>
+            <div class="row sub-filter">
+                <div class="col-lg-12 map-filter-subtitle">
+                    COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12 filter-content">
+                    <input type="checkbox" name="collector1" value="collector1"> Collector 1<br>
+                    <input type="checkbox" name="collector2" value="collector2"> Collector 2<br>
+                    <input type="checkbox" name="collector3" value="collector3"> Collector 3<br>
+                    <input type="checkbox" name="collector4" value="collector4"> Collector 4<br>
+                    <input type="checkbox" name="collector5" value="collector5"> Collector 5<br>
+                </div>
+            </div>
+            <div class="row sub-filter">
+                <div class="col-lg-12 map-filter-subtitle">
+                    CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12 filter-content">
+                    <input type="checkbox" name="indigenous" value="indigenous"> Indigenous<br>
+                    <input type="checkbox" name="invasive" value="invasive"> Invasive<br>
                 </div>
             </div>
         </div>
