@@ -22,5 +22,6 @@ class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
             'collector',
             'category',
             'collection_date',
-            'geometry'
+            'geometry',
+            'taxon_gbif_id'
         ]

@@ -69,9 +69,9 @@ html, body, .map, .map-wrapper, #map-container {
     background: rgba(255, 255, 255, 1);
     color: #4e4e4e;
     z-index: 2000;
-    -webkit-box-shadow: 3px 3px 5px 6px rgba(0, 0, 0, 0.3);  /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
-    -moz-box-shadow:    3px 3px 5px 6px rgba(0, 0, 0, 0.3);  /* Firefox 3.5 - 3.6 */
-    box-shadow:         3px 3px 5px 6px rgba(0, 0, 0, 0.3);  /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+    -webkit-box-shadow: 3px 3px 5px 6px rgba(0, 0, 0, 0.3); /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+    -moz-box-shadow: 3px 3px 5px 6px rgba(0, 0, 0, 0.3); /* Firefox 3.5 - 3.6 */
+    box-shadow: 3px 3px 5px 6px rgba(0, 0, 0, 0.3); /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
 
 }
 
@@ -431,4 +431,21 @@ div:hover::-webkit-scrollbar {
 
 .search-results-total:hover {
     cursor: pointer;
+}
+
+#loading-warning {
+    position: absolute;
+    padding: 10px;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    opacity: 0.3;
+}
+
+#loading-warning span {
+    background-color: grey;
+    color: white;
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
