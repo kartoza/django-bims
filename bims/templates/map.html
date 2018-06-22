@@ -23,6 +23,7 @@
 
 {% block body_content %}
     <div id="map-container"></div>
+    <div id="loading-warning"><span>LOADING....</span></div>
 
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
@@ -109,11 +110,25 @@
         </div>
     </script>
 
-    <script type="text/template" id="search-result-template">
+    <script type="text/template" id="search-result-record-template">
         <div class="result-search" data-search-result-id="">
             <p>Original species name: <%= original_species_name %></p>
             <p>Collector: <%= collector %></p>
             <p>Collection date: <%= collection_date %></p>
+        </div>
+    </script>
+
+    <script type="text/template" id="search-result-taxa-template">
+        <div class="result-search" data-search-result-id="">
+            <p>Scientific name: <%= scientific_name %></p>
+            <p>Common name: <%= common_name %></p>
+            <p>Author: <%= author %></p>
+        </div>
+    </script>
+
+    <script type="text/template" id="search-result-site-template">
+        <div class="result-search" data-search-result-id="">
+            <p>Name: <%= name %></p>
         </div>
     </script>
 

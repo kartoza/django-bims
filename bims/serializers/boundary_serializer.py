@@ -9,6 +9,7 @@ class BoundarySerializer(serializers.ModelSerializer):
     Serializer for boundary model.
     """
     cluster_data = serializers.SerializerMethodField()
+    boundary_type = serializers.SerializerMethodField()
     point = serializers.SerializerMethodField()
 
     def get_cluster_data(self, obj):
@@ -21,6 +22,9 @@ class BoundarySerializer(serializers.ModelSerializer):
     def get_point(self, obj):
         center = obj.geometry.centroid
         return [center.x, center.y]
+
+    def get_boundary_type(self, obj):
+        return obj.type.name
 
     class Meta:
         model = Boundary

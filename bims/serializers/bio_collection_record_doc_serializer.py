@@ -10,6 +10,10 @@ from rest_framework import serializers
 class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
 
     geometry = serializers.SerializerMethodField()
+    record_type = serializers.SerializerMethodField()
+
+    def get_record_type(self, obj):
+        return 'bio'
 
     def get_geometry(self, object):
         return object.site.get_geometry().geojson
@@ -22,5 +26,7 @@ class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
             'collector',
             'category',
             'collection_date',
-            'geometry'
+            'geometry',
+            'taxon_gbif_id',
+            'record_type'
         ]

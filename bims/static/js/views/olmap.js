@@ -4,19 +4,22 @@ define([
     'shared',
     'collections/location_site',
     'collections/cluster',
+    'collections/cluster_biological',
     'views/map_control_panel',
     'views/side_panel',
     'ol',
-    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, MapControlPanelView, SidePanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
+    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection, MapControlPanelView, SidePanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
         locationSiteVectorSource: null,
+        clusterSource: null,
         geocontextOverlay: null,
-        previousZoom:0,
+        previousZoom: 0,
         sidePanelView: null,
         geocontextOverlayDisplayed: false,
+        mapInteractionEnabled: true,
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
@@ -32,9 +35,12 @@ define([
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             Shared.Dispatcher.on('map:addLocationSiteFeatures', this.addLocationSiteFeatures, this);
+            Shared.Dispatcher.on('map:addClusterFeatures', this.addClusterFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
+            this.clusterBiologicalCollection = new ClusterBiologicalCollection();
+            Shared.Dispatcher.on('searchResult:clicked', this.updateClusterBiologicalCollectionTaxonID, this);
             this.render();
         },
         zoomInMap: function (e) {
@@ -53,16 +59,16 @@ define([
                 duration: 250
             })
         },
-        zoomToCoordinates: function(coordinates, zoomLevel) {
+        zoomToCoordinates: function (coordinates, zoomLevel) {
             this.map.getView().setCenter(coordinates);
-            if(typeof zoomLevel !== 'undefined') {
+            if (typeof zoomLevel !== 'undefined') {
                 this.map.getView().setZoom(zoomLevel);
             }
         },
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
-            if(features) {
+            if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
                 if (geometryType === 'Point') {
@@ -139,6 +145,23 @@ define([
         },
         layerControlClicked: function (e) {
         },
+        fetchingStart: function () {
+            $('#loading-warning').show();
+            if (this.fetchXhr) {
+                this.fetchXhr.abort();
+            }
+            this.mapInteractionEnabled = false;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(false);
+            });
+        },
+        fetchingFinish: function () {
+            $('#loading-warning').hide();
+            this.mapInteractionEnabled = true;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(true);
+            });
+        },
         checkAdministrativeLevel: function () {
             var self = this;
             var zoomLevel = this.map.getView().getZoom();
@@ -151,26 +174,12 @@ define([
             });
             return administrative;
         },
-        refetchCollection: function () {
-            var self = this;
-            var administrative = this.checkAdministrativeLevel();
-            if (administrative != 'detail') {
-                this.clusterCollection.updateAdministrative(administrative);
-                this.clusterCollection.fetch({
-                    success: function () {
-                        self.locationSiteVectorSource.clear();
-                        self.clusterCollection.renderCollection()
-                    }
-                });
-            } else {
-                this.locationSiteCollection.fetch({
-                    success: function () {
-                        self.locationSiteVectorSource.clear();
-                        self.locationSiteCollection.renderCollection()
-                    }
-                });
-            }
-
+        getCurrentZoom: function () {
+            return this.map.getView().getZoom();
+        },
+        getCurrentBbox: function () {
+            var ext = this.map.getView().calculateExtent(this.map.getSize());
+            return ol.proj.transformExtent(ext, ol.proj.get('EPSG:3857'), ol.proj.get('EPSG:4326'));
         },
         render: function () {
             var self = this;
@@ -178,7 +187,6 @@ define([
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
             this.loadMap();
-            self.refetchCollection();
 
             this.map.on('click', function (e) {
                 self.mapClicked(e);
@@ -196,19 +204,15 @@ define([
             // add layer switcher
             var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
-
-            this.previousZoom = self.map.getView().getZoom();
-
             this.map.on('moveend', function (evt) {
-                var zoomLevel = self.map.getView().getZoom();
-                if(zoomLevel !== self.previousZoom) {
-                    self.previousZoom = zoomLevel;
-                    self.refetchCollection();
-                }
-
+                self.mapMoved();
             });
-
             return this;
+        },
+        mapMoved: function () {
+            var self = this;
+            self.updateClusterBiologicalCollectionZoomExt();
+            self.fetchingRecords();
         },
         loadMap: function () {
             var self = this;
@@ -262,9 +266,6 @@ define([
 
             var styleFunction = function (feature) {
                 var style = styles[feature.getGeometry().getType()];
-                if (feature.getProperties()['text']) {
-                    style.getText().setText(feature.getProperties()['text'])
-                }
                 return style;
             };
 
@@ -304,9 +305,159 @@ define([
                 overlays: [this.geocontextOverlay]
             });
             this.map.addLayer(locationSiteVectorLayer);
+
+
+            // cluster layer
+            self.clusterSource = new ol.source.Vector({});
+
+            var styleFunction = function (feature) {
+                var count = 1;
+                if (feature.getProperties()['count']) {
+                    count = feature.getProperties()['count'];
+                }
+                var style = self.getClusterStyle(count);
+                style.getText().setText('' + count);
+                return style;
+            };
+
+            var clusterVectorLayer = new ol.layer.Vector({
+                source: self.clusterSource,
+                style: styleFunction
+            });
+            this.map.addLayer(clusterVectorLayer);
+        },
+        fetchingRecords: function () {
+            // get records based on administration
+            var self = this;
+            if (!this.clusterBiologicalCollection.taxonID) {
+                var administrative = this.checkAdministrativeLevel();
+                if (administrative !== 'detail') {
+                    this.locationSiteVectorSource.clear();
+                    var zoomLevel = this.getCurrentZoom();
+                    if (administrative === this.clusterCollection.administrative) {
+                        return
+                    }
+                    if (zoomLevel === this.previousZoom) {
+                        return
+                    }
+                    this.previousZoom = zoomLevel;
+                    this.clusterCollection.updateUrl(administrative);
+                    this.fetchingStart();
+                    this.fetchXhr = this.clusterCollection.fetch({
+                        success: function () {
+                            self.fetchingFinish();
+                            self.clusterSource.clear();
+                            self.locationSiteVectorSource.clear();
+                            self.clusterCollection.renderCollection()
+                        }
+                    });
+                } else {
+                    this.previousZoom = -1;
+                    this.clusterCollection.administrative = null;
+                    this.clusterSource.clear();
+                    this.fetchingStart();
+                    this.locationSiteCollection.updateUrl(this.getCurrentBbox());
+                    this.fetchXhr = this.locationSiteCollection.fetch({
+                        success: function () {
+                            self.fetchingFinish();
+                            self.clusterSource.clear();
+                            self.locationSiteVectorSource.clear();
+                            self.locationSiteCollection.renderCollection()
+                        }
+                    });
+                }
+            } else {
+                this.fetchingStart();
+                this.locationSiteVectorSource.clear();
+                this.fetchXhr = this.clusterBiologicalCollection.fetch({
+                    success: function () {
+                        self.fetchingFinish();
+                        self.clusterSource.clear();
+                        self.locationSiteVectorSource.clear();
+                        self.clusterBiologicalCollection.renderCollection();
+                    }
+                });
+            }
+        },
+        updateClusterBiologicalCollectionTaxonID: function (taxonID) {
+            if (!this.sidePanelView.isSidePanelOpen()) {
+                return
+            }
+            if (!taxonID && !this.clusterBiologicalCollection.taxonID) {
+                return
+            }
+            this.clusterBiologicalCollection.updateTaxon(taxonID);
+            if (!this.clusterBiologicalCollection.taxonID) {
+                // clear all data for taxon records
+                this.clusterSource.clear();
+                this.previousZoom = -1;
+                this.clusterCollection.administrative = null;
+                this.fetchingRecords();
+            } else {
+                // get extent for all record and fit it to map
+                var self = this;
+                $.ajax({
+                    url: '/api/cluster/collection/taxon/' + taxonID + '/extent/',
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.length == 4) {
+                            // after fit to map, show the cluster
+                            var ext = ol.proj.transformExtent(data, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+                            self.map.getView().fit(ext, {
+                                size: self.map.getSize(), padding: [
+                                    0, $('.right-panel').width(), 0, 0
+                                ]
+                            });
+                        }
+                    }
+                });
+            }
+        },
+        updateClusterBiologicalCollectionZoomExt: function () {
+            this.clusterBiologicalCollection.updateZoomAndBBox(this.getCurrentZoom(), this.getCurrentBbox());
+        },
+        getClusterStyle: function (count) {
+            var smallCluster = new ol.style.Circle({
+                radius: 15,
+                fill: new ol.style.Fill({
+                    color: 'red'
+                })
+            });
+            var mediumCluster = new ol.style.Circle({
+                radius: 30,
+                fill: new ol.style.Fill({
+                    color: 'yellow'
+                })
+            });
+            var largeCluster = new ol.style.Circle({
+                radius: 45,
+                fill: new ol.style.Fill({
+                    color: 'green'
+                })
+            });
+            var image = null;
+            if (count < 10) {
+                image = smallCluster;
+            } else if (10 >= count <= 100) {
+                image = mediumCluster;
+            } else {
+                image = largeCluster
+            }
+            return new ol.style.Style({
+                image: image,
+                text: new ol.style.Text({
+                    scale: 1,
+                    fill: new ol.style.Fill({
+                        color: '#000000'
+                    })
+                })
+            });
         },
         addLocationSiteFeatures: function (features) {
             this.locationSiteVectorSource.addFeatures(features);
+        },
+        addClusterFeatures: function (features) {
+            this.clusterSource.addFeatures(features);
         },
 
         // TODO : When this functions moved to other js, the mapbox style broken (doesn't call style)
