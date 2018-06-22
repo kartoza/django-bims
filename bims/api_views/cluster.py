@@ -21,5 +21,9 @@ class ClusterList(APIView):
 
         boundaries = Boundary.objects.filter(
             type=boundary_type)
-        serializer = BoundarySerializer(boundaries, many=True)
+        clean_boundaries = []
+        for boundary in boundaries:
+            if boundary.cluster_set.filter(site_count__gte=1).count() >= 1:
+                clean_boundaries.append(boundary)
+        serializer = BoundarySerializer(clean_boundaries, many=True)
         return Response(serializer.data)
