@@ -334,10 +334,6 @@ define([
                 if (administrative !== 'detail') {
                     this.locationSiteVectorSource.clear();
                     var zoomLevel = this.getCurrentZoom();
-                    console.log(administrative);
-                    console.log(this.clusterCollection.administrative);
-                    console.log(zoomLevel);
-                    console.log(this.previousZoom);
                     if (administrative === this.clusterCollection.administrative) {
                         return
                     }
