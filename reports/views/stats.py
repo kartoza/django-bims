@@ -7,6 +7,7 @@ from django.http import HttpResponse
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.utils import ImageReader
 
 
 def create_pdf(pathname, current_site):
@@ -23,12 +24,20 @@ def create_pdf(pathname, current_site):
     page.setFillColorRGB(0.1, 0.1, 0.1)
     page.setFont('Times-Roman', 18)
 
+    logo = 'reports/static/img/logo.png'
     page.setFont('Times-Bold', 26)
-    page.drawCentredString(center, 480, 'Ledet Report')
+    page.drawImage(
+            logo, 370, 480, width = 100, height = 100,
+            preserveAspectRatio = True, mask = 'auto')
+    page.drawCentredString(center, 450, 'Ledet Report')
 
     page.setFont('Times-Roman', 16)
     page.drawCentredString(
-        center, 370, 'Here we shall count some things like fish.. maybe more')
+        center, 370, 'protected area management role')
+
+    page.setFont('Times-Roman', 16)
+    page.drawCentredString(
+            center, 270, 'environmental impact management role')
 
     # footer information.
     page.setFont('Times-Roman', 14)
