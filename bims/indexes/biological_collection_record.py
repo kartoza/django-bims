@@ -17,6 +17,34 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
             indexed=True
     )
 
+    category = indexes.CharField(
+            model_attr='category'
+    )
+
+    present = indexes.BooleanField(
+            model_attr='present'
+    )
+
+    absent = indexes.BooleanField(
+            model_attr='absent'
+    )
+
+    collection_date = indexes.DateField(
+            model_attr='collection_date'
+    )
+
+    owner = indexes.CharField(
+            model_attr='owner__username'
+    )
+
+    notes = indexes.CharField(
+            model_attr='notes'
+    )
+
+    location_site_name = indexes.CharField(
+            model_attr='site__name'
+    )
+
     class Meta:
         app_label = 'bims'
 
