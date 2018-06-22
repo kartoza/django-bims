@@ -19,6 +19,7 @@ define([
         previousZoom: 0,
         sidePanelView: null,
         geocontextOverlayDisplayed: false,
+        mapInteractionEnabled: true,
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
@@ -146,11 +147,20 @@ define([
         },
         fetchingStart: function () {
             $('#loading-warning').show();
-
+            if (this.fetchXhr) {
+                this.fetchXhr.abort();
+            }
+            this.mapInteractionEnabled = false;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(false);
+            });
         },
         fetchingFinish: function () {
             $('#loading-warning').hide();
-
+            this.mapInteractionEnabled = true;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(true);
+            });
         },
         checkAdministrativeLevel: function () {
             var self = this;
@@ -197,7 +207,6 @@ define([
             this.map.on('moveend', function (evt) {
                 self.mapMoved();
             });
-
             return this;
         },
         mapMoved: function () {
@@ -320,14 +329,15 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            if (this.fetchXhr) {
-                this.fetchXhr.abort();
-            }
             if (!this.clusterBiologicalCollection.taxonID) {
                 var administrative = this.checkAdministrativeLevel();
                 if (administrative !== 'detail') {
                     this.locationSiteVectorSource.clear();
                     var zoomLevel = this.getCurrentZoom();
+                    console.log(administrative);
+                    console.log(this.clusterCollection.administrative);
+                    console.log(zoomLevel);
+                    console.log(this.previousZoom);
                     if (administrative === this.clusterCollection.administrative) {
                         return
                     }
@@ -346,6 +356,8 @@ define([
                         }
                     });
                 } else {
+                    this.previousZoom = -1;
+                    this.clusterCollection.administrative = null;
                     this.clusterSource.clear();
                     this.fetchingStart();
                     this.locationSiteCollection.updateUrl(this.getCurrentBbox());
