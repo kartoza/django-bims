@@ -24,6 +24,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
 
             return this;
         },
+        isSidePanelOpen:function () {
+          return this.rightPanel.is(":visible");
+        },
         openSidePanel: function (properties) {
             this.rightPanel.show('slide', { direction: 'right'}, 200);
             if(typeof properties !== 'undefined') {
@@ -68,11 +71,11 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             $rightPanelTitle.html(title);
         },
         closeSidePanel: function (e) {
+            Shared.Dispatcher.trigger('searchResult:clicked', null);
             var self = this;
             this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
                 self.clearSidePanel();
             });
-            Shared.Dispatcher.trigger('searchResult:clicked', null);
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {

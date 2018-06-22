@@ -1,5 +1,6 @@
 # coding=utf8
 
+from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
 from django.http import HttpResponseBadRequest, Http404
@@ -16,6 +17,37 @@ from bims.utils.cluster_point import (
     update_min_bbox,
     geo_serializer
 )
+
+
+class ClusterCollectionByTaxonExtent(APIView):
+    """
+    Return extent of cluster by taxon
+    """
+
+    def get(self, request, pk, format=None):
+        try:
+            taxon = Taxon.objects.get(pk=pk)
+        except Taxon.DoesNotExist:
+            raise Http404
+
+        # get records with same taxon
+        queryset = BiologicalCollectionRecord.objects.filter(
+            taxon_gbif_id=taxon
+        )
+        # get by bbox
+        bbox = request.GET.get('bbox', None)
+        if bbox:
+            geom_bbox = Polygon.from_bbox(
+                tuple([float(edge) for edge in bbox.split(',')]))
+            queryset = queryset.filter(
+                Q(site__geometry_point__intersects=geom_bbox) |
+                Q(site__geometry_line__intersects=geom_bbox) |
+                Q(site__geometry_polygon__intersects=geom_bbox) |
+                Q(site__geometry_multipolygon__intersects=geom_bbox)
+            )
+
+        extent = queryset.aggregate(Extent('site__geometry_point'))
+        return Response(extent['site__geometry_point__extent'])
 
 
 class ClusterCollectionByTaxon(APIView):

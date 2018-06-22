@@ -144,6 +144,14 @@ define([
         },
         layerControlClicked: function (e) {
         },
+        fetchingStart: function () {
+            $('#loading-warning').show();
+
+        },
+        fetchingFinish: function () {
+            $('#loading-warning').hide();
+
+        },
         checkAdministrativeLevel: function () {
             var self = this;
             var zoomLevel = this.map.getView().getZoom();
@@ -156,73 +164,12 @@ define([
             });
             return administrative;
         },
-        refetchCollection: function () {
-            if (this.clusterBiologicalCollection.taxonID) {
-                this.locationSiteVectorSource.clear();
-                return
-            }
-            var self = this;
-            if (self.fetchXhr) {
-                self.fetchXhr.abort();
-            }
-            $('#loading-warning').show();
-            var administrative = this.checkAdministrativeLevel();
-            if (administrative != 'detail') {
-                this.clusterCollection.updateAdministrative(administrative);
-
-                self.fetchXhr = this.clusterCollection.fetch({
-                    success: function () {
-                        $('#loading-warning').hide();
-                        self.clusterSource.clear();
-                        self.locationSiteVectorSource.clear();
-                        self.clusterCollection.renderCollection()
-                    }
-                });
-            } else {
-                self.fetchXhr = this.locationSiteCollection.fetch({
-                    success: function () {
-                        $('#loading-warning').hide();
-                        self.clusterSource.clear();
-                        self.locationSiteVectorSource.clear();
-                        self.locationSiteCollection.renderCollection()
-                    }
-                });
-            }
-
+        getCurrentZoom: function () {
+            return this.map.getView().getZoom();
         },
-        updateClusterBiologicalCollectionTaxonID: function (taxonID) {
-            this.clusterBiologicalCollection.updateTaxon(taxonID);
-            if (!this.clusterBiologicalCollection.taxonID) {
-                this.clusterSource.clear();
-                this.refetchCollection();
-                return
-            }
-            this.refetchClusterBiologicalCollection();
-        },
-        updateClusterBiologicalCollectionZoomExt: function () {
-            var zoom = this.map.getView().getZoom();
+        getCurrentBbox: function () {
             var ext = this.map.getView().calculateExtent(this.map.getSize());
-            ext = ol.proj.transformExtent(ext, ol.proj.get('EPSG:3857'), ol.proj.get('EPSG:4326'));
-            this.clusterBiologicalCollection.updateZoomAndBBox(zoom, ext);
-            this.refetchClusterBiologicalCollection();
-        },
-        refetchClusterBiologicalCollection: function () {
-            if (!this.clusterBiologicalCollection.taxonID) {
-                return
-            }
-            var self = this;
-            if (self.fetchXhr) {
-                self.fetchXhr.abort();
-            }
-            $('#loading-warning').show();
-            self.fetchXhr = this.clusterBiologicalCollection.fetch({
-                success: function () {
-                    $('#loading-warning').hide();
-                    self.locationSiteVectorSource.clear();
-                    self.clusterSource.clear();
-                    self.clusterBiologicalCollection.renderCollection()
-                }
-            });
+            return ol.proj.transformExtent(ext, ol.proj.get('EPSG:3857'), ol.proj.get('EPSG:4326'));
         },
         render: function () {
             var self = this;
@@ -230,7 +177,6 @@ define([
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
             this.loadMap();
-            self.refetchCollection();
 
             this.map.on('click', function (e) {
                 self.mapClicked(e);
@@ -248,19 +194,16 @@ define([
             // add layer switcher
             var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
-
-            this.previousZoom = self.map.getView().getZoom();
-
             this.map.on('moveend', function (evt) {
-                var zoomLevel = self.map.getView().getZoom();
-                if (zoomLevel !== self.previousZoom) {
-                    self.previousZoom = zoomLevel;
-                    self.refetchCollection();
-                }
-                self.updateClusterBiologicalCollectionZoomExt();
+                self.mapMoved();
             });
 
             return this;
+        },
+        mapMoved: function () {
+            var self = this;
+            self.updateClusterBiologicalCollectionZoomExt();
+            self.fetchingRecords();
         },
         loadMap: function () {
             var self = this;
@@ -313,20 +256,7 @@ define([
             };
 
             var styleFunction = function (feature) {
-                var style = null;
-                if (!feature.getProperties()['boundary_type']) {
-                    style = styles[feature.getGeometry().getType()];
-
-                } else {
-                    var count = 0;
-                    try {
-                        count = feature.getProperties()['cluster_data']['location site']['details']['records'];
-                    }
-                    catch (err) {
-                    }
-                    style = self.getClusterStyle(count);
-                    style.getText().setText('' + count)
-                }
+                var style = styles[feature.getGeometry().getType()];
                 return style;
             };
 
@@ -387,6 +317,94 @@ define([
             });
             this.map.addLayer(clusterVectorLayer);
         },
+        fetchingRecords: function () {
+            // get records based on administration
+            var self = this;
+            if (this.fetchXhr) {
+                this.fetchXhr.abort();
+            }
+            if (!this.clusterBiologicalCollection.taxonID) {
+                var administrative = this.checkAdministrativeLevel();
+                if (administrative !== 'detail') {
+                    this.locationSiteVectorSource.clear();
+                    var zoomLevel = this.getCurrentZoom();
+                    if (administrative === this.clusterCollection.administrative) {
+                        return
+                    }
+                    if (zoomLevel === this.previousZoom) {
+                        return
+                    }
+                    this.previousZoom = zoomLevel;
+                    this.clusterCollection.updateUrl(administrative);
+                    this.fetchingStart();
+                    this.fetchXhr = this.clusterCollection.fetch({
+                        success: function () {
+                            self.fetchingFinish();
+                            self.clusterSource.clear();
+                            self.locationSiteVectorSource.clear();
+                            self.clusterCollection.renderCollection()
+                        }
+                    });
+                } else {
+                    this.clusterSource.clear();
+                    this.fetchingStart();
+                    this.locationSiteCollection.updateUrl(this.getCurrentBbox());
+                    this.fetchXhr = this.locationSiteCollection.fetch({
+                        success: function () {
+                            self.fetchingFinish();
+                            self.clusterSource.clear();
+                            self.locationSiteVectorSource.clear();
+                            self.locationSiteCollection.renderCollection()
+                        }
+                    });
+                }
+            } else {
+                this.fetchingStart();
+                this.locationSiteVectorSource.clear();
+                this.fetchXhr = this.clusterBiologicalCollection.fetch({
+                    success: function () {
+                        self.fetchingFinish();
+                        self.clusterSource.clear();
+                        self.locationSiteVectorSource.clear();
+                        self.clusterBiologicalCollection.renderCollection();
+                    }
+                });
+            }
+        },
+        updateClusterBiologicalCollectionTaxonID: function (taxonID) {
+            if (!this.sidePanelView.isSidePanelOpen()) {
+                return
+            }
+            this.clusterBiologicalCollection.updateTaxon(taxonID);
+            if (!this.clusterBiologicalCollection.taxonID) {
+                // clear all data for taxon records
+                this.clusterSource.clear();
+                this.previousZoom = -1;
+                this.clusterCollection.administrative = null;
+                this.fetchingRecords();
+            } else {
+                // get extent for all record and fit it to map
+                var self = this;
+                $.ajax({
+                    url: '/api/cluster/collection/taxon/' + taxonID + '/extent/',
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.length == 4) {
+                            // after fit to map, show the cluster
+                            var ext = ol.proj.transformExtent(data, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+                            self.map.getView().fit(ext, {
+                                size: self.map.getSize(), padding: [
+                                    0, $('.right-panel').width(), 0, 0
+                                ]
+                            });
+                        }
+                    }
+                });
+            }
+        },
+        updateClusterBiologicalCollectionZoomExt: function () {
+            this.clusterBiologicalCollection.updateZoomAndBBox(this.getCurrentZoom(), this.getCurrentBbox());
+        },
         getClusterStyle: function (count) {
             var smallCluster = new ol.style.Circle({
                 radius: 15,
@@ -406,7 +424,7 @@ define([
                     color: 'green'
                 })
             });
-            var image = null
+            var image = null;
             if (count < 10) {
                 image = smallCluster;
             } else if (10 >= count <= 100) {

@@ -10,11 +10,7 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
             this.render();
         },
         clicked: function (e) {
-            var geometry = JSON.parse(this.model.attributes['geometry']);
-            var coordinates = ol.proj.transform(geometry['coordinates'], "EPSG:4326", "EPSG:3857");
-            var zoomLevel = 15;
             Shared.Dispatcher.trigger('searchResult:clicked', this.model.get('taxon_gbif_id'));
-            Shared.Dispatcher.trigger('map:zoomToCoordinates', coordinates, zoomLevel);
         },
         render: function () {
             this.data = this.model.toJSON();
