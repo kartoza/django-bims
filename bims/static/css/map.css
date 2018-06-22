@@ -92,7 +92,7 @@ html, body, .map, .map-wrapper, #map-container {
     font-size: 17pt;
     padding-bottom: 5px;
     padding-left: 15px;
-    height: 80px;
+    height: 100px;
     background: rgba(255, 255, 255, 0.7);
 }
 

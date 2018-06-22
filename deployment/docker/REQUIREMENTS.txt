@@ -28,7 +28,7 @@ coreapi==2.3.3
 pygbif==0.2.0
 
 # Django BIMS
-# git+https://github.com/dimasciput/django-bims.git
+# git+https://github.com/kartoza/django-bims.git
 
 # documentation generation
 django-modelsdoc==0.1.9
