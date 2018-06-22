@@ -513,6 +513,7 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
+
 .user-icon {
     border: 3px solid black !important;
     border-radius: 0 !important;
@@ -522,3 +523,21 @@ div:hover::-webkit-scrollbar {
     padding: 3px 10px;
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
 }
+
+#loading-warning {
+    position: absolute;
+    padding: 10px;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    opacity: 0.3;
+}
+
+#loading-warning span {
+    background-color: grey;
+    color: white;
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+

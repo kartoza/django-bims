@@ -4,7 +4,7 @@ define(['backbone', 'models/cluster', 'views/cluster'], function (Backbone, Clus
         clusterAPI: "/api/cluster/",
         url: "",
         viewCollection: [],
-        updateAdministrative: function (administrative) {
+        updateUrl: function (administrative) {
             this.administrative = administrative;
             this.url = this.clusterAPI + administrative
         },

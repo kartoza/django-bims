@@ -62,7 +62,7 @@ class TestApiView(TestCase):
                 'zoom': 1
             })
         response = view(request, 1)
-        features = response.data['features']
+        features = response.data
         self.assertEqual(
             len(features), 1)
         self.assertEqual(
@@ -76,7 +76,7 @@ class TestApiView(TestCase):
                 'zoom': 1
             })
         response = view(request, 1)
-        features = response.data['features']
+        features = response.data
         self.assertEqual(
             len(features), 1)
         self.assertEqual(
@@ -93,7 +93,7 @@ class TestApiView(TestCase):
                 'zoom': 18
             })
         response = view(request, 1)
-        features = response.data['features']
+        features = response.data
         self.assertEqual(
             len(features), 2)
         for feature in features:
@@ -108,7 +108,7 @@ class TestApiView(TestCase):
                 'zoom': 18
             })
         response = view(request, 2)
-        features = response.data['features']
+        features = response.data
         self.assertEqual(
             len(features), 1)
         for feature in features:
@@ -123,6 +123,6 @@ class TestApiView(TestCase):
                 'zoom': 18
             })
         response = view(request, 2)
-        features = response.data['features']
+        features = response.data
         self.assertEqual(
             len(features), 0)
