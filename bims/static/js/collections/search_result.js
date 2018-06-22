@@ -76,6 +76,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             $('#taxa-list .number').html(taxaCount);
             $('#site-list .number').html(siteCount);
             $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
+            $searchResultsWrapper.find('.search-results-total').click();
         }
     })
 });
