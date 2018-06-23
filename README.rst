@@ -89,7 +89,7 @@ Thank you to the individual contributors who have helped to build HealthyRivers:
 * Irwan Fathurrahman: irwan@kartoza.com
 * Anita Hapsari: anita@kartoza.com
 
-.. _developer guide: https://github.com/kartoza/healthyrivers/blob/develop/README-dev.md
+.. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
 .. _docker: http://docker.com
 .. |ready| image:: https://badge.waffle.io/kartoza/django-bims.svg?label=ready&title=Ready
 .. |inprogress| image:: https://badge.waffle.io/kartoza/django-bims.svg?label=in%20progress&title=In%20Progress
