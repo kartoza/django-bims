@@ -352,6 +352,14 @@ status:
 	@echo "--------------------------"
 	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) ps
 
+
+update-taxa:
+	@echo
+	@echo "--------------------------"
+	@echo "Updating tax"
+	@echo "--------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) exec uwsgi python manage.py update_taxa
+
 # --------------- help --------------------------------
 
 help:

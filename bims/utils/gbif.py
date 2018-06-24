@@ -8,6 +8,8 @@ def update_taxa():
     """Get all taxon, then update the data bimsd on the gbif id.
     """
     taxa = Taxon.objects.all()
+    if not taxa:
+        print('No taxon found')
     for taxon in taxa:
         print('Update taxon for %s with gbif id %s' % (
             taxon.common_name, taxon.gbif_id
