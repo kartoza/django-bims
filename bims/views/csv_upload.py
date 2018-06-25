@@ -84,7 +84,7 @@ class CsvUploadView(FormView):
                         )
                     if collection_status:
                         collection_processed['added'] += 1
-                except ValueError:
+                except (ValueError, KeyError):
                     collection_processed['failed'] += 1
 
         self.context_data['uploaded'] = 'Collection added ' + \
