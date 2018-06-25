@@ -21,8 +21,8 @@ def create_pdf(pathname, current_site):
     margin_left = 125
     margin_bottom = 220
 
-    taxa_records = Taxon.objects.all()
-    species_total = taxa_records.count()
+    species_records = Taxon.objects.all()
+    species_total = species_records.count()
 
     biological_total = BiologicalCollectionRecord.objects.count()
 
@@ -36,27 +36,38 @@ def create_pdf(pathname, current_site):
     biodiversity_logo = 'reports/static/img/collection/biodiversity.png'
     page.setFont('Times-Bold', 16)
     page.drawImage(
-            logo, 230, 650, width = 100, height = 100,
+            logo, 250, 650, width = 100, height = 100,
             preserveAspectRatio = True, mask = 'auto')
-    page.drawString(235, 630, 'Ledet Report')
+    page.drawString(250, 630, 'Ledet Report')
 
-    page.setFillColorRGB(0.1, 0.1, 0.1)
-    page.setFont('Times-Roman', 12)
-    page.drawString(
-            380, 600, 'Species Name')
 
-    page.setFont('Times-Roman', 10)
-    page.drawString(
-            380, 580, 'Some fancy name')
+    # name_width = 380
+    # status_width = 520
+    name_height = 530
+    status_height = 530
 
-    page.setFillColorRGB(0.1, 0.1, 0.1)
-    page.setFont('Times-Roman', 12)
-    page.drawString(
-            520, 600, 'ICUN Status')
+    for specie in species_records:
 
-    page.setFont('Times-Roman', 10)
-    page.drawString(
-            520, 580, 'Available')
+        page.setFillColorRGB(0.1, 0.1, 0.1)
+        page.setFont('Times-Roman', 12)
+        page.drawString(
+                380, 550, 'Species Name')
+
+        page.setFont('Times-Roman', 10)
+        page.drawString(
+                380, name_height, specie.scientific_name)
+
+        page.setFillColorRGB(0.1, 0.1, 0.1)
+        page.setFont('Times-Roman', 12)
+        page.drawString(
+                520, 550, 'IUCN Status')
+
+        page.setFont('Times-Roman', 10)
+        page.drawString(
+                520, status_height, 'Available')
+
+        name_height -= 20
+        status_height -= 20
 
 
 
