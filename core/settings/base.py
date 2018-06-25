@@ -103,6 +103,7 @@ TEMPLATES = [
             # project level templates
             absolute_path('core', 'base_templates'),
             absolute_path('bims', 'templates'),
+            absolute_path('example', 'templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
