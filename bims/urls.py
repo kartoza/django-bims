@@ -21,6 +21,7 @@ from bims.api_views.cluster_collection_by_taxon import (
 from bims.views.links import LinksCategoryView
 from bims.api_views.search import SearchObjects
 from bims.views.activate_user import activate_user
+from bims.views.csv_upload import CsvUploadView
 
 
 api_urls = [
@@ -44,6 +45,7 @@ api_urls = [
 urlpatterns = [
     path('', LandingPageView.as_view(), name='landing-page'),
     path('map', MapPageView.as_view()),
+    url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
     url(r'^links/', LinksCategoryView.as_view(), name = 'link_list'),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
