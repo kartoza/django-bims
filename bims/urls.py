@@ -46,7 +46,7 @@ urlpatterns = [
     url(r'^map/$', MapPageView.as_view()),
     url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
-    url(r'^api/docs/$', include_docs_urls(title='BIMS API')),
+    url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user')
 ] + api_urls
