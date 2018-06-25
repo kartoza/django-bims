@@ -1,15 +1,9 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
 # Note this base image is based on debian
-FROM python:3.6
+FROM kartoza/django-base
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
-RUN export DEBIAN_FRONTEND=noninteractive
-ENV DEBIAN_FRONTEND noninteractive
-RUN dpkg-divert --local --rename --add /sbin/initctl
-
-RUN apt-get update -y && apt-get install -y python3-pip python-gdal python-geoip python3-setuptools rpl
-
-RUN apt-get -y --force-yes install yui-compressor
+RUN apt-get update -y && apt-get -y --force-yes install yui-compressor
 
 ADD REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt
