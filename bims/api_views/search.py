@@ -19,30 +19,30 @@ class SearchObjects(APIView):
     def get(self, request, query_value):
         sqs = SearchQuerySet()
         clean_query = sqs.query.clean(query_value)
-        result = {}
+        search_result = {}
 
         # Biological records
         results = sqs.filter(
             original_species_name=clean_query
         ).models(BiologicalCollectionRecord)
         serializer = BiologicalCollectionRecordDocSerializer(
-            [result.object for result in results], many=True)
+            [r.object for r in results], many=True)
 
-        result['biological_collection_record'] = serializer.data
+        search_result['biological_collection_record'] = serializer.data
 
         # Taxon records
         results = sqs.filter(
             common_name=clean_query
         ).models(Taxon)
         serializer = TaxonSerializer(
-            [result.object for result in results], many=True)
-        result['taxa'] = serializer.data
+            [r.object for r in results], many=True)
+        search_result['taxa'] = serializer.data
 
         # Sites records
         results = sqs.filter(
             name=clean_query
         ).models(LocationSite)
         serializer = LocationSiteSerializer(
-            [result.object for result in results], many=True)
-        result['location_site'] = serializer.data
-        return Response(result)
+            [r.object for r in results], many=True)
+        search_result['location_site'] = serializer.data
+        return Response(search_result)
