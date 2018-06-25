@@ -1,6 +1,7 @@
 define(['backbone', 'models/location_site', 'views/location_site'], function (Backbone, LocationSiteModel, LocationSiteView) {
     return Backbone.Collection.extend({
         model: LocationSiteModel,
+        baseAPI: "/api/location-site/",
         collectionAPI: "/api/location-site/?bbox=",
         url: "",
         viewCollection: [],
@@ -14,6 +15,7 @@ define(['backbone', 'models/location_site', 'views/location_site'], function (Ba
             });
             this.viewCollection = [];
             $.each(this.models, function (index, model) {
+                model.url = self.baseAPI + model.get('id')
                 self.viewCollection.push(new LocationSiteView({
                     model: model
                 }));
