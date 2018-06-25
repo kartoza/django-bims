@@ -1,27 +1,21 @@
 # coding: utf-8
 from requests.exceptions import HTTPError
 from pygbif import species
-from bims.models import Taxon
+from bims.models import Taxon, TaxonomyField
 
 
 def update_taxa():
-    """Get all taxon, then update the data bimsd on the gbif id.
-    """
+    """Get all taxon, then update the data bimsd on the gbif id."""
     taxa = Taxon.objects.all()
+    if not taxa:
+        print('No taxon found')
     for taxon in taxa:
         print('Update taxon for %s with gbif id %s' % (
-            taxon.common_name, taxon.gbif_id
-        ))
+            taxon.common_name, taxon.gbif_id))
         try:
             response = species.name_usage(key=taxon.gbif_id)
             if response:
-                if 'canonicalName' in response:
-                    taxon.common_name = response['canonicalName']
-                if 'scientificName' in response:
-                    taxon.scientific_name = response['scientificName']
-                if 'authorship' in response:
-                    taxon.author = response['authorship']
-                taxon.save()
+                update_taxonomy_fields(taxon, response)
                 print('Taxon updated')
         except HTTPError as e:
             print('Taxon not updated')
@@ -64,13 +58,29 @@ def update_fish_collection_record(fish_collection):
         if 'nubKey' in result:
             taxon, created = Taxon.objects.get_or_create(
                     gbif_id=result['nubKey'])
-            if 'canonicalName' in result:
-                taxon.common_name = result['canonicalName']
-            if 'scientificName' in result:
-                taxon.scientific_name = result['scientificName']
-            if 'authorship' in result:
-                taxon.author = result['authorship']
-            taxon.save()
+            update_taxonomy_fields(taxon, result)
             fish_collection.taxon_gbif_id = taxon
             fish_collection.save()
             continue
+
+
+def update_taxonomy_fields(taxon, response):
+    """Helper to update taxonomy field of taxon from a response dictionary.
+
+    :param taxon: The Taxon object.
+    :type taxon: Taxon
+
+    :param response: A dictionary contains of Taxonomy value.
+    :type response: dict
+    """
+    # Iterate through all fields and update the one which is a
+    # field from Taxonomy
+    taxon_fields = Taxon._meta.get_fields()
+    for field in taxon_fields:
+        if isinstance(field, TaxonomyField):
+            if field.taxonomy_key in response:
+                setattr(
+                    taxon,
+                    field.get_attname(),
+                    response[field.taxonomy_key])
+    taxon.save()
