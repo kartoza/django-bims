@@ -2,6 +2,7 @@ import requests
 from requests.exceptions import HTTPError
 from django.conf import settings
 from bims.models.iucn_status import IUCNStatus
+from bims.utils.get_key import get_key
 
 
 def get_iucn_status(taxon_id=None, species_name=None):
@@ -11,7 +12,7 @@ def get_iucn_status(taxon_id=None, species_name=None):
     :param taxon_id: taxon id of the species
     :param species_name: name of the species
     """
-    api_iucn_key = settings.IUCN_API_KEY
+    api_iucn_key = get_key('IUCN_API_KEY')
 
     if not api_iucn_key:
         return None
