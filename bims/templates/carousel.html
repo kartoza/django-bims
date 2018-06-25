@@ -1,0 +1,32 @@
+<div id="carouselIndicators" class="carousel slide" data-ride="carousel">
+    <ol class="carousel-indicators">
+        {% for header in headers %}
+            <li data-target="#carouselIndicators" data-slide-to="{{ forloop.counter0 }}"
+                {% if forloop.counter == 1 %}class="active"{% endif %}></li>
+        {% endfor %}
+    </ol>
+    <div class="carousel-inner">
+        {% for header in headers %}
+            {% if forloop.counter == 1 %}
+                <div class="carousel-item active">
+            {% else %}
+                <div class="carousel-item">
+            {% endif %}
+                <div class="carousel-title">
+                    {{ header.description }}
+                </div>
+                <img class="d-block w-100" src="media/{{ header.file }}" alt="slide">
+            </div>
+        {% endfor %}
+    </div>
+</div>
+<div id="title-header">
+    <div class="title-header-buttons">
+        {% if not user.is_authenticated %}
+            <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
+            <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
+        {% else %}
+            <a class="btn btn-account btn-l js-scroll-trigger" href="/map">OPEN MAP</a>
+        {% endif %}
+    </div>
+</div>

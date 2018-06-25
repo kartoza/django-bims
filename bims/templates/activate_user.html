@@ -1,0 +1,88 @@
+{% extends "main_base.html" %}
+{% load staticfiles %}
+
+{% block title %}
+    Activate User
+{% endblock %}
+
+{% block body_content %}
+    <style>
+        .block-container {
+            text-align: center;
+            width: 550px;
+            margin: 0 auto;
+            border: 1px solid grey;
+            margin-top: 50px;
+            padding: 20px;
+            border-radius: 3px;
+            background: #f7f7f7;
+        }
+
+        .password-input {
+            width: 200px;
+            height: 30px;
+        }
+        .btn-login {
+            background-color: white;
+            border-radius: 0;
+            margin: 10px;
+            font-weight: normal;
+            color: #436461;
+            padding: 0 30px;
+            border: 2px solid #436461;
+            font-size: 16pt;
+        }
+
+        .btn-login:hover {
+            background-color: #436461;
+            color: white;
+            border: 2px solid #436461;
+        }
+    </style>
+
+    <div class="container block-container">
+        <h2>Welcome!</h2><br/>
+        <h5 style="margin-bottom: 10px">Please enter new password to activate your account.</h5>
+        <div class="container">
+            <form id="new_password_form" action="." method="POST">
+                {% csrf_token %}
+                <div style="text-align: left; margin: 0 auto; width: 350px">
+                    <label for="password1">New Password: </label>
+                    <input name="password1" type="password" class="password-input pull-right"><br/>
+                    <label for="password2">Confirm Password: </label>
+                    <input name="password2" type="password" class="password-input pull-right"><br/>
+                </div>
+                <p id="error" style="color: red; font-weight: bold"></p>
+                <input class="btn btn-primary btn-login" type="submit" value="Submit"/>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script>
+        $('#mainNav').hide();
+        $('#new_password_form').submit(function (e) {
+            $('#error').html('');
+            $('input[name=password1]').css('border-color', 'initial');
+            $('input[name=password2]').css('border-color', 'initial');
+            if($('input[name=password1]').val() === ''){
+                $('#error').html('Please enter your new password.');
+                $('input[name=password1]').css('border-color', 'red');
+                return false;
+            }else if($('input[name=password2]').val() === ''){
+                $('#error').html('Please confirm your password.');
+                $('input[name=password2]').css('border-color', 'red');
+                return false;
+            }else if($('input[name=password1]').val() !== $('input[name=password2]').val()){
+                $('#error').html('Your password does not match.');
+                $('input[name=password1]').css('border-color', 'red');
+                $('input[name=password2]').css('border-color', 'red');
+                return false;
+            }
+            {#e.preventDefault();#}
+        })
+    </script>
+{% endblock %}

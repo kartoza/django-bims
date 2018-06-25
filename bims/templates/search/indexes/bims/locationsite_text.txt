@@ -1,0 +1,3 @@
+{{ object.name }}
+{{ object.location_type.name }}
+{{ object.geometry_point }}

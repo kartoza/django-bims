@@ -11,10 +11,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelDetail', this.updateSidePanelDetail, this);
+            Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
+            Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
         },
         render: function() {
             this.$el.html(this.template());
-            $('#map-container').append(this.$el);
+            // $('#map-container').append(this.$el);
 
             // Hide the side panel
             this.rightPanel = this.$el.find('.right-panel');
@@ -22,12 +24,15 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
 
             return this;
         },
+        isSidePanelOpen:function () {
+          return this.rightPanel.is(":visible");
+        },
         openSidePanel: function (properties) {
             this.rightPanel.show('slide', { direction: 'right'}, 200);
-            if(properties) {
+            if(typeof properties !== 'undefined') {
                 this.clearSidePanel();
                 this.$el.find('.panel-loading').show();
-                this.setSiteName(properties['name']);
+                this.updateSidePanelTitle('<i class="fa fa-map-marker"></i> '+ properties['name'] +'</span>');
                 if(properties.hasOwnProperty('location_type')) {
                     this.fillSidePanel(properties['location_type']);
                 }
@@ -57,17 +62,16 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                         this.$el.find('.data-'+recordName).html(collections[recordName]);
                     }
                 }
+            } else{
+                $('#content-panel').html(JSON.stringify(data));
             }
         },
-        setSiteName: function(name) {
-            var $siteName = this.$el.find('.site-name');
-            $siteName.html(name);
-        },
-        setTotalFish: function(total) {
-            var $dataFish = this.$el.find('.data-fish');
-            $dataFish.html(total);
+        updateSidePanelTitle: function(title) {
+            var $rightPanelTitle = this.$el.find('.right-panel-title');
+            $rightPanelTitle.html(title);
         },
         closeSidePanel: function (e) {
+            Shared.Dispatcher.trigger('searchResult:clicked', null);
             var self = this;
             this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
                 self.clearSidePanel();
@@ -80,9 +84,16 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                 }
             }
         },
+        fillSidePanelHtml: function (htmlData) {
+            $('#content-panel').html(htmlData);
+        },
+        appendSidePanelContent: function (htmlData) {
+            $('#content-panel').append(htmlData);
+        },
         clearSidePanel: function () {
             $('#content-panel').html('');
             $('.panel-icons').html('');
+            this.updateSidePanelTitle('');
         }
     })
 });

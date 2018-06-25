@@ -9,6 +9,18 @@ from bims.models.iucn_status import IUCNStatus
 from bims.utils.iucn import get_iucn_status
 
 
+class TaxonomyField(models.CharField):
+
+    description = 'A taxonomy field.'
+
+    def __init__(self, *args, taxonomy_key=None, **kwargs):
+        kwargs['max_length'] = 100
+        kwargs['blank'] = True
+        kwargs['default'] = ''
+        self.taxonomy_key = taxonomy_key
+        super().__init__(*args, **kwargs)
+
+
 class Taxon(models.Model):
     """Taxon model."""
 
@@ -23,20 +35,68 @@ class Taxon(models.Model):
         null=True,
         blank=True,
     )
-    common_name = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
+
+    # Taxonomy fields
+    common_name = TaxonomyField(
+        verbose_name='Common Name',
+        taxonomy_key='canonicalName',
     )
-    scientific_name = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
+    scientific_name = TaxonomyField(
+        verbose_name='Scientific Name',
+        taxonomy_key='scientificName'
     )
-    author = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
+    author = TaxonomyField(
+        verbose_name='Author',
+        taxonomy_key='authorship'
+    )
+    kingdom = TaxonomyField(
+        verbose_name='Kingdom',
+        taxonomy_key='kingdom'
+    )
+
+    phylum = TaxonomyField(
+        verbose_name='Phylum',
+        taxonomy_key='phylum'
+    )
+
+    taxon_class = TaxonomyField(
+        verbose_name='Class',
+        taxonomy_key='class'
+    )
+
+    order = TaxonomyField(
+        verbose_name='Order',
+        taxonomy_key='order'
+    )
+
+    family = TaxonomyField(
+        verbose_name='Family',
+        taxonomy_key='family'
+    )
+
+    genus = TaxonomyField(
+        verbose_name='Genus',
+        taxonomy_key='genus'
+    )
+
+    species = TaxonomyField(
+        verbose_name='Species',
+        taxonomy_key='species'
+    )
+
+    taxon_id = TaxonomyField(
+        verbose_name='Taxon ID',
+        taxonomy_key='taxonID'
+    )
+
+    accepted_name = TaxonomyField(
+        verbose_name='Accepted Name',
+        taxonomy_key='accepted'
+    )
+
+    accepted_key = TaxonomyField(
+        verbose_name='Accepted Key',
+        taxonomy_key='acceptedKey'
     )
 
     # noinspection PyClassicStyleClass

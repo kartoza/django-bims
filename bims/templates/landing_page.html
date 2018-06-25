@@ -15,45 +15,8 @@
 {% block body_content %}
 <div id="section-wrapper">
     <header class="masthead text-center text-white d-flex" id="header">
-        <div id="carouselIndicators" class="carousel slide" data-ride="carousel">
-            <ol class="carousel-indicators">
-                <li data-target="#carouselIndicators" data-slide-to="0" class="active"></li>
-                <li data-target="#carouselIndicators" data-slide-to="1"></li>
-                <li data-target="#carouselIndicators" data-slide-to="2"></li>
-            </ol>
-            <div class="carousel-inner">
-                <div class="carousel-item active">
-                 <div class="carousel-title">
-                      BIMS Slide 1
-                  </div>
-                  <img class="d-block w-100" src="static/img/Banner1.jpg" alt="First slide">
-                </div>
-                <div class="carousel-item">
-                    <div class="carousel-title">
-                       BIMS Slide 2
-                    </div>
-                  <img class="d-block w-100" src="static/img/Banner2.jpg" alt="Second slide">
-                </div>
-                <div class="carousel-item">
-                    <div class="carousel-title">
-                        BIMS Slide 3
-                    </div>
-                  <img class="d-block w-100" src="static/img/Banner3.jpg" alt="Third slide">
-                </div>
-            </div>
-        </div>
-      <div id="title-header">
-            <div class="title-header-buttons">
-                {% if not user.is_authenticated %}
-                    <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
-                    <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
-                {% else %}
-                    <a class="btn btn-account btn-l js-scroll-trigger" href="/map">OPEN MAP</a>
-                {% endif %}
-            </div>
-      </div>
+        {% include "carousel.html" %}
     </header>
-
     <section id="fish-data" style="position: relative">
       <div class="container" style="margin-bottom: 25px">
         <div class="row">
@@ -112,7 +75,7 @@
             </div>
             <div class="col-lg-2 pull-right about-links">
                 <p><a>About</a></p>
-                <p><a>Contact</a></p>
+                <p><a href="/contact/" style="text-decoration: none; color: white">Contact</a></p>
                 <p><a>Others</a></p>
             </div>
         </div>
