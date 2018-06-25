@@ -1,7 +1,6 @@
 # coding=utf-8
 
 from django.conf.urls import url
-from django.urls import path
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
@@ -43,10 +42,10 @@ api_urls = [
 ]
 
 urlpatterns = [
-    path('', LandingPageView.as_view(), name='landing-page'),
-    path('map', MapPageView.as_view()),
+    url(r'^$', LandingPageView.as_view(), name='landing-page'),
+    url(r'^map/$', MapPageView.as_view()),
     url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
-    url(r'^links/', LinksCategoryView.as_view(), name = 'link_list'),
+    url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user')

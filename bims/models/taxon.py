@@ -13,12 +13,12 @@ class TaxonomyField(models.CharField):
 
     description = 'A taxonomy field.'
 
-    def __init__(self, *args, taxonomy_key=None, **kwargs):
+    def __init__(self, taxonomy_key=None, *args, **kwargs):
         kwargs['max_length'] = 100
         kwargs['blank'] = True
         kwargs['default'] = ''
         self.taxonomy_key = taxonomy_key
-        super().__init__(*args, **kwargs)
+        super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
 class Taxon(models.Model):
