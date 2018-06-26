@@ -80,18 +80,17 @@ div[role="main"] {
 .import-message {
   position: fixed;
   bottom: 0;
-  left: 0;
+  left: 400pt;
   min-width: 100%;
-  padding: 1rem;
-  background-color: #526B43 !important;
   color: white;
   text-align: center;
 }
 
 .import-message a.button.import {
-  margin-left: 1rem;
-  background-color: #fff;
-  color: #526B43 !important;
+  background-color: #526B43 !important;
+  border-color: #526B43;
+  color: #fff;
+  text-decoration: none;
 }
 
 .import-message a.button.import:hover {

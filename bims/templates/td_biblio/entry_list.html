@@ -94,13 +94,9 @@
 
 {% if request.user.is_superuser %}
 <div class="import-message">
-  Hi <strong>{{ request.user.username }}</strong>!
-  {% blocktrans %}
-  As an adminstrator of this application you can import new references with
-  DOIs or PubMed ids.
-  {% endblocktrans %}
-  <a href="{% url 'td_biblio:import' %}" class="button import">
-    Add references
+  <a href="{% url 'td_biblio:import' %}" class="button import"
+          data-toggle="Import with DOIs or PubMed ids">
+      Import with DOIs or PubMed ids
   </a>
 </div>
 {% endif %}
