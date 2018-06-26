@@ -23,7 +23,7 @@ urlpatterns = [
     url(r'^accounts/', include('allauth.urls')),
     url('^contact/', include('contactus.urls')),
     url(r'^', include('bims.urls')),
-    url(r'^', include('fish.urls', namespace='fish')),
+    url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
 ]
