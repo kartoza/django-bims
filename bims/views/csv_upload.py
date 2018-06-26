@@ -40,7 +40,7 @@ class CsvUploadView(FormView):
         # Read csv
         csv_file = form.instance.csv_file
 
-        with open(csv_file.path, newline='') as csvfile:
+        with open(csv_file.path, 'r') as csvfile:
             csv_reader = csv.DictReader(csvfile)
             for record in csv_reader:
                 try:

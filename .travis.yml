@@ -16,6 +16,7 @@ sudo: false
 dist: trusty
 
 python:
+  - '2.7'
   - '3.6'
 
 addons:
@@ -27,6 +28,7 @@ addons:
 install:
   - pip install coveralls
   - pip install -r REQUIREMENTS-dev.txt
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then pip install django==2.0.2; fi
   - nodeenv -p --node=0.10.31
   - npm -g install yuglify
 
