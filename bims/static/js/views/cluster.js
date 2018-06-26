@@ -3,15 +3,8 @@ define(['backbone', 'models/cluster', 'ol', 'shared'], function (Backbone, Clust
         initialize: function (options) {
             this.render();
         },
-        clicked: function () {
-            Shared.Dispatcher.trigger('sidePanel:openSidePanel', this.model.toJSON());
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', this.model.toJSON()['cluster_data']);
-        },
         render: function () {
             var modelJson = this.model.toJSON();
-            this.id = modelJson['id'];
-            Shared.Dispatcher.on('locationSite-' + this.id + ':clicked', this.clicked, this);
-
             var geometry = modelJson['point'];
             delete modelJson['geometry'];
             modelJson['text'] = modelJson['name'];
