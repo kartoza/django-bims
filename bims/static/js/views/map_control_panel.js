@@ -8,6 +8,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             'click .filter-control': 'filterClicked',
             'click .location-control': 'locationClicked',
             'click .map-search-close': 'closeSearchPanel',
+            'click .sub-filter': 'closeSubFilter'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -60,6 +61,10 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
         },
         closeAllPanel: function () {
             this.closeSearchPanel();
+        },
+        closeSubFilter: function (e) {
+            var target = $(e.target);
+            target.parent().next().toggle();
         }
     })
 });

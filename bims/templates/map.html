@@ -10,6 +10,7 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/map.css" %}" rel="stylesheet">
+    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
 
@@ -94,7 +95,7 @@
                     DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none">
                 <div class="slide-container">
                     <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
                 </div>
@@ -104,13 +105,11 @@
                     COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content">
-                    <input type="checkbox" name="collector1" value="collector1"> Collector 1<br>
-                    <input type="checkbox" name="collector2" value="collector2"> Collector 2<br>
-                    <input type="checkbox" name="collector3" value="collector3"> Collector 3<br>
-                    <input type="checkbox" name="collector4" value="collector4"> Collector 4<br>
-                    <input type="checkbox" name="collector5" value="collector5"> Collector 5<br>
+                    {% for collector in collectors %}
+                        <input type="checkbox" name="collector-value" value="{{ collector }}"> {{ collector }}<br>
+                    {% endfor %}
                 </div>
             </div>
             <div class="row sub-filter">
@@ -118,10 +117,10 @@
                     CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content">
-                    <input type="checkbox" name="indigenous" value="indigenous"> Indigenous<br>
-                    <input type="checkbox" name="invasive" value="invasive"> Invasive<br>
+                    <input type="checkbox" name="category-value" value="indigenous"> Indigenous<br>
+                    <input type="checkbox" name="category-value" value="invasive"> Invasive<br>
                 </div>
             </div>
         </div>

@@ -22,7 +22,27 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
                     return false;
                 }
 
-                this.searchResultCollection.search(searchValue, this.sidePanel);
+                var collectorValue = [];
+                $('input[name=collector-value]:checked').each(function () {
+                    collectorValue.push($(this).val())
+                });
+                if(collectorValue.length === 0){
+                    collectorValue = null
+                }else {
+                    collectorValue = JSON.stringify(collectorValue)
+                }
+
+                var categoryValue = [];
+                $('input[name=category-value]:checked').each(function () {
+                    categoryValue.push($(this).val())
+                });
+                if(categoryValue.length === 0){
+                    categoryValue = null
+                }else {
+                    categoryValue = JSON.stringify(categoryValue)
+                }
+
+                this.searchResultCollection.search(searchValue, this.sidePanel, collectorValue, categoryValue);
                 this.searchResultCollection.fetch({
                     success: function () {
                         self.searchResultCollection.renderCollection()

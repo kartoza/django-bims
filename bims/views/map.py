@@ -1,6 +1,7 @@
 # coding=utf-8
 from django.views.generic import TemplateView
 from bims.utils.get_key import get_key
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 
 class MapPageView(TemplateView):
@@ -20,4 +21,7 @@ class MapPageView(TemplateView):
         context['bing_map_key'] = get_key('BING_MAP_KEY')
         context['map_tiler_key'] = get_key('MAP_TILER_KEY')
         context['geocontext_url'] = get_key('GEOCONTEXT_URL')
+        context['collectors'] = \
+            BiologicalCollectionRecord.objects.all().values_list(
+                'collector', flat=True).distinct().order_by('collector')
         return context

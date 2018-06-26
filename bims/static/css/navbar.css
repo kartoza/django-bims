@@ -1,0 +1,95 @@
+
+.dropdown-menu {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding-top: 70px;
+    padding-left: 50px;
+    padding-right: 50px;
+    border-radius: 0 !important;
+    margin-top: 0 !important;
+}
+
+.dropdown-menu li:hover {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.dropdown-menu li {
+    margin-top: 12px;
+}
+
+.dropdown-menu a {
+    color: white !important;
+    font-size: 20pt;
+    font-weight: lighter;
+    font-family: "Roboto Condensed";
+}
+
+.close-dropdown {
+    position: fixed;
+    border: 2px solid white;
+    font-size: 27pt;
+    padding: 0 5px;
+    top: 0;
+    left: 0;
+    color: white !important;
+    z-index: 2005;
+    line-height: 40px;
+}
+
+.close-dropdown:hover {
+    color: black !important;
+    background-color: white !important;
+}
+
+.right-nav-dropdown {
+    text-align: right;
+}
+
+.right-nav-dropdown .close-dropdown {
+    top: 0;
+    left: auto;
+    right: 0;
+}
+
+.bims-title {
+    position: fixed;
+    top: 20px;
+    left: 0;
+    color: yellow;
+    font-weight: lighter;
+    width: 100%;
+    z-index: 2004;
+}
+
+.bims-title-big {
+    text-align: right;
+    border-right: 2px solid yellow;
+    font-size: 30px;
+}
+
+.bims-title-acc {
+    text-align: left;
+}
+
+.bims-nav-footer {
+    color: white !important;
+    position: fixed;
+    text-align: center;
+    bottom: 5px;
+    left: 0;
+    width: 100%;
+    z-index: 2006;
+    line-height: 20px;
+    border-top: 1px solid white;
+    font-weight: bolder;
+    padding-top: 5px;
+    font-size: 10pt;
+}
+
+.bims-nav-footer img {
+    vertical-align: top;
+}
