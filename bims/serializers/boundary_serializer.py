@@ -1,6 +1,3 @@
-from rest_framework_gis.serializers import (
-    GeoFeatureModelSerializer, GeometrySerializerMethodField
-)
 from rest_framework import serializers
 from bims.models import Boundary
 from bims.models.cluster import Cluster
@@ -32,24 +29,3 @@ class BoundarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Boundary
         exclude = ['geometry']
-
-
-class BoundaryGeoSerializer(GeoFeatureModelSerializer):
-    """
-    Serializer for boundary model in geojson.
-    """
-    geometry = GeometrySerializerMethodField()
-
-    def get_geometry(self, obj):
-        return obj.geometry
-
-    class Meta:
-        model = Boundary
-        geo_field = 'geometry'
-        exclude = ['type']
-
-    def to_representation(self, instance):
-        result = super(
-            BoundaryGeoSerializer, self).to_representation(
-            instance)
-        return result
