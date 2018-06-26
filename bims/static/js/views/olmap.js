@@ -292,6 +292,16 @@ define([
                 return false;
             };
 
+            var mousePositionControl = new ol.control.MousePosition({
+                coordinateFormat: ol.coordinate.createStringXY(4),
+                projection: 'EPSG:4326',
+                target: document.getElementById('page-top'),
+                className: 'mouse-position',
+                undefinedHTML: '&nbsp;',
+                coordinateFormat: function (coordinate) {
+                    return ol.coordinate.format(coordinate, '{y}, {x}', 4);
+                }
+            });
             this.map = new ol.Map({
                 target: 'map',
                 layers: self.getBaseMaps(),
@@ -301,7 +311,7 @@ define([
                 }),
                 controls: ol.control.defaults({
                     zoom: false
-                }),
+                }).extend([mousePositionControl]),
                 overlays: [this.geocontextOverlay]
             });
             this.map.addLayer(locationSiteVectorLayer);
