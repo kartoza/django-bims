@@ -58,18 +58,6 @@ class SearchObjects(APIView):
             common_name=clean_query
         ).models(Taxon)
 
-        if query_collector != 'null':
-            clean_query_collector = sqs.query.clean(query_collector)
-            results = results.filter(collector=clean_query_collector)
-
-        if query_category != 'null':
-            clean_query_category = sqs.query.clean(query_category)
-            results = results.filter(category=clean_query_category)
-
-        if query_date:
-            clean_query_date = sqs.query.clean(query_date)
-            results = results.filter(category=clean_query_date)
-
         serializer = TaxonSerializer(
             [r.object for r in results], many=True)
         search_result['taxa'] = serializer.data
@@ -78,18 +66,6 @@ class SearchObjects(APIView):
         results = sqs.filter(
             name=clean_query
         ).models(LocationSite)
-
-        if query_collector != 'null':
-            clean_query_collector = sqs.query.clean(query_collector)
-            results = results.filter(collector=clean_query_collector)
-
-        if query_category != 'null':
-            clean_query_category = sqs.query.clean(query_category)
-            results = results.filter(category=clean_query_category)
-
-        if query_date:
-            clean_query_date = sqs.query.clean(query_date)
-            results = results.filter(category=clean_query_date)
 
         serializer = LocationSiteSerializer(
             [r.object for r in results], many=True)
