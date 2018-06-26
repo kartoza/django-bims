@@ -86,6 +86,11 @@ define([
                     self.featureClicked(features[0]);
                     var coordinates = geometry.getCoordinates();
                     self.zoomToCoordinates(coordinates);
+
+                    // increase zoom level if it is clusters
+                    if (features[0].getProperties()['count']) {
+                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                    }
                 } else {
                     this.sidePanelView.closeSidePanel();
                 }
@@ -306,6 +311,7 @@ define([
                     return style;
                 }
             }));
+            this.startOnHoverListener();
         },
         fetchingRecords: function () {
             // get records based on administration
@@ -418,6 +424,22 @@ define([
         },
         updateAdministrativeBoundaryFeatures: function (features) {
             this.administrativeBoundarySource.addFeatures(features);
+        },
+        startOnHoverListener: function () {
+            var that = this;
+            this.pointerMoveListener = this.map.on('pointermove', function (e) {
+                var pixel = that.map.getEventPixel(e.originalEvent);
+                var hit = that.map.hasFeatureAtPixel(pixel);
+                $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
+                if (hit) {
+                    that.map.forEachFeatureAtPixel(pixel,
+                        function (feature, layer) {
+                            if (feature.getGeometry().getType() == 'Point') {
+                                $('#' + that.map.getTarget()).find('canvas').css('cursor', 'pointer');
+                            }
+                        })
+                }
+            });
         },
         getBaseMaps: function () {
             var baseDefault = null;
