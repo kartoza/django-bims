@@ -1,6 +1,7 @@
 body {
     font-family: "Roboto Condensed";
 }
+
 .container {
     margin-right: 0 !important;
     margin-left: 0 !important;
@@ -72,9 +73,9 @@ html, body, .map, .map-wrapper, #map-container {
     background: rgba(204, 204, 204, 0.7);
     color: #4e4e4e;
     z-index: 2000;
-    -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);  /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
-    -moz-box-shadow:    0 2px 5px 0 rgba(0, 0, 0, 0.2);  /* Firefox 3.5 - 3.6 */
-    box-shadow:         0 2px 5px 0 rgba(0, 0, 0, 0.2);  /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+    -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2); /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+    -moz-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2); /* Firefox 3.5 - 3.6 */
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2); /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
     border-radius: 0;
 }
 
@@ -315,7 +316,7 @@ html, body, .map, .map-wrapper, #map-container {
     outline: none !important;
 }
 
-.container-1 input#search::placeholder{
+.container-1 input#search::placeholder {
     color: rgba(0, 0, 0, 0.2);
 }
 
@@ -513,7 +514,6 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
-
 .user-icon {
     border: 3px solid black !important;
     border-radius: 0 !important;
@@ -541,3 +541,14 @@ div:hover::-webkit-scrollbar {
     padding-right: 20px;
 }
 
+.mouse-position {
+    position: absolute;
+    padding: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    bottom: .5em;
+    left: .5em;
+    font-size: .7rem;
+    color: #000;
+    background: rgba(255, 255, 255, .8);
+}
