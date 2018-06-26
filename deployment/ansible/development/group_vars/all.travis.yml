@@ -1,0 +1,36 @@
+---
+
+# Set to yes, if you're using pycharm for development
+# Otherwise, set no
+use_pycharm: no
+# Your linux/mac user that will run ansible
+remote_user: travis
+# Your linux/mac group that will run ansible
+remote_group: travis
+# Your project location (this repo)
+project_path: "/home/travis/build/inasafe/inasafe-django"
+# True if it will be running on Travis
+on_travis: True
+
+django_bims:
+  site_domain_name: 'http://django-bims.test'
+  geocontext_url: 'http://localhost:65402'
+  contact_us_email: 'dimas@kartoza.com'
+  debug: True
+  allowed_hosts:
+
+interpreters:
+  inasafe_django:
+    name: 'Django-BIMS Container'
+    domain_alias: 'django-bims.test'
+    ssh_port: &inasafe_django_ssh_port 63303
+    pycharm_helpers: /home/web/django_project/.pycharm_helpers
+    ipaddress: &inasafe_django_host_ip django-bims.test
+
+docker_port_forward:
+  django:
+    db: 6543
+    elastic_search: 9200
+    http: 63302
+    ssh: 63303
+    karma_tests: 63304
