@@ -1,0 +1,61 @@
+# Specific configuration for development environment
+
+
+# Exactly the same as production but for dev env, we expose the port and uses
+# different port for the web.
+version: '2'
+services:
+
+  db:
+    volumes:
+      #- ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+      - ./sql:/sql
+
+  {% if 'db' in docker_port_forward.django %}
+
+    ports:
+      - "{{ docker_port_forward.django.db }}:5432"
+
+  {% endif %}
+
+  {% if 'elastic_search' in docker_port_forward.django %}
+
+  elasticsearch:
+    ports:
+      - "{{ docker_port_forward.django.elastic_search }}:9200"
+
+  {% endif %}
+
+  dbbackups:
+    volumes:
+      - ./backups:/backups
+
+  uwsgi:
+    build:
+      context: docker
+      dockerfile: Dockerfile-dev
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - GEOCONTEXT_URL={{ django.geocontext_url }}
+      - CONTACT_US_EMAIL={{ django.contact_us_email }}
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./logs:/var/log/
+    ports:
+      # for django test server
+      - "{{ docker_port_forward.django.http }}:8080"
+      # for ssh
+      - "{{ docker_port_forward.django.ssh }}:22"
+      # for karma tests
+      - "{{ docker_port_forward.django.karma_tests }}:9876"
+
+  web:
+    volumes:
+      - ./sites-enabled:/etc/nginx/conf.d:ro
+      # I dont use volumes_from as I want to use the ro modifier
+      - ./static:/home/web/static:ro
+      - ./media:/home/web/media:ro
+      - ./logs:/var/log/nginx

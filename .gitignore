@@ -118,3 +118,10 @@ deployment/media
 deployment/docker/71-apt-cacher-ng
 core/settings/secret.py
 deployment/backups
+
+# Ansible Project Dev Setup
+deployment/ansible/tmp
+!deployment/ansible/tmp/.gitkeep
+deployment/ansible/development/site.retry
+deployment/ansible/development/group_vars/all.yml
+deployment/docker-compose.override.yml
