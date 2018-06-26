@@ -1,0 +1,55 @@
+---
+- name: customize project configuration
+  template:
+    src: django-bims.iml
+    dest: '{{ project_path }}/.idea/django-bims.iml'
+    owner: '{{ remote_user }}'
+    group: '{{ remote_group }}'
+    mode: "u=rw,g=rw,o=r"
+- name: customize remote-mappings configurations
+  template:
+    src: remote-mappings.xml.j2
+    dest: '{{ project_path }}/.idea/remote-mappings.xml'
+    owner: '{{ remote_user }}'
+    group: '{{ remote_group }}'
+    mode: "u=rw,g=rw,o=r"
+- name: customize VCS mappings
+  template:
+    src: vcs.xml
+    dest: '{{ project_path }}/.idea/vcs.xml'
+    owner: '{{ remote_user }}'
+    group: '{{ remote_group }}'
+    mode: "u=rw,g=rw,o=r"
+
+- name: gather os specific variables
+  include_vars:
+    file: "generic/{{ ansible_distribution }}.yml"
+
+- name: customize dockerized python interpreter
+  template:
+    src: 'python-interpreter/{{ item.src }}'
+    dest: '{{ project_path }}/deployment/ansible/tmp/{{ item.src }}'
+    owner: '{{ remote_user }}'
+    group: '{{ remote_group }}'
+    mode: "u=rw,g=rw,o=r"
+  with_items:
+    - { src: django-bims.xml.j2 }
+- name: inject python interpreter definitions
+  command: python inject_python_interpreter.py "{{ pycharm_settings_path }}/options/jdk.table.xml" "{{ project_path }}/deployment/ansible/tmp/{{ item.src }}"
+  args:
+    chdir: "{{ project_path }}/deployment/ansible/development/roles/pycharm/files/"
+  with_items:
+    - { src: django-bims.xml.j2 }
+
+- name: customize run/debug configurations
+  template:
+    src: workspace-configuration.xml.j2
+    dest: '{{ project_path }}/deployment/ansible/tmp/workspace-configuration.xml'
+    owner: '{{ remote_user }}'
+    group: '{{ remote_group }}'
+    mode: "u=rw,g=rw,o=r"
+- name: inject run/debug configurations
+  command: python inject_run_configurations.py "{{ project_path }}/.idea/workspace.xml" "{{ project_path }}/deployment/ansible/tmp/workspace-configuration.xml"
+  args:
+    chdir: "{{ project_path }}/deployment/ansible/development/roles/pycharm/files/"
+

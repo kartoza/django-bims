@@ -1,0 +1,18 @@
+
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="PATH" value="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" />
+        <env name="PYTHONPATH" value="/home/web/django_project" />
+        <env name="ROOT_URLCONF" value="core.urls" />
+        <env name="DATABASE_NAME" value="gis" />
+        <env name="DATABASE_PASSWORD" value="docker" />
+        <env name="DATABASE_USERNAME" value="docker" />
+        <env name="DATABASE_HOST" value="db" />
+        <env name="DJANGO_SETTINGS_MODULE" value="core.settings.dev_docker" />
+        <env name="RABBITMQ_HOST" value="rabbitmq" />
+        <env name="HAYSTACK_HOST" value="elasticsearch" />
+        <env name="GEOCONTEXT_URL" value="{{ django.geocontext_url }}" />
+        <env name="CONTACT_US_EMAIL" value="{{ django.contact_us_email }}" />
+
+        <env name="DEBUG" value="{{ django.debug }}" />
+        <env name="LANG" value="C.UTF-8" />
+        <env name="ALLOWED_HOSTS" value="{{ django.allowed_hosts }}" />
