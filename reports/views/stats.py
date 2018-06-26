@@ -70,9 +70,8 @@ def create_pdf(pathname, current_site):
     page.drawString(130,
                     560,
                     'Total Species collection: {0}'.format(species_total))
-    page.drawImage(
-		    biodiversity_logo, 90, 500, width = 30, height = 30,
-		    preserveAspectRatio = True, mask = 'auto')
+    page.drawImage(biodiversity_logo, 90, 500, width = 30, height = 30,
+                   preserveAspectRatio = True, mask = 'auto')
     page.setFont('Times-Roman', 10)
     page.drawString(130,
                     510,
