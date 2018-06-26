@@ -1,7 +1,6 @@
 # coding=utf-8
 
 from django.conf.urls import url, include
-from django.urls import path
 
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
@@ -57,7 +56,7 @@ urlpatterns = [
     url(r'^map/$', MapPageView.as_view()),
     url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
-    url(r'^bibliography/$',
+    url(r'^bibliography/',
         include((bibliography_urls, 'bims'), namespace = 'td_biblio')),
 
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
