@@ -269,22 +269,6 @@ define([
                 }
             }));
 
-            // cluster layer
-            // ---------------------------------
-            self.clusterSource = new ol.source.Vector({});
-            this.map.addLayer(new ol.layer.Vector({
-                source: self.clusterSource,
-                style: function (feature) {
-                    var count = 1;
-                    if (feature.getProperties()['count']) {
-                        count = feature.getProperties()['count'];
-                    }
-                    var style = self.layerStyle.getClusterStyle(count);
-                    style.getText().setText('' + count);
-                    return style;
-                }
-            }));
-
             // Administrative boundary layer
             // ---------------------------------
             self.administrativeBoundarySource = new ol.source.Vector({});
@@ -304,6 +288,22 @@ define([
                             text: feature.getProperties()['name']
                         })
                     })
+                }
+            }));
+
+            // cluster layer
+            // ---------------------------------
+            self.clusterSource = new ol.source.Vector({});
+            this.map.addLayer(new ol.layer.Vector({
+                source: self.clusterSource,
+                style: function (feature) {
+                    var count = 1;
+                    if (feature.getProperties()['count']) {
+                        count = feature.getProperties()['count'];
+                    }
+                    var style = self.layerStyle.getClusterStyle(count);
+                    style.getText().setText('' + count);
+                    return style;
                 }
             }));
         },
