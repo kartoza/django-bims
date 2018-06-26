@@ -16,9 +16,11 @@
     <!-- Milligram CSS minified -->
     <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
     <!-- Override styles -->
-    <link rel="stylesheet" href="{% static "css/styles.css" %}">
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
+    <link href="{% static "css/base.css"  %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
+    <link href="{% static "css/fonts.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
+    <link rel="stylesheet" href="{% static "css/styles.css" %}">
 
 {% endblock %}
 
@@ -37,6 +39,10 @@
         }
         #mainNav {
             margin-left: 10%;
+        }
+        .navbar-expand-lg .navbar-nav .nav-link {
+
+            font-size: 1.8rem;
         }
     </style>
   <body class="{% block page_class %}Bibliography ma

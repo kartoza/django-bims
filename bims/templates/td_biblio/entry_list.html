@@ -90,34 +90,33 @@
 
 {% block main_content %}
 
-<h2>{% trans "Publications" %}</h2>
+        <h2>{% trans "Publications" %}</h2>
 
-{% if request.user.is_superuser %}
-<div class="import-message">
-  <a href="{% url 'td_biblio:import' %}" class="button import"
-          data-toggle="Import with DOIs or PubMed ids">
-      Import with DOIs or PubMed ids
-  </a>
-</div>
-{% endif %}
-
-{% include "td_biblio/partials/publication_list_by_year.html" with publications=entry_list %}
-
-{% if is_paginated %}
-<div class="pagination-centered">
-
-    <ul class="pagination">
-        {% if page_obj.has_previous %}
-        <li class="arrow"><a href="?page={{ page_obj.previous_page_number }}" class="pagination">&laquo;</a></li>
+        {% if request.user.is_superuser %}
+        <div class="import-message">
+          <a href="{% url 'td_biblio:import' %}" class="button import"
+                  data-toggle="Import with DOIs or PubMed ids">
+              Import with DOIs or PubMed ids
+          </a>
+        </div>
         {% endif %}
-        <li class="current">
-            <a href="">{{ page_obj.number }}</a>
-            {{ page_obj.start_index }} - {{ page_obj.end_index }}</li>
-        {% if page_obj.has_next %}
-        <li class="arrow"><a href="?page={{ page_obj.next_page_number }}" class="pagination">&raquo;</a></li>
-        {% endif %}
-    </ul>
-</div>
-{% endif %}
 
+        {% include "td_biblio/partials/publication_list_by_year.html" with publications=entry_list %}
+
+        {% if is_paginated %}
+        <div class="pagination-centered">
+
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="arrow"><a href="?page={{ page_obj.previous_page_number }}" class="pagination">&laquo;</a></li>
+                {% endif %}
+                <li class="current">
+                    <a href="">{{ page_obj.number }}</a>
+                    {{ page_obj.start_index }} - {{ page_obj.end_index }}</li>
+                {% if page_obj.has_next %}
+                <li class="arrow"><a href="?page={{ page_obj.next_page_number }}" class="pagination">&raquo;</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
 {% endblock main_content %}
