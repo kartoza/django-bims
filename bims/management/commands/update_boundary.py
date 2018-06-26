@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from abc import ABC
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import MultiPolygon, Polygon
 
@@ -11,7 +10,7 @@ from bims.models.boundary_type import BoundaryType
 logger = logging.getLogger(__name__)
 
 
-class UpdateBoundary(ABC):
+class UpdateBoundary(object):
     """ Update boundaries from shapefile.
     Boundary that created based on boundary_type. E.g. Country
     And use column_name as indicator which column to be used

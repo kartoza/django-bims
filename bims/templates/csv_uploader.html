@@ -1,0 +1,94 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Uploader
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+            <h3>CSV Uploader</h3>
+            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+            </div>
+                <div class="modal-body">
+                    <form id="upload-form" onchange="Validate(this)" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                        <label for="file"><b>Upload csv here</b></label>
+                        <input type="file" name="csv_file">
+                        <p class="help-block">Upload a .csv file you want to read.</p>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="upload-file-btn" class="btn btn-primary" data-dismiss="modal" value="Upload">Upload</button>
+                </div>
+
+            {% if data.uploaded %}
+                <p> {{ data.uploaded }} </p>
+            {% endif %}
+
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-easing/jquery.easing.min.js" %}"></script>
+    <script src="{% static "js/libs/scrollreveal/scrollreveal.min.js" %}"></script>
+    <script src="{% static "js/libs/magnific-popup/jquery.magnific-popup.min.js" %}"></script>
+
+    <script type="text/javascript">
+        var _validFileExtensions = [".csv"];
+
+        $('#upload-file-btn').click(function (e) {
+            $('.loading').show();
+            $('#upload-form').submit();
+        });
+
+        function Validate(oForm) {
+            var arrInputs = oForm.getElementsByTagName("input");
+            var alertDiv = $('#csv-alert');
+            alertDiv.hide();
+            for (var i = 0; i < arrInputs.length; i++) {
+                var oInput = arrInputs[i];
+                if (oInput.type == "file") {
+                    var sFileName = oInput.value;
+                    if (sFileName.length > 0) {
+                        var blnValid = false;
+                        for (var j = 0; j < _validFileExtensions.length; j++) {
+                            var sCurExtension = _validFileExtensions[j];
+                            if (sFileName.substr(sFileName.length - sCurExtension.length, sCurExtension.length).toLowerCase() == sCurExtension.toLowerCase()) {
+                                blnValid = true;
+                                break;
+                            }
+                        }
+
+                        if (!blnValid) {
+                            alertDiv.html("Sorry, " + sFileName + " is invalid, allowed extensions are: " + _validFileExtensions.join(", "));
+                            alertDiv.show();
+                            oInput.value = '';
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+    </script>
+
+{% endblock %}

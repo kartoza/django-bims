@@ -1,5 +1,5 @@
 psycopg2-binary
-Django>=2.0.2
+Django==1.11
 django-braces==1.9.0
 django-model-utils==1.4.0
 django-pipeline==1.6.14
@@ -28,7 +28,7 @@ coreapi==2.3.3
 pygbif==0.2.0
 
 # Django BIMS
-# git+https://github.com/dimasciput/django-bims.git
+# git+https://github.com/kartoza/django-bims.git
 
 # bibliography
 bibtexparser==1.0.1

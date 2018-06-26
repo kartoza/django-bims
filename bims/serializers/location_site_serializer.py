@@ -9,6 +9,10 @@ class LocationSiteSerializer(serializers.ModelSerializer):
     """
     geometry = serializers.SerializerMethodField()
     location_type = LocationTypeSerializer(read_only=True)
+    record_type = serializers.SerializerMethodField()
+
+    def get_record_type(self, obj):
+        return 'site'
 
     def get_geometry(self, obj):
         geometry = obj.get_geometry()
@@ -18,4 +22,4 @@ class LocationSiteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LocationSite
-        fields = ['id', 'name', 'geometry', 'location_type']
+        fields = ['id', 'name', 'geometry', 'location_type', 'record_type']

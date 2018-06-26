@@ -2,6 +2,7 @@
 
 from django.conf.urls import url, include
 from django.urls import path
+
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
@@ -15,7 +16,8 @@ from bims.api_views.location_type import (
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
 from bims.api_views.cluster_collection_by_taxon import (
-    ClusterCollectionByTaxon
+    ClusterCollectionByTaxon,
+    ClusterCollectionByTaxonExtent
 )
 from bims.views.links import LinksCategoryView
 from bims.views.bibliography import (
@@ -24,6 +26,7 @@ from bims.views.bibliography import (
 )
 from bims.api_views.search import SearchObjects
 from bims.views.activate_user import activate_user
+from bims.views.csv_upload import CsvUploadView
 
 
 api_urls = [
@@ -36,6 +39,8 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
+    url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/extent/$',
+        ClusterCollectionByTaxonExtent.as_view()),
     url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/$',
         ClusterCollectionByTaxon.as_view()),
     url(r'^api/search/(?P<query_value>\w+)/$',
@@ -48,11 +53,13 @@ bibliography_urls = [
 ]
 
 urlpatterns = [
-    path('', LandingPageView.as_view(), name='landing-page'),
-    path('map', MapPageView.as_view()),
-    url(r'^links/', LinksCategoryView.as_view(), name='link_list'),
-    url(r'^bibliography/',
-        include((bibliography_urls, 'bims'), namespace='td_biblio')),
+    url(r'^$', LandingPageView.as_view(), name='landing-page'),
+    url(r'^map/$', MapPageView.as_view()),
+    url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
+    url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
+    url(r'^bibliography/$',
+        include((bibliography_urls, 'bims'), namespace = 'td_biblio')),
+
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user')
