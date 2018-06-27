@@ -31,20 +31,39 @@ services:
     volumes:
       - ./backups:/backups
 
+  geoserver:
+    environment:
+
+      {% for key, value in geoserver.environment.iteritems() %}
+
+      - {{ key }}={{ value }}
+
+      {% endfor %}
+
   uwsgi:
     build:
       context: docker
       dockerfile: Dockerfile-dev
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - GEOCONTEXT_URL={{ django.geocontext_url }}
-      - CONTACT_US_EMAIL={{ django.contact_us_email }}
+
+      {% for key, value in django.environment.iteritems() %}
+
+      - {{ key }}={{ value }}
+
+      {% endfor %}
+
+      {% for key, value in geonode.environment.iteritems() %}
+
+      - {{ key }}={{ value }}
+
+      {% endfor %}
+
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./logs:/var/log/
-      - ../pycharm_helpers:/root/.pycharm_helpers
+      - ../.pycharm_helpers:/root/.pycharm_helpers
     ports:
       # for django test server
       - "{{ docker_port_forward.django.http }}:8080"
