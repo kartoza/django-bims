@@ -1,5 +1,6 @@
 export COMPOSE_PROJECT_NAME=bims
 export COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.override.yml
+export ANSIBLE_PROJECT_SETUP_DIR=deployment/ansible
 
 SHELL := /bin/bash
 
@@ -16,12 +17,12 @@ setup:
 
 ansible-check:
 	@echo "Check ansible command"
-	@ansible -i deployment/ansible/development/hosts all -m ping
-	@ansible-playbook -i deployment/ansible/development/hosts deployment/ansible/development/site.yml --list-tasks --list-hosts $(ANSIBLE_ARGS)
+	@ansible -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts all -m ping
+	@ansible-playbook -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts ${ANSIBLE_PROJECT_SETUP_DIR}/development/site.yml --list-tasks --list-hosts $(ANSIBLE_ARGS)
 
 setup-ansible:
 	@echo "Setup configurations using ansible"
-	@ansible-playbook -i deployment/ansible/development/hosts deployment/ansible/development/site.yml $(ANSIBLE_ARGS)
+	@ansible-playbook -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts ${ANSIBLE_PROJECT_SETUP_DIR}/development/site.yml $(ANSIBLE_ARGS)
 
 # ----------------------------------------------------------------------------
 #    P R O D U C T I O N     C O M M A N D S
