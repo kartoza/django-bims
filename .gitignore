@@ -110,7 +110,7 @@ ENV/
 deployment/pg/postgres_data/9.3
 deployment/pg/postgres_staging_data/9.3
 deployment/pg/postgres_dev_data/9.3
-deployment/sql/healthyrivers-old.sql
+deployment/sql
 # Template for apt-cacher
 # static and media dirs
 deployment/static
@@ -125,3 +125,5 @@ deployment/ansible/tmp
 deployment/ansible/development/site.retry
 deployment/ansible/development/group_vars/all.yml
 deployment/docker-compose.override.yml
+deployment/logs
+deployment/sites-enabled

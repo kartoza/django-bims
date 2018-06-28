@@ -8,6 +8,8 @@
 # See accompanying Make commands for easy collectstatic etc.
 
 version: '2'
+volumes:
+  geoserver-data-dir:
 services:
   smtp:
     image: catatnight/postfix
@@ -34,6 +36,22 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
+  data-dir-conf:
+    image: geosolutionsit/geoserver_data:2.13.x
+    restart: on-failure
+    command: /bin/true
+    volumes:
+      - geoserver-data-dir:/geoserver_data/data
+
+  geoserver:
+    image: geosolutionsit/geoserver-docker:2.13.x
+    restart: unless-stopped
+    depends_on:
+      - db
+      - data-dir-conf
+    volumes:
+      - geoserver-data-dir:/geoserver_data/data
+
   bims_uwsgi:
     build:
       context: docker
@@ -44,6 +62,8 @@ services:
     build:
       context: docker
     hostname: uwsgi
+    working_dir: /usr/src/app
+    entrypoint: []
     environment:
       - DATABASE_NAME=gis
       - DATABASE_USERNAME=docker
@@ -60,6 +80,7 @@ services:
       - smtp:smtp
       - db:db
       - elasticsearch:elasticsearch
+      - geoserver:geoserver
     restart: unless-stopped
     user: root
 

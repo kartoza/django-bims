@@ -17,7 +17,9 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 
-urlpatterns = [
+from geonode_generic.urls import urlpatterns as geonode_generic_urlpatterns
+
+urlpatterns = geonode_generic_urlpatterns + [
     url(r'^admin/', admin.site.urls),
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^accounts/', include('allauth.urls')),

@@ -134,8 +134,7 @@ class CustomUserAdmin(UserAdmin):
         return redirect('/admin/auth/user/')
 
 
-    # Re-register UserAdmin
-admin.site.unregister(User)
+# Re-register UserAdmin
 admin.site.register(User, CustomUserAdmin)
 
 

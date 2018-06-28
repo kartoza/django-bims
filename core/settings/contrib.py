@@ -2,7 +2,10 @@
 """
 core.settings.contrib
 """
-from .base import *  # noqa
+from core.settings.utils import ensure_unique_app_labels
+from .base import *
+# Override base settings from geonode
+from geonode_generic.settings import *
 from .celery_settings import *  # noqa
 import os
 try:
@@ -39,6 +42,8 @@ INSTALLED_APPS = (
 GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
 
 INSTALLED_APPS += (
+    # AppConfig Hook to fix issue from geonode
+    'core.config_hook',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -53,6 +58,8 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
 )
+
+INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
