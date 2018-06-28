@@ -11,12 +11,16 @@ class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
 
     geometry = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
+    taxon_gbif_id = serializers.SerializerMethodField()
 
     def get_record_type(self, obj):
         return 'bio'
 
     def get_geometry(self, object):
         return object.site.get_geometry().geojson
+
+    def get_taxon_gbif_id(self, object):
+        return object.taxon_gbif_id
 
     class Meta:
         model = BiologicalCollectionRecord
