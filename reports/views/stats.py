@@ -8,11 +8,8 @@ import datetime
 from django.http import HttpResponse
 
 from reportlab.pdfgen import canvas
-
-from reportlab.lib.colors import Color, yellowgreen,darkred, yellow, \
-    greenyellow, \
-    mediumseagreen
 from reportlab.lib.units import mm
+from reportlab.lib.colors import yellowgreen, darkred, yellow
 from reportlab.lib.pagesizes import letter
 
 from bims.models.taxon import Taxon
@@ -24,17 +21,13 @@ def create_pdf(pathname, current_site):
     # initialising the PDF for drawing content on it
     page = canvas.Canvas(pathname, pagesize=letter)
 
-    page.radialGradient(105*mm, 240*mm, 60*mm, (darkred, yellow,
+    page.radialGradient(105 * mm, 240 * mm, 60 * mm, (darkred, yellow,
                                                 yellowgreen), (0, 0.8, 1))
 
     species_records = Taxon.objects.all()
     species_total = species_records.count()
 
     biological_total = BiologicalCollectionRecord.objects.count()
-
-
-    # we start to draw staff on the PDF
-    # page.setFillColorRGB(0.2, 0.2, 0.2)
 
     logo = 'reports/static/img/logo.png'
     wildlife_logo = 'reports/static/img/collection/wildlife.png'
