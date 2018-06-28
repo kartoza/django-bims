@@ -543,12 +543,26 @@ div:hover::-webkit-scrollbar {
 
 .mouse-position {
     position: absolute;
-    padding: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
     bottom: .5em;
     left: .5em;
     font-size: .7rem;
     color: #000;
     background: rgba(255, 255, 255, .8);
 }
+
+.mouse-position button {
+    height: 1.375em;
+    width: 1.375em;
+    cursor: pointer;
+}
+
+.mouse-position.active {
+    width: 117px;
+}
+
+.ol-mouse-position {
+    top: 5px;
+    left: 30px;
+    position: absolute;
+}
+

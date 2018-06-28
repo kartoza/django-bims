@@ -254,11 +254,9 @@ define([
             var mousePositionControl = new ol.control.MousePosition({
                 coordinateFormat: ol.coordinate.createStringXY(4),
                 projection: 'EPSG:4326',
-                target: document.getElementById('page-top'),
-                className: 'mouse-position',
-                undefinedHTML: '&nbsp;',
+                target: document.getElementById('mouse-position-wrapper'),
                 coordinateFormat: function (coordinate) {
-                    return ol.coordinate.format(coordinate, '{y}, {x}', 4);
+                    return ol.coordinate.format(coordinate, '{y},{x}', 4);
                 }
             });
             this.map = new ol.Map({

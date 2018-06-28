@@ -37,11 +37,22 @@ require.config({
     }
 });
 
-require( [
+require([
     'views/olmap',
     'shared',
     'app'
-], function(olmap, Shared, App) {
+], function (olmap, Shared, App) {
     // Display the map
     var map = new olmap();
+    $(document).ready(function () {
+        $('.mouse-position button').click(function () {
+            if ($('.mouse-position').hasClass('active')) {
+                $('.mouse-position').removeClass('active');
+                $('#mouse-position-wrapper').hide();
+            } else {
+                $('.mouse-position').addClass('active');
+                $('#mouse-position-wrapper').show();
+            }
+        })
+    });
 });
