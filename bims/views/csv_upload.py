@@ -7,7 +7,6 @@ from datetime import datetime
 from django.urls import reverse_lazy
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
-from django.core.management import call_command
 from django.views.generic import FormView
 from bims.forms.csv_upload import CsvUploadForm
 from bims.models import (
@@ -19,7 +18,6 @@ from bims.models.location_site import (
 )
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from bims.utils.cluster import update_cluster_by_site
 
 
 class CsvUploadView(FormView):
