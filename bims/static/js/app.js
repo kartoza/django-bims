@@ -37,11 +37,17 @@ require.config({
     }
 });
 
-require( [
+require([
     'views/olmap',
     'shared',
     'app'
-], function(olmap, Shared, App) {
+], function (olmap, Shared, App) {
     // Display the map
     var map = new olmap();
+    // A $( document ).ready() block.
+    $(document).ready(function () {
+        $('.try-again-button').click(function () {
+            Shared.Dispatcher.trigger('map:reloadXHR', this.features)
+        });
+    });
 });
