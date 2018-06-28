@@ -18,7 +18,7 @@ class ClusterList(APIView):
             boundary_type = BoundaryType.objects.get(
                 name=administrative_level)
         except BoundaryType.DoesNotExist:
-            raise Http404()
+            return Response([])
 
         boundaries = Cluster.objects.filter(
             boundary__type=boundary_type).values_list('boundary')
