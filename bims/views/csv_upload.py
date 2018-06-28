@@ -5,15 +5,21 @@
 import csv
 from datetime import datetime
 from django.urls import reverse_lazy
+from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
+from django.core.management import call_command
 from django.views.generic import FormView
 from bims.forms.csv_upload import CsvUploadForm
 from bims.models import (
     LocationSite,
     LocationType,
 )
+from bims.models.location_site import (
+    location_site_post_save_handler
+)
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
+from bims.utils.cluster import update_cluster_by_site
 
 
 class CsvUploadView(FormView):
@@ -40,28 +46,35 @@ class CsvUploadView(FormView):
         # Read csv
         csv_file = form.instance.csv_file
 
+        # disconnect post save handler of location sites
+        # it is done from record signal
+        models.signals.post_save.disconnect(
+            location_site_post_save_handler,
+        )
+        location_sites = []
         with open(csv_file.path, 'r') as csvfile:
             csv_reader = csv.DictReader(csvfile)
             for record in csv_reader:
                 try:
                     location_type, status = LocationType.objects.get_or_create(
-                            name='RiverPointObservation',
-                            allowed_geometry='POINT'
+                        name='RiverPointObservation',
+                        allowed_geometry='POINT'
                     )
 
                     record_point = Point(
-                            float(record['Longitude']),
-                            float(record['Latitude']))
+                        float(record['Longitude']),
+                        float(record['Latitude']))
 
                     location_site, status = LocationSite.objects.get_or_create(
                         location_type=location_type,
                         geometry_point=record_point,
                         name=record['River'],
                     )
+                    location_sites.append(location_site)
 
                     # Get existed taxon
                     collections = BiologicalCollectionRecord.objects.filter(
-                            original_species_name=record['Species']
+                        original_species_name=record['Species']
                     )
 
                     taxon_gbif = None
@@ -69,7 +82,7 @@ class CsvUploadView(FormView):
                         taxon_gbif = collections[0].taxon_gbif_id
 
                     collection, collection_status = \
-                        BiologicalCollectionRecord.\
+                        BiologicalCollectionRecord. \
                         objects.get_or_create(
                             site=location_site,
                             original_species_name=record['Species'],
@@ -77,7 +90,7 @@ class CsvUploadView(FormView):
                             present=record['Present'] == 1,
                             absent=record['Absent'] == 1,
                             collection_date=datetime(
-                                    int(record['Year']), 1, 1),
+                                int(record['Year']), 1, 1),
                             collector=record['Collector'],
                             notes=record['Notes'],
                             taxon_gbif_id=taxon_gbif,
@@ -89,4 +102,10 @@ class CsvUploadView(FormView):
 
         self.context_data['uploaded'] = 'Collection added ' + \
                                         str(collection_processed['added'])
+
+        # reconnect post save handler of location sites
+        models.signals.post_save.connect(
+            location_site_post_save_handler,
+        )
+
         return super(CsvUploadView, self).form_valid(form)
