@@ -1,5 +1,4 @@
 # coding=utf8
-from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.cluster import Cluster
