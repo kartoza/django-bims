@@ -65,6 +65,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
         closeSubFilter: function (e) {
             var target = $(e.target);
             target.parent().next().toggle();
+            target.children('.filter-icon-arrow').toggle();
         }
     })
 });

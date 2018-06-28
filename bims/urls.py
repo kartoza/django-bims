@@ -17,8 +17,9 @@ from bims.api_views.cluster_collection_by_taxon import (
     ClusterCollectionByTaxon,
     ClusterCollectionByTaxonExtent
 )
-from bims.views.links import LinksCategoryView
+from bims.api_views.collector import CollectorList
 from bims.api_views.search import SearchObjects
+from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 
@@ -39,6 +40,8 @@ api_urls = [
         ClusterCollectionByTaxon.as_view()),
     url(r'^api/search/(?P<query_value>\w+)/$',
         SearchObjects.as_view(), name='search-api'),
+    url(r'^api/list-collector/$',
+        CollectorList.as_view(), name='list-collector'),
 ]
 
 urlpatterns = [

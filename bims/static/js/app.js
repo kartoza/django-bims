@@ -44,4 +44,24 @@ require( [
 ], function(olmap, Shared, App) {
     // Display the map
     var map = new olmap();
+
+    $('li.dropdown a').on('click', function (event) {
+        $(this).next().addClass('show');
+    });
+    $('.close-dropdown').on('click', function (event) {
+        $('.dropdown-menu').removeClass('show');
+    });
+
+    // Fetch collectors
+    $.ajax({
+        type: 'GET',
+        url: listCollectorAPIUrl,
+        dataType: 'json',
+        success: function (data) {
+            for (var i = 0; i < data.length; i++) {
+                $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> '+ data[i] +'<br>');
+            }
+        }
+    });
+
 });

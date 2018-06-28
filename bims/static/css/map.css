@@ -324,10 +324,12 @@ html, body, .map, .map-wrapper, #map-container {
 
 .search-arrow {
     line-height: 37px;
-    margin-left: 5px;
+    margin-left: 4px;
     font-weight: bolder;
     font-size: 25pt;
     color: white !important;
+    padding-left: 3px;
+    padding-right: 3px;
 }
 
 .container-1 .icon {
@@ -549,6 +551,7 @@ div:hover::-webkit-scrollbar {
 
 .sub-filter {
     cursor: pointer;
+}
 
 .mouse-position {
     position: absolute;

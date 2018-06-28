@@ -19,6 +19,7 @@
         const mapTilerKey = '{{ map_tiler_key }}';
         const staticURL = "{% static "" %}";
         const geocontextUrl = '{{ geocontext_url }}';
+        const listCollectorAPIUrl = '{% url "list-collector" %}';
     </script>
 {% endblock %}
 
@@ -92,7 +93,7 @@
             </div>
             <div class="row sub-filter">
                 <div class="col-lg-12 map-filter-subtitle">
-                    DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                    DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow" style="display: none"></i>
                 </div>
             </div>
             <div class="row" style="display: none">
@@ -102,19 +103,16 @@
             </div>
             <div class="row sub-filter">
                 <div class="col-lg-12 map-filter-subtitle">
-                    COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                    COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow" style="display: none"></i>
                 </div>
             </div>
             <div class="row" style="display: none">
-                <div class="col-lg-12 filter-content">
-                    {% for collector in collectors %}
-                        <input type="checkbox" name="collector-value" value="{{ collector }}"> {{ collector }}<br>
-                    {% endfor %}
+                <div class="col-lg-12 filter-content" id="filter-collectors">
                 </div>
             </div>
             <div class="row sub-filter">
                 <div class="col-lg-12 map-filter-subtitle">
-                    CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                    CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow" style="display: none"></i>
                 </div>
             </div>
             <div class="row" style="display: none">
