@@ -2,13 +2,11 @@
 __author__ = 'Anita Hapsari <anita@kartoza.com>'
 __date__ = '07/06/18'
 
-
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from rest_framework import serializers
 
 
 class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
-
     geometry = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
     taxon_gbif_id = serializers.SerializerMethodField()
@@ -20,7 +18,10 @@ class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
         return object.site.get_geometry().geojson
 
     def get_taxon_gbif_id(self, object):
-        return object.taxon_gbif_id
+        if object.taxon_gbif_id:
+            return object.taxon_gbif_id.id
+        else:
+            return None
 
     class Meta:
         model = BiologicalCollectionRecord
