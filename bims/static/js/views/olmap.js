@@ -21,6 +21,7 @@ define([
         administrativeBoundarySource: null,
         clusterSource: null,
         locationSiteVectorSource: null,
+        highlightVectorSource: null,
 
         // attributes
         geocontextOverlay: null,
@@ -79,6 +80,7 @@ define([
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
+            this.highlightVectorSource.clear();
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
@@ -158,6 +160,8 @@ define([
         featureClicked: function (feature) {
             var properties = feature.getProperties();
             Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
+            this.highlightVectorSource.clear();
+            this.addHighlightFeature(feature);
         },
         layerControlClicked: function (e) {
         },
@@ -321,6 +325,17 @@ define([
                     return style;
                 }
             }));
+
+            // highlight layer
+            // ---------------------------------
+            self.highlightVectorSource = new ol.source.Vector({});
+            this.map.addLayer(new ol.layer.Vector({
+                source: self.highlightVectorSource,
+                style: function (feature) {
+                    var geom = feature.getGeometry();
+                    return self.layerStyle.getHighlightStyle(geom.getType());
+                }
+            }));
             this.startOnHoverListener();
         },
         fetchingRecords: function () {
@@ -431,6 +446,9 @@ define([
         },
         addClusterFeatures: function (features) {
             this.clusterSource.addFeatures(features);
+        },
+        addHighlightFeature: function (feature) {
+            this.highlightVectorSource.addFeature(feature);
         },
         updateAdministrativeBoundaryFeatures: function (features) {
             this.administrativeBoundarySource.addFeatures(features);

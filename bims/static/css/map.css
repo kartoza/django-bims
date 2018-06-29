@@ -8,7 +8,7 @@ body {
     max-width: 100% !important;
 }
 
-.row.side-panel {
+.row.side-panel.full-height {
     height: 100%;
 }
 
