@@ -87,8 +87,6 @@ celerybeat-schedule
 venv/
 ENV/
 
-# pycharm helpers
-.pycharm_helpers/
 
 # Spyder project settings
 .spyderproject
@@ -105,6 +103,13 @@ ENV/
 
 # Pycharm
 .idea
+.pycharm_helpers
+
+# database stuff
+*.dmp
+
+# node modules
+ node_modules/
 
 # Pg cluster for docker
 deployment/pg/postgres_data/9.3

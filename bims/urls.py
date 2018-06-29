@@ -1,6 +1,7 @@
 # coding=utf-8
 
-from django.conf.urls import url
+from django.conf.urls import url, include
+
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
@@ -18,6 +19,10 @@ from bims.api_views.cluster_collection_by_taxon import (
     ClusterCollectionByTaxonExtent
 )
 from bims.views.links import LinksCategoryView
+from bims.views.bibliography import (
+    EntryListView,
+    EntryBatchImportView,
+)
 from bims.api_views.search import SearchObjects
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
@@ -41,11 +46,19 @@ api_urls = [
         SearchObjects.as_view(), name='search-api'),
 ]
 
+bibliography_urls = [
+    url('^$', EntryListView.as_view(), name='entry_list'),
+    url('^import/$', EntryBatchImportView.as_view(), name='import'),
+]
+
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
     url(r'^map/$', MapPageView.as_view()),
     url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
+    url(r'^bibliography/',
+        include((bibliography_urls, 'bims'), namespace = 'td_biblio')),
+
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user')
