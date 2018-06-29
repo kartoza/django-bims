@@ -25,6 +25,10 @@ urlpatterns = [
     url(r'^', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
     url(r'^', include('example.urls')),
+
+    # prometheus monitoring
+    url(r'^', include('django_prometheus.urls')),
+
     url(r'^api-auth/', include('rest_framework.urls')),
 ]
 
