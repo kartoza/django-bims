@@ -61,7 +61,7 @@ def update_fish_collection_record(fish_collection):
             update_taxonomy_fields(taxon, result)
             fish_collection.taxon_gbif_id = taxon
             fish_collection.save()
-            continue
+            break
 
 
 def update_taxonomy_fields(taxon, response):

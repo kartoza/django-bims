@@ -16,6 +16,9 @@ from bims.models import (
 from bims.models.location_site import (
     location_site_post_save_handler
 )
+from bims.models.biological_collection_record import (
+    collection_post_save_update_cluster
+)
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 
@@ -49,11 +52,16 @@ class CsvUploadView(FormView):
         models.signals.post_save.disconnect(
             location_site_post_save_handler,
         )
+        models.signals.post_save.disconnect(
+            collection_post_save_update_cluster,
+        )
         location_sites = []
         with open(csv_file.path, 'r') as csvfile:
             csv_reader = csv.DictReader(csvfile)
             for record in csv_reader:
                 try:
+                    print('------------------------------------')
+                    print('Processing : %s' % record['Species'])
                     location_type, status = LocationType.objects.get_or_create(
                         name='RiverPointObservation',
                         allowed_geometry='POINT'
@@ -79,24 +87,38 @@ class CsvUploadView(FormView):
                     if collections:
                         taxon_gbif = collections[0].taxon_gbif_id
 
-                    collection, collection_status = \
-                        BiologicalCollectionRecord. \
-                        objects.get_or_create(
+                    collection_records = BiologicalCollectionRecord.objects.\
+                        filter(
                             site=location_site,
                             original_species_name=record['Species'],
                             category=record['Category'].lower(),
                             present=record['Present'] == 1,
                             absent=record['Absent'] == 1,
                             collection_date=datetime(
-                                int(record['Year']), 1, 1),
+                                    int(record['Year']), 1, 1),
                             collector=record['Collector'],
                             notes=record['Notes'],
-                            taxon_gbif_id=taxon_gbif,
+                            taxon_gbif_id=taxon_gbif
+                    )
+
+                    if not collection_records:
+                        BiologicalCollectionRecord.objects.create(
+                            site=location_site,
+                            original_species_name=record['Species'],
+                            category=record['Category'].lower(),
+                            present=record['Present'] == 1,
+                            absent=record['Absent'] == 1,
+                            collection_date=datetime(
+                                    int(record['Year']), 1, 1),
+                            collector=record['Collector'],
+                            notes=record['Notes'],
+                            taxon_gbif_id=taxon_gbif
                         )
-                    if collection_status:
+                        print('%s Added' % record['Species'])
                         collection_processed['added'] += 1
                 except (ValueError, KeyError):
                     collection_processed['failed'] += 1
+                print('------------------------------------')
 
         self.context_data['uploaded'] = 'Collection added ' + \
                                         str(collection_processed['added'])
@@ -104,6 +126,9 @@ class CsvUploadView(FormView):
         # reconnect post save handler of location sites
         models.signals.post_save.connect(
             location_site_post_save_handler,
+        )
+        models.signals.post_save.connect(
+            collection_post_save_update_cluster,
         )
 
         return super(CsvUploadView, self).form_valid(form)
