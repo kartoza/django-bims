@@ -50,5 +50,5 @@ elasticsearch==5.0.1
 
 # prometheus monitoring support
 django-prometheus==1.0.14
-prometheus_client==1.2.0
+prometheus_client==0.2.0
 
