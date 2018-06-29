@@ -49,5 +49,14 @@ require([
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)
         });
+        $('.mouse-position button').click(function () {
+            if ($('.mouse-position').hasClass('active')) {
+                $('.mouse-position').removeClass('active');
+                $('#mouse-position-wrapper').hide();
+            } else {
+                $('.mouse-position').addClass('active');
+                $('#mouse-position-wrapper').show();
+            }
+        })
     });
 });

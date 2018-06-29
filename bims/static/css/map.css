@@ -8,7 +8,7 @@ body {
     max-width: 100% !important;
 }
 
-.row.side-panel {
+.row.side-panel.full-height {
     height: 100%;
 }
 
@@ -549,9 +549,6 @@ div:hover::-webkit-scrollbar {
 
 .mouse-position {
     position: absolute;
-    padding: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
     bottom: .5em;
     left: .5em;
     font-size: .7rem;
@@ -570,4 +567,20 @@ div:hover::-webkit-scrollbar {
     padding: 10px;
     padding-left: 20px;
     padding-right: 20px;
+}
+
+.mouse-position button {
+    height: 1.375em;
+    width: 1.375em;
+    cursor: pointer;
+}
+
+.mouse-position.active {
+    width: 117px;
+}
+
+.ol-mouse-position {
+    top: 5px;
+    left: 30px;
+    position: absolute;
 }

@@ -1,0 +1,72 @@
+{% comment %}
+    TailorDev Biblio
+
+    Bibiography style: ieeetr
+{% endcomment %}
+
+{% load i18n %}
+{% load td_biblio %}
+
+{% comment %}
+
+    Article citation style
+
+{% endcomment %}
+
+<!-- Article citation style -->
+<div class="article">
+
+    <!-- Authors -->
+    {% for author in entry.get_authors %}
+    <span class="author {% if author.id == current_publication_author %}active{% endif %}">
+        {% if author.user %}
+        <a href="{{ author.user.get_absolute_url }}" title="{% trans "Access user home page" %}">
+        {% endif %}
+        {% for initial in author.first_initial.split %}
+            {{ initial }}.
+        {% endfor %}
+        <span class="last_name">{{ author.last_name }}</span>{% if author.user %}</a>{% endif %}{% if forloop.revcounter == 2 %} and {% else %}, {% endif %}
+    </span>
+    {% endfor %}
+    <!-- /Authors -->
+
+    <!-- Title -->
+    <span class="title">
+        &ldquo;{{ entry.title }}&rdquo;,
+    </span>
+    <!-- /Title -->
+
+    <!-- Journal -->
+    <span class="journal">
+        <em>{% if entry.journal.abbreviation %}{{ entry.journal.abbreviation }}{% else %}{{ entry.journal.name }}{% endif %}</em>,
+    </span>
+    <!-- /Journal -->
+
+    <!-- Volume -->
+    {% if entry.volume %}
+    <span class="volume">
+        vol. {{ entry.volume }}
+        {% if entry.number %}
+        <span class="number">({{ entry.number}})</span>
+        {% endif %}
+        ,
+    </span>
+    {% endif %}
+    <!-- /Volume -->
+
+    <!-- Pages -->
+    {% if entry.pages %}
+    <span class="pages">
+        pp. {{ entry.pages }},
+    </span>
+    {% endif %}
+    <!-- /Pages -->
+
+    <!-- Publication date -->
+    <span class="publication_date">
+        {{ entry|publication_date }}.
+    </span>
+    <!-- /Publication date -->
+
+</div>
+<!-- ./article -->
