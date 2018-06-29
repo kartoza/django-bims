@@ -99,7 +99,7 @@ class CsvUploadView(FormView):
                             collector=record['Collector'],
                             notes=record['Notes'],
                             taxon_gbif_id=taxon_gbif
-                    )
+                        )
 
                     if not collection_records:
                         BiologicalCollectionRecord.objects.create(
