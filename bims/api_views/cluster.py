@@ -1,5 +1,4 @@
 # coding=utf8
-from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.cluster import Cluster
@@ -18,7 +17,7 @@ class ClusterList(APIView):
             boundary_type = BoundaryType.objects.get(
                 name=administrative_level)
         except BoundaryType.DoesNotExist:
-            raise Http404()
+            return Response([])
 
         boundaries = Cluster.objects.filter(
             boundary__type=boundary_type).values_list('boundary')

@@ -44,7 +44,11 @@ require([
 ], function (olmap, Shared, App) {
     // Display the map
     var map = new olmap();
+    // A $( document ).ready() block.
     $(document).ready(function () {
+        $('.try-again-button').click(function () {
+            Shared.Dispatcher.trigger('map:reloadXHR', this.features)
+        });
         $('.mouse-position button').click(function () {
             if ($('.mouse-position').hasClass('active')) {
                 $('.mouse-position').removeClass('active');

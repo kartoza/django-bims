@@ -47,6 +47,7 @@ define([
             Shared.Dispatcher.on('map:addClusterFeatures', this.addClusterFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
+            Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             this.layerStyle = new LayerStyle();
             this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
@@ -166,6 +167,7 @@ define([
         layerControlClicked: function (e) {
         },
         fetchingStart: function () {
+            $('#fetching-error').hide();
             $('#loading-warning').show();
             if (this.fetchXhr) {
                 this.fetchXhr.abort();
@@ -176,11 +178,24 @@ define([
             });
         },
         fetchingFinish: function () {
+            this.fetchingReset();
+            this.mapInteractionEnabled = true;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(true);
+            });
+        },
+        fetchingError: function () {
+            $('#fetching-error').show();
             $('#loading-warning').hide();
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
             });
+        },
+        fetchingReset: function () {
+            $('#fetching-error').hide();
+            $('#loading-warning').hide();
+            $('#fetching-error .call-administrator').hide();
         },
         checkAdministrativeLevel: function () {
             var self = this;
@@ -336,6 +351,12 @@ define([
             }));
             this.startOnHoverListener();
         },
+        reloadXHR: function () {
+            this.previousZoom = -1;
+            this.clusterCollection.administrative = null;
+            this.fetchingRecords();
+            $('#fetching-error .call-administrator').show();
+        },
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
@@ -350,6 +371,7 @@ define([
                     if (zoomLevel === this.previousZoom) {
                         return
                     }
+                    this.fetchingReset();
                     // generate boundary
                     this.administrativeBoundarySource.clear();
                     this.boundaryView.renderAdministrativeBoundary(
@@ -369,6 +391,8 @@ define([
                                 self.clusterSource.clear();
                                 self.locationSiteVectorSource.clear();
                                 self.clusterCollection.renderCollection()
+                            }, error: function () {
+                                self.fetchingError();
                             }
                         });
                     }
@@ -377,6 +401,7 @@ define([
                     this.clusterCollection.administrative = null;
                     this.clusterSource.clear();
                     this.administrativeBoundarySource.clear();
+                    this.fetchingReset();
                     this.fetchingStart();
                     this.locationSiteCollection.updateUrl(this.getCurrentBbox());
                     this.fetchXhr = this.locationSiteCollection.fetch({
@@ -385,10 +410,13 @@ define([
                             self.clusterSource.clear();
                             self.locationSiteVectorSource.clear();
                             self.locationSiteCollection.renderCollection()
+                        }, error: function () {
+                            self.fetchingError();
                         }
                     });
                 }
             } else {
+                this.fetchingReset();
                 this.fetchingStart();
                 this.locationSiteVectorSource.clear();
                 this.administrativeBoundarySource.clear();
@@ -398,6 +426,8 @@ define([
                         self.clusterSource.clear();
                         self.locationSiteVectorSource.clear();
                         self.clusterBiologicalCollection.renderCollection();
+                    }, error: function () {
+                        self.fetchingError();
                     }
                 });
             }

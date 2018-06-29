@@ -524,13 +524,19 @@ div:hover::-webkit-scrollbar {
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
 }
 
-#loading-warning {
+#loading-warning, #fetching-error {
     position: absolute;
     padding: 10px;
     top: 10px;
     width: 100%;
     text-align: center;
     opacity: 0.3;
+    display: none;
+    z-index: 9999;
+}
+
+#fetching-error {
+    opacity: 0.8;
 }
 
 #loading-warning span {
@@ -550,6 +556,19 @@ div:hover::-webkit-scrollbar {
     background: rgba(255, 255, 255, .8);
 }
 
+#fetching-error .try-again-button {
+    color: blue;
+    cursor: pointer;
+}
+
+#fetching-error span {
+    background-color: red;
+    color: white;
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
 .mouse-position button {
     height: 1.375em;
     width: 1.375em;
@@ -565,4 +584,3 @@ div:hover::-webkit-scrollbar {
     left: 30px;
     position: absolute;
 }
-
