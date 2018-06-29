@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0011_boundary_centroid'),
+        ('bims', '0012_merge_20180626_1630'),
     ]
 
     operations = [
