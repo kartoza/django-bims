@@ -27,7 +27,7 @@ urlpatterns = [
     url(r'^', include('example.urls')),
 
     # prometheus monitoring
-    url(r'^', include('django_prometheus.urls')),
+    url(r'', include('django_prometheus.urls')),
 
     url(r'^api-auth/', include('rest_framework.urls')),
 ]
