@@ -7,19 +7,28 @@ define([
     'collections/cluster_biological',
     'views/map_control_panel',
     'views/side_panel',
+    'views/boundary',
     'ol',
-    'jquery', 'layerSwitcher', 'olMapboxStyle'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection, MapControlPanelView, SidePanelView, ol, $, LayerSwitcher, OlMapboxStyle) {
+    'jquery', 'layerSwitcher',
+    'views/basemap', 'views/layer_style'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
+                                                     MapControlPanelView, SidePanelView, BoundaryView, ol, $, LayerSwitcher, Basemap, LayerStyle) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
-        locationSiteVectorSource: null,
+
+        // source of layers
+        administrativeBoundarySource: null,
         clusterSource: null,
+        locationSiteVectorSource: null,
+        highlightVectorSource: null,
+
+        // attributes
         geocontextOverlay: null,
-        previousZoom: 0,
-        sidePanelView: null,
         geocontextOverlayDisplayed: false,
         mapInteractionEnabled: true,
+        previousZoom: 0,
+        sidePanelView: null,
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
@@ -36,7 +45,11 @@ define([
             _.bindAll(this, 'render');
             Shared.Dispatcher.on('map:addLocationSiteFeatures', this.addLocationSiteFeatures, this);
             Shared.Dispatcher.on('map:addClusterFeatures', this.addClusterFeatures, this);
+            Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
+            Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
+            this.layerStyle = new LayerStyle();
+            this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection();
@@ -68,6 +81,7 @@ define([
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
+            this.highlightVectorSource.clear();
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
@@ -75,6 +89,11 @@ define([
                     self.featureClicked(features[0]);
                     var coordinates = geometry.getCoordinates();
                     self.zoomToCoordinates(coordinates);
+
+                    // increase zoom level if it is clusters
+                    if (features[0].getProperties()['count']) {
+                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                    }
                 } else {
                     this.sidePanelView.closeSidePanel();
                 }
@@ -142,10 +161,13 @@ define([
         featureClicked: function (feature) {
             var properties = feature.getProperties();
             Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
+            this.highlightVectorSource.clear();
+            this.addHighlightFeature(feature);
         },
         layerControlClicked: function (e) {
         },
         fetchingStart: function () {
+            $('#fetching-error').hide();
             $('#loading-warning').show();
             if (this.fetchXhr) {
                 this.fetchXhr.abort();
@@ -156,11 +178,24 @@ define([
             });
         },
         fetchingFinish: function () {
+            this.fetchingReset();
+            this.mapInteractionEnabled = true;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(true);
+            });
+        },
+        fetchingError: function () {
+            $('#fetching-error').show();
             $('#loading-warning').hide();
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
             });
+        },
+        fetchingReset: function () {
+            $('#fetching-error').hide();
+            $('#loading-warning').hide();
+            $('#fetching-error .call-administrator').hide();
         },
         checkAdministrativeLevel: function () {
             var self = this;
@@ -217,63 +252,6 @@ define([
         loadMap: function () {
             var self = this;
 
-            self.locationSiteVectorSource = new ol.source.Vector({});
-
-            var iconStyle = new ol.style.Style({
-                image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
-                    anchor: [0.5, 46],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'pixels',
-                    opacity: 0.75,
-                    src: 'static/img/map-marker.png'
-                })),
-                text: new ol.style.Text({
-                    scale: 1,
-                    fill: new ol.style.Fill({
-                        color: '#000000'
-                    })
-                })
-            });
-
-            var styles = {
-                'Point': iconStyle,
-                'LineString': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: 'green',
-                        width: 1
-                    })
-                }),
-                'MultiPolygon': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: 'yellow',
-                        width: 1
-                    }),
-                    fill: new ol.style.Fill({
-                        color: 'rgba(255, 255, 0, 0.1)'
-                    })
-                }),
-                'Polygon': new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: 'blue',
-                        lineDash: [4],
-                        width: 3
-                    }),
-                    fill: new ol.style.Fill({
-                        color: 'rgba(0, 0, 255, 0.1)'
-                    })
-                })
-            };
-
-            var styleFunction = function (feature) {
-                var style = styles[feature.getGeometry().getType()];
-                return style;
-            };
-
-            var locationSiteVectorLayer = new ol.layer.Vector({
-                source: self.locationSiteVectorSource,
-                style: styleFunction
-            });
-
             this.geoOverlayContainer = document.getElementById('geocontext-popup');
             this.geoOverlayContent = document.getElementById('geocontext-content');
             this.geoOverlayCloser = document.getElementById('geocontext-closer');
@@ -295,11 +273,9 @@ define([
             var mousePositionControl = new ol.control.MousePosition({
                 coordinateFormat: ol.coordinate.createStringXY(4),
                 projection: 'EPSG:4326',
-                target: document.getElementById('page-top'),
-                className: 'mouse-position',
-                undefinedHTML: '&nbsp;',
+                target: document.getElementById('mouse-position-wrapper'),
                 coordinateFormat: function (coordinate) {
-                    return ol.coordinate.format(coordinate, '{y}, {x}', 4);
+                    return ol.coordinate.format(coordinate, '{y},{x}', 4);
                 }
             });
             this.map = new ol.Map({
@@ -314,27 +290,72 @@ define([
                 }).extend([mousePositionControl]),
                 overlays: [this.geocontextOverlay]
             });
-            this.map.addLayer(locationSiteVectorLayer);
 
+            // LOAD SOURCE LAYERS
+            // ---------------------------------
+            self.locationSiteVectorSource = new ol.source.Vector({});
+            this.map.addLayer(new ol.layer.Vector({
+                source: self.locationSiteVectorSource,
+                style: function (feature) {
+                    return self.layerStyle.getSiteStyle(feature.getGeometry().getType());
+                }
+            }));
+
+            // Administrative boundary layer
+            // ---------------------------------
+            self.administrativeBoundarySource = new ol.source.Vector({});
+            this.map.addLayer(new ol.layer.Vector({
+                source: self.administrativeBoundarySource,
+                style: function (feature) {
+                    return new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: 'yellow',
+                            width: 1
+                        }),
+                        text: new ol.style.Text({
+                            scale: 1,
+                            fill: new ol.style.Fill({
+                                color: '#000000'
+                            }),
+                            text: feature.getProperties()['name']
+                        })
+                    })
+                }
+            }));
 
             // cluster layer
+            // ---------------------------------
             self.clusterSource = new ol.source.Vector({});
-
-            var styleFunction = function (feature) {
-                var count = 1;
-                if (feature.getProperties()['count']) {
-                    count = feature.getProperties()['count'];
-                }
-                var style = self.getClusterStyle(count);
-                style.getText().setText('' + count);
-                return style;
-            };
-
-            var clusterVectorLayer = new ol.layer.Vector({
+            this.map.addLayer(new ol.layer.Vector({
                 source: self.clusterSource,
-                style: styleFunction
-            });
-            this.map.addLayer(clusterVectorLayer);
+                style: function (feature) {
+                    var count = 1;
+                    if (feature.getProperties()['count']) {
+                        count = feature.getProperties()['count'];
+                    }
+                    var style = self.layerStyle.getClusterStyle(count);
+                    style.getText().setText('' + count);
+                    return style;
+                }
+            }));
+
+            // highlight layer
+            // ---------------------------------
+            self.highlightVectorSource = new ol.source.Vector({});
+            this.map.addLayer(new ol.layer.Vector({
+                source: self.highlightVectorSource,
+                style: function (feature) {
+                    var geom = feature.getGeometry();
+                    return self.layerStyle.getHighlightStyle(geom.getType());
+                }
+            }));
+            this.startOnHoverListener();
+        },
+        reloadXHR: function () {
+            this.previousZoom = -1;
+            this.clusterCollection.administrative = null;
+            this.fetchingRecords();
+            $('#fetching-error .call-administrator').show();
         },
         fetchingRecords: function () {
             // get records based on administration
@@ -350,21 +371,37 @@ define([
                     if (zoomLevel === this.previousZoom) {
                         return
                     }
+                    this.fetchingReset();
+                    // generate boundary
+                    this.administrativeBoundarySource.clear();
+                    this.boundaryView.renderAdministrativeBoundary(
+                        administrative, this.getCurrentBbox());
+
                     this.previousZoom = zoomLevel;
                     this.clusterCollection.updateUrl(administrative);
-                    this.fetchingStart();
-                    this.fetchXhr = this.clusterCollection.fetch({
-                        success: function () {
-                            self.fetchingFinish();
-                            self.clusterSource.clear();
-                            self.locationSiteVectorSource.clear();
-                            self.clusterCollection.renderCollection()
-                        }
-                    });
+                    if (this.clusterCollection.getCache()) {
+                        this.clusterSource.clear();
+                        this.locationSiteVectorSource.clear();
+                        this.clusterCollection.applyCache();
+                    } else {
+                        this.fetchingStart();
+                        this.fetchXhr = this.clusterCollection.fetch({
+                            success: function () {
+                                self.fetchingFinish();
+                                self.clusterSource.clear();
+                                self.locationSiteVectorSource.clear();
+                                self.clusterCollection.renderCollection()
+                            }, error: function () {
+                                self.fetchingError();
+                            }
+                        });
+                    }
                 } else {
                     this.previousZoom = -1;
                     this.clusterCollection.administrative = null;
                     this.clusterSource.clear();
+                    this.administrativeBoundarySource.clear();
+                    this.fetchingReset();
                     this.fetchingStart();
                     this.locationSiteCollection.updateUrl(this.getCurrentBbox());
                     this.fetchXhr = this.locationSiteCollection.fetch({
@@ -373,18 +410,24 @@ define([
                             self.clusterSource.clear();
                             self.locationSiteVectorSource.clear();
                             self.locationSiteCollection.renderCollection()
+                        }, error: function () {
+                            self.fetchingError();
                         }
                     });
                 }
             } else {
+                this.fetchingReset();
                 this.fetchingStart();
                 this.locationSiteVectorSource.clear();
+                this.administrativeBoundarySource.clear();
                 this.fetchXhr = this.clusterBiologicalCollection.fetch({
                     success: function () {
                         self.fetchingFinish();
                         self.clusterSource.clear();
                         self.locationSiteVectorSource.clear();
                         self.clusterBiologicalCollection.renderCollection();
+                    }, error: function () {
+                        self.fetchingError();
                     }
                 });
             }
@@ -426,115 +469,33 @@ define([
         updateClusterBiologicalCollectionZoomExt: function () {
             this.clusterBiologicalCollection.updateZoomAndBBox(this.getCurrentZoom(), this.getCurrentBbox());
         },
-        getClusterStyle: function (count) {
-            var smallCluster = new ol.style.Circle({
-                radius: 15,
-                fill: new ol.style.Fill({
-                    color: 'red'
-                })
-            });
-            var mediumCluster = new ol.style.Circle({
-                radius: 30,
-                fill: new ol.style.Fill({
-                    color: 'yellow'
-                })
-            });
-            var largeCluster = new ol.style.Circle({
-                radius: 45,
-                fill: new ol.style.Fill({
-                    color: 'green'
-                })
-            });
-            var image = null;
-            if (count < 10) {
-                image = smallCluster;
-            } else if (10 >= count <= 100) {
-                image = mediumCluster;
-            } else {
-                image = largeCluster
-            }
-            return new ol.style.Style({
-                image: image,
-                text: new ol.style.Text({
-                    scale: 1,
-                    fill: new ol.style.Fill({
-                        color: '#000000'
-                    })
-                })
-            });
-        },
         addLocationSiteFeatures: function (features) {
             this.locationSiteVectorSource.addFeatures(features);
         },
         addClusterFeatures: function (features) {
             this.clusterSource.addFeatures(features);
         },
-
-        // TODO : When this functions moved to other js, the mapbox style broken (doesn't call style)
-        // ------------------------------ BASEMAP ---------------------------------
-        getVectorTileMapBoxStyle: function (url, styleUrl, layerName, attributions) {
-            var tilegrid = ol.tilegrid.createXYZ({tileSize: 512, maxZoom: 14});
-            var layer = new ol.layer.VectorTile({
-                source: new ol.source.VectorTile({
-                    attributions: attributions,
-                    format: new ol.format.MVT(),
-                    tileGrid: tilegrid,
-                    tilePixelRatio: 8,
-                    url: url
-                })
-            });
-            fetch(styleUrl).then(function (response) {
-                response.json().then(function (glStyle) {
-                    OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
-                    });
-                });
-            });
-            return layer
+        addHighlightFeature: function (feature) {
+            this.highlightVectorSource.addFeature(feature);
         },
-        getOpenMapTilesTile: function (styleUrl) {
-            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
-                '© <a href="http://www.openstreetmap.org/copyright">' +
-                'OpenStreetMap contributors</a>';
-            return this.getVectorTileMapBoxStyle(
-                'https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
-                styleUrl,
-                'openmaptiles',
-                attributions
-            );
+        updateAdministrativeBoundaryFeatures: function (features) {
+            this.administrativeBoundarySource.addFeatures(features);
         },
-        getKlokantechTerrainBasemap: function () {
-            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
-                '© <a href="http://www.openstreetmap.org/copyright">' +
-                'OpenStreetMap contributors</a>';
-            var openMapTiles = this.getOpenMapTilesTile(staticURL + 'mapbox-style/klokantech-terrain-gl-style.json');
-            var contours = this.getVectorTileMapBoxStyle(
-                'https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
-                staticURL + 'mapbox-style/klokantech-terrain-gl-style.json',
-                'contours',
-                attributions
-            );
-            var hillshading = new ol.layer.Tile({
-                opacity: 0.1,
-                source: new ol.source.XYZ({
-                    url: 'https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
-                })
+        startOnHoverListener: function () {
+            var that = this;
+            this.pointerMoveListener = this.map.on('pointermove', function (e) {
+                var pixel = that.map.getEventPixel(e.originalEvent);
+                var hit = that.map.hasFeatureAtPixel(pixel);
+                $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
+                if (hit) {
+                    that.map.forEachFeatureAtPixel(pixel,
+                        function (feature, layer) {
+                            if (feature.getGeometry().getType() == 'Point') {
+                                $('#' + that.map.getTarget()).find('canvas').css('cursor', 'pointer');
+                            }
+                        })
+                }
             });
-            return new ol.layer.Group({
-                title: 'Klokantech Terrain',
-                layers: [openMapTiles, hillshading, contours]
-            });
-        },
-        getPositronBasemap: function () {
-            var layer = this.getOpenMapTilesTile(
-                staticURL + 'mapbox-style/positron-gl-style.json');
-            layer.set('title', 'Positron Map');
-            return layer
-        },
-        getDarkMatterBasemap: function () {
-            var layer = this.getOpenMapTilesTile(
-                staticURL + 'mapbox-style/dark-matter-gl-style.json');
-            layer.set('title', 'Dark Matter');
-            return layer
         },
         getBaseMaps: function () {
             var baseDefault = null;
@@ -573,10 +534,11 @@ define([
             }
 
             // OPENMAPTILES
+            var basemap = new Basemap();
             if (mapTilerKey) {
-                baseSourceLayers.push(this.getPositronBasemap());
-                baseSourceLayers.push(this.getDarkMatterBasemap());
-                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
+                baseSourceLayers.push(basemap.getPositronBasemap());
+                baseSourceLayers.push(basemap.getDarkMatterBasemap());
+                baseSourceLayers.push(basemap.getKlokantechTerrainBasemap());
             }
             $.each(baseSourceLayers, function (index, layer) {
                 layer.set('type', 'base');

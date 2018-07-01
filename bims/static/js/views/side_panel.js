@@ -38,9 +38,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                 }
             }
         },
-        updateSidePanelDetail: function(data) {
+        updateSidePanelDetail: function(data, sidePanelDataType) {
             $('.panel-icons').html('');
             this.$el.find('.panel-loading').hide();
+            this.switchToDetailResultPanel();
             if(data.hasOwnProperty('biological_collection_record')) {
                 var biologicalCollectionRecords = data['biological_collection_record'];
                 var collections = {};
@@ -52,7 +53,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
                         collections[recordName] = 1;
                         $panelIcons.append(
                             '<div class="col-lg-3 text-center">'+
-                                '<img src="static/img/'+ recordName +'.svg" class="right-panel-icon">' +
+                                '<img src="/static/img/'+ recordName +'.svg" class="right-panel-icon">' +
                                 '<p class="data-'+ recordName +' text-bold">'+collections[recordName]+'</p>'+
                                 '<p>'+ recordName +' species</p>'+
                             '</div>'
@@ -65,6 +66,16 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             } else{
                 $('#content-panel').html(JSON.stringify(data));
             }
+        },
+        switchToSearchResultPanel:function () {
+            $('.title-side-panel').show();
+            $('.search-result-info').show();
+            $('.side-panel-info').addClass('full-height');
+        },
+        switchToDetailResultPanel:function () {
+            $('.title-side-panel').hide();
+            $('.search-result-info').hide();
+            $('.side-panel-info').removeClass('full-height');
         },
         updateSidePanelTitle: function(title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');

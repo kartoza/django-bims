@@ -37,11 +37,11 @@ require.config({
     }
 });
 
-require( [
+require([
     'views/olmap',
     'shared',
     'app'
-], function(olmap, Shared, App) {
+], function (olmap, Shared, App) {
     // Display the map
     var map = new olmap();
 
@@ -64,4 +64,19 @@ require( [
         }
     });
 
+    // A $( document ).ready() block.
+    $(document).ready(function () {
+        $('.try-again-button').click(function () {
+            Shared.Dispatcher.trigger('map:reloadXHR', this.features)
+        });
+        $('.mouse-position button').click(function () {
+            if ($('.mouse-position').hasClass('active')) {
+                $('.mouse-position').removeClass('active');
+                $('#mouse-position-wrapper').hide();
+            } else {
+                $('.mouse-position').addClass('active');
+                $('#mouse-position-wrapper').show();
+            }
+        })
+    });
 });

@@ -17,6 +17,10 @@ class Boundary(models.Model):
         BoundaryType, on_delete=models.CASCADE
     )
     geometry = models.MultiPolygonField(blank=True, null=True)
+    centroid = models.PointField(
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return u'%s - %s' % (

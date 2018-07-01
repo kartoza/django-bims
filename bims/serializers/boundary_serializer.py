@@ -20,7 +20,10 @@ class BoundarySerializer(serializers.ModelSerializer):
         return data
 
     def get_point(self, obj):
-        center = obj.geometry.centroid
+        if obj.centroid:
+            center = obj.centroid.centroid
+        else:
+            center = obj.geometry.centroid
         return [center.x, center.y]
 
     def get_boundary_type(self, obj):

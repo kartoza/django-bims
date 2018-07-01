@@ -28,6 +28,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         renderCollection: function () {
             var self = this;
             this.sidePanel.updateSidePanelTitle(this.searchValue);
+            this.sidePanel.switchToSearchResultPanel();
 
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {

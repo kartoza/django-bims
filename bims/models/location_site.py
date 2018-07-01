@@ -5,6 +5,7 @@
 
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
+from django.dispatch import receiver
 from bims.models.location_type import LocationType
 from bims.models.location_context import LocationContext
 from bims.utils.cluster import update_cluster_by_site
@@ -92,4 +93,13 @@ class LocationSite(models.Model):
                 raise ValidationError('Geometry is not allowed.')
         else:
             raise ValidationError('At least one geometry need to be filled.')
-        update_cluster_by_site(self)
+
+
+@receiver(models.signals.post_save)
+def location_site_post_save_handler(sender, instance, **kwargs):
+    """
+    Update cluster when location site saved
+    """
+    if not issubclass(sender, LocationSite):
+        return
+    update_cluster_by_site(instance)
