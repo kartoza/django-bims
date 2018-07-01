@@ -142,7 +142,7 @@ html, body, .map, .map-wrapper, #map-container {
     color: white;
     width: 54px;
     height: 33px;
-    z-index: 2001;
+    z-index: 11;
     text-align: center;
     box-shadow: none;
 }
@@ -230,7 +230,7 @@ html, body, .map, .map-wrapper, #map-container {
     color: black;
     padding: 5px 15px;
     border: none;
-    z-index: 2000;
+    z-index: 10;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
     text-align: center;
     font-weight: normal;
@@ -259,6 +259,8 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
+    max-height: 300px;
+    overflow-y: scroll;
 }
 
 .map-search-close, .close-panel {
@@ -322,10 +324,12 @@ html, body, .map, .map-wrapper, #map-container {
 
 .search-arrow {
     line-height: 37px;
-    margin-left: 5px;
+    margin-left: 4px;
     font-weight: bolder;
     font-size: 25pt;
     color: white !important;
+    padding-left: 3px;
+    padding-right: 3px;
 }
 
 .container-1 .icon {
@@ -547,6 +551,14 @@ div:hover::-webkit-scrollbar {
     padding-right: 20px;
 }
 
+.result-search:hover {
+   background-color: rgba(255, 255, 255, 0.6);
+}
+
+.sub-filter {
+    cursor: pointer;
+}
+
 .mouse-position {
     position: absolute;
     bottom: .5em;
@@ -554,6 +566,7 @@ div:hover::-webkit-scrollbar {
     font-size: .7rem;
     color: #000;
     background: rgba(255, 255, 255, .8);
+
 }
 
 #fetching-error .try-again-button {

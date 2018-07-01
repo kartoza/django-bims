@@ -179,7 +179,7 @@ h6 {
 }
 
 #navbarResponsive .dropdown-menu {
-  right: 10px !important;
+  right: 0!important;
   left: auto !important;
 }
 

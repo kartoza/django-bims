@@ -6,9 +6,9 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         viewCollection: [],
         sidePanel: null,
         searchValue: '',
-        search: function (searchValue, sidePanel) {
+        search: function (searchValue, sidePanel, collectorValue, categoryValue) {
             this.searchValue = searchValue;
-            this.url = this.searchUrl + searchValue;
+            this.url = this.searchUrl + searchValue + '?collector=' + collectorValue + '&category=' + categoryValue;
             this.sidePanel = sidePanel;
         },
         hideAll: function (e) {

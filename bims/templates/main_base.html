@@ -26,10 +26,22 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav">
              <li class="dropdown">
-                 <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-reorder user-icon"></i></a>
+                 <a class="dropdown-toggle" href="#"><i class="fa fa-reorder user-icon"></i></a>
                     <ul class="dropdown-menu">
-                        <li><a class="nav-link js-scroll-trigger" href="{% url 'link_list' %}">Links</a></li>
-                        <li><a class="nav-link js-scroll-trigger"href="/bibliography/">Bibliography</a></li>
+                        <div class="close-dropdown"><i class="fa fa-close"></i></div>
+                        <div class="bims-title row">
+                            <div class="bims-title-big col-lg-6">BIMS</div>
+                            <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION SYSTEM</div>
+                        </div>
+                        <li><a class="nav-link js-scroll-trigger" href="/">HOME</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/map">MAP</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="{% url 'link_list' %}">EXTERNAL RESOURCES</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="#">DOCUMENTS & REPORTS</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/contact/">CONTACT</a></li>
+                        <li><a class="nav-link js-scroll-trigger"href="/bibliography/">BIBLIOGRAPHY</a></li>
+                        <div class="bims-nav-footer row">
+                            <div class="col-lg-12">MADE WITH <img src="{% static 'img/kartoza-logo-only.png' %}" height="20px"> BY KARTOZA</div>
+                        </div>
                     </ul>
             </li>
           </ul>
@@ -40,20 +52,32 @@
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
              <li class="dropdown">
-                 <a class="dropdown-toggle" data-toggle="dropdown" href="#"><i class="fa fa-user user-icon"></i></a>
-                    <ul class="dropdown-menu">
+                 <a class="dropdown-toggle" href="#"><i class="fa fa-user user-icon"></i></a>
+                    <ul class="dropdown-menu right-nav-dropdown">
+                    <div class="close-dropdown"><i class="fa fa-close"></i></div>
+                    <div class="bims-title row">
+                        <div class="bims-title-big col-lg-6">BIMS</div>
+                        <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION SYSTEM</div>
+                    </div>
                      {% if user.is_authenticated %}
-                        <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> Logout</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="#">PROFILE</a></li>
+                         <li><a class="nav-link js-scroll-trigger" href="#">CONTRIBUTIONS</a></li>
+                         <li><a class="nav-link js-scroll-trigger" href="#">UPLOAD FILES</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
                      {% else %}
-                        <li><a class="nav-link js-scroll-trigger" href="/accounts/login/"><i class="fa fa-sign-in"></i> Login</a></li>
-                        <li><a class="nav-link js-scroll-trigger" href="/accounts/signup/">Sign Up</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/accounts/signup/">SIGN UP</a></li>
                      {% endif %}
+                    <div class="bims-nav-footer row">
+                        <div class="col-lg-12">MADE WITH <img src="{% static 'img/kartoza-logo-only.png' %}" height="20px"> BY KARTOZA</div>
+                    </div>
                     </ul>
             </li>
           </ul>
         </div>
       </div>
     </nav>
+
     {% endblock %}
 
     {% block body_content %} {% endblock %}
