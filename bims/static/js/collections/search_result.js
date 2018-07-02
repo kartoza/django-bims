@@ -6,10 +6,18 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         viewCollection: [],
         sidePanel: null,
         searchValue: '',
-        search: function (searchValue, sidePanel, collectorValue, categoryValue, dateFrom, dateTo) {
-            this.searchValue = searchValue;
-            this.url = this.searchUrl + searchValue + '?collector=' + collectorValue + '&category=' + categoryValue +
-                '&date-from=' + dateFrom + '&date-to=' + dateTo;
+        search: function (sidePanel, parameters) {
+            this.searchValue = parameters['search'];
+            this.collectorValue = parameters['collector'];
+            this.categoryValue = parameters['category'];
+            this.dateFrom = parameters['dateFrom'];
+            this.dateTo = parameters['dateTo'];
+
+            this.url = this.searchUrl + this.searchValue +
+                '?collector=' + this.collectorValue +
+                '&category=' + this.categoryValue +
+                '&date-from=' + this.dateFrom +
+                '&date-to=' + this.dateTo;
             this.sidePanel = sidePanel;
         },
         hideAll: function (e) {
