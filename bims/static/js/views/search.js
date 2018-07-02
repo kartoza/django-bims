@@ -9,17 +9,12 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick'
         },
-        search: function () {
+        search: function (searchValue) {
             var self = this;
             this.sidePanel.openSidePanel();
             this.sidePanel.clearSidePanel();
 
             $('#search-results-wrapper').html('');
-            var searchValue = $('#search').val();
-            if (searchValue.length < 3) {
-                this.sidePanel.fillSidePanelHtml("<div id='search-results-container'>Minimal 3 characters</div>");
-                return false;
-            }
 
             var collectorValue = [];
             $('input[name=collector-value]:checked').each(function () {
@@ -58,11 +53,23 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
             });
         },
         searchClick: function () {
-            this.search();
+            var searchValue = $('#search').val();
+            if(searchValue.length < 3) {
+                this.sidePanel.fillSidePanelHtml("<div id='search-results-container'>Minimal 3 characters</div>");
+                return false
+            }
+            Shared.Router.clearSearch();
+            this.search(searchValue);
         },
         searchEnter: function (e) {
             if (e.which === 13) {
-                this.search();
+                var searchValue = $('#search').val();
+                if(searchValue.length < 3) {
+                    this.sidePanel.fillSidePanelHtml("<div id='search-results-container'>Minimal 3 characters</div>");
+                    return false
+                }
+                Shared.Router.clearSearch();
+                this.search(searchValue);
             }
         },
         datePickerToDate: function (element) {
@@ -77,6 +84,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
             this.parent = options.parent;
             this.sidePanel = options.sidePanel;
             this.searchResultCollection = new SearchResultCollection();
+            Shared.Dispatcher.on('search:searchCollection', this.search, this);
         },
         render: function () {
             this.$el.html(this.template());

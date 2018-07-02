@@ -83,6 +83,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
         },
         closeSidePanel: function (e) {
             Shared.Dispatcher.trigger('searchResult:clicked', null);
+            Shared.Router.clearSearch();
             var self = this;
             this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
                 self.clearSidePanel();

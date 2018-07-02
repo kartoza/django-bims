@@ -38,24 +38,16 @@ require.config({
 });
 
 require([
+    'router',
     'views/olmap',
     'shared',
     'app'
-], function (olmap, Shared, App) {
+], function (Router, olmap, Shared, App) {
     // Display the map
-    var map = new olmap();
+    Shared.Router = new Router();
 
-    // Fetch collectors
-    $.ajax({
-        type: 'GET',
-        url: listCollectorAPIUrl,
-        dataType: 'json',
-        success: function (data) {
-            for (var i = 0; i < data.length; i++) {
-                $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> ' + data[i] + '<br>');
-            }
-        }
-    });
+    // Start Backbone history a necessary step for bookmarkable URL's
+    Backbone.history.start();
 
     // A $( document ).ready() block.
     $(document).ready(function () {
@@ -70,7 +62,7 @@ require([
                 $('.mouse-position').addClass('active');
                 $('#mouse-position-wrapper').show();
             }
-        })
+        });
         $(".date-filter").datepicker({dateFormat: 'yy-mm-dd'});
     });
 });
