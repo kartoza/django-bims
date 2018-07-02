@@ -542,7 +542,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .result-search:hover {
-   background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.6);
 }
 
 .sub-filter {
@@ -586,4 +586,24 @@ div:hover::-webkit-scrollbar {
     top: 5px;
     left: 30px;
     position: absolute;
+}
+
+.date-filter {
+    width: 71%;
+}
+
+.sub-filter .fa-angle-up {
+    display: none;
+}
+
+#ui-datepicker-div {
+    z-index: 9999 !important;
+}
+
+.search-arrow {
+    cursor: pointer;
+}
+
+.search-arrow:hover {
+    opacity: 0.5;
 }
