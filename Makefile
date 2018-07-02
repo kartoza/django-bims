@@ -23,6 +23,10 @@ setup-ansible:
 	@echo "Setup configurations using ansible"
 	@ansible-playbook -i deployment/ansible/development/hosts deployment/ansible/development/site.yml $(ANSIBLE_ARGS)
 
+flake8-check:
+	@echo "Flake8 check"
+	@flake8 --config .flake8 .
+
 # ----------------------------------------------------------------------------
 #    P R O D U C T I O N     C O M M A N D S
 # ----------------------------------------------------------------------------
@@ -331,6 +335,11 @@ status:
 	@echo "--------------------------"
 	@docker-compose ps
 
+django-test:
+	@docker-compose run --rm uwsgi python manage.py test
+
+coverage-django-test:
+	@docker-compose run --rm uwsgi coverage run -p --branch --source='.' python manage.py test
 
 update-taxa:
 	@echo

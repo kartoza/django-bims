@@ -8,7 +8,7 @@ remote_user: travis
 # Your linux/mac group that will run ansible
 remote_group: travis
 # Your project location (this repo)
-project_path: "/home/travis/build/inasafe/inasafe-django"
+project_path: "/home/travis/build/kartoza/django-bims"
 # True if it will be running on Travis
 on_travis: True
 
@@ -28,6 +28,7 @@ django:
     DATABASE_USERNAME: docker
     DATABASE_HOST: db
     SITEURL: http://django-bims.test/
+    SECRET_KEY: 'tT\xd7\xb06\xf7\x9b\xff\x0fZL\xca\xca\x11\xefM\xacr\xfb\xdf\xca\x9b'
 
 geonode:
   environment:
