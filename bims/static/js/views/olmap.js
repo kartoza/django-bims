@@ -292,7 +292,9 @@ define([
                 layers: self.getBaseMaps(),
                 view: new ol.View({
                     center: ol.proj.fromLonLat([22.937506, -30.559482]),
-                    zoom: 7
+                    zoom: 7,
+                    minZoom: 7,
+                    extent: [1801862.6258878047, -4051414.739574095, 3304920.3500875104, -3099926.6114802207]
                 }),
                 controls: ol.control.defaults({
                     zoom: false
