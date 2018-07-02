@@ -40,14 +40,16 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
             } else {
                 categoryValue = JSON.stringify(categoryValue)
             }
-
+            var parameters = {
+                'search': searchValue,
+                'collector': collectorValue,
+                'category': categoryValue,
+                'dateFrom': this.datePickerToDate($('#date-filter-from')),
+                'dateTo': this.datePickerToDate($('#date-filter-to'))
+            };
+            Shared.Dispatcher.trigger('search:hit', parameters);
             this.searchResultCollection.search(
-                searchValue,
-                this.sidePanel,
-                collectorValue,
-                categoryValue,
-                this.datePickerToDate($('#date-filter-from')),
-                this.datePickerToDate($('#date-filter-to'))
+                this.sidePanel, parameters
             );
             this.searchResultCollection.fetch({
                 success: function () {

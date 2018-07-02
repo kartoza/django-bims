@@ -47,6 +47,7 @@ define([
             Shared.Dispatcher.on('map:addClusterFeatures', this.addClusterFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
+            Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             this.layerStyle = new LayerStyle();
             this.boundaryView = new BoundaryView();
@@ -77,6 +78,14 @@ define([
             if (typeof zoomLevel !== 'undefined') {
                 this.map.getView().setZoom(zoomLevel);
             }
+        },
+        zoomToExtent: function (coordinates) {
+            var ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+            this.map.getView().fit(ext, {
+                size: this.map.getSize(), padding: [
+                    0, $('.right-panel').width(), 0, 0
+                ]
+            });
         },
         mapClicked: function (e) {
             var self = this;
@@ -360,7 +369,7 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            if (!this.clusterBiologicalCollection.taxonID) {
+            if (!this.clusterBiologicalCollection.getTaxon()) {
                 var administrative = this.checkAdministrativeLevel();
                 if (administrative !== 'detail') {
                     this.locationSiteVectorSource.clear();
@@ -436,34 +445,18 @@ define([
             if (!this.sidePanelView.isSidePanelOpen()) {
                 return
             }
-            if (!taxonID && !this.clusterBiologicalCollection.taxonID) {
+            if (!taxonID && !this.clusterBiologicalCollection.getTaxon()) {
                 return
             }
             this.clusterBiologicalCollection.updateTaxon(taxonID);
-            if (!this.clusterBiologicalCollection.taxonID) {
+            if (!this.clusterBiologicalCollection.getTaxon()) {
                 // clear all data for taxon records
                 this.clusterSource.clear();
                 this.previousZoom = -1;
                 this.clusterCollection.administrative = null;
                 this.fetchingRecords();
             } else {
-                // get extent for all record and fit it to map
-                var self = this;
-                $.ajax({
-                    url: '/api/cluster/collection/taxon/' + taxonID + '/extent/',
-                    dataType: "json",
-                    success: function (data) {
-                        if (data.length == 4) {
-                            // after fit to map, show the cluster
-                            var ext = ol.proj.transformExtent(data, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
-                            self.map.getView().fit(ext, {
-                                size: self.map.getSize(), padding: [
-                                    0, $('.right-panel').width(), 0, 0
-                                ]
-                            });
-                        }
-                    }
-                });
+                this.clusterBiologicalCollection.getExtentOfRecords();
             }
         },
         updateClusterBiologicalCollectionZoomExt: function () {

@@ -152,6 +152,7 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
+    list_filter = ('taxon_gbif_id', 'collection_date')
     list_display = (
         'original_species_name',
         'category',
