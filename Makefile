@@ -24,6 +24,10 @@ setup-ansible:
 	@echo "Setup configurations using ansible"
 	@ansible-playbook -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts ${ANSIBLE_PROJECT_SETUP_DIR}/development/site.yml $(ANSIBLE_ARGS)
 
+flake8-check:
+	@echo "Flake8 check"
+	@flake8 --config .flake8 .
+
 # ----------------------------------------------------------------------------
 #    P R O D U C T I O N     C O M M A N D S
 # ----------------------------------------------------------------------------
@@ -298,6 +302,9 @@ enable-machine:
 	@echo "------------------------------------------------------------------"
 	@echo "eval \"$(docker-machine env freshwater)\""
 
+sync-geonode:
+	@docker-compose run --rm -w /usr/src/geonode uwsgi paver sync
+
 sync-roles:
 	@echo
 	@echo "------------------------------------------------------------------"
@@ -329,6 +336,11 @@ status:
 	@echo "--------------------------"
 	@docker-compose ps
 
+django-test:
+	@docker-compose run --rm uwsgi python manage.py test
+
+coverage-django-test:
+	@docker-compose run --rm uwsgi coverage run -p --branch --source='.' python manage.py test
 
 update-taxa:
 	@echo

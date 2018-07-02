@@ -18,5 +18,3 @@ class AppConfig(BaseAppConfig):
                 installed_apps.append(app)
 
         settings.INSTALLED_APPS = installed_apps
-
-

@@ -13,18 +13,18 @@ Including another URLconf
     1. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
-from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 
 from geonode_generic.urls import urlpatterns as geonode_generic_urlpatterns
 
+# GeoNode has to be in root url conf.
+# It cannot be included in include() function because it contains i18n urls
 urlpatterns = geonode_generic_urlpatterns + [
-    url(r'^admin/', admin.site.urls),
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^accounts/', include('allauth.urls')),
     url('^contact/', include('contactus.urls')),
-    url(r'^', include('bims.urls')),
+    url(r'^bims/', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),

@@ -1,12 +1,12 @@
 # coding=utf-8
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+from django import forms
 from django.contrib.gis import admin
 from django.core.mail import send_mail
-from django.shortcuts import redirect
+from geonode.people.admin import ProfileAdmin
+from geonode.people.forms import ProfileCreationForm
+from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
-from django import forms
+
 from bims.models import (
     LocationType,
     LocationSite,
@@ -80,9 +80,9 @@ admin.site.register(Category)
 admin.site.register(Link, LinkAdmin)
 
 
-class UserCreateForm(UserCreationForm):
+# Inherits from GeoNode ProfileCreationForm
+class UserCreateForm(ProfileCreationForm):
     class Meta:
-        model = User
         fields = ('username', 'first_name', 'last_name', 'email')
 
     def __init__(self, *args, **kwargs):
@@ -90,7 +90,8 @@ class UserCreateForm(UserCreationForm):
         self.fields['email'].required = True
 
 
-class CustomUserAdmin(UserAdmin):
+# Inherits from GeoNode's ProfileAdmin page
+class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
 
     add_fieldsets = (
@@ -131,11 +132,13 @@ class CustomUserAdmin(UserAdmin):
             [obj.email],
             fail_silently=False
         )
-        return redirect('/admin/auth/user/')
+        return super(CustomUserAdmin, self).response_add(
+            request, obj, post_url_continue)
 
 
-# Re-register UserAdmin
-admin.site.register(User, CustomUserAdmin)
+# Re-register GeoNode's Profile page
+admin.site.unregister(Profile)
+admin.site.register(Profile, CustomUserAdmin)
 
 
 admin.site.register(LocationSite, LocationSiteAdmin)
