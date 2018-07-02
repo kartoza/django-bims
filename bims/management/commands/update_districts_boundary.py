@@ -17,4 +17,4 @@ class Command(UpdateBoundary, BaseCommand):
                 settings.STATIC_ROOT,
                 'data/district/district.shp'
             ),
-            'district', 'district_n')
+            'district', 'district_n', 'district', 3, 'province')

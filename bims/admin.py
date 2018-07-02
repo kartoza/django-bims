@@ -69,7 +69,7 @@ class EntryAdmin(admin.ModelAdmin):
         ('Publication core fields', {
             'fields': ('type', 'title', 'journal',
                        ('volume', 'number'),
-                       ('pages', ),
+                       ('pages',),
                        ('publication_date',
                         'is_partial_publication_date'),
                        'url')
@@ -105,7 +105,6 @@ class EntryAdmin(admin.ModelAdmin):
 
 
 class CollectionAdmin(admin.ModelAdmin):
-
     def size(self, obj):
         """Get the number of entries in each collection"""
         return obj.entries.count()
@@ -138,7 +137,7 @@ class TaxonAdmin(admin.ModelAdmin):
 
 
 class BoundaryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'type')
+    list_display = ('code_name', 'name', 'type', 'top_level_boundary')
     list_filter = ('type',)
     ordering = ('type', 'name')
 
@@ -235,7 +234,6 @@ admin.site.register(Collection, CollectionAdmin)
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
-
 
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
