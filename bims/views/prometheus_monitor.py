@@ -68,8 +68,8 @@ def count_500():
     return generate_latest(REGISTRY)
 
 
-PROCESS_COLLECTION = Gauge('collect_running_process', 'Collect running '
-                                                      'processes')
+PROCESS_COLLECTION = Gauge(
+        'collect_running_process', 'Collect running processes')
 
 
 @PROCESS_COLLECTION.track_inprogress()
