@@ -178,11 +178,6 @@ h6 {
   border: none;
 }
 
-#navbarResponsive .dropdown-menu {
-  right: 0!important;
-  left: auto !important;
-}
-
 .dropdown-menu li {
   padding: 0 10px;
 }

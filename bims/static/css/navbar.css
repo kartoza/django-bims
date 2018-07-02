@@ -93,3 +93,18 @@
 .bims-nav-footer img {
     vertical-align: top;
 }
+
+.user-icon {
+    border: 3px solid black !important;
+    border-radius: 0 !important;
+    color: black !important;
+    background-color: white !important;
+    font-size: 25pt !important;
+    padding: 3px 10px;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+}
+
+#navbarResponsive .dropdown-menu {
+  right: 0!important;
+  left: auto !important;
+}

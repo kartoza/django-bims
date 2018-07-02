@@ -45,13 +45,6 @@ require([
     // Display the map
     var map = new olmap();
 
-    $('li.dropdown a').on('click', function (event) {
-        $(this).next().addClass('show');
-    });
-    $('.close-dropdown').on('click', function (event) {
-        $('.dropdown-menu').removeClass('show');
-    });
-
     // Fetch collectors
     $.ajax({
         type: 'GET',

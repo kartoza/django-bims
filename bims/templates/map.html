@@ -10,7 +10,6 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/map.css" %}" rel="stylesheet">
-    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
 
@@ -178,8 +177,6 @@
 {% block foot %}
 
     <!-- Plugin JavaScript -->
-    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
 
     {% grunt_module "map_view" %}
 

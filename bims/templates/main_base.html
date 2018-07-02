@@ -12,6 +12,7 @@
     <title>{% block title %} Title {% endblock %}</title>
 
     {% stylesheet 'healthyriver-base' %}
+    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Alegreya:400,400i,500,500i,700,700i|Roboto+Condensed:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
 
     {% block head %} {% endblock %}
@@ -26,7 +27,7 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav">
              <li class="dropdown">
-                 <a class="dropdown-toggle" href="#"><i class="fa fa-reorder user-icon"></i></a>
+                 <a class="dropdown-toggle" id="menu-dropdown-burger" href="#"><i class="fa fa-reorder user-icon"></i></a>
                     <ul class="dropdown-menu">
                         <div class="close-dropdown"><i class="fa fa-close"></i></div>
                         <div class="bims-title row">
@@ -52,7 +53,7 @@
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
              <li class="dropdown">
-                 <a class="dropdown-toggle" href="#"><i class="fa fa-user user-icon"></i></a>
+                 <a class="dropdown-toggle" id="menu-dropdown-account" href="#"><i class="fa fa-user user-icon"></i></a>
                     <ul class="dropdown-menu right-nav-dropdown">
                     <div class="close-dropdown"><i class="fa fa-close"></i></div>
                     <div class="bims-title row">
@@ -77,6 +78,33 @@
         </div>
       </div>
     </nav>
+
+
+    <script>
+
+        var burgerMenuButton = document.getElementById("menu-dropdown-burger");
+        var accountMenuButton = document.getElementById("menu-dropdown-account");
+
+        burgerMenuButton.onclick = function () {
+            burgerMenuButton.nextElementSibling.classList.add("show");
+        };
+
+        accountMenuButton.onclick = function () {
+            accountMenuButton.nextElementSibling.classList.add("show");
+        };
+
+        var dropdownCloseButtons = document.getElementsByClassName("close-dropdown");
+
+        for(var i = 0; i < dropdownCloseButtons.length; i++) {
+            dropdownCloseButtons[i].onclick = function () {
+                var dropdownMenu = document.getElementsByClassName("dropdown-menu");
+                for(var j = 0; j < dropdownMenu.length; j++) {
+                    dropdownMenu[j].classList.remove("show");
+                }
+            }
+        }
+
+    </script>
 
     {% endblock %}
 
