@@ -12,12 +12,49 @@ project_path: "/home/travis/build/inasafe/inasafe-django"
 # True if it will be running on Travis
 on_travis: True
 
-django_bims:
-  site_domain_name: 'http://django-bims.test'
-  geocontext_url: 'http://localhost:65402'
-  contact_us_email: 'dimas@kartoza.com'
-  debug: True
-  allowed_hosts:
+django:
+  environment:
+    SITE_DOMAIN_NAME: 'http://django-bims.test'
+    GEOCONTEXT_URL: 'http://localhost:65402'
+    CONTACT_US_EMAIL: 'dimas@kartoza.com'
+    DEBUG: True
+    DJANGO_SETTINGS_MODULE: core.settings.dev_docker
+    RABBITMQ_HOST: rabbitmq
+    HAYSTACK_HOST: elasticsearch
+    PYTHONPATH: /usr/src/app:/home/web/django_project
+    ROOT_URLCONF: core.urls
+    DATABASE_NAME: gis
+    DATABASE_PASSWORD: docker
+    DATABASE_USERNAME: docker
+    DATABASE_HOST: db
+    SITEURL: http://django-bims.test/
+
+geonode:
+  environment:
+    GEONODE_INSTANCE_NAME: geonode
+    DEFAULT_BACKEND_DATASTORE: datastore
+    GEONODE_DATABASE: gis
+    GEONODE_DATABASE_USER: docker
+    GEONODE_DATABASE_PASSWORD: docker
+    GEONODE_GEODATABASE: geonode_data
+    GEONODE_GEODATABASE_PASSWORD: geonode_data
+    UWSGI_CMD: uwsgi --ini /usr/src/app/uwsgi.ini
+    IS_CELERY: False
+    C_FORCE_ROOT: 1
+    # replaced with defaults in settings
+    GEOSERVER_PUBLIC_LOCATION: django-bims.test/geoserver/
+    GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+    STATIC_ROOT: /home/web/static/static
+    MEDIA_ROOT: /home/web/media
+    GEOIP_PATH: /home/web/media/geoip.db
+    ALLOWED_HOSTS: ['django-bims.test']
+    ADMIN_EMAILS: dimas@kartoza.com
+    GEOSERVER_ADMIN_PASSWORD: admingeoserver
+
+geoserver:
+  environment:
+    GEOSERVER_ADMIN_PASSWORD: admingeoserver
+    SITEURL: http://django-bims.test/
 
 interpreters:
   inasafe_django:
