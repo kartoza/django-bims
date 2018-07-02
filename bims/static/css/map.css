@@ -617,3 +617,44 @@ div:hover::-webkit-scrollbar {
 .search-arrow:hover {
     opacity: 0.5;
 }
+
+#popup {
+    background-color: white;
+    border: 1px solid #cccccc;
+    padding: 10px;
+    border-radius: 3px;
+}
+
+#popup:before, #popup:after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-top: -1px;
+    width: 0;
+    height: 0;
+    border: solid transparent;
+}
+
+#popup:before {
+    margin-left: -11px;
+    border-width: 11px;
+    border-top-color: #cccccc;
+
+}
+
+#popup:after {
+    margin-left: -10px;
+    border-width: 10px;
+    border-top-color: #ffffff;
+}
+
+#popup td {
+    border: 1px solid grey;
+    font-size: 8pt;
+    padding: 3px;
+}
+
+#popup tr td:first-child {
+    font-weight: 700;
+}

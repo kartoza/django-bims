@@ -46,6 +46,9 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
             return this.styles[type]
         },
         getClusterStyle: function (count) {
+            if (count == 1) {
+                return this.styles['Point'];
+            }
             var smallCluster = new ol.style.Circle({
                 radius: 15,
                 fill: new ol.style.Fill({

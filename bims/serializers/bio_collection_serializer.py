@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.serializers.taxon_serializer import TaxonSerializer
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -9,6 +10,10 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     children_fields = serializers.SerializerMethodField()
     validated = serializers.BooleanField(required=True)
+    taxonomy = serializers.SerializerMethodField()
+
+    def get_taxonomy(self, obj):
+        return TaxonSerializer(obj.taxon_gbif_id).data
 
     def get_owner(self, obj):
         if obj.owner:
