@@ -46,7 +46,8 @@ class SearchObjects(APIView):
         date_from = request.GET.get('date-from')
         if date_from:
             clean_query_date_from = sqs.query.clean(date_from)
-            results = results.filter(collection_date__gte=clean_query_date_from)
+            results = results.filter(
+                collection_date__gte=clean_query_date_from)
 
         date_to = request.GET.get('date-to')
         if date_to:
