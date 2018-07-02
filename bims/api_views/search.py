@@ -28,7 +28,6 @@ class SearchObjects(APIView):
 
         query_collector = request.GET.get('collector')
         query_category = request.GET.get('category')
-        query_date = request.GET.get('date')
 
         if query_collector != 'null':
             qs_collector = SQ()
@@ -44,9 +43,16 @@ class SearchObjects(APIView):
                 qs_category.add(SQ(category=query), SQ.OR)
             results = results.filter(qs_category)
 
-        if query_date:
-            clean_query_date = sqs.query.clean(query_date)
-            results = results.filter(category=clean_query_date)
+        date_from = request.GET.get('date-from')
+        if date_from:
+            clean_query_date_from = sqs.query.clean(date_from)
+            results = results.filter(
+                collection_date__gte=clean_query_date_from)
+
+        date_to = request.GET.get('date-to')
+        if date_to:
+            clean_query_date_to = sqs.query.clean(date_to)
+            results = results.filter(collection_date__lte=clean_query_date_to)
 
         serializer = BiologicalCollectionRecordDocSerializer(
             [r.object for r in results], many=True)
