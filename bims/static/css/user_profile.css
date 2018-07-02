@@ -9,6 +9,7 @@ body {
 #profile-title {
     margin-top: 30px;
     text-align: center;
+    font-family: "Times New Roman";
 }
 
 #profile-title span {
@@ -48,9 +49,13 @@ body {
 }
 
 #user-photo img {
-    height: 100%;
+    height: 150px;
     width: 100%;
     object-fit: contain
+}
+
+.photo-wrapper {
+    padding: 15px;
 }
 
 .user-photo-footer {
@@ -61,4 +66,8 @@ body {
     border-top: 2px solid black;
     width: 100%;
     text-align: center;
+}
+
+.img-provider {
+    width: 50px;
 }

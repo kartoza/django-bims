@@ -16,8 +16,12 @@
     </div>
     <div class="profile-row">
         <div id="user-photo" class="col-lg-2 profile-block pull-left">
-            <div>
-                <img class="img-responsive" src="{% static 'img/default-user.svg' %}">
+            <div class="photo-wrapper">
+                {% if user.socialaccount_set.all %}
+                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}">
+                {% else %}
+                    <img src="{% static 'img/default-user.svg' %}">
+                {% endif %}
             </div>
             <div class="user-photo-footer">
                 <span>Biodiversity Management</span>
@@ -28,6 +32,13 @@
             <p>Username : {{ user.username }}</p>
             <p>Name : {{ user.first_name }} {{ user.last_name }}</p>
             <p>Email address : {{ user.email }}</p>
+            {% if user.socialaccount_set.all %}
+                {% if user.socialaccount_set.all.0.provider == 'google' %}
+                    <img class="img-provider" src="{% static 'img/google-logo.png' %}">
+                {% elif user.socialaccount_set.all.0.provider == 'github' %}
+                    <img class="img-provider" src="{% static 'img/github-logo.svg' %}">
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 {% endblock %}

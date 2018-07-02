@@ -1,6 +1,7 @@
 # coding=utf-8
 from django.views.generic import TemplateView
 from django.contrib.auth.models import User
+from django.http import Http404
 
 
 class UserProfileView(TemplateView):
@@ -19,5 +20,8 @@ class UserProfileView(TemplateView):
         """
         context = super(UserProfileView, self).get_context_data(**kwargs)
         user = self.request.user
-        context['user'] = User.objects.get(username=user)
+        try:
+            context['user'] = User.objects.get(username=user)
+        except User.DoesNotExist:
+            raise Http404()
         return context
