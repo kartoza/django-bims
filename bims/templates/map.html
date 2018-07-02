@@ -153,9 +153,8 @@
 
     <script type="text/template" id="search-result-record-template">
         <div class="result-search" data-search-result-id="">
-            <p>Original species name: <%= original_species_name %></p>
-            <p>Collector: <%= collector %></p>
-            <p>Collection date: <%= collection_date %></p>
+            <p class="group-title"><%= common_name %></p>
+            <a class="group-description"><%= count %> occurrences</a>
         </div>
     </script>
 

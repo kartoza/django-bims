@@ -22,7 +22,9 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
             this.data = this.model.toJSON();
             if (this.getResultType() == 'bio') {
                 var template = _.template($('#search-result-record-template').html());
-                this.$el.html(template(this.model.attributes));
+                this.$el.html(
+                    template(this.model.attributes)
+                );
                 $('#biological-record-list').append(this.$el);
             } else if (this.getResultType() == 'taxa') {
                 var template = _.template($('#search-result-taxa-template').html());
