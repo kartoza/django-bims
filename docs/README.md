@@ -10,7 +10,7 @@ LEDET-BIMS documentation
 
 
 **Then to generated the documentation run **
-```python manage.py listing_models --output docs/docs/index.rst
+```python manage.py listing_models --output docs/index.rst
 ```
 
 Options
