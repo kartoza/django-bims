@@ -7,8 +7,6 @@ from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.location_site import LocationSite
 from bims.models.taxon import Taxon
-from bims.serializers.bio_collection_record_doc_serializer import \
-    BiologicalCollectionRecordDocSerializer
 from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 
@@ -54,10 +52,24 @@ class SearchObjects(APIView):
             clean_query_date_to = sqs.query.clean(date_to)
             results = results.filter(collection_date__lte=clean_query_date_to)
 
-        serializer = BiologicalCollectionRecordDocSerializer(
-            [r.object for r in results], many=True)
+        # group data of biological collection record
+        # TODO : Move it to query of haystack and use count aggregations
+        records = {}
+        for r in results:
+            model = r.object
+            if model.taxon_gbif_id:
+                taxon_gbif_id = model.taxon_gbif_id.id
+                if taxon_gbif_id not in records:
+                    records[taxon_gbif_id] = {
+                        'common_name': model.taxon_gbif_id.common_name,
+                        'record_type': 'bio',
+                        'taxon_gbif_id': taxon_gbif_id,
+                        'count': 0
+                    }
+                records[taxon_gbif_id]['count'] += 1
 
-        search_result['biological_collection_record'] = serializer.data
+        search_result['biological_collection_record'] = [
+            value for key, value in records.iteritems()]
 
         # Taxon records
         results = sqs.filter(

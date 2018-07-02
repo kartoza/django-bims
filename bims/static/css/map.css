@@ -471,6 +471,16 @@ html, body, .map, .map-wrapper, #map-container {
     overflow-x: hidden;
 }
 
+.result-search .group-title {
+    font-style: italic;
+    font-weight: 700;
+    font-size: 9pt;
+}
+
+.result-search .group-description {
+
+}
+
 .result-search:hover {
     cursor: pointer;
 }
