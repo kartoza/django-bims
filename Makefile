@@ -297,6 +297,9 @@ enable-machine:
 	@echo "------------------------------------------------------------------"
 	@echo "eval \"$(docker-machine env freshwater)\""
 
+sync-geonode:
+	@docker-compose run --rm -w /usr/src/geonode uwsgi paver sync
+
 sync-roles:
 	@echo
 	@echo "------------------------------------------------------------------"

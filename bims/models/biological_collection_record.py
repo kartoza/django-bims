@@ -3,18 +3,18 @@
 
 """
 
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
-from django.utils import timezone
 from django.dispatch import receiver
+from django.utils import timezone
 
 from bims.models.location_site import LocationSite
-from bims.utils.gbif import update_fish_collection_record
+from bims.models.taxon import Taxon
 from bims.utils.cluster import (
     update_cluster_by_collection,
     update_cluster_by_site
 )
-from bims.models.taxon import Taxon
+from bims.utils.gbif import update_fish_collection_record
 
 
 class BiologicalCollectionRecord(models.Model):
@@ -54,7 +54,7 @@ class BiologicalCollectionRecord(models.Model):
         default='',
     )
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         models.SET_NULL,
         blank=True,
         null=True,

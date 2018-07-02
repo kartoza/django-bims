@@ -3,9 +3,9 @@
 core.settings.contrib
 """
 from core.settings.utils import ensure_unique_app_labels
-from .base import *
+from .base import *  # noqa
 # Override base settings from geonode
-from geonode_generic.settings import *
+from geonode_generic.settings import *  # noqa
 from .celery_settings import *  # noqa
 import os
 try:
