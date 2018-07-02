@@ -16,8 +16,7 @@ class Boundary(models.Model):
     )
     code_name = models.CharField(
         max_length=128,
-        blank=False,
-        null=True
+        default="EMPTY"
     )
     type = models.ForeignKey(
         BoundaryType, on_delete=models.CASCADE
@@ -39,7 +38,7 @@ class Boundary(models.Model):
             self.type, self.name)
 
     class Meta:
-        unique_together = ("name", "type")
+        unique_together = ("name", "code_name", "type")
 
     def generate_cluster(self, CollectionModel=None):
         """ Generate cluster for the boundary.

@@ -137,7 +137,7 @@ class TaxonAdmin(admin.ModelAdmin):
 
 
 class BoundaryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'type', 'top_level_boundary')
+    list_display = ('code_name', 'name', 'type', 'top_level_boundary')
     list_filter = ('type',)
     ordering = ('type', 'name')
 

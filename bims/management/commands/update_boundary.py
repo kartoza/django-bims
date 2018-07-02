@@ -54,9 +54,12 @@ class UpdateBoundary(object):
                 name=boundary_type)
         except BoundaryType.DoesNotExist:
             boundary_type = BoundaryType.objects.create(
-                name=boundary_type,
-                level=boundary_level
+                name=boundary_type
             )
+        boundary_type.level = boundary_level
+        boundary_type.save()
+
+        Boundary.objects.filter(type=boundary_type).delete()
 
         data_source = DataSource(
             shapefile)
@@ -93,20 +96,12 @@ class UpdateBoundary(object):
                     print('Top boundary=%s not found' %
                           top_boundary_codename)
 
-            try:
-                boundary = Boundary.objects.get(
-                    name=name,
-                    type=boundary_type
-                )
-            except Boundary.DoesNotExist:
-                boundary = Boundary.objects.create(
-                    name=name,
-                    code_name=codename,
-                    type=boundary_type
-                )
-
-            # save geometry
-            boundary.top_level_boundary = top_level_boundary
+            boundary = Boundary.objects.create(
+                name=name,
+                type=boundary_type,
+                code_name=codename,
+                top_level_boundary=top_level_boundary
+            )
             geometry = feature.geom
             if 'MultiPolygon' not in geometry.geojson:
                 geometry = MultiPolygon(
