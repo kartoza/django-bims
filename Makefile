@@ -46,19 +46,19 @@ build:
 	@echo "------------------------------------------------------------------"
 	@echo "Building in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose build bims_uwsgi
-	@docker-compose build uwsgi
+	@docker-compose ${ARGS} build bims_uwsgi
+	@docker-compose ${ARGS} build uwsgi
 
 web:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose up -d web
+	@docker-compose ${ARGS} up -d web
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container
-	@docker-compose up --no-recreate --no-deps -d dbbackups
+	@docker-compose ${ARGS} up --no-recreate --no-deps -d dbbackups
 
 up: web
 	# Synonymous with web
@@ -100,14 +100,14 @@ migrate:
 	@echo "------------------------------------------------------------------"
 	@echo "Running migrate static in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose run --rm uwsgi python manage.py migrate
+	@docker-compose exec uwsgi python manage.py migrate
 
 update-migrations:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running update migrations in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose run --rm uwsgi python manage.py makemigrations
+	@docker-compose ${ARGS} exec uwsgi python manage.py makemigrations
 
 collectstatic:
 	@echo
@@ -118,7 +118,7 @@ collectstatic:
 	#We need to run collect static in the same context as the running
 	# uwsgi container it seems so I use docker exec here
 	# no -it flag so we can run over remote shell
-	@docker-compose exec uwsgi python manage.py collectstatic --noinput
+	@docker-compose ${ARGS} exec uwsgi python manage.py collectstatic --noinput ${CMD_ARGS} -i geonode -i geoexplorer -i geonode_generic -i js -i lib
 
 reload:
 	@echo
@@ -189,14 +189,14 @@ shell:
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling in in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose run --rm uwsgi /bin/bash
+	@docker-compose exec uwsgi /bin/bash
 
 superuser:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Creating a superuser in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose run --rm uwsgi python manage.py createsuperuser
+	@docker-compose exec uwsgi python manage.py createsuperuser
 
 dbbash:
 	@echo
@@ -303,7 +303,7 @@ enable-machine:
 	@echo "eval \"$(docker-machine env freshwater)\""
 
 sync-geonode:
-	@docker-compose run --rm -w /usr/src/geonode uwsgi paver sync
+	@docker-compose ${ARGS} exec uwsgi paver sync
 
 sync-roles:
 	@echo
@@ -337,10 +337,10 @@ status:
 	@docker-compose ps
 
 django-test:
-	@docker-compose run --rm uwsgi python manage.py test
+	@docker-compose exec uwsgi python manage.py test --noinput --verbosity 3 bims
 
 coverage-django-test:
-	@docker-compose run --rm uwsgi coverage run -p --branch --source='.' python manage.py test
+	@docker-compose exec uwsgi coverage run -p --branch --source='.' manage.py test --noinput ${CMD_ARGS} bims
 
 update-taxa:
 	@echo

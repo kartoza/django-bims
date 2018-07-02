@@ -14,7 +14,7 @@ on_travis: True
 
 django:
   environment:
-    SITE_DOMAIN_NAME: 'http://django-bims.test'
+    SITE_DOMAIN_NAME: 'http://uwsgi'
     GEOCONTEXT_URL: 'http://localhost:65402'
     CONTACT_US_EMAIL: 'dimas@kartoza.com'
     DEBUG: True
@@ -27,7 +27,7 @@ django:
     DATABASE_PASSWORD: docker
     DATABASE_USERNAME: docker
     DATABASE_HOST: db
-    SITEURL: http://django-bims.test/
+    SITEURL: http://uwsgi/
     SECRET_KEY: 'tT\xd7\xb06\xf7\x9b\xff\x0fZL\xca\xca\x11\xefM\xacr\xfb\xdf\xca\x9b'
 
 geonode:
@@ -43,32 +43,32 @@ geonode:
     IS_CELERY: False
     C_FORCE_ROOT: 1
     # replaced with defaults in settings
-    GEOSERVER_PUBLIC_LOCATION: django-bims.test/geoserver/
+    GEOSERVER_PUBLIC_LOCATION: http://uwsgi/geoserver/
     GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
-    STATIC_ROOT: /home/web/static/static
+    STATIC_ROOT: /home/web/static
     MEDIA_ROOT: /home/web/media
     GEOIP_PATH: /home/web/media/geoip.db
-    ALLOWED_HOSTS: ['django-bims.test']
+    ALLOWED_HOSTS: ['uwsgi']
     ADMIN_EMAILS: dimas@kartoza.com
     GEOSERVER_ADMIN_PASSWORD: admingeoserver
 
 geoserver:
   environment:
     GEOSERVER_ADMIN_PASSWORD: admingeoserver
-    SITEURL: http://django-bims.test/
+    SITEURL: http://uwsgi/
 
 interpreters:
   inasafe_django:
     name: 'Django-BIMS Container'
-    domain_alias: 'django-bims.test'
+    domain_alias: 'uwsgi'
     ssh_port: &inasafe_django_ssh_port 63303
     pycharm_helpers: /home/web/django_project/.pycharm_helpers
-    ipaddress: &inasafe_django_host_ip django-bims.test
+    ipaddress: &inasafe_django_host_ip uwsgi
 
 docker_port_forward:
   django:
     db: 6543
     elastic_search: 9200
-    http: 63302
+    http: 80
     ssh: 63303
     karma_tests: 63304

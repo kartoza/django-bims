@@ -23,6 +23,10 @@ matrix:
     - python: 3.6
       env: PYTHON=3.6
 
+addons:
+  hosts:
+    - uwsgi
+
 before_install:
   # install ansible
   - sudo apt-get -y update
@@ -32,6 +36,7 @@ before_install:
 install:
   - pip install coveralls
   - pip install -r REQUIREMENTS-dev.txt
+  - pip install -U docker-compose
   # setup files
   - cp deployment/ansible/development/group_vars/${ALL_FILE} deployment/ansible/development/group_vars/all.yml
   - make setup-ansible ANSIBLE_ARGS="--extra-vars='pycharm_version=\"\"' --skip-tags=development"
@@ -40,13 +45,13 @@ install:
 
 script:
   - make flake8-check
-  - make build
-  - make up
-  - make update-migrations
-  - make sync-geonode
-  - make migrate
-  - make collectstatic
-  - make coverage-django-test
+  - make build ARGS="--log-level ERROR"
+  - make up ARGS="--log-level ERROR"
+  - make update-migrations ARGS="--log-level ERROR"
+  - make sync-geonode ARGS="--log-level ERROR"
+  - make migrate ARGS="--log-level ERROR"
+  - make collectstatic ARGS="--log-level ERROR" CMD_ARGS="--verbosity 0"
+  - make coverage-django-test ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
 
 after_success:
   - coverage combine
