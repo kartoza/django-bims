@@ -424,7 +424,6 @@ define([
             } else {
                 this.fetchingReset();
                 this.fetchingStart();
-                this.biodiversitySource.clear();
                 this.administrativeBoundarySource.clear();
                 this.fetchXhr = this.clusterBiologicalCollection.fetch({
                     success: function () {
