@@ -118,15 +118,25 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
         renderLayers: function () {
             var self = this;
             $(document).ready(function () {
+                var mostTop = 'Biodiversity';
+                var initKeys = [mostTop];
                 var keys = Object.keys(self.layers);
+                keys.splice($.inArray(mostTop, keys), 1);
                 keys.sort();
+                keys = initKeys.concat(keys);
                 $.each(keys, function (index, key) {
                     var value = self.layers[key]
                     var selector = '<tr><td valign="top"><input type="checkbox" value="' + key + '" class="layer-selector-input" ';
                     if (value['visibleInDefault']) {
                         selector += 'checked';
                     }
-                    selector += '></td><td valign="top">' + key + '</td></tr>'
+                    selector += '></td><td valign="top">';
+                    if (key === mostTop) {
+                        selector += '<b>' + key + '</b>';
+                    } else {
+                        selector += key;
+                    }
+                    selector += '</td></tr>';
                     $('#layers-selector').append(selector);
                 });
                 $('.layer-selector-input').change(function (e) {
