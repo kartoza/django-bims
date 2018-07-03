@@ -63,6 +63,56 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 staticURL + 'mapbox-style/dark-matter-gl-style.json');
             layer.set('title', 'Dark Matter');
             return layer
+        },
+        getBaseMaps: function () {
+            var baseDefault = null;
+            var baseSourceLayers = [];
+
+            // TOPOSHEET MAP
+            var toposheet = new ol.layer.Tile({
+                title: 'South Africa 1:50k Toposheets',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'Toposheets'],
+                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+                })
+            });
+            baseSourceLayers.push(toposheet);
+
+
+            // NGI MAP
+            var ngiMap = new ol.layer.Tile({
+                title: 'NGI OSM aerial photographs',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
+                    url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
+                })
+            });
+            baseSourceLayers.push(ngiMap);
+            // add bing
+            if (bingMapKey) {
+                var bingMap = new ol.layer.Tile({
+                    title: 'Bing',
+                    source: new ol.source.BingMaps({
+                        key: bingMapKey,
+                        imagerySet: 'AerialWithLabels'
+                    })
+                });
+                baseSourceLayers.push(bingMap);
+            }
+
+            // OPENMAPTILES
+            if (mapTilerKey) {
+                baseSourceLayers.push(this.getPositronBasemap());
+                baseSourceLayers.push(this.getDarkMatterBasemap());
+                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
+            }
+            $.each(baseSourceLayers, function (index, layer) {
+                layer.set('type', 'base');
+                layer.set('visible', true);
+                layer.set('preload', Infinity);
+            });
+
+            return baseSourceLayers
         }
     })
 });

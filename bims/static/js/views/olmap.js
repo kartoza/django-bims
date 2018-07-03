@@ -19,8 +19,7 @@ define([
 
         // source of layers
         administrativeBoundarySource: null,
-        clusterSource: null,
-        locationSiteVectorSource: null,
+        biodiversitySource: null,
         highlightVectorSource: null,
 
         // attributes
@@ -43,8 +42,7 @@ define([
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
-            Shared.Dispatcher.on('map:addLocationSiteFeatures', this.addLocationSiteFeatures, this);
-            Shared.Dispatcher.on('map:addClusterFeatures', this.addClusterFeatures, this);
+            Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
@@ -198,6 +196,7 @@ define([
         },
         fetchingFinish: function () {
             this.fetchingReset();
+            this.biodiversitySource.clear();
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
@@ -297,9 +296,10 @@ define([
                     return ol.coordinate.format(coordinate, '{y},{x}', 4);
                 }
             });
+            var basemap = new Basemap();
             this.map = new ol.Map({
                 target: 'map',
-                layers: self.getBaseMaps(),
+                layers: basemap.getBaseMaps(),
                 view: new ol.View({
                     center: ol.proj.fromLonLat([22.937506, -30.559482]),
                     zoom: 7,
@@ -320,13 +320,13 @@ define([
             });
             this.map.addOverlay(this.popup);
 
-            // LOAD SOURCE LAYERS
+            // BIODIVERSITY LAYERS
             // ---------------------------------
-            self.locationSiteVectorSource = new ol.source.Vector({});
+            self.biodiversitySource = new ol.source.Vector({});
             this.map.addLayer(new ol.layer.Vector({
-                source: self.locationSiteVectorSource,
+                source: self.biodiversitySource,
                 style: function (feature) {
-                    return self.layerStyle.getSiteStyle(feature.getGeometry().getType());
+                    return self.layerStyle.getBiodiversityCluster(feature);
                 }
             }));
 
@@ -349,24 +349,6 @@ define([
                             text: feature.getProperties()['name']
                         })
                     })
-                }
-            }));
-
-            // cluster layer
-            // ---------------------------------
-            self.clusterSource = new ol.source.Vector({});
-            this.map.addLayer(new ol.layer.Vector({
-                source: self.clusterSource,
-                style: function (feature) {
-                    var count = 1;
-                    if (feature.getProperties()['count']) {
-                        count = feature.getProperties()['count'];
-                    }
-                    var style = self.layerStyle.getClusterStyle(count);
-                    if (count > 1) {
-                        style.getText().setText('' + count);
-                    }
-                    return style;
                 }
             }));
 
@@ -394,7 +376,6 @@ define([
             if (!this.clusterBiologicalCollection.getTaxon()) {
                 var administrative = this.checkAdministrativeLevel();
                 if (administrative !== 'detail') {
-                    this.locationSiteVectorSource.clear();
                     var zoomLevel = this.getCurrentZoom();
                     if (administrative === this.clusterCollection.administrative) {
                         return
@@ -411,16 +392,13 @@ define([
                     this.previousZoom = zoomLevel;
                     this.clusterCollection.updateUrl(administrative);
                     if (this.clusterCollection.getCache()) {
-                        this.clusterSource.clear();
-                        this.locationSiteVectorSource.clear();
+                        this.biodiversitySource.clear();
                         this.clusterCollection.applyCache();
                     } else {
                         this.fetchingStart();
                         this.fetchXhr = this.clusterCollection.fetch({
                             success: function () {
                                 self.fetchingFinish();
-                                self.clusterSource.clear();
-                                self.locationSiteVectorSource.clear();
                                 self.clusterCollection.renderCollection()
                             }, error: function () {
                                 self.fetchingError();
@@ -430,7 +408,6 @@ define([
                 } else {
                     this.previousZoom = -1;
                     this.clusterCollection.administrative = null;
-                    this.clusterSource.clear();
                     this.administrativeBoundarySource.clear();
                     this.fetchingReset();
                     this.fetchingStart();
@@ -438,8 +415,6 @@ define([
                     this.fetchXhr = this.locationSiteCollection.fetch({
                         success: function () {
                             self.fetchingFinish();
-                            self.clusterSource.clear();
-                            self.locationSiteVectorSource.clear();
                             self.locationSiteCollection.renderCollection()
                         }, error: function () {
                             self.fetchingError();
@@ -449,13 +424,11 @@ define([
             } else {
                 this.fetchingReset();
                 this.fetchingStart();
-                this.locationSiteVectorSource.clear();
+                this.biodiversitySource.clear();
                 this.administrativeBoundarySource.clear();
                 this.fetchXhr = this.clusterBiologicalCollection.fetch({
                     success: function () {
                         self.fetchingFinish();
-                        self.clusterSource.clear();
-                        self.locationSiteVectorSource.clear();
                         self.clusterBiologicalCollection.renderCollection();
                     }, error: function () {
                         self.fetchingError();
@@ -472,8 +445,6 @@ define([
             }
             this.clusterBiologicalCollection.updateTaxon(taxonID);
             if (!this.clusterBiologicalCollection.getTaxon()) {
-                // clear all data for taxon records
-                this.clusterSource.clear();
                 this.previousZoom = -1;
                 this.clusterCollection.administrative = null;
                 this.fetchingRecords();
@@ -484,11 +455,8 @@ define([
         updateClusterBiologicalCollectionZoomExt: function () {
             this.clusterBiologicalCollection.updateZoomAndBBox(this.getCurrentZoom(), this.getCurrentBbox());
         },
-        addLocationSiteFeatures: function (features) {
-            this.locationSiteVectorSource.addFeatures(features);
-        },
-        addClusterFeatures: function (features) {
-            this.clusterSource.addFeatures(features);
+        addBiodiversityFeatures: function (features) {
+            this.biodiversitySource.addFeatures(features);
         },
         addHighlightFeature: function (feature) {
             this.highlightVectorSource.addFeature(feature);
@@ -512,56 +480,5 @@ define([
                 }
             });
         },
-        getBaseMaps: function () {
-            var baseDefault = null;
-            var baseSourceLayers = [];
-
-            // TOPOSHEET MAP
-            var toposheet = new ol.layer.Tile({
-                title: 'South Africa 1:50k Toposheets',
-                source: new ol.source.XYZ({
-                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'Toposheets'],
-                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
-                })
-            });
-            baseSourceLayers.push(toposheet);
-
-
-            // NGI MAP
-            var ngiMap = new ol.layer.Tile({
-                title: 'NGI OSM aerial photographs',
-                source: new ol.source.XYZ({
-                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
-                    url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
-                })
-            });
-            baseSourceLayers.push(ngiMap);
-            // add bing
-            if (bingMapKey) {
-                var bingMap = new ol.layer.Tile({
-                    title: 'Bing',
-                    source: new ol.source.BingMaps({
-                        key: bingMapKey,
-                        imagerySet: 'AerialWithLabels'
-                    })
-                });
-                baseSourceLayers.push(bingMap);
-            }
-
-            // OPENMAPTILES
-            var basemap = new Basemap();
-            if (mapTilerKey) {
-                baseSourceLayers.push(basemap.getPositronBasemap());
-                baseSourceLayers.push(basemap.getDarkMatterBasemap());
-                baseSourceLayers.push(basemap.getKlokantechTerrainBasemap());
-            }
-            $.each(baseSourceLayers, function (index, layer) {
-                layer.set('type', 'base');
-                layer.set('visible', true);
-                layer.set('preload', Infinity);
-            });
-
-            return baseSourceLayers
-        }
     })
 });

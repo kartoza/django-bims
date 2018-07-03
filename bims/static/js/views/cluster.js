@@ -34,7 +34,7 @@ define(['backbone', 'models/cluster', 'ol', 'shared'], function (Backbone, Clust
             this.features = new ol.format.GeoJSON().readFeatures(geojson, {
                 featureProjection: 'EPSG:3857'
             });
-            Shared.Dispatcher.trigger('map:addClusterFeatures', this.features)
+            Shared.Dispatcher.trigger('map:addBiodiversityFeatures', this.features)
         },
         destroy: function () {
             this.unbind();

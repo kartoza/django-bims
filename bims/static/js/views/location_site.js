@@ -39,7 +39,7 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
             this.features = new ol.format.GeoJSON().readFeatures(geojson, {
                 featureProjection: 'EPSG:3857'
             });
-            Shared.Dispatcher.trigger('map:addLocationSiteFeatures', this.features)
+            Shared.Dispatcher.trigger('map:addBiodiversityFeatures', this.features)
         },
         destroy: function () {
             Shared.Dispatcher.unbind('locationSite-' + this.id + ':clicked');
