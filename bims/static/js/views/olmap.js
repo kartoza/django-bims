@@ -326,7 +326,7 @@ define([
             this.map.addLayer(new ol.layer.Vector({
                 source: self.biodiversitySource,
                 style: function (feature) {
-                    return self.layerStyle.getBiodiversityCluster(feature);
+                    return self.layerStyle.getBiodiversityStyle(feature);
                 }
             }));
 

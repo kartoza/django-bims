@@ -42,7 +42,7 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 })
             })
         },
-        getBiodiversityCluster: function (feature) {
+        getBiodiversityStyle: function (feature) {
             var type = feature.getGeometry().getType();
             if (type !== 'Point') {
                 return this.styles[type];
