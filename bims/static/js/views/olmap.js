@@ -94,9 +94,11 @@ define([
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
+                console.log(geometryType);
                 if (geometryType === 'Point') {
                     self.featureClicked(features[0]);
                     var coordinates = geometry.getCoordinates();
+                    console.log(coordinates);
                     self.zoomToCoordinates(coordinates);
 
                     // increase zoom level if it is clusters
@@ -320,17 +322,7 @@ define([
             });
             this.map.addOverlay(this.popup);
 
-            // BIODIVERSITY LAYERS
-            // ---------------------------------
-            self.biodiversitySource = new ol.source.Vector({});
-            this.map.addLayer(new ol.layer.Vector({
-                source: self.biodiversitySource,
-                style: function (feature) {
-                    return self.layerStyle.getBiodiversityStyle(feature);
-                }
-            }));
-
-            // Administrative boundary layer
+            // ADMINISTRATIVE BOUNDARY LAYER
             // ---------------------------------
             self.administrativeBoundarySource = new ol.source.Vector({});
             this.map.addLayer(new ol.layer.Vector({
@@ -349,6 +341,16 @@ define([
                             text: feature.getProperties()['name']
                         })
                     })
+                }
+            }));
+
+            // BIODIVERSITY LAYERS
+            // ---------------------------------
+            self.biodiversitySource = new ol.source.Vector({});
+            this.map.addLayer(new ol.layer.Vector({
+                source: self.biodiversitySource,
+                style: function (feature) {
+                    return self.layerStyle.getBiodiversityStyle(feature);
                 }
             }));
 
