@@ -42,6 +42,21 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 })
             })
         },
+        administrativeBoundaryStyle: function (feature) {
+            return new ol.style.Style({
+                stroke: new ol.style.Stroke({
+                    color: 'yellow',
+                    width: 1
+                }),
+                text: new ol.style.Text({
+                    scale: 1,
+                    fill: new ol.style.Fill({
+                        color: '#000000'
+                    }),
+                    text: feature.getProperties()['name']
+                })
+            })
+        },
         getBiodiversityStyle: function (feature) {
             var type = feature.getGeometry().getType();
             if (type !== 'Point') {
@@ -50,10 +65,14 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 return this.getClusterStyle(feature);
             }
         },
-        getClusterStyle: function (feature) {
+        isIndividialCluster: function (feature) {
             var count = feature.getProperties()['count'];
             var boundary_type = feature.getProperties()['boundary_type'];
-            if (!boundary_type && (!count || count === 1)) {
+            return (!boundary_type && (!count || count === 1))
+        },
+        getClusterStyle: function (feature) {
+            var count = feature.getProperties()['count'];
+            if (this.isIndividialCluster(feature)) {
                 return this.styles['Point'];
             }
             var smallCluster = new ol.style.Circle({
