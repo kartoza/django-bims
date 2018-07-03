@@ -235,15 +235,29 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layers-selector-container {
     display: none;
+    padding-bottom: 0 !important;
 }
 
-#layers-selector div {
-    text-align: left;
-    width: 100%;
+#layers-selector {
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 0;
 }
 
-#layers-selector td {
+#layers-selector li {
     text-align: left;
+    background: none;
+    color: black;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+#layers-selector li:hover {
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .layer-selector-input {
@@ -252,7 +266,6 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .layers-selector-container .content {
-    padding: 10px;
     border-top: 1px solid darkgray;
     margin-top: 3px;
 }

@@ -10,15 +10,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
                     }
                 })
             }),
-            'South Africa Towns': new ol.layer.Tile({
-                source: new ol.source.TileWMS({
-                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
-                    params: {
-                        'layers': 'geonode:sa_towns',
-                        'format': 'image/png'
-                    }
-                })
-            }),
             'Biomes of South Africa': new ol.layer.Tile({
                 source: new ol.source.TileWMS({
                     url: 'http://lbimsgis.kartoza.com/geoserver/wms',
@@ -33,6 +24,15 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
                     url: 'http://lbimsgis.kartoza.com/geoserver/wms',
                     params: {
                         'layers': 'geonode:dams500g',
+                        'format': 'image/png'
+                    }
+                })
+            }),
+            'South Africa Towns': new ol.layer.Tile({
+                source: new ol.source.TileWMS({
+                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
+                    params: {
+                        'layers': 'geonode:sa_towns',
                         'format': 'image/png'
                     }
                 })
@@ -66,10 +66,13 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
         },
         addLayersToMap: function (map) {
             var self = this;
+            this.map = map;
 
             // RENDER NON BIODIVERSITY LAYERS
-            $.each(self.nonBiodiversityLayersInitiation, function (key, value) {
-                self.initLayer(value, key, false)
+            var keys = Object.keys(self.nonBiodiversityLayersInitiation);
+            keys.reverse();
+            $.each(keys, function (index, key) {
+                self.initLayer(self.nonBiodiversityLayersInitiation[key], key, false)
             });
             // ---------------------------------
             // ADMINISTRATIVE BOUNDARY LAYER
@@ -96,6 +99,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
+                console.log(key);
                 map.addLayer(value['layer']);
             });
 
@@ -115,32 +119,56 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
         selectorChanged: function (layerName, selected) {
             this.layers[layerName]['layer'].setVisible(selected)
         },
+        ol3_checkLayer: function (layer) {
+            var res = false;
+            for (var i = 0; i < this.map.getLayers().getLength(); i++) {
+                //check if layer exists
+                if (this.map.getLayers().getArray()[i] === layer) {
+                    //if exists, return true
+                    res = true;
+                }
+            }
+            return res;
+        },
+        moveLayerToTop: function (layer) {
+            if (layer) {
+                if (this.ol3_checkLayer(layer)) {
+                    this.map.removeLayer(layer);
+                    this.map.getLayers().insertAt(this.map.getLayers().getLength(), layer);
+                }
+            }
+        },
         renderLayers: function () {
             var self = this;
             $(document).ready(function () {
                 var mostTop = 'Biodiversity';
-                var initKeys = [mostTop];
                 var keys = Object.keys(self.layers);
-                keys.splice($.inArray(mostTop, keys), 1);
-                keys.sort();
-                keys = initKeys.concat(keys);
+                keys.reverse();
                 $.each(keys, function (index, key) {
-                    var value = self.layers[key]
-                    var selector = '<tr><td valign="top"><input type="checkbox" value="' + key + '" class="layer-selector-input" ';
+                    var value = self.layers[key];
+                    var selector = '<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" value="' + key + '" class="layer-selector-input" ';
                     if (value['visibleInDefault']) {
                         selector += 'checked';
                     }
-                    selector += '></td><td valign="top">';
+                    selector += '>';
                     if (key === mostTop) {
                         selector += '<b>' + key + '</b>';
                     } else {
                         selector += key;
                     }
-                    selector += '</td></tr>';
+                    selector += '</li>';
                     $('#layers-selector').append(selector);
                 });
                 $('.layer-selector-input').change(function (e) {
                     self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
+                });
+                $('#layers-selector').sortable({
+                    update: function () {
+                        $($(".layer-selector-input").get().reverse()).each(function (index, value) {
+                            self.moveLayerToTop(
+                                self.layers[$(value).val()]['layer']);
+                        });
+                    }
                 });
             });
         }
