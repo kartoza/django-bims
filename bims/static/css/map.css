@@ -114,13 +114,12 @@ html, body, .map, .map-wrapper, #map-container {
 
 .map-control-panel {
     background-color: white;
-    border: 4px solid white;
-    border-radius: 0;
     position: absolute;
     left: 0;
-    top: 165px;
+    top: 162px;
     transform: translateY(-50%);
-    padding: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
     font-size: 18pt;
     text-align: center;
     color: #4e4e4e;
@@ -128,6 +127,7 @@ html, body, .map, .map-wrapper, #map-container {
     margin-left: 31px;
     padding-top: 0;
     border-top: none;
+    width: 54px;
 }
 
 .zoom-control {
@@ -157,14 +157,10 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .sub-control-panel {
-    padding-top: 8px;
-}
-
-.search-control {
-    padding-top: 5px !important;
+    padding-top: 5px;
     padding-bottom: 5px;
-    margin-left: -10px;
-    margin-right: -10px;
+    margin-left: -6px;
+    margin-right: -6px;
 }
 
 .control-panel-selected {
@@ -220,13 +216,11 @@ html, body, .map, .map-wrapper, #map-container {
     display: block;
 }
 
-.map-search-box {
+.map-control-panel-box {
     width: 265px;
     background-color: rgba(204, 204, 204, 0.4);
     position: absolute;
     top: 0;
-    margin-left: 75px;
-    margin-top: 60px;
     color: black;
     padding: 5px 15px;
     border: none;
@@ -235,9 +229,35 @@ html, body, .map, .map-wrapper, #map-container {
     text-align: center;
     font-weight: normal;
     border-radius: 0;
+    margin-left: 85px;
+    margin-top: 60px;
 }
 
-.map-search-title {
+.layers-selector-container {
+    display: none;
+}
+
+#layers-selector div {
+    text-align: left;
+    width: 100%;
+}
+
+#layers-selector td {
+    text-align: left;
+}
+
+.layer-selector-input {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.layers-selector-container .content {
+    padding: 10px;
+    border-top: 1px solid darkgray;
+    margin-top: 3px;
+}
+
+.map-control-panel-box .title {
     font-size: 16pt;
     line-height: 20px;
 }
@@ -247,7 +267,7 @@ html, body, .map, .map-wrapper, #map-container {
     font-size: 16pt;
 }
 
-.map-filter-subtitle, .search-results-total {
+.map-control-panel-box .subtitle, .search-results-total {
     background-color: rgba(255, 255, 255, 0.8);
     text-align: left;
     border: 1px solid grey;
@@ -263,7 +283,7 @@ html, body, .map, .map-wrapper, #map-container {
     overflow-y: scroll;
 }
 
-.map-search-close, .close-panel {
+.map-control-panel-box .close-button, .close-panel {
     cursor: pointer;
     padding: 0 5px;
     border: 2px solid black;
@@ -272,7 +292,7 @@ html, body, .map, .map-wrapper, #map-container {
     line-height: 20px;
 }
 
-.map-search-close:hover, .close-panel:hover {
+.map-control-panel-box .close-button:hover, .close-panel:hover {
     background-color: rgba(0, 0, 0, 0.7) !important;
     color: white !important;
 }

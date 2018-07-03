@@ -10,17 +10,14 @@ define([
     'views/boundary',
     'ol',
     'jquery', 'layerSwitcher',
-    'views/basemap', 'views/layer_style'], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
-                                                     MapControlPanelView, SidePanelView, BoundaryView, ol, $, LayerSwitcher, Basemap, LayerStyle) {
+    'views/basemap', 'views/olmap_layers'], function (Backbone, _, Shared,
+                                                      LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
+                                                      MapControlPanelView, SidePanelView, BoundaryView,
+                                                      ol, $, LayerSwitcher, Basemap, Layers) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
-
-        // source of layers
-        administrativeBoundarySource: null,
-        biodiversitySource: null,
-        highlightVectorSource: null,
 
         // attributes
         geocontextOverlay: null,
@@ -42,17 +39,18 @@ define([
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
+            this.layers = new Layers();
+            this.boundaryView = new BoundaryView();
+            this.locationSiteCollection = new LocationSiteCollection();
+            this.clusterCollection = new ClusterCollection();
+            this.clusterBiologicalCollection = new ClusterBiologicalCollection();
+
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
-            this.layerStyle = new LayerStyle();
-            this.boundaryView = new BoundaryView();
-            this.locationSiteCollection = new LocationSiteCollection();
-            this.clusterCollection = new ClusterCollection();
-            this.clusterBiologicalCollection = new ClusterBiologicalCollection();
             Shared.Dispatcher.on('searchResult:clicked', this.updateClusterBiologicalCollectionTaxonID, this);
             this.render();
         },
@@ -89,20 +87,19 @@ define([
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
-            this.highlightVectorSource.clear();
+            this.layers.highlightVectorSource.clear();
             this.hidePopup();
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
-                console.log(geometryType);
                 if (geometryType === 'Point') {
                     self.featureClicked(features[0]);
                     var coordinates = geometry.getCoordinates();
-                    console.log(coordinates);
                     self.zoomToCoordinates(coordinates);
 
                     // increase zoom level if it is clusters
-                    if (features[0].getProperties()['count']) {
+                    if (features[0].getProperties()['count'] &&
+                        features[0].getProperties()['count'] > 1) {
                         self.map.getView().setZoom(self.getCurrentZoom() + 1);
                     }
                 }
@@ -110,7 +107,6 @@ define([
 
             // Close opened control panel
             this.mapControlPanel.closeAllPanel();
-
             if (this.mapControlPanel.locationControlActive) {
                 if (this.geocontextOverlayDisplayed === false) {
                     this.showGeoContext(e.coordinate);
@@ -125,7 +121,6 @@ define([
             this.geocontextOverlayDisplayed = false;
         },
         showGeoContext: function (coordinate) {
-
             if (!geocontextUrl) {
                 return false;
             }
@@ -171,8 +166,8 @@ define([
             } else {
                 Shared.Dispatcher.trigger('cluster-biology' + properties.id + ':clicked');
             }
-            this.highlightVectorSource.clear();
-            if (!properties['count'] || properties['count'] === 1) {
+            this.layers.highlightVectorSource.clear();
+            if (this.layers.layerStyle.isIndividialCluster(feature)) {
                 this.addHighlightFeature(feature);
             }
         },
@@ -185,50 +180,6 @@ define([
         },
         layerControlClicked: function (e) {
         },
-        fetchingStart: function () {
-            $('#fetching-error').hide();
-            $('#loading-warning').show();
-            if (this.fetchXhr) {
-                this.fetchXhr.abort();
-            }
-            this.mapInteractionEnabled = false;
-            this.map.getInteractions().forEach(function (interaction) {
-                interaction.setActive(false);
-            });
-        },
-        fetchingFinish: function () {
-            this.fetchingReset();
-            this.biodiversitySource.clear();
-            this.mapInteractionEnabled = true;
-            this.map.getInteractions().forEach(function (interaction) {
-                interaction.setActive(true);
-            });
-        },
-        fetchingError: function () {
-            $('#fetching-error').show();
-            $('#loading-warning').hide();
-            this.mapInteractionEnabled = true;
-            this.map.getInteractions().forEach(function (interaction) {
-                interaction.setActive(true);
-            });
-        },
-        fetchingReset: function () {
-            $('#fetching-error').hide();
-            $('#loading-warning').hide();
-            $('#fetching-error .call-administrator').hide();
-        },
-        checkAdministrativeLevel: function () {
-            var self = this;
-            var zoomLevel = this.map.getView().getZoom();
-            var administrative = 'detail';
-            $.each(Object.keys(this.clusterLevel), function (index, value) {
-                if (zoomLevel <= value) {
-                    administrative = self.clusterLevel[value];
-                    return false;
-                }
-            });
-            return administrative;
-        },
         getCurrentZoom: function () {
             return this.map.getView().getZoom();
         },
@@ -238,7 +189,6 @@ define([
         },
         render: function () {
             var self = this;
-
             this.$el.html(this.template());
             $('#map-container').append(this.$el);
             this.loadMap();
@@ -248,7 +198,6 @@ define([
             });
 
             this.sidePanelView = new SidePanelView();
-
             this.mapControlPanel = new MapControlPanelView({
                 parent: this
             });
@@ -271,7 +220,6 @@ define([
         },
         loadMap: function () {
             var self = this;
-
             this.geoOverlayContainer = document.getElementById('geocontext-popup');
             this.geoOverlayContent = document.getElementById('geocontext-content');
             this.geoOverlayCloser = document.getElementById('geocontext-closer');
@@ -291,7 +239,6 @@ define([
             };
 
             var mousePositionControl = new ol.control.MousePosition({
-                coordinateFormat: ol.coordinate.createStringXY(4),
                 projection: 'EPSG:4326',
                 target: document.getElementById('mouse-position-wrapper'),
                 coordinateFormat: function (coordinate) {
@@ -321,49 +268,7 @@ define([
                 offset: [0, -55]
             });
             this.map.addOverlay(this.popup);
-
-            // ADMINISTRATIVE BOUNDARY LAYER
-            // ---------------------------------
-            self.administrativeBoundarySource = new ol.source.Vector({});
-            this.map.addLayer(new ol.layer.Vector({
-                source: self.administrativeBoundarySource,
-                style: function (feature) {
-                    return new ol.style.Style({
-                        stroke: new ol.style.Stroke({
-                            color: 'yellow',
-                            width: 1
-                        }),
-                        text: new ol.style.Text({
-                            scale: 1,
-                            fill: new ol.style.Fill({
-                                color: '#000000'
-                            }),
-                            text: feature.getProperties()['name']
-                        })
-                    })
-                }
-            }));
-
-            // BIODIVERSITY LAYERS
-            // ---------------------------------
-            self.biodiversitySource = new ol.source.Vector({});
-            this.map.addLayer(new ol.layer.Vector({
-                source: self.biodiversitySource,
-                style: function (feature) {
-                    return self.layerStyle.getBiodiversityStyle(feature);
-                }
-            }));
-
-            // highlight layer
-            // ---------------------------------
-            self.highlightVectorSource = new ol.source.Vector({});
-            this.map.addLayer(new ol.layer.Vector({
-                source: self.highlightVectorSource,
-                style: function (feature) {
-                    var geom = feature.getGeometry();
-                    return self.layerStyle.getHighlightStyle(geom.getType());
-                }
-            }));
+            this.layers.addLayersToMap(this.map);
             this.startOnHoverListener();
         },
         reloadXHR: function () {
@@ -371,6 +276,51 @@ define([
             this.clusterCollection.administrative = null;
             this.fetchingRecords();
             $('#fetching-error .call-administrator').show();
+        },
+        fetchingStart: function () {
+            $('#fetching-error').hide();
+            $('#loading-warning').show();
+            if (this.fetchXhr) {
+                this.fetchXhr.abort();
+            }
+            this.mapInteractionEnabled = false;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(false);
+            });
+        },
+        fetchingFinish: function () {
+            this.fetchingReset();
+            this.mapInteractionEnabled = true;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(true);
+            });
+            this.layers.biodiversitySource.clear();
+        },
+        fetchingError: function () {
+            $('#fetching-error').show();
+            $('#loading-warning').hide();
+            this.mapInteractionEnabled = true;
+            this.map.getInteractions().forEach(function (interaction) {
+                interaction.setActive(true);
+            });
+        },
+        fetchingReset: function () {
+            $('#fetching-error').hide();
+            $('#loading-warning').hide();
+            $('#fetching-error .call-administrator').hide();
+            this.layers.administrativeBoundarySource.clear();
+        },
+        checkAdministrativeLevel: function () {
+            var self = this;
+            var zoomLevel = this.map.getView().getZoom();
+            var administrative = 'detail';
+            $.each(Object.keys(this.clusterLevel), function (index, value) {
+                if (zoomLevel <= value) {
+                    administrative = self.clusterLevel[value];
+                    return false;
+                }
+            });
+            return administrative;
         },
         fetchingRecords: function () {
             // get records based on administration
@@ -387,14 +337,13 @@ define([
                     }
                     this.fetchingReset();
                     // generate boundary
-                    this.administrativeBoundarySource.clear();
                     this.boundaryView.renderAdministrativeBoundary(
                         administrative, this.getCurrentBbox());
 
                     this.previousZoom = zoomLevel;
                     this.clusterCollection.updateUrl(administrative);
                     if (this.clusterCollection.getCache()) {
-                        this.biodiversitySource.clear();
+                        this.layers.biodiversitySource.clear();
                         this.clusterCollection.applyCache();
                     } else {
                         this.fetchingStart();
@@ -410,7 +359,6 @@ define([
                 } else {
                     this.previousZoom = -1;
                     this.clusterCollection.administrative = null;
-                    this.administrativeBoundarySource.clear();
                     this.fetchingReset();
                     this.fetchingStart();
                     this.locationSiteCollection.updateUrl(this.getCurrentBbox());
@@ -426,7 +374,6 @@ define([
             } else {
                 this.fetchingReset();
                 this.fetchingStart();
-                this.administrativeBoundarySource.clear();
                 this.fetchXhr = this.clusterBiologicalCollection.fetch({
                     success: function () {
                         self.fetchingFinish();
@@ -446,8 +393,8 @@ define([
             }
             this.clusterBiologicalCollection.updateTaxon(taxonID);
             if (!this.clusterBiologicalCollection.getTaxon()) {
-                this.previousZoom = -1;
                 this.clusterCollection.administrative = null;
+                this.previousZoom = -1;
                 this.fetchingRecords();
             } else {
                 this.clusterBiologicalCollection.getExtentOfRecords();
@@ -457,13 +404,13 @@ define([
             this.clusterBiologicalCollection.updateZoomAndBBox(this.getCurrentZoom(), this.getCurrentBbox());
         },
         addBiodiversityFeatures: function (features) {
-            this.biodiversitySource.addFeatures(features);
+            this.layers.biodiversitySource.addFeatures(features);
         },
         addHighlightFeature: function (feature) {
-            this.highlightVectorSource.addFeature(feature);
+            this.layers.highlightVectorSource.addFeature(feature);
         },
         updateAdministrativeBoundaryFeatures: function (features) {
-            this.administrativeBoundarySource.addFeatures(features);
+            this.layers.administrativeBoundarySource.addFeatures(features);
         },
         startOnHoverListener: function () {
             var that = this;
@@ -480,6 +427,6 @@ define([
                         })
                 }
             });
-        },
+        }
     })
 });
