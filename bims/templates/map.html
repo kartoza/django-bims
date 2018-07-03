@@ -34,6 +34,7 @@
         <button type="button"><i class="fa fa-globe"></i></button>
         <div id="mouse-position-wrapper" style="display: none"></div>
     </div>
+    <div id="popup"></div>
 
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
@@ -169,6 +170,69 @@
     <script type="text/template" id="search-result-site-template">
         <div class="result-search" data-search-result-id="">
             <p>Name: <%= name %></p>
+        </div>
+    </script>
+
+    <script type="text/template" id="record-detail-template">
+        <div>
+            <table>
+                <tr>
+                    <td>Kingdom</td>
+                    <td><%= taxonomy.kingdom %></td>
+                </tr>
+                <tr>
+                    <td>Phylum</td>
+                    <td><%= taxonomy.phylum %></td>
+                </tr>
+                <tr>
+                    <td>Class</td>
+                    <td><%= taxonomy.class %></td>
+                </tr>
+                <tr>
+                    <td>Order</td>
+                    <td><%= taxonomy.order %></td>
+                </tr>
+                <tr>
+                    <td>Family</td>
+                    <td><%= taxonomy.family %></td>
+                </tr>
+                <tr>
+                    <td>Genus</td>
+                    <td><%= taxonomy.genus %></td>
+                </tr>
+                <tr>
+                    <td>Species</td>
+                    <td><%= taxonomy.species %></td>
+                </tr>
+                <tr>
+                    <td>Common name</td>
+                    <td><%= taxonomy.common_name %></td>
+                </tr>
+                <tr>
+                    <td>Scientific name</td>
+                    <td><%= taxonomy.scientific_name %></td>
+                </tr>
+                <tr>
+                    <td>Author</td>
+                    <td><%= taxonomy.author %></td>
+                </tr>
+                <tr>
+                    <td>Original species name</td>
+                    <td><%= original_species_name %></td>
+                </tr>
+                <tr>
+                    <td>Collection date</td>
+                    <td><%= collection_date %></td>
+                </tr>
+                <tr>
+                    <td>Collector</td>
+                    <td><%= collector %></td>
+                </tr>
+                <tr>
+                    <td>Notes</td>
+                    <td><%= notes %></td>
+                </tr>
+            </table>
         </div>
     </script>
 

@@ -49,6 +49,7 @@ define([
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
+            Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             this.layerStyle = new LayerStyle();
             this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
@@ -91,6 +92,7 @@ define([
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
             this.highlightVectorSource.clear();
+            this.hidePopup();
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
@@ -103,12 +105,7 @@ define([
                     if (features[0].getProperties()['count']) {
                         self.map.getView().setZoom(self.getCurrentZoom() + 1);
                     }
-                } else {
-                    this.sidePanelView.closeSidePanel();
                 }
-            }
-            else {
-                this.sidePanelView.closeSidePanel();
             }
 
             // Close opened control panel
@@ -169,9 +166,22 @@ define([
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
-            Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
+            if (properties['record_type'] === 'site') {
+                Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
+            } else {
+                Shared.Dispatcher.trigger('cluster-biology' + properties.id + ':clicked');
+            }
             this.highlightVectorSource.clear();
-            this.addHighlightFeature(feature);
+            if (!properties['count'] || properties['count'] === 1) {
+                this.addHighlightFeature(feature);
+            }
+        },
+        hidePopup: function () {
+            this.popup.setPosition(undefined);
+        },
+        showPopup: function (coordinates, html) {
+            $('#popup').html(html);
+            this.popup.setPosition(coordinates);
         },
         layerControlClicked: function (e) {
         },
@@ -302,6 +312,14 @@ define([
                 overlays: [this.geocontextOverlay]
             });
 
+            // Create a popup overlay which will be used to display feature info
+            this.popup = new ol.Overlay({
+                element: document.getElementById('popup'),
+                positioning: 'bottom-center',
+                offset: [0, -55]
+            });
+            this.map.addOverlay(this.popup);
+
             // LOAD SOURCE LAYERS
             // ---------------------------------
             self.locationSiteVectorSource = new ol.source.Vector({});
@@ -345,7 +363,9 @@ define([
                         count = feature.getProperties()['count'];
                     }
                     var style = self.layerStyle.getClusterStyle(count);
-                    style.getText().setText('' + count);
+                    if (count > 1) {
+                        style.getText().setText('' + count);
+                    }
                     return style;
                 }
             }));
