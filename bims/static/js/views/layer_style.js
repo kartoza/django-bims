@@ -42,11 +42,18 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 })
             })
         },
-        getSiteStyle: function (type) {
-            return this.styles[type]
+        getBiodiversityStyle: function (feature) {
+            var type = feature.getGeometry().getType();
+            if (type !== 'Point') {
+                return this.styles[type];
+            } else {
+                return this.getClusterStyle(feature);
+            }
         },
-        getClusterStyle: function (count) {
-            if (count == 1) {
+        getClusterStyle: function (feature) {
+            var count = feature.getProperties()['count'];
+            var boundary_type = feature.getProperties()['boundary_type'];
+            if (!boundary_type && (!count || count === 1)) {
                 return this.styles['Point'];
             }
             var smallCluster = new ol.style.Circle({
@@ -81,7 +88,8 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                     scale: 1,
                     fill: new ol.style.Fill({
                         color: '#000000'
-                    })
+                    }),
+                    text: '' + count
                 })
             });
         },
