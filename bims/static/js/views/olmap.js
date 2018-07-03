@@ -10,18 +10,17 @@ define([
     'views/boundary',
     'ol',
     'jquery', 'layerSwitcher',
-    'views/basemap', 'views/olmap_layers'], function (Backbone, _, Shared,
-                                                      LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
-                                                      MapControlPanelView, SidePanelView, BoundaryView,
-                                                      ol, $, LayerSwitcher, Basemap, Layers) {
+    'views/basemap', 'views/olmap_layers',
+    'views/geocontext'], function (Backbone, _, Shared,
+                                   LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
+                                   MapControlPanelView, SidePanelView, BoundaryView,
+                                   ol, $, LayerSwitcher, Basemap, Layers, Geocontext) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
 
         // attributes
-        geocontextOverlay: null,
-        geocontextOverlayDisplayed: false,
         mapInteractionEnabled: true,
         previousZoom: 0,
         sidePanelView: null,
@@ -44,6 +43,7 @@ define([
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection();
+            this.geocontext = new Geocontext();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
@@ -107,62 +107,17 @@ define([
 
             // Close opened control panel
             this.mapControlPanel.closeAllPanel();
-            if (this.mapControlPanel.locationControlActive) {
-                if (this.geocontextOverlayDisplayed === false) {
-                    this.showGeoContext(e.coordinate);
-                } else {
-                    this.hideGeoContext();
-                }
-            }
-        },
-        hideGeoContext: function () {
-            this.geoOverlayContent.innerHTML = '';
-            this.geocontextOverlay.setPosition(undefined);
-            this.geocontextOverlayDisplayed = false;
-        },
-        showGeoContext: function (coordinate) {
-            if (!geocontextUrl) {
-                return false;
-            }
-
-            this.geocontextOverlayDisplayed = true;
-
-            var lonlat = ol.proj.transform(coordinate, "EPSG:3857", "EPSG:4326");
-
-            // Show popup
-            var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
-                coordinate, "EPSG:3857", "EPSG:4326"
-            ));
-
-            this.geoOverlayContent.innerHTML = '<div class=small-loading></div>';
-            this.geocontextOverlay.setPosition(coordinate);
-            var lon = lonlat[0];
-            var lan = lonlat[1];
-            var self = this;
-
-            var url = geocontextUrl + "/geocontext/value/list/" + lon + "/" + lan + "/?with-geometry=False";
-
-            $.get({
-                url: url,
-                dataType: 'json',
-                success: function (data) {
-                    var contentDiv = '<div>';
-                    for (var i = 0; i < data.length; i++) {
-                        contentDiv += data[i]['display_name'] + ' : ' + data[i]['value'];
-                        contentDiv += '<br>';
-                    }
-                    contentDiv += '</div>';
-                    self.geoOverlayContent.innerHTML = contentDiv;
-                },
-                error: function (req, err) {
-                    console.log(err);
-                }
-            });
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
             if (properties['record_type'] === 'site') {
                 Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
+
+                // call geocontext
+                var coordinates = feature.getGeometry().getCoordinates();
+                coordinates = ol.proj.transform(coordinates, "EPSG:3857", "EPSG:4326");
+                this.geocontext.loadGeocontext(coordinates[0], coordinates[1]);
+
             } else {
                 Shared.Dispatcher.trigger('cluster-biology' + properties.id + ':clicked');
             }
@@ -220,24 +175,6 @@ define([
         },
         loadMap: function () {
             var self = this;
-            this.geoOverlayContainer = document.getElementById('geocontext-popup');
-            this.geoOverlayContent = document.getElementById('geocontext-content');
-            this.geoOverlayCloser = document.getElementById('geocontext-closer');
-
-            this.geocontextOverlay = new ol.Overlay({
-                element: this.geoOverlayContainer,
-                autoPan: true,
-                autoPanAnimation: {
-                    duration: 250
-                }
-            });
-
-            this.geoOverlayCloser.onclick = function () {
-                self.geocontextOverlay.setPosition(undefined);
-                self.geoOverlayCloser.blur();
-                return false;
-            };
-
             var mousePositionControl = new ol.control.MousePosition({
                 projection: 'EPSG:4326',
                 target: document.getElementById('mouse-position-wrapper'),
@@ -257,8 +194,7 @@ define([
                 }),
                 controls: ol.control.defaults({
                     zoom: false
-                }).extend([mousePositionControl]),
-                overlays: [this.geocontextOverlay]
+                }).extend([mousePositionControl])
             });
 
             // Create a popup overlay which will be used to display feature info
@@ -296,9 +232,11 @@ define([
             });
             this.layers.biodiversitySource.clear();
         },
-        fetchingError: function () {
-            $('#fetching-error').show();
-            $('#loading-warning').hide();
+        fetchingError: function (err) {
+            if (err['textStatus'] !== "abort") {
+                $('#fetching-error').show();
+                $('#loading-warning').hide();
+            }
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
@@ -351,8 +289,8 @@ define([
                             success: function () {
                                 self.fetchingFinish();
                                 self.clusterCollection.renderCollection()
-                            }, error: function () {
-                                self.fetchingError();
+                            }, error: function (xhr, text_status, error_thrown) {
+                                self.fetchingError(error_thrown);
                             }
                         });
                     }
@@ -366,8 +304,8 @@ define([
                         success: function () {
                             self.fetchingFinish();
                             self.locationSiteCollection.renderCollection()
-                        }, error: function () {
-                            self.fetchingError();
+                        }, error: function (xhr, text_status, error_thrown) {
+                            self.fetchingError(error_thrown);
                         }
                     });
                 }
@@ -378,8 +316,8 @@ define([
                     success: function () {
                         self.fetchingFinish();
                         self.clusterBiologicalCollection.renderCollection();
-                    }, error: function () {
-                        self.fetchingError();
+                    }, error: function (xhr, text_status, error_thrown) {
+                        self.fetchingError(error_thrown);
                     }
                 });
             }

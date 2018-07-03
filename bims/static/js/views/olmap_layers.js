@@ -99,7 +99,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
-                console.log(key);
                 map.addLayer(value['layer']);
             });
 
