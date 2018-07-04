@@ -14,7 +14,7 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 Shared.Dispatcher.trigger('map:updateAdministrativeBoundary', this.cache[administrative])
             } else {
                 this.administrativeXhr = $.ajax({
-                    url: '/media/geojson/' + administrative + '.geojson/',
+                    url: '/media/geojson/' + administrative + '.geojson',
                     dataType: "json",
                     success: function (data) {
                         var features = (new ol.format.GeoJSON()).readFeatures(data, {
