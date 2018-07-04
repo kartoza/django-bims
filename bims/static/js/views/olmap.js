@@ -10,7 +10,7 @@ define([
     'views/boundary',
     'ol',
     'jquery', 'layerSwitcher',
-    'views/basemap', 'views/olmap_layers',
+    'views/olmap_basemap', 'views/olmap_layers',
     'views/geocontext'], function (Backbone, _, Shared,
                                    LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
                                    MapControlPanelView, SidePanelView, BoundaryView,

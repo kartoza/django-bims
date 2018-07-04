@@ -51,6 +51,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
         administrativeBoundarySource: null,
         biodiversitySource: null,
         highlightVectorSource: null,
+        highlightVector: null,
         layers: {},
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -106,13 +107,14 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
             // HIGHLIGHT LAYER
             // ---------------------------------
             self.highlightVectorSource = new ol.source.Vector({});
-            map.addLayer(new ol.layer.Vector({
+            self.highlightVector = new ol.layer.Vector({
                 source: self.highlightVectorSource,
                 style: function (feature) {
                     var geom = feature.getGeometry();
                     return self.layerStyle.getHighlightStyle(geom.getType());
                 }
-            }));
+            });
+            map.addLayer(self.highlightVector);
             this.renderLayers();
         },
         selectorChanged: function (layerName, selected) {
@@ -134,6 +136,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
                 if (this.ol3_checkLayer(layer)) {
                     this.map.removeLayer(layer);
                     this.map.getLayers().insertAt(this.map.getLayers().getLength(), layer);
+                } else {
+                    console.log('not found')
                 }
             }
         },
@@ -167,6 +171,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
                             self.moveLayerToTop(
                                 self.layers[$(value).val()]['layer']);
                         });
+                        self.moveLayerToTop(self.highlightVector);
                     }
                 });
             });
