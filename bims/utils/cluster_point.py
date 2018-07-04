@@ -117,6 +117,7 @@ def geo_serializer(records):
         if record['count'] == 1:
             geojson['features'].append(
                 {
+                    "id": record['record']['id'],
                     "geometry": {
                         "type": "Point",
                         "coordinates": record['coordinates']
