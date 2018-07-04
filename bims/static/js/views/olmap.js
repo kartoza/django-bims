@@ -288,6 +288,11 @@ define([
                     this.boundaryView.renderAdministrativeBoundary(
                         administrative, this.getCurrentBbox());
 
+                    // if layer is shows
+                    if (!this.layers.isBiodiversityLayerShow()) {
+                        return;
+                    }
+
                     this.previousZoom = zoomLevel;
                     this.clusterCollection.updateUrl(administrative);
                     if (this.clusterCollection.getCache()) {
@@ -305,6 +310,10 @@ define([
                         });
                     }
                 } else {
+                    // if layer is shows
+                    if (!this.layers.isBiodiversityLayerShow()) {
+                        return;
+                    }
                     this.previousZoom = -1;
                     this.clusterCollection.administrative = null;
                     this.fetchingReset();
@@ -321,6 +330,10 @@ define([
                     });
                 }
             } else {
+                // if layer is shows
+                if (!this.layers.isBiodiversityLayerShow()) {
+                    return;
+                }
                 this.fetchingReset();
                 this.fetchingStart();
                 this.fetchXhr = this.clusterBiologicalCollection.fetch({
