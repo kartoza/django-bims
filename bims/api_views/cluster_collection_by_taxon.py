@@ -166,6 +166,6 @@ class ClusterCollectionByTaxon(ClusterCollectionByTaxonAbstract):
                 'icon_pixel_y: size y of icon in pixel. ')
         queryset = self.apply_filter(pk, request)
         cluster = self.clustering_process(
-            queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y)
+            queryset, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])

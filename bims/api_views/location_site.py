@@ -152,6 +152,6 @@ class LocationSiteClusterList(APIView):
                 Q(geometry_multipolygon__intersects=geom_bbox)
             )
         cluster = self.clustering_process(
-            location_site, int(zoom), int(icon_pixel_x), int(icon_pixel_y)
+            location_site, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])
