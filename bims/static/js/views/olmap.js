@@ -246,14 +246,24 @@ define([
                 }
             });
             var basemap = new Basemap();
+
+            var center = [22.937506, -30.559482];
+            if(centerPointMap) {
+                var centerArray = centerPointMap.split(',');
+                for (var i in centerArray) {
+                    centerArray[i] = parseFloat(centerArray[i]);
+                }
+                center = centerArray;
+            }
+
             this.map = new ol.Map({
                 target: 'map',
                 layers: basemap.getBaseMaps(),
                 view: new ol.View({
-                    center: ol.proj.fromLonLat([22.937506, -30.559482]),
+                    center: ol.proj.fromLonLat(center),
                     zoom: 7,
                     minZoom: 7,
-                    extent: [1801862.6258878047, -4051414.739574095, 3304920.3500875104, -3099926.6114802207]
+                    extent: [579700.2488501729, -4540000.22437294, 5275991.266691402, -2101353.2739626765]
                 }),
                 controls: ol.control.defaults({
                     zoom: false
