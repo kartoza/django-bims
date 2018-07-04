@@ -17,4 +17,4 @@ class Command(UpdateBoundary, BaseCommand):
                 settings.STATIC_ROOT,
                 'data/municipal/municipal.shp'
             ),
-            'municipal', 'municname')
+            'municipal', 'municname', 'cat_b', 4, 'district')

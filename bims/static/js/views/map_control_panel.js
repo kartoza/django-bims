@@ -8,6 +8,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             'click .filter-control': 'filterClicked',
             'click .location-control': 'locationClicked',
             'click .map-search-close': 'closeSearchPanel',
+            'click .layers-selector-container-close': 'closeFilterPanel',
+            'click .sub-filter': 'closeSubFilter'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -15,21 +17,29 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
         },
         searchClicked: function (e) {
             // show search div
-            if(!this.searchView.isOpen()) {
+            if (!this.searchView.isOpen()) {
                 this.openSearchPanel();
+                this.closeFilterPanel();
             } else {
                 this.closeSearchPanel();
             }
         },
         filterClicked: function (e) {
+            // show filter div
+            if ($('.layers-selector-container').is(":hidden")) {
+                this.openFilterPanel();
+                this.closeSearchPanel();
+            } else {
+                this.closeFilterPanel();
+            }
         },
         locationClicked: function (e) {
             var target = $(e.target);
-            if(!target.hasClass('location-control')) {
+            if (!target.hasClass('location-control')) {
                 target = target.parent();
             }
             // Activate function
-            if(!this.locationControlActive) {
+            if (!this.locationControlActive) {
                 this.locationControlActive = true;
                 target.addClass('control-panel-selected');
             } else {
@@ -47,7 +57,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             });
 
             this.$el.append(this.searchView.render().$el);
-
             return this;
         },
         openSearchPanel: function () {
@@ -60,6 +69,19 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
         },
         closeAllPanel: function () {
             this.closeSearchPanel();
-        }
+        },
+        closeSubFilter: function (e) {
+            var target = $(e.target);
+            target.parent().next().toggle();
+            target.children('.filter-icon-arrow').toggle();
+        },
+        openFilterPanel: function () {
+            this.$el.find('.filter-control').addClass('control-panel-selected');
+            $('.layers-selector-container').show();
+        },
+        closeFilterPanel: function () {
+            this.$el.find('.filter-control').removeClass('control-panel-selected');
+            $('.layers-selector-container').hide();
+        },
     })
 });

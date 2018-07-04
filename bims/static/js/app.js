@@ -38,12 +38,17 @@ require.config({
 });
 
 require([
+    'router',
     'views/olmap',
     'shared',
     'app'
-], function (olmap, Shared, App) {
+], function (Router, olmap, Shared, App) {
     // Display the map
-    var map = new olmap();
+    Shared.Router = new Router();
+
+    // Start Backbone history a necessary step for bookmarkable URL's
+    Backbone.history.start();
+
     // A $( document ).ready() block.
     $(document).ready(function () {
         $('.try-again-button').click(function () {
@@ -57,6 +62,7 @@ require([
                 $('.mouse-position').addClass('active');
                 $('#mouse-position-wrapper').show();
             }
-        })
+        });
+        $(".date-filter").datepicker({dateFormat: 'yy-mm-dd'});
     });
 });

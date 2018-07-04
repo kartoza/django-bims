@@ -28,6 +28,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
           return this.rightPanel.is(":visible");
         },
         openSidePanel: function (properties) {
+            $('#geocontext-information-container').hide();
             this.rightPanel.show('slide', { direction: 'right'}, 200);
             if(typeof properties !== 'undefined') {
                 this.clearSidePanel();
@@ -83,6 +84,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
         },
         closeSidePanel: function (e) {
             Shared.Dispatcher.trigger('searchResult:clicked', null);
+            Shared.Router.clearSearch();
             var self = this;
             this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
                 self.clearSidePanel();
