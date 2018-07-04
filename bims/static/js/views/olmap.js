@@ -185,7 +185,7 @@ define([
             var basemap = new Basemap();
 
             var center = [22.937506, -30.559482];
-            if(centerPointMap) {
+            if (centerPointMap) {
                 var centerArray = centerPointMap.split(',');
                 for (var i in centerArray) {
                     centerArray[i] = parseFloat(centerArray[i]);
@@ -309,7 +309,8 @@ define([
                     this.clusterCollection.administrative = null;
                     this.fetchingReset();
                     this.fetchingStart();
-                    this.locationSiteCollection.updateUrl(this.getCurrentBbox());
+                    this.locationSiteCollection.updateUrl(
+                        this.getCurrentBbox(), this.getCurrentZoom());
                     this.fetchXhr = this.locationSiteCollection.fetch({
                         success: function () {
                             self.fetchingFinish();

@@ -9,6 +9,7 @@ from bims.views.user_profile import UserProfileView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSiteDetail,
+    LocationSiteClusterList
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
@@ -33,6 +34,7 @@ from bims.views.csv_upload import CsvUploadView
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
         LocationTypeAllowedGeometryDetail.as_view()),
+    url(r'^api/location-site/cluster/$', LocationSiteClusterList.as_view()),
     url(r'^api/location-site/$', LocationSiteList.as_view()),
     url(r'^api/location-site/(?P<pk>[0-9]+)/$',
         LocationSiteDetail.as_view()),

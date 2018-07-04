@@ -46,6 +46,17 @@ class LocationSite(models.Model):
         blank=True,
     )
 
+    def get_centroid(self):
+        """ Getting centroid of location site """
+
+        if self.geometry_point:
+            return self.geometry_point
+        else:
+            if self.get_geometry():
+                return self.get_geometry().centroid
+            else:
+                return None
+
     def get_geometry(self):
         """Function to get geometry."""
         geometry = None
