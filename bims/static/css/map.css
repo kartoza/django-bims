@@ -656,6 +656,11 @@ div:hover::-webkit-scrollbar {
     border: 1px solid #cccccc;
     padding: 10px;
     border-radius: 3px;
+    max-width: 350px;
+}
+
+#popup h4 {
+    text-align: center;
 }
 
 #popup:before, #popup:after {

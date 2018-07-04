@@ -155,5 +155,6 @@ class LocationSiteClusterList(APIView):
                 location_site,
                 int(float(zoom)),
                 int(icon_pixel_x),
-                int(icon_pixel_y))
+                int(icon_pixel_y)
+        )
         return Response(geo_serializer(cluster)['features'])
