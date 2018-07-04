@@ -28,6 +28,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
           return this.rightPanel.is(":visible");
         },
         openSidePanel: function (properties) {
+            $('#geocontext-information-container').hide();
             this.rightPanel.show('slide', { direction: 'right'}, 200);
             if(typeof properties !== 'undefined') {
                 this.clearSidePanel();

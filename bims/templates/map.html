@@ -24,24 +24,20 @@
 
 {% block body_content %}
     <div id="map-container"></div>
-    <div id="loading-warning"><span>LOADING....</span></div>
-    <div id="fetching-error">
-        <span class="try-again">Error when fetching data, please try again. <a class="try-again-button">refresh</a>.
-        <a class="call-administrator">If this error still persists, please call administrator.</a>
-        </span>
-    </div>
-    <div class="ol-control mouse-position">
-        <button type="button"><i class="fa fa-globe"></i></button>
-        <div id="mouse-position-wrapper" style="display: none"></div>
-    </div>
-    <div id="popup"></div>
-
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
-        <div id="geocontext-popup" class="ol-popup">
-            <a href="#" id="geocontext-closer" class="ol-popup-closer"></a>
-            <div id="geocontext-content"></div>
+        <div id="loading-warning"><span>LOADING....</span></div>
+        <div id="fetching-error">
+            <span class="try-again">Error when fetching data, please try again.
+                <a class="try-again-button">refresh</a>.
+                <a class="call-administrator">If this error still persists, please call administrator.</a>
+            </span>
         </div>
+        <div class="ol-control mouse-position">
+            <button type="button"><i class="fa fa-globe"></i></button>
+            <div id="mouse-position-wrapper" style="display: none"></div>
+        </div>
+        <div id="popup"></div>
     </script>
 
     <script type='text/html' id='side-panel-template'>
@@ -67,6 +63,11 @@
                 <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
             </div>
             <div class="row side-panel panel-icons">
+            </div>
+            <div id="geocontext-information-container" class="row side-panel">
+                <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
+                <table class="content">
+                </table>
             </div>
         </div>
     </script>
@@ -141,9 +142,6 @@
             </div>
             <div class="filter-control sub-control-panel">
                 <i class="fa fa-map" aria-hidden="true"></i>
-            </div>
-            <div class="location-control sub-control-panel">
-                <i class="fa fa-info" aria-hidden="true"></i>
             </div>
         </div>
         <div class="zoom-control row">
