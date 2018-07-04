@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function (Backbone, _, $, ol, LayerStyle) {
+define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, ol, LayerStyle) {
     return Backbone.View.extend({
         nonBiodiversityLayersInitiation: {
             '2012 Vegetation Map of South Africa, Lesotho and Swaziland': new ol.layer.Tile({
@@ -55,6 +55,10 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
         layers: {},
         initialize: function () {
             this.layerStyle = new LayerStyle();
+        },
+        isBiodiversityLayerShow: function () {
+            var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
+            return $checkbox.is(':checked');
         },
         initLayer: function (layer, layerName, visibleInDefault) {
             this.layers[layerName] = {
@@ -118,6 +122,9 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function
             this.renderLayers();
         },
         selectorChanged: function (layerName, selected) {
+            if (layerName == "Biodiversity") {
+                Shared.Dispatcher.trigger('map:reloadXHR');
+            }
             this.layers[layerName]['layer'].setVisible(selected)
         },
         ol3_checkLayer: function (layer) {
