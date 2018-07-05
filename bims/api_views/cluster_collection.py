@@ -4,7 +4,7 @@ import datetime
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
-from django.http import HttpResponseBadRequest, Http404
+from django.http import HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \

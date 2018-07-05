@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from bims.models import Boundary
 from bims.models.cluster import Cluster
-from bims.serializers.cluster_serializer import ClusterSerializer
 
 
 class BoundarySerializer(serializers.ModelSerializer):
