@@ -61,26 +61,26 @@ class CsvUploadView(FormView):
             for record in csv_reader:
                 try:
                     print('------------------------------------')
-                    print('Processing : %s' % record['Species'])
+                    print('Processing : %s' % record['species_name'])
                     location_type, status = LocationType.objects.get_or_create(
-                        name='RiverPointObservation',
+                        name='PointObservation',
                         allowed_geometry='POINT'
                     )
 
                     record_point = Point(
-                        float(record['Longitude']),
-                        float(record['Latitude']))
+                        float(record['longitude']),
+                        float(record['latitude']))
 
                     location_site, status = LocationSite.objects.get_or_create(
                         location_type=location_type,
                         geometry_point=record_point,
-                        name=record['River'],
+                        name=record['location_site'],
                     )
                     location_sites.append(location_site)
 
                     # Get existed taxon
                     collections = BiologicalCollectionRecord.objects.filter(
-                        original_species_name=record['Species']
+                        original_species_name=record['species_name']
                     )
 
                     taxon_gbif = None
@@ -90,33 +90,35 @@ class CsvUploadView(FormView):
                     collection_records = BiologicalCollectionRecord.objects.\
                         filter(
                             site=location_site,
-                            original_species_name=record['Species'],
-                            category=record['Category'].lower(),
-                            present=record['Present'] == 1,
-                            absent=record['Absent'] == 1,
-                            collection_date=datetime(
-                                    int(record['Year']), 1, 1),
-                            collector=record['Collector'],
-                            notes=record['Notes'],
-                            taxon_gbif_id=taxon_gbif
+                            original_species_name=record['species_name'],
+                            category=record['category'].lower(),
+                            present=record['present'] == 1,
+                            absent=record['absent'] == 1,
+                            collection_date=datetime.strptime(
+                                    record['date'], '%Y-%m-%d'),
+                            collector=record['collector'],
+                            notes=record['notes'],
+                            taxon_gbif_id=taxon_gbif,
+                            owner=self.request.user
                         )
 
                     if not collection_records:
                         BiologicalCollectionRecord.objects.create(
                             site=location_site,
-                            original_species_name=record['Species'],
-                            category=record['Category'].lower(),
-                            present=record['Present'] == 1,
-                            absent=record['Absent'] == 1,
-                            collection_date=datetime(
-                                    int(record['Year']), 1, 1),
-                            collector=record['Collector'],
-                            notes=record['Notes'],
-                            taxon_gbif_id=taxon_gbif
+                            original_species_name=record['species_name'],
+                            category=record['category'].lower(),
+                            present=record['present'] == 1,
+                            absent=record['absent'] == 1,
+                            collection_date=datetime.strptime(
+                                    record['date'], '%Y-%m-%d'),
+                            collector=record['collector'],
+                            notes=record['notes'],
+                            taxon_gbif_id=taxon_gbif,
+                            owner=self.request.user
                         )
-                        print('%s Added' % record['Species'])
+                        print('%s Added' % record['species_name'])
                         collection_processed['added'] += 1
-                except (ValueError, KeyError):
+                except (ValueError, KeyError) as e:
                     collection_processed['failed'] += 1
                 print('------------------------------------')
 
