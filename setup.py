@@ -52,6 +52,7 @@ setup(
             'bibtexparser==1.0.1',
             'eutils==0.4.0',
             'habanero==0.3.0',
+            'django-tracking2==0.4.0',
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',

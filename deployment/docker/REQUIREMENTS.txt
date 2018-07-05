@@ -48,3 +48,6 @@ git+https://github.com/kartoza/kbims-fish
 django-haystack==2.8.1
 elasticsearch==5.0.1
 
+# Statistics Dashboard
+django-tracking2==0.4.0
+
