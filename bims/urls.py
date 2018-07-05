@@ -16,6 +16,10 @@ from bims.api_views.location_type import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
+from bims.api_views.cluster_collection import (
+    ClusterCollection,
+    ClusterCollectionExtent
+)
 from bims.api_views.cluster_collection_by_taxon import (
     ClusterCollectionByTaxon,
     ClusterCollectionByTaxonExtent
@@ -30,7 +34,6 @@ from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 
-
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
         LocationTypeAllowedGeometryDetail.as_view()),
@@ -42,6 +45,10 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
+    url(r'^api/cluster/collection/records/extent/$',
+        ClusterCollectionExtent.as_view()),
+    url(r'^api/cluster/collection/records/$',
+        ClusterCollection.as_view()),
     url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/extent/$',
         ClusterCollectionByTaxonExtent.as_view()),
     url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/$',
