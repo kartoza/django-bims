@@ -1,0 +1,43 @@
+
+<html>
+    <style>
+         #dashboard {
+            margin-top: 8%;
+            padding-bottom: 5%;
+        }
+
+    </style>
+        <body>
+        <div class="container" id="dashboard">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="page-header text-center"><h1>Dashboard</h1></div>
+            </div>
+        </div>
+            <div class="col-lg-6">
+                <div id="tracking-filters">
+                    <form method="GET">
+                        {{ form.as_table }}
+                        <input type="submit" name="submit" value="submit" />
+                    </form>
+                </div>
+                <div id="tracking-info">
+                    <p>
+                        Visitor tracking began on
+                        {{ track_start_time|date:"Y-m-d H:i:s" }}
+                    </p>
+                    {% if warn_incomplete %}
+                    <p class=warning>
+                        The start time precedes the oldest tracked visitor, thus
+                        the stats are not complete for the specified range.
+                    </p>
+                    {% endif %}
+                </div>
+                <div id="tracking-stats">
+                    {% include "tracking/snippets/stats.html" %}
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>

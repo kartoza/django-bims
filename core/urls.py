@@ -24,6 +24,7 @@ urlpatterns = [
     url('^contact/', include('contactus.urls')),
     url(r'^', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
+    url(r'^tracking/', include('tracking.urls')),
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
 ]
