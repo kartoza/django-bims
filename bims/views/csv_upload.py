@@ -121,7 +121,7 @@ class CsvUploadView(FormView):
                         print('%s Added' % record['species_name'])
                         collection_processed['added'] += 1
 
-                except (ValueError, KeyError) as e:
+                except (ValueError, KeyError):
                     collection_processed['failed'] += 1
                 print('------------------------------------')
 
