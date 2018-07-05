@@ -79,7 +79,7 @@
       </div>
     </nav>
 
-
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script>
 
         var burgerMenuButton = document.getElementById("menu-dropdown-burger");
@@ -111,6 +111,8 @@
         var biblioUrl = '{{ biblio_url }}';
         var profileUrl = '{{ profile_url }}';
         var contributionsUrl = '{{ contributions_url }}';
+        var titleAbbr = '{{ title_bims_abbr }}';
+        var titleLong = '{{ title_bims_long|safe }}';
 
         if(uploadUrl !== 'None'){
             var navbarUpload = document.getElementById("navbar-upload");
@@ -145,6 +147,14 @@
         if(contributionsUrl !== 'None'){
             var navbarContributions = document.getElementById("navbar-contributions");
             navbarContributions.href = contributionsUrl;
+        }
+
+        if(titleAbbr !== 'None'){
+            $(".bims-title-big").html(titleAbbr);
+        }
+
+        if(titleLong !== 'None'){
+            $('.bims-title-acc').html(titleLong);
         }
 
     </script>

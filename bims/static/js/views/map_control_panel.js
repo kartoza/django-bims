@@ -16,6 +16,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             this.parent = options.parent;
         },
         searchClicked: function (e) {
+            $('.layer-switcher.shown button').click();
             // show search div
             if (!this.searchView.isOpen()) {
                 this.openSearchPanel();
@@ -25,6 +26,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             }
         },
         filterClicked: function (e) {
+            $('.layer-switcher.shown button').click();
             // show filter div
             if ($('.layers-selector-container').is(":hidden")) {
                 this.openFilterPanel();

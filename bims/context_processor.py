@@ -63,4 +63,14 @@ def custom_navbar_url(request):
     except AttributeError:
         context['contributions_url'] = None
 
+    try:
+        context['title_bims_abbr'] = settings.TITLE_BIMS_ABBREVIATION
+    except AttributeError:
+        context['title_bims_abbr'] = None
+
+    try:
+        context['title_bims_long'] = settings.TITLE_BIMS_LONG
+    except AttributeError:
+        context['title_bims_long'] = None
+
     return context
