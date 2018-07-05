@@ -44,6 +44,11 @@ class CsvUploadView(FormView):
             'failed': 0
         }
 
+        optional_fields = {
+            'present': 'bool',
+            'absent': 'bool'
+        }
+
         # Read csv
         csv_file = form.instance.csv_file
 
@@ -55,67 +60,67 @@ class CsvUploadView(FormView):
         models.signals.post_save.disconnect(
             collection_post_save_update_cluster,
         )
+
         location_sites = []
         with open(csv_file.path, 'r') as csvfile:
             csv_reader = csv.DictReader(csvfile)
             for record in csv_reader:
                 try:
                     print('------------------------------------')
-                    print('Processing : %s' % record['Species'])
+                    print('Processing : %s' % record['species_name'])
                     location_type, status = LocationType.objects.get_or_create(
-                        name='RiverPointObservation',
+                        name='PointObservation',
                         allowed_geometry='POINT'
                     )
 
                     record_point = Point(
-                        float(record['Longitude']),
-                        float(record['Latitude']))
+                        float(record['longitude']),
+                        float(record['latitude']))
 
                     location_site, status = LocationSite.objects.get_or_create(
                         location_type=location_type,
                         geometry_point=record_point,
-                        name=record['River'],
+                        name=record['location_site'],
                     )
                     location_sites.append(location_site)
 
                     # Get existed taxon
                     collections = BiologicalCollectionRecord.objects.filter(
-                        original_species_name=record['Species']
+                        original_species_name=record['species_name']
                     )
 
                     taxon_gbif = None
                     if collections:
                         taxon_gbif = collections[0].taxon_gbif_id
 
-                    collection_records = BiologicalCollectionRecord.objects.\
-                        filter(
+                    # Optional fields and value
+                    optional_records = {}
+
+                    for (opt_field, field_type) in optional_fields.iteritems():
+                        if opt_field in record:
+                            if field_type == 'bool':
+                                record[opt_field] = record[opt_field] == '1'
+                            optional_records[opt_field] = record[opt_field]
+
+                    collection_records, status = BiologicalCollectionRecord.\
+                        objects.\
+                        get_or_create(
                             site=location_site,
-                            original_species_name=record['Species'],
-                            category=record['Category'].lower(),
-                            present=record['Present'] == 1,
-                            absent=record['Absent'] == 1,
-                            collection_date=datetime(
-                                    int(record['Year']), 1, 1),
-                            collector=record['Collector'],
-                            notes=record['Notes'],
-                            taxon_gbif_id=taxon_gbif
+                            original_species_name=record['species_name'],
+                            category=record['category'].lower(),
+                            collection_date=datetime.strptime(
+                                    record['date'], '%Y-%m-%d'),
+                            collector=record['collector'],
+                            notes=record['notes'],
+                            taxon_gbif_id=taxon_gbif,
+                            owner=self.request.user,
+                            **optional_records
                         )
 
-                    if not collection_records:
-                        BiologicalCollectionRecord.objects.create(
-                            site=location_site,
-                            original_species_name=record['Species'],
-                            category=record['Category'].lower(),
-                            present=record['Present'] == 1,
-                            absent=record['Absent'] == 1,
-                            collection_date=datetime(
-                                    int(record['Year']), 1, 1),
-                            collector=record['Collector'],
-                            notes=record['Notes'],
-                            taxon_gbif_id=taxon_gbif
-                        )
-                        print('%s Added' % record['Species'])
+                    if not status:
+                        print('%s Added' % record['species_name'])
                         collection_processed['added'] += 1
+
                 except (ValueError, KeyError):
                     collection_processed['failed'] += 1
                 print('------------------------------------')
