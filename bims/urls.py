@@ -29,6 +29,7 @@ from bims.api_views.search import SearchObjects
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
+from bims.views.under_development import UnderDevelopmentView
 
 
 api_urls = [
@@ -68,5 +69,7 @@ urlpatterns = [
 
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
-        activate_user, name='activate-user')
+        activate_user, name='activate-user'),
+    url(r'^under-development/$',
+        UnderDevelopmentView.as_view(), name='under-development'),
 ] + api_urls
