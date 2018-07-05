@@ -37,7 +37,7 @@
                         <li><a class="nav-link js-scroll-trigger" href="/">HOME</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/map">MAP</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="{% url 'link_list' %}">EXTERNAL RESOURCES</a></li>
-                        <li><a class="nav-link js-scroll-trigger" href="#">DOCUMENTS & REPORTS</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/under-development/">DOCUMENTS & REPORTS</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/contact/">CONTACT</a></li>
                         <li><a class="nav-link js-scroll-trigger"href="/bibliography/">BIBLIOGRAPHY</a></li>
                         <div class="bims-nav-footer row">
@@ -62,8 +62,8 @@
                     </div>
                      {% if user.is_authenticated %}
                         <li><a class="nav-link js-scroll-trigger" href="/profile/">PROFILE</a></li>
-                         <li><a class="nav-link js-scroll-trigger" href="#">CONTRIBUTIONS</a></li>
-                         <li><a class="nav-link js-scroll-trigger" href="#">UPLOAD FILES</a></li>
+                         <li><a class="nav-link js-scroll-trigger" href="/under-development/">CONTRIBUTIONS</a></li>
+                         <li><a class="nav-link js-scroll-trigger" href="/upload/">UPLOAD FILES</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
                      {% else %}
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a></li>
