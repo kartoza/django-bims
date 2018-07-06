@@ -90,6 +90,14 @@
     font-size: 10pt;
 }
 
+.bims-nav-footer a {
+    font-size: 10pt;
+}
+
+.bims-nav-footer a:hover {
+    color: yellow !important;
+}
+
 .bims-nav-footer img {
     vertical-align: top;
 }

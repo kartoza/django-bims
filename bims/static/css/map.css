@@ -464,7 +464,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 198px !important;
+    top: 190px !important;
     left: 0;
     right: auto !important;
     text-align: left;
@@ -475,10 +475,11 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher button {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    width: 41px !important;
+    width: 54px !important;
     height: 41px !important;
-    background-position: 6px !important;
+    background-position: center !important;
     background-size: 32px;
+    margin: 0 auto;
 }
 
 .layer-switcher .panel {
@@ -486,6 +487,11 @@ html, body, .map, .map-wrapper, #map-container {
     border: none !important;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 9px !important;
+    position: absolute;
+    width: 250px;
+    margin-left: 55px !important;
+    background-color: rgba(204, 204, 204, 0.4) !important;
+    border-radius: 0 !important;
 }
 
 .layer-switcher ul {
@@ -495,6 +501,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher input {
     cursor: pointer;
+}
+
+.layer-switcher.shown button {
+    background-color: #1b900d !important;
+}
+
+.layer-switcher button:focus {
+    outline: none !important;
 }
 
 .result-search {

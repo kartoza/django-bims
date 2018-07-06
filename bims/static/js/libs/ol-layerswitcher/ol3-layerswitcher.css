@@ -43,10 +43,6 @@
     border: none;
 }
 
-.layer-switcher.shown button {
-    display: none;
-}
-
 .layer-switcher button:focus, .layer-switcher button:hover {
     background-color: white;
 }
