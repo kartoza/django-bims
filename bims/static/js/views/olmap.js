@@ -50,6 +50,7 @@ define([
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
+            Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
             Shared.Dispatcher.on('searchResult:clicked', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
@@ -349,6 +350,7 @@ define([
             }
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
+            this.closeHighlight();
             if (!this.sidePanelView.isSidePanelOpen()) {
                 return
             }
@@ -373,6 +375,10 @@ define([
         },
         updateAdministrativeBoundaryFeatures: function (features) {
             this.layers.administrativeBoundarySource.addFeatures(features);
+        },
+        closeHighlight: function () {
+            this.hidePopup();
+            this.layers.highlightVectorSource.clear();
         },
         startOnHoverListener: function () {
             var that = this;
