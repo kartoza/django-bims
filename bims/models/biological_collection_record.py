@@ -80,7 +80,8 @@ class BiologicalCollectionRecord(models.Model):
         app_label = 'bims'
 
     def on_post_save(self):
-        update_fish_collection_record(self)
+        if not self.taxon_gbif_id:
+            update_fish_collection_record(self)
 
     def get_children(self):
         rel_objs = [f for f in self._meta.get_fields(include_parents=False)
@@ -117,10 +118,16 @@ def collection_post_save_handler(sender, instance, **kwargs):
         collection_post_save_handler,
     )
     instance.on_post_save()
-    update_cluster_by_collection(instance)
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
+
+
+@receiver(models.signals.post_save)
+def collection_post_save_update_cluster(sender, instance, **kwargs):
+    if not issubclass(sender, BiologicalCollectionRecord):
+        return
+    update_cluster_by_collection(instance)
 
 
 @receiver(models.signals.post_delete)

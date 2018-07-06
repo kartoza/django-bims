@@ -115,7 +115,8 @@ TEMPLATES = [
 
                 # `allauth` needs this from django
                 'django.template.context_processors.request',
-                'bims.context_processor.add_recaptcha_key'
+                'bims.context_processor.add_recaptcha_key',
+                'bims.context_processor.custom_navbar_url'
             ],
         },
     },

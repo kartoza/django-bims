@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def update_cluster(boundary, CollectionModel=None):
     """
     Updating cluster in boundary. It will get all
-    biological collection childrenand generate clustering from that
+    biological collection children and generate clustering from that
 
     :param boundary: boundary that will be checked
     :type boundary: Boundary
@@ -37,9 +37,9 @@ def update_cluster(boundary, CollectionModel=None):
         # get all children model if no CollectionModel given
     if not CollectionModel:
         children_models = BiologicalCollectionRecord.get_children_model()
-        children_models.append(LocationSite)
         if len(children_models) == 0:
             children_models.append(BiologicalCollectionRecord)
+        children_models.append(LocationSite)
     else:
         children_models = [CollectionModel]
 
@@ -96,11 +96,12 @@ def update_cluster_by_collection(collection):
     :param collection: Biological collection record model
     """
     boundaries = Boundary.objects.filter(
-        geometry__contains=collection.site.get_geometry())
+        geometry__contains=collection.site.get_geometry()).order_by(
+        '-type__level')
 
     # Update cluster from that boundaries
     for boundary in boundaries:
-        update_cluster(boundary, type(collection))
+        boundary.generate_cluster(type(collection))
 
 
 def update_cluster_by_site(site):
@@ -113,8 +114,9 @@ def update_cluster_by_site(site):
     :param site: Site model
     """
     boundaries = Boundary.objects.filter(
-        geometry__contains=site.get_geometry())
+        geometry__contains=site.get_geometry()).order_by(
+        '-type__level')
 
     # Update cluster from that boundaries
     for boundary in boundaries:
-        update_cluster(boundary)
+        boundary.generate_cluster()

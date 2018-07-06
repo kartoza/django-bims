@@ -30,6 +30,11 @@ pygbif==0.2.0
 # Django BIMS
 # git+https://github.com/kartoza/django-bims.git
 
+# bibliography
+bibtexparser==1.0.1
+eutils==0.4.0
+habanero==0.3.0
+
 # documentation generation
 django-modelsdoc==0.1.9
 

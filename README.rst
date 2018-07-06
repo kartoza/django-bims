@@ -94,6 +94,9 @@ The keys are:
 
 2. To show openmaptile map (terrain and other style), use your key of maptile (https://www.maptiler.com/cloud/) and put it in `core/settings/secret.py` with key MAP_TILER_KEY
 
+Generating boundaries
+---------------------------
+Bims using boundaries for clustering. To generate it, do `make generate-boundaries`
 
 Thank you
 _________

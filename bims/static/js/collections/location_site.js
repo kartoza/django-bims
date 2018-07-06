@@ -2,11 +2,14 @@ define(['backbone', 'models/location_site', 'views/location_site'], function (Ba
     return Backbone.Collection.extend({
         model: LocationSiteModel,
         baseAPI: "/api/location-site/",
-        collectionAPI: "/api/location-site/?bbox=",
+        collectionAPI: _.template("/api/location-site/cluster/?icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>"),
         url: "",
         viewCollection: [],
-        updateUrl: function (bbox) {
-            this.url = this.collectionAPI + bbox
+        updateUrl: function (bbox, zoom) {
+            this.url = this.collectionAPI({
+                bbox: bbox,
+                zoom: zoom
+            });
         },
         renderCollection: function () {
             var self = this;

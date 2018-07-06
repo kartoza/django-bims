@@ -1,5 +1,6 @@
 # coding=utf8
 
+import datetime
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
@@ -19,12 +20,12 @@ from bims.utils.cluster_point import (
 )
 
 
-class ClusterCollectionByTaxonExtent(APIView):
+class ClusterCollectionByTaxonAbstract(APIView):
     """
-    Return extent of cluster by taxon
+    Abstract class for cluster collection by taxon
     """
 
-    def get(self, request, pk, format=None):
+    def apply_filter(self, pk, request):
         try:
             taxon = Taxon.objects.get(pk=pk)
         except Taxon.DoesNotExist:
@@ -34,6 +35,7 @@ class ClusterCollectionByTaxonExtent(APIView):
         queryset = BiologicalCollectionRecord.objects.filter(
             taxon_gbif_id=taxon
         )
+
         # get by bbox
         bbox = request.GET.get('bbox', None)
         if bbox:
@@ -46,11 +48,45 @@ class ClusterCollectionByTaxonExtent(APIView):
                 Q(site__geometry_multipolygon__intersects=geom_bbox)
             )
 
+        # additional filters
+        collector = request.GET.get('collector')
+        if collector:
+            queryset = queryset.filter(collector=collector)
+
+        category = request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category=category)
+
+        date_from = request.GET.get('date-from')
+        if date_from:
+            queryset = queryset.filter(
+                collection_date__gte=
+                datetime.datetime.fromtimestamp(
+                    int(date_from) / 1000
+                ).strftime('%Y-%m-%d'))
+
+        date_to = request.GET.get('date-to')
+        if date_to:
+            queryset = queryset.filter(
+                collection_date__lte=
+                datetime.datetime.fromtimestamp(
+                    int(date_to) / 1000
+                ).strftime('%Y-%m-%d'))
+        return queryset
+
+
+class ClusterCollectionByTaxonExtent(ClusterCollectionByTaxonAbstract):
+    """
+    Return extent of cluster by taxon
+    """
+
+    def get(self, request, pk, format=None):
+        queryset = self.apply_filter(pk, request)
         extent = queryset.aggregate(Extent('site__geometry_point'))
         return Response(extent['site__geometry_point__extent'])
 
 
-class ClusterCollectionByTaxon(APIView):
+class ClusterCollectionByTaxon(ClusterCollectionByTaxonAbstract):
     """
     Clustering collection with same taxon
     """
@@ -128,29 +164,8 @@ class ClusterCollectionByTaxon(APIView):
                 'zoom : zoom level of map. '
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
-
-        try:
-            taxon = Taxon.objects.get(pk=pk)
-        except Taxon.DoesNotExist:
-            raise Http404
-
-        # get records with same taxon
-        queryset = BiologicalCollectionRecord.objects.filter(
-            taxon_gbif_id=taxon
-        )
-        # get by bbox
-        bbox = request.GET.get('bbox', None)
-        if bbox:
-            geom_bbox = Polygon.from_bbox(
-                tuple([float(edge) for edge in bbox.split(',')]))
-            queryset = queryset.filter(
-                Q(site__geometry_point__intersects=geom_bbox) |
-                Q(site__geometry_line__intersects=geom_bbox) |
-                Q(site__geometry_polygon__intersects=geom_bbox) |
-                Q(site__geometry_multipolygon__intersects=geom_bbox)
-            )
-
+        queryset = self.apply_filter(pk, request)
         cluster = self.clustering_process(
-            queryset, int(zoom), int(icon_pixel_x), int(icon_pixel_y)
+            queryset, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])
