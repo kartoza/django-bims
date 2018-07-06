@@ -48,6 +48,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
                 'dateFrom': this.datePickerToDate($('#date-filter-from')),
                 'dateTo': this.datePickerToDate($('#date-filter-to'))
             };
+            Shared.Dispatcher.trigger('map:closeHighlight');
             Shared.Dispatcher.trigger('search:hit', parameters);
             this.searchResultCollection.search(
                 this.sidePanel, parameters

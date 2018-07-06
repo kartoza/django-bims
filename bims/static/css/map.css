@@ -606,14 +606,20 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
-.mouse-position {
+.mouse-position, #taxon-filter {
     position: absolute;
     bottom: .5em;
     left: .5em;
     font-size: .7rem;
     color: #000;
     background: rgba(255, 255, 255, .8);
+}
 
+#taxon-filter {
+    bottom: 3.3em;
+    font-size: 12px;
+    padding: 10px;
+    display: none;
 }
 
 #fetching-error .try-again-button {

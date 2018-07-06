@@ -42,7 +42,6 @@ define([
             this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
-            this.clusterBiologicalCollection = new ClusterBiologicalCollection();
             this.geocontext = new Geocontext();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
@@ -51,8 +50,11 @@ define([
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
+            Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
             Shared.Dispatcher.on('searchResult:clicked', this.updateClusterBiologicalCollectionTaxonID, this);
+
             this.render();
+            this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -170,7 +172,6 @@ define([
         },
         mapMoved: function () {
             var self = this;
-            self.updateClusterBiologicalCollectionZoomExt();
             self.fetchingRecords();
         },
         loadMap: function () {
@@ -206,6 +207,7 @@ define([
                     zoom: false
                 }).extend([mousePositionControl])
             });
+            this.initExtent = this.getCurrentBbox();
 
             // Create a popup overlay which will be used to display feature info
             this.popup = new ol.Overlay({
@@ -273,7 +275,8 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            if (!this.clusterBiologicalCollection.getTaxon()) {
+            self.updateClusterBiologicalCollectionZoomExt();
+            if (!this.clusterBiologicalCollection.isActive()) {
                 var administrative = this.checkAdministrativeLevel();
                 if (administrative !== 'detail') {
                     var zoomLevel = this.getCurrentZoom();
@@ -346,15 +349,13 @@ define([
                 });
             }
         },
-        updateClusterBiologicalCollectionTaxonID: function (taxonID) {
+        updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
+            this.closeHighlight();
             if (!this.sidePanelView.isSidePanelOpen()) {
                 return
             }
-            if (!taxonID && !this.clusterBiologicalCollection.getTaxon()) {
-                return
-            }
-            this.clusterBiologicalCollection.updateTaxon(taxonID);
-            if (!this.clusterBiologicalCollection.getTaxon()) {
+            this.clusterBiologicalCollection.updateTaxon(taxonID, taxonName);
+            if (!this.clusterBiologicalCollection.isActive()) {
                 this.clusterCollection.administrative = null;
                 this.previousZoom = -1;
                 this.fetchingRecords();
@@ -363,7 +364,8 @@ define([
             }
         },
         updateClusterBiologicalCollectionZoomExt: function () {
-            this.clusterBiologicalCollection.updateZoomAndBBox(this.getCurrentZoom(), this.getCurrentBbox());
+            this.clusterBiologicalCollection.updateZoomAndBBox(
+                this.getCurrentZoom(), this.getCurrentBbox());
         },
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
@@ -373,6 +375,10 @@ define([
         },
         updateAdministrativeBoundaryFeatures: function (features) {
             this.layers.administrativeBoundarySource.addFeatures(features);
+        },
+        closeHighlight: function () {
+            this.hidePopup();
+            this.layers.highlightVectorSource.clear();
         },
         startOnHoverListener: function () {
             var that = this;
