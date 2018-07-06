@@ -1,4 +1,4 @@
-$(document).ready(function () {
+document.addEventListener('DOMContentLoaded', function (event) {
     var fishContainer = document.getElementById("chart-fish");
     var fishData = {
         labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],

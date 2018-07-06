@@ -11,7 +11,9 @@
     <meta name="author" content="">
     <title>{% block title %} Title {% endblock %}</title>
 
-    {% stylesheet 'healthyriver-base' %}
+    <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet">
+    <link href="{% static "css/base.css" %}" rel="stylesheet">
     <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Alegreya:400,400i,500,500i,700,700i|Roboto+Condensed:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
 
@@ -79,7 +81,6 @@
       </div>
     </nav>
 
-    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script>
 
         var burgerMenuButton = document.getElementById("menu-dropdown-burger");
