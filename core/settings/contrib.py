@@ -98,6 +98,12 @@ except KeyError:
         },
     ]
 
+# Absolute path to the directory static files should be collected to.
+# Don't put anything in this directory yourself; store your static files
+# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+# Example: "/var/www/example.com/static/"
+STATIC_ROOT = '/home/web/static'
+
 # Additional locations of static files
 STATICFILES_DIRS += (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
@@ -107,8 +113,6 @@ STATICFILES_DIRS += (
     absolute_path('bims', 'static'),
     absolute_path('example', 'static'),
 )
-
-STATIC_ROOT = '/home/web/static'
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 

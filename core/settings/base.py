@@ -48,25 +48,9 @@ MEDIA_ROOT = '/home/web/media'
 # setting full MEDIA_URL to be able to use it for the feeds
 MEDIA_URL = '/media/'
 
-# Absolute path to the directory static files should be collected to.
-# Don't put anything in this directory yourself; store your static files
-# in apps' "static/" subdirectories and in STATICFILES_DIRS.
-# Example: "/var/www/example.com/static/"
-STATIC_ROOT = '/home/web/static'
-
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
 STATIC_URL = '/static/'
-
-# Additional locations of static files
-STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    absolute_path('core', 'base_static'),
-    absolute_path('bims', 'static'),
-    absolute_path('example', 'static'),
-)
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -97,13 +81,34 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'dj_pagination.middleware.PaginationMiddleware',
+    # The setting below makes it possible to serve different languages per
+    # user depending on things like headers in HTTP requests.
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Security settings
+    'django.middleware.security.SecurityMiddleware',
+
+    # This middleware allows to print private layers for the users that have
+    # the permissions to view them.
+    # It sets temporary the involved layers as public before restoring the
+    # permissions.
+    # Beware that for few seconds the involved layers are public there could be
+    # risks.
+    # 'geonode.middleware.PrintProxyMiddleware',
+
+    # If you use SessionAuthenticationMiddleware, be sure it appears before OAuth2TokenMiddleware.
+    # SessionAuthenticationMiddleware is NOT required for using
+    # django-oauth-toolkit.
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
 )
 
 ROOT_URLCONF = 'core.urls'
