@@ -59,6 +59,44 @@ INSTALLED_APPS += (
     'haystack',
 )
 
+try:
+    TEMPLATES[0]['DIRS'] = [
+        absolute_path('core', 'base_templates'),
+        absolute_path('bims', 'templates'),
+        absolute_path('example', 'templates'),
+    ] + TEMPLATES[0]['DIRS']
+
+    TEMPLATES[0]['OPTIONS']['context_processors'] += [
+        'bims.context_processor.add_recaptcha_key',
+        'bims.context_processor.custom_navbar_url'
+    ]
+except KeyError:
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [
+                # project level templates
+                absolute_path('core', 'base_templates'),
+                absolute_path('bims', 'templates'),
+                absolute_path('example', 'templates'),
+            ],
+            'APP_DIRS': True,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+
+                    # `allauth` needs this from django
+                    'django.template.context_processors.request',
+                    'bims.context_processor.add_recaptcha_key',
+                    'bims.context_processor.custom_navbar_url'
+                ],
+            },
+        },
+    ]
+
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE += (

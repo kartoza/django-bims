@@ -96,32 +96,6 @@ INSTALLED_APPS = (
     'django.contrib.gis',
 )
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            # project level templates
-            absolute_path('core', 'base_templates'),
-            absolute_path('bims', 'templates'),
-            absolute_path('example', 'templates'),
-        ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-
-                # `allauth` needs this from django
-                'django.template.context_processors.request',
-                'bims.context_processor.add_recaptcha_key',
-                'bims.context_processor.custom_navbar_url'
-            ],
-        },
-    },
-]
-
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
