@@ -15,7 +15,6 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.views.generic import TemplateView
 from django.conf import settings
-from django.conf.urls.i18n import i18n_patterns
 from django.conf.urls.static import static
 
 from geonode.urls import urlpatterns as geonode_urlpatterns
@@ -32,8 +31,8 @@ urlpatterns = [
     url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^geonode/?$',
-       TemplateView.as_view(template_name='site_index.html'),
-       name='home'),
+        TemplateView.as_view(template_name='site_index.html'),
+        name='home'),
 ]
 
 urlpatterns += geonode_urlpatterns
