@@ -7,7 +7,7 @@ python manage.py migrate --noinput
 
 # Run collectstatic
 echo "Run collectstatic"
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput -i geonode -i geoexplorer -i geonode_generic -i js -i lib
 
 # Run as bash entrypoint
 exec "$@"
