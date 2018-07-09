@@ -9,7 +9,8 @@ RUN pip install -r /REQUIREMENTS.txt
 RUN pip install uwsgi
 
 # install shallow clone of django bims geonode branch
-RUN git clone --depth=1 git://github.com/kartoza/django-bims.git --branch geonode /usr/src/bims
+ARG BIMS_TAG=geonode
+RUN git clone --depth=1 git://github.com/kartoza/django-bims.git --branch ${BIMS_TAG} /usr/src/bims
 
 #USER www-data
 WORKDIR /usr/src/bims
