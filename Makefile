@@ -319,6 +319,55 @@ gruntserver:
 	@echo "------------------------------------------------------------------"
 	@docker-compose run --rm uwsgi python manage.py gruntserver
 
+generate-boundaries:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Generate boundaries"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_countries_boundary"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_provinces_boundary"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_districts_boundary"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_municipals_boundary"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_cluster"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py generate_boundary_geojson"
+
+# ----------------------------------------------------------------------------
+#    DEVELOPMENT C O M M A N D S
+# --no-deps will attach to prod deps if running
+# after running you will have ssh and web ports open (see dockerfile for no's)
+# and you can set your pycharm to use the python in the container
+# Note that pycharm will copy in resources to the /root/ user folder
+# for pydevd etc. If they dont get copied, restart pycharm...
+# ----------------------------------------------------------------------------
+
+devweb: db
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in DEVELOPMENT mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up --no-deps -d devweb
+
+build-devweb: db
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Building devweb"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build devweb
+
+devweb-test:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running karma tests in devweb"
+	@echo "------------------------------------------------------------------"
+	@docker exec bims-dev-web bash -c 'cd / ; karma start --single-run'
+
+rebuildindex-devweb:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running rebuild_index in DEVELOPMENT mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run devweb python manage.py rebuild_index
+
 # Run pep8 style checking
 #http://pypi.python.org/pypi/pep8
 pep8:

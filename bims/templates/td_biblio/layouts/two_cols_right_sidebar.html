@@ -1,0 +1,20 @@
+{% extends "_layouts/base.html" %}
+
+{% load static from staticfiles %}
+
+{% block content %}
+
+<div id="content-wrapper">
+    <div id="main-content" class="{% block main_content_class %}{% endblock main_content_class %}">
+        {% block main_content %}{% endblock main_content %}
+    </div>
+
+    <div id="right-sidebar" class="{% block right_sidebar_class %}{% endblock right_sidebar_class %}">
+        {% block right_sidebar_extras %}{% endblock right_sidebar_extras %}
+        {% block right_sidebar %}{% endblock right_sidebar %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+{% endblock javascripts %}

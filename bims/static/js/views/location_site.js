@@ -6,40 +6,36 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
         },
         clicked: function () {
             var self = this;
-            Shared.Dispatcher.trigger('sidePanel:openSidePanel', self.model.toJSON());
+            var properties = this.model.attributes['properties'];
+            Shared.Dispatcher.trigger('sidePanel:openSidePanel', properties);
             if (Shared.LocationSiteDetailXHRRequest) {
                 Shared.LocationSiteDetailXHRRequest.abort();
                 Shared.LocationSiteDetailXHRRequest = null;
             }
-            Shared.LocationSiteDetailXHRRequest = self.model.fetch({
+            Shared.LocationSiteDetailXHRRequest = $.get({
+                url: this.model.url,
+                dataType: 'json',
                 success: function (data) {
-                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', self.model.toJSON());
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', data);
                     Shared.LocationSiteDetailXHRRequest = null;
+                },
+                error: function (req, err) {
+                    self.loadSuccess();
                 }
             });
         },
         render: function () {
             var modelJson = this.model.toJSON();
-            this.id = modelJson['id'];
-
-            Shared.Dispatcher.on('locationSite-' + this.id + ':clicked', this.clicked, this);
-            var geometry = JSON.parse(modelJson['geometry']);
-            delete modelJson['geometry'];
-            var geojson = {
-                'type': 'FeatureCollection',
-                'features': [
-                    {
-                        'type': 'Feature',
-                        'geometry': geometry,
-                        'properties': modelJson
-                    }
-                ]
-            };
-
-            this.features = new ol.format.GeoJSON().readFeatures(geojson, {
+            var properties = this.model.attributes['properties'];
+            this.id = this.model.attributes['properties']['id'];
+            this.model.set('id', this.id)
+            if (!this.model.attributes['properties']['count']) {
+                Shared.Dispatcher.on('locationSite-' + this.id + ':clicked', this.clicked, this);
+            }
+            this.features = new ol.format.GeoJSON().readFeatures(modelJson, {
                 featureProjection: 'EPSG:3857'
             });
-            Shared.Dispatcher.trigger('map:addLocationSiteFeatures', this.features)
+            Shared.Dispatcher.trigger('map:addBiodiversityFeatures', this.features)
         },
         destroy: function () {
             Shared.Dispatcher.unbind('locationSite-' + this.id + ':clicked');

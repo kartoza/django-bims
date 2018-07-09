@@ -1,0 +1,44 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    User Profile
+{% endblock %}
+
+{% block head %}
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/user_profile.css" %}" rel="stylesheet">
+{% endblock %}
+
+{% block body_content %}
+    <div id="profile-title">
+        <span>My Profile</span>
+    </div>
+    <div class="profile-row">
+        <div id="user-photo" class="col-lg-2 profile-block pull-left">
+            <div class="photo-wrapper">
+                {% if user.socialaccount_set.all %}
+                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}">
+                {% else %}
+                    <img src="{% static 'img/default-user.svg' %}">
+                {% endif %}
+            </div>
+            <div class="user-photo-footer">
+                <span>Biodiversity Management</span>
+            </div>
+        </div>
+        <div id="profile-info" class="col-lg-9 profile-block pull-right">
+            <p class="profile-block-title">PROFILE INFO</p>
+            <p>Username : {{ user.username }}</p>
+            <p>Name : {{ user.first_name }} {{ user.last_name }}</p>
+            <p>Email address : {{ user.email }}</p>
+            {% if user.socialaccount_set.all %}
+                {% if user.socialaccount_set.all.0.provider == 'google' %}
+                    <img class="img-provider" src="{% static 'img/google-logo.png' %}">
+                {% elif user.socialaccount_set.all.0.provider == 'github' %}
+                    <img class="img-provider" src="{% static 'img/github-logo.svg' %}">
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

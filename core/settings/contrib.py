@@ -59,6 +59,61 @@ INSTALLED_APPS += (
     'haystack',
 )
 
+# Set templates
+try:
+    TEMPLATES[0]['DIRS'] = [
+        absolute_path('core', 'base_templates'),
+        absolute_path('bims', 'templates'),
+        absolute_path('example', 'templates'),
+    ] + TEMPLATES[0]['DIRS']
+
+    TEMPLATES[0]['OPTIONS']['context_processors'] += [
+        'bims.context_processor.add_recaptcha_key',
+        'bims.context_processor.custom_navbar_url'
+    ]
+except KeyError:
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [
+                # project level templates
+                absolute_path('core', 'base_templates'),
+                absolute_path('bims', 'templates'),
+                absolute_path('example', 'templates'),
+            ],
+            'APP_DIRS': True,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+
+                    # `allauth` needs this from django
+                    'django.template.context_processors.request',
+                    'bims.context_processor.add_recaptcha_key',
+                    'bims.context_processor.custom_navbar_url'
+                ],
+            },
+        },
+    ]
+
+# Absolute path to the directory static files should be collected to.
+# Don't put anything in this directory yourself; store your static files
+# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+# Example: "/var/www/example.com/static/"
+STATIC_ROOT = '/home/web/static'
+
+# Additional locations of static files
+STATICFILES_DIRS += (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    absolute_path('core', 'base_static'),
+    absolute_path('bims', 'static'),
+    absolute_path('example', 'static'),
+)
+
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE += (
@@ -74,7 +129,7 @@ DJANGO_EASY_AUDIT_WATCH_MODEL_EVENTS = True
 DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = True
 
 # Defines whether to log URL requests made to the project
-DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = True
+DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
 
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
@@ -100,7 +155,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 
 # django modelsdoc settings
-MODELSDOC_APPS = ('bims',)
+MODELSDOC_APPS = ('bims', 'fish',)
 
 MODELSDOC_OUTPUT_FORMAT = 'rst'
 MODELSDOC_MODEL_WRAPPER = 'modelsdoc.wrappers.ModelWrapper'
@@ -110,4 +165,4 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 # contact us email
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
-ELASTIC_MIN_SCORE = 0.5
+ELASTIC_MIN_SCORE = 2

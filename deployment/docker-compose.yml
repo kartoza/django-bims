@@ -85,7 +85,7 @@ services:
     user: root
 
   dbbackups:
-    image: kartoza/pg-backup:9.4
+    image: kartoza/pg-backup:9.6
     hostname: pg-backups
     links:
       - db:db

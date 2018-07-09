@@ -18,19 +18,29 @@
         const mapTilerKey = '{{ map_tiler_key }}';
         const staticURL = "{% static "" %}";
         const geocontextUrl = '{{ geocontext_url }}';
+        const listCollectorAPIUrl = '{% url "list-collector" %}';
+        const centerPointMap = '{{ center_point_map }}';
     </script>
 {% endblock %}
 
 {% block body_content %}
     <div id="map-container"></div>
-    <div id="loading-warning"><span>LOADING....</span></div>
-
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
-        <div id="geocontext-popup" class="ol-popup">
-            <a href="#" id="geocontext-closer" class="ol-popup-closer"></a>
-            <div id="geocontext-content"></div>
+        <div id="loading-warning"><span>LOADING....</span></div>
+        <div id="fetching-error">
+            <span class="try-again">Error when fetching data, please try again.
+                <a class="try-again-button">refresh</a>.
+                <a class="call-administrator">If this error still persists, please call administrator.</a>
+            </span>
         </div>
+        <div class="ol-control mouse-position">
+            <button type="button"><i class="fa fa-globe"></i></button>
+            <div id="mouse-position-wrapper" style="display: none"></div>
+        </div>
+        <div class="ol-control" id="taxon-filter">ssss
+        </div>
+        <div id="popup"></div>
     </script>
 
     <script type='text/html' id='side-panel-template'>
@@ -48,7 +58,7 @@
             <div class="search-result-info">
                 Select an item to find more detailed information.
             </div>
-            <div class="row side-panel">
+            <div class="row side-panel side-panel-info">
                 <div class="col-lg-12" id="content-panel">
                 </div>
             </div>
@@ -57,17 +67,22 @@
             </div>
             <div class="row side-panel panel-icons">
             </div>
+            <div id="geocontext-information-container" class="row side-panel">
+                <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
+                <table class="content">
+                </table>
+            </div>
         </div>
     </script>
 
     <script type="text/html" id="map-search-container">
-        <div class="map-search-box">
+        <div class="map-search-box map-control-panel-box">
             <div class="row">
                 <div class="col-lg-12" style="padding-right: 0">
-                    <span class="map-search-title">
+                    <span class="title">
                         SEARCH
                     </span>
-                    <div class="map-search-close pull-right">
+                    <div class="close-button map-search-close pull-right">
                         X
                     </div>
                 </div>
@@ -90,38 +105,34 @@
                 </div>
             </div>
             <div class="row sub-filter">
-                <div class="col-lg-12 map-filter-subtitle">
-                    DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                <div class="col-lg-12 subtitle">
+                    DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row">
-                <div class="slide-container">
-                    <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
-                </div>
-            </div>
-            <div class="row sub-filter">
-                <div class="col-lg-12 map-filter-subtitle">
-                    COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12 filter-content">
-                    <input type="checkbox" name="collector1" value="collector1"> Collector 1<br>
-                    <input type="checkbox" name="collector2" value="collector2"> Collector 2<br>
-                    <input type="checkbox" name="collector3" value="collector3"> Collector 3<br>
-                    <input type="checkbox" name="collector4" value="collector4"> Collector 4<br>
-                    <input type="checkbox" name="collector5" value="collector5"> Collector 5<br>
+            <div class="row" style="display: none">
+                <div class="slide-container" style="padding-bottom: 10px">
+                    <div>FROM : <input type="text" class="date-filter" id="date-filter-from"></div>
+                    <div>TO : <input class="date-filter" type="text" id="date-filter-to"></div>
                 </div>
             </div>
             <div class="row sub-filter">
-                <div class="col-lg-12 map-filter-subtitle">
-                    CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                <div class="col-lg-12 subtitle">
+                    COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" style="display: none">
+                <div class="col-lg-12 filter-content" id="filter-collectors">
+                </div>
+            </div>
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content">
-                    <input type="checkbox" name="indigenous" value="indigenous"> Indigenous<br>
-                    <input type="checkbox" name="invasive" value="invasive"> Invasive<br>
+                    <input type="checkbox" name="category-value" value="indigenous"> Indigenous<br>
+                    <input type="checkbox" name="category-value" value="invasive"> Invasive<br>
                 </div>
             </div>
         </div>
@@ -135,21 +146,35 @@
             <div class="filter-control sub-control-panel">
                 <i class="fa fa-map" aria-hidden="true"></i>
             </div>
-            <div class="location-control sub-control-panel">
-                <i class="fa fa-info" aria-hidden="true"></i>
-            </div>
         </div>
         <div class="zoom-control row">
             <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
             <div class="col-lg-6 sub-zoom-control zoom-in"><i class="fa fa-minus" aria-hidden="true"></i></div>
         </div>
+
+        {# layers selector container #}
+        <div class="layers-selector-container map-control-panel-box">
+            <div class="row">
+                <div class="col-lg-12" style="padding-right: 0">
+                    <span class="title">
+                        LAYER SELECTOR
+                    </span>
+                    <div class="layers-selector-container-close close-button pull-right">
+                        X
+                    </div>
+                </div>
+            </div>
+            <div class="row content">
+                <ul id="layers-selector" style="width:100%">
+                </ul>
+            </div>
+        </div>
     </script>
 
     <script type="text/template" id="search-result-record-template">
         <div class="result-search" data-search-result-id="">
-            <p>Original species name: <%= original_species_name %></p>
-            <p>Collector: <%= collector %></p>
-            <p>Collection date: <%= collection_date %></p>
+            <p class="group-title"><%= common_name %></p>
+            <a class="group-description"><%= count %> occurrences</a>
         </div>
     </script>
 
@@ -167,13 +192,75 @@
         </div>
     </script>
 
+    <script type="text/template" id="record-detail-template">
+        <div>
+            <h4><%= taxonomy.common_name %></h4>
+            <table style="width: 100%">
+                <tr>
+                    <td>Kingdom</td>
+                    <td><%= taxonomy.kingdom %></td>
+                </tr>
+                <tr>
+                    <td>Phylum</td>
+                    <td><%= taxonomy.phylum %></td>
+                </tr>
+                <tr>
+                    <td>Class</td>
+                    <td><%= taxonomy.class %></td>
+                </tr>
+                <tr>
+                    <td>Order</td>
+                    <td><%= taxonomy.order %></td>
+                </tr>
+                <tr>
+                    <td>Family</td>
+                    <td><%= taxonomy.family %></td>
+                </tr>
+                <tr>
+                    <td>Genus</td>
+                    <td><%= taxonomy.genus %></td>
+                </tr>
+                <tr>
+                    <td>Species</td>
+                    <td><%= taxonomy.species %></td>
+                </tr>
+                <tr>
+                    <td>Common name</td>
+                    <td><%= taxonomy.common_name %></td>
+                </tr>
+                <tr>
+                    <td>Scientific name</td>
+                    <td><%= taxonomy.scientific_name %></td>
+                </tr>
+                <tr>
+                    <td>Author</td>
+                    <td><%= taxonomy.author %></td>
+                </tr>
+                <tr>
+                    <td>Original species name</td>
+                    <td><%= original_species_name %></td>
+                </tr>
+                <tr>
+                    <td>Collection date</td>
+                    <td><%= collection_date %></td>
+                </tr>
+                <tr>
+                    <td>Collector</td>
+                    <td><%= collector %></td>
+                </tr>
+                <tr>
+                    <td>Notes</td>
+                    <td><%= notes %></td>
+                </tr>
+            </table>
+        </div>
+    </script>
+
 {% endblock %}
 
 {% block foot %}
 
     <!-- Plugin JavaScript -->
-    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
 
     {% grunt_module "map_view" %}
 

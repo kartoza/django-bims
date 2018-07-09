@@ -17,4 +17,4 @@ class Command(UpdateBoundary, BaseCommand):
                 settings.STATIC_ROOT,
                 'data/province/province_boundary.shp'
             ),
-            'province', 'provname')
+            'province', 'provname', 'prov_code', 2, 'country')

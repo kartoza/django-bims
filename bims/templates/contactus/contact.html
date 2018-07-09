@@ -1,43 +1,26 @@
-{% load staticfiles %}
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
 {% load i18n %}
-{% block css_head %}
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.css" rel="stylesheet" type="text/css" media="screen, projection" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
-    <!-- Chosen library -->
-    <link rel="stylesheet" href="{% static 'chosen/chosen.min.css' %}">
+{% block title %}
+    Contact Us
+{% endblock %}
+{% block head %}
+
     <link rel="stylesheet" href="{% static 'css/form.css' %}">
     <link rel="stylesheet" href="{% static 'css/account.css' %}">
-{% endblock %}
-
-{% block js_head %}
-    <!-- <script src="{% static 'js/form.js' %}"></script> -->
+    <link rel="stylesheet" href="{% static 'css/contactus.css' %}">
 
 {% endblock %}
-{% block container %}
 
-<style>
-        .form-group .help-block {
-            display: none;
-        }
-        .form-group.has-error .help-block {
-            display: block;
-        }
-        input[name='decoy'],
-        p.decoy {
-            display: none !important;
-        }
-      
-    </style>
+
+{% block body_content %}
     <div class="content" style="height: 100%;">
-        {% block content %}
 
         <div class="content" style="height: 100%;">
             {% csrf_token %}
-            <div class="container" style="height: 100%;">
-                <div class="custom-form-container" style="margin-top: 40px;">
+            <div class="container">
+                <div class="custom-form-container">
                     <h1>{% trans "Contact Us" %}</h1>
                     <form class="signup" id="signup_form" method="POST">{% csrf_token %}
                         {% if form.non_field_errors %}
@@ -61,7 +44,7 @@
                             control-label">E-mail Address</label>
                             <div class="form-group">
                                 <input class="form-control" type="text" name="email"
-                                 value="{% if form.data.email %}{{form.data.email}}{% else %}{{form.initial.email}}{% endif %}" />
+                                 value=""/>
                                 <div class="visualclear"></div>
                                 <p class="help-block">A valid e-mail address is required.</p>
                             </div>
@@ -101,7 +84,5 @@
             </div> <!-- /container -->
         </div>
 
-            {% endblock %}
     {% endblock %}
     </div>
-{% include 'main_base.html' %}

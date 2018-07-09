@@ -23,3 +23,18 @@ class LocationSiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocationSite
         fields = ['id', 'name', 'geometry', 'location_type', 'record_type']
+
+
+class LocationSiteClusterSerializer(serializers.ModelSerializer):
+    """
+    Serializer for location site model for cluster.
+    """
+    location_type = LocationTypeSerializer(read_only=True)
+    record_type = serializers.SerializerMethodField()
+
+    def get_record_type(self, obj):
+        return 'site'
+
+    class Meta:
+        model = LocationSite
+        fields = ['id', 'name', 'location_type', 'record_type']
