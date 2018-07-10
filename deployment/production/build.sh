@@ -5,7 +5,7 @@ if [ -z "$REPO_NAME" ]; then
 fi
 
 if [ -z "$IMAGE_NAME" ]; then
-	IMAGE_NAME=bims_uwsgi
+	IMAGE_NAME=kbims_uwsgi
 fi
 
 if [ -z "$TAG_NAME" ]; then
