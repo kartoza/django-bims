@@ -8,6 +8,20 @@ ADD REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt
 RUN pip install uwsgi
 
+# Install Node js
+RUN curl -sL https://deb.nodesource.com/setup_6.x -o nodesource_setup.sh
+RUN bash nodesource_setup.sh
+RUN apt-get -y --force-yes install nodejs
+RUN npm -g install yuglify
+
+RUN rpl "env node" "env nodejs" /usr/lib/node_modules/yuglify/bin/yuglify
+
+# Install grunt
+RUN npm install -g grunt-cli
+ADD package.json /package.json
+ADD Gruntfile.js /Gruntfile.js
+RUN cd / && npm install
+
 # install shallow clone of django bims geonode branch
 ARG BIMS_TAG=geonode
 RUN git clone --depth=1 git://github.com/kartoza/django-bims.git --branch ${BIMS_TAG} /usr/src/bims
