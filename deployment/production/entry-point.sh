@@ -9,5 +9,5 @@ python manage.py migrate --noinput
 echo "Run collectstatic"
 python manage.py collectstatic --noinput
 
-
-uwsgi --ini /uwsgi.conf
+# Run as bash entrypoint
+exec "$@"
