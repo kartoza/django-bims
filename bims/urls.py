@@ -34,6 +34,7 @@ from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 from bims.views.under_development import UnderDevelopmentView
+from bims.views.contributions import ContributionsView
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -79,4 +80,6 @@ urlpatterns = [
         activate_user, name='activate-user'),
     url(r'^under-development/$',
         UnderDevelopmentView.as_view(), name='under-development'),
+    url(r'^contributions/$',
+        ContributionsView.as_view(), name='contributions'),
 ] + api_urls

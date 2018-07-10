@@ -1,0 +1,48 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load contributions %}
+
+{% block title %}
+    Contributions
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/contributions.css" %}" rel="stylesheet">
+{% endblock %}
+
+{% block body_content %}
+    <div class="container title-header">
+        <p>CONTRIBUTIONS</p>
+    </div>
+    <div class="container row contrib-info-header">
+    <div class="col-lg-7">
+        <span>
+            Every contribution counts! Together we can improve biodiversity management with<br/>
+            information distribution to help support biodiversity conservation in the province.
+        </span>
+    </div>
+    <div class="col-lg-3 button-wrapper">
+        <button><a href="{% url 'under-development' %}">ADD CONTRIBUTION</a></button>
+    </div>
+    </div>
+
+    <div class="container contrib-content">
+    <table>
+        {% for contributor in contributors %}
+            <tr>
+                <td>
+                    {% if contributor.socialaccount_set.all %}
+                        <img class="contrib-photo" src="{{ contributor.socialaccount_set.all.0.get_avatar_url }}">
+                    {% else %}
+                        <img class="contrib-photo" src="{% static 'img/default-user.svg' %}">
+                    {% endif %}
+                </td>
+                <td>{{ contributor.first_name }} {{ contributor.last_name }}</td>
+                <td>{{ contributor|contribution_date }}</td>
+                <td>{{ contributor|summary_contribution }}</td>
+                <td><button><a href="#">VIEW ON MAP</a></button></td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+{% endblock %}
