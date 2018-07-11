@@ -28,7 +28,6 @@ urlpatterns = [
     url('^contact/', include('contactus.urls')),
     url(r'^', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
-    url(r'^', include('example.urls')),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^geonode/?$',
         TemplateView.as_view(template_name='site_index.html'),
