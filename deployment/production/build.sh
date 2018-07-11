@@ -18,7 +18,7 @@ fi
 
 # Build Args Environment
 
-if [ -z "BIMS_TAG" ]; then
+if [ -z "$BIMS_TAG" ]; then
 	BIMS_TAG=geonode
 fi
 
