@@ -105,14 +105,14 @@ except KeyError:
 STATIC_ROOT = '/home/web/static'
 
 # Additional locations of static files
-STATICFILES_DIRS += (
+STATICFILES_DIRS = [
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     absolute_path('core', 'base_static'),
     absolute_path('bims', 'static'),
     absolute_path('example', 'static'),
-)
+] + STATICFILES_DIRS
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
