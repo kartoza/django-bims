@@ -111,7 +111,6 @@ STATICFILES_DIRS = [
     # Don't forget to use absolute paths, not relative paths.
     absolute_path('core', 'base_static'),
     absolute_path('bims', 'static'),
-    absolute_path('example', 'static'),
 ] + STATICFILES_DIRS
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
