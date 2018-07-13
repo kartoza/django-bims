@@ -2,7 +2,10 @@
 """
 core.settings.contrib
 """
+from core.settings.utils import ensure_unique_app_labels
 from .base import *  # noqa
+# Override base settings from geonode
+from geonode_generic.settings import *  # noqa
 from .celery_settings import *  # noqa
 import os
 try:
@@ -39,6 +42,8 @@ INSTALLED_APPS = (
 GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
 
 INSTALLED_APPS += (
+    # AppConfig Hook to fix issue from geonode
+    'core.config_hook',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -53,6 +58,62 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
 )
+
+# Set templates
+try:
+    TEMPLATES[0]['DIRS'] = [
+        absolute_path('core', 'base_templates'),
+        absolute_path('bims', 'templates'),
+        absolute_path('example', 'templates'),
+    ] + TEMPLATES[0]['DIRS']
+
+    TEMPLATES[0]['OPTIONS']['context_processors'] += [
+        'bims.context_processor.add_recaptcha_key',
+        'bims.context_processor.custom_navbar_url'
+    ]
+except KeyError:
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [
+                # project level templates
+                absolute_path('core', 'base_templates'),
+                absolute_path('bims', 'templates'),
+                absolute_path('example', 'templates'),
+            ],
+            'APP_DIRS': True,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+
+                    # `allauth` needs this from django
+                    'django.template.context_processors.request',
+                    'bims.context_processor.add_recaptcha_key',
+                    'bims.context_processor.custom_navbar_url'
+                ],
+            },
+        },
+    ]
+
+# Absolute path to the directory static files should be collected to.
+# Don't put anything in this directory yourself; store your static files
+# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+# Example: "/var/www/example.com/static/"
+STATIC_ROOT = '/home/web/static'
+
+# Additional locations of static files
+STATICFILES_DIRS = [
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    absolute_path('core', 'base_static'),
+    absolute_path('bims', 'static'),
+] + STATICFILES_DIRS
+
+INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',

@@ -45,6 +45,13 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
             model_attr='site__name'
     )
 
+    id = indexes.CharField()
+
+    def prepare_id(self, obj):
+        if obj.pk:
+            return obj.pk
+        return ''
+
     class Meta:
         app_label = 'bims'
 

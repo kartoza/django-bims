@@ -35,5 +35,15 @@ def ensure_secret_key_file():
             f.write("SECRET_KEY = " + repr(secret_key) + "\n")
 
 
+def ensure_unique_app_labels(installed_apps):
+    """Checks that INSTALLED APPS contains unique app labels."""
+    retval = ()
+    for val in installed_apps:
+        if val in retval:
+            continue
+        retval += (val, )
+    return retval
+
+
 # Import the secret key
 ensure_secret_key_file()

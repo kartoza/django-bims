@@ -1,0 +1,9 @@
+---
+
+- name: customize docker-compose.override.yml
+  template:
+    src: docker-compose.override.yml.j2
+    dest: '{{ project_path }}/deployment/docker-compose.override.yml'
+    owner: '{{ remote_user }}'
+    group: '{{ remote_group }}'
+    mode: "u=rw,g=rw,o=r"
