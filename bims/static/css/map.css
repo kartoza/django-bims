@@ -462,6 +462,10 @@ html, body, .map, .map-wrapper, #map-container {
     content: "✖";
 }
 
+.control-drop-shadow {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
 .layer-switcher {
     position: absolute;
     top: 190px !important;
@@ -480,6 +484,9 @@ html, body, .map, .map-wrapper, #map-container {
     background-position: center !important;
     background-size: 32px;
     margin: 0 auto;
+    background-color: white !important;
+    border: none !important;
+    cursor: pointer;
 }
 
 .layer-switcher .panel {
@@ -737,4 +744,51 @@ div:hover::-webkit-scrollbar {
     height: 50px;
     padding: 10px;
     border: 1px solid gray;
+}
+
+#map-legend-wrapper {
+    border-radius: 5px;
+    min-height: 31px;
+    min-width: 31px;
+    max-width: 250px;
+    max-height: 450px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    position: absolute;
+    left: .5em;
+    bottom: 2.5em;
+    background-color: white;
+    cursor: pointer;
+}
+
+#map-legend-symbol {
+    height: 31px;
+    width: 31px;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: 700;
+}
+
+#map-legend-wrapper.show-legend #map-legend-symbol {
+    display: none;
+}
+
+#map-legend-wrapper.hide-legend #map-legend {
+    display: none;
+}
+
+#map-legend-wrapper.hide-legend {
+    max-width: 31px;
+    max-height: 31px;
+    opacity: 0.6;
+}
+
+#map-legend-wrapper .legend-row {
+    margin-bottom: 10px;
+    border-bottom: 1px solid darkgray;
+    padding: 10px;
+}
+
+#map-legend-wrapper .legend-row:last-child {
+    border-bottom: none;
 }
