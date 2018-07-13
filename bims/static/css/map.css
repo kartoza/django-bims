@@ -623,7 +623,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #taxon-filter {
-    bottom: 3.3em;
+    bottom: 3em;
     font-size: 12px;
     padding: 10px;
     display: none;
@@ -755,8 +755,8 @@ div:hover::-webkit-scrollbar {
     overflow-x: hidden;
     overflow-y: scroll;
     position: absolute;
-    left: .5em;
-    bottom: 2.5em;
+    left: .4em;
+    bottom: 6.3em;
     background-color: white;
     cursor: pointer;
 }
