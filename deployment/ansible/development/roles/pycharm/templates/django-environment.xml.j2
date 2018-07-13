@@ -1,0 +1,20 @@
+
+        <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="PATH" value="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" />
+        <env name="LANG" value="C.UTF-8" />
+
+        {# Django environment #}
+
+        {% for key, value in django.environment.iteritems() %}
+
+        <env name="{{ key }}" value="{{ value }}" />
+
+        {% endfor %}
+
+        {# GeoNode environment #}
+
+        {% for key, value in geonode.environment.iteritems() %}
+
+        <env name="{{ key }}" value="{{ value }}" />
+
+        {% endfor %}
