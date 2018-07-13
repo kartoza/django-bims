@@ -13,6 +13,13 @@ class AppConfig(BaseAppConfig):
         from django.conf import settings
 
         installed_apps = []
+
+        # Fix python 3 compatibility
+        try:
+            basestring
+        except NameError:
+            basestring = str
+
         for app in settings.INSTALLED_APPS:
             if isinstance(app, basestring):
                 installed_apps.append(app)
