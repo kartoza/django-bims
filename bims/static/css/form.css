@@ -130,10 +130,6 @@
     opacity: 1 !important;
 }
 
-.github-button .text-button {
-    display: inline-block;
-    float: left !important;
-}
 .github-button:hover,
 .github-button:focus {
     border: 1px solid #2b2b2b;
@@ -161,11 +157,6 @@
     border-radius: 0;
     color: #000099 !important;
     opacity: 1 !important;
-}
-
-.google-button .text-button {
-    display: inline-block;
-    float: left !important;
 }
 .google-button:hover,
 .google-button:focus {

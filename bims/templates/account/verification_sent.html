@@ -1,0 +1,43 @@
+{% load staticfiles %}
+{% load i18n %}
+{% load account socialaccount %}
+
+{% block css_head %}
+    <!-- Chosen library -->
+    <link rel="stylesheet" href="{% static 'chosen/chosen.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/form.css' %}">
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+{% endblock %}
+
+{% block js_head %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="https://cdn.rawgit.com/leafo/sticky-kit/v1.1.2/jquery.sticky-kit.min.js"></script>
+
+    <script src="{% static 'js/libs/chosen/chosen.jquery.min.js' %}"></script>
+    <script src="{% static 'js/form.js' %}"></script>
+
+{% endblock %}
+
+{% block container %}
+    <div class="content">
+        {% block content %}
+            <div class="container">
+
+                <div class="custom-form-container" style="padding: 50px;">
+                   <h1>{% trans "Verify Your E-mail Address" %}</h1>
+                    <p  style="font-size: 15px;">{% blocktrans %}We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process. Please contact us if you do not receive it within a few minutes.{% endblocktrans %}</p>
+                </div>
+            </div> <!-- /container -->
+            </div>
+        {% endblock %}
+{% endblock %}
+
+{% include 'main_base.html' %}
+
+{% block foot %}
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <link rel="stylesheet" href="{% static 'css/landing_page.css' %}">
+{% endblock %}
