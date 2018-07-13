@@ -4,7 +4,7 @@ core.settings.base
 """
 # Django settings for projecta project.
 
-from .utils import absolute_path
+from .utils import absolute_path  # noqa
 
 ADMINS = (
     ('Dimas Ciputra', 'dimas@kartoza.com'),
@@ -104,7 +104,8 @@ MIDDLEWARE = (
     # risks.
     # 'geonode.middleware.PrintProxyMiddleware',
 
-    # If you use SessionAuthenticationMiddleware, be sure it appears before OAuth2TokenMiddleware.
+    # If you use SessionAuthenticationMiddleware, be sure it appears before
+    # OAuth2TokenMiddleware.
     # SessionAuthenticationMiddleware is NOT required for using
     # django-oauth-toolkit.
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
