@@ -57,6 +57,7 @@ INSTALLED_APPS += (
     'modelsdoc',
     'contactus',
     'haystack',
+    'django_prometheus',
 )
 
 # Set templates
@@ -117,6 +118,7 @@ INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
 )
 
 # Defines whether to log model related events,

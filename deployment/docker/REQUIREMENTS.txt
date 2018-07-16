@@ -48,3 +48,7 @@ git+https://github.com/kartoza/kbims-fish
 django-haystack==2.8.1
 elasticsearch==5.0.1
 
+# prometheus monitoring support
+django-prometheus==1.0.14
+prometheus_client==0.2.0
+

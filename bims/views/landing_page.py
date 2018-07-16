@@ -1,9 +1,10 @@
 # coding=utf-8
 from django.views.generic import TemplateView
 from bims.models.carousel_header import CarouselHeader
+from bims.views.prometheus_monitor import PrometheusCounter
 
 
-class LandingPageView(TemplateView):
+class LandingPageView(PrometheusCounter, TemplateView):
     """Template view for landing page"""
     template_name = 'landing_page.html'
 
@@ -17,6 +18,7 @@ class LandingPageView(TemplateView):
         :rtype: dict
         """
         context = super(LandingPageView, self).get_context_data(**kwargs)
+        self.increase_landing_page_view()
         carousel_headers = CarouselHeader.objects.all()
         context['headers'] = []
         for header in carousel_headers:
