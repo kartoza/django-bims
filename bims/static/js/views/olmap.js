@@ -55,6 +55,7 @@ define([
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
+            this.mapControlPanel.searchView.initDateFilter();
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -168,6 +169,7 @@ define([
             this.map.on('moveend', function (evt) {
                 self.mapMoved();
             });
+
             return this;
         },
         mapMoved: function () {

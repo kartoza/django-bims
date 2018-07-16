@@ -8,6 +8,7 @@ require.config({
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
+        noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
     },
     shim: {
         ol: {

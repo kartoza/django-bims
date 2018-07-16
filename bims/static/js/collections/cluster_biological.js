@@ -5,13 +5,13 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
             "/api/cluster/collection/records/?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&date-from=<%= dateFrom %>&date-to=<%= dateTo %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
             ""),
         url: "",
         viewCollection: [],
         parameters: {
             taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', dateFrom: '', dateTo: ''
+            collector: '', category: '', yearFrom: '', yearTo: '', months: ''
         },
         initialize: function (initExtent) {
             this.initExtent = initExtent;
@@ -28,10 +28,15 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         isActive: function () {
             // flag if this collection need to be called
-            if (this.parameters['taxon'] || this.parameters['search']) {
-                return true;
+            if (!this.parameters['taxon']
+                && !this.parameters['search']
+                && !this.parameters['collector']
+                && !this.parameters['category']
+                && !this.parameters['yearFrom']
+                && !this.parameters['yearTo']) {
+                return false
             } else {
-                return false;
+                return true;
             }
         },
         getTaxon: function () {
@@ -57,14 +62,11 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         updateZoomAndBBox: function (zoom, bbox) {
             this.parameters['zoom'] = zoom;
-            this.parameters['bbox'] = bbox;
+            this.parameters['bbox'] = bbox.join(',');
             this.refresh();
         },
         getExtentOfRecords: function () {
             var self = this;
-            // get extent for all record and fit it to map
-            this.parameters['date-from'] = this.parameters['dateFrom'];
-            this.parameters['date-to'] = this.parameters['dateTo'];
             $.ajax({
                 url: '/api/cluster/collection/records/extent/',
                 data: this.parameters,

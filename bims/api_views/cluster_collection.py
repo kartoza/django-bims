@@ -1,6 +1,5 @@
 # coding=utf8
 
-import datetime
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
@@ -64,21 +63,22 @@ class ClusterCollectionAbstract(APIView):
         if category:
             queryset = queryset.filter(category=category)
 
-        date_from = request.GET.get('date-from')
-        if date_from:
+        year_from = request.GET.get('yearFrom')
+        if year_from:
             queryset = queryset.filter(
-                collection_date__gte=
-                datetime.datetime.fromtimestamp(
-                    int(date_from) / 1000
-                ).strftime('%Y-%m-%d'))
+                collection_date__year__gte=year_from)
 
-        date_to = request.GET.get('date-to')
-        if date_to:
+        year_to = request.GET.get('yearTo')
+        if year_to:
             queryset = queryset.filter(
-                collection_date__lte=
-                datetime.datetime.fromtimestamp(
-                    int(date_to) / 1000
-                ).strftime('%Y-%m-%d'))
+                collection_date__year__lte=year_to)
+
+        months = request.GET.get('months')
+        if months:
+            months = months.split(',')
+            months = [int(month) for month in months]
+            queryset = queryset.filter(
+                collection_date__month__in=months)
         return queryset
 
 
@@ -179,3 +179,44 @@ class ClusterCollection(ClusterCollectionAbstract):
             queryset, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])
+
+
+class ClusterCollectionSummary(ClusterCollectionAbstract):
+    """
+    Clustering collection summary that show on map
+    """
+
+    def get(self, request, format=None):
+        queryset = self.apply_filter(request)
+        search_result = {}
+
+        # group data of biological collection record
+        # TODO : Move it to query of haystack and use count aggregations
+        records = {}
+        sites = {}
+        for model in queryset:
+            if model.taxon_gbif_id:
+                taxon_gbif_id = model.taxon_gbif_id.id
+                if taxon_gbif_id not in records:
+                    records[taxon_gbif_id] = {
+                        'common_name': model.taxon_gbif_id.common_name,
+                        'record_type': 'bio',
+                        'taxon_gbif_id': taxon_gbif_id,
+                        'count': 0
+                    }
+                records[taxon_gbif_id]['count'] += 1
+
+                if model.site.id not in sites:
+                    sites[model.site.id] = {
+                        'name': model.site.name,
+                        'record_type': 'site',
+                        'site_id': model.site.id,
+                        'count': 0
+                    }
+                sites[model.site.id]['count'] += 1
+
+        search_result['biological_collection_record'] = [
+            value for key, value in records.iteritems()]
+        search_result['location_site'] = [
+            value for key, value in sites.iteritems()]
+        return Response(search_result)

@@ -18,7 +18,8 @@ from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
 from bims.api_views.cluster_collection import (
     ClusterCollection,
-    ClusterCollectionExtent
+    ClusterCollectionExtent,
+    ClusterCollectionSummary
 )
 from bims.api_views.cluster_collection_by_taxon import (
     ClusterCollectionByTaxon,
@@ -46,6 +47,8 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
+    url(r'^api/cluster/collection/records/summary/$',
+        ClusterCollectionSummary.as_view()),
     url(r'^api/cluster/collection/records/extent/$',
         ClusterCollectionExtent.as_view()),
     url(r'^api/cluster/collection/records/$',

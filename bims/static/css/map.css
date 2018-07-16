@@ -756,7 +756,7 @@ div:hover::-webkit-scrollbar {
     overflow-y: scroll;
     position: absolute;
     left: .4em;
-    bottom: 6.3em;
+    bottom: 5.3em;
     background-color: white;
     cursor: pointer;
 }
@@ -791,4 +791,59 @@ div:hover::-webkit-scrollbar {
 
 #map-legend-wrapper .legend-row:last-child {
     border-bottom: none;
+}
+
+.year-indicator {
+    width: 100%;
+    height: 20px;
+    position: relative;
+    margin-bottom: 10px;
+    margin-top: -10px;
+}
+
+#year-from {
+    position: absolute;
+    left: 0;
+}
+
+#year-to {
+    position: absolute;
+    right: 0;
+}
+
+#year-slider {
+    height: 5px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#month-selector {
+    margin-bottom: 10px;
+}
+
+.noUi-target {
+    box-shadow: none !important;
+    background: #d4d4d4 !important;
+    border: none !important;
+}
+
+.noUi-connect {
+    background: #888 !important;
+}
+
+.noUi-handle {
+    right: -7.5px !important;
+    background: #888 !important;
+    width: 15px !important;
+    height: 15px !important;
+    border: 0 !important;
+    border-radius: 100% !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 0 0 #c7c7c7 !important;
+    -webkit-transition: box-shadow .2s ease !important;
+    transition: box-shadow .2s ease !important;
+}
+
+.noUi-handle:before, .noUi-handle:after {
+    display: none !important;
 }
