@@ -1,8 +1,8 @@
 define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, ol, LayerStyle) {
     return Backbone.View.extend({
+        nonBiodiversityLayersUrl: 'http://lbimsgis.kartoza.com/geoserver/wms',
         nonBiodiversityLayersInitiationSource: {
             '2012 Vegetation Map of South Africa, Lesotho and Swaziland': {
-                url: 'http://lbimsgis.kartoza.com/geoserver/wms',
                 params: {
                     'layers': 'geonode:vegetation_map_2012',
                     'format': 'image/png',
@@ -11,7 +11,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             },
             'Biomes of South Africa': {
-                url: 'http://lbimsgis.kartoza.com/geoserver/wms',
                 params: {
                     'layers': 'geonode:biomes_of_south_africa_dea_csir',
                     'format': 'image/png',
@@ -20,21 +19,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             },
             'South Africa Dams Polygon': {
-                url: 'http://lbimsgis.kartoza.com/geoserver/wms',
                 params: {
                     'layers': 'geonode:dams500g',
                     'format': 'image/png'
                 }
             },
             'South Africa Towns': {
-                url: 'http://lbimsgis.kartoza.com/geoserver/wms',
                 params: {
                     'layers': 'geonode:sa_towns',
                     'format': 'image/png'
                 }
             },
             'World Heritage Sites': {
-                url: 'http://lbimsgis.kartoza.com/geoserver/wms',
                 params: {
                     'layers': 'geonode:world_heritage_sites',
                     'format': 'image/png'
@@ -71,6 +67,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var keys = Object.keys(self.nonBiodiversityLayersInitiationSource);
             keys.reverse();
             $.each(keys, function (index, key) {
+                self.nonBiodiversityLayersInitiationSource[key]['url'] = self.nonBiodiversityLayersUrl;
                 self.initLayer(
                     new ol.layer.Tile({
                         source: new ol.source.TileWMS(
