@@ -1,51 +1,41 @@
 define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, ol, LayerStyle) {
     return Backbone.View.extend({
-        nonBiodiversityLayersInitiation: {
-            '2012 Vegetation Map of South Africa, Lesotho and Swaziland': new ol.layer.Tile({
-                source: new ol.source.TileWMS({
-                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
-                    params: {
-                        'layers': 'geonode:vegetation_map_2012',
-                        'format': 'image/png'
-                    }
-                })
-            }),
-            'Biomes of South Africa': new ol.layer.Tile({
-                source: new ol.source.TileWMS({
-                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
-                    params: {
-                        'layers': 'geonode:biomes_of_south_africa_dea_csir',
-                        'format': 'image/png'
-                    }
-                })
-            }),
-            'South Africa Dams Polygon': new ol.layer.Tile({
-                source: new ol.source.TileWMS({
-                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
-                    params: {
-                        'layers': 'geonode:dams500g',
-                        'format': 'image/png'
-                    }
-                })
-            }),
-            'South Africa Towns': new ol.layer.Tile({
-                source: new ol.source.TileWMS({
-                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
-                    params: {
-                        'layers': 'geonode:sa_towns',
-                        'format': 'image/png'
-                    }
-                })
-            }),
-            'World Heritage Sites': new ol.layer.Tile({
-                source: new ol.source.TileWMS({
-                    url: 'http://lbimsgis.kartoza.com/geoserver/wms',
-                    params: {
-                        'layers': 'geonode:world_heritage_sites',
-                        'format': 'image/png'
-                    }
-                })
-            })
+        nonBiodiversityLayersUrl: 'http://lbimsgis.kartoza.com/geoserver/wms',
+        nonBiodiversityLayersInitiationSource: {
+            '2012 Vegetation Map of South Africa, Lesotho and Swaziland': {
+                params: {
+                    'layers': 'geonode:vegetation_map_2012',
+                    'format': 'image/png',
+                    'legend-width': 40,
+                    'legend-height': 40,
+                }
+            },
+            'Biomes of South Africa': {
+                params: {
+                    'layers': 'geonode:biomes_of_south_africa_dea_csir',
+                    'format': 'image/png',
+                    'legend-width': 40,
+                    'legend-height': 40,
+                }
+            },
+            'South Africa Dams Polygon': {
+                params: {
+                    'layers': 'geonode:dams500g',
+                    'format': 'image/png'
+                }
+            },
+            'South Africa Towns': {
+                params: {
+                    'layers': 'geonode:sa_towns',
+                    'format': 'image/png'
+                }
+            },
+            'World Heritage Sites': {
+                params: {
+                    'layers': 'geonode:world_heritage_sites',
+                    'format': 'image/png'
+                }
+            }
         },
         // source of layers
         administrativeBoundarySource: null,
@@ -74,10 +64,23 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             this.map = map;
 
             // RENDER NON BIODIVERSITY LAYERS
-            var keys = Object.keys(self.nonBiodiversityLayersInitiation);
+            var keys = Object.keys(self.nonBiodiversityLayersInitiationSource);
             keys.reverse();
             $.each(keys, function (index, key) {
-                self.initLayer(self.nonBiodiversityLayersInitiation[key], key, false)
+                self.nonBiodiversityLayersInitiationSource[key]['url'] = self.nonBiodiversityLayersUrl;
+                self.initLayer(
+                    new ol.layer.Tile({
+                        source: new ol.source.TileWMS(
+                            self.nonBiodiversityLayersInitiationSource[key])
+                    }),
+                    key, false
+                );
+                self.renderLegend(
+                    key,
+                    self.nonBiodiversityLayersInitiationSource[key]['url'],
+                    self.nonBiodiversityLayersInitiationSource[key]['params']['layers'],
+                    false
+                );
             });
             // ---------------------------------
             // ADMINISTRATIVE BOUNDARY LAYER
@@ -125,7 +128,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             if (layerName == "Biodiversity") {
                 Shared.Dispatcher.trigger('map:reloadXHR');
             }
-            this.layers[layerName]['layer'].setVisible(selected)
+            this.layers[layerName]['layer'].setVisible(selected);
+
+            // show/hide legend
+            if (selected) {
+                this.getLegendElement(layerName).show();
+            } else {
+                this.getLegendElement(layerName).hide();
+            }
         },
         ol3_checkLayer: function (layer) {
             var res = false;
@@ -147,6 +157,25 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     console.log('not found')
                 }
             }
+        },
+        getLegendElement: function (layerName) {
+            return $(".control-drop-shadow").find(
+                "[data-name='" + layerName + "']");
+        },
+        renderLegend: function (id, url, layer, visibleDefault) {
+            var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
+            var html =
+                '<div data-name="' + id + '" class="legend-row"';
+            if (!visibleDefault) {
+                html += ' style="display: None"'
+            }
+            html += '>' +
+                '<b>' + id + '</b><br>' +
+                '<img src="' + scr + '"></div>';
+            $('#map-legend').prepend(html);
+        },
+        moveLegendToTop: function (layerName) {
+            this.getLegendElement(layerName).detach().prependTo('#map-legend');
         },
         renderLayers: function () {
             var self = this;
@@ -177,8 +206,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         $($(".layer-selector-input").get().reverse()).each(function (index, value) {
                             self.moveLayerToTop(
                                 self.layers[$(value).val()]['layer']);
+                            self.moveLegendToTop($(value).val());
                         });
                         self.moveLayerToTop(self.highlightVector);
+                    }
+                });
+                $('#map-legend-wrapper').click(function () {
+                    if ($(this).hasClass('hide-legend')) {
+                        $(this).removeClass('hide-legend');
+                        $(this).addClass('show-legend');
+                    } else {
+                        $(this).addClass('hide-legend');
+                        $(this).removeClass('show-legend');
                     }
                 });
             });
