@@ -12,6 +12,7 @@
     <link href="{% static "css/map.css" %}" rel="stylesheet">
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
         const bingMapKey = '{{ bing_map_key }}';
@@ -38,7 +39,13 @@
             <button type="button"><i class="fa fa-globe"></i></button>
             <div id="mouse-position-wrapper" style="display: none"></div>
         </div>
+        <div class="ol-control" id="taxon-filter">ssss
+        </div>
         <div id="popup"></div>
+        <div id="map-legend-wrapper" class="control-drop-shadow hide-legend">
+            <div id="map-legend-symbol">L</div>
+            <div id="map-legend"></div>
+        </div>
     </script>
 
     <script type='text/html' id='side-panel-template'>
@@ -155,7 +162,7 @@
             <div class="row">
                 <div class="col-lg-12" style="padding-right: 0">
                     <span class="title">
-                        LAYERS SELECTOR
+                        LAYER SELECTOR
                     </span>
                     <div class="layers-selector-container-close close-button pull-right">
                         X

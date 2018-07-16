@@ -251,6 +251,7 @@ a.anchor-entry {
     border: 2px solid #e0d441;
     font-size: 9pt;
     margin: 0 25px;
+    margin-top: 20px;
 }
 
 .btn-social-login:hover {

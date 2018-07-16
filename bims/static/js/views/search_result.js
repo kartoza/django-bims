@@ -10,9 +10,16 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
         },
         clicked: function (e) {
             if (this.getResultType() == 'bio') {
-                Shared.Dispatcher.trigger('searchResult:clicked', this.model.get('taxon_gbif_id'));
+                Shared.Dispatcher.trigger(
+                    'searchResult:clicked',
+                    this.model.get('taxon_gbif_id'),
+                    this.model.get('common_name')
+                );
             } else if (this.getResultType() == 'taxa') {
-                Shared.Dispatcher.trigger('searchResult:clicked', this.model.get('id'));
+                Shared.Dispatcher.trigger('searchResult:clicked',
+                    this.model.get('id'),
+                    this.model.get('common_name')
+                );
             }
         },
         getResultType: function () {

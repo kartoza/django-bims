@@ -138,19 +138,11 @@ var LayerSwitcher = function (_Control) {
 
         var this_ = _this;
 
-        button.onmouseover = function (e) {
-            this_.showPanel();
-        };
-
         button.onclick = function (e) {
-            e = e || window.event;
-            this_.showPanel();
-            e.preventDefault();
-        };
-
-        this_.panel.onmouseout = function (e) {
-            e = e || window.event;
-            if (!this_.panel.contains(e.toElement || e.relatedTarget)) {
+            $('.control-panel-selected').click();
+            if (!$(element).hasClass(_this.shownClassName)) {
+               this_.showPanel();
+            }else {
                 this_.hidePanel();
             }
         };

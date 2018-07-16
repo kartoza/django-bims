@@ -23,7 +23,13 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
             if (collectorValue.length === 0) {
                 collectorValue = null
             } else {
-                collectorValue = JSON.stringify(collectorValue)
+                var encodedCollectorValue = [];
+                $.each(collectorValue, function (index, value) {
+                    encodedCollectorValue.push(encodeURIComponent(value));
+                });
+                collectorValue = encodeURIComponent(JSON.stringify(
+                    collectorValue)
+                );
             }
 
             var categoryValue = [];
@@ -42,6 +48,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
                 'dateFrom': this.datePickerToDate($('#date-filter-from')),
                 'dateTo': this.datePickerToDate($('#date-filter-to'))
             };
+            Shared.Dispatcher.trigger('map:closeHighlight');
             Shared.Dispatcher.trigger('search:hit', parameters);
             this.searchResultCollection.search(
                 this.sidePanel, parameters
@@ -54,7 +61,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
         },
         searchClick: function () {
             var searchValue = $('#search').val();
-            if(searchValue.length < 3) {
+            if (searchValue.length < 3) {
                 this.sidePanel.fillSidePanelHtml("<div id='search-results-container'>Minimal 3 characters</div>");
                 return false
             }
@@ -64,7 +71,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'collections/search_result'], 
         searchEnter: function (e) {
             if (e.which === 13) {
                 var searchValue = $('#search').val();
-                if(searchValue.length < 3) {
+                if (searchValue.length < 3) {
                     this.sidePanel.fillSidePanelHtml("<div id='search-results-container'>Minimal 3 characters</div>");
                     return false
                 }

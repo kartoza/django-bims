@@ -462,9 +462,13 @@ html, body, .map, .map-wrapper, #map-container {
     content: "✖";
 }
 
+.control-drop-shadow {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
 .layer-switcher {
     position: absolute;
-    top: 198px !important;
+    top: 190px !important;
     left: 0;
     right: auto !important;
     text-align: left;
@@ -475,10 +479,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher button {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    width: 41px !important;
+    width: 54px !important;
     height: 41px !important;
-    background-position: 6px !important;
+    background-position: center !important;
     background-size: 32px;
+    margin: 0 auto;
+    background-color: white !important;
+    border: none !important;
+    cursor: pointer;
 }
 
 .layer-switcher .panel {
@@ -486,6 +494,11 @@ html, body, .map, .map-wrapper, #map-container {
     border: none !important;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 9px !important;
+    position: absolute;
+    width: 250px;
+    margin-left: 55px !important;
+    background-color: rgba(204, 204, 204, 0.4) !important;
+    border-radius: 0 !important;
 }
 
 .layer-switcher ul {
@@ -495,6 +508,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher input {
     cursor: pointer;
+}
+
+.layer-switcher.shown button {
+    background-color: #1b900d !important;
+}
+
+.layer-switcher button:focus {
+    outline: none !important;
 }
 
 .result-search {
@@ -592,14 +613,20 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
-.mouse-position {
+.mouse-position, #taxon-filter {
     position: absolute;
     bottom: .5em;
     left: .5em;
     font-size: .7rem;
     color: #000;
     background: rgba(255, 255, 255, .8);
+}
 
+#taxon-filter {
+    bottom: 3em;
+    font-size: 12px;
+    padding: 10px;
+    display: none;
 }
 
 #fetching-error .try-again-button {
@@ -717,4 +744,51 @@ div:hover::-webkit-scrollbar {
     height: 50px;
     padding: 10px;
     border: 1px solid gray;
+}
+
+#map-legend-wrapper {
+    border-radius: 5px;
+    min-height: 31px;
+    min-width: 31px;
+    max-width: 250px;
+    max-height: 450px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    position: absolute;
+    left: .4em;
+    bottom: 6.3em;
+    background-color: white;
+    cursor: pointer;
+}
+
+#map-legend-symbol {
+    height: 31px;
+    width: 31px;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: 700;
+}
+
+#map-legend-wrapper.show-legend #map-legend-symbol {
+    display: none;
+}
+
+#map-legend-wrapper.hide-legend #map-legend {
+    display: none;
+}
+
+#map-legend-wrapper.hide-legend {
+    max-width: 31px;
+    max-height: 31px;
+    opacity: 0.6;
+}
+
+#map-legend-wrapper .legend-row {
+    margin-bottom: 10px;
+    border-bottom: 1px solid darkgray;
+    padding: 10px;
+}
+
+#map-legend-wrapper .legend-row:last-child {
+    border-bottom: none;
 }
