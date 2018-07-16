@@ -23,7 +23,7 @@ ADD Gruntfile.js /Gruntfile.js
 RUN cd / && npm install
 
 # install shallow clone of django bims geonode branch
-ARG BIMS_TAG=geonode
+ARG BIMS_TAG=develop
 ADD https://api.github.com/repos/kartoza/django-bims/git/refs/heads/${BIMS_TAG} version.json
 RUN git clone --depth=1 git://github.com/kartoza/django-bims.git --branch ${BIMS_TAG} /usr/src/bims
 
