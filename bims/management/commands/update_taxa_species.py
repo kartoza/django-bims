@@ -19,5 +19,6 @@ class Command(BaseCommand):
             )
             if existed:
                 collection.taxon_gbif_id = existed[0].taxon_gbif_id
+                collection.save()
             else:
                 update_collection_record(collection)
