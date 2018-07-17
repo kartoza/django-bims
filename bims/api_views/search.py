@@ -19,13 +19,14 @@ class SearchObjects(APIView):
         search_result = {}
 
         # Biological records
-        results = sqs.all().models(BiologicalCollectionRecord)
         query_value = request.GET.get('search')
         if query_value:
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
                 original_species_name=clean_query
             )
+        else:
+            results = sqs.all().models(BiologicalCollectionRecord)
 
         query_collector = request.GET.get('collector')
         query_category = request.GET.get('category')
