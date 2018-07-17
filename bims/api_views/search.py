@@ -15,15 +15,17 @@ class SearchObjects(APIView):
     """API for searching using elasticsearch."""
 
     def get(self, request):
-        query_value = request.GET.get('search')
         sqs = SearchQuerySet()
-        clean_query = sqs.query.clean(query_value)
         search_result = {}
 
         # Biological records
-        results = sqs.filter(
-            original_species_name=clean_query
-        ).models(BiologicalCollectionRecord)
+        results = sqs.all().models(BiologicalCollectionRecord)
+        query_value = request.GET.get('search')
+        if query_value:
+            clean_query = sqs.query.clean(query_value)
+            results = sqs.filter(
+                original_species_name=clean_query
+            )
 
         query_collector = request.GET.get('collector')
         query_category = request.GET.get('category')
@@ -66,6 +68,7 @@ class SearchObjects(APIView):
         # group data of biological collection record
         # TODO : Move it to query of haystack and use count aggregations
         records = {}
+        sites = {}
         for r in results:
             model = r.object
             if model.taxon_gbif_id:
@@ -77,27 +80,30 @@ class SearchObjects(APIView):
                         'taxon_gbif_id': taxon_gbif_id,
                         'count': 0
                     }
+
+                if model.site.id not in sites:
+                    sites[model.site.id] = {
+                        'name': model.site.name,
+                        'record_type': 'site',
+                        'site_id': model.site.id,
+                        'count': 0
+                    }
                 records[taxon_gbif_id]['count'] += 1
 
         search_result['biological_collection_record'] = [
             value for key, value in records.iteritems()]
+        search_result['location_site'] = [
+            value for key, value in sites.iteritems()]
 
         # Taxon records
-        results = sqs.filter(
-            common_name=clean_query
-        ).models(Taxon)
+        results = sqs.all().models(Taxon)
+        if query_value:
+            clean_query = sqs.query.clean(query_value)
+            results = results.filter(
+                common_name=clean_query
+            )
 
         serializer = TaxonSerializer(
             [r.object for r in results], many=True)
         search_result['taxa'] = serializer.data
-
-        # Sites records
-        results = sqs.filter(
-            name=clean_query
-        ).models(LocationSite)
-
-        serializer = LocationSiteSerializer(
-            [r.object for r in results], many=True)
-        search_result['location_site'] = serializer.data
-
         return Response(search_result)

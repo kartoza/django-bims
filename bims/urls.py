@@ -18,8 +18,7 @@ from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
 from bims.api_views.cluster_collection import (
     ClusterCollection,
-    ClusterCollectionExtent,
-    ClusterCollectionSummary
+    ClusterCollectionExtent
 )
 from bims.api_views.cluster_collection_by_taxon import (
     ClusterCollectionByTaxon,
@@ -48,8 +47,6 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
-    url(r'^api/cluster/collection/records/summary/$',
-        ClusterCollectionSummary.as_view()),
     url(r'^api/cluster/collection/records/extent/$',
         ClusterCollectionExtent.as_view()),
     url(r'^api/cluster/collection/records/$',
@@ -72,17 +69,17 @@ bibliography_urls = [
 ]
 
 urlpatterns = [
-    url(r'^$', LandingPageView.as_view(), name='landing-page'),
-    url(r'^map/$', MapPageView.as_view()),
-    url(r'^profile/$', UserProfileView.as_view(), name='user-profile'),
-    url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
-    url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
-    url(r'^bibliography/',
-        include((bibliography_urls, 'bims'), namespace = 'td_biblio')),
+                  url(r'^$', LandingPageView.as_view(), name='landing-page'),
+                  url(r'^map/$', MapPageView.as_view()),
+                  url(r'^profile/$', UserProfileView.as_view(), name='user-profile'),
+                  url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
+                  url(r'^links/$', LinksCategoryView.as_view(), name='link_list'),
+                  url(r'^bibliography/',
+                      include((bibliography_urls, 'bims'), namespace='td_biblio')),
 
-    url(r'^api/docs/', include_docs_urls(title='BIMS API')),
-    url(r'^activate-user/(?P<username>[\w-]+)/$',
-        activate_user, name='activate-user'),
-    url(r'^under-development/$',
-        UnderDevelopmentView.as_view(), name='under-development'),
-] + api_urls
+                  url(r'^api/docs/', include_docs_urls(title='BIMS API')),
+                  url(r'^activate-user/(?P<username>[\w-]+)/$',
+                      activate_user, name='activate-user'),
+                  url(r'^under-development/$',
+                      UnderDevelopmentView.as_view(), name='under-development'),
+              ] + api_urls
