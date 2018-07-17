@@ -847,3 +847,8 @@ div:hover::-webkit-scrollbar {
 .noUi-handle:before, .noUi-handle:after {
     display: none !important;
 }
+
+.button-filter-wrapper {
+    text-align: center;
+    padding: 5px 40px;
+}

@@ -26,6 +26,7 @@ from bims.api_views.cluster_collection_by_taxon import (
     ClusterCollectionByTaxonExtent
 )
 from bims.api_views.collector import CollectorList
+from bims.api_views.date_category_filter import DateCategoryList
 from bims.views.bibliography import (
     EntryListView,
     EntryBatchImportView,
@@ -57,10 +58,12 @@ api_urls = [
         ClusterCollectionByTaxonExtent.as_view()),
     url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/$',
         ClusterCollectionByTaxon.as_view()),
-    url(r'^api/search/(?P<query_value>\w+)/$',
+    url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
     url(r'^api/list-collector/$',
         CollectorList.as_view(), name='list-collector'),
+    url(r'^api/list-date-category/$',
+        DateCategoryList.as_view(), name='list-date-category'),
 ]
 
 bibliography_urls = [

@@ -8,8 +8,8 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
         events: {
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
-            'click #apply-filter': 'searchClick',
-            'click #clear-filter': 'clearFilter'
+            'click .apply-filter': 'searchClick',
+            'click .clear-filter': 'clearFilter'
         },
         search: function (searchValue) {
             var self = this;

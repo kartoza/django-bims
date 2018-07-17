@@ -2,7 +2,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
-        searchUrl: "/api/cluster/collection/records/summary/",
+        searchUrl: "/api/search/",
         viewCollection: [],
         sidePanel: null,
         searchValue: '',
