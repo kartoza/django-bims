@@ -29,7 +29,6 @@ def find_species(original_species_name):
     :return: List of species
     """
     print('Find species : %s' % original_species_name)
-    list_of_species = []
     try:
         response = species.name_lookup(
             q=original_species_name,
@@ -39,29 +38,31 @@ def find_species(original_species_name):
         if 'results' in response:
             results = response['results']
             for result in results:
-                if 'nubKey' in result:
-                    list_of_species.append(result)
+                if 'nubKey' in result and 'taxonomicStatus' in result:
+                    if result['taxonomicStatus'] == 'ACCEPTED' or \
+                            result['taxonomicStatus'] == 'SYNONYM':
+                        return result
     except HTTPError:
         print('Species not found')
 
-    return list_of_species
+    return None
 
 
-def update_fish_collection_record(fish_collection):
+def update_collection_record(collection):
     """
-    Update taxon for a fish collection.
-    :param fish_collection: Fish collection record model
+    Update taxon for a collection.
+    :param collection: Biological collection record model
     """
-    results = find_species(fish_collection.original_species_name)
+    result = find_species(collection.original_species_name)
 
-    for result in results:
-        if 'nubKey' in result:
-            taxon, created = Taxon.objects.get_or_create(
-                    gbif_id=result['nubKey'])
-            update_taxonomy_fields(taxon, result)
-            fish_collection.taxon_gbif_id = taxon
-            fish_collection.save()
-            break
+    if not result:
+        return
+
+    taxon, created = Taxon.objects.get_or_create(
+            gbif_id=result['nubKey'])
+    update_taxonomy_fields(taxon, result)
+    collection.taxon_gbif_id = taxon
+    collection.save()
 
 
 def update_taxonomy_fields(taxon, response):
@@ -83,4 +84,19 @@ def update_taxonomy_fields(taxon, response):
                     taxon,
                     field.get_attname(),
                     response[field.taxonomy_key])
+            continue
+
+        # Set vernacular names
+        try:
+            if field.get_attname() == 'vernacular_names':
+                vernacular_names = []
+                for vernacular_name in response['vernacularNames']:
+                   if 'vernacularName' in vernacular_name:
+                       vernacular_names.append(
+                               vernacular_name['vernacularName']
+                       )
+                taxon.vernacular_names =  vernacular_names
+        except AttributeError:
+            continue
+
     taxon.save()

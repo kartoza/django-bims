@@ -38,6 +38,6 @@ def get_iucn_status(taxon_id=None, species_name=None):
             )
             return iucn_status
         return None
-    except HTTPError as e:
+    except (HTTPError, KeyError) as e:
         print(e)
         return None

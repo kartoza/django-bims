@@ -1,0 +1,4 @@
+[submodule "fish"]
+	path = fish
+	url = git@github.com:kartoza/kbims-fish.git
+    branch = apps
