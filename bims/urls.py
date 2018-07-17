@@ -14,6 +14,9 @@ from bims.api_views.location_site import (
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
 )
+from bims.api_views.non_biodiversity_layer import (
+    NonBiodiversityLayerList
+)
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
 from bims.api_views.cluster_collection import (
@@ -58,6 +61,9 @@ api_urls = [
         SearchObjects.as_view(), name='search-api'),
     url(r'^api/list-collector/$',
         CollectorList.as_view(), name='list-collector'),
+    url(r'^api/list-non-biodiversity/$',
+        NonBiodiversityLayerList.as_view(),
+        name='list-non-biodiversity-layer'),
 ]
 
 bibliography_urls = [
