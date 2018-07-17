@@ -47,6 +47,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     id = indexes.CharField()
 
+    collection_month = indexes.DateField(
+        model_attr='collection_date__month'
+    )
+
     def prepare_id(self, obj):
         if obj.pk:
             return obj.pk

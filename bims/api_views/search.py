@@ -60,7 +60,7 @@ class SearchObjects(APIView):
             qs_month = SQ()
             for month in qs:
                 clean_query_month = sqs.query.clean(month)
-                qs_month.add(SQ(collection_date__month=clean_query_month), SQ.OR)
+                qs_month.add(SQ(collection_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
 
         # group data of biological collection record
@@ -99,5 +99,5 @@ class SearchObjects(APIView):
         serializer = LocationSiteSerializer(
             [r.object for r in results], many=True)
         search_result['location_site'] = serializer.data
-        print(search_result)
+
         return Response(search_result)
