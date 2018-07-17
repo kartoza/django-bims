@@ -147,11 +147,14 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
             });
             $('#month-selector').html(monthSelectorHtml);
         },
-        clearFilter: function () {
-            $('.map-search-box').find('input:checkbox:checked').prop('checked', false);
-            this.yearSlider.set([this.startYear, this.endYear]);
-            $('#year-from').html(this.startYear);
-            $('#year-to').html(this.endYear);
+        clearFilter: function (e) {
+            var target = $(e.target);
+            target.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            if(target.closest('.row').find('#year-from').length > 0) {
+                this.yearSlider.set([this.startYear, this.endYear]);
+                target.closest('.row').find('#year-from').html(this.startYear);
+                target.closest('.row').find('#year-to').html(this.endYear);
+            }
             this.searchClick();
 
         },

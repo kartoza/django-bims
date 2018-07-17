@@ -44,14 +44,12 @@ class SearchObjects(APIView):
 
         year_from = request.GET.get('yearFrom')
         if year_from:
-            print(year_from)
             clean_query_year_from = sqs.query.clean(year_from)
             results = results.filter(
                 collection_date__year__gte=clean_query_year_from)
 
         year_to = request.GET.get('yearTo')
         if year_to:
-            print(year_to)
             clean_query_year_to = sqs.query.clean(year_to)
             results = results.filter(
                 collection_date__year__lte=clean_query_year_to)
@@ -63,7 +61,7 @@ class SearchObjects(APIView):
             for month in qs:
                 clean_query_month = sqs.query.clean(month)
                 qs_month.add(SQ(collection_date__month=clean_query_month), SQ.OR)
-            results = results.filter(collection_date__month=qs_month)
+            results = results.filter(qs_month)
 
         # group data of biological collection record
         # TODO : Move it to query of haystack and use count aggregations
@@ -101,4 +99,5 @@ class SearchObjects(APIView):
         serializer = LocationSiteSerializer(
             [r.object for r in results], many=True)
         search_result['location_site'] = serializer.data
+        print(search_result)
         return Response(search_result)
