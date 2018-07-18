@@ -19,6 +19,12 @@ class ShapefileUploadSession(models.Model):
             null=True,
     )
 
+    token = models.CharField(
+            max_length=100,
+            null=True,
+            blank=True
+    )
+
     uploaded_at = models.DateField(
             default=timezone.now
     )

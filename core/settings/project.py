@@ -55,3 +55,5 @@ GRUNT_MODULES = {
         'optimized': 'js/optimized.js',
     }
 }
+
+TEMP_FOLDER = MEDIA_ROOT + '/temp'

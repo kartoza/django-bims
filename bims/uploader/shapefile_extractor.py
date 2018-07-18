@@ -36,39 +36,34 @@ class WrongExtention(Exception):
 def handle_uploaded_file(f, filename):
     """Handle uploaded file to be saved in temporary file.
     """
-    if not os.path.exists(settings.TEMP_FOLDER):
-        os.makedirs(settings.TEMP_FOLDER)
+    temp_folder = settings.TEMP_FOLDER
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
     filename = os.path.join(
-        settings.TEMP_FOLDER, filename)
+        temp_folder, filename)
     with open(filename, 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
 
 
-def extract_shape_file(request):
+def extract_shape_file(request=None, shp_file=None, shx_file=None, dbf_file=None):
     """Read this shapefile
     """
+    if request:
+        shp_file = request.FILES['shp_file']
+        shx_file = request.FILES['shx_file']
+        dbf_file = request.FILES['dbf_file']
 
-    shp_file = request.FILES['shp_file']
-    shx_file = request.FILES['shx_file']
-    dbf_file = request.FILES['dbf_file']
     if shp_file.name.endswith('.shp') and shx_file.name.endswith(
             '.shx') and dbf_file.name.endswith('.dbf'):
-        # check the size
-        if shp_file._size > LIMIT_FILE or shx_file._size > LIMIT_FILE or dbf_file._size > LIMIT_FILE:
-            raise FileExceedLimit
 
-        # check the name
-        shp_filename = shp_file.name.replace(".shp", "")
-        shx_filename = shx_file.name.replace(".shx", "")
-        dbf_filename = dbf_file.name.replace(".dbf", "")
-        if shp_filename != shx_filename or shp_filename != dbf_filename or shx_filename != dbf_filename:
-            raise FilesHasNotSameName
+        shp_filename, ext = os.path.splitext(shp_file.name)
+        shp_filename = shp_filename.split('/')[1]
 
         # save temporary file
-        handle_uploaded_file(shp_file, shp_file.name)
-        handle_uploaded_file(shx_file, shx_file.name)
-        handle_uploaded_file(dbf_file, dbf_file.name)
+        handle_uploaded_file(shp_file, shp_filename + '.shp')
+        handle_uploaded_file(shx_file, shp_filename + '.shx')
+        handle_uploaded_file(dbf_file, shp_filename + '.dbf')
 
         sf = shapefile.Reader(os.path.join(
             settings.TEMP_FOLDER, shp_filename + ".dbf")
@@ -86,13 +81,13 @@ def extract_shape_file(request):
 
         # delete that file
         os.remove(os.path.join(
-            settings.TEMP_FOLDER, shp_file.name)
+            settings.TEMP_FOLDER, shp_filename + '.shp')
         )
         os.remove(os.path.join(
-            settings.TEMP_FOLDER, shx_file.name)
+            settings.TEMP_FOLDER, shp_filename + '.shx')
         )
         os.remove(os.path.join(
-            settings.TEMP_FOLDER, dbf_file.name)
+            settings.TEMP_FOLDER, shp_filename + '.dbf')
         )
         return output
     else:

@@ -33,7 +33,7 @@ from bims.api_views.search import SearchObjects
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
-from bims.views.shapefile_upload import ShapefileUploadView
+from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
 from bims.views.under_development import UnderDevelopmentView
 
 api_urls = [
@@ -71,7 +71,10 @@ urlpatterns = [
     url(r'^map/$', MapPageView.as_view()),
     url(r'^profile/$', UserProfileView.as_view(), name='user-profile'),
     url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
-    url(r'^upload_shp/$', ShapefileUploadView.as_view(), name='shapefile-upload'),
+    url(r'^upload_shp/$', ShapefileUploadView.as_view(),
+        name='shapefile-upload'),
+    url(r'^process_shapefiles/$', process_shapefiles,
+        name='process_shapefiles'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
     url(r'^bibliography/',
         include((bibliography_urls, 'bims'), namespace = 'td_biblio')),

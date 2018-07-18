@@ -176,7 +176,7 @@ class ShapefileInline(admin.TabularInline):
 
 
 class ShapefileUploadSessionAdmin(admin.ModelAdmin):
-    exclude = ('shapefiles',)
+    exclude = ('shapefiles', 'token')
     list_display = (
         'uploader',
         'uploaded_at',
@@ -187,7 +187,9 @@ class ShapefileUploadSessionAdmin(admin.ModelAdmin):
 
 
 class ShapefileAdmin(admin.ModelAdmin):
+    exclude = ('token',)
     list_display = (
+        'id',
         'shapefile',
     )
 

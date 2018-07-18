@@ -21,87 +21,40 @@
             <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
             </div>
 
-            <ul class="nav nav-tabs" id="myTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="csv-tab" data-toggle="tab" href="#csv" role="tab" aria-controls="home" aria-selected="true">CSV</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="shapefile-tab" data-toggle="tab" href="#shapefile" role="tab" aria-controls="profile" aria-selected="false">Shapefile</a>
-                </li>
-            </ul>
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="csv" role="tabpanel" aria-labelledby="csv-tab">
-                    <div class="modal-body">
-                        <form id="upload-form" onchange="Validate(this)" method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <label for="file"><b>Upload csv here</b></label>
-                            <input type="file" name="csv_file">
-                            <p class="help-block">These formats are supported: csv</p>
-                            <div class="help-block">
-                                Your data must conform to this schema to be accepted :
-                                <div class="help-block-schema">
-                                    {% block required_fields %}
-                                        latitude(float), longitude(float), species_name(string), location_site(string), notes(string), category(string), date(yyyy-mm-dd), collector(string)
-                                    {% endblock %}
-                                </div>
-                                <div class="help-block-space"></div>
-                                And these are optional fields :
-                                <div class="help-block-schema">
-                                    {% block optional_fields %}
-                                        present(int), absent(int)
-                                    {% endblock %}
-                                </div>
-                            </div>
-                            <div class="help-block-space"></div>
-                            <div class="help-block">
-                                Duplicates will be detected and rejected.
-                            </div>
-                        </form>
+            <div class="modal-body">
+                <form id="upload-form" onchange="Validate(this)" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label for="file"><b>Upload csv here</b></label>
+                    <input type="file" name="csv_file">
+                    <p class="help-block">These formats are supported: csv</p>
+                    <div class="help-block">
+                        Your data must conform to this schema to be accepted :
+                        <div class="help-block-schema">
+                            {% block required_fields %}
+                                latitude(float), longitude(float), species_name(string), location_site(string), notes(string), category(string), date(yyyy-mm-dd), collector(string)
+                            {% endblock %}
+                        </div>
+                        <div class="help-block-space"></div>
+                        And these are optional fields :
+                        <div class="help-block-schema">
+                            {% block optional_fields %}
+                                present(int), absent(int)
+                            {% endblock %}
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button id="upload-file-btn" class="btn btn-primary" data-dismiss="modal" value="Upload">Upload</button>
+                    <div class="help-block-space"></div>
+                    <div class="help-block">
+                        Duplicates will be detected and rejected.
                     </div>
-                </div>
-                <div class="tab-pane fade" id="shapefile" role="tabpanel" aria-labelledby="shapefile-tab">
-                    <div class="modal-body">
-                        <form id="upload-form" onchange="Validate(this)" method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <label for="file"><b>Upload shapefile here</b></label>
-                            <input type="file" name="shapefile_file">
-                            <p class="help-block">These formats are supported: .shx, .shp, .dbf, .qpj, .prj, .cpg</p>
-                            <div class="help-block">
-                                Your data must conform to this schema to be accepted :
-                                <div class="help-block-schema">
-                                    {% block shapefile_required_fields %}
-                                       species_name(string), location_site(string), notes(string), category(string), date(yyyy-mm-dd), collector(string)
-                                    {% endblock %}
-                                </div>
-                                <div class="help-block-space"></div>
-                                And these are optional fields :
-                                <div class="help-block-schema">
-                                    {% block shapefile_optional_fields %}
-                                        present(int), absent(int)
-                                    {% endblock %}
-                                </div>
-                            </div>
-                            <div class="help-block-space"></div>
-                            <div class="help-block">
-                                Duplicates will be detected and rejected.
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button id="upload-file-btn" class="btn btn-primary" data-dismiss="modal" value="Upload">Upload</button>
-                    </div>
-                </div>
+                </form>
             </div>
-
-
+            <div class="modal-footer">
+                <button id="upload-file-btn" class="btn btn-primary" data-dismiss="modal" value="Upload">Upload</button>
+            </div>
 
             {% if data.uploaded %}
                 <p> {{ data.uploaded }} </p>
             {% endif %}
-
 
         </div>
     </div>

@@ -13,6 +13,12 @@ class Shapefile(models.Model):
     """
     shapefile = models.FileField(upload_to='shapefile/')
 
+    token = models.CharField(
+            max_length=100,
+            null=True,
+            blank=True
+    )
+
     @property
     def filename(self):
         return self.shapefile.name

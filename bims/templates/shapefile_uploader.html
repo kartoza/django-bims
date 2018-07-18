@@ -1,0 +1,98 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Uploader
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+            <h3>This is the page for uploading {% block module_name %}generic{% endblock %} observation records</h3>
+            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+            </div>
+
+            <div class="modal-body">
+
+                <div class="help-block">
+                    Your data must have these properties to be accepted :
+                    <div class="help-block-schema">
+                        {% block required_fields %}
+                            species(string), location(string), notes(string), category(string), date(yyyy-mm-dd), collector(string)
+                        {% endblock %}
+                    </div>
+                    <div class="help-block-space"></div>
+                    And these are optional properties :
+                    <div class="help-block-schema">
+                        {% block optional_fields %}
+                            present(int), absent(int)
+                        {% endblock %}
+                    </div>
+                </div>
+                <div class="help-block-space"></div>
+                <div class="help-block">
+                    Duplicates will be detected and rejected.
+                </div>
+                <div class="help-block-space"></div>
+
+                <label for="file"><b>Upload shapefile here</b></label>
+
+                <button type="button" class="btn btn-primary js-upload-photos">
+                    <span class="glyphicon glyphicon-cloud-upload"></span> Upload shapefiles
+                </button>
+
+                <input id="fileupload" type="file" name="shapefile" multiple
+                       style="display: none;"
+                       data-url="{% url 'shapefile-upload' %}"
+                       data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+
+                <div class="help-block-space"></div>
+                <table id="gallery" class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th>Files</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for shapefile in shapefiles %}
+                        <tr>
+                            <td><a href="{{ shapefile.fileurl }}">{{ shapefile.filename }}</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+
+            </div>
+
+            <div class="help-block" id="process-shapefile">
+                Processing shapefiles...
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/vendor/jquery.ui.widget.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/jquery.iframe-transport.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/jquery.fileupload.js" %}"></script>
+    <script type="text/javascript">
+        var csrfmiddlewaretoken = '{{ csrf_token }}';
+    </script>
+    <script src="{% static "js/shapefile-upload.js" %}"></script>
+
+{% endblock %}
