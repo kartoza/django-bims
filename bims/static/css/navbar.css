@@ -110,9 +110,21 @@
     font-size: 25pt !important;
     padding: 3px 10px;
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+    width: 55px;
+    text-align: center;
+
 }
 
 #navbarResponsive .dropdown-menu {
   right: 0!important;
   left: auto !important;
+}
+
+.navbar-light .navbar-toggler {
+    border: 2px solid black;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.col-lg-6 {
+    max-width: 50% !important;
 }
