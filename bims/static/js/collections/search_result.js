@@ -22,6 +22,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                 '&yearTo=' + this.yearTo +
                 '&months=' + this.months;
             this.sidePanel = sidePanel;
+            this.sidePanel.showSearchLoading();
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {

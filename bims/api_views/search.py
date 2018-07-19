@@ -1,13 +1,12 @@
 # coding=utf-8
 import json
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from haystack.query import SearchQuerySet, SQ
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from bims.models.location_site import LocationSite
 from bims.models.taxon import Taxon
-from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 
 
@@ -24,9 +23,11 @@ class SearchObjects(APIView):
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
                 original_species_name=clean_query
-            )
+            ).models(BiologicalCollectionRecord)
+            settings.ELASTIC_MIN_SCORE = 1
         else:
             results = sqs.all().models(BiologicalCollectionRecord)
+            settings.ELASTIC_MIN_SCORE = 0
 
         query_collector = request.GET.get('collector')
         query_category = request.GET.get('category')
@@ -49,13 +50,13 @@ class SearchObjects(APIView):
         if year_from:
             clean_query_year_from = sqs.query.clean(year_from)
             results = results.filter(
-                collection_date__year__gte=clean_query_year_from)
+                collection_date_year__gte=clean_query_year_from)
 
         year_to = request.GET.get('yearTo')
         if year_to:
             clean_query_year_to = sqs.query.clean(year_to)
             results = results.filter(
-                collection_date__year__lte=clean_query_year_to)
+                collection_date_year__lte=clean_query_year_to)
 
         months = request.GET.get('months')
         if months:
@@ -63,7 +64,7 @@ class SearchObjects(APIView):
             qs_month = SQ()
             for month in qs:
                 clean_query_month = sqs.query.clean(month)
-                qs_month.add(SQ(collection_month=clean_query_month), SQ.OR)
+                qs_month.add(SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
 
         # group data of biological collection record
