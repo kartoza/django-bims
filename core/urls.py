@@ -28,6 +28,7 @@ urlpatterns = [
     url('^contact/', include('contactus.urls')),
     url(r'^', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
+    url(r'^', include(('reptile.urls', 'reptile'), namespace='reptile')),
     url(r'^', include('example.urls')),
 
     # prometheus monitoring

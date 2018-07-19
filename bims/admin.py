@@ -1,5 +1,6 @@
 # coding=utf-8
 from django import forms
+from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.core.mail import send_mail
 from geonode.people.admin import ProfileAdmin
@@ -28,7 +29,9 @@ from bims.models import (
     Entry,
     Collection,
     AuthorEntryRank,
-    NonBiodiversityLayer
+    ShapefileUploadSession,
+    Shapefile,
+    NonBiodiversityLayer,
 )
 
 
@@ -164,6 +167,37 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
     )
 
 
+class ShapefileInline(admin.TabularInline):
+
+    def shapefile_name(self, obj):
+        if obj.shapefile:
+            return mark_safe("""<a href="%s" />%s</a>""" % (
+                obj.shapefile.fileurl, obj.shapefile.filename))
+
+    model = ShapefileUploadSession.shapefiles.through
+    fields = ('shapefile_name', 'shapefile')
+    readonly_fields = ('shapefile_name',)
+
+
+class ShapefileUploadSessionAdmin(admin.ModelAdmin):
+    exclude = ('shapefiles', 'token')
+    list_display = (
+        'uploader',
+        'uploaded_at',
+        'processed',
+    )
+
+    inlines = (ShapefileInline,)
+
+
+class ShapefileAdmin(admin.ModelAdmin):
+    exclude = ('token',)
+    list_display = (
+        'id',
+        'shapefile',
+    )
+
+
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('name', 'category')
     list_filter = ('category',)
@@ -260,3 +294,6 @@ admin.site.register(BoundaryType, admin.ModelAdmin)
 admin.site.register(Cluster, ClusterAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)
 admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
+
+admin.site.register(ShapefileUploadSession, ShapefileUploadSessionAdmin)
+admin.site.register(Shapefile, ShapefileAdmin)
