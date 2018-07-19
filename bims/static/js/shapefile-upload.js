@@ -1,6 +1,7 @@
 $(function () {
 
     $('#process-shapefile').hide();
+    $('#reupload-button').hide();
 
     $(".js-upload-photos").click(function () {
         $("#fileupload").click();
@@ -22,6 +23,7 @@ $(function () {
         $('.js-upload-photos').hide();
 
         $('#process-shapefile').show();
+        $('#reupload-button').show();
 
         // Process shapefile
         $.ajax({
@@ -36,5 +38,9 @@ $(function () {
         })
 
     })
+
+    $('#reupload-button').click(function() {
+        location.reload();
+    });
 
 });
