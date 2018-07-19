@@ -7,13 +7,12 @@ define([
     'collections/cluster_biological',
     'views/map_control_panel',
     'views/side_panel',
-    'views/boundary',
     'ol',
     'jquery', 'layerSwitcher',
     'views/olmap_basemap', 'views/olmap_layers',
     'views/geocontext'], function (Backbone, _, Shared,
                                    LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
-                                   MapControlPanelView, SidePanelView, BoundaryView,
+                                   MapControlPanelView, SidePanelView,
                                    ol, $, LayerSwitcher, Basemap, Layers, Geocontext) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
@@ -39,13 +38,11 @@ define([
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             this.layers = new Layers();
-            this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
-            Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
@@ -258,7 +255,6 @@ define([
             $('#fetching-error').hide();
             $('#loading-warning').hide();
             $('#fetching-error .call-administrator').hide();
-            this.layers.administrativeBoundarySource.clear();
         },
         checkAdministrativeLevel: function () {
             var self = this;
@@ -288,8 +284,7 @@ define([
                     }
                     this.fetchingReset();
                     // generate boundary
-                    this.boundaryView.renderAdministrativeBoundary(
-                        administrative, this.getCurrentBbox());
+                    this.layers.changeLayerAdministrative(administrative);
 
                     // if layer is shows
                     if (!this.layers.isBiodiversityLayerShow()) {
@@ -372,9 +367,6 @@ define([
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
-        },
-        updateAdministrativeBoundaryFeatures: function (features) {
-            this.layers.administrativeBoundarySource.addFeatures(features);
         },
         closeHighlight: function () {
             this.hidePopup();
