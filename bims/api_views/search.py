@@ -64,7 +64,8 @@ class SearchObjects(APIView):
             qs_month = SQ()
             for month in qs:
                 clean_query_month = sqs.query.clean(month)
-                qs_month.add(SQ(collection_date_month=clean_query_month), SQ.OR)
+                qs_month.add(
+                    SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
 
         # group data of biological collection record
