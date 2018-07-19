@@ -1,0 +1,26 @@
+body {
+    font-family: "Roboto Condensed";
+}
+
+table, tr, th, td {
+    border: 1px solid black;
+    padding: 5px 10px;
+}
+
+th {
+    background-color: lightgrey;
+}
+
+.pagination {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.validate-action {
+    text-align: center;
+    color: orange
+}
+
+.validate-action:hover {
+    color: #1b900d;
+}

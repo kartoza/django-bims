@@ -33,10 +33,12 @@ from bims.views.bibliography import (
     EntryBatchImportView,
 )
 from bims.api_views.search import SearchObjects
+from bims.api_views.validate_object import ValidateObject
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 from bims.views.under_development import UnderDevelopmentView
+from bims.views.non_validated_list import NonValidatedObjectsView
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -64,6 +66,8 @@ api_urls = [
     url(r'^api/list-non-biodiversity/$',
         NonBiodiversityLayerList.as_view(),
         name='list-non-biodiversity-layer'),
+    url(r'^api/validate-object/$',
+        ValidateObject.as_view(), name='validate-object'),
 ]
 
 bibliography_urls = [
@@ -85,4 +89,6 @@ urlpatterns = [
         activate_user, name='activate-user'),
     url(r'^under-development/$',
         UnderDevelopmentView.as_view(), name='under-development'),
+    url(r'^nonvalidated-list/$',
+        NonValidatedObjectsView.as_view(), name='nonvalidated-list'),
 ] + api_urls

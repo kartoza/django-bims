@@ -1,0 +1,64 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Validation
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+{% endblock %}
+
+{% block body_content %}
+    <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 30px">
+        <h1>Unvalidated Objects</h1>
+    </div>
+    <div class="container">
+    <table>
+        <tr>
+            <th>Original Species Name</th>
+            <th>Category</th>
+            <th>Collection Date</th>
+            <th>Owner</th>
+            <th>Validation Action</th>
+        </tr>
+        {% for obj in biorecords %}
+            <tr>
+                <td>{{ obj.original_species_name }}</td>
+                <td>{{ obj.category }}</td>
+                <td>{{ obj.collection_date }}</td>
+                <td>{{ obj.owner }}</td>
+                <td class="validate-action"><a onclick="validateObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Validate this object"><i class="fa fa-check-circle"></i></a></td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+    {% if is_paginated %}
+        <div class="container pagination">
+            <span class="page-links">
+                {% if page_obj.has_previous %}
+                    <a href="/nonvalidated-list/?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="/nonvalidated-list/?page={{ page_obj.next_page_number }}">next</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script>
+    function validateObject(pk) {
+        $.ajax({
+            url: '{% url "validate-object" %}',
+            data: {'pk': pk},
+            success: function () {
+                location.reload()
+            }
+        });
+    }
+    </script>
+{% endblock %}
