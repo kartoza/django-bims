@@ -156,7 +156,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 
 # django modelsdoc settings
-MODELSDOC_APPS = ('bims', 'fish',)
+MODELSDOC_APPS = ('bims', 'fish', 'reptile',)
 
 MODELSDOC_OUTPUT_FORMAT = 'rst'
 MODELSDOC_MODEL_WRAPPER = 'modelsdoc.wrappers.ModelWrapper'
