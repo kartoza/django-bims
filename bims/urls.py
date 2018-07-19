@@ -3,6 +3,7 @@
 from django.conf.urls import url, include
 
 from rest_framework.documentation import include_docs_urls
+from django.contrib.auth.decorators import login_required
 from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
 from bims.views.user_profile import UserProfileView
@@ -13,6 +14,9 @@ from bims.api_views.location_site import (
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
+)
+from bims.api_views.non_biodiversity_layer import (
+    NonBiodiversityLayerList
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
@@ -59,6 +63,9 @@ api_urls = [
         SearchObjects.as_view(), name='search-api'),
     url(r'^api/list-collector/$',
         CollectorList.as_view(), name='list-collector'),
+    url(r'^api/list-non-biodiversity/$',
+        NonBiodiversityLayerList.as_view(),
+        name='list-non-biodiversity-layer'),
 ]
 
 bibliography_urls = [
@@ -70,8 +77,9 @@ urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
     url(r'^map/$', MapPageView.as_view()),
     url(r'^profile/$', UserProfileView.as_view(), name='user-profile'),
-    url(r'^upload/$', CsvUploadView.as_view(), name='csv-upload'),
-    url(r'^upload_shp/$', ShapefileUploadView.as_view(),
+    url(r'^upload/$', login_required(CsvUploadView.as_view()),
+        name='csv-upload'),
+    url(r'^upload_shp/$', login_required(ShapefileUploadView.as_view()),
         name='shapefile-upload'),
     url(r'^process_shapefiles/$', process_shapefiles,
         name='process_shapefiles'),

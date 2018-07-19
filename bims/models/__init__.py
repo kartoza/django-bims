@@ -11,6 +11,7 @@ from bims.models.boundary import *  # noqa
 from bims.models.boundary_type import *  # noqa
 from bims.models.carousel_header import CarouselHeader
 from bims.models.links import *
-from bims.models.bibliography import * #noqa
 from bims.models.shapefile import * #noqa
 from bims.models.shapefile_upload_session import * #noqa
+from bims.models.bibliography import *  # noqa
+from bims.models.non_biodiversity_layer import *  # noqa

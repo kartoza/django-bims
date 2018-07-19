@@ -17,6 +17,12 @@
     <div class="loading">Loading&#8230;</div>
     <div class="container">
         <div class="jumbotron csv-uploader-wrapper">
+            <div class="row">
+                <div class="col-lg-2"><button type="button" class="btn">Upload CSV</button></div>
+                <div class="col-lg-2"><a href="{% block upload_shp_url %}/upload_shp{% endblock %}" class="btn btn-info" role="button">Upload Shapefile</a></div>
+            </div>
+
+            <div class="help-block-space"></div>
             <h3>This is the page for uploading {% block module_name %}generic{% endblock %} observation records</h3>
             <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
             </div>

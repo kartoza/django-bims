@@ -30,7 +30,8 @@ from bims.models import (
     Collection,
     AuthorEntryRank,
     ShapefileUploadSession,
-    Shapefile
+    Shapefile,
+    NonBiodiversityLayer,
 )
 
 
@@ -259,6 +260,12 @@ class CustomUserAdmin(ProfileAdmin):
             request, obj, post_url_continue)
 
 
+class NonBiodiversityLayerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'wms_url', 'wms_layer_name')
+    list_filter = ('wms_url',)
+    ordering = ('name',)
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -276,6 +283,7 @@ admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Survey)
+admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(LocationContext)
 
 admin.site.register(Boundary, BoundaryAdmin)
