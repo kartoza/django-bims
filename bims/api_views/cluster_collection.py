@@ -1,6 +1,5 @@
 # coding=utf8
 
-import datetime
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
@@ -64,21 +63,22 @@ class ClusterCollectionAbstract(APIView):
         if category:
             queryset = queryset.filter(category=category)
 
-        date_from = request.GET.get('date-from')
-        if date_from:
+        year_from = request.GET.get('yearFrom')
+        if year_from:
             queryset = queryset.filter(
-                collection_date__gte=
-                datetime.datetime.fromtimestamp(
-                    int(date_from) / 1000
-                ).strftime('%Y-%m-%d'))
+                collection_date__year__gte=year_from)
 
-        date_to = request.GET.get('date-to')
-        if date_to:
+        year_to = request.GET.get('yearTo')
+        if year_to:
             queryset = queryset.filter(
-                collection_date__lte=
-                datetime.datetime.fromtimestamp(
-                    int(date_to) / 1000
-                ).strftime('%Y-%m-%d'))
+                collection_date__year__lte=year_to)
+
+        months = request.GET.get('months')
+        if months:
+            months = months.split(',')
+            months = [int(month) for month in months]
+            queryset = queryset.filter(
+                collection_date__month__in=months)
         return queryset
 
 

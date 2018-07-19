@@ -162,6 +162,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'category',
         'collection_date',
         'validated',
+        'collector',
         'owner',
     )
 

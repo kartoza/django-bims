@@ -13,6 +13,7 @@
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
         const bingMapKey = '{{ bing_map_key }}';
@@ -21,6 +22,7 @@
         const geocontextUrl = '{{ geocontext_url }}';
         const listCollectorAPIUrl = '{% url "list-collector" %}';
         const centerPointMap = '{{ center_point_map }}';
+        const listCategoryAPIUrl = '{% url "list-date-category" %}';
         const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
     </script>
 {% endblock %}
@@ -111,14 +113,23 @@
                 </div>
             </div>
             <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
+                <div class="col-lg-12 subtitle" id="date-filter-subtitle">
                     DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
             <div class="row" style="display: none">
                 <div class="slide-container" style="padding-bottom: 10px">
-                    <div>FROM : <input type="text" class="date-filter" id="date-filter-from"></div>
-                    <div>TO : <input class="date-filter" type="text" id="date-filter-to"></div>
+                    <div>YEAR</div>
+                    <div class="year-indicator">
+                        <div id="year-from">1600</div>
+                        <div id="year-to">1800</div>
+                    </div>
+                    <div id="year-slider" class="noUiSlider"></div>
+                    <div>MONTH</div>
+                    <table id="month-selector" style="width:100%">
+                    </table>
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
                 </div>
             </div>
             <div class="row sub-filter">
@@ -129,6 +140,10 @@
             <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content" id="filter-collectors">
                 </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
+                </div>
             </div>
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
@@ -136,9 +151,11 @@
                 </div>
             </div>
             <div class="row" style="display: none">
-                <div class="col-lg-12 filter-content">
-                    <input type="checkbox" name="category-value" value="indigenous"> Indigenous<br>
-                    <input type="checkbox" name="category-value" value="invasive"> Invasive<br>
+                <div class="col-lg-12 filter-content" id="filter-category">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
                 </div>
             </div>
         </div>
@@ -194,7 +211,8 @@
 
     <script type="text/template" id="search-result-site-template">
         <div class="result-search" data-search-result-id="">
-            <p>Name: <%= name %></p>
+            <p class="group-title"><%= name %></p>
+            <a class="group-description"><%= count %> records found</a>
         </div>
     </script>
 
