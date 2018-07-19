@@ -7,6 +7,7 @@ $(function () {
     });
 
     $("#fileupload").fileupload({
+        acceptFileTypes: /(\.|\/)(shp|shx|dbf)$/i,
         dataType: 'json',
         done: function (e, data) {
             if (data.result.is_valid) {
@@ -24,7 +25,7 @@ $(function () {
 
         // Process shapefile
         $.ajax({
-            url: '/process_shapefiles/',
+            url: processShapefileUrl,
             data: {
                 token: csrfmiddlewaretoken
             },

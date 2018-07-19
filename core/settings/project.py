@@ -14,6 +14,7 @@ from .contrib import *  # noqa
 INSTALLED_APPS += (
     'bims',
     'fish',
+    'reptile',
 )
 
 # Set languages which want to be translated

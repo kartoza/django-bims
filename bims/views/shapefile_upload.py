@@ -23,8 +23,11 @@ from bims.models.location_type import LocationType
 
 
 class ShapefileUploadView(View):
+
+    template_name = 'shapefile_uploader.html'
+
     def get(self, request):
-        return render(self.request, 'shapefile_uploader.html')
+        return render(self.request, template_name=self.template_name)
 
     def post(self, request):
         form = ShapefileUploadForm(
@@ -49,6 +52,10 @@ def process_shapefiles(request,
                        collection=BiologicalCollectionRecord,
                        additional_fields=None):
     token = request.GET.get('token', None)
+
+    if not token:
+        return JsonResponse({'message': 'empty token'})
+
     shapefiles = Shapefile.objects.filter(
             token=token
     )
@@ -79,6 +86,7 @@ def process_shapefiles(request,
     needed_ext = ['.shx', '.shp', '.dbf']
     needed_files = {}
 
+    # Check all needed files
     for shp in all_shapefiles:
         name, extension = os.path.splitext(shp.filename)
         if extension in needed_ext:
@@ -89,8 +97,11 @@ def process_shapefiles(request,
         data = {
             'message': 'missing %s' % ','.join(needed_ext)
         }
+        upload_session.error = data['message']
+        upload_session.save()
         return JsonResponse(data)
 
+    # Extract shapefile into dictionary
     outputs = extract_shape_file(
             shp_file=needed_files['shp'].shapefile,
             shx_file=needed_files['shx'].shapefile,
@@ -128,7 +139,7 @@ def process_shapefiles(request,
             for (opt_field, field_type) in optional_fields_iter:
                 if opt_field in properties:
                     if field_type == 'bool':
-                        properties[opt_field] = properties[opt_field] == '1'
+                        properties[opt_field] = properties[opt_field] == 1
                     elif field_type == 'str':
                         properties[opt_field] = properties[opt_field].lower()
                     optional_records[opt_field] = properties[opt_field]
@@ -153,7 +164,7 @@ def process_shapefiles(request,
                         geometry_multipolygon=geometry,
                         location_type=location_type,
                 )
-            elif geojson['geometry']['type'] == 'Line':
+            elif geojson['geometry']['type'] == 'LineString':
                 location_type, status = LocationType.objects.get_or_create(
                         name='LineObservation',
                         allowed_geometry='LINE'
@@ -198,8 +209,13 @@ def process_shapefiles(request,
 
             if created:
                 collection_added += 1
-        except (ValueError, KeyError):
-            pass
+
+            upload_session.processed = True
+            upload_session.save()
+
+        except (ValueError, KeyError) as e:
+            upload_session.error = str(e)
+            upload_session.save()
 
     # reconnect signals
     signals.post_save.connect(
