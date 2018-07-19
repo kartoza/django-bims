@@ -103,6 +103,7 @@ ENV/
 # Pycharm
 .idea
 .pycharm_helpers
+pycharm_project_251*
 
 # database stuff
 *.dmp
