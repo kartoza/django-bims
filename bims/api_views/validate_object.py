@@ -1,5 +1,4 @@
 # coding=utf-8
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import HttpResponse, JsonResponse
 from rest_framework import status
