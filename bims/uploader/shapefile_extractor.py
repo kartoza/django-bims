@@ -11,7 +11,8 @@ LIMIT_FILE = 20 * 1024 * 1024
 
 class FileExceedLimit(Exception):
     def __init__(self):
-        super(FileExceedLimit, self).__init__('File Exceed Limit %s' % LIMIT_FILE)
+        super(FileExceedLimit, self).__init__(
+                'File Exceed Limit %s' % LIMIT_FILE)
         self.errors = 'File Exceed Limit %s' % LIMIT_FILE
 
 
@@ -46,7 +47,11 @@ def handle_uploaded_file(f, filename):
             destination.write(chunk)
 
 
-def extract_shape_file(request=None, shp_file=None, shx_file=None, dbf_file=None):
+def extract_shape_file(
+        request=None,
+        shp_file=None,
+        shx_file=None,
+        dbf_file=None):
     """Read this shapefile
     """
     if request:
@@ -117,9 +122,11 @@ def get_shapefile_data(shapefile_file):
             buffer.append(feature)
             try:
                 for date_field in date_fields:
-                    if date_field in feature['properties'] and feature['properties'][date_field]:
+                    if date_field in feature['properties'] and \
+                            feature['properties'][date_field]:
                         feature['properties'][date_field] = \
-                            feature['properties'][date_field].strftime('%Y-%m-%d')
+                            feature['properties'][date_field].strftime(
+                                    '%Y-%m-%d')
             except Exception as e:
                 raise e
         return {

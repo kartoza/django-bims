@@ -1,7 +1,6 @@
 import os
 import json
 import sys
-from datetime import datetime
 from django.views import View
 from django.shortcuts import render
 from django.db.models import signals
@@ -204,8 +203,7 @@ def process_shapefiles(request,
                     notes=properties['notes'],
                     taxon_gbif_id=taxon_gbif,
                     owner=request.user,
-                    **optional_records
-            )
+                    **optional_records)
 
             if created:
                 collection_added += 1

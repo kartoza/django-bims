@@ -91,11 +91,11 @@ def update_taxonomy_fields(taxon, response):
             if field.get_attname() == 'vernacular_names':
                 vernacular_names = []
                 for vernacular_name in response['vernacularNames']:
-                   if 'vernacularName' in vernacular_name:
-                       vernacular_names.append(
-                               vernacular_name['vernacularName']
-                       )
-                taxon.vernacular_names =  vernacular_names
+                    if 'vernacularName' in vernacular_name:
+                        vernacular_names.append(
+                                vernacular_name['vernacularName']
+                        )
+                taxon.vernacular_names = vernacular_names
         except AttributeError:
             continue
 

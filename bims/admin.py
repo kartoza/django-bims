@@ -165,11 +165,13 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'owner',
     )
 
+
 class ShapefileInline(admin.TabularInline):
 
     def shapefile_name(self, obj):
         if obj.shapefile:
-            return mark_safe("""<a href="%s" />%s</a>""" % (obj.shapefile.fileurl, obj.shapefile.filename))
+            return mark_safe("""<a href="%s" />%s</a>""" % (
+                obj.shapefile.fileurl, obj.shapefile.filename))
 
     model = ShapefileUploadSession.shapefiles.through
     fields = ('shapefile_name', 'shapefile')
