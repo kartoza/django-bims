@@ -1,42 +1,5 @@
 define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, ol, LayerStyle) {
     return Backbone.View.extend({
-        nonBiodiversityLayersUrl: 'http://lbimsgis.kartoza.com/geoserver/wms',
-        nonBiodiversityLayersInitiationSource: {
-            '2012 Vegetation Map of South Africa, Lesotho and Swaziland': {
-                params: {
-                    'layers': 'geonode:vegetation_map_2012',
-                    'format': 'image/png',
-                    'legend-width': 40,
-                    'legend-height': 40,
-                }
-            },
-            'Biomes of South Africa': {
-                params: {
-                    'layers': 'geonode:biomes_of_south_africa_dea_csir',
-                    'format': 'image/png',
-                    'legend-width': 40,
-                    'legend-height': 40,
-                }
-            },
-            'South Africa Dams Polygon': {
-                params: {
-                    'layers': 'geonode:dams500g',
-                    'format': 'image/png'
-                }
-            },
-            'South Africa Towns': {
-                params: {
-                    'layers': 'geonode:sa_towns',
-                    'format': 'image/png'
-                }
-            },
-            'World Heritage Sites': {
-                params: {
-                    'layers': 'geonode:world_heritage_sites',
-                    'format': 'image/png'
-                }
-            }
-        },
         // source of layers
         administrativeBoundarySource: null,
         biodiversitySource: null,
@@ -59,29 +22,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layer.setVisible(false);
             }
         },
-        addLayersToMap: function (map) {
+        addBiodiveristyLayersToMap: function (map) {
             var self = this;
-            this.map = map;
-
-            // RENDER NON BIODIVERSITY LAYERS
-            var keys = Object.keys(self.nonBiodiversityLayersInitiationSource);
-            keys.reverse();
-            $.each(keys, function (index, key) {
-                self.nonBiodiversityLayersInitiationSource[key]['url'] = self.nonBiodiversityLayersUrl;
-                self.initLayer(
-                    new ol.layer.Tile({
-                        source: new ol.source.TileWMS(
-                            self.nonBiodiversityLayersInitiationSource[key])
-                    }),
-                    key, false
-                );
-                self.renderLegend(
-                    key,
-                    self.nonBiodiversityLayersInitiationSource[key]['url'],
-                    self.nonBiodiversityLayersInitiationSource[key]['params']['layers'],
-                    false
-                );
-            });
             // ---------------------------------
             // ADMINISTRATIVE BOUNDARY LAYER
             // ---------------------------------
@@ -123,6 +65,43 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             });
             map.addLayer(self.highlightVector);
             this.renderLayers();
+        },
+        addLayersToMap: function (map) {
+            var self = this;
+            this.map = map;
+
+            $.ajax({
+                type: 'GET',
+                url: listNonBiodiversityLayerAPIUrl,
+                dataType: 'json',
+                success: function (data) {
+                    $.each(data.reverse(), function (index, value) {
+                        var options = {
+                            url: value.wms_url,
+                            params: {
+                                layers: value.wms_layer_name,
+                                format: value.wms_format
+                            }
+                        };
+                        self.initLayer(
+                            new ol.layer.Tile({
+                                source: new ol.source.TileWMS(options)
+                            }),
+                            value.name, false
+                        );
+                        self.renderLegend(
+                            value.name,
+                            options['url'],
+                            options['params']['layers'],
+                            false
+                        );
+                    });
+                    self.addBiodiveristyLayersToMap(map);
+                },
+                error: function (err) {
+                    self.addBiodiveristyLayersToMap(map);
+                }
+            });
         },
         selectorChanged: function (layerName, selected) {
             if (layerName == "Biodiversity") {

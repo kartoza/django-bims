@@ -72,7 +72,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var toposheet = new ol.layer.Tile({
                 title: 'South Africa 1:50k Toposheets',
                 source: new ol.source.XYZ({
-                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'Toposheets'],
+                    attributions: ['&copy; National Geo-spatial Information (NGI) contributors', 'Toposheets'],
                     url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
                 })
             });
