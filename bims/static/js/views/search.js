@@ -115,7 +115,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
         },
         initDateFilter: function () {
             // render slider
-            this.startYear = 1600;
+            this.startYear = 1900;
             this.endYear = 2018;
             this.yearSlider = NoUiSlider.create($('#year-slider')[0], {
                 start: [this.startYear, this.endYear],
