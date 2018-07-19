@@ -1,8 +1,8 @@
 [submodule "fish"]
 	path = fish
-	url = git@github.com:kartoza/kbims-fish.git
+	url = https://github.com/kartoza/kbims-fish.git
     branch = apps
 [submodule "reptile"]
 	path = reptile
-	url = git@github.com:kartoza/kbims-reptile.git
+	url = https://github.com/kartoza/kbims-reptile.git
     branch = apps
