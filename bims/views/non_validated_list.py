@@ -1,10 +1,10 @@
 # coding=utf-8
-from braces.views import LoginRequiredMixin
 from django.views.generic import ListView
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.utils.user_permissions import ValidatorRequiredMixin
 
 
-class NonValidatedObjectsView(LoginRequiredMixin, ListView):
+class NonValidatedObjectsView(ValidatorRequiredMixin, ListView):
 
     model = BiologicalCollectionRecord
     context_object_name = 'biorecords'
