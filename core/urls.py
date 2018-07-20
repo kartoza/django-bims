@@ -25,7 +25,7 @@ from geonode.urls import urlpatterns as geonode_urlpatterns
 urlpatterns = [
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^accounts/', include('allauth.urls')),
-    url('^contact/', include('contactus.urls')),
+    url(r'^contact/', include('contactus.urls')),
     url(r'^pages/', include('django.contrib.flatpages.urls')),
     url(r'^', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
