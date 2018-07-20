@@ -58,7 +58,7 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
-	'ckeditor',
+    'ckeditor',
 )
 
 # workaround to get flatpages picked up in installed apps.
