@@ -24,7 +24,7 @@ class ClusterCollectionAbstract(APIView):
     Abstract class for cluster collection
     """
 
-    def apply_filter(self, request):
+    def apply_filter(self, request, ignore_bbox=False):
         # get records with same taxon
         queryset = BiologicalCollectionRecord.objects.filter()
         taxon = request.GET.get('taxon', None)
@@ -43,16 +43,17 @@ class ClusterCollectionAbstract(APIView):
             )
 
         # get by bbox
-        bbox = request.GET.get('bbox', None)
-        if bbox:
-            geom_bbox = Polygon.from_bbox(
-                tuple([float(edge) for edge in bbox.split(',')]))
-            queryset = queryset.filter(
-                Q(site__geometry_point__intersects=geom_bbox) |
-                Q(site__geometry_line__intersects=geom_bbox) |
-                Q(site__geometry_polygon__intersects=geom_bbox) |
-                Q(site__geometry_multipolygon__intersects=geom_bbox)
-            )
+        if not ignore_bbox:
+            bbox = request.GET.get('bbox', None)
+            if bbox:
+                geom_bbox = Polygon.from_bbox(
+                    tuple([float(edge) for edge in bbox.split(',')]))
+                queryset = queryset.filter(
+                    Q(site__geometry_point__intersects=geom_bbox) |
+                    Q(site__geometry_line__intersects=geom_bbox) |
+                    Q(site__geometry_polygon__intersects=geom_bbox) |
+                    Q(site__geometry_multipolygon__intersects=geom_bbox)
+                )
 
         # additional filters
         collector = request.GET.get('collector')
@@ -88,7 +89,7 @@ class ClusterCollectionExtent(ClusterCollectionAbstract):
     """
 
     def get(self, request, format=None):
-        queryset = self.apply_filter(request)
+        queryset = self.apply_filter(request, ignore_bbox=True)
         extent = queryset.aggregate(Extent('site__geometry_point'))
         if extent['site__geometry_point__extent']:
             return Response(extent['site__geometry_point__extent'])
