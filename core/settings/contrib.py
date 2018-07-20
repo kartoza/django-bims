@@ -61,9 +61,11 @@ INSTALLED_APPS += (
 	'ckeditor',
 )
 
+# workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
 )
+
 # Set templates
 try:
     TEMPLATES[0]['DIRS'] = [
