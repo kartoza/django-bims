@@ -58,8 +58,12 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
+	'ckeditor',
 )
 
+INSTALLED_APPS += (
+    'django.contrib.flatpages',
+)
 # Set templates
 try:
     TEMPLATES[0]['DIRS'] = [
