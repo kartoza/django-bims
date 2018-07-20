@@ -6,7 +6,11 @@
 {% endblock %}
 
 {% block head %}
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
     <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+
+    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
 {% endblock %}
 
 {% block body_content %}
@@ -14,6 +18,8 @@
         <h1>Unvalidated Objects</h1>
     </div>
     <div class="container">
+    <div class="row">
+    <div class="col-lg-7">
     <table>
         <tr>
             <th>Original Species Name</th>
@@ -24,7 +30,11 @@
         </tr>
         {% for obj in biorecords %}
             <tr>
-                <td>{{ obj.original_species_name }}</td>
+                {% if obj.site.geometry_point %}
+                    <td><a onclick="zoomToObject({{ obj.site.geometry_point.x }}, {{ obj.site.geometry_point.y }})" class="site-link">{{ obj.original_species_name }}</a></td>
+                {% else %}
+                    <td><a>{{ obj.original_species_name }}</a></td>
+                {% endif %}
                 <td>{{ obj.category }}</td>
                 <td>{{ obj.collection_date }}</td>
                 <td>{{ obj.owner }}</td>
@@ -32,6 +42,11 @@
             </tr>
         {% endfor %}
     </table>
+    </div>
+    <div class="col-lg-5">
+        <div id="map" class="map" style="height: 100%"></div>
+    </div>
+    </div>
     </div>
     {% if is_paginated %}
         <div class="container pagination">
@@ -49,7 +64,6 @@
         </div>
     {% endif %}
 
-    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
     <script>
     function validateObject(pk) {
         $.ajax({
@@ -61,4 +75,5 @@
         });
     }
     </script>
+    <script src="{% static 'js/views/map-review-validation.js' %}"></script>
 {% endblock %}

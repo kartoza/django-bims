@@ -24,3 +24,12 @@ th {
 .validate-action:hover {
     color: #1b900d;
 }
+
+.site-link {
+    color: cadetblue !important;
+    cursor: pointer;
+}
+
+.site-link:hover {
+    text-decoration: underline !important;
+}
