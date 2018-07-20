@@ -1,11 +1,12 @@
 # coding=utf-8
+from braces.views import LoginRequiredMixin
 from rest_framework.views import APIView
 from django.http import HttpResponse, JsonResponse
 from rest_framework import status
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 
-class ValidateObject(APIView):
+class ValidateObject(LoginRequiredMixin, APIView):
 
     def get(self, request):
         object_pk = request.GET.get('pk', None)
