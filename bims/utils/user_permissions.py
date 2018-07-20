@@ -1,6 +1,6 @@
 # coding=utf-8
 from braces.views import LoginRequiredMixin
-from django.http import Http404
+from django.contrib.auth import logout
 
 
 class ValidatorRequiredMixin(LoginRequiredMixin):
@@ -10,10 +10,11 @@ class ValidatorRequiredMixin(LoginRequiredMixin):
             'validator' in request.user.groups.all().values_list(
                 'groupprofile__categories__name', flat=True)
 
-        if not request.user.is_authenticated():
+        if request.user.is_authenticated() and not validator:
+            logout(request)
             return self.handle_no_permission(request)
-        elif not validator:
-            raise Http404
+        elif not request.user.is_authenticated():
+            return self.handle_no_permission(request)
 
         return super(ValidatorRequiredMixin, self).dispatch(
             request, *args, **kwargs)
