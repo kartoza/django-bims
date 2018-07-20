@@ -51,3 +51,6 @@ django-prometheus==1.0.14
 prometheus_client==0.2.0
 
 pyshp==1.2.12
+
+# for django flatpages
+django-ckeditor==5.6.1

@@ -54,6 +54,7 @@ setup(
             'habanero==0.3.0',
             'django-prometheus==1.0.14',
             'prometheus_client==0.2.0',
+            'django-ckeditor==5.6.1',
         ],
         dependency_links=[
             'git+https://github.com/soynatan/django-easy-audit.git',
