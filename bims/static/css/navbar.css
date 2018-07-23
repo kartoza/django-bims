@@ -128,3 +128,32 @@
 .col-lg-6 {
     max-width: 50% !important;
 }
+
+.navbar-toggler {
+    padding: .15rem .35rem;
+}
+
+@media screen and (max-width: 650px) {
+    .user-icon {
+        font-size: 20pt !important;
+        width: 47px;
+    }
+    .dropdown-menu a {
+        font-size: 15pt;
+    }
+    .dropdown-menu li {
+        margin-top: 10px;
+    }
+    .bims-title-acc {
+        line-height: 1.1rem;
+        font-size: 0.7rem;
+    }
+    .close-dropdown {
+        font-size: 20pt;
+        line-height: 30px;
+    }
+
+    .bims-nav-footer a {
+        font-size: 10pt !important;
+    }
+}
