@@ -80,38 +80,6 @@ INSTALLED_APPS = (
     'django.contrib.gis',
 )
 
-# MIDDLEWARE = (
-#     'corsheaders.middleware.CorsMiddleware',
-#     'django.middleware.common.CommonMiddleware',
-#     'django.contrib.sessions.middleware.SessionMiddleware',
-#     'django.contrib.messages.middleware.MessageMiddleware',
-#     'dj_pagination.middleware.PaginationMiddleware',
-#     # The setting below makes it possible to serve different languages per
-#     # user depending on things like headers in HTTP requests.
-#     'django.middleware.locale.LocaleMiddleware',
-#     'django.middleware.csrf.CsrfViewMiddleware',
-#     'django.contrib.auth.middleware.AuthenticationMiddleware',
-#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-#
-#     # Security settings
-#     'django.middleware.security.SecurityMiddleware',
-#
-#     # This middleware allows to print private layers for the users that have
-#     # the permissions to view them.
-#     # It sets temporary the involved layers as public before restoring the
-#     # permissions.
-#     # Beware that for few seconds the involved layers are public there could be
-#     # risks.
-#     # 'geonode.middleware.PrintProxyMiddleware',
-#
-#     # If you use SessionAuthenticationMiddleware, be sure it appears before
-#     # OAuth2TokenMiddleware.
-#     # SessionAuthenticationMiddleware is NOT required for using
-#     # django-oauth-toolkit.
-#     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-#     'oauth2_provider.middleware.OAuth2TokenMiddleware',
-# )
-
 ROOT_URLCONF = 'core.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
