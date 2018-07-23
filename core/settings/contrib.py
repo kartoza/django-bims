@@ -116,10 +116,14 @@ STATICFILES_DIRS = [
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
-MIDDLEWARE += (
+MIDDLEWARE_CLASSES += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
 )
+
+# for middleware in MIDDLEWARE_CLASSES:
+#     if middleware not in MIDDLEWARE:
+#         MIDDLEWARE += (middleware,)
 
 # Defines whether to log model related events,
 # such as when an object is created, updated, or deleted
@@ -167,3 +171,9 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
 ELASTIC_MIN_SCORE = 2
+
+DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
+    'layers.Layer',
+    'monitoring.RequestEvent',
+    'monitoring.MonitoredResource',
+]
