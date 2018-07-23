@@ -58,6 +58,12 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
+    'ckeditor',
+)
+
+# workaround to get flatpages picked up in installed apps.
+INSTALLED_APPS += (
+    'django.contrib.flatpages',
 )
 
 # Set templates

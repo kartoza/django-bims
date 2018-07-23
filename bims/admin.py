@@ -3,10 +3,17 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.core.mail import send_mail
+
+from django.contrib.flatpages.admin import FlatPageAdmin
+from django.contrib.flatpages.models import FlatPage
+from django.db import models
+
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
+
+from ckeditor.widgets import CKEditorWidget
 
 from bims.models import (
     LocationType,
@@ -269,6 +276,13 @@ class NonBiodiversityLayerAdmin(admin.ModelAdmin):
     ordering = ('name',)
 
 
+# flatpage ckeditor integration
+class FlatPageCustomAdmin(FlatPageAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditorWidget}
+    }
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -297,3 +311,6 @@ admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
 
 admin.site.register(ShapefileUploadSession, ShapefileUploadSessionAdmin)
 admin.site.register(Shapefile, ShapefileAdmin)
+
+admin.site.unregister(FlatPage)
+admin.site.register(FlatPage, FlatPageCustomAdmin)
