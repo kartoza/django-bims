@@ -6,9 +6,11 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
         events: {
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
+            'click .locate-control': 'locateClicked',
             'click .location-control': 'locationClicked',
             'click .map-search-close': 'closeSearchPanel',
             'click .layers-selector-container-close': 'closeFilterPanel',
+            'click .locate-options-container-close': 'closeLocatePanel',
             'click .sub-filter': 'closeSubFilter'
         },
         initialize: function (options) {
@@ -21,6 +23,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             if (!this.searchView.isOpen()) {
                 this.openSearchPanel();
                 this.closeFilterPanel();
+                this.closeLocatePanel();
             } else {
                 this.closeSearchPanel();
             }
@@ -31,8 +34,20 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             if ($('.layers-selector-container').is(":hidden")) {
                 this.openFilterPanel();
                 this.closeSearchPanel();
+                this.closeLocatePanel();
             } else {
                 this.closeFilterPanel();
+            }
+        },
+        locateClicked: function (e) {
+            $('.layer-switcher.shown button').click();
+            // show locate div
+            if ($('.locate-options-container').is(":hidden")) {
+                this.openLocatePanel();
+                this.closeSearchPanel();
+                this.closeFilterPanel();
+            } else {
+                this.closeLocatePanel();
             }
         },
         locationClicked: function (e) {
@@ -85,5 +100,13 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             this.$el.find('.filter-control').removeClass('control-panel-selected');
             $('.layers-selector-container').hide();
         },
+        openLocatePanel: function () {
+            this.$el.find('.locate-control').addClass('control-panel-selected');
+            $('.locate-options-container').show();
+        },
+        closeLocatePanel: function () {
+            this.$el.find('.locate-control').removeClass('control-panel-selected');
+            $('.locate-options-container').hide();
+        }
     })
 });
