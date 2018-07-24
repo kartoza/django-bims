@@ -347,3 +347,8 @@ html, body {
 .carousel-inner, .carousel-item {
     height: 100%;
 }
+
+#header-wrapper {
+    min-height: 100%;
+    height: auto;
+}
