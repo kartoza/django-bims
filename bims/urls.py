@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from django.contrib.auth.decorators import login_required
 from django.conf.urls import url, include
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
@@ -8,7 +9,6 @@ from rest_framework.documentation import include_docs_urls
 from django.contrib.auth.decorators import login_required
 from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
-from bims.views.user_profile import UserProfileView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSiteDetail,
@@ -82,10 +82,10 @@ urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
     url(r'^map/$', MapPageView.as_view()),
     url(r'^profile/$',
-        lambda request: RedirectView.as_view(
+        login_required(lambda request: RedirectView.as_view(
             url=reverse_lazy('profile_detail', kwargs={
                 'username': request.user.username
-            }), permanent=False)(request), name='user-profile'),
+            }), permanent=False)(request)), name='user-profile'),
     url(r'^upload/$', login_required(CsvUploadView.as_view()),
         name='csv-upload'),
     url(r'^upload_shp/$', login_required(ShapefileUploadView.as_view()),
