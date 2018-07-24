@@ -5,9 +5,13 @@ echo "Run database migrations"
 python manage.py makemigrations --noinput --merge
 python manage.py migrate --noinput
 
+# Run gruntserver
+echo "Run gruntserver"
+python manage.py gruntserver
+
 # Run collectstatic
 echo "Run collectstatic"
-python manage.py collectstatic --noinput -i geonode -i geoexplorer -i geonode_generic -i js -i lib
+python manage.py collectstatic --noinput -i geoexplorer
 
 # Run as bash entrypoint
 exec "$@"

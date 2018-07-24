@@ -19,7 +19,7 @@ fi
 # Build Args Environment
 
 if [ -z "$BIMS_TAG" ]; then
-	BIMS_TAG=geonode
+	BIMS_TAG=develop
 fi
 
 echo "BIMS_TAG=${BIMS_TAG}"
