@@ -65,7 +65,7 @@
                         <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION MANAGEMENT SYSTEM</div>
                     </div>
                      {% if user.is_authenticated %}
-                        <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="/profile/">PROFILE</a></li>
+                        <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="{% url 'profile_detail' user.username %}">PROFILE</a></li>
                          <li><a class="nav-link js-scroll-trigger" id="navbar-contributions" href="/under-development/">CONTRIBUTIONS</a></li>
                          <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/upload/">UPLOAD FILES</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
