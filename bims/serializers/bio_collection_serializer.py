@@ -36,3 +36,25 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiologicalCollectionRecord
         fields = '__all__'
+
+
+class BioCollectionOneRowSerializer(serializers.ModelSerializer):
+    """
+    Serializer for biological collection record.
+    """
+    owner = serializers.SerializerMethodField()
+    validated = serializers.BooleanField(required=True)
+
+    def get_owner(self, obj):
+        if obj.owner:
+            return '%s,%s' % (obj.owner.pk, obj.owner.username)
+
+    class Meta:
+        model = BiologicalCollectionRecord
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        result = super(BioCollectionOneRowSerializer, self).to_representation(instance)
+        taxonomy = TaxonSerializer(instance.taxon_gbif_id).data
+        result.update(taxonomy)
+        return result

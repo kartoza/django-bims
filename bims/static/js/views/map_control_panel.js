@@ -1,6 +1,6 @@
-define(
-    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate'],
-    function (Backbone, _, $, ol, SearchView, LocateView) {
+define([
+    'backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate', 'views/data_downloader'
+], function (Backbone, _, $, ol, SearchView, LocateView, DataDownloader) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
@@ -20,11 +20,19 @@ define(
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
+            this.dataDownloaderControl = new DataDownloader({
+                parent: this
+            });
+        },
+        resetAllControlState: function () {
+            $('.layer-switcher.shown button').click();
+            $('.map-control-panel-box:visible').hide();
+            $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
         },
         searchClicked: function (e) {
-            $('.layer-switcher.shown button').click();
             // show search div
             if (!this.searchView.isOpen()) {
+                this.resetAllControlState();
                 this.openSearchPanel();
                 this.closeFilterPanel();
                 this.closeLocatePanel();
@@ -33,9 +41,9 @@ define(
             }
         },
         filterClicked: function (e) {
-            $('.layer-switcher.shown button').click();
             // show filter div
             if ($('.layers-selector-container').is(":hidden")) {
+                this.resetAllControlState();
                 this.openFilterPanel();
                 this.closeSearchPanel();
                 this.closeLocatePanel();
@@ -44,9 +52,9 @@ define(
             }
         },
         locateClicked: function (e) {
-            $('.layer-switcher.shown button').click();
             // show locate div
             if ($('.locate-options-container').is(":hidden")) {
+                this.resetAllControlState();
                 this.openLocatePanel();
                 this.closeSearchPanel();
                 this.closeFilterPanel();
@@ -83,6 +91,7 @@ define(
                 parent: this,
             });
             this.$el.append(this.locateView.render().$el);
+            this.$el.append(this.dataDownloaderControl.render().$el);
             return this;
         },
         openSearchPanel: function () {
