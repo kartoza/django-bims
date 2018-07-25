@@ -13,11 +13,11 @@ define([
     'layerSwitcher',
     'views/olmap_basemap',
     'views/olmap_layers',
-    'views/geocontext',
+    'views/geocontext'
     ], function (
         Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
         ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-        BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
+        BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext
         ) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
