@@ -14,11 +14,10 @@ define([
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
-    'views/locate'], function (
+    ], function (
         Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
         ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
         BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
-        Locate
         ) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
@@ -48,7 +47,6 @@ define([
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
-            this.locate = new Locate();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
