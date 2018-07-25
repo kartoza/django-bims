@@ -14,6 +14,7 @@
 
 {% block body_content %}
 <div id="section-wrapper">
+    <div id="header-wrapper">
     <header class="masthead text-center text-white d-flex" id="header">
         {% include "carousel.html" %}
     </header>
@@ -79,11 +80,13 @@
         </div>
     </div>
     </section>
+    </div>
 {% endblock %}
 
 {% block foot %}
 
     <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/views/donut-chart.js" %}"></script>

@@ -26,7 +26,10 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
       <div class="container">
-        <div class="collapse navbar-collapse">
+      <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target=".navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbarResponsive">
           <ul class="navbar-nav">
              <li class="dropdown">
                  <a class="dropdown-toggle" id="menu-dropdown-burger" href="#"><i class="fa fa-reorder user-icon"></i></a>
@@ -51,18 +54,17 @@
             </li>
           </ul>
         </div>
-        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarResponsive">
+        <div class="collapse navbar-collapse navbarResponsive" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
              <li class="dropdown">
                  <a class="dropdown-toggle" id="menu-dropdown-account" href="#"><i class="fa fa-user user-icon"></i></a>
                     <ul class="dropdown-menu right-nav-dropdown">
                     <div class="close-dropdown"><i class="fa fa-close"></i></div>
+                    <div class="container">
                     <div class="bims-title row">
                         <div class="bims-title-big col-lg-6">BIMS</div>
                         <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION MANAGEMENT SYSTEM</div>
+                    </div>
                     </div>
                      {% if user.is_authenticated %}
                         <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="/profile/">PROFILE</a></li>
