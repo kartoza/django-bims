@@ -9,12 +9,16 @@ define([
     'views/side_panel',
     'views/boundary',
     'ol',
-    'jquery', 'layerSwitcher',
-    'views/olmap_basemap', 'views/olmap_layers',
-    'views/geocontext'], function (Backbone, _, Shared,
-                                   LocationSiteCollection, ClusterCollection, ClusterBiologicalCollection,
-                                   MapControlPanelView, SidePanelView, BoundaryView,
-                                   ol, $, LayerSwitcher, Basemap, Layers, Geocontext) {
+    'jquery',
+    'layerSwitcher',
+    'views/olmap_basemap',
+    'views/olmap_layers',
+    'views/geocontext',
+    ], function (
+        Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
+        ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
+        BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
+        ) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
