@@ -5,7 +5,8 @@ from celery import Celery
 app = Celery('bims')
 
 app.config_from_object('django.conf:settings')
-app.autodiscover_tasks(['bims',])
+app.autodiscover_tasks(['bims', ])
+
 
 @app.task(bind=True)
 def debug_task(self):
