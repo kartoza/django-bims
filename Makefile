@@ -324,12 +324,11 @@ generate-boundaries:
 	@echo "------------------------------------------------------------------"
 	@echo "Generate boundaries"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_countries_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_provinces_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_districts_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_municipals_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_cluster"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py generate_boundary_geojson"
+	@docker-compose exec uwsgi bash -c "python manage.py update_countries_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_provinces_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_districts_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_municipals_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py generate_boundary_geojson"
 
 # ----------------------------------------------------------------------------
 #    DEVELOPMENT C O M M A N D S
