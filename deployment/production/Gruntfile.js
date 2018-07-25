@@ -7,11 +7,11 @@ module.exports = function(grunt) {
         requirejs: {
             compile: {
                 options: {
-                    baseUrl: '/home/web/django_project/bims/static/js',
-                    mainConfigFile: '/home/web/django_project/bims/static/js/app.js',
+                    baseUrl: '/usr/src/bims/bims/static/js',
+                    mainConfigFile: '/usr/src/bims/bims/static/js/app.js',
                     name: 'libs/almond/almond',
                     include: ['app.js'],
-                    out: '/home/web/django_project/bims/static/js/optimized.js'
+                    out: '/usr/src/bims/bims/static/js/optimized.js'
                 }
             }
         }
