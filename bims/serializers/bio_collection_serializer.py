@@ -54,7 +54,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
-        result = super(BioCollectionOneRowSerializer, self).to_representation(instance)
+        result = super(BioCollectionOneRowSerializer, self).to_representation(
+            instance)
         taxonomy = TaxonSerializer(instance.taxon_gbif_id).data
         result.update(taxonomy)
         return result
