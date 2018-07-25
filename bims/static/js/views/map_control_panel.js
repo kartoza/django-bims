@@ -1,8 +1,11 @@
-define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Backbone, _, $, ol, SearchView) {
+define(
+    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate'],
+    function (Backbone, _, $, ol, SearchView, LocateView) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
         searchView: null,
+        locateView: null,
         events: {
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
@@ -11,7 +14,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             'click .map-search-close': 'closeSearchPanel',
             'click .layers-selector-container-close': 'closeFilterPanel',
             'click .locate-options-container-close': 'closeLocatePanel',
-            'click .sub-filter': 'closeSubFilter'
+            'click .sub-filter': 'closeSubFilter',
+            'click .locate-coordinates': 'openLocateCoordinates',
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -74,6 +78,11 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             });
 
             this.$el.append(this.searchView.render().$el);
+
+            this.locateView = new LocateView({
+                parent: this,
+            });
+            this.$el.append(this.locateView.render().$el);
             return this;
         },
         openSearchPanel: function () {
@@ -107,6 +116,11 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
         closeLocatePanel: function () {
             this.$el.find('.locate-control').removeClass('control-panel-selected');
             $('.locate-options-container').hide();
+        },
+        openLocateCoordinates: function (e) {
+            this.closeLocatePanel();
+            this.locateView.showModal();
         }
+
     })
 });
