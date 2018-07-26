@@ -22,6 +22,7 @@ from bims.models.biological_collection_record import (
     collection_post_save_update_cluster
 )
 from bims.utils.gbif import update_collection_record
+from bims.tasks.collection_record import update_search_index, update_cluster
 
 
 class CsvUploadView(FormView):
@@ -151,5 +152,11 @@ class CsvUploadView(FormView):
         models.signals.post_save.connect(
             collection_post_save_update_cluster,
         )
+
+        # Update search index
+        update_search_index.delay()
+
+        # Update cluster
+        update_cluster.delay()
 
         return super(CsvUploadView, self).form_valid(form)
