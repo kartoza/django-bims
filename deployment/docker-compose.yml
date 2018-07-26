@@ -75,6 +75,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - HAYSTACK_HOST=elasticsearch
       - GEOCONTEXT_URL=http://localhost:65402
+      - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
     links:
       - smtp:smtp
@@ -105,6 +106,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - HAYSTACK_HOST=elasticsearch
       - GEOCONTEXT_URL=http://localhost:65402
+      - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
     links:
       - smtp:smtp
