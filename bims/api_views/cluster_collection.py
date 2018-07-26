@@ -1,6 +1,5 @@
 # coding=utf8
 
-import datetime
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
@@ -25,7 +24,7 @@ class ClusterCollectionAbstract(APIView):
     Abstract class for cluster collection
     """
 
-    def apply_filter(self, request):
+    def apply_filter(self, request, ignore_bbox=False):
         # get records with same taxon
         queryset = BiologicalCollectionRecord.objects.filter()
         taxon = request.GET.get('taxon', None)
@@ -44,16 +43,17 @@ class ClusterCollectionAbstract(APIView):
             )
 
         # get by bbox
-        bbox = request.GET.get('bbox', None)
-        if bbox:
-            geom_bbox = Polygon.from_bbox(
-                tuple([float(edge) for edge in bbox.split(',')]))
-            queryset = queryset.filter(
-                Q(site__geometry_point__intersects=geom_bbox) |
-                Q(site__geometry_line__intersects=geom_bbox) |
-                Q(site__geometry_polygon__intersects=geom_bbox) |
-                Q(site__geometry_multipolygon__intersects=geom_bbox)
-            )
+        if not ignore_bbox:
+            bbox = request.GET.get('bbox', None)
+            if bbox:
+                geom_bbox = Polygon.from_bbox(
+                    tuple([float(edge) for edge in bbox.split(',')]))
+                queryset = queryset.filter(
+                    Q(site__geometry_point__intersects=geom_bbox) |
+                    Q(site__geometry_line__intersects=geom_bbox) |
+                    Q(site__geometry_polygon__intersects=geom_bbox) |
+                    Q(site__geometry_multipolygon__intersects=geom_bbox)
+                )
 
         # additional filters
         collector = request.GET.get('collector')
@@ -64,21 +64,22 @@ class ClusterCollectionAbstract(APIView):
         if category:
             queryset = queryset.filter(category=category)
 
-        date_from = request.GET.get('date-from')
-        if date_from:
+        year_from = request.GET.get('yearFrom')
+        if year_from:
             queryset = queryset.filter(
-                collection_date__gte=
-                datetime.datetime.fromtimestamp(
-                    int(date_from) / 1000
-                ).strftime('%Y-%m-%d'))
+                collection_date__year__gte=year_from)
 
-        date_to = request.GET.get('date-to')
-        if date_to:
+        year_to = request.GET.get('yearTo')
+        if year_to:
             queryset = queryset.filter(
-                collection_date__lte=
-                datetime.datetime.fromtimestamp(
-                    int(date_to) / 1000
-                ).strftime('%Y-%m-%d'))
+                collection_date__year__lte=year_to)
+
+        months = request.GET.get('months')
+        if months:
+            months = months.split(',')
+            months = [int(month) for month in months]
+            queryset = queryset.filter(
+                collection_date__month__in=months)
         return queryset
 
 
@@ -88,7 +89,7 @@ class ClusterCollectionExtent(ClusterCollectionAbstract):
     """
 
     def get(self, request, format=None):
-        queryset = self.apply_filter(request)
+        queryset = self.apply_filter(request, ignore_bbox=True)
         extent = queryset.aggregate(Extent('site__geometry_point'))
         if extent['site__geometry_point__extent']:
             return Response(extent['site__geometry_point__extent'])

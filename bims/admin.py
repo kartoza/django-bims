@@ -1,11 +1,19 @@
 # coding=utf-8
 from django import forms
+from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.core.mail import send_mail
+
+from django.contrib.flatpages.admin import FlatPageAdmin
+from django.contrib.flatpages.models import FlatPage
+from django.db import models
+
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
+
+from ckeditor.widgets import CKEditorWidget
 
 from bims.models import (
     LocationType,
@@ -28,7 +36,9 @@ from bims.models import (
     Entry,
     Collection,
     AuthorEntryRank,
-    NonBiodiversityLayer
+    ShapefileUploadSession,
+    Shapefile,
+    NonBiodiversityLayer,
 )
 
 
@@ -159,7 +169,39 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'category',
         'collection_date',
         'validated',
+        'collector',
         'owner',
+    )
+
+
+class ShapefileInline(admin.TabularInline):
+
+    def shapefile_name(self, obj):
+        if obj.shapefile:
+            return mark_safe("""<a href="%s" />%s</a>""" % (
+                obj.shapefile.fileurl, obj.shapefile.filename))
+
+    model = ShapefileUploadSession.shapefiles.through
+    fields = ('shapefile_name', 'shapefile')
+    readonly_fields = ('shapefile_name',)
+
+
+class ShapefileUploadSessionAdmin(admin.ModelAdmin):
+    exclude = ('shapefiles', 'token')
+    list_display = (
+        'uploader',
+        'uploaded_at',
+        'processed',
+    )
+
+    inlines = (ShapefileInline,)
+
+
+class ShapefileAdmin(admin.ModelAdmin):
+    exclude = ('token',)
+    list_display = (
+        'id',
+        'shapefile',
     )
 
 
@@ -234,6 +276,13 @@ class NonBiodiversityLayerAdmin(admin.ModelAdmin):
     ordering = ('name',)
 
 
+# flatpage ckeditor integration
+class FlatPageCustomAdmin(FlatPageAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditorWidget}
+    }
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -259,3 +308,9 @@ admin.site.register(BoundaryType, admin.ModelAdmin)
 admin.site.register(Cluster, ClusterAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)
 admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
+
+admin.site.register(ShapefileUploadSession, ShapefileUploadSessionAdmin)
+admin.site.register(Shapefile, ShapefileAdmin)
+
+admin.site.unregister(FlatPage)
+admin.site.register(FlatPage, FlatPageCustomAdmin)

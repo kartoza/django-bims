@@ -3,6 +3,7 @@
 """
 
 import csv
+import sys
 from datetime import datetime
 from django.urls import reverse_lazy
 from django.contrib.gis.db import models
@@ -17,10 +18,11 @@ from bims.models.location_site import (
     location_site_post_save_handler
 )
 from bims.models.biological_collection_record import (
+    BiologicalCollectionRecord,
     collection_post_save_update_cluster
 )
-from bims.models.biological_collection_record import \
-    BiologicalCollectionRecord
+from bims.utils.gbif import update_collection_record
+from bims.tasks.collection_record import update_search_index, update_cluster
 
 
 class CsvUploadView(FormView):
@@ -30,6 +32,12 @@ class CsvUploadView(FormView):
     template_name = 'csv_uploader.html'
     context_data = dict()
     success_url = reverse_lazy('csv-upload')
+    collection_record = BiologicalCollectionRecord
+
+    additional_fields = {
+        'present': 'bool',
+        'absent': 'bool'
+    }
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
@@ -42,11 +50,6 @@ class CsvUploadView(FormView):
         collection_processed = {
             'added': 0,
             'failed': 0
-        }
-
-        optional_fields = {
-            'present': 'bool',
-            'absent': 'bool'
         }
 
         # Read csv
@@ -85,8 +88,8 @@ class CsvUploadView(FormView):
                     location_sites.append(location_site)
 
                     # Get existed taxon
-                    collections = BiologicalCollectionRecord.objects.filter(
-                        original_species_name=record['species_name']
+                    collections = self.collection_record.objects.filter(
+                            original_species_name=record['species_name']
                     )
 
                     taxon_gbif = None
@@ -96,13 +99,23 @@ class CsvUploadView(FormView):
                     # Optional fields and value
                     optional_records = {}
 
-                    for (opt_field, field_type) in optional_fields.iteritems():
+                    if (sys.version_info > (3, 0)):
+                        # Python 3 code in this block
+                        optional_fields_iter = self.additional_fields.items()
+                    else:
+                        # Python 2 code in this block
+                        optional_fields_iter = self.additional_fields.\
+                            iteritems()
+
+                    for (opt_field, field_type) in optional_fields_iter:
                         if opt_field in record:
                             if field_type == 'bool':
                                 record[opt_field] = record[opt_field] == '1'
+                            elif field_type == 'str':
+                                record[opt_field] = record[opt_field].lower()
                             optional_records[opt_field] = record[opt_field]
 
-                    collection_records, status = BiologicalCollectionRecord.\
+                    collection_records, created = self.collection_record.\
                         objects.\
                         get_or_create(
                             site=location_site,
@@ -117,9 +130,13 @@ class CsvUploadView(FormView):
                             **optional_records
                         )
 
-                    if not status:
+                    if created:
                         print('%s Added' % record['species_name'])
                         collection_processed['added'] += 1
+                    else:
+                        if not taxon_gbif:
+                            print('Update taxon gbif')
+                            update_collection_record(collection_records)
 
                 except (ValueError, KeyError):
                     collection_processed['failed'] += 1
@@ -135,5 +152,11 @@ class CsvUploadView(FormView):
         models.signals.post_save.connect(
             collection_post_save_update_cluster,
         )
+
+        # Update search index
+        update_search_index.delay()
+
+        # Update cluster
+        update_cluster.delay()
 
         return super(CsvUploadView, self).form_valid(form)

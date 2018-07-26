@@ -58,6 +58,12 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
+    'ckeditor',
+)
+
+# workaround to get flatpages picked up in installed apps.
+INSTALLED_APPS += (
+    'django.contrib.flatpages',
 )
 
 # Set templates
@@ -116,10 +122,14 @@ STATICFILES_DIRS = [
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
-MIDDLEWARE += (
+MIDDLEWARE_CLASSES += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
 )
+
+# for middleware in MIDDLEWARE_CLASSES:
+#     if middleware not in MIDDLEWARE:
+#         MIDDLEWARE += (middleware,)
 
 # Defines whether to log model related events,
 # such as when an object is created, updated, or deleted
@@ -156,7 +166,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 
 # django modelsdoc settings
-MODELSDOC_APPS = ('bims', 'fish',)
+MODELSDOC_APPS = ('bims', 'fish', 'reptile',)
 
 MODELSDOC_OUTPUT_FORMAT = 'rst'
 MODELSDOC_MODEL_WRAPPER = 'modelsdoc.wrappers.ModelWrapper'
@@ -167,3 +177,9 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
 ELASTIC_MIN_SCORE = 2
+
+DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
+    'layers.Layer',
+    'monitoring.RequestEvent',
+    'monitoring.MonitoredResource',
+]

@@ -81,6 +81,42 @@ services:
       - db:db
       - elasticsearch:elasticsearch
       - geoserver:geoserver
+      - worker:worker
+    volumes:
+      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    restart: unless-stopped
+    user: root
+
+  worker:
+    build:
+      context: docker
+    hostname: worker
+    working_dir: /home/web/django_project
+    command: celery worker --app=bims.celery:app -B -l INFO
+    entrypoint: []
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - HAYSTACK_HOST=elasticsearch
+      - GEOCONTEXT_URL=http://localhost:65402
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+    links:
+      - smtp:smtp
+      - db:db
+      - elasticsearch:elasticsearch
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./logs:/var/log/
     restart: unless-stopped
     user: root
 
