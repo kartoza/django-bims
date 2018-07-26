@@ -20,12 +20,22 @@ function zoomToObject(lat, lng) {
     }
 
     var iconFeatures=[];
-
     var iconFeature = new ol.Feature({
       geometry: new ol.geom.Point(ol.proj.transform([lat, lng], 'EPSG:4326',
-      'EPSG:3857')),
+      'EPSG:3857'))
     });
 
+    var iconStyle = new ol.style.Style({
+        image: new ol.style.Icon(({
+            anchor: [0.5, 46],
+            anchorXUnits: 'fraction',
+            anchorYUnits: 'pixels',
+            opacity: 0.75,
+            src: '/static/img/map-marker.png'
+        }))
+    });
+
+    iconFeature.setStyle(iconStyle);
     iconFeatures.push(iconFeature);
 
     var vectorSource = new ol.source.Vector({

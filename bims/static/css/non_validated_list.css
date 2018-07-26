@@ -11,6 +11,8 @@ th {
     background-color: lightgrey;
 }
 
+tr:nth-child(odd) {background: #f5f5f5}
+
 .pagination {
     text-align: center;
     margin-bottom: 25px;
@@ -32,4 +34,13 @@ th {
 
 .site-link:hover {
     text-decoration: underline !important;
+}
+
+.title-heading {
+    color: #a02246;
+    font-size: 27pt;
+}
+
+.page-current a {
+    color: cadetblue !important;
 }

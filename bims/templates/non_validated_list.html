@@ -15,7 +15,7 @@
 
 {% block body_content %}
     <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 30px">
-        <h1>Unvalidated Objects</h1>
+        <h1 class="title-heading">NONVALIDATED BIODIVERSITY RECORDS</h1>
     </div>
     <div class="container">
     <div class="row">
@@ -51,15 +51,25 @@
     {% if is_paginated %}
         <div class="container pagination">
             <span class="page-links">
+                    <a href="/nonvalidated-list/?page=1">&laquo; first</a>
                 {% if page_obj.has_previous %}
                     <a href="/nonvalidated-list/?page={{ page_obj.previous_page_number }}">previous</a>
                 {% endif %}
-                <span class="page-current">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-                </span>
+                {% for page in page_obj.paginator.page_range %}
+                    {% if page == page_obj.number %}
+                        <span class="page-current">
+                            <a href="/nonvalidated-list/?page={{ page_obj.number }}">{{ page_obj.number }}</a>
+                        </span>
+                    {% elif page > page_obj.number|add:'-3' and page < page_obj.number|add:'3' %}
+                        <span>
+                            <a href="/nonvalidated-list/?page={{ page }}">{{ page }}</a>
+                        </span>
+                    {% endif %}
+                {% endfor %}
                 {% if page_obj.has_next %}
                     <a href="/nonvalidated-list/?page={{ page_obj.next_page_number }}">next</a>
                 {% endif %}
+                    <a href="/nonvalidated-list/?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
             </span>
         </div>
     {% endif %}
