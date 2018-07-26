@@ -10,6 +10,7 @@ var map = new ol.Map({
           zoom: 2
         })
       });
+
 var popup = new ol.Overlay({
     element: document.getElementById('popup'),
     positioning: 'bottom-center',
@@ -80,3 +81,76 @@ map.on('singleclick', function(e) {
         popup.setPosition(undefined)
     }
   });
+
+$(document).ready(function () {
+    $('input[type="date"]').datepicker(
+        {
+            dateFormat: 'yyyy-mm-dd',
+            changeMonth: true,
+            changeYear: true
+        }
+    ).attr('type', 'text');
+
+    updateSelectedFilter(customUrl)
+});
+
+function validateObject(pk) {
+    $.ajax({
+        url: validateUrl,
+        data: {'pk': pk},
+        success: function () {
+            location.reload()
+        }
+    });
+}
+
+function dynamicInputFilter(that) {
+    $('.input-options').hide().val('');
+    $('.' + that.value).show();
+}
+
+$('input[name=filter_result]').click(function () {
+    var selected_filter = $('#filter-select').val();
+    var url = '/nonvalidated-list/';
+    if(selected_filter === 'collection_date'){
+        var filter_date_to = $('input[name=date_to]').val();
+        var filter_date_from = $('input[name=date_from]').val();
+        url += '?';
+        if(filter_date_from !== '' && filter_date_to !== '') {
+            url += 'date_from=' + filter_date_from + '&date_to=' + filter_date_to;
+        }else if(filter_date_from !== ''){
+            url += 'date_from=' + filter_date_from
+        }else {
+            url += 'date_to=' + filter_date_to
+        }
+    }else if(selected_filter !== ''){
+        var filter_value = $('input[name=' + selected_filter + ']').val();
+        url += '?'+ selected_filter +'=' + filter_value
+    }
+
+    window.location.href = url;
+});
+
+function updateSelectedFilter(customUrl) {
+    var filter_options = ['original_species_name', 'date_to', 'date_from', 'owner'];
+    var value;
+    for (var key in filter_options) {
+        var selected_filter = filter_options[key];
+        if(selected_filter !== 'date_to' && selected_filter !=='date_from') {
+            if (customUrl.indexOf(selected_filter) > -1) {
+                $('#filter-select').val(selected_filter);
+                $('.' + selected_filter).show();
+                value = customUrl.split(selected_filter + '=')[1];
+                $('input[name=' + selected_filter + ']').val(value);
+            }
+        }else {
+            if (customUrl.indexOf(selected_filter) > -1) {
+                $('#filter-select').val('collection_date');
+                $('.collection_date').show();
+                value = customUrl.split(selected_filter + '=')[1];
+                value = value.split('&')[0];
+                $('input[name=' + selected_filter + ']').val(value);
+            }
+        }
+    }
+}

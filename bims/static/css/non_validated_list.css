@@ -71,3 +71,8 @@ tr:nth-child(odd) {background: #f5f5f5}
 .kartoza-icon {
     margin: auto auto;
 }
+
+select {
+    background: none;
+    border: 1px solid gainsboro;
+}

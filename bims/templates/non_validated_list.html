@@ -8,6 +8,7 @@
 {% block head %}
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
     <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
 
     <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
@@ -15,8 +16,22 @@
 
 {% block body_content %}
 <div style="min-height: 100%; height: auto;">
-    <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 30px">
+    <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 25px">
         <h1 class="title-heading">NONVALIDATED BIODIVERSITY RECORDS</h1>
+    </div>
+    <div class="container" style="margin-bottom: 15px">
+        <div class="filter"> <span>Filter by</span>
+            <select id="filter-select" onchange="dynamicInputFilter(this)">
+                <option value=""></option>
+                <option value="original_species_name">original species name</option>
+                <option value="collection_date">collection date</option>
+                <option value="owner">owner</option>
+            </select>
+            <input type="text" class="input-options original_species_name" name="original_species_name" style="display: none">
+            <input type="date" class="input-options collection_date" name="date_from" style="display: none"><span class="input-options collection_date" style="display: none"> to </span><input type="date" class="input-options collection_date" name="date_to" style="display: none">
+            <input type="text" class="input-options owner" name="owner" style="display: none">
+            <span><input type="button" name="filter_result" value="Go"></span>
+        </div>
     </div>
     <div class="container">
     <div class="row">
@@ -53,25 +68,25 @@
     {% if is_paginated %}
         <div class="container pagination">
             <span class="page-links">
-                    <a href="/nonvalidated-list/?page=1">&laquo; first</a>
+                    <a href="/nonvalidated-list/?page=1{{ custom_url }}">&laquo; first</a>
                 {% if page_obj.has_previous %}
-                    <a href="/nonvalidated-list/?page={{ page_obj.previous_page_number }}">previous</a>
+                    <a href="/nonvalidated-list/?page={{ page_obj.previous_page_number }}{{ custom_url }}">previous</a>
                 {% endif %}
                 {% for page in page_obj.paginator.page_range %}
                     {% if page == page_obj.number %}
                         <span class="page-current">
-                            <a href="/nonvalidated-list/?page={{ page_obj.number }}">{{ page_obj.number }}</a>
+                            <a href="/nonvalidated-list/?page={{ page_obj.number }}{{ custom_url }}">{{ page_obj.number }}</a>
                         </span>
                     {% elif page > page_obj.number|add:'-3' and page < page_obj.number|add:'3' %}
                         <span>
-                            <a href="/nonvalidated-list/?page={{ page }}">{{ page }}</a>
+                            <a href="/nonvalidated-list/?page={{ page }}{{ custom_url }}">{{ page }}</a>
                         </span>
                     {% endif %}
                 {% endfor %}
                 {% if page_obj.has_next %}
-                    <a href="/nonvalidated-list/?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="/nonvalidated-list/?page={{ page_obj.next_page_number }}{{ custom_url }}">next</a>
                 {% endif %}
-                    <a href="/nonvalidated-list/?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                    <a href="/nonvalidated-list/?page={{ page_obj.paginator.num_pages }}{{ custom_url }}">last &raquo;</a>
             </span>
         </div>
     {% endif %}
@@ -94,16 +109,11 @@
     </div>
     </section>
 
+    <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
+    <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
     <script>
-    function validateObject(pk) {
-        $.ajax({
-            url: '{% url "validate-object" %}',
-            data: {'pk': pk},
-            success: function () {
-                location.reload()
-            }
-        });
-    }
+        var validateUrl = '{% url "validate-object" %}';
+        var customUrl = '{{ custom_url }}';
     </script>
     <script src="{% static 'js/views/map-review-validation.js' %}"></script>
 {% endblock %}
