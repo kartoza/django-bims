@@ -51,3 +51,23 @@ tr:nth-child(odd) {background: #f5f5f5}
     padding: 5px;
     font-size: 8pt;
 }
+
+#about {
+    background-color: #aad993;
+    color: white;
+    width: 100%;
+    padding: 12px 0;
+}
+
+.about-links {
+    border-left: 1px solid white;
+}
+
+.about-links>p {
+    margin: 0;
+    font-size: 11pt;
+}
+
+.kartoza-icon {
+    margin: auto auto;
+}

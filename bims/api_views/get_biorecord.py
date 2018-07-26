@@ -1,6 +1,6 @@
 # coding=utf-8
 from rest_framework.views import APIView, Response
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from rest_framework import status
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.utils.user_permissions import ValidatorRequiredMixin
