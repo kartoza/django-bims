@@ -34,6 +34,7 @@ from bims.views.bibliography import (
 )
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
+from bims.api_views.get_biorecord import GetBioRecords
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
@@ -68,6 +69,8 @@ api_urls = [
         name='list-non-biodiversity-layer'),
     url(r'^api/validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
+    url(r'^api/get-bio-object/$',
+        GetBioRecords.as_view(), name='get-bio-object'),
 ]
 
 bibliography_urls = [

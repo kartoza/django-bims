@@ -31,7 +31,7 @@
         {% for obj in biorecords %}
             <tr>
                 {% if obj.site.geometry_point %}
-                    <td><a onclick="zoomToObject({{ obj.site.geometry_point.x }}, {{ obj.site.geometry_point.y }})" class="site-link">{{ obj.original_species_name }}</a></td>
+                    <td><a onclick="zoomToObject({{ obj.site.geometry_point.x }}, {{ obj.site.geometry_point.y }}, {{ obj.pk }})" class="site-link">{{ obj.original_species_name }}</a></td>
                 {% else %}
                     <td><a>{{ obj.original_species_name }}</a></td>
                 {% endif %}
@@ -46,6 +46,7 @@
     <div class="col-lg-5">
         <div id="map" class="map" style="height: 100%"></div>
     </div>
+    <div id="popup"></div>
     </div>
     </div>
     {% if is_paginated %}
