@@ -19,3 +19,5 @@ class Command(BaseCommand):
             success, message = location_site.update_location_context_document()
             if not success:
                 print('[FAILED] %s : %s' % (location_site.name, message))
+            if success:
+                location_site.save()

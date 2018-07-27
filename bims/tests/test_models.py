@@ -185,15 +185,16 @@ class TestLocationSiteCRUD(TestCase):
     def test_LocationSite_update_location_context_document(self):
         """Test updating location context document"""
         location_site = LocationSiteF.create()
+        old_context = location_site.location_context_document
         new_point = {
             'geometry_point': Point(27, -31),
         }
         location_site.__dict__.update(new_point)
+        # update_location_context_document is called here
         location_site.save()
-        self.assertIsNone(location_site.location_context_document)
-        status, message = location_site.update_location_context_document()
-        self.assertTrue(status, message)
         self.assertIsNotNone(location_site.location_context_document)
+        self.assertNotEqual(
+            location_site.location_context_document, old_context)
 
 
 class TestIUCNStatusCRUD(TestCase):

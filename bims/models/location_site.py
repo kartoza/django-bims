@@ -20,6 +20,8 @@ LOGGER = logging.getLogger(__name__)
 class LocationSite(models.Model):
     """Location Site model."""
 
+    __original_centroid = None
+
     name = models.CharField(
         max_length=100,
         blank=False,
@@ -100,6 +102,7 @@ class LocationSite(models.Model):
 
     def update_location_context_document(self):
         """Update location context document."""
+        LOGGER.debug('update_location_context_document')
         geocontext_url = get_key('GEOCONTEXT_URL')
         geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
         if not geocontext_url:
@@ -138,7 +141,6 @@ class LocationSite(models.Model):
             return False, message
 
         self.location_context_document = r.json()
-        self.save()
         return True, 'Successfully update location context document.'
 
     # noinspection PyClassicStyleClass
@@ -156,11 +158,19 @@ class LocationSite(models.Model):
             # Check if geometry is allowed
             if isinstance(self.get_geometry(),
                           self.location_type.get_allowed_geometry_class()):
+                # If the centroid is changed, update the context document
+                if self.get_centroid() != self.__original_centroid:
+                    self.update_location_context_document()
                 super(LocationSite, self).save(*args, **kwargs)
+                self.__original_centroid = self.get_centroid()
             else:
                 raise ValidationError('Geometry is not allowed.')
         else:
             raise ValidationError('At least one geometry need to be filled.')
+
+    def __init__(self, *args, **kwargs):
+        super(LocationSite, self).__init__(*args, **kwargs)
+        self.__original_centroid = self.get_centroid()
 
 
 @receiver(models.signals.post_save)
