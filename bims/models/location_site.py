@@ -46,6 +46,14 @@ class LocationSite(models.Model):
         blank=True,
     )
 
+    location_context_document = models.TextField(
+        verbose_name='Document for location context as JSON.',
+        help_text='This document is generated from GeoContext by using '
+                  'management command or changing the geometry.',
+        null=True,
+        blank=True
+    )
+
     def get_centroid(self):
         """ Getting centroid of location site """
 
