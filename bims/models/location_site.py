@@ -117,8 +117,8 @@ class LocationSite(models.Model):
                 'Can not update location context document because centroid is '
                 'None. Please set it.')
             return False, message
-        longitude = self.get_centroid().get_x()
-        latitude = self.get_centroid().get_x()
+        longitude = self.get_centroid().x
+        latitude = self.get_centroid().y
 
         # build url
         url_format = '{geocontext_url}/api/v1/geocontext/value/collection/' \
