@@ -44,6 +44,8 @@ from bims.views.csv_upload import CsvUploadView
 from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
+from bims.views.non_validated_user_list import NonValidatedObjectsUserView
+from bims.views.bio_records_edit import BioRecordsUpdateView
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -109,4 +111,8 @@ urlpatterns = [
         UnderDevelopmentView.as_view(), name='under-development'),
     url(r'^nonvalidated-list/$',
         NonValidatedObjectsView.as_view(), name='nonvalidated-list'),
+    url(r'^nonvalidated-user-list/$',
+        NonValidatedObjectsUserView.as_view(), name='nonvalidated-user-list'),
+    url(r'^update/(?P<pk>\d+)/$',
+        BioRecordsUpdateView.as_view(), name='update-records')
 ] + api_urls

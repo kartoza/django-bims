@@ -111,7 +111,7 @@ function dynamicInputFilter(that) {
 
 $('input[name=filter_result]').click(function () {
     var selected_filter = $('#filter-select').val();
-    var url = '/nonvalidated-list/';
+    var url = pageUrl;
     if(selected_filter === 'collection_date'){
         var filter_date_to = $('input[name=date_to]').val();
         var filter_date_from = $('input[name=date_from]').val();

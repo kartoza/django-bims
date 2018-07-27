@@ -1,0 +1,47 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Edit Records
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
+
+    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
+
+    <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
+    <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
+{% endblock %}
+
+{% block body_content %}
+    <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 25px">
+        <h1 class="title-heading">UPDATE BIODIVERSITY RECORDS</h1>
+    </div>
+    <div class="container" style="margin-bottom: 50px">
+    <div class="form-wrapper form-control">
+        <form id="update-form" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input class="form-control btn btn-primary" type="submit" value="Update" />
+        </form>
+    </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('input[name=collection_date]').datepicker(
+                {
+                    dateFormat: 'yyyy-mm-dd',
+                    changeMonth: true,
+                    changeYear: true
+                }
+            ).attr('type', 'text');
+            $('#update-form').find("input[type='text'], select, textarea").each(function(index, element) {
+                $(element).addClass("form-control");
+            });
+        });
+    </script>
+{% endblock %}

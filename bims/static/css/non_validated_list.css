@@ -23,8 +23,17 @@ tr:nth-child(odd) {background: #f5f5f5}
     color: orange
 }
 
+.edit-action a {
+    text-align: center;
+    color: cadetblue;
+}
+
 .validate-action:hover {
     color: #1b900d;
+}
+
+.edit-action:hover a {
+    color: darkblue;
 }
 
 .site-link {
@@ -75,4 +84,10 @@ tr:nth-child(odd) {background: #f5f5f5}
 select {
     background: none;
     border: 1px solid gainsboro;
+}
+
+.form-wrapper {
+    border: 1px solid gainsboro;
+    padding: 25px;
+    border-radius: 2px;
 }

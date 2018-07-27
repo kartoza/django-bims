@@ -2,7 +2,7 @@
 {% load static from staticfiles %}
 
 {% block title %}
-    Validation
+    Nonvalidated Records
 {% endblock %}
 
 {% block head %}
@@ -25,7 +25,6 @@
                 <option value=""></option>
                 <option value="original_species_name">original species name</option>
                 <option value="collection_date">collection date</option>
-                <option value="owner">owner</option>
             </select>
             <input type="text" class="input-options original_species_name" name="original_species_name" style="display: none">
             <input type="date" class="input-options collection_date" name="date_from" style="display: none"><span class="input-options collection_date" style="display: none"> to </span><input type="date" class="input-options collection_date" name="date_to" style="display: none">
@@ -42,7 +41,7 @@
             <th>Category</th>
             <th>Collection Date</th>
             <th>Owner</th>
-            <th>Validation Action</th>
+            <th>Action</th>
         </tr>
         {% for obj in biorecords %}
             <tr>
@@ -54,7 +53,7 @@
                 <td>{{ obj.category }}</td>
                 <td>{{ obj.collection_date }}</td>
                 <td>{{ obj.owner }}</td>
-                <td class="validate-action"><a onclick="validateObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Validate this object"><i class="fa fa-check-circle"></i></a></td>
+                <td class="edit-action"><a href="{% url 'update-records' obj.pk %}" class="btn btn-default" data-toggle="tooltip" title="Edit this object"><i class="fa fa-pencil"></i></a></td>
             </tr>
         {% endfor %}
     </table>
@@ -68,25 +67,25 @@
     {% if is_paginated %}
         <div class="container pagination">
             <span class="page-links">
-                    <a href="/nonvalidated-list/?page=1{{ custom_url }}">&laquo; first</a>
+                    <a href="/nonvalidated-user-list/?page=1{{ custom_url }}">&laquo; first</a>
                 {% if page_obj.has_previous %}
-                    <a href="/nonvalidated-list/?page={{ page_obj.previous_page_number }}{{ custom_url }}">previous</a>
+                    <a href="/nonvalidated-user-list/?page={{ page_obj.previous_page_number }}{{ custom_url }}">previous</a>
                 {% endif %}
                 {% for page in page_obj.paginator.page_range %}
                     {% if page == page_obj.number %}
                         <span class="page-current">
-                            <a href="/nonvalidated-list/?page={{ page_obj.number }}{{ custom_url }}">{{ page_obj.number }}</a>
+                            <a href="/nonvalidated-user-list/?page={{ page_obj.number }}{{ custom_url }}">{{ page_obj.number }}</a>
                         </span>
                     {% elif page > page_obj.number|add:'-3' and page < page_obj.number|add:'3' %}
                         <span>
-                            <a href="/nonvalidated-list/?page={{ page }}{{ custom_url }}">{{ page }}</a>
+                            <a href="/nonvalidated-user-list/?page={{ page }}{{ custom_url }}">{{ page }}</a>
                         </span>
                     {% endif %}
                 {% endfor %}
                 {% if page_obj.has_next %}
-                    <a href="/nonvalidated-list/?page={{ page_obj.next_page_number }}{{ custom_url }}">next</a>
+                    <a href="/nonvalidated-user-list/?page={{ page_obj.next_page_number }}{{ custom_url }}">next</a>
                 {% endif %}
-                    <a href="/nonvalidated-list/?page={{ page_obj.paginator.num_pages }}{{ custom_url }}">last &raquo;</a>
+                    <a href="/nonvalidated-user-list/?page={{ page_obj.paginator.num_pages }}{{ custom_url }}">last &raquo;</a>
             </span>
         </div>
     {% endif %}
@@ -114,7 +113,7 @@
     <script>
         var validateUrl = '{% url "validate-object" %}';
         var customUrl = '{{ custom_url }}';
-        var pageUrl = '/nonvalidated-list/';
+        var pageUrl = '/nonvalidated-user-list/';
     </script>
     <script src="{% static 'js/views/map-review-validation.js' %}"></script>
 {% endblock %}
