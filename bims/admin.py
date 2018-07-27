@@ -138,6 +138,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lat = -30
     default_lon = 25
 
+    list_display = (
+        'name', 'location_type', 'get_centroid', 'has_location_context')
+    search_fields = ('name',)
+
 
 class IUCNStatusAdmin(admin.ModelAdmin):
     list_display = ('get_category_display', 'sensitive')

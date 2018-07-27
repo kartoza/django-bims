@@ -73,6 +73,9 @@ class LocationSite(models.Model):
             else:
                 return None
 
+    def has_location_context(self):
+        return self.location_context_document is not None
+
     def get_geometry(self):
         """Function to get geometry."""
         geometry = None
