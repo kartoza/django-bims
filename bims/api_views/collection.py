@@ -1,6 +1,7 @@
 # coding=utf8
 
 import csv
+import json
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
@@ -12,7 +13,8 @@ from bims.models.biological_collection_record import \
 from bims.models.taxon import Taxon
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
-    BioCollectionOneRowSerializer
+    BioCollectionOneRowSerializer,
+    BioCollectionGeojsonSerializer
 )
 from bims.utils.cluster_point import (
     within_bbox,
@@ -130,6 +132,21 @@ class CollectionDownloader(GetCollectionAbstract):
 
         return response
 
+    def convert_to_geojson(self, queryset, Model, ModelSerializer):
+        """
+        Converting data to geojson.
+        :param queryset: queryset that need to be converted
+        :type queryset: QuerySet
+        """
+        serializer = ModelSerializer(
+            queryset, many=True)
+        response = HttpResponse(
+            content=json.dumps(serializer.data),
+            content_type='text/geojson')
+        response['Content-Disposition'] = \
+            'attachment; filename="download.geojson"'
+        return response
+
     def get(self, request):
         file_type = request.GET.get('fileType', None)
         if not file_type:
@@ -140,6 +157,11 @@ class CollectionDownloader(GetCollectionAbstract):
                 queryset,
                 BiologicalCollectionRecord,
                 BioCollectionOneRowSerializer)
+        elif file_type == 'geojson':
+            return self.convert_to_geojson(
+                queryset,
+                BiologicalCollectionRecord,
+                BioCollectionGeojsonSerializer)
         else:
             return Response([])
 

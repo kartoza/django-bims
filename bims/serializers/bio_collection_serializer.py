@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework_gis.serializers import (
+    GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.taxon_serializer import TaxonSerializer
 
@@ -44,6 +46,24 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     """
     owner = serializers.SerializerMethodField()
     validated = serializers.BooleanField(required=True)
+    x = serializers.SerializerMethodField()
+    y = serializers.SerializerMethodField()
+    site = serializers.SerializerMethodField()
+
+    def get_x(self, obj):
+        if obj.site and obj.site.geometry_point:
+            return obj.site.geometry_point.x
+        return ''
+
+    def get_y(self, obj):
+        if obj.site and obj.site.geometry_point:
+            return obj.site.geometry_point.y
+        return ''
+
+    def get_site(self, obj):
+        if obj.site:
+            return obj.site.name
+        return ''
 
     def get_owner(self, obj):
         if obj.owner:
@@ -58,4 +78,34 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             instance)
         taxonomy = TaxonSerializer(instance.taxon_gbif_id).data
         result.update(taxonomy)
+        return result
+
+
+class BioCollectionGeojsonSerializer(GeoFeatureModelSerializer):
+    geometry = GeometrySerializerMethodField()
+    site = serializers.SerializerMethodField()
+
+    def get_geometry(self, obj):
+        if obj.site:
+            return obj.site.get_geometry()
+        return None
+
+    def get_site(self, obj):
+        if obj.site:
+            return obj.site.name
+        return ''
+
+    class Meta:
+        model = BiologicalCollectionRecord
+        geo_field = 'geometry'
+        exclude = []
+
+    def to_representation(self, instance):
+        result = super(BioCollectionGeojsonSerializer, self).to_representation(
+            instance)
+        try:
+            taxonomy = TaxonSerializer(instance.taxon_gbif_id).data
+            result['properties'].update(taxonomy)
+        except KeyError:
+            pass
         return result
