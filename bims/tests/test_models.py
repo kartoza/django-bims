@@ -191,7 +191,8 @@ class TestLocationSiteCRUD(TestCase):
         location_site.__dict__.update(new_point)
         location_site.save()
         self.assertIsNone(location_site.location_context_document)
-        location_site.update_location_context_document()
+        status, message = location_site.update_location_context_document()
+        self.assertTrue(status, message)
         self.assertIsNotNone(location_site.location_context_document)
 
 
