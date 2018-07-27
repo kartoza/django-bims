@@ -10,7 +10,6 @@ from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
 from bims.models.location_type import LocationType
-from bims.models.location_context import LocationContext
 from bims.utils.cluster import update_cluster_by_site
 from bims.utils.get_key import get_key
 
@@ -44,12 +43,6 @@ class LocationSite(models.Model):
         blank=True,
     )
     geometry_multipolygon = models.MultiPolygonField(
-        null=True,
-        blank=True,
-    )
-    location_context = models.ForeignKey(
-        LocationContext,
-        models.SET_NULL,
         null=True,
         blank=True,
     )

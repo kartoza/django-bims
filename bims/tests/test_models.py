@@ -1,6 +1,5 @@
 # coding=utf-8
 """Tests for models."""
-import json
 import requests
 import unittest
 from django.test import TestCase
@@ -124,14 +123,6 @@ class TestLocationSiteCRUD(TestCase):
         model = LocationSiteF.create(
             location_type=location_type
         )
-
-        try:
-            location_context = json.loads(
-                    model.location_context.context_document
-            )
-            self.assertTrue(len(location_context['features']) > 0)
-        except ValueError:
-            pass
 
         self.assertTrue(model.location_type.name == 'custom type')
 

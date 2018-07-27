@@ -21,7 +21,6 @@ from bims.models import (
     IUCNStatus,
     Taxon,
     Survey,
-    LocationContext,
     Boundary,
     BoundaryType,
     Cluster,
@@ -305,7 +304,6 @@ admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
-admin.site.register(LocationContext)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
