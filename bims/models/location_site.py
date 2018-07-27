@@ -3,12 +3,18 @@
 
 """
 
+import logging
+import requests
+
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
 from bims.models.location_type import LocationType
 from bims.models.location_context import LocationContext
 from bims.utils.cluster import update_cluster_by_site
+from bims.utils.get_key import get_key
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LocationSite(models.Model):
@@ -91,6 +97,48 @@ class LocationSite(models.Model):
             geometry = self.geometry_line
 
         return geometry
+
+    def update_location_context_document(self):
+        """Update location context document."""
+        geocontext_url = get_key('GEOCONTEXT_URL')
+        geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
+        if not geocontext_url:
+            LOGGER.info(
+                'Can not update location context document because geocontext '
+                'url is None. Please set it.')
+            return
+        if not geocontext_collection_key:
+            LOGGER.info(
+                'Can not update location context document because geocontext '
+                'collection key is None. Please set it.')
+            return
+        if not self.get_centroid():
+            LOGGER.info(
+                'Can not update location context document because centroid is '
+                'None. Please set it.')
+            return
+        longitude = self.get_centroid().get_x()
+        latitude = self.get_centroid().get_x()
+
+        # build url
+        url_format = '{geocontext_url}/api/v1/geocontext/value/collection/' \
+                     '{longitude}/{latitude}/{geocontext_collection_key}'
+        url = url_format.format(
+            geocontext_url=geocontext_url,
+            longitude=longitude,
+            latitude=latitude,
+            geocontext_collection_key=geocontext_collection_key,
+        )
+
+        r = requests.get(url)
+        if r.status_code != 200:
+            LOGGER.info(
+                'Request to url %s got %s [%s], can not update location '
+                'context document.' % (url, r.status_code, r.reason))
+            return
+
+        self.location_context_document = r.json()
+        self.save()
 
     # noinspection PyClassicStyleClass
     class Meta:
