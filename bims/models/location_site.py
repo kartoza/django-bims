@@ -103,17 +103,17 @@ class LocationSite(models.Model):
         geocontext_url = get_key('GEOCONTEXT_URL')
         geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
         if not geocontext_url:
-            LOGGER.info(
+            LOGGER.error(
                 'Can not update location context document because geocontext '
                 'url is None. Please set it.')
             return
         if not geocontext_collection_key:
-            LOGGER.info(
+            LOGGER.error(
                 'Can not update location context document because geocontext '
                 'collection key is None. Please set it.')
             return
         if not self.get_centroid():
-            LOGGER.info(
+            LOGGER.error(
                 'Can not update location context document because centroid is '
                 'None. Please set it.')
             return
@@ -132,7 +132,7 @@ class LocationSite(models.Model):
 
         r = requests.get(url)
         if r.status_code != 200:
-            LOGGER.info(
+            LOGGER.error(
                 'Request to url %s got %s [%s], can not update location '
                 'context document.' % (url, r.status_code, r.reason))
             return
