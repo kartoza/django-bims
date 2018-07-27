@@ -74,7 +74,7 @@ services:
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq
       - HAYSTACK_HOST=elasticsearch
-      - GEOCONTEXT_URL=http://localhost:65402
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
     links:
@@ -105,7 +105,7 @@ services:
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq
       - HAYSTACK_HOST=elasticsearch
-      - GEOCONTEXT_URL=http://localhost:65402
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
     links:
