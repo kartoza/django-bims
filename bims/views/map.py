@@ -1,6 +1,10 @@
 # coding=utf-8
+from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from bims.utils.get_key import get_key
+from bims.models.biological_collection_record import (
+    BiologicalCollectionRecord
+)
 
 
 class MapPageView(TemplateView):
@@ -21,4 +25,15 @@ class MapPageView(TemplateView):
         context['map_tiler_key'] = get_key('MAP_TILER_KEY')
         context['geocontext_url'] = get_key('GEOCONTEXT_URL')
         context['center_point_map'] = get_key('CENTER_POINT_MAP')
+
+        # get date filter
+        context['date_filter'] = {'min': '1900', 'max': '2008'}
+        date_min = BiologicalCollectionRecord.objects.all(
+        ).aggregate(min=Min('collection_date'))['min']
+        date_max = BiologicalCollectionRecord.objects.all(
+        ).aggregate(max=Max('collection_date'))['max']
+        if date_min:
+            context['date_filter']['min'] = date_min.year
+        if date_max:
+            context['date_filter']['max'] = date_max.year
         return context

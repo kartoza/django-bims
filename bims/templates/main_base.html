@@ -123,7 +123,9 @@
 
         if(uploadUrl !== 'None'){
             var navbarUpload = document.getElementById("navbar-upload");
-            navbarUpload.href = uploadUrl;
+            if(navbarUpload) {
+                navbarUpload.href = uploadUrl;
+            }
         }
 
         if(extResourceUrl !== 'None'){
@@ -148,7 +150,9 @@
 
         if(profileUrl !== 'None'){
             var navbarProfile = document.getElementById("navbar-profile");
-            navbarProfile.href = profileUrl;
+            if(navbarProfile) {
+                navbarProfile.href = profileUrl;
+            }
         }
 
         if(contributionsUrl !== 'None'){
