@@ -174,6 +174,9 @@
             <div class="locate-control sub-control-panel">
                 <i class="fa fa-location-arrow" aria-hidden="true"></i>
             </div>
+            <div class="upload-data sub-control-panel">
+                <i class="fa fa-upload" aria-hidden="true"></i>
+            </div>
         </div>
         <div class="zoom-control row">
             <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
@@ -220,6 +223,8 @@
                 </ul>
             </div>
         </div>
+
+
     </script>
 
     <script type="text/html" id="locate-coordinate-modal">
@@ -257,6 +262,62 @@
                             <button id="go-button" type="button" class="btn
                             btn-outline-dark mb-2 mr-sm-2"
                             >Go</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/html" id="upload-data-modal">
+        <div class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Data</h5>
+                        <button type="button" class="close"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form">
+                            <label for="ud_species_name" class="sr-only">
+                                Species Name
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="ud_species_name" placeholder="Species Name">
+                            <label for="ud_location_site" class="sr-only">
+                                Location Site Name
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="ud_location_site" placeholder="Location Site Name">
+                            <label for="ud_collection_date" class="sr-only">
+                                Collection Date
+                            </label>
+                            <input type="date"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="ud_collection_date" placeholder="Collection Date">
+                            <label for="ud_category" class="sr-only">
+                                Category
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="ud_category" placeholder="Category">
+                            <label for="ud_collector" class="sr-only">
+                                Collector
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="ud_collector" placeholder="Collector">
+                            <label for="ud_notes" class="sr-only">
+                                Notes
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="ud_notes" placeholder="Notes">
                         </form>
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 define(
-    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate'],
-    function (Backbone, _, $, ol, SearchView, LocateView) {
+    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data'],
+    function (Backbone, _, $, ol, SearchView, LocateView, UploadDataView) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
@@ -10,7 +10,7 @@ define(
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
             'click .locate-control': 'locateClicked',
-            'click .location-control': 'locationClicked',
+            'click .upload-data': 'uploadDataClicked',
             'click .map-search-close': 'closeSearchPanel',
             'click .layers-selector-container-close': 'closeFilterPanel',
             'click .locate-options-container-close': 'closeLocatePanel',
@@ -24,50 +24,35 @@ define(
         searchClicked: function (e) {
             $('.layer-switcher.shown button').click();
             // show search div
+            this.closeAllPanel();
+
             if (!this.searchView.isOpen()) {
                 this.openSearchPanel();
-                this.closeFilterPanel();
-                this.closeLocatePanel();
-            } else {
-                this.closeSearchPanel();
             }
         },
         filterClicked: function (e) {
             $('.layer-switcher.shown button').click();
+            this.closeAllPanel();
             // show filter div
             if ($('.layers-selector-container').is(":hidden")) {
                 this.openFilterPanel();
-                this.closeSearchPanel();
-                this.closeLocatePanel();
-            } else {
-                this.closeFilterPanel();
             }
         },
         locateClicked: function (e) {
             $('.layer-switcher.shown button').click();
+            this.closeAllPanel();
             // show locate div
             if ($('.locate-options-container').is(":hidden")) {
                 this.openLocatePanel();
-                this.closeSearchPanel();
-                this.closeFilterPanel();
-            } else {
-                this.closeLocatePanel();
             }
         },
-        locationClicked: function (e) {
-            var target = $(e.target);
-            if (!target.hasClass('location-control')) {
-                target = target.parent();
-            }
-            // Activate function
-            if (!this.locationControlActive) {
-                this.locationControlActive = true;
-                target.addClass('control-panel-selected');
-            } else {
-                this.locationControlActive = false;
-                target.removeClass('control-panel-selected');
-                this.parent.hideGeoContext();
-            }
+        uploadDataClicked: function (e) {
+            this.closeAllPanel();
+            var active = this.controlPanelClicked(e);
+            this.parent.uploadDataState = active;
+        },
+        showUploadDataModal: function (lon, lat) {
+            this.uploadDataView.showModal();
         },
         render: function () {
             this.$el.html(this.template());
@@ -83,6 +68,12 @@ define(
                 parent: this,
             });
             this.$el.append(this.locateView.render().$el);
+
+            this.uploadDataView = new UploadDataView({
+                parent: this,
+            });
+            this.$el.append(this.uploadDataView.render().$el);
+
             return this;
         },
         openSearchPanel: function () {
@@ -93,8 +84,19 @@ define(
             this.$el.find('.search-control').removeClass('control-panel-selected');
             this.searchView.hide();
         },
-        closeAllPanel: function () {
-            this.closeSearchPanel();
+        controlPanelClicked: function (e) {
+            var target = $(e.target);
+            if (!target.hasClass('sub-control-panel')) {
+                target = target.parent();
+            }
+            // Activate function
+            if (!target.hasClass('control-panel-selected')) {
+                target.addClass('control-panel-selected');
+                return true;
+            } else {
+                target.removeClass('control-panel-selected');
+                return false;
+            }
         },
         closeSubFilter: function (e) {
             var target = $(e.target);
@@ -120,6 +122,17 @@ define(
         openLocateCoordinates: function (e) {
             this.closeLocatePanel();
             this.locateView.showModal();
+        }, 
+        closeAllPanel: function () {
+            this.closeFilterPanel();
+            this.closeLocatePanel();
+            this.closeSearchPanel();
+
+            var uploadDataElm = this.$el.find('.upload-data');
+            if(uploadDataElm.hasClass('control-panel-selected')) {
+                uploadDataElm.removeClass('control-panel-selected');
+                this.parent.uploadDataState = false;
+            }
         }
 
     })

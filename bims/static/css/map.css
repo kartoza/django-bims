@@ -116,7 +116,7 @@ html, body, .map, .map-wrapper, #map-container {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 165px;
+    top: 185px;
     transform: translateY(-50%);
     padding-left: 6px;
     padding-right: 6px;
@@ -497,7 +497,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 236px !important;
+    top: 280px !important;
     left: 0;
     right: auto !important;
     text-align: left;
