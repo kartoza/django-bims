@@ -11,6 +11,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
+            if ($checkbox.length === 0) {
+                return true
+            }
             return $checkbox.is(':checked');
         },
         initLayer: function (layer, layerName, visibleInDefault) {

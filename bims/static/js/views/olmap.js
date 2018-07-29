@@ -264,7 +264,9 @@ define([
             $('#fetching-error').hide();
             $('#loading-warning').hide();
             $('#fetching-error .call-administrator').hide();
-            this.layers.administrativeBoundarySource.clear();
+            if (this.layers.administrativeBoundarySource) {
+                this.layers.administrativeBoundarySource.clear();
+            }
         },
         checkAdministrativeLevel: function () {
             var self = this;
