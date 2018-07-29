@@ -81,7 +81,6 @@ services:
       - db:db
       - elasticsearch:elasticsearch
       - geoserver:geoserver
-      - worker:worker
     volumes:
       - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
     restart: unless-stopped
