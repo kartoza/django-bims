@@ -1,36 +1,57 @@
-define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Backbone, _, $, ol, SearchView) {
+define(
+    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate'],
+    function (Backbone, _, $, ol, SearchView, LocateView) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
         searchView: null,
+        locateView: null,
         events: {
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
+            'click .locate-control': 'locateClicked',
             'click .location-control': 'locationClicked',
             'click .map-search-close': 'closeSearchPanel',
             'click .layers-selector-container-close': 'closeFilterPanel',
-            'click .sub-filter': 'closeSubFilter'
+            'click .locate-options-container-close': 'closeLocatePanel',
+            'click .sub-filter': 'closeSubFilter',
+            'click .locate-coordinates': 'openLocateCoordinates',
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
         },
         searchClicked: function (e) {
+            $('.layer-switcher.shown button').click();
             // show search div
             if (!this.searchView.isOpen()) {
                 this.openSearchPanel();
                 this.closeFilterPanel();
+                this.closeLocatePanel();
             } else {
                 this.closeSearchPanel();
             }
         },
         filterClicked: function (e) {
+            $('.layer-switcher.shown button').click();
             // show filter div
             if ($('.layers-selector-container').is(":hidden")) {
                 this.openFilterPanel();
                 this.closeSearchPanel();
+                this.closeLocatePanel();
             } else {
                 this.closeFilterPanel();
+            }
+        },
+        locateClicked: function (e) {
+            $('.layer-switcher.shown button').click();
+            // show locate div
+            if ($('.locate-options-container').is(":hidden")) {
+                this.openLocatePanel();
+                this.closeSearchPanel();
+                this.closeFilterPanel();
+            } else {
+                this.closeLocatePanel();
             }
         },
         locationClicked: function (e) {
@@ -57,6 +78,11 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             });
 
             this.$el.append(this.searchView.render().$el);
+
+            this.locateView = new LocateView({
+                parent: this,
+            });
+            this.$el.append(this.locateView.render().$el);
             return this;
         },
         openSearchPanel: function () {
@@ -83,5 +109,18 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'views/search'], function (Bac
             this.$el.find('.filter-control').removeClass('control-panel-selected');
             $('.layers-selector-container').hide();
         },
+        openLocatePanel: function () {
+            this.$el.find('.locate-control').addClass('control-panel-selected');
+            $('.locate-options-container').show();
+        },
+        closeLocatePanel: function () {
+            this.$el.find('.locate-control').removeClass('control-panel-selected');
+            $('.locate-options-container').hide();
+        },
+        openLocateCoordinates: function (e) {
+            this.closeLocatePanel();
+            this.locateView.showModal();
+        }
+
     })
 });

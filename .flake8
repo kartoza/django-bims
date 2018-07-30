@@ -1,5 +1,5 @@
 [flake8]
-exclude = */docs/*,*/.tox/*,*/.venv/*,*/.pycharm_helpers/*,*/migrations/*,docs/*,fabfile.py,*/__init__.py,secret.py
+exclude = */docs/*,*/.tox/*,*/.venv/*,.pycharm_helpers/*,*/migrations/*,docs/*,fabfile.py,*/__init__.py,secret.py,deployment/*,restore_geonode.py
 max-line-length = 79
 
 # E12x continuation line indentation

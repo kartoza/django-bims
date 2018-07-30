@@ -17,40 +17,50 @@
     <div class="loading">Loading&#8230;</div>
     <div class="container">
         <div class="jumbotron csv-uploader-wrapper">
-            <h3>This is the page for uploading generic observation records</h3>
+            <div class="row">
+                <div class="col-lg-2"><button type="button" class="btn">Upload CSV</button></div>
+                <div class="col-lg-2"><a href="{% block upload_shp_url %}/upload_shp{% endblock %}" class="btn btn-info" role="button">Upload Shapefile</a></div>
+            </div>
+
+            <div class="help-block-space"></div>
+            <h3>This is the page for uploading {% block module_name %}generic{% endblock %} observation records</h3>
             <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
             </div>
-                <div class="modal-body">
-                    <form id="upload-form" onchange="Validate(this)" method="post" enctype="multipart/form-data">
+
+            <div class="modal-body">
+                <form id="upload-form" onchange="Validate(this)" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                        <label for="file"><b>Upload file here</b></label>
-                        <input type="file" name="csv_file">
-                        <p class="help-block">These formats are supported: csv</p>
-                        <div class="help-block">
-                            Your data must conform to this schema to be accepted :
-                            <div class="help-block-schema">
+                    <label for="file"><b>Upload csv here</b></label>
+                    <input type="file" name="csv_file">
+                    <p class="help-block">These formats are supported: csv</p>
+                    <div class="help-block">
+                        Your data must conform to this schema to be accepted :
+                        <div class="help-block-schema">
+                            {% block required_fields %}
                                 latitude(float), longitude(float), species_name(string), location_site(string), notes(string), category(string), date(yyyy-mm-dd), collector(string)
-                            </div>
-                            <div class="help-block-space"></div>
-                            And these are optional fields :
-                            <div class="help-block-schema">
-                                present(int), absent(int)
-                            </div>
+                            {% endblock %}
                         </div>
                         <div class="help-block-space"></div>
-                        <div class="help-block">
-                            Duplicates will be detected and rejected.
+                        And these are optional fields :
+                        <div class="help-block-schema">
+                            {% block optional_fields %}
+                                present(int), absent(int)
+                            {% endblock %}
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button id="upload-file-btn" class="btn btn-primary" data-dismiss="modal" value="Upload">Upload</button>
-                </div>
+                    </div>
+                    <div class="help-block-space"></div>
+                    <div class="help-block">
+                        Duplicates will be detected and rejected.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="upload-file-btn" class="btn btn-primary" data-dismiss="modal" value="Upload">Upload</button>
+            </div>
 
             {% if data.uploaded %}
                 <p> {{ data.uploaded }} </p>
             {% endif %}
-
 
         </div>
     </div>

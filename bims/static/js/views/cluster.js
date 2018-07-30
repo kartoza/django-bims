@@ -10,13 +10,7 @@ define(['backbone', 'models/cluster', 'ol', 'shared'], function (Backbone, Clust
             modelJson['text'] = modelJson['name'];
 
             // assign count
-            var count = 0;
-            try {
-                count = modelJson['cluster_data']['location site']['details']['records'];
-            }
-            catch (err) {
-            }
-
+            var count = modelJson['count'];
             if (count === 0) {
                 return
             }

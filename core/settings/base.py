@@ -4,7 +4,7 @@ core.settings.base
 """
 # Django settings for projecta project.
 
-from .utils import absolute_path
+from .utils import absolute_path  # noqa
 
 ADMINS = (
     ('Dimas Ciputra', 'dimas@kartoza.com'),
@@ -48,25 +48,9 @@ MEDIA_ROOT = '/home/web/media'
 # setting full MEDIA_URL to be able to use it for the feeds
 MEDIA_URL = '/media/'
 
-# Absolute path to the directory static files should be collected to.
-# Don't put anything in this directory yourself; store your static files
-# in apps' "static/" subdirectories and in STATICFILES_DIRS.
-# Example: "/var/www/example.com/static/"
-STATIC_ROOT = '/home/web/static'
-
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
 STATIC_URL = '/static/'
-
-# Additional locations of static files
-STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    absolute_path('core', 'base_static'),
-    absolute_path('bims', 'static'),
-    absolute_path('example', 'static'),
-)
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -95,6 +79,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.gis',
 )
+
 
 TEMPLATES = [
     {

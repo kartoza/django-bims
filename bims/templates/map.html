@@ -12,14 +12,21 @@
     <link href="{% static "css/map.css" %}" rel="stylesheet">
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
+        const max_year_filter = '{{ date_filter.max }}';
+        const min_year_filter = '{{ date_filter.min }}';
         const bingMapKey = '{{ bing_map_key }}';
         const mapTilerKey = '{{ map_tiler_key }}';
         const staticURL = "{% static "" %}";
         const geocontextUrl = '{{ geocontext_url }}';
+        const geocontextCollectionKey = '{{ geocontext_collection_key }}';
         const listCollectorAPIUrl = '{% url "list-collector" %}';
         const centerPointMap = '{{ center_point_map }}';
+        const listCategoryAPIUrl = '{% url "list-date-category" %}';
+        const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
     </script>
 {% endblock %}
 
@@ -38,7 +45,13 @@
             <button type="button"><i class="fa fa-globe"></i></button>
             <div id="mouse-position-wrapper" style="display: none"></div>
         </div>
+        <div class="ol-control" id="taxon-filter">ssss
+        </div>
         <div id="popup"></div>
+        <div id="map-legend-wrapper" class="control-drop-shadow hide-legend">
+            <div id="map-legend-symbol">L</div>
+            <div id="map-legend"></div>
+        </div>
     </script>
 
     <script type='text/html' id='side-panel-template'>
@@ -103,14 +116,23 @@
                 </div>
             </div>
             <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
+                <div class="col-lg-12 subtitle" id="date-filter-subtitle">
                     DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
             <div class="row" style="display: none">
                 <div class="slide-container" style="padding-bottom: 10px">
-                    <div>FROM : <input type="text" class="date-filter" id="date-filter-from"></div>
-                    <div>TO : <input class="date-filter" type="text" id="date-filter-to"></div>
+                    <div>YEAR</div>
+                    <div class="year-indicator">
+                        <div id="year-from">1600</div>
+                        <div id="year-to">1800</div>
+                    </div>
+                    <div id="year-slider" class="noUiSlider"></div>
+                    <div>MONTH</div>
+                    <table id="month-selector" style="width:100%">
+                    </table>
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
                 </div>
             </div>
             <div class="row sub-filter">
@@ -121,6 +143,10 @@
             <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content" id="filter-collectors">
                 </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
+                </div>
             </div>
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
@@ -128,9 +154,11 @@
                 </div>
             </div>
             <div class="row" style="display: none">
-                <div class="col-lg-12 filter-content">
-                    <input type="checkbox" name="category-value" value="indigenous"> Indigenous<br>
-                    <input type="checkbox" name="category-value" value="invasive"> Invasive<br>
+                <div class="col-lg-12 filter-content" id="filter-category">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
                 </div>
             </div>
         </div>
@@ -144,6 +172,9 @@
             <div class="filter-control sub-control-panel">
                 <i class="fa fa-map" aria-hidden="true"></i>
             </div>
+            <div class="locate-control sub-control-panel">
+                <i class="fa fa-location-arrow" aria-hidden="true"></i>
+            </div>
         </div>
         <div class="zoom-control row">
             <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
@@ -155,7 +186,7 @@
             <div class="row">
                 <div class="col-lg-12" style="padding-right: 0">
                     <span class="title">
-                        LAYERS SELECTOR
+                        LAYER SELECTOR
                     </span>
                     <div class="layers-selector-container-close close-button pull-right">
                         X
@@ -165,6 +196,71 @@
             <div class="row content">
                 <ul id="layers-selector" style="width:100%">
                 </ul>
+            </div>
+        </div>
+        {# locate option container #}
+        <div class="locate-options-container map-control-panel-box">
+            <div class="row">
+                <div class="col-lg-12" style="padding-right: 0">
+                    <span class="title">
+                        LOCATE OPTIONS
+                    </span>
+                    <div class="locate-options-container-close close-button pull-right">
+                        X
+                    </div>
+                </div>
+            </div>
+            <div class="row content">
+                <ul id="locate-options" style="width:100%">
+                    <li class="locate-coordinates">
+                        Locate by coordinate
+                    </li>
+{#                    Will be implemented in another PR #}
+{#                    <li id="locate-farm">Locate by Farm/Farm Portion Code Page</li>#}
+{#                    <li id="map-navigation">Map navigation page</li>#}
+                </ul>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/html" id="locate-coordinate-modal">
+        <div class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Locate by Coordinate</h5>
+                        <button type="button" class="close"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Please enter the decimal latitude (positive
+                            degrees North) and longitude (positive degrees
+                            East) coordinates of your area of interest below!
+                        </p>
+                        <form class="form-inline">
+                            <label for="longitude" class="sr-only">
+                                Longitude
+                            </label>
+                            <input type="number" step="0.000001" min="-180"
+                                   max="180"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="longitude" placeholder="Longitude">
+                            <label for="latitude" class="sr-only">
+                                Latitude
+                            </label>
+                            <input type="number" step="0.000001" max="90"
+                                   min="-90"
+                                   class="form-control mb-2 mr-sm-2"
+                                   id="latitude" placeholder="Latitude">
+                            <button id="go-button" type="button" class="btn
+                            btn-outline-dark mb-2 mr-sm-2"
+                            >Go</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </script>
@@ -186,7 +282,8 @@
 
     <script type="text/template" id="search-result-site-template">
         <div class="result-search" data-search-result-id="">
-            <p>Name: <%= name %></p>
+            <p class="group-title"><%= name %></p>
+            <a class="group-description"><%= count %> records found</a>
         </div>
     </script>
 

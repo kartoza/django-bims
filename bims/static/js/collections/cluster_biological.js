@@ -2,51 +2,86 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
     return Backbone.Collection.extend({
         model: ClusterModel,
         clusterAPI: _.template(
-            "/api/cluster/collection/taxon/<%= taxonID %>/?" +
-            "icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
+            "/api/cluster/collection/records/?taxon=<%= taxon %>&search=<%= search %>" +
+            "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&date-from=<%= dateFrom %>&date-to=<%= dateTo %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
             ""),
         url: "",
         viewCollection: [],
-        parameters: {},
-        initialize: function () {
+        parameters: {
+            taxon: '', zoom: 0, bbox: [],
+            collector: '', category: '', yearFrom: '', yearTo: '', months: ''
+        },
+        initialize: function (initExtent) {
+            this.initExtent = initExtent;
             Shared.Dispatcher.on('search:hit', this.updateParameters, this);
         },
         updateParameters: function (parameters) {
-            this.parameters = parameters;
-            this.parameters['taxonID'] = null;
+            var self = this;
+            $.each(parameters, function (key, value) {
+                self.parameters[key] = value;
+            });
+            this.parameters['taxon'] = null;
+            this.toggleTaxonIndicator();
+            this.getExtentOfRecords();
+        },
+        isActive: function () {
+            // flag if this collection need to be called
+            if (!this.parameters['taxon']
+                && !this.parameters['search']
+                && !this.parameters['collector']
+                && !this.parameters['category']
+                && !this.parameters['yearFrom']
+                && !this.parameters['yearTo']) {
+                return false
+            } else {
+                return true;
+            }
         },
         getTaxon: function () {
-            return this.parameters['taxonID'];
+            return this.parameters['taxon'];
         },
-        updateTaxon: function (taxonID) {
-            this.parameters['taxonID'] = taxonID;
+        toggleTaxonIndicator: function (taxonName) {
+            if (this.parameters['taxon']) {
+                $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName);
+                if ($('#taxon-filter').is(":hidden")) {
+                    $('#taxon-filter').toggle("slide");
+                }
+            } else {
+                if (!$('#taxon-filter').is(":hidden")) {
+                    $('#taxon-filter').toggle("slide");
+                }
+            }
+        },
+        updateTaxon: function (taxon, taxonName) {
+            this.parameters['taxon'] = taxon;
+            this.parameters['search'] = null;
+            this.toggleTaxonIndicator(taxonName);
             this.refresh();
         },
         updateZoomAndBBox: function (zoom, bbox) {
             this.parameters['zoom'] = zoom;
-            this.parameters['bbox'] = bbox;
+            this.parameters['bbox'] = bbox.join(',');
             this.refresh();
         },
         getExtentOfRecords: function () {
-            // get extent for all record and fit it to map
-            this.parameters['date-from'] = this.parameters['dateFrom'];
-            this.parameters['date-to'] = this.parameters['dateTo'];
+            var self = this;
             $.ajax({
-                url: '/api/cluster/collection/taxon/' + this.getTaxon() + '/extent/',
+                url: '/api/cluster/collection/records/extent/',
                 data: this.parameters,
                 dataType: "json",
                 success: function (data) {
                     if (data.length == 4) {
                         Shared.Dispatcher.trigger('map:zoomToExtent', data);
+                    } else {
+                        Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
                     }
                 }
             });
         },
         refresh: function () {
-            if (this.parameters['taxonID'] &&
-                this.parameters['zoom'] &&
+            if (this.parameters['zoom'] &&
                 this.parameters['bbox']) {
                 this.url = this.clusterAPI(this.parameters);
             }

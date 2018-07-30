@@ -8,7 +8,7 @@ Note that BIMS is under development and not yet feature complete.
 
 The latest source code is available at http://github.com/kartoza/django-bims.
 
-* **Developers:** See our `developer guide`_
+* **Developers:** See our `project setup guide`_ and `developer guide`_
 
 
 Project Activity
@@ -21,6 +21,23 @@ Project Activity
 * Current test status master: |test_status_master| 
 
 * Current test status develop: |test_status_develop| 
+
+
+Quick Project Setup
+-------------------
+
+Refer to `project setup guide`_ for in depth information.
+
+Make sure ansible is installed, all.yml file is configured, and project
+already opened using PyCharm. Then run these command:
+
+    make ansible-check
+
+This will check and dry-run ansible tasks
+
+    make setup-ansible
+
+This will generate project file configuration.
 
 
 Quick Installation Guide
@@ -94,6 +111,7 @@ Thank you to the individual contributors who have helped to build HealthyRivers:
 
 .. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
 .. _docker: http://docker.com
+.. _project setup guide: deployment/ansible/README.md
 .. |ready| image:: https://badge.waffle.io/kartoza/django-bims.svg?label=ready&title=Ready
 .. |inprogress| image:: https://badge.waffle.io/kartoza/django-bims.svg?label=in%20progress&title=In%20Progress
 .. |throughput_graph| image:: https://graphs.waffle.io/kartoza/django-bims/throughput.svg

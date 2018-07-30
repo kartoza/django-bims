@@ -1,8 +1,9 @@
 # coding=utf-8
 """Tests for models."""
-import json
+import requests
+import unittest
 from django.test import TestCase
-from django.contrib.gis.geos import LineString
+from django.contrib.gis.geos import LineString, Point
 from django.core.exceptions import ValidationError
 from django.db.models import signals
 from bims.tests.model_factories import (
@@ -13,6 +14,14 @@ from bims.tests.model_factories import (
     SurveyF,
 )
 from bims.models.iucn_status import iucn_status_pre_save_handler
+from bims.utils.get_key import get_key
+
+skip_geocontext = (
+        not get_key('GEOCONTEXT_URL') or
+        not get_key('GEOCONTEXT_COLLECTION_KEY'))
+if not skip_geocontext:
+    if requests.get(get_key('GEOCONTEXT_URL')).status_code != 200:
+        skip_geocontext = True
 
 
 class TestLocationTypeCRUD(TestCase):
@@ -115,14 +124,6 @@ class TestLocationSiteCRUD(TestCase):
             location_type=location_type
         )
 
-        try:
-            location_context = json.loads(
-                    model.location_context.context_document
-            )
-            self.assertTrue(len(location_context['features']) > 0)
-        except ValueError:
-            pass
-
         self.assertTrue(model.location_type.name == 'custom type')
 
     def test_LocationSite_update(self):
@@ -167,6 +168,24 @@ class TestLocationSiteCRUD(TestCase):
 
         # check if validation error raised
         self.assertRaises(ValidationError, location_site.save)
+
+    @unittest.skipIf(
+        skip_geocontext,
+        'Either geocontext url or collection key is not found or the '
+        'geocontext url is not accessible.')
+    def test_LocationSite_update_location_context_document(self):
+        """Test updating location context document"""
+        location_site = LocationSiteF.create()
+        old_context = location_site.location_context_document
+        new_point = {
+            'geometry_point': Point(27, -31),
+        }
+        location_site.__dict__.update(new_point)
+        # update_location_context_document is called here
+        location_site.save()
+        self.assertIsNotNone(location_site.location_context_document)
+        self.assertNotEqual(
+            location_site.location_context_document, old_context)
 
 
 class TestIUCNStatusCRUD(TestCase):

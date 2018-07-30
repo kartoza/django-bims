@@ -1,4 +1,6 @@
-PROJECT_ID := bims
+export COMPOSE_PROJECT_NAME=bims
+export COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.override.yml
+export ANSIBLE_PROJECT_SETUP_DIR=deployment/ansible
 
 SHELL := /bin/bash
 
@@ -12,6 +14,19 @@ setup:
 	@echo "Building dist file "
 	@echo "------------------------------------------------------------------"
 	@python setup.py sdist
+
+ansible-check:
+	@echo "Check ansible command"
+	@ansible -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts all -m ping
+	@ansible-playbook -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts ${ANSIBLE_PROJECT_SETUP_DIR}/development/site.yml --list-tasks --list-hosts $(ANSIBLE_ARGS)
+
+setup-ansible:
+	@echo "Setup configurations using ansible"
+	@ansible-playbook -i ${ANSIBLE_PROJECT_SETUP_DIR}/development/hosts ${ANSIBLE_PROJECT_SETUP_DIR}/development/site.yml $(ANSIBLE_ARGS)
+
+flake8-check:
+	@echo "Flake8 check"
+	@flake8 --config .flake8 .
 
 # ----------------------------------------------------------------------------
 #    P R O D U C T I O N     C O M M A N D S
@@ -31,18 +46,22 @@ build:
 	@echo "------------------------------------------------------------------"
 	@echo "Building in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build uwsgi
+	@docker-compose ${ARGS} build bims_uwsgi
+	@docker-compose ${ARGS} build uwsgi
 
 web:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up -d web
+	@docker-compose ${ARGS} up -d web
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up --no-recreate --no-deps -d dbbackups
+	@docker-compose ${ARGS} up --no-recreate --no-deps -d dbbackups
+
+up: web
+	# Synonymous with web
 
 permissions:
 	# Probably we want something more granular here....
@@ -63,7 +82,7 @@ db:
 	@echo "------------------------------------------------------------------"
 	@echo "Running db in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up -d db
+	@docker-compose up -d db
 
 nginx:
 	@echo
@@ -73,7 +92,7 @@ nginx:
 	@echo "In a production environment you will typically use nginx running"
 	@echo "on the host rather if you have a multi-site host."
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up -d nginx
+	@docker-compose up -d nginx
 	@echo "Site should now be available at http://localhost"
 
 migrate:
@@ -81,30 +100,25 @@ migrate:
 	@echo "------------------------------------------------------------------"
 	@echo "Running migrate static in production mode"
 	@echo "------------------------------------------------------------------"
-	@#http://stackoverflow.com/questions/29689365/auth-user-error-with-django-1-8-and-syncdb-migrate
-	@#and
-	@#http://stackoverflow.com/questions/3143635/how-to-ignore-mv-error
-	@# We add the '-' prefix to the next line as the migration may fail
-	@# but we want to continue anyway.
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py migrate
+	@docker-compose exec uwsgi python manage.py migrate
 
 update-migrations:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running update migrations in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py makemigrations
+	@docker-compose ${ARGS} exec uwsgi python manage.py makemigrations
 
 collectstatic:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Collecting static in production mode"
 	@echo "------------------------------------------------------------------"
-	#@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py collectstatic --noinput
+	#@docker-compose run --rm uwsgi python manage.py collectstatic --noinput
 	#We need to run collect static in the same context as the running
 	# uwsgi container it seems so I use docker exec here
 	# no -it flag so we can run over remote shell
-	@docker exec $(PROJECT_ID)-uwsgi python manage.py collectstatic --noinput
+	@docker-compose ${ARGS} exec uwsgi python manage.py collectstatic --noinput ${CMD_ARGS} -i geoexplorer
 
 reload:
 	@echo
@@ -112,30 +126,34 @@ reload:
 	@echo "Reload django project in production mode"
 	@echo "------------------------------------------------------------------"
 	# no -it flag so we can run over remote shell
-	@docker exec $(PROJECT_ID)-uwsgi uwsgi --reload  /tmp/django.pid
+	@docker-compose exec uwsgi uwsgi --reload  /tmp/django.pid
 
 rebuildindex:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running rebuild_index in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py rebuild_index
+	@docker-compose run --rm uwsgi python manage.py rebuild_index
 
 updateindex:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running update_index in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py update_index
+	@docker-compose run --rm uwsgi python manage.py update_index
 
 kill:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Killing in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) kill
+	@docker-compose kill
 
 rm: dbbackup rm-only
+
+down:
+	# Synonymous with kill rm
+	@docker-compose down
 
 
 rm-only: kill
@@ -143,58 +161,58 @@ rm-only: kill
 	@echo "------------------------------------------------------------------"
 	@echo "Removing production instance!!! "
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) rm
+	@docker-compose rm
 
 logs:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Showing uwsgi logs in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) logs uwsgi
+	@docker-compose logs -f --tail=30 uwsgi
 
 dblogs:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Showing db logs in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) logs db
+	@docker-compose logs -f --tail=30 db
 
 nginxlogs:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Showing nginx logs in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) logs web
+	@docker-compose logs -f --tail=30 web
 
 shell:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling in in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi /bin/bash
+	@docker-compose exec uwsgi /bin/bash
 
 superuser:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Creating a superuser in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py createsuperuser
+	@docker-compose exec uwsgi python manage.py createsuperuser
 
 dbbash:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Bashing in to production database"
 	@echo "------------------------------------------------------------------"
-	@docker exec -t -i $(PROJECT_ID)-db /bin/bash
+	@docker-compose exec db /bin/bash
 
 dbsnapshot:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Grab a quick snapshot of the database and place in the host filesystem"
 	@echo "------------------------------------------------------------------"
-	@docker exec -t -i $(PROJECT_ID)-db /bin/bash -c "PGPASSWORD=docker pg_dump -Fc -h localhost -U docker -f /tmp/$(PROJECT_ID)-snapshot.dmp gis"
-	@docker cp $(PROJECT_ID)-db:/tmp/$(PROJECT_ID)-snapshot.dmp .
-	@docker exec -t -i $(PROJECT_ID)-db /bin/bash -c "rm /tmp/$(PROJECT_ID)-snapshot.dmp"
+	@docker-compose exec db /bin/bash -c "PGPASSWORD=docker pg_dump -Fc -h localhost -U docker -f /tmp/$(COMPOSE_PROJECT_NAME)-snapshot.dmp gis"
+	@docker cp $(COMPOSE_PROJECT_NAME)-db:/tmp/$(COMPOSE_PROJECT_NAME)-snapshot.dmp .
+	@docker-compose exec db /bin/bash -c "rm /tmp/$(COMPOSE_PROJECT_NAME)-snapshot.dmp"
 	@ls -lahtr *.dmp
 
 dbschema:
@@ -202,14 +220,14 @@ dbschema:
 	@echo "------------------------------------------------------------------"
 	@echo "Print the database schema to stdio"
 	@echo "------------------------------------------------------------------"
-	@docker exec -t -i $(PROJECT_ID)-db /bin/bash -c "PGPASSWORD=docker pg_dump -s -h localhost -U docker gis"
+	@docker-compose exec db /bin/bash -c "PGPASSWORD=docker pg_dump -s -h localhost -U docker gis"
 
 dbshell:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Shelling in in production database"
 	@echo "------------------------------------------------------------------"
-	@docker exec -t -i $(PROJECT_ID)-db psql -U docker -h localhost gis
+	@docker-compose exec db psql -U docker -h localhost gis
 
 dbrestore:
 	@echo
@@ -217,19 +235,19 @@ dbrestore:
 	@echo "Restore dump from backups/latest.dmp in production mode"
 	@echo "------------------------------------------------------------------"
 	@# - prefix causes command to continue even if it fails
-	-@docker exec -t -i $(PROJECT_ID)-db su - postgres -c "dropdb gis"
-	@docker exec -t -i $(PROJECT_ID)-db su - postgres -c "createdb -O docker -T template_postgis gis"
-	@docker exec -t -i $(PROJECT_ID)-db pg_restore /backups/latest.dmp | docker exec -i $(PROJECT_ID)-db su - postgres -c "psql gis"
+	-@docker-compose exec db su - postgres -c "dropdb gis"
+	@docker-compose exec db su - postgres -c "createdb -O docker -T template_postgis gis"
+	@docker-compose exec db bash -c 'pg_restore /backups/latest.dmp | su - postgres -c "psql gis"'
 
 db-fresh-restore:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Restore dump from backups/latest.dmp in production mode"
 	@echo "------------------------------------------------------------------"
-	-@docker exec -t -i $(PROJECT_ID)-db su - postgres -c "dropdb gis"
-	@docker exec -t -i $(PROJECT_ID)-db su - postgres -c "createdb -O docker -T template_postgis gis"
-	@docker exec -t -i $(PROJECT_ID)-db su - postgres -c "psql gis -f /sql/bims-old.sql"
-	@docker exec -t -i $(PROJECT_ID)-db su - postgres -c "psql gis -f /sql/migration.sql"
+	-@docker-compose exec db su - postgres -c "dropdb gis"
+	@docker-compose exec db su - postgres -c "createdb -O docker -T template_postgis gis"
+	@docker-compose exec db su - postgres -c "psql gis -f /sql/bims-old.sql"
+	@docker-compose exec db su - postgres -c "psql gis -f /sql/migration.sql"
 
 
 dbbackup:
@@ -241,41 +259,41 @@ dbbackup:
 	@echo "------------------------------------------------------------------"
 	@# - prefix causes command to continue even if it fails
 	@# Explicitly don't use -it so we can call this make target over a remote ssh session
-	@docker exec $(PROJECT_ID)-db-backups /backups.sh
-	@docker exec $(PROJECT_ID)-db-backups cat /var/log/cron.log | tail -2 | head -1 | awk '{print $4}'
+	@docker exec $(COMPOSE_PROJECT_NAME)-db-backups /backups.sh
+	@docker exec $(COMPOSE_PROJECT_NAME)-db-backups cat /var/log/cron.log | tail -2 | head -1 | awk '{print $4}'
 	-@if [ -f "backups/latest.dmp" ]; then rm backups/latest.dmp; fi
 	# backups is intentionally missing from front of first clause below otherwise symlink comes
 	# out with wrong path...
-	@ln -s `date +%Y`/`date +%B`/PG_$(PROJECT_ID)_gis.`date +%d-%B-%Y`.dmp backups/latest.dmp
-	@echo "Backup should be at: backups/`date +%Y`/`date +%B`/PG_$(PROJECT_ID)_gis.`date +%d-%B-%Y`.dmp"
+	@ln -s `date +%Y`/`date +%B`/PG_$(COMPOSE_PROJECT_NAME)_gis.`date +%d-%B-%Y`.dmp backups/latest.dmp
+	@echo "Backup should be at: backups/`date +%Y`/`date +%B`/PG_$(COMPOSE_PROJECT_NAME)_gis.`date +%d-%B-%Y`.dmp"
 
 sentry:
 	@echo
 	@echo "--------------------------"
 	@echo "Running sentry production mode"
 	@echo "--------------------------"
-	@docker-compose -f deployment/docker-compose.yml  -p $(PROJECT_ID) up -d sentry
+	@docker-compose up -d sentry
 
 maillogs:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Showing smtp logs in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker exec -t -i $(PROJECT_ID)-smtp tail -f /var/log/mail.log
+	@docker-compose exec smtp tail -f /var/log/mail.log
 
 mailerrorlogs:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Showing smtp error logs in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker exec -t -i $(PROJECT_ID)-smtp tail -f /var/log/mail.err
+	@docker-compose exec smtp tail -f /var/log/mail.err
 
 create-machine:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Creating a docker machine."
 	@echo "------------------------------------------------------------------"
-	@docker-machine create -d virtualbox $(PROJECT_ID)
+	@docker-machine create -d virtualbox $(COMPOSE_PROJECT_NAME)
 
 enable-machine:
 	@echo
@@ -284,31 +302,33 @@ enable-machine:
 	@echo "------------------------------------------------------------------"
 	@echo "eval \"$(docker-machine env freshwater)\""
 
+sync-geonode:
+	@docker-compose ${ARGS} exec uwsgi paver sync
+
 sync-roles:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running update migrations in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py sync_roles
+	@docker-compose run --rm uwsgi python manage.py sync_roles
 
 gruntserver:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Run grunt"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi python manage.py gruntserver
+	@docker-compose run --rm uwsgi python manage.py gruntserver
 
 generate-boundaries:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Generate boundaries"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_countries_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_provinces_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_districts_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_municipals_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_cluster"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py generate_boundary_geojson"
+	@docker-compose exec uwsgi bash -c "python manage.py update_countries_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_provinces_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_districts_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_municipals_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py generate_boundary_geojson"
 
 # ----------------------------------------------------------------------------
 #    DEVELOPMENT C O M M A N D S
@@ -362,15 +382,28 @@ status:
 	@echo "--------------------------"
 	@echo "Show status of all containers"
 	@echo "--------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) ps
+	@docker-compose ps
 
+django-test:
+	@docker-compose exec uwsgi python manage.py test --noinput --verbosity 3 bims
+
+coverage-django-test:
+	@docker-compose exec uwsgi coverage run -p --branch --source='.' manage.py test --noinput ${CMD_ARGS} bims
 
 update-taxa:
 	@echo
 	@echo "--------------------------"
 	@echo "Updating tax"
 	@echo "--------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) exec uwsgi python manage.py update_taxa
+	@docker-compose exec uwsgi python manage.py update_taxa
+
+
+update-location-context-documents:
+	@echo
+	@echo "--------------------------"
+	@echo "Updating ALL location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py update_location_context_documents
 
 # --------------- help --------------------------------
 

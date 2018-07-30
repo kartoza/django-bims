@@ -14,8 +14,8 @@ from .contrib import *  # noqa
 INSTALLED_APPS += (
     'bims',
     'fish',
-    'example',
-    # 'td_biblio',
+    'reptile',
+    'tracking',
 )
 
 # Set languages which want to be translated
@@ -57,3 +57,5 @@ GRUNT_MODULES = {
         'optimized': 'js/optimized.js',
     }
 }
+
+TEMP_FOLDER = MEDIA_ROOT + '/temp'

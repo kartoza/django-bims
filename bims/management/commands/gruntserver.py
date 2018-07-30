@@ -23,7 +23,10 @@ class Command(BaseCommand):
                 shell=True)
 
         self.stdout.write('>>> Collectstatic')
-        call_command('collectstatic', verbosity=0, interactive=False)
+        call_command('collectstatic',
+                     ignore=['geoexplorer'],
+                     verbosity=0,
+                     interactive=False)
 
         def kill_grunt_process(grunt_process):
             self.stdout.write('>>> Closing grunt process')

@@ -3,18 +3,18 @@
 
 """
 
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
-from django.utils import timezone
 from django.dispatch import receiver
+from django.utils import timezone
 
 from bims.models.location_site import LocationSite
-from bims.utils.gbif import update_fish_collection_record
+from bims.models.taxon import Taxon
 from bims.utils.cluster import (
     update_cluster_by_collection,
     update_cluster_by_site
 )
-from bims.models.taxon import Taxon
+from bims.utils.gbif import update_collection_record
 
 
 class BiologicalCollectionRecord(models.Model):
@@ -54,7 +54,7 @@ class BiologicalCollectionRecord(models.Model):
         default='',
     )
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         models.SET_NULL,
         blank=True,
         null=True,
@@ -81,7 +81,7 @@ class BiologicalCollectionRecord(models.Model):
 
     def on_post_save(self):
         if not self.taxon_gbif_id:
-            update_fish_collection_record(self)
+            update_collection_record(self)
 
     def get_children(self):
         rel_objs = [f for f in self._meta.get_fields(include_parents=False)
@@ -127,7 +127,6 @@ def collection_post_save_handler(sender, instance, **kwargs):
 def collection_post_save_update_cluster(sender, instance, **kwargs):
     if not issubclass(sender, BiologicalCollectionRecord):
         return
-    update_cluster_by_collection(instance)
 
 
 @receiver(models.signals.post_delete)

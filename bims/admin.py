@@ -1,19 +1,26 @@
 # coding=utf-8
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+from django import forms
+from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.core.mail import send_mail
-from django.shortcuts import redirect
+
+from django.contrib.flatpages.admin import FlatPageAdmin
+from django.contrib.flatpages.models import FlatPage
+from django.db import models
+
+from geonode.people.admin import ProfileAdmin
+from geonode.people.forms import ProfileCreationForm
+from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
-from django import forms
+
+from ckeditor.widgets import CKEditorWidget
+
 from bims.models import (
     LocationType,
     LocationSite,
     IUCNStatus,
     Taxon,
     Survey,
-    LocationContext,
     Boundary,
     BoundaryType,
     Cluster,
@@ -28,6 +35,9 @@ from bims.models import (
     Entry,
     Collection,
     AuthorEntryRank,
+    ShapefileUploadSession,
+    Shapefile,
+    NonBiodiversityLayer,
 )
 
 
@@ -127,6 +137,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lat = -30
     default_lon = 25
 
+    list_display = (
+        'name', 'location_type', 'get_centroid', 'has_location_context')
+    search_fields = ('name',)
+
 
 class IUCNStatusAdmin(admin.ModelAdmin):
     list_display = ('get_category_display', 'sensitive')
@@ -158,7 +172,39 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'category',
         'collection_date',
         'validated',
+        'collector',
         'owner',
+    )
+
+
+class ShapefileInline(admin.TabularInline):
+
+    def shapefile_name(self, obj):
+        if obj.shapefile:
+            return mark_safe("""<a href="%s" />%s</a>""" % (
+                obj.shapefile.fileurl, obj.shapefile.filename))
+
+    model = ShapefileUploadSession.shapefiles.through
+    fields = ('shapefile_name', 'shapefile')
+    readonly_fields = ('shapefile_name',)
+
+
+class ShapefileUploadSessionAdmin(admin.ModelAdmin):
+    exclude = ('shapefiles', 'token')
+    list_display = (
+        'uploader',
+        'uploaded_at',
+        'processed',
+    )
+
+    inlines = (ShapefileInline,)
+
+
+class ShapefileAdmin(admin.ModelAdmin):
+    exclude = ('token',)
+    list_display = (
+        'id',
+        'shapefile',
     )
 
 
@@ -171,9 +217,9 @@ admin.site.register(Category)
 admin.site.register(Link, LinkAdmin)
 
 
-class UserCreateForm(UserCreationForm):
+# Inherits from GeoNode ProfileCreationForm
+class UserCreateForm(ProfileCreationForm):
     class Meta:
-        model = User
         fields = ('username', 'first_name', 'last_name', 'email')
 
     def __init__(self, *args, **kwargs):
@@ -181,7 +227,8 @@ class UserCreateForm(UserCreationForm):
         self.fields['email'].required = True
 
 
-class CustomUserAdmin(UserAdmin):
+# Inherits from GeoNode's ProfileAdmin page
+class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
 
     add_fieldsets = (
@@ -222,8 +269,26 @@ class CustomUserAdmin(UserAdmin):
             [obj.email],
             fail_silently=False
         )
-        return redirect('/admin/auth/user/')
+        return super(CustomUserAdmin, self).response_add(
+            request, obj, post_url_continue)
 
+
+class NonBiodiversityLayerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'wms_url', 'wms_layer_name')
+    list_filter = ('wms_url',)
+    ordering = ('name',)
+
+
+# flatpage ckeditor integration
+class FlatPageCustomAdmin(FlatPageAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditorWidget}
+    }
+
+
+# Re-register GeoNode's Profile page
+admin.site.unregister(Profile)
+admin.site.register(Profile, CustomUserAdmin)
 
 # register bibliography models
 admin.site.register(Author, AuthorAdmin)
@@ -233,19 +298,21 @@ admin.site.register(Publisher, PublisherAdmin)
 admin.site.register(Entry, EntryAdmin)
 admin.site.register(Collection, CollectionAdmin)
 
-# Re-register UserAdmin
-admin.site.unregister(User)
-admin.site.register(User, CustomUserAdmin)
-
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Survey)
-admin.site.register(LocationContext)
+admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
 admin.site.register(Cluster, ClusterAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)
 admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
+
+admin.site.register(ShapefileUploadSession, ShapefileUploadSessionAdmin)
+admin.site.register(Shapefile, ShapefileAdmin)
+
+admin.site.unregister(FlatPage)
+admin.site.register(FlatPage, FlatPageCustomAdmin)
