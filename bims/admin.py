@@ -21,7 +21,6 @@ from bims.models import (
     IUCNStatus,
     Taxon,
     Survey,
-    LocationContext,
     Boundary,
     BoundaryType,
     Cluster,
@@ -137,6 +136,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_zoom = 5
     default_lat = -30
     default_lon = 25
+
+    list_display = (
+        'name', 'location_type', 'get_centroid', 'has_location_context')
+    search_fields = ('name',)
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
@@ -301,7 +304,6 @@ admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
-admin.site.register(LocationContext)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
