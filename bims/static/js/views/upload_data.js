@@ -72,6 +72,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             });
 
             dataToSend['csrfmiddlewaretoken'] = csrfmiddlewaretoken;
+            dataToSend['lat'] = self.lat;
+            dataToSend['lon'] = self.lon;
 
             uploadButton.html('Uploading...');
             uploadButton.prop('disabled', true);

@@ -30,6 +30,7 @@
         const uploadDataUrl = '{% url "upload-collection" %}';
         const collectionCategory = "{{ collection_category|safe }}";
         const csrfmiddlewaretoken = "{{ csrf_token }}";
+        const biological_modules = "{{ biological_modules|safe }}";
     </script>
 {% endblock %}
 
@@ -290,6 +291,16 @@
                             </div>
                             <div class="alert alert-success" role="alert">
                             </div>
+                            <label for="ud_module" class="upload-input-label">
+                                Module *
+                            </label>
+                            <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                <option value="">-</option>
+                                <option value="base">base</option>
+                                {% for key, value in biological_modules.items %}
+                                    <option value="{{ value }}">{{ key }}</option>
+                                {% endfor %}
+                            </select>
                             <label for="ud_species_name" class="upload-input-label">
                                 Species Name *
                             </label>
