@@ -1,30 +1,112 @@
 define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone, _, $, Shared, ol) {
     return Backbone.View.extend({
         template: _.template($('#upload-data-modal').html()),
-        locateCoordinateModal: null,
+        uploadDataModal: null,
+        $alertElement: null,
+        $successAlertElement: null,
+        $collectionDateElement: null,
+        lon: null,
+        lat: null,
         events: {
             'click .close': 'closeModal',
-            'click #go-button': 'searchCoordinate',
+            'click .upload-data-button': 'uploadData'
         },
         render: function () {
             this.$el.html(this.template());
-            this.locateCoordinateModal = this.$el.find('.modal');
+            this.uploadDataModal = this.$el.find('.modal');
+
+            this.$alertElement = $(this.$el.find('.alert-danger')[0]);
+            this.$alertElement.hide();
+
+            this.$successAlertElement = $(this.$el.find('.alert-success')[0]);
+            this.$successAlertElement.hide();
+
+            // Collection Date Input
+            this.$collectionDateElement = $(this.$el.find('#ud_collection_date')[0]);
+            this.$collectionDateElement.datepicker();
+
             return this;
         },
-        showModal: function () {
-            this.locateCoordinateModal.show();
+        showModal: function (lon, lat) {
+            this.lon = lon;
+            this.lat = lat;
+            this.uploadDataModal.show();
         },
         closeModal: function () {
-            this.locateCoordinateModal.hide();
+            this.lon = null;
+            this.lat = null;
+            this.clearAllFields();
+            this.uploadDataModal.hide();
         },
-        searchCoordinate: function (e) {
-            var longitude = parseFloat($('#longitude').val());
-            var latitude = parseFloat($('#latitude').val());
-            var coordinates = [longitude, latitude];
-            coordinates = ol.proj.transform(
-                coordinates, ol.proj.get("EPSG:4326"), ol.proj.get("EPSG:3857"));
-            Shared.Dispatcher.trigger('map:zoomToCoordinates', coordinates, 17);
-            this.closeModal();
+        clearAllFields: function () {
+            var fields = this.$el.find(".ud-item");
+            $.each(fields, function (i, field) {
+                field.value = '';
+            });
         },
+        uploadData: function (e) {
+            var self = this;
+            var alertMessages = '';
+            var uploadButton = $(e.target);
+            self.$alertElement.hide();
+            self.$successAlertElement.hide();
+
+            // Check required Fields
+            var requiredFields = this.$el.find(".ud-item-required");
+            $.each(requiredFields, function(i, field) {
+                if (!field.value)
+                {
+                    alertMessages += field.name + ' is required<br>';
+                }
+            });
+            if(alertMessages.length > 0) {
+                self.showErrorMessage(alertMessages);
+                return false;
+            }
+
+            // Processing data
+            var fields = this.$el.find(".ud-item");
+            var dataToSend = {};
+            $.each(fields, function (i, field) {
+                dataToSend[field.id] = field.value;
+            });
+
+            dataToSend['csrfmiddlewaretoken'] = csrfmiddlewaretoken;
+
+            uploadButton.html('Uploading...');
+            uploadButton.prop('disabled', true);
+
+            $.ajax({
+                url: uploadDataUrl,
+                method: "POST",
+                dataType: 'json',
+                data: dataToSend,
+                success: function (response) {
+                    if(response['status'] === 'success') {
+                        self.showSuccessMessage(response['message']);
+                    } else {
+                        self.showErrorMessage(response['message'])
+                    }
+                },
+                error: function (response) {
+                    self.showErrorMessage(response)
+                },
+                complete: function () {
+                    self.clearAllFields();
+                    uploadButton.html('Upload');
+                    uploadButton.prop('disabled', false);
+                }
+            });
+        },
+        showErrorMessage: function (message) {
+            this.$alertElement.html(message);
+            this.$alertElement.show();
+            this.$successAlertElement.hide();
+        },
+        showSuccessMessage: function (message) {
+            this.$successAlertElement.html(message);
+            this.$successAlertElement.show();
+            this.$alertElement.hide();
+        }
     })
 });

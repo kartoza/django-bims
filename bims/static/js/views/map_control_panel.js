@@ -52,7 +52,7 @@ define(
             this.parent.uploadDataState = active;
         },
         showUploadDataModal: function (lon, lat) {
-            this.uploadDataView.showModal();
+            this.uploadDataView.showModal(lon, lat);
         },
         render: function () {
             this.$el.html(this.template());

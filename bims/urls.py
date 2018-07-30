@@ -44,6 +44,7 @@ from bims.views.csv_upload import CsvUploadView
 from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
+from bims.views.collection_upload import CollectionUploadView
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -109,4 +110,6 @@ urlpatterns = [
         UnderDevelopmentView.as_view(), name='under-development'),
     url(r'^nonvalidated-list/$',
         NonValidatedObjectsView.as_view(), name='nonvalidated-list'),
+    url(r'^upload_collection/$', CollectionUploadView.as_view(),
+        name='upload-collection'),
 ] + api_urls

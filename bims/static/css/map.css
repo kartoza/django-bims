@@ -880,3 +880,17 @@ div:hover::-webkit-scrollbar {
     text-align: center;
     padding: 5px 40px;
 }
+
+.upload-data-button {
+    border-radius: 8px !important;
+    width: 100%;
+}
+
+.required-text {
+    margin-top: 5px;
+}
+
+.upload-input-label {
+    font-size: 11pt;
+    margin-bottom: 0;
+}
