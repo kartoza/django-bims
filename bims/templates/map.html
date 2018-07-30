@@ -16,10 +16,13 @@
     <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
+        const max_year_filter = '{{ date_filter.max }}';
+        const min_year_filter = '{{ date_filter.min }}';
         const bingMapKey = '{{ bing_map_key }}';
         const mapTilerKey = '{{ map_tiler_key }}';
         const staticURL = "{% static "" %}";
         const geocontextUrl = '{{ geocontext_url }}';
+        const geocontextCollectionKey = '{{ geocontext_collection_key }}';
         const listCollectorAPIUrl = '{% url "list-collector" %}';
         const centerPointMap = '{{ center_point_map }}';
         const listCategoryAPIUrl = '{% url "list-date-category" %}';

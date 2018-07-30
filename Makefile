@@ -237,7 +237,7 @@ dbrestore:
 	@# - prefix causes command to continue even if it fails
 	-@docker-compose exec db su - postgres -c "dropdb gis"
 	@docker-compose exec db su - postgres -c "createdb -O docker -T template_postgis gis"
-	@docker-compose exec db pg_restore /backups/latest.dmp | docker exec -i $(COMPOSE_PROJECT_NAME)-db su - postgres -c "psql gis"
+	@docker-compose exec db bash -c 'pg_restore /backups/latest.dmp | su - postgres -c "psql gis"'
 
 db-fresh-restore:
 	@echo
@@ -396,6 +396,14 @@ update-taxa:
 	@echo "Updating tax"
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_taxa
+
+
+update-location-context-documents:
+	@echo
+	@echo "--------------------------"
+	@echo "Updating ALL location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py update_location_context_documents
 
 # --------------- help --------------------------------
 

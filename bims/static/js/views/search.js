@@ -115,8 +115,8 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
         },
         initDateFilter: function () {
             // render slider
-            this.startYear = 1900;
-            this.endYear = 2018;
+            this.startYear = parseInt(min_year_filter);
+            this.endYear = parseInt(max_year_filter);
             this.yearSlider = NoUiSlider.create($('#year-slider')[0], {
                 start: [this.startYear, this.endYear],
                 connect: true,
@@ -150,7 +150,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
         clearFilter: function (e) {
             var target = $(e.target);
             target.closest('.row').find('input:checkbox:checked').prop('checked', false);
-            if(target.closest('.row').find('#year-from').length > 0) {
+            if (target.closest('.row').find('#year-from').length > 0) {
                 this.yearSlider.set([this.startYear, this.endYear]);
                 target.closest('.row').find('#year-from').html(this.startYear);
                 target.closest('.row').find('#year-to').html(this.endYear);

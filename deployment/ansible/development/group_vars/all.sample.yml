@@ -14,7 +14,8 @@ on_travis: False
 django:
   environment:
     SITE_DOMAIN_NAME: 'http://django-bims.test'
-    GEOCONTEXT_URL: 'http://localhost:65402'
+    GEOCONTEXT_URL: 'https://geocontext.kartoza.com'
+    GEOCONTEXT_COLLECTION_KEY: 'climate'
     CONTACT_US_EMAIL: 'dimas@kartoza.com'
     DEBUG: True
     DJANGO_SETTINGS_MODULE: core.settings.dev_docker

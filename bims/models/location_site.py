@@ -3,16 +3,23 @@
 
 """
 
+import logging
+import requests
+
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
 from bims.models.location_type import LocationType
-from bims.models.location_context import LocationContext
 from bims.utils.cluster import update_cluster_by_site
+from bims.utils.get_key import get_key
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LocationSite(models.Model):
     """Location Site model."""
+
+    __original_centroid = None
 
     name = models.CharField(
         max_length=100,
@@ -39,11 +46,13 @@ class LocationSite(models.Model):
         null=True,
         blank=True,
     )
-    location_context = models.ForeignKey(
-        LocationContext,
-        models.SET_NULL,
+
+    location_context_document = models.TextField(
+        verbose_name='Document for location context as JSON.',
+        help_text='This document is generated from GeoContext by using '
+                  'management command or changing the geometry.',
         null=True,
-        blank=True,
+        blank=True
     )
 
     def get_centroid(self):
@@ -56,6 +65,9 @@ class LocationSite(models.Model):
                 return self.get_geometry().centroid
             else:
                 return None
+
+    def has_location_context(self):
+        return self.location_context_document is not None
 
     def get_geometry(self):
         """Function to get geometry."""
@@ -84,6 +96,49 @@ class LocationSite(models.Model):
 
         return geometry
 
+    def update_location_context_document(self):
+        """Update location context document."""
+        LOGGER.debug('update_location_context_document')
+        geocontext_url = get_key('GEOCONTEXT_URL')
+        geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
+        if not geocontext_url:
+            message = (
+                'Can not update location context document because geocontext '
+                'url is None. Please set it.')
+            return False, message
+        if not geocontext_collection_key:
+            message = (
+                'Can not update location context document because geocontext '
+                'collection key is None. Please set it.')
+            return False, message
+        if not self.get_centroid():
+            message = (
+                'Can not update location context document because centroid is '
+                'None. Please set it.')
+            return False, message
+        longitude = self.get_centroid().x
+        latitude = self.get_centroid().y
+
+        # build url
+        url_format = '{geocontext_url}/api/v1/geocontext/value/collection/' \
+                     '{longitude}/{latitude}/{geocontext_collection_key}'
+        url = url_format.format(
+            geocontext_url=geocontext_url,
+            longitude=longitude,
+            latitude=latitude,
+            geocontext_collection_key=geocontext_collection_key,
+        )
+
+        r = requests.get(url)
+        if r.status_code != 200:
+            message = (
+                'Request to url %s got %s [%s], can not update location '
+                'context document.' % (url, r.status_code, r.reason))
+            return False, message
+
+        self.location_context_document = r.json()
+        return True, 'Successfully update location context document.'
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
@@ -99,11 +154,19 @@ class LocationSite(models.Model):
             # Check if geometry is allowed
             if isinstance(self.get_geometry(),
                           self.location_type.get_allowed_geometry_class()):
+                # If the centroid is changed, update the context document
+                if self.get_centroid() != self.__original_centroid:
+                    self.update_location_context_document()
                 super(LocationSite, self).save(*args, **kwargs)
+                self.__original_centroid = self.get_centroid()
             else:
                 raise ValidationError('Geometry is not allowed.')
         else:
             raise ValidationError('At least one geometry need to be filled.')
+
+    def __init__(self, *args, **kwargs):
+        super(LocationSite, self).__init__(*args, **kwargs)
+        self.__original_centroid = self.get_centroid()
 
 
 @receiver(models.signals.post_save)
