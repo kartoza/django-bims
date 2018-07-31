@@ -628,7 +628,7 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     text-align: center;
     opacity: 0.6;
-    z-index: 9999;
+    z-index: 999;
     display: none;
 }
 
@@ -904,6 +904,10 @@ div:hover::-webkit-scrollbar {
 .upload-input-label {
     font-size: 11pt;
     margin-bottom: 0;
+}
+
+.modal-upload-data {
+    z-index: 9999;
 }
 
 @media (min-width: 1300px) and (max-width: 1412px){
