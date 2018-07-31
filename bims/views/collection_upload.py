@@ -28,7 +28,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
 
         try:
             species_name = request.POST['ud_species_name']
-            location_site = request.POST['ud_location_site']
+            location_site_name = request.POST['ud_location_site']
             collection_date = request.POST['ud_collection_date']
             collector = request.POST['ud_collector']
             category = request.POST['ud_category']
@@ -65,7 +65,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
             location_site, status = LocationSite.objects.get_or_create(
                     location_type=location_type,
                     geometry_point=record_point,
-                    name=location_site,
+                    name=location_site_name,
             )
 
             # Get existed taxon

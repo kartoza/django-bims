@@ -71,6 +71,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             this.lon = null;
             this.lat = null;
             this.map.removeLayer(this.vectorLayer);
+            this.$alertElement.hide();
+            this.$successAlertElement.hide();
             this.clearAllFields();
             this.uploadDataModal.hide();
         },
