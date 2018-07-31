@@ -71,6 +71,7 @@ define(
 
             this.uploadDataView = new UploadDataView({
                 parent: this,
+                map: this.parent.map
             });
             this.$el.append(this.uploadDataView.render().$el);
 

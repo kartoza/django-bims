@@ -11,6 +11,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             'click .close': 'closeModal',
             'click .upload-data-button': 'uploadData'
         },
+        initialize: function (options) {
+            _.bindAll(this, 'render');
+            this.parent = options.parent;
+            this.map = options.map;
+        },
         render: function () {
             this.$el.html(this.template());
             this.uploadDataModal = this.$el.find('.modal');
@@ -25,16 +30,47 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             this.$collectionDateElement = $(this.$el.find('#ud_collection_date')[0]);
             this.$collectionDateElement.datepicker();
 
+            this.markerStyle = new ol.style.Style({
+                image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+                        anchor: [0.5, 40],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        opacity: 0.75,
+                        src: '/static/img/upload-marker-small.png'
+                    })),
+                });
+
             return this;
         },
         showModal: function (lon, lat) {
             this.lon = lon;
             this.lat = lat;
+
+            var coordinates = ol.proj.fromLonLat([lon, lat]);
+            this.markerPoint = new ol.Feature({
+                geometry: new ol.geom.Point(coordinates)
+            });
+
+            this.map.getView().setCenter(coordinates);
+
+            this.markerPoint.setStyle(this.markerStyle);
+
+            this.vectorSource = new ol.source.Vector({
+                features: [this.markerPoint]
+            });
+
+            this.vectorLayer = new ol.layer.Vector({
+                source: this.vectorSource
+            });
+
+            this.map.addLayer(this.vectorLayer);
+
             this.uploadDataModal.show();
         },
         closeModal: function () {
             this.lon = null;
             this.lat = null;
+            this.map.removeLayer(this.vectorLayer);
             this.clearAllFields();
             this.uploadDataModal.hide();
         },

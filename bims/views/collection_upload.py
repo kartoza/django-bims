@@ -60,7 +60,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
                     name='PointObservation',
                     allowed_geometry='POINT'
             )
-            record_point = Point(float(lon),float(lat))
+            record_point = Point(float(lon), float(lat))
 
             location_site, status = LocationSite.objects.get_or_create(
                     location_type=location_type,
@@ -89,7 +89,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
                     notes=notes,
                     taxon_gbif_id=taxon_gbif,
                     owner=self.request.user,
-            )
+                )
 
             # reconnect post save handler of location sites
             signals.post_save.connect(
@@ -101,7 +101,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
 
             if created:
                 return JsonResponse({
-                    'status':'success',
+                    'status': 'success',
                     'message': 'Collection added, waiting for validation'})
             else:
                 return JsonResponse({
@@ -110,5 +110,5 @@ class CollectionUploadView(View, LoginRequiredMixin):
                 })
         except KeyError as e:
             return JsonResponse({
-                'status':'failed',
+                'status': 'failed',
                 'message': 'KeyError : ' + str(e)})

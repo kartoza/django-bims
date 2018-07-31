@@ -894,3 +894,21 @@ div:hover::-webkit-scrollbar {
     font-size: 11pt;
     margin-bottom: 0;
 }
+
+@media (min-width: 1300px) and (max-width: 1412px){
+   .modal-upload-data {
+        margin-left: 45rem;
+   }
+}
+
+@media (min-width: 1412px) and (max-width: 1575px) {
+    .modal-upload-data {
+        margin-left: 50rem;
+    }
+}
+
+@media (min-width: 1575px) {
+    .modal-upload-data {
+        margin-left: 55%;
+    }
+}
