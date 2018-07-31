@@ -15,6 +15,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     def get_biological_collection_record(self, obj):
         collections = BiologicalCollectionRecord.objects.filter(
             site=obj,
+            validated=True
         )
         return BioCollectionSerializer(collections, many=True).data
 
