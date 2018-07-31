@@ -21,13 +21,10 @@ from bims.api_views.non_biodiversity_layer import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
-from bims.api_views.cluster_collection import (
-    ClusterCollection,
-    ClusterCollectionExtent
-)
-from bims.api_views.cluster_collection_by_taxon import (
-    ClusterCollectionByTaxon,
-    ClusterCollectionByTaxonExtent
+from bims.api_views.collection import (
+    GetCollectionExtent,
+    CollectionDownloader,
+    ClusterCollection
 )
 from bims.api_views.collector import CollectorList
 from bims.api_views.category_filter import CategoryList
@@ -56,14 +53,12 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
-    url(r'^api/cluster/collection/records/extent/$',
-        ClusterCollectionExtent.as_view()),
-    url(r'^api/cluster/collection/records/$',
+    url(r'^api/collection/extent/$',
+        GetCollectionExtent.as_view()),
+    url(r'^api/collection/cluster/$',
         ClusterCollection.as_view()),
-    url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/extent/$',
-        ClusterCollectionByTaxonExtent.as_view()),
-    url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/$',
-        ClusterCollectionByTaxon.as_view()),
+    url(r'^api/collection/download/$',
+        CollectionDownloader.as_view()),
     url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
     url(r'^api/list-collector/$',
