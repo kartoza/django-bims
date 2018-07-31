@@ -10,6 +10,8 @@ from django.contrib.gis.geos import Point
 from bims.models import (
     LocationSite,
     LocationType,
+    Boundary,
+    BoundaryType,
 )
 from bims.models.location_site import (
     location_site_post_save_handler
@@ -61,6 +63,23 @@ class CollectionUploadView(View, LoginRequiredMixin):
                     allowed_geometry='POINT'
             )
             record_point = Point(float(lon), float(lat))
+
+            # Check if inside the boundary
+            provinces = BoundaryType.objects.filter(name='province')
+            if not provinces:
+                return JsonResponse({
+                    'status': 'failed',
+                    'message': 'No boundary provided',
+                })
+            boundaries = Boundary.objects.filter(
+                    geometry__contains=record_point,
+                    type=provinces[0]
+            )
+            if not boundaries:
+                return JsonResponse({
+                    'status': 'failed',
+                    'message': 'Out of boundary!'
+                })
 
             location_site, status = LocationSite.objects.get_or_create(
                     location_type=location_type,
