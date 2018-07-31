@@ -1,4 +1,3 @@
-# Inspired by http://eflorenzano.com/blog/2008/11/28/drop-dead-simple-django-caching/
 from django.db import models
 from django.core.cache import cache
 from django.db.models.query import QuerySet
@@ -32,4 +31,3 @@ class CacheQuerySet(QuerySet):
 class CacheManager(models.Manager):
     def get_queryset(self):
         return CacheQuerySet(self.model)
-
