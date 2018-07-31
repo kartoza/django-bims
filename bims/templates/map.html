@@ -23,6 +23,7 @@
         const mapTilerKey = '{{ map_tiler_key }}';
         const staticURL = "{% static "" %}";
         const geocontextUrl = '{{ geocontext_url }}';
+        const geocontextCollectionKey = '{{ geocontext_collection_key }}';
         const listCollectorAPIUrl = '{% url "list-collector" %}';
         const centerPointMap = '{{ center_point_map }}';
         const listCategoryAPIUrl = '{% url "list-date-category" %}';
@@ -424,7 +425,7 @@
                     <td><%= collection_date %></td>
                 </tr>
                 <tr>
-                    <td>Collector</td>
+                    <td>Collector or observer</td>
                     <td><%= collector %></td>
                 </tr>
                 <tr>

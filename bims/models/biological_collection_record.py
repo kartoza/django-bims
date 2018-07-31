@@ -52,6 +52,7 @@ class BiologicalCollectionRecord(models.Model):
         max_length=100,
         blank=True,
         default='',
+        verbose_name='collector or observer',
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -397,6 +397,14 @@ update-taxa:
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_taxa
 
+
+update-location-context-documents:
+	@echo
+	@echo "--------------------------"
+	@echo "Updating ALL location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py update_location_context_documents
+
 # --------------- help --------------------------------
 
 help:
