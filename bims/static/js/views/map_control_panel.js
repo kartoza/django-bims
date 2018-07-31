@@ -145,6 +145,9 @@ define(
             var uploadDataElm = this.$el.find('.upload-data');
             if(uploadDataElm.hasClass('control-panel-selected')) {
                 uploadDataElm.removeClass('control-panel-selected');
+                this.uploadDataActive = false;
+                $('#footer-message span').html('-');
+                $('#footer-message').hide();
                 this.parent.uploadDataState = false;
             }
         }
