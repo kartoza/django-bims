@@ -4,8 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from tracking.managers import VisitorManager, PageviewManager
-from tracking.settings import TRACK_USING_GEOIP
+from bims.managers import VisitorManager, PageviewManager
+from bims.conf import TRACK_USING_GEOIP
 
 from django.contrib.gis.geoip import HAS_GEOIP
 if HAS_GEOIP:

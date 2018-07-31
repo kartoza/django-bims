@@ -1,4 +1,6 @@
 # coding=utf-8
+from datetime import timedelta
+
 from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
@@ -33,12 +35,16 @@ from bims.models import (
     Journal,
     Publisher,
     Entry,
+    Visitor,
+    Pageview,
     Collection,
     AuthorEntryRank,
     ShapefileUploadSession,
     Shapefile,
     NonBiodiversityLayer,
 )
+
+from bims.conf import TRACK_PAGEVIEWS
 
 
 class AuthorEntryRankInline(admin.TabularInline):
@@ -316,3 +322,37 @@ admin.site.register(Shapefile, ShapefileAdmin)
 
 admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, FlatPageCustomAdmin)
+
+
+
+
+
+
+class VisitorAdmin(admin.ModelAdmin):
+    date_hierarchy = 'start_time'
+
+    list_display = ('session_key', 'user', 'start_time', 'session_over',
+        'pretty_time_on_site', 'ip_address', 'user_agent')
+    list_filter = ('user', 'ip_address')
+
+    def session_over(self, obj):
+        return obj.session_ended() or obj.session_expired()
+    session_over.boolean = True
+
+    def pretty_time_on_site(self, obj):
+        if obj.time_on_site is not None:
+            return timedelta(seconds=obj.time_on_site)
+    pretty_time_on_site.short_description = 'Time on site'
+
+
+admin.site.register(Visitor, VisitorAdmin)
+
+
+class PageviewAdmin(admin.ModelAdmin):
+    date_hierarchy = 'view_time'
+
+    list_display = ('url', 'view_time')
+
+
+if TRACK_PAGEVIEWS:
+    admin.site.register(Pageview, PageviewAdmin)

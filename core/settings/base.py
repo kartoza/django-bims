@@ -110,7 +110,7 @@ TEMPLATES = [
 MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     # django tracking needs to be checked before session middleware
-    'tracking.middleware.VisitorTrackingMiddleware',
+    'bims.middleware.VisitorTrackingMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

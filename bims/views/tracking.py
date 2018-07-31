@@ -7,8 +7,10 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from django.utils.timezone import now
 
-from tracking.models import Visitor, Pageview
-from tracking.settings import TRACK_PAGEVIEWS
+from bims.models import Visitor, Pageview
+from bims.conf import TRACK_PAGEVIEWS
+
+from bims.models import Taxon
 
 log = logging.getLogger(__file__)
 
@@ -57,6 +59,8 @@ def dashboard(request):
     else:
         pageview_stats = None
 
+    taxon_count = Taxon.objects.count()
+
     context = {
         'form': form,
         'track_start_time': track_start_time,
@@ -64,5 +68,6 @@ def dashboard(request):
         'user_stats': user_stats,
         'visitor_stats': visitor_stats,
         'pageview_stats': pageview_stats,
+        'taxon_count': taxon_count,
     }
     return render(request, 'tracking/dashboard.html', context)

@@ -1,8 +1,8 @@
 from django.utils import timezone
 from django.core.cache import cache
 from django.conf import settings
-from tracking.models import Visitor
-from tracking.cache import instance_cache_key
+from bims.models import Visitor
+from bims.cache import instance_cache_key
 
 SESSION_COOKIE_AGE = getattr(settings, 'SESSION_COOKIE_AGE')
 

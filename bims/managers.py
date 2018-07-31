@@ -5,8 +5,8 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, Avg
-from tracking.settings import TRACK_PAGEVIEWS, TRACK_ANONYMOUS_USERS
-from tracking.cache import CacheManager
+from bims.conf import TRACK_PAGEVIEWS, TRACK_ANONYMOUS_USERS
+from bims.cache import CacheManager
 
 
 class VisitorManager(CacheManager):

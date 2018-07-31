@@ -11,9 +11,9 @@ try:
 except ImportError:
     MiddlewareMixin = object
 
-from tracking.models import Visitor, Pageview
-from tracking.utils import get_ip_address, total_seconds
-from tracking.settings import (
+from bims.models import Visitor, Pageview
+from bims.utils import get_ip_address, total_seconds
+from bims.conf import (
     TRACK_AJAX_REQUESTS,
     TRACK_ANONYMOUS_USERS,
     TRACK_IGNORE_STATUS_CODES,

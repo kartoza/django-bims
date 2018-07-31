@@ -29,7 +29,6 @@ urlpatterns = [
     url(r'^pages/', include('django.contrib.flatpages.urls')),
     url(r'^', include('bims.urls')),
     url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
-    url(r'^tracking/', include('tracking.urls')),
     url(r'^', include(('reptile.urls', 'reptile'), namespace='reptile')),
     url(r'^', include('example.urls')),
 

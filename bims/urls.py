@@ -7,6 +7,7 @@ from django.views.generic import RedirectView
 
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
+from bims.views.tracking import dashboard
 from bims.views.landing_page import LandingPageView
 from bims.api_views.location_site import (
     LocationSiteList,
@@ -109,4 +110,6 @@ urlpatterns = [
         UnderDevelopmentView.as_view(), name='under-development'),
     url(r'^nonvalidated-list/$',
         NonValidatedObjectsView.as_view(), name='nonvalidated-list'),
+
+    url(r'^tracking/$', dashboard, name='tracking-dashboard'),
 ] + api_urls

@@ -15,7 +15,6 @@ INSTALLED_APPS += (
     'bims',
     'fish',
     'reptile',
-    'tracking',
 )
 
 # Set languages which want to be translated
