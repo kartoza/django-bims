@@ -4,6 +4,7 @@ define(
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
+        uploadDataActive: false,
         searchView: null,
         locateView: null,
         events: {
@@ -48,8 +49,19 @@ define(
         },
         uploadDataClicked: function (e) {
             this.closeAllPanel();
-            var active = this.controlPanelClicked(e);
-            this.parent.uploadDataState = active;
+
+            var button = $(this.$el.find('.upload-data')[0]);
+            if(this.uploadDataActive) {
+                button.removeClass('control-panel-selected');
+                $('#footer-message span').html('-');
+                $('#footer-message').hide();
+            } else {
+                button.addClass('control-panel-selected');
+                $('#footer-message span').html('CLICK LOCATION ON THE MAP');
+                $('#footer-message').show();
+            }
+            this.uploadDataActive = !this.uploadDataActive;
+            this.parent.uploadDataState = this.uploadDataActive;
         },
         showUploadDataModal: function (lon, lat) {
             this.uploadDataView.showModal(lon, lat);
@@ -90,6 +102,7 @@ define(
             if (!target.hasClass('sub-control-panel')) {
                 target = target.parent();
             }
+            console.log(target);
             // Activate function
             if (!target.hasClass('control-panel-selected')) {
                 target.addClass('control-panel-selected');

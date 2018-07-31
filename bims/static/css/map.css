@@ -621,11 +621,22 @@ div:hover::-webkit-scrollbar {
     z-index: 9999;
 }
 
+#footer-message {
+    position: absolute;
+    bottom: 10px;
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    opacity: 0.6;
+    z-index: 9999;
+    display: none;
+}
+
 #fetching-error {
     opacity: 0.8;
 }
 
-#loading-warning span {
+#loading-warning span, #footer-message span {
     background-color: grey;
     color: white;
     padding: 10px;
