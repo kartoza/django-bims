@@ -2,7 +2,7 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
     return Backbone.Collection.extend({
         model: ClusterModel,
         clusterAPI: _.template(
-            "/api/cluster/collection/records/?taxon=<%= taxon %>&search=<%= search %>" +
+            "/api/collection/cluster/?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
@@ -66,9 +66,10 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
             this.refresh();
         },
         getExtentOfRecords: function () {
+            Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             var self = this;
             $.ajax({
-                url: '/api/cluster/collection/records/extent/',
+                url: '/api/collection/extent/',
                 data: this.parameters,
                 dataType: "json",
                 success: function (data) {
