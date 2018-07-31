@@ -116,7 +116,7 @@ html, body, .map, .map-wrapper, #map-container {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 162px;
+    top: 185px;
     transform: translateY(-50%);
     padding-left: 6px;
     padding-right: 6px;
@@ -130,8 +130,12 @@ html, body, .map, .map-wrapper, #map-container {
     width: 54px;
 }
 
+.no-upload {
+    top: 160px;
+}
+
 .download-control-panel {
-    top: 301px;
+    top: 349px;
 }
 
 .download-control-panel .download-format-selector-container {
@@ -176,6 +180,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .control-panel-selected {
     background-color: #1b900d;
+    padding-right: 0;
     color: white !important;
 }
 
@@ -519,7 +524,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 233px !important;
+    top: 280px !important;
     left: 0;
     right: auto !important;
     text-align: left;
@@ -643,11 +648,22 @@ div:hover::-webkit-scrollbar {
     z-index: 9999;
 }
 
+#footer-message {
+    position: absolute;
+    bottom: 10px;
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    opacity: 0.6;
+    z-index: 999;
+    display: none;
+}
+
 #fetching-error {
     opacity: 0.8;
 }
 
-#loading-warning span {
+#loading-warning span, #footer-message span {
     background-color: grey;
     color: white;
     padding: 10px;
@@ -901,4 +917,40 @@ div:hover::-webkit-scrollbar {
 .button-filter-wrapper {
     text-align: center;
     padding: 5px 40px;
+}
+
+.upload-data-button {
+    border-radius: 8px !important;
+    width: 100%;
+}
+
+.required-text {
+    margin-top: 5px;
+}
+
+.upload-input-label {
+    font-size: 11pt;
+    margin-bottom: 0;
+}
+
+.modal-upload-data {
+    z-index: 9999;
+}
+
+@media (min-width: 1300px) and (max-width: 1412px) {
+    .modal-upload-data {
+        margin-left: 45rem;
+    }
+}
+
+@media (min-width: 1412px) and (max-width: 1575px) {
+    .modal-upload-data {
+        margin-left: 50rem;
+    }
+}
+
+@media (min-width: 1575px) {
+    .modal-upload-data {
+        margin-left: 55%;
+    }
 }
