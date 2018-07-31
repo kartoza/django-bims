@@ -323,6 +323,7 @@ class PageviewAdmin(admin.ModelAdmin):
 
     list_display = ('url', 'view_time')
 
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
