@@ -112,7 +112,7 @@ html, body, .map, .map-wrapper, #map-container {
     cursor: pointer;
 }
 
-.map-control-panel {
+.map-control-panel, .download-control-panel {
     background-color: white;
     position: absolute;
     left: 0;
@@ -128,6 +128,17 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 0;
     border-top: none;
     width: 54px;
+}
+
+.download-control-panel {
+    top: 349px;
+}
+
+.download-control-panel .download-format-selector-container {
+    margin-left: 49px;
+    margin-top: 0;
+    display: none;
+    width: auto;
 }
 
 .zoom-control {
@@ -238,13 +249,24 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 0 !important;
 }
 
-#layers-selector {
+.download-format-selector-container {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.download-format-selector-container li {
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 18px;
+}
+
+.map-control-panel-box ul {
     list-style-type: none;
     padding: 5px;
     margin-bottom: 0;
 }
 
-#layers-selector li {
+.map-control-panel-box li {
     text-align: left;
     background: none;
     color: black;
@@ -256,7 +278,7 @@ html, body, .map, .map-wrapper, #map-container {
     cursor: pointer;
 }
 
-#layers-selector li:hover {
+.map-control-panel-box li:hover {
     background-color: rgba(0, 0, 0, 0.2);
 }
 
@@ -298,6 +320,7 @@ html, body, .map, .map-wrapper, #map-container {
     border-top: 1px solid darkgray;
     margin-top: 3px;
 }
+
 .map-control-panel-box .title {
     font-size: 16pt;
     line-height: 20px;
@@ -910,10 +933,10 @@ div:hover::-webkit-scrollbar {
     z-index: 9999;
 }
 
-@media (min-width: 1300px) and (max-width: 1412px){
-   .modal-upload-data {
+@media (min-width: 1300px) and (max-width: 1412px) {
+    .modal-upload-data {
         margin-left: 45rem;
-   }
+    }
 }
 
 @media (min-width: 1412px) and (max-width: 1575px) {
