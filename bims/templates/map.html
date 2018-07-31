@@ -32,6 +32,7 @@
         const collectionCategory = "{{ collection_category|safe }}";
         const csrfmiddlewaretoken = "{{ csrf_token }}";
         const biological_modules = "{{ biological_modules|safe }}";
+        const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
     </script>
 {% endblock %}
 
@@ -171,7 +172,7 @@
     </script>
 
     <script type="text/html" id="map-control-panel">
-        <div class="map-control-panel">
+        <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
             <div class="search-control sub-control-panel">
                 <i class="fa fa-search" aria-hidden="true"></i>
             </div>
@@ -181,9 +182,11 @@
             <div class="locate-control sub-control-panel">
                 <i class="fa fa-location-arrow" aria-hidden="true"></i>
             </div>
+            {% if user.is_authenticated %}
             <div class="upload-data sub-control-panel">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
+            {% endif %}
         </div>
         <div class="zoom-control row">
             <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>

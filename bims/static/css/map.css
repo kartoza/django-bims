@@ -130,6 +130,10 @@ html, body, .map, .map-wrapper, #map-container {
     width: 54px;
 }
 
+.no-upload {
+    top: 160px;
+}
+
 .download-control-panel {
     top: 349px;
 }
