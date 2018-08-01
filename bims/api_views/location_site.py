@@ -5,6 +5,9 @@ from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.location_site import LocationSite
+from bims.models.biological_collection_record import (
+    BiologicalCollectionRecord
+)
 from bims.serializers.location_site_serializer import (
     LocationSiteSerializer,
     LocationSiteClusterSerializer
@@ -145,16 +148,21 @@ class LocationSiteClusterList(APIView):
         if bbox:
             geom_bbox = Polygon.from_bbox(
                 tuple([float(edge) for edge in bbox.split(',')]))
+
+            sites_ids = BiologicalCollectionRecord.objects.filter(
+                validated=True).filter(
+                Q(site__geometry_point__intersects=geom_bbox) |
+                Q(site__geometry_line__intersects=geom_bbox) |
+                Q(site__geometry_polygon__intersects=geom_bbox) |
+                Q(site__geometry_multipolygon__intersects=geom_bbox)
+            ).values('site').distinct()
             location_site = location_site.filter(
-                Q(geometry_point__intersects=geom_bbox) |
-                Q(geometry_line__intersects=geom_bbox) |
-                Q(geometry_polygon__intersects=geom_bbox) |
-                Q(geometry_multipolygon__intersects=geom_bbox)
+                id__in=sites_ids
             )
         cluster = self.clustering_process(
-                location_site,
-                int(float(zoom)),
-                int(icon_pixel_x),
-                int(icon_pixel_y)
+            location_site,
+            int(float(zoom)),
+            int(icon_pixel_x),
+            int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])

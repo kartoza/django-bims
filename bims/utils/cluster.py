@@ -7,6 +7,7 @@ from django.core.exceptions import FieldError
 from django.db.models import Q
 from bims.models.boundary import Boundary
 from bims.models.cluster import Cluster
+from bims.tasks.collection_record import update_cluster as task_update_cluster
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +26,14 @@ def update_cluster(boundary, CollectionModel=None):
     from bims.models.location_site import LocationSite
     from bims.models.survey import Survey
 
-    sites = LocationSite.objects.filter(
-        Q(geometry_point__intersects=boundary.geometry) |
-        Q(geometry_line__intersects=boundary.geometry) |
-        Q(geometry_polygon__intersects=boundary.geometry) |
-        Q(geometry_multipolygon__intersects=boundary.geometry)
-    )
-    if sites.count() == 0:
-        return
+    sites = BiologicalCollectionRecord.objects.filter(validated=True).filter(
+        Q(site__geometry_point__intersects=boundary.geometry) |
+        Q(site__geometry_line__intersects=boundary.geometry) |
+        Q(site__geometry_polygon__intersects=boundary.geometry) |
+        Q(site__geometry_multipolygon__intersects=boundary.geometry)
+    ).values('site').distinct()
 
-        # get all children model if no CollectionModel given
+    # get all children model if no CollectionModel given
     if not CollectionModel:
         children_models = BiologicalCollectionRecord.get_children_model()
         if len(children_models) == 0:
@@ -47,8 +46,9 @@ def update_cluster(boundary, CollectionModel=None):
         verbose_name = children_model._meta.verbose_name
         try:
             records = children_model.objects.filter(
-                site__in=sites)
-            sites_with_collection = records.values('site').distinct()
+                site__in=sites,
+                validated=True)
+            sites_with_collection = records
         except FieldError:
             records = children_model.objects.filter(
                 id__in=sites)
@@ -97,11 +97,9 @@ def update_cluster_by_collection(collection):
     """
     boundaries = Boundary.objects.filter(
         geometry__contains=collection.site.get_geometry()).order_by(
-        '-type__level')
-
-    # Update cluster from that boundaries
-    for boundary in boundaries:
-        boundary.generate_cluster(type(collection))
+        '-type__level').values_list('id', flat=True)
+    boundaries = list(boundaries)
+    task_update_cluster.delay(boundaries)
 
 
 def update_cluster_by_site(site):

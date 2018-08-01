@@ -38,6 +38,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         model_attr='absent'
     )
 
+    validated = indexes.BooleanField(
+        model_attr='validated'
+    )
+
     collection_date = indexes.DateField(
         model_attr='collection_date'
     )
