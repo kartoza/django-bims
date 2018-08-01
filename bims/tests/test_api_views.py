@@ -23,7 +23,8 @@ class TestApiView(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.location_site = LocationSiteF.create(
-            pk=1
+            pk=1,
+            location_context_document='""'
         )
         self.fish_collection_1 = BiologicalCollectionRecordF.create(
             pk=1,
