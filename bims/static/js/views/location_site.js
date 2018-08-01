@@ -20,7 +20,6 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {
-                    self.loadSuccess();
                 }
             });
         },
