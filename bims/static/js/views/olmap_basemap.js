@@ -52,6 +52,14 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 layers: [openMapTiles, hillshading, contours]
             });
         },
+
+        getOSMMapsurferRoads: function () {
+            var layer = this.getOpenMapTilesTile(
+                staticURL + 'mapbox-style/positron-gl-style.json');
+            layer.set('title', 'Positron Map');
+            return layer
+        },
+
         getPositronBasemap: function () {
             var layer = this.getOpenMapTilesTile(
                 staticURL + 'mapbox-style/positron-gl-style.json');
@@ -100,11 +108,22 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 baseSourceLayers.push(bingMap);
             }
 
+            // OSM MAPSURFER ROADS - Make default
+            var mapSurfer = new ol.layer.Tile({
+                title: 'OSM Mapsurfer roads',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
+                    url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
+                })
+            });
+            baseSourceLayers.push(mapSurfer);
+
             // OPENMAPTILES
             if (mapTilerKey) {
                 baseSourceLayers.push(this.getPositronBasemap());
                 baseSourceLayers.push(this.getDarkMatterBasemap());
                 baseSourceLayers.push(this.getKlokantechTerrainBasemap());
+                baseSourceLayers.push(this.getOSMMapsurferRoads());
             }
             $.each(baseSourceLayers, function (index, layer) {
                 layer.set('type', 'base');
