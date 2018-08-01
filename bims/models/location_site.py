@@ -5,6 +5,7 @@
 
 import logging
 import requests
+import json
 
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
@@ -65,9 +66,6 @@ class LocationSite(models.Model):
                 return self.get_geometry().centroid
             else:
                 return None
-
-    def has_location_context(self):
-        return self.location_context_document is not None
 
     def get_geometry(self):
         """Function to get geometry."""
@@ -136,7 +134,7 @@ class LocationSite(models.Model):
                 'context document.' % (url, r.status_code, r.reason))
             return False, message
 
-        self.location_context_document = r.json()
+        self.location_context_document = json.dumps(r.json())
         return True, 'Successfully update location context document.'
 
     # noinspection PyClassicStyleClass

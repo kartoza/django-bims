@@ -2,6 +2,7 @@
 from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
+from django.contrib import admin as django_admin
 from django.core.mail import send_mail
 
 from django.contrib.flatpages.admin import FlatPageAdmin
@@ -131,6 +132,30 @@ class LocationSiteForm(forms.ModelForm):
             '/static/js/forms/location-site-admin-form.js')
 
 
+class HasLocationContextDocument(django_admin.SimpleListFilter):
+    """Filter based on Location Context Document existence."""
+    title = 'has_location_context'
+    parameter_name = 'has_location_context'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('Yes', 'Yes'),
+            ('No', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'Yes':
+            return queryset.filter(
+                location_context_document__isnull=False).exclude(
+                location_context_document__exact='')
+        elif value == 'No':
+            return queryset.filter(models.Q(
+                location_context_document__isnull=True) | models.Q(
+                location_context_document__exact=''))
+        return queryset
+
+
 class LocationSiteAdmin(admin.GeoModelAdmin):
     form = LocationSiteForm
     default_zoom = 5
@@ -140,6 +165,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     list_display = (
         'name', 'location_type', 'get_centroid', 'has_location_context')
     search_fields = ('name',)
+    list_filter = (HasLocationContextDocument,)
+
+    def has_location_context(self, obj):
+        return bool(obj.location_context_document)
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
