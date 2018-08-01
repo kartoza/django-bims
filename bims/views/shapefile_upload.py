@@ -6,6 +6,8 @@ from django.shortcuts import render
 from django.db.models import signals
 from django.http import JsonResponse
 from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib import messages
 from bims.forms.shapefile_upload import ShapefileUploadForm
 from bims.models.shapefile import Shapefile
 from bims.models.shapefile_upload_session import ShapefileUploadSession
@@ -21,9 +23,17 @@ from bims.models.location_site import LocationSite
 from bims.models.location_type import LocationType
 
 
-class ShapefileUploadView(View):
+class ShapefileUploadView(UserPassesTestMixin, LoginRequiredMixin, View):
 
     template_name = 'shapefile_uploader.html'
+
+    def test_func(self):
+        return self.request.user.has_perm('bims.can_upload_shapefile')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to upload Shapefile')
+        return super(ShapefileUploadView, self).handle_no_permission()
 
     def get(self, request):
         return render(self.request, template_name=self.template_name)

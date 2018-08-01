@@ -79,6 +79,11 @@ class BiologicalCollectionRecord(models.Model):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
+        permissions = (
+            ('can_upload_csv', 'Can upload CSV'),
+            ('can_upload_shapefile', 'Can upload Shapefile'),
+            ('can_validate_data', 'Can validate data'),
+        )
 
     def on_post_save(self):
         if not self.taxon_gbif_id:
