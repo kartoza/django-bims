@@ -23,6 +23,7 @@ define([
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
         map: null,
+        uploadDataState: false,
 
         // attributes
         mapInteractionEnabled: true,
@@ -55,7 +56,7 @@ define([
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
-            Shared.Dispatcher.on('searchResult:clicked', this.updateClusterBiologicalCollectionTaxonID, this);
+            Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -96,27 +97,43 @@ define([
             var features = self.map.getFeaturesAtPixel(e.pixel);
             this.layers.highlightVectorSource.clear();
             this.hidePopup();
+            // Point of interest flag
+            var pointFound = false;
+
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
                 if (geometryType === 'Point') {
-                    self.featureClicked(features[0]);
-                    var coordinates = geometry.getCoordinates();
-                    self.zoomToCoordinates(coordinates);
+                    pointFound = self.featureClicked(features[0]);
+                    if(pointFound) {
+                        var coordinates = geometry.getCoordinates();
+                        self.zoomToCoordinates(coordinates);
 
-                    // increase zoom level if it is clusters
-                    if (features[0].getProperties()['count'] &&
-                        features[0].getProperties()['count'] > 1) {
-                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                        // increase zoom level if it is clusters
+                        if (features[0].getProperties()['count'] &&
+                            features[0].getProperties()['count'] > 1) {
+                            self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                        }
                     }
                 }
             }
 
+            if (self.uploadDataState && !pointFound) {
+                // Get lat and long map
+                var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
+                var lon = lonlat[0];
+                var lat = lonlat[1];
+                self.mapControlPanel.showUploadDataModal(lon, lat);
+            }
+
             // Close opened control panel
-            this.mapControlPanel.closeAllPanel();
+            this.mapControlPanel.closeSearchPanel();
         },
         featureClicked: function (feature) {
             var properties = feature.getProperties();
+            if(!properties.hasOwnProperty('record_type')) {
+                return false;
+            }
             if (properties['record_type'] === 'site') {
                 Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
 
@@ -132,6 +149,7 @@ define([
             if (this.layers.layerStyle.isIndividialCluster(feature)) {
                 this.addHighlightFeature(feature);
             }
+            return true;
         },
         hidePopup: function () {
             this.popup.setPosition(undefined);
@@ -393,14 +411,17 @@ define([
             this.pointerMoveListener = this.map.on('pointermove', function (e) {
                 var pixel = that.map.getEventPixel(e.originalEvent);
                 var hit = that.map.hasFeatureAtPixel(pixel);
-                $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
-                if (hit) {
+                if(that.uploadDataState) {
+                    $('#' + that.map.getTarget()).find('canvas').css('cursor', 'pointer');
+                } else if (hit) {
                     that.map.forEachFeatureAtPixel(pixel,
                         function (feature, layer) {
                             if (feature.getGeometry().getType() == 'Point') {
                                 $('#' + that.map.getTarget()).find('canvas').css('cursor', 'pointer');
                             }
                         })
+                } else {
+                    $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
                 }
             });
         }

@@ -1,15 +1,27 @@
 # coding=utf-8
 from django.views.generic import ListView
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib import messages
 from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.utils.user_permissions import ValidatorRequiredMixin
 
 
-class NonValidatedObjectsView(ValidatorRequiredMixin, ListView):
+class NonValidatedObjectsView(
+        UserPassesTestMixin,
+        LoginRequiredMixin,
+        ListView):
 
     model = BiologicalCollectionRecord
     context_object_name = 'biorecords'
     template_name = 'non_validated_list.html'
     paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.has_perm('bims.can_validate_data')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to validate collection data')
+        return super(NonValidatedObjectsView, self).handle_no_permission()
 
     def get_context_data(self, **kwargs):
         filter_name = self.request.GET.get('original_species_name', None)

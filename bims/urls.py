@@ -21,13 +21,10 @@ from bims.api_views.non_biodiversity_layer import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.cluster import ClusterList
-from bims.api_views.cluster_collection import (
-    ClusterCollection,
-    ClusterCollectionExtent
-)
-from bims.api_views.cluster_collection_by_taxon import (
-    ClusterCollectionByTaxon,
-    ClusterCollectionByTaxonExtent
+from bims.api_views.collection import (
+    GetCollectionExtent,
+    CollectionDownloader,
+    ClusterCollection
 )
 from bims.api_views.collector import CollectorList
 from bims.api_views.category_filter import CategoryList
@@ -46,6 +43,7 @@ from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
 from bims.views.bio_records_edit import BioRecordsUpdateView
+from bims.views.collection_upload import CollectionUploadView
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -58,14 +56,12 @@ api_urls = [
         TaxonDetail.as_view()),
     url(r'^api/cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
-    url(r'^api/cluster/collection/records/extent/$',
-        ClusterCollectionExtent.as_view()),
-    url(r'^api/cluster/collection/records/$',
+    url(r'^api/collection/extent/$',
+        GetCollectionExtent.as_view()),
+    url(r'^api/collection/cluster/$',
         ClusterCollection.as_view()),
-    url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/extent/$',
-        ClusterCollectionByTaxonExtent.as_view()),
-    url(r'^api/cluster/collection/taxon/(?P<pk>[0-9]+)/$',
-        ClusterCollectionByTaxon.as_view()),
+    url(r'^api/collection/download/$',
+        CollectionDownloader.as_view()),
     url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
     url(r'^api/list-collector/$',
@@ -94,9 +90,9 @@ urlpatterns = [
             url=reverse_lazy('profile_detail', kwargs={
                 'username': request.user.username
             }), permanent=False)(request)), name='user-profile'),
-    url(r'^upload/$', login_required(CsvUploadView.as_view()),
+    url(r'^upload/$', CsvUploadView.as_view(),
         name='csv-upload'),
-    url(r'^upload_shp/$', login_required(ShapefileUploadView.as_view()),
+    url(r'^upload_shp/$', ShapefileUploadView.as_view(),
         name='shapefile-upload'),
     url(r'^process_shapefiles/$', process_shapefiles,
         name='process_shapefiles'),
@@ -115,4 +111,6 @@ urlpatterns = [
         NonValidatedObjectsUserView.as_view(), name='nonvalidated-user-list'),
     url(r'^update/(?P<pk>\d+)/$',
         BioRecordsUpdateView.as_view(), name='update-records')
+    url(r'^upload_collection/$', CollectionUploadView.as_view(),
+        name='upload-collection'),
 ] + api_urls

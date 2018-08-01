@@ -28,6 +28,14 @@ class MapPageView(TemplateView):
             'GEOCONTEXT_COLLECTION_KEY')
         context['center_point_map'] = get_key('CENTER_POINT_MAP')
 
+        categories = BiologicalCollectionRecord.CATEGORY_CHOICES
+        context['collection_category'] = [list(x) for x in categories]
+
+        bio_childrens = BiologicalCollectionRecord.get_children_model()
+        context['biological_modules'] = {
+            bio._meta.app_label: str(bio._meta.label) for bio in bio_childrens
+        }
+
         # get date filter
         context['date_filter'] = {'min': '1900', 'max': '2008'}
         date_min = BiologicalCollectionRecord.objects.all(

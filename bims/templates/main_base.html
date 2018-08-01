@@ -72,14 +72,8 @@
                          {% if user.is_staff or user.is_superuser %}
                             <li><a class="nav-link js-scroll-trigger" href="/admin/">ADMINISTRATION</a></li>
                          {% endif %}
-                          {% for group in user.groups.all %}
-                             {% for category in group.groupprofile.categories.all %}
-                                 {% if category.name == 'validator' %}
-                                    <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/nonvalidated-list/">VALIDATE RECORDS</a></li>
-                                {% endif %}
-                             {% endfor %}
-                         {% endfor %}
-                            <li><a class="nav-link js-scroll-trigger" href="/nonvalidated-user-list/">UPDATE RECORDS</a></li>
+                             <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/nonvalidated-list/">VALIDATE RECORDS</a></li>
+                             <li><a class="nav-link js-scroll-trigger" href="/nonvalidated-user-list/">UPDATE RECORDS</a></li>
                              <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
                      {% else %}
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a></li>

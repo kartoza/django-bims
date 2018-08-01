@@ -14,6 +14,7 @@
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
         const max_year_filter = '{{ date_filter.max }}';
@@ -27,6 +28,11 @@
         const centerPointMap = '{{ center_point_map }}';
         const listCategoryAPIUrl = '{% url "list-date-category" %}';
         const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
+        const uploadDataUrl = '{% url "upload-collection" %}';
+        const collectionCategory = "{{ collection_category|safe }}";
+        const csrfmiddlewaretoken = "{{ csrf_token }}";
+        const biological_modules = "{{ biological_modules|safe }}";
+        const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
     </script>
 {% endblock %}
 
@@ -35,6 +41,7 @@
     <script type='text/html' id='map-template'>
         <div id="map" class="map"></div>
         <div id="loading-warning"><span>LOADING....</span></div>
+        <div id="footer-message"><span>Additional Info</span></div>
         <div id="fetching-error">
             <span class="try-again">Error when fetching data, please try again.
                 <a class="try-again-button">refresh</a>.
@@ -165,7 +172,7 @@
     </script>
 
     <script type="text/html" id="map-control-panel">
-        <div class="map-control-panel">
+        <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
             <div class="search-control sub-control-panel">
                 <i class="fa fa-search" aria-hidden="true"></i>
             </div>
@@ -175,6 +182,11 @@
             <div class="locate-control sub-control-panel">
                 <i class="fa fa-location-arrow" aria-hidden="true"></i>
             </div>
+            {% if user.is_authenticated %}
+            <div class="upload-data sub-control-panel">
+                <i class="fa fa-upload" aria-hidden="true"></i>
+            </div>
+            {% endif %}
         </div>
         <div class="zoom-control row">
             <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
@@ -221,6 +233,8 @@
                 </ul>
             </div>
         </div>
+
+
     </script>
 
     <script type="text/html" id="locate-coordinate-modal">
@@ -264,6 +278,96 @@
             </div>
         </div>
     </script>
+
+    <script type="text/html" id="upload-data-modal">
+        <div class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-upload-data" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Data</h5>
+                        <button type="button" class="close"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form">
+                            <div class="alert alert-danger" role="alert">
+                            </div>
+                            <div class="alert alert-success" role="alert">
+                            </div>
+                            <label for="ud_module" class="upload-input-label">
+                                Module *
+                            </label>
+                            <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                <option value="">-</option>
+                                <option value="base">base</option>
+                                {% for key, value in biological_modules.items %}
+                                    <option value="{{ value }}">{{ key }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="ud_species_name" class="upload-input-label">
+                                Species Name *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_species_name" placeholder="" name="Species Name">
+                            <label for="ud_location_site" class="upload-input-label">
+                                Location Site Name *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_location_site" name="Location Site" placeholder="">
+                            <label for="ud_collection_date" class="upload-input-label">
+                                Collection Date *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_collection_date" name="Collection Date" placeholder="">
+                            <label for="ud_category" class="upload-input-label">
+                                Category *
+                            </label>
+                            <select id="ud_category" name="Category" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                <option value="">-</option>
+                                {% for category in collection_category %}
+                                    <option value="{{ category.0 }}">{{ category.1 }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="ud_collector" class="upload-input-label">
+                                Collector *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item-required ud-item"
+                                   id="ud_collector" placeholder="" name="Collector">
+                            <label for="ud_notes" class="upload-input-label">
+                                Notes
+                            </label>
+                            <textarea class="form-control ud-item"
+                                   id="ud_notes" placeholder=""></textarea>
+                            <p class="required-text ">* = Required </p>
+
+                            <button type="button" class="btn btn-info upload-data-button">Upload</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/html" id="download-control-panel">
+         <div class="download-control sub-control-panel">
+             <i class="fa fa-download" aria-hidden="true"></i>
+         </div>
+
+         <div class="download-format-selector-container map-control-panel-box">
+             <div class="row content">
+                 <ul style="width:100%">
+                     <li data-format="csv">csv</li>
+                     <li data-format="geojson">geojson</li>
+                 </ul>
+             </div>
+         </div>
+     </script>
 
     <script type="text/template" id="search-result-record-template">
         <div class="result-search" data-search-result-id="">
@@ -340,7 +444,7 @@
                     <td><%= collection_date %></td>
                 </tr>
                 <tr>
-                    <td>Collector</td>
+                    <td>Collector or observer</td>
                     <td><%= collector %></td>
                 </tr>
                 <tr>
