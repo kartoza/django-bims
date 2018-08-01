@@ -1,16 +1,21 @@
 # coding=utf8
 
+import csv
+import json
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxon import Taxon
-from bims.serializers.bio_collection_serializer import \
-    BioCollectionSerializer
+from bims.serializers.bio_collection_serializer import (
+    BioCollectionSerializer,
+    BioCollectionOneRowSerializer,
+    BioCollectionGeojsonSerializer
+)
 from bims.utils.cluster_point import (
     within_bbox,
     overlapping_area,
@@ -19,9 +24,9 @@ from bims.utils.cluster_point import (
 )
 
 
-class ClusterCollectionAbstract(APIView):
+class GetCollectionAbstract(APIView):
     """
-    Abstract class for cluster collection
+    Abstract class for getting collection
     """
 
     def apply_filter(self, request, ignore_bbox=False):
@@ -85,9 +90,9 @@ class ClusterCollectionAbstract(APIView):
         return queryset
 
 
-class ClusterCollectionExtent(ClusterCollectionAbstract):
+class GetCollectionExtent(GetCollectionAbstract):
     """
-    Return extent of cluster by taxon
+    Return extent of collection
     """
 
     def get(self, request, format=None):
@@ -99,7 +104,71 @@ class ClusterCollectionExtent(ClusterCollectionAbstract):
             return Response([])
 
 
-class ClusterCollection(ClusterCollectionAbstract):
+class CollectionDownloader(GetCollectionAbstract):
+    """
+    Download all collections with format
+    """
+
+    def convert_to_cvs(self, queryset, Model, ModelSerializer):
+        """
+        Converting data to csv.
+        :param queryset: queryset that need to be converted
+        :type queryset: QuerySet
+        """
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="download.csv"'
+
+        headers = Model._meta.fields
+        rows = []
+        if queryset:
+            serializer = ModelSerializer(
+                queryset, many=True)
+            headers = serializer.data[0].keys()
+            rows = serializer.data
+
+        writer = csv.DictWriter(response, fieldnames=headers)
+        writer.writeheader()
+
+        for row in rows:
+            writer.writerow(row)
+
+        return response
+
+    def convert_to_geojson(self, queryset, Model, ModelSerializer):
+        """
+        Converting data to geojson.
+        :param queryset: queryset that need to be converted
+        :type queryset: QuerySet
+        """
+        serializer = ModelSerializer(
+            queryset, many=True)
+        response = HttpResponse(
+            content=json.dumps(serializer.data),
+            content_type='text/geojson')
+        response['Content-Disposition'] = \
+            'attachment; filename="download.geojson"'
+        return response
+
+    def get(self, request):
+        file_type = request.GET.get('fileType', None)
+        if not file_type:
+            file_type = 'csv'
+        queryset = self.apply_filter(request, ignore_bbox=True)
+        if file_type == 'csv':
+            return self.convert_to_cvs(
+                queryset,
+                BiologicalCollectionRecord,
+                BioCollectionOneRowSerializer)
+        elif file_type == 'geojson':
+            return self.convert_to_geojson(
+                queryset,
+                BiologicalCollectionRecord,
+                BioCollectionGeojsonSerializer)
+        else:
+            return Response([])
+
+
+class ClusterCollection(GetCollectionAbstract):
     """
     Clustering collection with same taxon
     """

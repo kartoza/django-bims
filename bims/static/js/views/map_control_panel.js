@@ -1,16 +1,17 @@
 define(
-    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate'],
-    function (Backbone, _, $, ol, SearchView, LocateView) {
+    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader'],
+    function (Backbone, _, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
+        uploadDataActive: false,
         searchView: null,
         locateView: null,
         events: {
             'click .search-control': 'searchClicked',
             'click .filter-control': 'filterClicked',
             'click .locate-control': 'locateClicked',
-            'click .location-control': 'locationClicked',
+            'click .upload-data': 'uploadDataClicked',
             'click .map-search-close': 'closeSearchPanel',
             'click .layers-selector-container-close': 'closeFilterPanel',
             'click .locate-options-container-close': 'closeLocatePanel',
@@ -20,54 +21,58 @@ define(
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
+            this.dataDownloaderControl = new DataDownloader({
+                 parent: this
+             });
         },
         searchClicked: function (e) {
-            $('.layer-switcher.shown button').click();
-            // show search div
             if (!this.searchView.isOpen()) {
-                this.openSearchPanel();
-                this.closeFilterPanel();
-                this.closeLocatePanel();
-            } else {
-                this.closeSearchPanel();
-            }
+                 this.resetAllControlState();
+                 this.openSearchPanel();
+                 this.closeFilterPanel();
+                 this.closeLocatePanel();
+             } else {
+                 this.closeSearchPanel();
+             }
         },
         filterClicked: function (e) {
-            $('.layer-switcher.shown button').click();
-            // show filter div
             if ($('.layers-selector-container').is(":hidden")) {
-                this.openFilterPanel();
-                this.closeSearchPanel();
-                this.closeLocatePanel();
-            } else {
-                this.closeFilterPanel();
-            }
+                 this.resetAllControlState();
+                 this.openFilterPanel();
+                 this.closeSearchPanel();
+                 this.closeLocatePanel();
+             } else {
+                 this.closeFilterPanel();
+             }
         },
         locateClicked: function (e) {
-            $('.layer-switcher.shown button').click();
-            // show locate div
             if ($('.locate-options-container').is(":hidden")) {
-                this.openLocatePanel();
-                this.closeSearchPanel();
-                this.closeFilterPanel();
+                 this.resetAllControlState();
+                 this.openLocatePanel();
+                 this.closeSearchPanel();
+                 this.closeFilterPanel();
             } else {
                 this.closeLocatePanel();
             }
         },
-        locationClicked: function (e) {
-            var target = $(e.target);
-            if (!target.hasClass('location-control')) {
-                target = target.parent();
-            }
-            // Activate function
-            if (!this.locationControlActive) {
-                this.locationControlActive = true;
-                target.addClass('control-panel-selected');
+        uploadDataClicked: function (e) {
+
+            var button = $(this.$el.find('.upload-data')[0]);
+            if(this.uploadDataActive) {
+                button.removeClass('control-panel-selected');
+                $('#footer-message span').html('-');
+                $('#footer-message').hide();
             } else {
-                this.locationControlActive = false;
-                target.removeClass('control-panel-selected');
-                this.parent.hideGeoContext();
+                this.resetAllControlState();
+                button.addClass('control-panel-selected');
+                $('#footer-message span').html('CLICK LOCATION ON THE MAP');
+                $('#footer-message').show();
             }
+            this.uploadDataActive = !this.uploadDataActive;
+            this.parent.uploadDataState = this.uploadDataActive;
+        },
+        showUploadDataModal: function (lon, lat) {
+            this.uploadDataView.showModal(lon, lat);
         },
         render: function () {
             this.$el.html(this.template());
@@ -83,6 +88,13 @@ define(
                 parent: this,
             });
             this.$el.append(this.locateView.render().$el);
+            this.$el.append(this.dataDownloaderControl.render().$el);
+            this.uploadDataView = new UploadDataView({
+                parent: this,
+                map: this.parent.map
+            });
+            this.$el.append(this.uploadDataView.render().$el);
+
             return this;
         },
         openSearchPanel: function () {
@@ -92,9 +104,6 @@ define(
         closeSearchPanel: function () {
             this.$el.find('.search-control').removeClass('control-panel-selected');
             this.searchView.hide();
-        },
-        closeAllPanel: function () {
-            this.closeSearchPanel();
         },
         closeSubFilter: function (e) {
             var target = $(e.target);
@@ -120,7 +129,20 @@ define(
         openLocateCoordinates: function (e) {
             this.closeLocatePanel();
             this.locateView.showModal();
-        }
+        },
+        resetAllControlState: function () {
+            var uploadDataElm = this.$el.find('.upload-data');
+            if(uploadDataElm.hasClass('control-panel-selected')) {
+                uploadDataElm.removeClass('control-panel-selected');
+                this.uploadDataActive = false;
+                $('#footer-message span').html('-');
+                $('#footer-message').hide();
+                this.parent.uploadDataState = false;
+            }
 
+            $('.layer-switcher.shown button').click();
+            $('.map-control-panel-box:visible').hide();
+            $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
+        }
     })
 });

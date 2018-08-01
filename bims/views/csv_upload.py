@@ -9,6 +9,8 @@ from django.urls import reverse_lazy
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from django.views.generic import FormView
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib import messages
 from bims.forms.csv_upload import CsvUploadForm
 from bims.models import (
     LocationSite,
@@ -25,7 +27,7 @@ from bims.utils.gbif import update_collection_record
 from bims.tasks.collection_record import update_search_index, update_cluster
 
 
-class CsvUploadView(FormView):
+class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
     """Csv upload view."""
 
     form_class = CsvUploadForm
@@ -33,6 +35,14 @@ class CsvUploadView(FormView):
     context_data = dict()
     success_url = reverse_lazy('csv-upload')
     collection_record = BiologicalCollectionRecord
+
+    def test_func(self):
+        return self.request.user.has_perm('bims.can_upload_csv')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to upload CSV')
+        return super(CsvUploadView, self).handle_no_permission()
 
     additional_fields = {
         'present': 'bool',
