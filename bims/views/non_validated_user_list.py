@@ -17,6 +17,11 @@ class NonValidatedObjectsUserView(LoginRequiredMixin, ListView):
         filter_date_from = self.request.GET.get('date_from', None)
         context = super(
             NonValidatedObjectsUserView, self).get_context_data(**kwargs)
+
+        # Parameters to be added in the url to update filters.
+        # original_species_name filters objects based on its
+        # original species name.
+        # date_from and date_to filter objects based on its collection date.
         context['custom_url'] = ''
         if filter_name:
             context['custom_url'] = \

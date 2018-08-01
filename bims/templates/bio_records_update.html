@@ -1,5 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
+{% load crispy_forms_tags %}
 
 {% block title %}
     Edit Records
@@ -22,15 +23,35 @@
     </div>
     <div class="container" style="margin-bottom: 50px">
     <div class="form-wrapper form-control">
-        <form id="update-form" method="post">
+        <form id="form" method="post">
             {% csrf_token %}
-            {{ form.as_p }}
-            <input class="form-control btn btn-primary" type="submit" value="Update" />
+            {% crispy form %}
+            <input name="geometry_type" type="hidden">
+            <input name="geometry" type="hidden">
         </form>
+        <div class="form-group">
+            <label>Geometry type</label>
+            <select id="type" class="form-control">
+                <option value="Point">Point</option>
+                <option value="LineString">LineString</option>
+                <option value="Polygon">Polygon</option>
+            </select>
+        </div>
+        <label class="control-label">Location</label>
+        <div id="map" class="map" style="height: 400px; width: 600px; margin-bottom: 50px"></div>
+        <input class="form-control btn btn-primary" form="form" type="submit" value="Update" />
     </div>
     </div>
 
+    <script src="{% static 'js/views/map-widget.js' %}"></script>
     <script>
+        var geometryType = {
+            'POINT': 'Point',
+            'LINE': 'LineString',
+            'POLYGON': 'Polygon'
+        };
+        var geojson  = new ol.format.GeoJSON;
+
         $(document).ready(function () {
             $('input[name=collection_date]').datepicker(
                 {
@@ -39,9 +60,33 @@
                     changeYear: true
                 }
             ).attr('type', 'text');
-            $('#update-form').find("input[type='text'], select, textarea").each(function(index, element) {
-                $(element).addClass("form-control");
+            $('#type').val(geometryType['{{ geometry_type }}']).change();
+            var geometry = '{{ geometry }}';
+            var geometry_json = JSON.parse(geometry.replace(/&quot;/g,'"'));
+            var geojsonObject = {
+                'type': 'FeatureCollection',
+                'features': [{
+                  'type': 'Feature',
+                  'geometry': {
+                    'type': geometry_json['type'],
+                    'coordinates': geometry_json['coordinates']
+                  }
+                }]
+            };
+            var geojson_feature = geojson.readFeatures(geojsonObject, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
             });
+            source.addFeatures(geojson_feature);
         });
+
+        $('#form').on('submit', function () {
+            var features = source.getFeatures();
+            var json = geojson.writeFeatures(features, {
+                featureProjection: 'EPSG:3857'
+            });
+            $('input[name=geometry_type]').val(typeSelect.value);
+            $('input[name=geometry]').val(json);
+        })
     </script>
 {% endblock %}
