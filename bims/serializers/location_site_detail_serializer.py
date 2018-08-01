@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -11,6 +12,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     """
     biological_collection_record = serializers.SerializerMethodField()
     geometry = serializers.SerializerMethodField()
+    location_context_document_json = serializers.SerializerMethodField()
 
     def get_biological_collection_record(self, obj):
         collections = BiologicalCollectionRecord.objects.filter(
@@ -24,6 +26,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return obj.get_geometry().json
         return ''
 
+    def get_location_context_document_json(self, obj):
+        return json.loads(obj.location_context_document)
+
     class Meta:
         model = LocationSite
         fields = [
@@ -32,4 +37,5 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'geometry',
             'location_type',
             'biological_collection_record',
+            'location_context_document_json',
         ]
