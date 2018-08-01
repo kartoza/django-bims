@@ -88,9 +88,9 @@ urlpatterns = [
             url=reverse_lazy('profile_detail', kwargs={
                 'username': request.user.username
             }), permanent=False)(request)), name='user-profile'),
-    url(r'^upload/$', login_required(CsvUploadView.as_view()),
+    url(r'^upload/$', CsvUploadView.as_view(),
         name='csv-upload'),
-    url(r'^upload_shp/$', login_required(ShapefileUploadView.as_view()),
+    url(r'^upload_shp/$', ShapefileUploadView.as_view(),
         name='shapefile-upload'),
     url(r'^process_shapefiles/$', process_shapefiles,
         name='process_shapefiles'),
