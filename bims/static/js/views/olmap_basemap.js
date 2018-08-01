@@ -112,7 +112,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var mapSurfer = new ol.layer.Tile({
                 title: 'OSM Mapsurfer roads',
                 source: new ol.source.XYZ({
-                    attributions: ['OpenStreetMap contributors, ODbL, Imagery GIScience Research Group @ Heidelberg University'],
+                    attributions: ['&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
                     url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
                 })
             });
