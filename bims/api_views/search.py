@@ -68,6 +68,9 @@ class SearchObjects(APIView):
                     SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
 
+        results = results.filter(
+            validated=True
+        )
         # group data of biological collection record
         # TODO : Move it to query of haystack and use count aggregations
         records = {}

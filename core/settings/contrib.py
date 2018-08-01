@@ -190,3 +190,5 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'monitoring.RequestEvent',
     'monitoring.MonitoredResource',
 ]
+
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False

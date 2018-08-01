@@ -5,6 +5,7 @@
 
 import logging
 import requests
+import json
 
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
@@ -20,6 +21,9 @@ class LocationSite(models.Model):
     """Location Site model."""
 
     __original_centroid = None
+    geocontext_url_format = '{geocontext_url}/api/v1/geocontext/value/' \
+                            'collection/{longitude}/{latitude}/' \
+                            '{geocontext_collection_key}'
 
     name = models.CharField(
         max_length=100,
@@ -65,9 +69,6 @@ class LocationSite(models.Model):
                 return self.get_geometry().centroid
             else:
                 return None
-
-    def has_location_context(self):
-        return self.location_context_document is not None
 
     def get_geometry(self):
         """Function to get geometry."""
@@ -120,9 +121,7 @@ class LocationSite(models.Model):
         latitude = self.get_centroid().y
 
         # build url
-        url_format = '{geocontext_url}/api/v1/geocontext/value/collection/' \
-                     '{longitude}/{latitude}/{geocontext_collection_key}'
-        url = url_format.format(
+        url = self.geocontext_url_format.format(
             geocontext_url=geocontext_url,
             longitude=longitude,
             latitude=latitude,
@@ -136,7 +135,7 @@ class LocationSite(models.Model):
                 'context document.' % (url, r.status_code, r.reason))
             return False, message
 
-        self.location_context_document = r.json()
+        self.location_context_document = json.dumps(r.json())
         return True, 'Successfully update location context document.'
 
     # noinspection PyClassicStyleClass

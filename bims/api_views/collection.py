@@ -31,7 +31,9 @@ class GetCollectionAbstract(APIView):
 
     def apply_filter(self, request, ignore_bbox=False):
         # get records with same taxon
-        queryset = BiologicalCollectionRecord.objects.filter()
+        queryset = BiologicalCollectionRecord.objects.filter(
+            validated=True
+        )
         taxon = request.GET.get('taxon', None)
         if taxon:
             try:

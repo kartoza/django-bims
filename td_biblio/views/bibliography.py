@@ -11,10 +11,10 @@ from django.urls import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, ListView
 
-from bims.exceptions import DOILoaderError, PMIDLoaderError
-from bims.forms.bibliography import EntryBatchImportForm
-from bims.models import Author, Collection, Entry, Journal
-from bims.utils.loaders import DOILoader, PubmedLoader
+from td_biblio.exceptions import DOILoaderError, PMIDLoaderError
+from td_biblio.forms.bibliography import EntryBatchImportForm
+from td_biblio.models import Author, Collection, Entry, Journal
+from td_biblio.utils.loaders import DOILoader, PubmedLoader
 
 logger = logging.getLogger('bims')
 

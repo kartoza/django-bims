@@ -137,10 +137,8 @@ define([
             if (properties['record_type'] === 'site') {
                 Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
 
-                // call geocontext
-                var coordinates = feature.getGeometry().getCoordinates();
-                coordinates = ol.proj.transform(coordinates, "EPSG:3857", "EPSG:4326");
-                this.geocontext.loadGeocontext(coordinates[0], coordinates[1]);
+                // Load geocontext value for the ID
+                this.geocontext.loadGeocontextByID(properties['id']);
 
             } else {
                 Shared.Dispatcher.trigger('cluster-biology' + properties.id + ':clicked');
