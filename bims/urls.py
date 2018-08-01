@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from django.contrib.auth.decorators import login_required
-from django.conf.urls import url, include
+from django.conf.urls import url
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
 
@@ -28,10 +28,6 @@ from bims.api_views.collection import (
 )
 from bims.api_views.collector import CollectorList
 from bims.api_views.category_filter import CategoryList
-from bims.views.bibliography import (
-    EntryListView,
-    EntryBatchImportView,
-)
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import GetBioRecords
@@ -75,10 +71,6 @@ api_urls = [
         GetBioRecords.as_view(), name='get-bio-object'),
 ]
 
-bibliography_urls = [
-    url('^$', EntryListView.as_view(), name='entry_list'),
-    url('^import/$', EntryBatchImportView.as_view(), name='import'),
-]
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -95,9 +87,6 @@ urlpatterns = [
     url(r'^process_shapefiles/$', process_shapefiles,
         name='process_shapefiles'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
-    url(r'^bibliography/',
-        include((bibliography_urls, 'bims'), namespace = 'td_biblio')),
-
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user'),
