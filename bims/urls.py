@@ -110,7 +110,7 @@ urlpatterns = [
     url(r'^nonvalidated-user-list/$',
         NonValidatedObjectsUserView.as_view(), name='nonvalidated-user-list'),
     url(r'^update/(?P<pk>\d+)/$',
-        BioRecordsUpdateView.as_view(), name='update-records')
+        BioRecordsUpdateView.as_view(), name='update-records'),
     url(r'^upload_collection/$', CollectionUploadView.as_view(),
         name='upload-collection'),
 ] + api_urls

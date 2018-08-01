@@ -2,7 +2,7 @@
 import json
 from braces.views import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.contrib.gis.geos import GEOSGeometry, GeometryCollection
+from django.contrib.gis.geos import GEOSGeometry
 from django.db.models import signals
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
