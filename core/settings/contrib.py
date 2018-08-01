@@ -76,7 +76,8 @@ try:
 
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
         'bims.context_processor.add_recaptcha_key',
-        'bims.context_processor.custom_navbar_url'
+        'bims.context_processor.custom_navbar_url',
+        'bims.context_processor.google_analytic_key'
     ]
 except KeyError:
     TEMPLATES = [
