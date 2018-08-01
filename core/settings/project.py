@@ -13,6 +13,7 @@ from .contrib import *  # noqa
 # Project apps
 INSTALLED_APPS += (
     'bims',
+    'td_biblio',
     'fish',
     'reptile',
 )
