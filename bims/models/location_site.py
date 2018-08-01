@@ -21,6 +21,9 @@ class LocationSite(models.Model):
     """Location Site model."""
 
     __original_centroid = None
+    geocontext_url_format = '{geocontext_url}/api/v1/geocontext/value/' \
+                            'collection/{longitude}/{latitude}/' \
+                            '{geocontext_collection_key}'
 
     name = models.CharField(
         max_length=100,
@@ -118,9 +121,7 @@ class LocationSite(models.Model):
         latitude = self.get_centroid().y
 
         # build url
-        url_format = '{geocontext_url}/api/v1/geocontext/value/collection/' \
-                     '{longitude}/{latitude}/{geocontext_collection_key}'
-        url = url_format.format(
+        url = self.geocontext_url_format.format(
             geocontext_url=geocontext_url,
             longitude=longitude,
             latitude=latitude,
