@@ -87,7 +87,7 @@ class IUCNStatusAdmin(admin.ModelAdmin):
 
 
 class TaxonAdmin(admin.ModelAdmin):
-    list_display = ('common_name', 'author', 'iucn_status')
+    list_display = ('common_name', 'author', 'iucn_status', 'taxon_class')
 
 
 class BoundaryAdmin(admin.ModelAdmin):

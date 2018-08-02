@@ -31,8 +31,6 @@ urlpatterns = [
     url(r'^bibliography/',
         include(('td_biblio.urls', 'bibliography'),
                 namespace = 'td_biblio')),
-    url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
-    url(r'^', include(('reptile.urls', 'reptile'), namespace='reptile')),
     url(r'^', include('example.urls')),
 
     # prometheus monitoring

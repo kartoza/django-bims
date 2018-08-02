@@ -28,7 +28,10 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         return ''
 
     def get_location_context_document_json(self, obj):
-        return json.loads(obj.location_context_document)
+        if obj.location_context_document:
+            return json.loads(obj.location_context_document)
+        else:
+            return ''
 
     class Meta:
         model = LocationSite
