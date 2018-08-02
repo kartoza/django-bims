@@ -71,8 +71,8 @@ define(
             this.uploadDataActive = !this.uploadDataActive;
             this.parent.uploadDataState = this.uploadDataActive;
         },
-        showUploadDataModal: function (lon, lat) {
-            this.uploadDataView.showModal(lon, lat);
+        showUploadDataModal: function (lon, lat, siteFeature) {
+            this.uploadDataView.showModal(lon, lat, siteFeature);
         },
         render: function () {
             this.$el.html(this.template());

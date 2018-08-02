@@ -97,43 +97,55 @@ define([
             var features = self.map.getFeaturesAtPixel(e.pixel);
             this.layers.highlightVectorSource.clear();
             this.hidePopup();
+
             // Point of interest flag
-            var pointFound = false;
+            var featuresClickedResponseData = [];
+            var poiFound = false;
+            var featuresData = '';
 
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
+
                 if (geometryType === 'Point') {
-                    pointFound = self.featureClicked(features[0]);
-                    if(pointFound) {
+                    featuresClickedResponseData = self.featureClicked(features[0], self.uploadDataState);
+                    poiFound = featuresClickedResponseData[0];
+                    featuresData = featuresClickedResponseData[1];
+
+                    if(poiFound) {
                         var coordinates = geometry.getCoordinates();
                         self.zoomToCoordinates(coordinates);
-
-                        // increase zoom level if it is clusters
-                        if (features[0].getProperties()['count'] &&
-                            features[0].getProperties()['count'] > 1) {
-                            self.map.getView().setZoom(self.getCurrentZoom() + 1);
-                        }
+                    }
+                    // increase zoom level if it is clusters
+                    if (features[0].getProperties()['count'] &&
+                        features[0].getProperties()['count'] > 1) {
+                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                        poiFound = true;
                     }
                 }
             }
 
-            if (self.uploadDataState && !pointFound) {
+            if (self.uploadDataState && !poiFound) {
                 // Get lat and long map
                 var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
                 var lon = lonlat[0];
                 var lat = lonlat[1];
-                self.mapControlPanel.showUploadDataModal(lon, lat);
+                self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
             }
 
             // Close opened control panel
             this.mapControlPanel.closeSearchPanel();
         },
-        featureClicked: function (feature) {
+        featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
             if(!properties.hasOwnProperty('record_type')) {
-                return false;
+                return [false, ''];
             }
+
+            if(uploadDataState) {
+                return [false, feature];
+            }
+
             if (properties['record_type'] === 'site') {
                 Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
 
@@ -147,7 +159,7 @@ define([
             if (this.layers.layerStyle.isIndividialCluster(feature)) {
                 this.addHighlightFeature(feature);
             }
-            return true;
+            return [true, properties];
         },
         hidePopup: function () {
             this.popup.setPosition(undefined);
