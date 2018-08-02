@@ -82,14 +82,14 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return obj.notes.encode('utf8')
 
     def get_category(self, obj):
-        return obj.category
+        return obj.category.encode('utf8')
 
     def get_date(self, obj):
         if obj.collection_date:
             return obj.collection_date.strftime('%Y-%m-%d')
 
     def get_collector(self, obj):
-        return obj.collector
+        return obj.collector.encode('utf8')
 
     class Meta:
         model = BiologicalCollectionRecord
