@@ -57,3 +57,12 @@ GRUNT_MODULES = {
 }
 
 TEMP_FOLDER = MEDIA_ROOT + '/temp'
+
+# Saving geometry of country in focused countries
+FOCUSED_COUNTRIES = ["South Africa"]
+
+# Geometry used for others
+# Turn off if it is not used (like showing on map)
+# If it is not used, geometry that saved is just municipals
+# Because of calculating cluster is just for municipals
+USE_GEOMETRY_BOUNDARY = False

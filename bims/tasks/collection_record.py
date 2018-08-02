@@ -20,5 +20,9 @@ def update_cluster(ids=None):
     else:
         for boundary in Boundary.objects.filter(
                 id__in=ids).order_by('-type__level'):
-            print('generate cluster for %s' % boundary)
-            boundary.generate_cluster()
+            while True:
+                print('generate cluster for %s' % boundary)
+                boundary.generate_cluster()
+                boundary = boundary.top_level_boundary
+                if not boundary:
+                    break

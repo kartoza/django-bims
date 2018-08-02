@@ -15,6 +15,6 @@ class Command(UpdateBoundary, BaseCommand):
         self.save_data(
             os.path.join(
                 settings.STATIC_ROOT,
-                'data/municipal/municipal.shp'
+                'data/municipal/municipal.simplified.shp'
             ),
             'municipal', 'municname', 'cat_b', 4, 'district')
