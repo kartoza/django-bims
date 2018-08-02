@@ -122,8 +122,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             if (mapTilerKey) {
                 baseSourceLayers.push(this.getPositronBasemap());
                 baseSourceLayers.push(this.getDarkMatterBasemap());
-                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
                 baseSourceLayers.push(this.getOSMMapsurferRoads());
+                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
             }
             $.each(baseSourceLayers, function (index, layer) {
                 layer.set('type', 'base');
