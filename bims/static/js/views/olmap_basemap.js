@@ -52,14 +52,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 layers: [openMapTiles, hillshading, contours]
             });
         },
-
-        getOSMMapsurferRoads: function () {
-            var layer = this.getOpenMapTilesTile(
-                staticURL + 'mapbox-style/positron-gl-style.json');
-            layer.set('title', 'Positron Map');
-            return layer
-        },
-
         getPositronBasemap: function () {
             var layer = this.getOpenMapTilesTile(
                 staticURL + 'mapbox-style/positron-gl-style.json');
@@ -122,7 +114,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             if (mapTilerKey) {
                 baseSourceLayers.push(this.getPositronBasemap());
                 baseSourceLayers.push(this.getDarkMatterBasemap());
-                baseSourceLayers.push(this.getOSMMapsurferRoads());
                 baseSourceLayers.push(this.getKlokantechTerrainBasemap());
             }
             $.each(baseSourceLayers, function (index, layer) {
