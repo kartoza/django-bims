@@ -58,7 +58,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_location_site(self, obj):
         if obj.site:
-            return obj.site.name
+            return obj.site.name.encode('utf8')
         return ''
 
     def get_latitude(self, obj):
@@ -72,10 +72,10 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return ''
 
     def get_species_name(self, obj):
-        return obj.original_species_name
+        return obj.original_species_name.encode('utf8')
 
     def get_notes(self, obj):
-        return obj.notes
+        return obj.notes.encode('utf8')
 
     def get_category(self, obj):
         return obj.category
