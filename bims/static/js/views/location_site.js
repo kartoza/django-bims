@@ -4,10 +4,91 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
         initialize: function (options) {
             this.render();
         },
+        hideAll: function (e) {
+            if ($(e.target).data('visibility')) {
+                $(e.target).nextAll().hide();
+                $(e.target).data('visibility', false)
+            } else {
+                $(e.target).nextAll().show();
+                $(e.target).data('visibility', true)
+            }
+        },
+        renderSiteDetail: function (data) {
+            var html = '<table class="site-detail-content">';
+            if (data.hasOwnProperty('records_occurrence')) {
+                var records_occurrence = data['records_occurrence'];
+                var index = 0;
+                $.each(records_occurrence, function (key, value) {
+                    if (key) {
+                        if (index % 2 === 0) {
+                            html += '<tr>';
+                        }
+                        html += '<td class="text-center" valign="top" width="50%">' +
+                            '<img src="/static/img/' + key + '.svg" class="right-panel-icon">' +
+                            '<p class="text-bold">' + Object.keys(value).length + '</p>' +
+                            '<p class="text-bold">' + key + ' spesies</p>' +
+                            '</td>';
+                        index += 1;
+                        if (index % 2 === 0) {
+                            html += '<tr>';
+                        }
+                    }
+                });
+            }
+            html += '</div>';
+            return html;
+        },
+        renderSpeciesList: function (data) {
+            var $specialListWrapper = $('<div style="display: none"></div>');
+            if (data.hasOwnProperty('records_occurrence')) {
+                var records_occurrence = data['records_occurrence'];
+                var template = _.template($('#search-result-record-template').html());
+                $.each(records_occurrence, function (key, value) {
+                    if (key) {
+                        var $classWrapper = $('<div class="sub-species-wrapper"></div>');
+                        var classTemplate = _.template($('#search-result-sub-title').html());
+                        $classWrapper.append(classTemplate({
+                            name: key,
+                            count: Object.keys(value).length
+                        }));
+                        $.each(value, function (species, speciesValue) {
+                            $classWrapper.append(
+                                template(speciesValue)
+                            );
+                        });
+                        $specialListWrapper.append($classWrapper);
+                    }
+                });
+            }
+            return $specialListWrapper;
+        },
         clicked: function () {
             var self = this;
             var properties = this.model.attributes['properties'];
+            // Render basic information
+            var $siteDetailWrapper = $('<div></div>');
+            $siteDetailWrapper.append(
+                '<div id="site-detail" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> Site detail </div></div>');
+            $siteDetailWrapper.append(
+                '<div id="dashboard-detail" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> Dashboard </div></div>');
+            $siteDetailWrapper.append(
+                '<div id="species-list" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> Species List </div></div>');
+            $siteDetailWrapper.append(
+                '<div id="party-data-detail" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> 3rd Party Data </div></div>');
+            $siteDetailWrapper.append(
+                '<div id="geocontext-detail" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> Geocontext </div></div>');
+
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', properties);
+            Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
+            $siteDetailWrapper.find('.search-results-total').click(self.hideAll);
+            $siteDetailWrapper.find('.search-results-total').click();
+
+            // call detail
             if (Shared.LocationSiteDetailXHRRequest) {
                 Shared.LocationSiteDetailXHRRequest.abort();
                 Shared.LocationSiteDetailXHRRequest = null;
@@ -16,10 +97,32 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
                 url: this.model.url,
                 dataType: 'json',
                 success: function (data) {
-                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', data);
+                    // render site detail
+                    var siteDetailHtml = self.renderSiteDetail(data);
+                    $('#site-detail').append(siteDetailHtml);
+
+                    // render species list
+                    var $specialListWrapper = self.renderSpeciesList(data);
+                    $('#species-list').append($specialListWrapper);
+                    $specialListWrapper.find('.result-search').click(function (e) {
+                        var $element = $(e.target);
+                        var taxonID = $(e.target).data('taxon-id');
+                        if (!taxonID) {
+                            $element = $(e.target).closest('.result-search')
+                            taxonID = $element.data('taxon-id');
+                        }
+                        Shared.Dispatcher.trigger(
+                            'searchResult:updateTaxon',
+                            taxonID,
+                            $element.find('.group-title').html()
+                        );
+                    });
+
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
                 }
             });
         },

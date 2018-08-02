@@ -44,7 +44,6 @@ body {
 }
 
 .panel-icons {
-    padding-top: 70px;
     position: absolute;
     height: 100px;
 }
@@ -120,7 +119,6 @@ html, body, .map, .map-wrapper, #map-container {
 
 .side-panel-info {
     height: 70px;
-    position: absolute;
     width: 100%
 }
 
@@ -707,6 +705,11 @@ div:hover::-webkit-scrollbar {
     display: none;
 }
 
+#taxon-filter .fa-times {
+    cursor: pointer;
+    margin-left: 5px;
+}
+
 #fetching-error .try-again-button {
     color: blue;
     cursor: pointer;
@@ -951,6 +954,34 @@ div:hover::-webkit-scrollbar {
 
 .modal-upload-data {
     z-index: 9999;
+}
+
+.site-detail-content {
+    padding: 10px;
+    width: 100%;
+
+}
+
+.site-detail-content td {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.search-result-sub-title {
+    padding-right: 5px;
+}
+
+.sub-species-wrapper .search-result-sub-title,
+.sub-species-wrapper .result-search {
+    padding-left: 15px !important;
+}
+
+.sub-species-wrapper .search-result-sub-title {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.site-detail-content .text-center {
+    font-size: 12px;
 }
 
 @media (min-width: 1300px) and (max-width: 1412px) {
