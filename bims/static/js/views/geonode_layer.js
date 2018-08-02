@@ -3,8 +3,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         className: 'geonode-layer-control-panel',
         template: _.template($('#geonode-layer-control-panel').html()),
         events: {
-            // 'click .download-control': 'toggleFormat',
-            // 'click li': 'download'
+            'click .geonode-layer-control': 'toggleFormat',
+            'click .map-search-close': 'closeGeonodeLayerPanel',
         },
         initialize: function (options) {
             this.parent = options.parent;
@@ -14,13 +14,19 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             return this;
         },
         toggleFormat: function () {
-            if ($('.download-format-selector-container').is(":hidden")) {
+            if ($('.geonode-layer-search-box').is(":hidden")) {
                 this.parent.resetAllControlState();
                 this.$el.find('.sub-control-panel').addClass('control-panel-selected');
-                $('.download-format-selector-container').show();
+                $('.geonode-layer-search-box').show();
             } else {
                 this.$el.find('.sub-control-panel').removeClass('control-panel-selected');
-                $('.download-format-selector-container').hide();
+                $('.geonode-layer-search-box').hide();
+            }
+        },
+        closeGeonodeLayerPanel: function () {
+             if (!$('.geonode-layer-search-box').is(":hidden")) {
+                this.$el.find('.sub-control-panel').removeClass('control-panel-selected');
+                $('.geonode-layer-search-box').hide();
             }
         }
     })

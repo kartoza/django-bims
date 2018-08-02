@@ -180,6 +180,18 @@ html, body, .map, .map-wrapper, #map-container {
     height: 46px;
 }
 
+.geonode-layer-control-panel .geonode-layer-search-box {
+    margin-left: 49px;
+    margin-top: 0;
+    display: none;
+    width: auto;
+}
+
+.geonode-layer-control-panel {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
 .zoom-control {
     font-size: 11pt;
     padding: 7px 0;
