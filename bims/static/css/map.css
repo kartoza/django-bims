@@ -157,6 +157,29 @@ html, body, .map, .map-wrapper, #map-container {
     width: auto;
 }
 
+.geonode-layer-control-panel {
+    background-color: white;
+    position: absolute;
+    left: 0;
+    top: 240px;
+    transform: translateY(-50%);
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 18pt;
+    text-align: center;
+    color: #4e4e4e;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
+    margin-left: 31px;
+    padding-top: 0;
+    border-top: none;
+    width: 54px;
+}
+
+.geonode-layer-control-panel  {
+    top: 399px;
+    height: 46px;
+}
+
 .zoom-control {
     font-size: 11pt;
     padding: 7px 0;
