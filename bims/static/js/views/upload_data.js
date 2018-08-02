@@ -47,8 +47,6 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             this.lon = lon;
             this.lat = lat;
             this.siteFeature = siteFeature;
-            console.log(lon);
-            console.log(lat);
 
             var coordinates = ol.proj.fromLonLat([lon, lat]);
             this.markerPoint = new ol.Feature({
