@@ -3,9 +3,8 @@ __date__ = '21/05/18'
 
 import json
 import logging
-from django.core.exceptions import FieldError
 from django.db.models import Q
-from bims.models.boundary import Boundary
+from bims.models.boundary import Boundary, BoundaryType
 from bims.models.cluster import Cluster
 from bims.tasks.collection_record import update_cluster as task_update_cluster
 
@@ -77,10 +76,11 @@ def update_cluster_by_collection(collection):
 
     :param collection: Biological collection record model
     """
-    boundaries = Boundary.objects.filter(
-        geometry__contains=collection.site.get_geometry()).order_by(
-        '-type__level').values_list('id', flat=True)
-    boundaries = list(boundaries)
+    boundary_type = BoundaryType.objects.all().order_by('-level')[0]
+    boundaries = Boundary.objects.filter().filter(
+        type=boundary_type).filter(
+        geometry__contains=collection.site.get_geometry())
+
     task_update_cluster.delay(boundaries)
 
 

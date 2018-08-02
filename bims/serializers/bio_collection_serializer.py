@@ -16,6 +16,10 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     children_fields = serializers.SerializerMethodField()
     validated = serializers.BooleanField(required=True)
     taxonomy = serializers.SerializerMethodField()
+    record_type = serializers.SerializerMethodField()
+
+    def get_record_type(self, obj):
+        return 'bio'
 
     def get_taxonomy(self, obj):
         return TaxonSerializer(obj.taxon_gbif_id).data
