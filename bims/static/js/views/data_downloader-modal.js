@@ -68,8 +68,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
                 url: url,
                 dataType: 'json',
                 success: function (data) {
-                    console.log(data);
-                    if (data['status'] != "success") {
+                    if (data['status'] !== "success") {
                         setTimeout(
                             function () {
                                 self.downloading(url);
@@ -83,7 +82,16 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             });
         },
         downloadFile: function (data) {
-            location.replace('/uploaded/csv_processed/' + data['filename']);
+            var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            if(is_safari) {
+                var a = window.document.createElement('a');
+                a.href = '/uploaded/csv_processed/' + data['filename'];
+                a.download = data['filename'];
+                a.click();
+            } else {
+                location.replace('/uploaded/csv_processed/' + data['filename']);
+            }
+
             this.resetModal();
         }
     })
