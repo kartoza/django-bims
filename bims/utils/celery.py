@@ -5,7 +5,7 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-LOCK_EXPIRE = 60 * 30  # Lock expires in 30 minutes
+LOCK_EXPIRE = 60 * 10  # Lock expires in 10 minutes
 
 
 @contextmanager
