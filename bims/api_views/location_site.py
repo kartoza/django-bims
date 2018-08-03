@@ -1,10 +1,12 @@
 # coding=utf8
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
+from django.db import models
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bims.models.location_site import LocationSite
+from bims.models.location_site import (
+    LocationSite, location_site_post_save_handler)
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
@@ -58,9 +60,15 @@ class LocationSiteDetail(APIView):
     def get(self, request, pk, format=None):
         location_site = self.get_object(pk)
         if not location_site.location_context_document:
+            models.signals.post_save.disconnect(
+                location_site_post_save_handler,
+            )
             location_site.update_location_context_document()
             location_site.save()
             location_site.refresh_from_db()
+            models.signals.post_save.connect(
+                location_site_post_save_handler,
+            )
         serializer = LocationSiteDetailSerializer(location_site)
         return Response(serializer.data)
 

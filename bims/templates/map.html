@@ -370,6 +370,41 @@
          </div>
      </script>
 
+    <script type="text/html" id="geonode-layer-control-panel">
+         <div class="geonode-layer-control sub-control-panel">
+             <i class="fa fa-plus-square" aria-hidden="true"></i>
+         </div>
+
+         <div class="geonode-layer-search-box map-control-panel-box">
+            <div class="row">
+                <div class="col-lg-12" style="padding-right: 0">
+                    <span class="title">
+                        SEARCH LAYER
+                    </span>
+                    <div class="close-button map-search-close pull-right">
+                        X
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="search-box">
+                    <div class="container-1">
+                        <input type="search" id="geonode-layer-search"
+                               placeholder="Filter...">
+                    </div>
+                </div>
+            </div>
+             <div class="row content">
+                 <ul style="width:100%" id="list-geonode-layers">
+                     <li>
+                        <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
+                         Loading layer...
+                     </li>
+                 </ul>
+             </div>
+         </div>
+     </script>
+
     <script type="text/template" id="search-result-record-template">
         <div class="result-search" data-search-result-id="">
             <p class="group-title"><%= common_name %></p>

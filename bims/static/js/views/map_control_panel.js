@@ -1,6 +1,6 @@
 define(
-    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader'],
-    function (Backbone, _, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
+    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader', 'views/geonode_layer'],
+    function (Backbone, _, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, GeonodeLayer) {
     return Backbone.View.extend({
         template: _.template($('#map-control-panel').html()),
         locationControlActive: false,
@@ -22,6 +22,9 @@ define(
             _.bindAll(this, 'render');
             this.parent = options.parent;
             this.dataDownloaderControl = new DataDownloader({
+                 parent: this
+             });
+            this.geonodeLayerControl = new GeonodeLayer({
                  parent: this
              });
         },
@@ -94,6 +97,8 @@ define(
                 map: this.parent.map
             });
             this.$el.append(this.uploadDataView.render().$el);
+
+            this.$el.append(this.geonodeLayerControl.render().$el);
 
             return this;
         },
