@@ -1,8 +1,13 @@
+import csv
+import logging
 from celery import shared_task
+from hashlib import md5
 from django.core.management import call_command
 
 from bims.models.boundary_type import BoundaryType
 from bims.models.boundary import Boundary
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(name='tasks.update_search_index')
@@ -26,3 +31,43 @@ def update_cluster(ids=None):
                 boundary = boundary.top_level_boundary
                 if not boundary:
                     break
+
+
+@shared_task(name='tasks.download_data_to_csv')
+def download_data_to_csv(path_file, request):
+    from bims.serializers.bio_collection_serializer import \
+        BioCollectionOneRowSerializer
+    from bims.api_views.collection import GetCollectionAbstract
+    from bims.utils.celery import memcache_lock
+
+    path_file_hexdigest = md5(path_file).hexdigest()
+
+    lock_id = '{0}-lock-{1}'.format(
+            download_data_to_csv.name,
+            path_file_hexdigest
+    )
+
+    oid = '{0}'.format(path_file_hexdigest)
+
+    with memcache_lock(lock_id, oid) as acquired:
+        if acquired:
+            queryset = GetCollectionAbstract.apply_filter(request,
+                                                          ignore_bbox=True)
+            serializer = BioCollectionOneRowSerializer(
+                    queryset,
+                    many=True
+            )
+            headers = serializer.data[0].keys()
+            rows = serializer.data
+
+            with open(path_file, 'wb') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=headers)
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow(row)
+
+            return
+
+    logger.info(
+            'Csv %s is already being processed by another worker',
+            path_file)

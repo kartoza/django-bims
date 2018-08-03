@@ -57,6 +57,8 @@ api_urls = [
         ClusterCollection.as_view()),
     url(r'^api/collection/download/$',
         CollectionDownloader.as_view()),
+    url(r'^collection/check_process/$',
+        CollectionDownloader.as_view()),
     url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
     url(r'^api/list-collector/$',
