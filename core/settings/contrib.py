@@ -232,7 +232,10 @@ LOGGING = {
         "geonode": {
             "handlers": ["console"], "level": "INFO", },
         "geonode.qgis_server": {
-            "handlers": ["console"], "level": "ERROR", },
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
         "gsconfig.catalog": {
             "handlers": ["console"], "level": "ERROR", },
         "owslib": {

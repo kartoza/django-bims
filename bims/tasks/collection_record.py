@@ -5,12 +5,12 @@ from bims.models.boundary_type import BoundaryType
 from bims.models.boundary import Boundary
 
 
-@shared_task(name='tasks.update_search_index')
+@shared_task(name='bims.tasks.update_search_index')
 def update_search_index():
     call_command('rebuild_index', '--noinput')
 
 
-@shared_task(name='tasks.update_cluster')
+@shared_task(name='bims.tasks.update_cluster')
 def update_cluster(ids=None):
     if not ids:
         for boundary_type in BoundaryType.objects.all().order_by('-level'):
