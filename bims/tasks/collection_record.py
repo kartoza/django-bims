@@ -51,8 +51,6 @@ def download_data_to_csv(path_file, request):
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            logger.info('Processing CSV')
-
             queryset = GetCollectionAbstract.apply_filter(request,
                                                           ignore_bbox=True)
             serializer = BioCollectionOneRowSerializer(

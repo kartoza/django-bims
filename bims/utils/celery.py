@@ -13,7 +13,6 @@ def memcache_lock(lock_id, oid):
     timeout_at = monotonic() + LOCK_EXPIRE - 3
     # cache.add fails if the key already exists
     status = cache.add(lock_id, oid, LOCK_EXPIRE)
-    logger.info('Status memcache : %s' % status)
     try:
         yield status
     finally:

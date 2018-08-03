@@ -1,11 +1,15 @@
 # coding=utf8
 
-import csv
 import json
+from hashlib import md5
+import datetime
+import os
+import errno
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
@@ -120,12 +124,6 @@ class CollectionDownloader(GetCollectionAbstract):
         :param queryset: queryset that need to be converted
         :type queryset: QuerySet
         """
-        from hashlib import md5
-        import datetime
-        from django.http import JsonResponse
-        from django.conf import settings
-        import os
-        import errno
         from bims.tasks.collection_record import download_data_to_csv
 
         response = HttpResponse(content_type='text/csv')

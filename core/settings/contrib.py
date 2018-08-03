@@ -227,7 +227,7 @@ LOGGING = {
         "django": {
             "handlers": ["console"], "level": "ERROR", },
         "bims": {
-            "handlers": ["console"], "level": "DEBUG",},
+            "handlers": ["console"], "level": "DEBUG", },
         "geonode": {
             "handlers": ["console"], "level": "INFO", },
         "geonode.qgis_server": {
@@ -241,10 +241,4 @@ LOGGING = {
         "celery": {
             'handlers': ['celery', 'console'], 'level': 'DEBUG', },
     },
-}
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
 }
