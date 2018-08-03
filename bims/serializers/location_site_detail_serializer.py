@@ -3,7 +3,6 @@ from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.location_site_serializer import LocationSiteSerializer
-from bims.serializers.bio_collection_serializer import BioCollectionSerializer
 
 
 class LocationSiteDetailSerializer(LocationSiteSerializer):
