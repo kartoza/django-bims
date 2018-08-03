@@ -17,6 +17,7 @@ define(
                 'click .locate-options-container-close': 'closeLocatePanel',
                 'click .sub-filter': 'closeSubFilter',
                 'click .locate-coordinates': 'openLocateCoordinates',
+                'click .locate-farm': 'openLocateFarm',
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -131,7 +132,11 @@ define(
             },
             openLocateCoordinates: function (e) {
                 this.closeLocatePanel();
-                this.locateView.showModal();
+                this.locateView.showModal('.coordinate-form');
+            },
+            openLocateFarm: function (e) {
+                this.closeLocatePanel();
+                this.locateView.showModal('.farm-form');
             },
             resetAllControlState: function () {
                 $('#download-control-modal').hide();
