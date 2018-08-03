@@ -165,6 +165,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+CELERY_BROKER_URL = BROKER_URL
 
 # django modelsdoc settings
 MODELSDOC_APPS = ('bims', 'fish', 'reptile',)
@@ -231,7 +232,10 @@ LOGGING = {
         "geonode": {
             "handlers": ["console"], "level": "INFO", },
         "geonode.qgis_server": {
-            "handlers": ["console"], "level": "ERROR", },
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
         "gsconfig.catalog": {
             "handlers": ["console"], "level": "ERROR", },
         "owslib": {
@@ -242,3 +246,9 @@ LOGGING = {
             'handlers': ['celery', 'console'], 'level': 'DEBUG', },
     },
 }
+
+ASYNC_SIGNALS = True
+
+from .geonode_queue_settings import *  # noqa
+
+CELERY_TASK_QUEUES += GEONODE_QUEUES

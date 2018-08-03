@@ -10,12 +10,12 @@ from bims.models.boundary import Boundary
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='tasks.update_search_index')
+@shared_task(name='bims.tasks.update_search_index')
 def update_search_index():
     call_command('rebuild_index', '--noinput')
 
 
-@shared_task(name='tasks.update_cluster')
+@shared_task(name='bims.tasks.update_cluster')
 def update_cluster(ids=None):
     if not ids:
         for boundary_type in BoundaryType.objects.all().order_by('-level'):
@@ -33,7 +33,7 @@ def update_cluster(ids=None):
                     break
 
 
-@shared_task(name='tasks.download_data_to_csv')
+@shared_task(name='bims.tasks.download_data_to_csv')
 def download_data_to_csv(path_file, request):
     from bims.serializers.bio_collection_serializer import \
         BioCollectionOneRowSerializer
