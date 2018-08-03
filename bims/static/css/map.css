@@ -949,6 +949,61 @@ div:hover::-webkit-scrollbar {
     margin-bottom: 0;
 }
 
+#download-control-modal {
+    margin-left: 100px;
+    margin-right: 100px;
+}
+
+#download-control-modal .modal-body {
+    text-align: center;
+}
+
+#download-control-modal .modal-body .table-section {
+    text-align: center;
+    padding: 10px;
+}
+
+#download-control-modal .modal-body table {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#download-control-modal .modal-body table .row-format {
+    height: 100px;
+    width: 80px;
+    border: 1px dashed black;
+    text-align: center;
+    padding-top: 35px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+#download-control-modal .modal-body .notification {
+    color: red;
+    opacity: 0.8;
+    display: none;
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
+#download-control-modal .modal-body table .row-format:hover {
+    background: #e9ecef;
+}
+
+#download-control-modal .modal-body table .row-format.disabled:hover {
+    background: transparent;
+}
+
+#download-control-modal .modal-body table .row-format.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .modal-upload-data {
     z-index: 9999;
 }
