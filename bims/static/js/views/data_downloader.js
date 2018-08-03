@@ -28,7 +28,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         download: function (e) {
             this.parameters['fileType'] = $(e.target).data("format");
             var parameter = $.param(this.parameters);
-            location.replace(this.url + '?' + parameter)
+            console.log(this.url + '?' + parameter);
+            // location.replace(this.url + '?' + parameter)
         },
         toggleFormat: function () {
             if ($('.download-format-selector-container').is(":hidden")) {

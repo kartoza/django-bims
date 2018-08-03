@@ -28,13 +28,18 @@ class GetCollectionAbstract(APIView):
     """
     Abstract class for getting collection
     """
-
-    def apply_filter(self, request, ignore_bbox=False):
+    @staticmethod
+    def apply_filter(request, ignore_bbox=False):
         # get records with same taxon
         queryset = BiologicalCollectionRecord.objects.filter(
             validated=True
         )
-        taxon = request.GET.get('taxon', None)
+        try:
+            request_data = request.GET
+        except AttributeError:
+            request_data = request
+
+        taxon = request_data.get('taxon', None)
         if taxon:
             try:
                 queryset = queryset.filter(
@@ -43,7 +48,7 @@ class GetCollectionAbstract(APIView):
             except Taxon.DoesNotExist:
                 pass
 
-        search = request.GET.get('search')
+        search = request_data.get('search')
         if search:
             queryset = queryset.filter(
                 original_species_name__contains=search
@@ -51,7 +56,7 @@ class GetCollectionAbstract(APIView):
 
         # get by bbox
         if not ignore_bbox:
-            bbox = request.GET.get('bbox', None)
+            bbox = request_data.get('bbox', None)
             if bbox:
                 geom_bbox = Polygon.from_bbox(
                     tuple([float(edge) for edge in bbox.split(',')]))
@@ -63,25 +68,25 @@ class GetCollectionAbstract(APIView):
                 )
 
         # additional filters
-        collector = request.GET.get('collector')
+        collector = request_data.get('collector')
         if collector:
             queryset = queryset.filter(collector=collector)
 
-        category = request.GET.get('category')
+        category = request_data.get('category')
         if category:
             queryset = queryset.filter(category=category)
 
-        year_from = request.GET.get('yearFrom')
+        year_from = request_data.get('yearFrom')
         if year_from:
             queryset = queryset.filter(
                 collection_date__year__gte=year_from)
 
-        year_to = request.GET.get('yearTo')
+        year_to = request_data.get('yearTo')
         if year_to:
             queryset = queryset.filter(
                 collection_date__year__lte=year_to)
 
-        months = request.GET.get('months')
+        months = request_data.get('months')
         if months:
             months = months.split(',')
             months = [int(month) for month in months]
@@ -109,30 +114,66 @@ class CollectionDownloader(GetCollectionAbstract):
     Download all collections with format
     """
 
-    def convert_to_cvs(self, queryset, Model, ModelSerializer):
+    def convert_to_cvs(self, queryset, ModelSerializer):
         """
         Converting data to csv.
         :param queryset: queryset that need to be converted
         :type queryset: QuerySet
         """
+        from hashlib import md5
+        import datetime
+        from django.http import JsonResponse
+        from django.conf import settings
+        import os
+        import errno
+        from bims.tasks.collection_record import download_data_to_csv
+
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="download.csv"'
 
-        headers = Model._meta.fields
-        rows = []
-        if queryset:
-            serializer = ModelSerializer(
-                queryset, many=True)
-            headers = serializer.data[0].keys()
-            rows = serializer.data
+        if not queryset:
+            return JsonResponse({
+                'status': 'failed',
+                'message': 'Data is empty'
+            })
 
-        writer = csv.DictWriter(response, fieldnames=headers)
-        writer.writeheader()
+        # Filename
+        today_date = datetime.date.today()
+        filename = md5(
+                '%s%s%s' % (
+                    json.dumps(self.request.GET),
+                    queryset.count(),
+                    today_date)
+        ).hexdigest()
+        filename += '.csv'
 
-        for row in rows:
-            writer.writerow(row)
+        # Check if filename exists
+        folder = 'csv_processed'
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        path_file = os.path.join(path_folder, filename)
 
-        return response
+        try:
+            os.mkdir(path_folder)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
+
+        if os.path.exists(path_file):
+            return JsonResponse({
+                'status': 'success',
+                'filename': filename
+            })
+
+        download_data_to_csv.delay(
+                path_file,
+                self.request.GET,
+        )
+
+        return JsonResponse({
+            'status': 'processing',
+            'filename': filename
+        })
 
     def convert_to_geojson(self, queryset, Model, ModelSerializer):
         """
@@ -157,7 +198,6 @@ class CollectionDownloader(GetCollectionAbstract):
         if file_type == 'csv':
             return self.convert_to_cvs(
                 queryset,
-                BiologicalCollectionRecord,
                 BioCollectionOneRowSerializer)
         elif file_type == 'geojson':
             return self.convert_to_geojson(

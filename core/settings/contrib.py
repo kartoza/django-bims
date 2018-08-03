@@ -186,3 +186,65 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
 ]
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d '
+                      '%(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(message)s',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'celery': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'celery.log',
+            'formatter': 'simple',
+            'maxBytes': 1024 * 1024 * 10,  # 10 mb
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+        }
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"], "level": "ERROR", },
+        "bims": {
+            "handlers": ["console"], "level": "DEBUG",},
+        "geonode": {
+            "handlers": ["console"], "level": "INFO", },
+        "geonode.qgis_server": {
+            "handlers": ["console"], "level": "ERROR", },
+        "gsconfig.catalog": {
+            "handlers": ["console"], "level": "ERROR", },
+        "owslib": {
+            "handlers": ["console"], "level": "ERROR", },
+        "pycsw": {
+            "handlers": ["console"], "level": "ERROR", },
+        "celery": {
+            'handlers': ['celery', 'console'], 'level': 'DEBUG', },
+    },
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}

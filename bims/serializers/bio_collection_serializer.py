@@ -59,6 +59,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     date = serializers.SerializerMethodField()
     collector = serializers.SerializerMethodField()
+    taxon_class = serializers.SerializerMethodField()
+
+    def get_taxon_class(self, obj):
+        if obj.taxon_gbif_id:
+            return obj.taxon_gbif_id.taxon_class
+        else:
+            return ''
 
     def get_location_site(self, obj):
         if obj.site:
@@ -96,14 +103,12 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         fields = [
             'location_site', 'latitude', 'longitude',
             'species_name', 'notes', 'category',
-            'date', 'collector']
+            'date', 'collector', 'taxon_class']
 
     def to_representation(self, instance):
         result = super(
             BioCollectionOneRowSerializer, self).to_representation(
             instance)
-        taxonomy = TaxonExportSerializer(instance.taxon_gbif_id).data
-        result.update(taxonomy)
         return result
 
 
