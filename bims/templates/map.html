@@ -184,9 +184,9 @@
                 <i class="fa fa-location-arrow" aria-hidden="true"></i>
             </div>
             {% if user.is_authenticated %}
-            <div class="upload-data sub-control-panel">
-                <i class="fa fa-upload" aria-hidden="true"></i>
-            </div>
+                <div class="upload-data sub-control-panel">
+                    <i class="fa fa-upload" aria-hidden="true"></i>
+                </div>
             {% endif %}
         </div>
         <div class="zoom-control row">
@@ -228,9 +228,9 @@
                     <li class="locate-coordinates">
                         Locate by coordinate
                     </li>
-{#                    Will be implemented in another PR #}
-{#                    <li id="locate-farm">Locate by Farm/Farm Portion Code Page</li>#}
-{#                    <li id="map-navigation">Map navigation page</li>#}
+                    {#                    Will be implemented in another PR #}
+                    {#                    <li id="locate-farm">Locate by Farm/Farm Portion Code Page</li>#}
+                    {#                    <li id="map-navigation">Map navigation page</li>#}
                 </ul>
             </div>
         </div>
@@ -272,7 +272,8 @@
                                    id="latitude" placeholder="Latitude">
                             <button id="go-button" type="button" class="btn
                             btn-outline-dark mb-2 mr-sm-2"
-                            >Go</button>
+                            >Go
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -344,7 +345,7 @@
                                 Notes
                             </label>
                             <textarea class="form-control ud-item"
-                                   id="ud_notes" placeholder=""></textarea>
+                                      id="ud_notes" placeholder=""></textarea>
                             <p class="required-text ">* = Required </p>
 
                             <button type="button" class="btn btn-info upload-data-button">Upload</button>
@@ -356,19 +357,39 @@
     </script>
 
     <script type="text/html" id="download-control-panel">
-         <div class="download-control sub-control-panel">
-             <i class="fa fa-download" aria-hidden="true"></i>
-         </div>
+        <div class="download-control sub-control-panel">
+            <i class="fa fa-download" aria-hidden="true"></i>
+        </div>
+    </script>
 
-         <div class="download-format-selector-container map-control-panel-box">
-             <div class="row content">
-                 <ul style="width:100%">
-                     <li data-format="csv">csv</li>
-                     <li data-format="geojson">geojson</li>
-                 </ul>
-             </div>
-         </div>
-     </script>
+    <script type="text/html" id="download-control-panel-template">
+        <div id="download-control-modal" class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Download data</h5>
+                        <button type="button" class="close"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div>Select a format to download current data.</div>
+                        <div class="table-section">
+                            <table>
+                                <tr>
+                                    <td valign="middle">
+                                        <div class="row-format" data-format="csv">.csv</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="notification"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
 
     <script type="text/template" id="search-result-record-template">
         <div class="result-search" data-search-result-id="">
