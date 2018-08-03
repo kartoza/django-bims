@@ -389,11 +389,20 @@
             <div class="row">
                 <div class="search-box">
                     <div class="container-1">
-                        <input type="search" id="search" placeholder="Search..."><span class="search-arrow"><i class="fa fa-angle-right"></i></span>
+                        <input type="search" id="geonode-layer-search"
+                               placeholder="Filter...">
                     </div>
                 </div>
             </div>
-        </div>
+             <div class="row content">
+                 <ul style="width:100%" id="list-geonode-layers">
+                     <li>
+                        <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
+                         Loading layer...
+                     </li>
+                 </ul>
+             </div>
+         </div>
      </script>
 
     <script type="text/template" id="search-result-record-template">

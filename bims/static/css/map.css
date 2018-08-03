@@ -192,6 +192,12 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 0;
 }
 
+.geonode-layer-control-panel li {
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 14px;
+}
+
 .zoom-control {
     font-size: 11pt;
     padding: 7px 0;
