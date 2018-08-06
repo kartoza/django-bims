@@ -55,7 +55,7 @@
                 <td>{{ obj.collection_date }}</td>
                 <td>{{ obj.owner }}</td>
                 <td class="edit-action"><a href="{% url 'update-records' obj.pk %}" class="btn btn-default" data-toggle="tooltip" title="Edit this object"><i class="fa fa-pencil"></i></a></td>
-                <td class="ready-validate-action" style="text-align: center !important;"><a onclick="sendEmailValidation({{ obj.pk }})"><i class="fa fa-send"></i></a></td>
+                <td class="ready-validate-action" style="text-align: center !important;"><a onclick="sendEmailValidation({{ obj.pk }})" title="Send email notification to validator to review this object"><i class="fa fa-send"></i></a></td>
             </tr>
         {% endfor %}
     </table>
