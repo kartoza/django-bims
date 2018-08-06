@@ -16,7 +16,7 @@ body {
     margin: 0 10px 10px 0;
     font-size: 8pt;
     font-weight: normal;
-    padding: 15px 30px 15px 15px;
+    padding: 0 0 15px 0;
     word-wrap: break-word;
     max-height: 85%;
     overflow-y: auto;
@@ -609,6 +609,10 @@ html, body, .map, .map-wrapper, #map-container {
     overflow-y: auto;
 }
 
+.side-panel-content {
+    padding: 10px;
+}
+
 ::-webkit-scrollbar {
     width: 7px;
     display: none;
@@ -637,10 +641,8 @@ div:hover::-webkit-scrollbar {
 .search-results-total {
     font-weight: bold;
     font-size: 9pt;
-    padding-bottom: 5px;
-    padding-top: 5px;
+    padding: 5px;
     background-color: rgba(255, 255, 255, 1);
-    padding-left: 5px;
 }
 
 .search-results-total:hover {

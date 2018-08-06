@@ -57,10 +57,6 @@ class LocationSiteDetail(APIView):
 
     def get(self, request, pk, format=None):
         location_site = self.get_object(pk)
-        if not location_site.location_context_document:
-            location_site.update_location_context_document()
-            location_site.save()
-            location_site.refresh_from_db()
         serializer = LocationSiteDetailSerializer(location_site)
         return Response(serializer.data)
 
