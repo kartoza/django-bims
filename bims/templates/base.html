@@ -162,11 +162,11 @@
                 <li role="separator" class="divider"></li>
                 <li><a href="{% url "help" %}">{% trans "Help" %}</a></li>
                 <li role="separator" class="divider"></li>
-                <li><a href="/account/logout/">Logout</a></li>
+                <li><a href="{% url "account_logout" %}?next={{ request.path }}">Logout</a></li>
                 </ul>
               </li>
 		      {% else %}
-		      <li><a href="#" data-toggle="modal" data-target="#SigninModal" role="button" >{% trans "Sign in" %} </a></li>
+                <li><a href="{% url "account_login" %}?next={{ request.path }}" role="button" >{% trans "Sign in" %} </a></li>
               {% endif %}
             </ul>
           </div> <!--/.nav-collapse -->
@@ -282,47 +282,6 @@
     </div>
   </footer>
   {% endblock footer %}
-
-
-    <!-- Modal must stay outside the navbar -->
-    {% if not user.is_authenticated %}
-    <div class="modal fade" id="SigninModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title" id="myModalLabel">{% trans "Sign in" %}</h4>
-          </div>
-          <form class="form-signin" role="form" action="{% url "account_login" %}?next={{ request.path }}" method="post">
-            <div class="modal-body">
-              {% csrf_token %}
-              {% get_providers as socialaccount_providers %}
-              {% if socialaccount_providers %}
-                  {% include "socialaccount/snippets/provider_list.html" with process="login" %}
-                  {% include "socialaccount/snippets/login_extra.html" %}
-                <hr>
-              {% endif %}
-              <div class="form-group">
-                <label for="id_username" class="sr-only">{% trans "Username" %}:</label>
-                <input id="id_username" class="form-control" name="login" placeholder="{% trans "Username" %}" type="text" />
-              </div>
-              <div class="form-group">
-                <label for="id_password" class="sr-only">{% trans "Password" %}:</label>
-                <input id="id_password" class="form-control" name="password" placeholder="{% trans "Password" %}" type="password" />
-              </div>
-              <label class="checkbox">
-                <input type="checkbox" /> {% trans "Remember Me" %}
-              </label>
-            </div>
-            <div class="modal-footer">
-              <button type="submit" class="btn btn-primary btn-block">{% trans "Sign in" %}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-    <!-- End of Modal -->
 
     {% if DEBUG_STATIC %}
     <script src="{% static "lib/js/jquery.min.js" %}?v={{ VERSION }}"></script>

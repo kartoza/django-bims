@@ -160,8 +160,6 @@ services:
 
   cache:
    image: memcached
-   ports:
-     - "11211:11211"
    entrypoint:
     - memcached
     - -m 64
