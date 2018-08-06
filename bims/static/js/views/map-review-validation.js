@@ -104,6 +104,16 @@ function validateObject(pk) {
     });
 }
 
+function sendEmailValidation(pk) {
+    $.ajax({
+        url: '/api/send-email-validation/',
+        data: {'pk': pk},
+        success: function () {
+            alert('Validation notification sent!')
+        }
+    });
+}
+
 function dynamicInputFilter(that) {
     $('.input-options').hide().val('');
     $('.' + that.value).show();

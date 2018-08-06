@@ -44,6 +44,8 @@ from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
 from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
+from bims.api_views.send_notification_to_validator import \
+    SendNotificationValidation
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -75,6 +77,8 @@ api_urls = [
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
         GetBioRecords.as_view(), name='get-bio-object'),
+    url(r'^api/send-email-validation/$',
+        SendNotificationValidation.as_view(), name='send-email-validation')
 ]
 
 bibliography_urls = [

@@ -57,7 +57,6 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
 
 
     def form_valid(self, form):
-        print(self.request.POST)
         super(BioRecordsUpdateView, self).form_valid(form)
         geometry_type = self.request.POST.get('geometry_type', None)
         geojson = self.request.POST.get('geometry', None)
