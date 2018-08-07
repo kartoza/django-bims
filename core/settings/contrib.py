@@ -168,7 +168,7 @@ BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
 CELERY_BROKER_URL = BROKER_URL
 
 # django modelsdoc settings
-MODELSDOC_APPS = ('bims', 'fish', 'reptile',)
+MODELSDOC_APPS = ('bims', 'td_biblio',)
 
 MODELSDOC_OUTPUT_FORMAT = 'rst'
 MODELSDOC_MODEL_WRAPPER = 'modelsdoc.wrappers.ModelWrapper'
