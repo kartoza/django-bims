@@ -16,7 +16,7 @@ body {
     margin: 0 10px 10px 0;
     font-size: 8pt;
     font-weight: normal;
-    padding: 15px 30px 15px 15px;
+    padding: 0 0 15px 0;
     word-wrap: break-word;
     max-height: 85%;
     overflow-y: auto;
@@ -44,7 +44,6 @@ body {
 }
 
 .panel-icons {
-    padding-top: 70px;
     position: absolute;
     height: 100px;
 }
@@ -120,7 +119,6 @@ html, body, .map, .map-wrapper, #map-container {
 
 .side-panel-info {
     height: 70px;
-    position: absolute;
     width: 100%
 }
 
@@ -611,6 +609,10 @@ html, body, .map, .map-wrapper, #map-container {
     overflow-y: auto;
 }
 
+.side-panel-content {
+    padding: 10px;
+}
+
 ::-webkit-scrollbar {
     width: 7px;
     display: none;
@@ -639,10 +641,8 @@ div:hover::-webkit-scrollbar {
 .search-results-total {
     font-weight: bold;
     font-size: 9pt;
-    padding-bottom: 5px;
-    padding-top: 5px;
+    padding: 5px;
     background-color: rgba(255, 255, 255, 1);
-    padding-left: 5px;
 }
 
 .search-results-total:hover {
@@ -705,6 +705,11 @@ div:hover::-webkit-scrollbar {
     font-size: 12px;
     padding: 10px;
     display: none;
+}
+
+#taxon-filter .fa-times {
+    cursor: pointer;
+    margin-left: 5px;
 }
 
 #fetching-error .try-again-button {
@@ -1006,6 +1011,34 @@ div:hover::-webkit-scrollbar {
 
 .modal-upload-data {
     z-index: 9999;
+}
+
+.site-detail-content {
+    padding: 10px;
+    width: 100%;
+
+}
+
+.site-detail-content td {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.search-result-sub-title {
+    padding-right: 5px;
+}
+
+.sub-species-wrapper .search-result-sub-title,
+.sub-species-wrapper .result-search {
+    padding-left: 15px !important;
+}
+
+.sub-species-wrapper .search-result-sub-title {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.site-detail-content .text-center {
+    font-size: 12px;
 }
 
 @media (min-width: 1300px) and (max-width: 1412px) {

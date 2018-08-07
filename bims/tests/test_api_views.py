@@ -49,7 +49,7 @@ class TestApiView(TestCase):
         request = self.factory.get('/api/location-site/' + pk)
         response = view(request, pk)
         self.assertTrue(
-            len(response.data['biological_collection_record']) > 1
+            'id' in response.data
         )
 
     def test_get_taxon_by_id(self):

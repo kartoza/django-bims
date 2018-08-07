@@ -53,7 +53,7 @@
             <button type="button"><i class="fa fa-globe"></i></button>
             <div id="mouse-position-wrapper" style="display: none"></div>
         </div>
-        <div class="ol-control" id="taxon-filter">ssss
+        <div class="ol-control" id="taxon-filter">
         </div>
         <div id="popup"></div>
         <div id="map-legend-wrapper" class="control-drop-shadow hide-legend">
@@ -391,8 +391,15 @@
         </div>
     </script>
 
+    <script type="text/template" id="search-result-sub-title">
+        <div class="search-result-sub-title search-results-total" data-search-result-id="">
+            <%= name %>
+            <i class="pull-right"><%= count %> occurrences</i>
+        </div>
+    </script>
+
     <script type="text/template" id="search-result-record-template">
-        <div class="result-search" data-search-result-id="">
+        <div class="result-search" data-search-result-id="" data-taxon-id="<%= taxon_gbif_id %>">
             <p class="group-title"><%= common_name %></p>
             <a class="group-description"><%= count %> occurrences</a>
         </div>
