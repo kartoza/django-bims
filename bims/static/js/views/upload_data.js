@@ -7,6 +7,7 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         $collectionDateElement: null,
         lon: null,
         lat: null,
+        siteFeature: null,
         events: {
             'click .close': 'closeModal',
             'click .upload-data-button': 'uploadData'
@@ -42,9 +43,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
 
             return this;
         },
-        showModal: function (lon, lat) {
+        showModal: function (lon, lat, siteFeature) {
             this.lon = lon;
             this.lat = lat;
+            this.siteFeature = siteFeature;
 
             var coordinates = ol.proj.fromLonLat([lon, lat]);
             this.markerPoint = new ol.Feature({
@@ -65,6 +67,14 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
 
             this.map.addLayer(this.vectorLayer);
 
+            if(this.siteFeature) {
+                var site_coordinates =  ol.proj.transform(this.siteFeature.getGeometry().getCoordinates(), 'EPSG:3857', 'EPSG:4326');
+                this.lon = site_coordinates[0];
+                this.lat = site_coordinates[1];
+                var properties = this.siteFeature.getProperties();
+                if(properties.hasOwnProperty('name'))
+                    $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
+            }
             this.uploadDataModal.show();
         },
         closeModal: function () {
@@ -81,6 +91,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             $.each(fields, function (i, field) {
                 field.value = '';
             });
+            if(this.siteFeature) {
+                var properties = this.siteFeature.getProperties();
+                if(properties.hasOwnProperty('name'))
+                    $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
+            }
         },
         uploadData: function (e) {
             var self = this;

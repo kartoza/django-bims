@@ -16,6 +16,10 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     children_fields = serializers.SerializerMethodField()
     validated = serializers.BooleanField(required=True)
     taxonomy = serializers.SerializerMethodField()
+    record_type = serializers.SerializerMethodField()
+
+    def get_record_type(self, obj):
+        return 'bio'
 
     def get_taxonomy(self, obj):
         return TaxonSerializer(obj.taxon_gbif_id).data
@@ -55,10 +59,17 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     date = serializers.SerializerMethodField()
     collector = serializers.SerializerMethodField()
+    taxon_class = serializers.SerializerMethodField()
+
+    def get_taxon_class(self, obj):
+        if obj.taxon_gbif_id:
+            return obj.taxon_gbif_id.taxon_class
+        else:
+            return ''
 
     def get_location_site(self, obj):
         if obj.site:
-            return obj.site.name
+            return obj.site.name.encode('utf8')
         return ''
 
     def get_latitude(self, obj):
@@ -72,34 +83,32 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return ''
 
     def get_species_name(self, obj):
-        return obj.original_species_name
+        return obj.original_species_name.encode('utf8')
 
     def get_notes(self, obj):
-        return obj.notes
+        return obj.notes.encode('utf8')
 
     def get_category(self, obj):
-        return obj.category
+        return obj.category.encode('utf8')
 
     def get_date(self, obj):
         if obj.collection_date:
             return obj.collection_date.strftime('%Y-%m-%d')
 
     def get_collector(self, obj):
-        return obj.collector
+        return obj.collector.encode('utf8')
 
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
             'location_site', 'latitude', 'longitude',
             'species_name', 'notes', 'category',
-            'date', 'collector']
+            'date', 'collector', 'taxon_class']
 
     def to_representation(self, instance):
         result = super(
             BioCollectionOneRowSerializer, self).to_representation(
             instance)
-        taxonomy = TaxonExportSerializer(instance.taxon_gbif_id).data
-        result.update(taxonomy)
         return result
 
 

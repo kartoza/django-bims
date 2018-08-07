@@ -2,6 +2,7 @@
 from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
+from django.contrib import admin as django_admin
 from django.core.mail import send_mail
 
 from django.contrib.flatpages.admin import FlatPageAdmin
@@ -28,99 +29,10 @@ from bims.models import (
     BiologicalCollectionRecord,
     Category,
     Link,
-    Author,
-    Editor,
-    Journal,
-    Publisher,
-    Entry,
-    Collection,
-    AuthorEntryRank,
     ShapefileUploadSession,
     Shapefile,
     NonBiodiversityLayer,
 )
-
-
-class AuthorEntryRankInline(admin.TabularInline):
-    extra = 1
-    model = AuthorEntryRank
-    ordering = ('rank',)
-
-
-class AbstractHumanAdmin(admin.ModelAdmin):
-    list_display = ('last_name', 'first_name')
-    ordering = ('last_name', 'first_name')
-
-
-class AuthorAdmin(AbstractHumanAdmin):
-    list_display = ('last_name', 'first_name', 'user')
-    raw_id_fields = ('user',)
-
-
-class EditorAdmin(AbstractHumanAdmin):
-    raw_id_fields = ('user',)
-
-
-class AbstractEntityAdmin(admin.ModelAdmin):
-    ordering = ('name',)
-
-
-class JournalAdmin(AbstractEntityAdmin):
-    pass
-
-
-class PublisherAdmin(AbstractEntityAdmin):
-    pass
-
-
-class EntryAdmin(admin.ModelAdmin):
-    date_hierarchy = 'publication_date'
-    fieldsets = (
-        ('Publication core fields', {
-            'fields': ('type', 'title', 'journal',
-                       ('volume', 'number'),
-                       ('pages',),
-                       ('publication_date',
-                        'is_partial_publication_date'),
-                       'url')
-        }),
-        ('Identifiers', {
-            'fields': (('doi', 'issn'), ('isbn', 'pmid'))
-        }),
-        ('Book fields', {
-            'fields': ('booktitle', 'edition', 'chapter')
-        }),
-        ('PhD Thesis', {
-            'fields': ('school',)
-        }),
-        ('Proceedings', {
-            'fields': ('organization',)
-        }),
-        ('Miscellaneous', {
-            'fields': ('editors', 'publisher', 'address', 'annote', 'note')
-        }),
-        ('Cross References', {
-            'fields': ('crossref',)
-        }),
-    )
-    inlines = (AuthorEntryRankInline,)
-    list_display = ('title', 'first_author', 'type', 'publication_date',
-                    'journal')
-    list_filter = ('publication_date', 'journal', 'authors')
-    list_per_page = 20
-    list_select_related = True
-    ordering = ('-publication_date',)
-    raw_id_fields = ('authors', 'crossref')
-    search_fields = ('title',)
-
-
-class CollectionAdmin(admin.ModelAdmin):
-    def size(self, obj):
-        """Get the number of entries in each collection"""
-        return obj.entries.count()
-
-    list_display = ('name', 'size')
-    raw_id_fields = ('entries',)
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -129,6 +41,30 @@ class LocationSiteForm(forms.ModelForm):
         js = (
             '/static/libs/jquery/jquery-3.3.1.min.js',
             '/static/js/forms/location-site-admin-form.js')
+
+
+class HasLocationContextDocument(django_admin.SimpleListFilter):
+    """Filter based on Location Context Document existence."""
+    title = 'has_location_context'
+    parameter_name = 'has_location_context'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('Yes', 'Yes'),
+            ('No', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'Yes':
+            return queryset.filter(
+                location_context_document__isnull=False).exclude(
+                location_context_document__exact='')
+        elif value == 'No':
+            return queryset.filter(models.Q(
+                location_context_document__isnull=True) | models.Q(
+                location_context_document__exact=''))
+        return queryset
 
 
 class LocationSiteAdmin(admin.GeoModelAdmin):
@@ -140,6 +76,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     list_display = (
         'name', 'location_type', 'get_centroid', 'has_location_context')
     search_fields = ('name',)
+    list_filter = (HasLocationContextDocument,)
+
+    def has_location_context(self, obj):
+        return bool(obj.location_context_document)
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
@@ -147,7 +87,7 @@ class IUCNStatusAdmin(admin.ModelAdmin):
 
 
 class TaxonAdmin(admin.ModelAdmin):
-    list_display = ('common_name', 'author', 'iucn_status')
+    list_display = ('common_name', 'author', 'iucn_status', 'taxon_class')
 
 
 class BoundaryAdmin(admin.ModelAdmin):
@@ -289,14 +229,6 @@ class FlatPageCustomAdmin(FlatPageAdmin):
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
-
-# register bibliography models
-admin.site.register(Author, AuthorAdmin)
-admin.site.register(Editor, EditorAdmin)
-admin.site.register(Journal, JournalAdmin)
-admin.site.register(Publisher, PublisherAdmin)
-admin.site.register(Entry, EntryAdmin)
-admin.site.register(Collection, CollectionAdmin)
 
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)

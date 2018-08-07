@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from django.conf import settings
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import MultiPolygon, Polygon
 
@@ -66,6 +67,9 @@ class UpdateBoundary(object):
         layer = data_source[0]
         for feature in layer:
             name = feature[column_name].value
+            if boundary_type.name == 'country' \
+                    and name not in settings.FOCUSED_COUNTRIES:
+                continue
 
             # TODO :Fix grapelli that can't handle non ascii
             if not self.is_ascii(name):
@@ -102,11 +106,20 @@ class UpdateBoundary(object):
                 code_name=codename,
                 top_level_boundary=top_level_boundary
             )
+
             geometry = feature.geom
             if 'MultiPolygon' not in geometry.geojson:
                 geometry = MultiPolygon(
                     Polygon(geometry.coords[0])).geojson
             else:
                 geometry = geometry.geojson
+
             boundary.geometry = geometry
+            boundary.centroid = boundary.geometry.centroid
+
+            # Don't save geometry if not municipals
+            # and USE_GEOMETRY_BOUNDARY is false
+            if boundary_type.name != 'municipal' and \
+                    not settings.USE_GEOMETRY_BOUNDARY:
+                boundary.geometry = None
             boundary.save()

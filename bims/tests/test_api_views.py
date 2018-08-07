@@ -23,7 +23,8 @@ class TestApiView(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.location_site = LocationSiteF.create(
-            pk=1
+            pk=1,
+            location_context_document='""'
         )
         self.fish_collection_1 = BiologicalCollectionRecordF.create(
             pk=1,
@@ -48,7 +49,7 @@ class TestApiView(TestCase):
         request = self.factory.get('/api/location-site/' + pk)
         response = view(request, pk)
         self.assertTrue(
-            len(response.data['biological_collection_record']) > 1
+            'id' in response.data
         )
 
     def test_get_taxon_by_id(self):

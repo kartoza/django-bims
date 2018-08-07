@@ -2,6 +2,7 @@
 """
 Our custom context processors
 """
+from bims.utils.get_key import get_key
 
 
 # noinspection PyPep8Naming
@@ -20,6 +21,13 @@ def add_recaptcha_key(request):
         return {'recaptcha_site_key': RECAPTCHA_SITE_KEY}
     else:
         return {}
+
+
+def google_analytic_key(request):
+    """
+    Return google analytic key
+    """
+    return {'GOOGLE_ANALYTIC_KEY': get_key('GOOGLE_ANALYTIC_KEY')}
 
 
 def custom_navbar_url(request):

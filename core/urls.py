@@ -28,8 +28,9 @@ urlpatterns = [
     url(r'^contact/', include('contactus.urls')),
     url(r'^pages/', include('django.contrib.flatpages.urls')),
     url(r'^', include('bims.urls')),
-    url(r'^', include(('fish.urls', 'fish'), namespace='fish')),
-    url(r'^', include(('reptile.urls', 'reptile'), namespace='reptile')),
+    url(r'^bibliography/',
+        include(('td_biblio.urls', 'bibliography'),
+                namespace = 'td_biblio')),
     url(r'^', include('example.urls')),
 
     # prometheus monitoring

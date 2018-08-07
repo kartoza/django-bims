@@ -65,15 +65,15 @@ class CollectionUploadView(View, LoginRequiredMixin):
             record_point = Point(float(lon), float(lat))
 
             # Check if inside the boundary
-            provinces = BoundaryType.objects.filter(name='province')
-            if not provinces:
+            municipals = BoundaryType.objects.filter(name='municipal')
+            if not municipals:
                 return JsonResponse({
                     'status': 'failed',
                     'message': 'No boundary provided',
                 })
             boundaries = Boundary.objects.filter(
                     geometry__contains=record_point,
-                    type=provinces[0]
+                    type=municipals[0]
             )
             if not boundaries:
                 return JsonResponse({
