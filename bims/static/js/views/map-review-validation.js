@@ -109,7 +109,8 @@ function sendEmailValidation(pk) {
         url: '/api/send-email-validation/',
         data: {'pk': pk},
         success: function () {
-            alert('Validation notification sent!')
+            $('#message-success').show().html('Validation notification is sent.');
+            setTimeout(location.reload(), 3000)
         }
     });
 }

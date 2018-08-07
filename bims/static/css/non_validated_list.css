@@ -95,3 +95,15 @@ select {
     padding: 25px;
     border-radius: 2px;
 }
+
+#message-success {
+    background: #eaffe8 !important;
+    border: 1px solid #1b900d !important;
+    border-radius: 5px;
+    text-align: center !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    font-size: 20pt;
+    line-height: 50px;
+}

@@ -74,6 +74,9 @@ class BiologicalCollectionRecord(models.Model):
     validated = models.BooleanField(
         default=False,
     )
+    ready_for_validation = models.BooleanField(
+        default=False,
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:
