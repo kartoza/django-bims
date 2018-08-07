@@ -1223,6 +1223,7 @@ Options::
 non biodiversity layer(bims.models.non_biodiversity_layer.NonBiodiversityLayer)
 -------------------------------------------------------------------------------
 
+
 ::
 
  Non biodiversity layer model.
@@ -1323,6 +1324,745 @@ CSV Document(bims.models.csv_document.CSVDocument)
 
 
 Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Author(td_biblio.models.bibliography.Author)
+--------------------------------------------
+
+::
+
+ Entry author
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - First name
+     - first_name
+     - varchar(100)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - Last name
+     - last_name
+     - varchar(100)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - First Initial(s)
+     - first_initial
+     - varchar(10)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - user
+     - user
+     - integer
+     - 
+     - 
+     - True
+     - Both
+     - FK:geonode.people.models.Profile
+
+
+Options::
+
+ ordering : ('last_name', 'first_name')
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Editor(td_biblio.models.bibliography.Editor)
+--------------------------------------------
+
+::
+
+ Journal or book editor
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - First name
+     - first_name
+     - varchar(100)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - Last name
+     - last_name
+     - varchar(100)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - First Initial(s)
+     - first_initial
+     - varchar(10)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - user
+     - user
+     - integer
+     - 
+     - 
+     - True
+     - Both
+     - FK:geonode.people.models.Profile
+
+
+Options::
+
+ ordering : ('last_name', 'first_name')
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Journal(td_biblio.models.bibliography.Journal)
+----------------------------------------------
+
+::
+
+ Non biodiversity layer model.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - name
+     - name
+     - varchar(100)
+     - 
+     - 
+     - 
+     - Blank
+     -
+
+
+Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Publisher(td_biblio.models.bibliography.Publisher)
+--------------------------------------------------
+
+::
+
+ Journal or book publisher
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - 
+     - 
+   * - wms url
+     - wms_url
+     - varchar(256)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - wms layer name
+     - wms_layer_name
+     - varchar(128)
+     - 
+     - Blank
+     -
+
+
+Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+entry-editor relationship(td_biblio.models.bibliography.Entry_editors)
+----------------------------------------------------------------------
+
+::
+
+ Entry_editors(id, entry, editor)
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - 
+     - 
+     - 
+   * - wms format
+     - wms_format
+     - varchar(64)
+     - 
+
+     - FK:td_biblio.models.bibliography.Entry
+   * - editor
+     - editor
+     - integer
+     - 
+     - 
+     - 
+     - FK:td_biblio.models.bibliography.Editor
+
+
+Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+from_entry-to_entry relationship(td_biblio.models.bibliography.Entry_crossref)
+------------------------------------------------------------------------------
+
+::
+
+ Entry_crossref(id, from_entry, to_entry)
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - from entry
+     - from_entry
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Entry
+   * - to entry
+     - to_entry
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Entry
+
+
+Options::
+
+ unique_together : ((u'from_entry', u'to_entry'),)
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Entry(td_biblio.models.bibliography.Entry)
+------------------------------------------
+
+::
+
+ The core model for references
+
+    Largely guided by the BibTeX file format (see
+    http://en.wikipedia.org/wiki/BibTeX).
+
+    Unsupported fields (for now):
+
+    * eprint: A specification of an electronic publication, often a preprint
+      or a technical report
+    * howpublished: How it was published, if the publishing method is
+      nonstandard
+    * institution: The institution that was involved in the publishing, but not
+      necessarily the publisher
+    * key: A hidden field used for specifying or overriding the alphabetical
+      order of entries (when the "author" and "editor" fields are missing).
+      Note that this is very different from the key (mentioned just after this
+      list) that is used to cite or cross-reference the entry.
+    * series: The series of books the book was published in (e.g. "The Hardy
+      Boys" or "Lecture Notes in Computer Science")
+    * type: The field overriding the default type of publication (e.g.
+      "Research Note" for techreport, "{PhD} dissertation" for phdthesis,
+      "Section" for inbook/incollection)
+    
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - Entry type
+     - type
+     - varchar(50)
+     - 
+     - 
+     - 
+     - 
+     - article:Article, book:Book, booklet:Book (no publisher), conference:Conference, inbook:Book chapter, incollection:Book from a collection, inproceedings:Conference proceedings article, manual:Technical documentation, mastersthesis:Master's Thesis, misc:Miscellaneous, phdthesis:PhD Thesis, proceedings:Conference proceedings, techreport:Technical report, unpublished:Unpublished work
+   * - Title
+     - title
+     - varchar(255)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - journal
+     - journal
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Journal
+   * - Publication date
+     - publication_date
+     - date
+     - 
+     - 
+     - 
+     - Null
+     - 
+   * - Partial publication date?
+     - is_partial_publication_date
+     - boolean
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Volume
+     - volume
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Number
+     - number
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Pages
+     - pages
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - URL
+     - url
+     - varchar(200)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - DOI
+     - doi
+     - varchar(100)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - ISSN
+     - issn
+     - varchar(20)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - ISBN
+     - isbn
+     - varchar(20)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - PMID
+     - pmid
+     - varchar(20)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Book title
+     - booktitle
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Edition
+     - edition
+     - varchar(100)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Chapter number
+     - chapter
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - School
+     - school
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Organization
+     - organization
+     - varchar(50)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - publisher
+     - publisher
+     - integer
+     - 
+     - 
+     - True
+     - Both
+     - FK:td_biblio.models.bibliography.Publisher
+   * - Address
+     - address
+     - varchar(250)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Annote
+     - annote
+     - varchar(250)
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - Note
+     - note
+     - text
+     - 
+     - 
+     - 
+     - Blank
+     - 
+   * - authors
+     - authors
+     - 
+     - 
+     - 
+     - 
+     - 
+     - M2M:td_biblio.models.bibliography.Author (through: td_biblio.models.bibliography.AuthorEntryRank)
+   * - editors
+     - editors
+     - 
+     - 
+     - 
+     - 
+     - Blank
+     - M2M:td_biblio.models.bibliography.Editor (through: td_biblio.models.bibliography.Entry_editors)
+   * - crossref
+     - crossref
+     - 
+     - 
+     - 
+     - 
+     - Blank
+     - M2M:td_biblio.models.bibliography.Entry (through: td_biblio.models.bibliography.Entry_crossref)
+
+
+Options::
+
+ ordering : ('-publication_date',)
+ default_permissions : (u'add', u'change', u'delete')
+
+
+collection-entry relationship(td_biblio.models.bibliography.Collection_entries)
+-------------------------------------------------------------------------------
+
+::
+
+ Collection_entries(id, collection, entry)
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - collection
+     - collection
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Collection
+   * - entry
+     - entry
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Entry
+
+
+Options::
+
+ unique_together : (('collection', u'entry'),)
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Collection(td_biblio.models.bibliography.Collection)
+----------------------------------------------------
+
+::
+
+ Define a collection of entries
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - Name
+     - name
+     - varchar(100)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - Short description
+     - short_description
+     - text
+     - 
+     - 
+     - 
+     - Both
+     - 
+   * - entries
+     - entries
+     - 
+     - 
+     - 
+     - 
+     - 
+     - M2M:td_biblio.models.bibliography.Entry (through: td_biblio.models.bibliography.Collection_entries)
+
+
+Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Author Entry Rank(td_biblio.models.bibliography.AuthorEntryRank)
+----------------------------------------------------------------
+
+::
+
+ Give the author rank for an entry author sequence
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - author
+     - author
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Author
+   * - entry
+     - entry
+     - integer
+     - 
+     - 
+     - True
+     - 
+     - FK:td_biblio.models.bibliography.Entry
+   * - Rank
+     - rank
+     - integer
+     - 
+     - 
+     -
+     - 
+     -
+
+
+Options::
+
+ ordering : ('rank',)
 
  default_permissions : (u'add', u'change', u'delete')
 
