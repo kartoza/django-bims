@@ -14,11 +14,9 @@ define([
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext'
-    ], function (
-        Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
-        ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-        BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext
-        ) {
+], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
+             ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
+             BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -79,18 +77,21 @@ define([
             })
         },
         zoomToCoordinates: function (coordinates, zoomLevel) {
+            this.previousZoom = this.getCurrentZoom();
             this.map.getView().setCenter(coordinates);
             if (typeof zoomLevel !== 'undefined') {
                 this.map.getView().setZoom(zoomLevel);
             }
         },
         zoomToExtent: function (coordinates) {
+            this.previousZoom = this.getCurrentZoom();
             var ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [
                     0, $('.right-panel').width(), 0, 0
                 ]
             });
+            this.map.getView().setZoom(this.getCurrentZoom());
         },
         mapClicked: function (e) {
             var self = this;
@@ -112,7 +113,7 @@ define([
                     poiFound = featuresClickedResponseData[0];
                     featuresData = featuresClickedResponseData[1];
 
-                    if(poiFound) {
+                    if (poiFound) {
                         var coordinates = geometry.getCoordinates();
                         self.zoomToCoordinates(coordinates);
                     }
@@ -138,11 +139,11 @@ define([
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
-            if(!properties.hasOwnProperty('record_type')) {
+            if (!properties.hasOwnProperty('record_type')) {
                 return [false, ''];
             }
 
-            if(uploadDataState) {
+            if (uploadDataState) {
                 return [false, feature];
             }
 
@@ -241,7 +242,6 @@ define([
                     zoom: false
                 }).extend([mousePositionControl])
             });
-            this.initExtent = this.getCurrentBbox();
 
             // Create a popup overlay which will be used to display feature info
             this.popup = new ol.Overlay({
@@ -252,6 +252,7 @@ define([
             this.map.addOverlay(this.popup);
             this.layers.addLayersToMap(this.map);
             this.startOnHoverListener();
+            this.initExtent = this.getCurrentBbox();
         },
         reloadXHR: function () {
             this.previousZoom = -1;
@@ -414,14 +415,16 @@ define([
         },
         closeHighlight: function () {
             this.hidePopup();
-            this.layers.highlightVectorSource.clear();
+            if (this.layers.highlightVectorSource) {
+                this.layers.highlightVectorSource.clear();
+            }
         },
         startOnHoverListener: function () {
             var that = this;
             this.pointerMoveListener = this.map.on('pointermove', function (e) {
                 var pixel = that.map.getEventPixel(e.originalEvent);
                 var hit = that.map.hasFeatureAtPixel(pixel);
-                if(that.uploadDataState) {
+                if (that.uploadDataState) {
                     $('#' + that.map.getTarget()).find('canvas').css('cursor', 'pointer');
                 } else if (hit) {
                     that.map.forEachFeatureAtPixel(pixel,

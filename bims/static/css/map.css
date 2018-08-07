@@ -343,7 +343,8 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-filter-title {
-    margin-top: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
     font-size: 16pt;
 }
 
@@ -431,6 +432,11 @@ html, body, .map, .map-wrapper, #map-container {
     color: white !important;
     padding-left: 3px;
     padding-right: 3px;
+}
+
+.search-arrow.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .container-1 .icon {
@@ -1006,6 +1012,16 @@ div:hover::-webkit-scrollbar {
 
 .modal-upload-data {
     z-index: 9999;
+}
+
+#search-error-text {
+    text-align: center;
+    width: 100%;
+    font-size: 13px;
+    padding: 3px;
+    color: red;
+    font-style: italic;
+    display: none;
 }
 
 @media (min-width: 1300px) and (max-width: 1412px) {

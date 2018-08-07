@@ -95,6 +95,7 @@ class SearchObjects(APIView):
                         'count': 0
                     }
                 records[taxon_gbif_id]['count'] += 1
+                sites[model.site.id]['count'] += 1
 
         search_result['biological_collection_record'] = [
             value for key, value in records.iteritems()]

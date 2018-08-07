@@ -6,12 +6,31 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
         searchBoxOpen: false,
         searchResults: {},
         events: {
+            'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
             'click .clear-filter': 'clearFilter'
         },
+        checkSearch: function (forceSearch) {
+            var searchValue = $('#search').val();
+            if (searchValue.length > 0 && searchValue.length < 3) {
+                $('#search-error-text').show();
+                $('.apply-filter').attr("disabled", "disabled");
+                $('.search-arrow').addClass('disabled');
+            } else {
+                $('#search-error-text').hide();
+                $('.apply-filter').removeAttr("disabled");
+                $('.search-arrow').removeClass('disabled');
+            }
+            if (forceSearch === true) {
+                this.search(searchValue);
+            }
+        },
         search: function (searchValue) {
+            if ($('#search-error-text').is(":visible")) {
+                return;
+            }
             var self = this;
             this.sidePanel.openSidePanel();
             this.sidePanel.clearSidePanel();
@@ -63,14 +82,19 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
                 parameters['yearTo'] = yearTo;
                 parameters['months'] = monthSelected.join(',');
             }
-            Shared.Dispatcher.trigger('map:closeHighlight');
-            Shared.Dispatcher.trigger('search:hit', parameters);
             if (!parameters['search']
                 && !parameters['collector']
                 && !parameters['category']
                 && !parameters['yearFrom']
                 && !parameters['yearTo']) {
+                Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
+                Shared.Dispatcher.trigger('map:closeHighlight');
+                Shared.Dispatcher.trigger('search:hit', parameters);
+                this.sidePanel.closeSidePanelAnimation();
                 return false
+            } else {
+                Shared.Dispatcher.trigger('map:closeHighlight');
+                Shared.Dispatcher.trigger('search:hit', parameters);
             }
             this.searchResultCollection.search(
                 this.sidePanel, parameters
@@ -106,6 +130,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
             this.sidePanel = options.sidePanel;
             this.searchResultCollection = new SearchResultCollection();
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
+            Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
         },
         render: function () {
             this.$el.html(this.template());

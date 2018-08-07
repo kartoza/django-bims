@@ -32,6 +32,7 @@ class GetCollectionAbstract(APIView):
     """
     Abstract class for getting collection
     """
+
     @staticmethod
     def apply_filter(request, ignore_bbox=False):
         # get records with same taxon
@@ -74,11 +75,13 @@ class GetCollectionAbstract(APIView):
         # additional filters
         collector = request_data.get('collector')
         if collector:
-            queryset = queryset.filter(collector=collector)
+            collectors = json.loads(collector)
+            queryset = queryset.filter(collector__in=collectors)
 
         category = request_data.get('category')
         if category:
-            queryset = queryset.filter(category=category)
+            categories = json.loads(category)
+            queryset = queryset.filter(category__in=categories)
 
         year_from = request_data.get('yearFrom')
         if year_from:
@@ -138,10 +141,10 @@ class CollectionDownloader(GetCollectionAbstract):
         # Filename
         today_date = datetime.date.today()
         filename = md5(
-                '%s%s%s' % (
-                    json.dumps(self.request.GET),
-                    queryset.count(),
-                    today_date)
+            '%s%s%s' % (
+                json.dumps(self.request.GET),
+                queryset.count(),
+                today_date)
         ).hexdigest()
         filename += '.csv'
 
@@ -164,8 +167,8 @@ class CollectionDownloader(GetCollectionAbstract):
             })
 
         download_data_to_csv.delay(
-                path_file,
-                self.request.GET,
+            path_file,
+            self.request.GET,
         )
 
         return JsonResponse({

@@ -68,18 +68,22 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         getExtentOfRecords: function () {
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             var self = this;
-            $.ajax({
-                url: '/api/collection/extent/',
-                data: this.parameters,
-                dataType: "json",
-                success: function (data) {
-                    if (data.length == 4) {
-                        Shared.Dispatcher.trigger('map:zoomToExtent', data);
-                    } else {
-                        Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
+            if (this.isActive()) {
+                $.ajax({
+                    url: '/api/collection/extent/',
+                    data: this.parameters,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.length == 4) {
+                            Shared.Dispatcher.trigger('map:zoomToExtent', data);
+                        } else {
+                            Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
+            }
         },
         refresh: function () {
             if (this.parameters['zoom'] &&
