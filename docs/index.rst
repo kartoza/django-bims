@@ -1223,6 +1223,7 @@ Options::
 non biodiversity layer(bims.models.non_biodiversity_layer.NonBiodiversityLayer)
 -------------------------------------------------------------------------------
 
+
 ::
 
  Non biodiversity layer model.
@@ -1464,7 +1465,7 @@ Journal(td_biblio.models.bibliography.Journal)
 
 ::
 
- Peer reviewed journal
+ Non biodiversity layer model.
 
 .. list-table::
    :header-rows: 1
@@ -1485,16 +1486,8 @@ Journal(td_biblio.models.bibliography.Journal)
      - 
      - Blank
      - 
-   * - Name
+   * - name
      - name
-     - varchar(150)
-     - 
-     - 
-     - 
-     - 
-     - 
-   * - Entity abbreviation
-     - abbreviation
      - varchar(100)
      - 
      - 
@@ -1532,21 +1525,19 @@ Publisher(td_biblio.models.bibliography.Publisher)
      - True
      - True
      - 
-     - Blank
-     - 
-   * - Name
-     - name
-     - varchar(150)
      - 
      - 
+   * - wms url
+     - wms_url
+     - varchar(256)
      - 
      - 
      - 
-   * - Entity abbreviation
-     - abbreviation
-     - varchar(100)
      - 
      - 
+   * - wms layer name
+     - wms_layer_name
+     - varchar(128)
      - 
      - Blank
      -
@@ -1581,29 +1572,26 @@ entry-editor relationship(td_biblio.models.bibliography.Entry_editors)
      - True
      - True
      - 
-     - Blank
-     - 
-   * - entry
-     - entry
-     - integer
      - 
      - 
-     - True
      - 
+   * - wms format
+     - wms_format
+     - varchar(64)
+     - 
+
      - FK:td_biblio.models.bibliography.Entry
    * - editor
      - editor
      - integer
      - 
      - 
-     - True
      - 
      - FK:td_biblio.models.bibliography.Editor
 
 
 Options::
 
- unique_together : (('entry', u'editor'),)
  default_permissions : (u'add', u'change', u'delete')
 
 
@@ -2067,7 +2055,7 @@ Author Entry Rank(td_biblio.models.bibliography.AuthorEntryRank)
      - integer
      - 
      - 
-     - 
+     -
      - 
      -
 
@@ -2075,6 +2063,7 @@ Author Entry Rank(td_biblio.models.bibliography.AuthorEntryRank)
 Options::
 
  ordering : ('rank',)
+
  default_permissions : (u'add', u'change', u'delete')
 
 
