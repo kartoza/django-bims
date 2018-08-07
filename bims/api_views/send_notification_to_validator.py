@@ -16,7 +16,9 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
         site = request.get_host()
         scheme = request.scheme
         pk = request.GET.get('pk', None)
-        permission = Permission.objects.filter(content_type__app_label='bims', codename='can_validate_data')
+        permission = \
+            Permission.objects.filter(
+                content_type__app_label='bims', codename='can_validate_data')
         validators = \
             Profile.objects.filter(
                 Q(user_permissions=permission) |
