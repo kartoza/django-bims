@@ -17,6 +17,15 @@
     <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Alegreya:400,400i,500,500i,700,700i|Roboto+Condensed:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
 
+    <!-- Global Site Tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTIC_KEY }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ GOOGLE_ANALYTIC_KEY }}');
+    </script>
+
     {% block head %} {% endblock %}
 
 </head>
@@ -26,7 +35,10 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
       <div class="container">
-        <div class="collapse navbar-collapse">
+      <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target=".navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbarResponsive">
           <ul class="navbar-nav">
              <li class="dropdown">
                  <a class="dropdown-toggle" id="menu-dropdown-burger" href="#"><i class="fa fa-reorder user-icon"></i></a>
@@ -34,15 +46,16 @@
                         <div class="close-dropdown"><i class="fa fa-close"></i></div>
                         <div class="bims-title row">
                             <div class="bims-title-big col-lg-6">BIMS</div>
-                            <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION SYSTEM</div>
+                            <div class="bims-title-acc
+                            col-lg-6">BIODIVERSITY <br/>INFORMATION MANAGEMENT SYSTEM</div>
                         </div>
                         <li><a class="nav-link js-scroll-trigger" href="/">HOME</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/map">MAP</a></li>
-                        <li><a class="nav-link js-scroll-trigger" id="navbar-ext-resources" href="{% url 'link_list' %}">EXTERNAL RESOURCES</a></li>
+                        <li><a class="nav-link js-scroll-trigger" id="navbar-ext-resources" href="{% url 'link_list' %}">LINKS</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-doc-report" href="/under-development/">DOCUMENTS & REPORTS</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-contact" href="/contact/">CONTACT</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-biblio" href="/bibliography/">BIBLIOGRAPHY</a></li>
-                        <li><a class="nav-link js-scroll-trigger" id="navbar-geonode" href="/geonode">GIS CATALOGUE</a></li>
+                        <li><a class="nav-link js-scroll-trigger" id="navbar-geonode" href="/layers">GIS CATALOGUE</a></li>
                         <div class="bims-nav-footer row">
                             <div class="col-lg-12">MADE WITH <img src="{% static 'img/kartoza-logo-only.png' %}" height="20px"> BY <a href="http://kartoza.com/">KARTOZA</a></div>
                         </div>
@@ -50,24 +63,26 @@
             </li>
           </ul>
         </div>
-        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarResponsive">
+        <div class="collapse navbar-collapse navbarResponsive" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
              <li class="dropdown">
                  <a class="dropdown-toggle" id="menu-dropdown-account" href="#"><i class="fa fa-user user-icon"></i></a>
                     <ul class="dropdown-menu right-nav-dropdown">
                     <div class="close-dropdown"><i class="fa fa-close"></i></div>
+                    <div class="container">
                     <div class="bims-title row">
                         <div class="bims-title-big col-lg-6">BIMS</div>
-                        <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION SYSTEM</div>
+                        <div class="bims-title-acc col-lg-6">BIODIVERSITY <br/>INFORMATION MANAGEMENT SYSTEM</div>
+                    </div>
                     </div>
                      {% if user.is_authenticated %}
                         <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="/profile/">PROFILE</a></li>
-                         <li><a class="nav-link js-scroll-trigger" id="navbar-contributions" href="/under-development/">CONTRIBUTIONS</a></li>
-                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/upload/">UPLOAD FILES</a></li>
-                        <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
+                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/upload/">UPLOAD DATA</a></li>
+                         {% if user.is_staff or user.is_superuser %}
+                            <li><a class="nav-link js-scroll-trigger" href="/admin/">ADMINISTRATION</a></li>
+                         {% endif %}
+                             <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/nonvalidated-list/">VALIDATE RECORDS</a></li>
+                             <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
                      {% else %}
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/signup/">SIGN UP</a></li>
@@ -118,7 +133,9 @@
 
         if(uploadUrl !== 'None'){
             var navbarUpload = document.getElementById("navbar-upload");
-            navbarUpload.href = uploadUrl;
+            if(navbarUpload) {
+                navbarUpload.href = uploadUrl;
+            }
         }
 
         if(extResourceUrl !== 'None'){
@@ -143,7 +160,9 @@
 
         if(profileUrl !== 'None'){
             var navbarProfile = document.getElementById("navbar-profile");
-            navbarProfile.href = profileUrl;
+            if(navbarProfile) {
+                navbarProfile.href = profileUrl;
+            }
         }
 
         if(contributionsUrl !== 'None'){

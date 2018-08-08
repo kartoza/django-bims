@@ -7,19 +7,13 @@ define(['backbone', 'views/olmap', 'shared'], function (Backbone, olmap, Shared)
         },
         initialize: function () {
             this.map = new olmap();
-            $.ajax({
-                type: 'GET',
-                url: listCollectorAPIUrl,
-                dataType: 'json',
-                success: function (data) {
-                    for (var i = 0; i < data.length; i++) {
-                        $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> ' + data[i] + '<br>');
-                    }
-                }
-            });
         },
         search: function (query) {
-            Shared.Dispatcher.trigger('search:searchCollection', query);
+            if ($('.search-control').is(":visible")) {
+                $('.search-control').click();
+            }
+            $('#search').val(query);
+            Shared.Dispatcher.trigger('search:checkSearchCollection', true);
         },
         clearSearch: function () {
             this.navigate('', true);

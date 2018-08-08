@@ -8,6 +8,7 @@ require.config({
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
+        noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
     },
     shim: {
         ol: {
@@ -51,6 +52,27 @@ require([
 
     // A $( document ).ready() block.
     $(document).ready(function () {
+        $.ajax({
+            type: 'GET',
+            url: listCollectorAPIUrl,
+            dataType: 'json',
+            success: function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> ' + data[i] + '<br>');
+                }
+            }
+        });
+        $.ajax({
+            type: 'GET',
+            url: listCategoryAPIUrl,
+            dataType: 'json',
+            success: function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    $('#filter-category').append('<input type="checkbox" name="category-value" value="' + data[i] + '">&nbsp;' + data[i] + '<br>');
+                }
+            }
+        });
+
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)
         });

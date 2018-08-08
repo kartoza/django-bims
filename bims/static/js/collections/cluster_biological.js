@@ -2,16 +2,16 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
     return Backbone.Collection.extend({
         model: ClusterModel,
         clusterAPI: _.template(
-            "/api/cluster/collection/records/?taxon=<%= taxon %>&search=<%= search %>" +
+            "/api/collection/cluster/?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&date-from=<%= dateFrom %>&date-to=<%= dateTo %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
             ""),
         url: "",
         viewCollection: [],
         parameters: {
             taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', dateFrom: '', dateTo: ''
+            collector: '', category: '', yearFrom: '', yearTo: '', months: ''
         },
         initialize: function (initExtent) {
             this.initExtent = initExtent;
@@ -28,18 +28,30 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         isActive: function () {
             // flag if this collection need to be called
-            if (this.parameters['taxon'] || this.parameters['search']) {
-                return true;
+            if (!this.parameters['taxon']
+                && !this.parameters['search']
+                && !this.parameters['collector']
+                && !this.parameters['category']
+                && !this.parameters['yearFrom']
+                && !this.parameters['yearTo']) {
+                return false
             } else {
-                return false;
+                return true;
             }
         },
         getTaxon: function () {
             return this.parameters['taxon'];
         },
         toggleTaxonIndicator: function (taxonName) {
+            var self = this;
             if (this.parameters['taxon']) {
-                $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName);
+                $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName +
+                    ' <i class="fa fa-times" style="color: red"></i> ');
+                $('#taxon-filter .fa-times').click(function () {
+                    self.parameters['taxon'] = null;
+                    self.toggleTaxonIndicator('');
+                    Shared.Dispatcher.trigger('map:reloadXHR');
+                });
                 if ($('#taxon-filter').is(":hidden")) {
                     $('#taxon-filter').toggle("slide");
                 }
@@ -57,26 +69,28 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         updateZoomAndBBox: function (zoom, bbox) {
             this.parameters['zoom'] = zoom;
-            this.parameters['bbox'] = bbox;
+            this.parameters['bbox'] = bbox.join(',');
             this.refresh();
         },
         getExtentOfRecords: function () {
+            Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             var self = this;
-            // get extent for all record and fit it to map
-            this.parameters['date-from'] = this.parameters['dateFrom'];
-            this.parameters['date-to'] = this.parameters['dateTo'];
-            $.ajax({
-                url: '/api/cluster/collection/records/extent/',
-                data: this.parameters,
-                dataType: "json",
-                success: function (data) {
-                    if (data.length == 4) {
-                        Shared.Dispatcher.trigger('map:zoomToExtent', data);
-                    } else {
-                        Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
+            if (this.isActive()) {
+                $.ajax({
+                    url: '/api/collection/extent/',
+                    data: this.parameters,
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.length == 4) {
+                            Shared.Dispatcher.trigger('map:zoomToExtent', data);
+                        } else {
+                            Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
+            }
         },
         refresh: function () {
             if (this.parameters['zoom'] &&

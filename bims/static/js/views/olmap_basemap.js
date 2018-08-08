@@ -100,6 +100,16 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 baseSourceLayers.push(bingMap);
             }
 
+            // OSM MAPSURFER ROADS - Make default
+            var mapSurfer = new ol.layer.Tile({
+                title: 'OSM Mapsurfer roads',
+                source: new ol.source.XYZ({
+                    attributions: ['&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
+                    url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
+                })
+            });
+            baseSourceLayers.push(mapSurfer);
+
             // OPENMAPTILES
             if (mapTilerKey) {
                 baseSourceLayers.push(this.getPositronBasemap());

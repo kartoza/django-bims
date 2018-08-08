@@ -239,7 +239,7 @@ dbrestore:
 	@# - prefix causes command to continue even if it fails
 	-@docker-compose exec db su - postgres -c "dropdb gis"
 	@docker-compose exec db su - postgres -c "createdb -O docker -T template_postgis gis"
-	@docker-compose exec db pg_restore /backups/latest.dmp | docker exec -i $(COMPOSE_PROJECT_NAME)-db su - postgres -c "psql gis"
+	@docker-compose exec db bash -c 'pg_restore /backups/latest.dmp | su - postgres -c "psql gis"'
 
 db-fresh-restore:
 	@echo
@@ -326,12 +326,11 @@ generate-boundaries:
 	@echo "------------------------------------------------------------------"
 	@echo "Generate boundaries"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_countries_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_provinces_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_districts_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_municipals_boundary"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py update_cluster"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run uwsgi bash -c "python manage.py generate_boundary_geojson"
+	@docker-compose exec uwsgi bash -c "python manage.py update_countries_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_provinces_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_districts_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py update_municipals_boundary"
+	@docker-compose exec uwsgi bash -c "python manage.py generate_boundary_geojson"
 
 # ----------------------------------------------------------------------------
 #    DEVELOPMENT C O M M A N D S
@@ -399,6 +398,14 @@ update-taxa:
 	@echo "Updating tax"
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_taxa
+
+
+update-location-context-documents:
+	@echo
+	@echo "--------------------------"
+	@echo "Updating ALL location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py update_location_context_documents
 
 # --------------- help --------------------------------
 

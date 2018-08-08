@@ -1,4 +1,5 @@
 {% load i18n avatar_tags %}
+{% load static from staticfiles %}
 {% load account socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
@@ -16,17 +17,17 @@
     <title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
     {% block head %}
       {% if DEBUG_STATIC %}
-          <link href="{{ STATIC_URL }}lib/css/jquery.dataTables.css?v={{ VERSION }}" rel="stylesheet" />
-          <link href="{{ STATIC_URL }}lib/css/select2.css?v={{ VERSION }}" rel="stylesheet"/>
-          <link href="{{ STATIC_URL }}lib/css/bootstrap.min.css?v={{ VERSION }}" rel="stylesheet"/>
-          <link href="{{ STATIC_URL }}lib/css/jquery-ui.css?v={{ VERSION }}" rel="stylesheet"/>
+          <link href="{% static "lib/css/jquery.dataTables.css" %}?v={{ VERSION }}" rel="stylesheet" />
+          <link href="{% static "lib/css/select2.css" %}?v={{ VERSION }}" rel="stylesheet"/>
+          <link href="{% static "lib/css/bootstrap.min.css" %}?v={{ VERSION }}" rel="stylesheet"/>
+          <link href="{% static "lib/css/jquery-ui.css" %}?v={{ VERSION }}" rel="stylesheet"/>
       {% else %}
-        <link href="{{ STATIC_URL }}lib/css/assets.min.css?v={{ VERSION }}" rel="stylesheet"/>
+        <link href="{% static "lib/css/assets.min.css" %}?v={{ VERSION }}" rel="stylesheet"/>
       {% endif %}
 
-      <link href="{{ STATIC_URL }}geonode/css/ext-compatibility.css?v={{ VERSION }}" rel="stylesheet" />
-      <link href="{{ STATIC_URL }}geonode/css/ux-all.css?v={{ VERSION }}" rel="stylesheet" />
-      <link href="{{ STATIC_URL }}geonode/css/base.css?v={{ VERSION }}" rel="stylesheet" />
+      <link href="{% static "geonode/css/ext-compatibility.css" %}?v={{ VERSION }}" rel="stylesheet" />
+      <link href="{% static "geonode/css/ux-all.css" %}?v={{ VERSION }}" rel="stylesheet" />
+      <link href="{% static "geonode/css/base.css" %}?v={{ VERSION }}" rel="stylesheet" />
       <style type="text/css">[ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}</style>
 
       {% block extra_head %}
@@ -161,11 +162,11 @@
                 <li role="separator" class="divider"></li>
                 <li><a href="{% url "help" %}">{% trans "Help" %}</a></li>
                 <li role="separator" class="divider"></li>
-                <li><a href="/account/logout/">Logout</a></li>
+                <li><a href="{% url "account_logout" %}?next={{ request.path }}">Logout</a></li>
                 </ul>
               </li>
 		      {% else %}
-		      <li><a href="#" data-toggle="modal" data-target="#SigninModal" role="button" >{% trans "Sign in" %} </a></li>
+                <li><a href="{% url "account_login" %}?next={{ request.path }}" role="button" >{% trans "Sign in" %} </a></li>
               {% endif %}
             </ul>
           </div> <!--/.nav-collapse -->
@@ -282,66 +283,25 @@
   </footer>
   {% endblock footer %}
 
-
-    <!-- Modal must stay outside the navbar -->
-    {% if not user.is_authenticated %}
-    <div class="modal fade" id="SigninModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            <h4 class="modal-title" id="myModalLabel">{% trans "Sign in" %}</h4>
-          </div>
-          <form class="form-signin" role="form" action="{% url "account_login" %}?next={{ request.path }}" method="post">
-            <div class="modal-body">
-              {% csrf_token %}
-              {% get_providers as socialaccount_providers %}
-              {% if socialaccount_providers %}
-                  {% include "socialaccount/snippets/provider_list.html" with process="login" %}
-                  {% include "socialaccount/snippets/login_extra.html" %}
-                <hr>
-              {% endif %}
-              <div class="form-group">
-                <label for="id_username" class="sr-only">{% trans "Username" %}:</label>
-                <input id="id_username" class="form-control" name="login" placeholder="{% trans "Username" %}" type="text" />
-              </div>
-              <div class="form-group">
-                <label for="id_password" class="sr-only">{% trans "Password" %}:</label>
-                <input id="id_password" class="form-control" name="password" placeholder="{% trans "Password" %}" type="password" />
-              </div>
-              <label class="checkbox">
-                <input type="checkbox" /> {% trans "Remember Me" %}
-              </label>
-            </div>
-            <div class="modal-footer">
-              <button type="submit" class="btn btn-primary btn-block">{% trans "Sign in" %}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-    <!-- End of Modal -->
-
     {% if DEBUG_STATIC %}
-    <script src="{{ STATIC_URL }}lib/js/jquery.min.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/jquery.dataTables.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/jquery.timeago.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/jquery.ajaxprogress.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/jquery.ajaxQueue.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/jquery-ui.custom.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/jquery.raty.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/bootstrap.min.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/moment-with-locales.min.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/bootstrap-datetimepicker.min.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/json2.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/select2.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}lib/js/waypoints.js?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery.min.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery.dataTables.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery.timeago.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery.ajaxprogress.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery.ajaxQueue.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery-ui.custom.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/jquery.raty.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/bootstrap.min.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/moment-with-locales.min.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/bootstrap-datetimepicker.min.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/json2.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/select2.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/waypoints.js" %}?v={{ VERSION }}"></script>
     {% else %}
-    <script src="{{ STATIC_URL }}lib/js/assets.min.js?v={{ VERSION }}"></script>
+    <script src="{% static "lib/js/assets.min.js" %}?v={{ VERSION }}"></script>
     {% endif %}
-    <script src="{{ STATIC_URL }}geonode/js/utils/utils.js?v={{ VERSION }}"></script>
-    <script src="{{ STATIC_URL }}geonode/js/base/base.js?v={{ VERSION }}"></script>
+    <script src="{% static "geonode/js/utils/utils.js" %}?v={{ VERSION }}"></script>
+    <script src="{% static "geonode/js/base/base.js" %}?v={{ VERSION }}"></script>
     {% include 'autocomplete_light/static.html' %}
     <script type="text/javascript" src="{% url "javascript-catalog" %}"></script>
     {% block extra_script %}{% endblock extra_script %}

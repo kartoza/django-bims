@@ -10,15 +10,19 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
             this.categoryValue = parameters['category'];
-            this.dateFrom = parameters['dateFrom'];
-            this.dateTo = parameters['dateTo'];
+            this.yearFrom = parameters['yearFrom'];
+            this.yearTo = parameters['yearTo'];
+            this.months = parameters['months'];
 
-            this.url = this.searchUrl + this.searchValue +
-                '?collector=' + this.collectorValue +
+            this.url = this.searchUrl +
+                '?search=' + this.searchValue +
+                '&collector=' + this.collectorValue +
                 '&category=' + this.categoryValue +
-                '&date-from=' + this.dateFrom +
-                '&date-to=' + this.dateTo;
+                '&yearFrom=' + this.yearFrom +
+                '&yearTo=' + this.yearTo +
+                '&months=' + this.months;
             this.sidePanel = sidePanel;
+            this.sidePanel.showSearchLoading();
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {

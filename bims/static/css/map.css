@@ -16,7 +16,7 @@ body {
     margin: 0 10px 10px 0;
     font-size: 8pt;
     font-weight: normal;
-    padding: 15px 30px 15px 15px;
+    padding: 0 0 15px 0;
     word-wrap: break-word;
     max-height: 85%;
     overflow-y: auto;
@@ -41,6 +41,11 @@ body {
 
 #number_site {
     font-weight: bold;
+}
+
+.panel-icons {
+    position: absolute;
+    height: 100px;
 }
 
 .right-panel-icon {
@@ -70,7 +75,7 @@ html, body, .map, .map-wrapper, #map-container {
     height: 100%;
     width: 250px;
     max-width: 400px;
-    background: rgba(204, 204, 204, 0.7);
+    background: rgba(204, 204, 204, 1);
     color: #4e4e4e;
     z-index: 2000;
     -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2); /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
@@ -94,7 +99,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 5px;
     padding-left: 15px;
     height: 100px;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 1);
 }
 
 .right-panel-title {
@@ -112,11 +117,16 @@ html, body, .map, .map-wrapper, #map-container {
     cursor: pointer;
 }
 
-.map-control-panel {
+.side-panel-info {
+    height: 70px;
+    width: 100%
+}
+
+.map-control-panel, .download-control-panel {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 139px;
+    top: 185px;
     transform: translateY(-50%);
     padding-left: 6px;
     padding-right: 6px;
@@ -128,6 +138,21 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 0;
     border-top: none;
     width: 54px;
+}
+
+.no-upload {
+    top: 160px;
+}
+
+.download-control-panel {
+    top: 349px;
+}
+
+.download-control-panel .download-format-selector-container {
+    margin-left: 49px;
+    margin-top: 0;
+    display: none;
+    width: auto;
 }
 
 .zoom-control {
@@ -218,7 +243,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .map-control-panel-box {
     width: 265px;
-    background-color: rgba(204, 204, 204, 0.4);
+    background-color: white;
     position: absolute;
     top: 0;
     color: black;
@@ -238,13 +263,24 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 0 !important;
 }
 
-#layers-selector {
+.download-format-selector-container {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.download-format-selector-container li {
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 18px;
+}
+
+.map-control-panel-box ul {
     list-style-type: none;
-    padding-left: 0;
+    padding: 5px;
     margin-bottom: 0;
 }
 
-#layers-selector li {
+.map-control-panel-box li {
     text-align: left;
     background: none;
     color: black;
@@ -256,7 +292,7 @@ html, body, .map, .map-wrapper, #map-container {
     cursor: pointer;
 }
 
-#layers-selector li:hover {
+.map-control-panel-box li:hover {
     background-color: rgba(0, 0, 0, 0.2);
 }
 
@@ -270,18 +306,48 @@ html, body, .map, .map-wrapper, #map-container {
     margin-top: 3px;
 }
 
+.locate-options-container {
+    display: none;
+    padding-bottom: 0 !important;
+}
+
+#locate-options {
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+#locate-options li {
+    text-align: left;
+    background: none;
+    color: black;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+}
+
+#locate-options li:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.locate-options-container .content {
+    border-top: 1px solid darkgray;
+    margin-top: 3px;
+}
+
 .map-control-panel-box .title {
     font-size: 16pt;
     line-height: 20px;
 }
 
 .map-filter-title {
-    margin-top: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
     font-size: 16pt;
 }
 
 .map-control-panel-box .subtitle, .search-results-total {
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: ghostwhite;
     text-align: left;
     border: 1px solid grey;
 }
@@ -294,6 +360,7 @@ html, body, .map, .map-wrapper, #map-container {
     text-align: left;
     max-height: 300px;
     overflow-y: scroll;
+    padding-top: 5px;
 }
 
 .map-control-panel-box .close-button, .close-panel {
@@ -363,6 +430,11 @@ html, body, .map, .map-wrapper, #map-container {
     color: white !important;
     padding-left: 3px;
     padding-right: 3px;
+}
+
+.search-arrow.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .container-1 .icon {
@@ -468,7 +540,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 190px !important;
+    top: 280px !important;
     left: 0;
     right: auto !important;
     text-align: left;
@@ -490,14 +562,13 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .layer-switcher .panel {
-    background-color: white;
     border: none !important;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 9px !important;
     position: absolute;
     width: 250px;
     margin-left: 55px !important;
-    background-color: rgba(204, 204, 204, 0.4) !important;
+    background-color: white !important;
     border-radius: 0 !important;
 }
 
@@ -544,6 +615,10 @@ html, body, .map, .map-wrapper, #map-container {
     overflow-y: auto;
 }
 
+.side-panel-content {
+    padding: 10px;
+}
+
 ::-webkit-scrollbar {
     width: 7px;
     display: none;
@@ -572,10 +647,8 @@ div:hover::-webkit-scrollbar {
 .search-results-total {
     font-weight: bold;
     font-size: 9pt;
-    padding-bottom: 5px;
-    padding-top: 5px;
-    background-color: rgba(255, 255, 255, 0.7);
-    padding-left: 5px;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 1);
 }
 
 .search-results-total:hover {
@@ -593,11 +666,22 @@ div:hover::-webkit-scrollbar {
     z-index: 9999;
 }
 
+#footer-message {
+    position: absolute;
+    bottom: 10px;
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    opacity: 0.6;
+    z-index: 999;
+    display: none;
+}
+
 #fetching-error {
     opacity: 0.8;
 }
 
-#loading-warning span {
+#loading-warning span, #footer-message span {
     background-color: grey;
     color: white;
     padding: 10px;
@@ -627,6 +711,11 @@ div:hover::-webkit-scrollbar {
     font-size: 12px;
     padding: 10px;
     display: none;
+}
+
+#taxon-filter .fa-times {
+    cursor: pointer;
+    margin-left: 5px;
 }
 
 #fetching-error .try-again-button {
@@ -725,8 +814,13 @@ div:hover::-webkit-scrollbar {
 }
 
 #geocontext-information-container {
-    padding: 10px;
+    top: 0;
     display: none;
+    position: absolute;
+    height: 100%;
+    overflow-y: scroll;
+    margin-top: 300px;
+    padding-bottom: 350px;
 }
 
 #geocontext-information-container table {
@@ -743,7 +837,6 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     height: 50px;
     padding: 10px;
-    border: 1px solid gray;
 }
 
 #map-legend-wrapper {
@@ -756,7 +849,7 @@ div:hover::-webkit-scrollbar {
     overflow-y: scroll;
     position: absolute;
     left: .4em;
-    bottom: 6.3em;
+    bottom: 5.3em;
     background-color: white;
     cursor: pointer;
 }
@@ -791,4 +884,193 @@ div:hover::-webkit-scrollbar {
 
 #map-legend-wrapper .legend-row:last-child {
     border-bottom: none;
+}
+
+.year-indicator {
+    width: 100%;
+    height: 20px;
+    position: relative;
+    margin-bottom: 10px;
+    margin-top: -10px;
+}
+
+#year-from {
+    position: absolute;
+    left: 0;
+}
+
+#year-to {
+    position: absolute;
+    right: 0;
+}
+
+#year-slider {
+    height: 5px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#month-selector {
+    margin-bottom: 10px;
+}
+
+.noUi-target {
+    box-shadow: none !important;
+    background: #d4d4d4 !important;
+    border: none !important;
+}
+
+.noUi-connect {
+    background: #888 !important;
+}
+
+.noUi-handle {
+    right: -7.5px !important;
+    background: #888 !important;
+    width: 15px !important;
+    height: 15px !important;
+    border: 0 !important;
+    border-radius: 100% !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 0 0 #c7c7c7 !important;
+    -webkit-transition: box-shadow .2s ease !important;
+    transition: box-shadow .2s ease !important;
+}
+
+.noUi-handle:before, .noUi-handle:after {
+    display: none !important;
+}
+
+.button-filter-wrapper {
+    text-align: center;
+    padding: 5px 40px;
+}
+
+.upload-data-button {
+    border-radius: 8px !important;
+    width: 100%;
+}
+
+.required-text {
+    margin-top: 5px;
+}
+
+.upload-input-label {
+    font-size: 11pt;
+    margin-bottom: 0;
+}
+
+#download-control-modal {
+    margin-left: 100px;
+    margin-right: 100px;
+}
+
+#download-control-modal .modal-body {
+    text-align: center;
+}
+
+#download-control-modal .modal-body .table-section {
+    text-align: center;
+    padding: 10px;
+}
+
+#download-control-modal .modal-body table {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#download-control-modal .modal-body table .row-format {
+    height: 100px;
+    width: 80px;
+    border: 1px dashed black;
+    text-align: center;
+    padding-top: 35px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+#download-control-modal .modal-body .notification {
+    color: red;
+    opacity: 0.8;
+    display: none;
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
+#download-control-modal .modal-body table .row-format:hover {
+    background: #e9ecef;
+}
+
+#download-control-modal .modal-body table .row-format.disabled:hover {
+    background: transparent;
+}
+
+#download-control-modal .modal-body table .row-format.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.modal-upload-data {
+    z-index: 9999;
+}
+
+#search-error-text {
+    text-align: center;
+    width: 100%;
+    font-size: 13px;
+    padding: 3px;
+    color: red;
+    font-style: italic;
+    display: none;
+}
+
+.site-detail-content {
+    padding: 10px;
+    width: 100%;
+
+}
+
+.site-detail-content td {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.search-result-sub-title {
+    padding-right: 5px;
+}
+
+.sub-species-wrapper .search-result-sub-title,
+.sub-species-wrapper .result-search {
+    padding-left: 15px !important;
+}
+
+.sub-species-wrapper .search-result-sub-title {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.site-detail-content .text-center {
+    font-size: 12px;
+}
+
+@media (min-width: 1300px) and (max-width: 1412px) {
+    .modal-upload-data {
+        margin-left: 45rem;
+    }
+}
+
+@media (min-width: 1412px) and (max-width: 1575px) {
+    .modal-upload-data {
+        margin-left: 50rem;
+    }
+}
+
+@media (min-width: 1575px) {
+    .modal-upload-data {
+        margin-left: 55%;
+    }
 }

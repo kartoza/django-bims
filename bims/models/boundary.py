@@ -40,7 +40,7 @@ class Boundary(models.Model):
     class Meta:
         unique_together = ("name", "code_name", "type")
 
-    def generate_cluster(self, CollectionModel=None):
+    def generate_cluster(self):
         """ Generate cluster for the boundary.
         This will generate by the rule.
         If the boundary is lowest, it will generate from
@@ -59,7 +59,7 @@ class Boundary(models.Model):
         )
         # if lowest boundary, do actual update cluster
         if self.type == BoundaryType.lowest_type():
-            update_cluster(self, CollectionModel)
+            update_cluster(self)
         else:
             # if not lowest, calculate from it's cluster boundary
             Cluster.objects.filter(

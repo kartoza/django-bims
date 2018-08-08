@@ -1,31 +1,8 @@
-
-__author__ = 'rischan'
-
 # -*- coding: utf-8 -*-
 from .test import *  # noqa
+from .dev_docker import *  # noqa
 
-STATICFILES_STORAGE = 'pipeline.storage.PipelineStorage'
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'test_db',
-        'USER': 'docker',
-        'PASSWORD': 'docker',
-        'HOST': 'db',
-        # Set to empty string for default.
-        'PORT': '',
-    }
-}
-
-MEDIA_ROOT = '/tmp/media'
-STATIC_ROOT = '/tmp/static'
-
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'bims.search_backends.fuzzy_elastic_search_engine'
-                  '.FuzzyElasticSearchEngine',
-        'URL': 'http://elasticsearch:9200/',
-        'INDEX_NAME': 'haystack',
-    },
-}
+DJANGO_EASY_AUDIT_WATCH_MODEL_EVENTS = False
+DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
+    'layers.Layer',
+]

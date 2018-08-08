@@ -1,7 +1,7 @@
 define(['backbone', 'underscore', 'shared', 'ol'], function (Backbone, _, Shared, ol) {
     return Backbone.View.extend({
         geocontextUrl: _.template(
-            "https://geocontext.kartoza.com/geocontext/value/list/<%= latitude %>/<%= longitude %>/?with-geometry=False"),
+            "<%= geocontextUrl %>/api/v1/geocontext/value/collection/<%= latitude %>/<%= longitude %>/<%= geocontextCollectionKey %>"),
         loadSuccess: function () {
             $('#geocontext-information-container img').hide();
             $('#geocontext-information-container .content').show();
@@ -11,24 +11,94 @@ define(['backbone', 'underscore', 'shared', 'ol'], function (Backbone, _, Shared
             $('#geocontext-information-container').show();
             $('#geocontext-information-container img').show();
             $('#geocontext-information-container .content').hide();
-            $('#geocontext-information-container .content').html("");
+            $('#geocontext-information-container .content').empty();
 
             if (this.geocontextXhr) {
                 this.geocontextXhr.abort();
             }
             this.geocontextXhr = $.get({
                 url: this.geocontextUrl({
+                    'geocontextUrl': geocontextUrl,
                     'latitude': latitude,
-                    'longitude': longitude
+                    'longitude': longitude,
+                    'geocontextCollectionKey': geocontextCollectionKey,
                 }),
                 dataType: 'json',
                 success: function (data) {
                     self.loadSuccess();
-                    $.each(data, function (index, value) {
-                        $('#geocontext-information-container .content').append(
-                            "<tr><td>" + value['name'] + "</td><td>" + value['value'] + "</td></tr>"
-                        )
+                    var geocontext_content = "";
+                    // Set title to collection name
+                    geocontext_content = geocontext_content.concat(
+                            "<div>Collection: " + data['name'] + "</div>\n");
+                    // Iterate data for all context groups
+                    $.each(data["context_group_values"], function (index, group_value) {
+                        geocontext_content = geocontext_content.concat(
+                            "<div> Group: " + group_value['name'] + "</div>\n");
+                        geocontext_content = geocontext_content.concat(
+                            "<table >\n");
+                        $.each(group_value["service_registry_values"], function (index_csr, csr) {
+                            geocontext_content = geocontext_content.concat(
+                                "<tr>" +
+                                "<td>" + csr['name'] + "</td>" +
+                                "<td>" + csr['value'] + "</td>" +
+                                "</tr>"
+                            );
+                        });
+                        geocontext_content = geocontext_content.concat("</table>");
                     });
+                    // Append content to the div
+                    $('#geocontext-information-container .content').append(geocontext_content);
+                },
+                error: function (req, err) {
+                    self.loadSuccess();
+                }
+            });
+        },
+        loadGeocontextByID: function (locationSiteID) {
+            var self = this;
+            $('#geocontext-information-container').show();
+            $('#geocontext-information-container img').show();
+            $('#geocontext-information-container .content').hide();
+            $('#geocontext-information-container .content').empty();
+
+            // URL building
+            var url = locationSiteDetailURL.replace('123456789', locationSiteID);
+
+            if (this.geocontextXhr) {
+                this.geocontextXhr.abort();
+            }
+            this.geocontextXhr = $.get({
+                url: url,
+                dataType: 'json',
+                success: function (data) {
+                    data = data['location_context_document_json'];
+                    if (!data){
+                        self.loadSuccess();
+                        return;
+                    }
+                    self.loadSuccess();
+                    var geocontext_content = "";
+                    // Set title to collection name
+                    geocontext_content = geocontext_content.concat(
+                            "<div>Collection: " + data['name'] + "</div>\n");
+                    // Iterate data for all context groups
+                    $.each(data["context_group_values"], function (index, group_value) {
+                        geocontext_content = geocontext_content.concat(
+                            "<div> Group: " + group_value['name'] + "</div>\n");
+                        geocontext_content = geocontext_content.concat(
+                            "<table >\n");
+                        $.each(group_value["service_registry_values"], function (index_csr, csr) {
+                            geocontext_content = geocontext_content.concat(
+                                "<tr>" +
+                                "<td>" + csr['name'] + "</td>" +
+                                "<td>" + csr['value'] + "</td>" +
+                                "</tr>"
+                            );
+                        });
+                        geocontext_content = geocontext_content.concat("</table>");
+                    });
+                    // Append content to the div
+                    $('#geocontext-information-container .content').append(geocontext_content);
                 },
                 error: function (req, err) {
                     self.loadSuccess();

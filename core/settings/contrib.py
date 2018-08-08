@@ -58,6 +58,12 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
+    'ckeditor',
+)
+
+# workaround to get flatpages picked up in installed apps.
+INSTALLED_APPS += (
+    'django.contrib.flatpages',
 )
 
 # Set templates
@@ -70,7 +76,8 @@ try:
 
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
         'bims.context_processor.add_recaptcha_key',
-        'bims.context_processor.custom_navbar_url'
+        'bims.context_processor.custom_navbar_url',
+        'bims.context_processor.google_analytic_key'
     ]
 except KeyError:
     TEMPLATES = [
@@ -116,10 +123,14 @@ STATICFILES_DIRS = [
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
-MIDDLEWARE += (
+MIDDLEWARE_CLASSES += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
 )
+
+# for middleware in MIDDLEWARE_CLASSES:
+#     if middleware not in MIDDLEWARE:
+#         MIDDLEWARE += (middleware,)
 
 # Defines whether to log model related events,
 # such as when an object is created, updated, or deleted
@@ -154,9 +165,10 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+CELERY_BROKER_URL = BROKER_URL
 
 # django modelsdoc settings
-MODELSDOC_APPS = ('bims', 'fish',)
+MODELSDOC_APPS = ('bims', 'td_biblio',)
 
 MODELSDOC_OUTPUT_FORMAT = 'rst'
 MODELSDOC_MODEL_WRAPPER = 'modelsdoc.wrappers.ModelWrapper'
@@ -167,3 +179,80 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
 ELASTIC_MIN_SCORE = 2
+
+DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
+    'layers.Layer',
+    'monitoring.RequestEvent',
+    'monitoring.MonitoredResource',
+]
+
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d '
+                      '%(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(message)s',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'celery': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'celery.log',
+            'formatter': 'simple',
+            'maxBytes': 1024 * 1024 * 10,  # 10 mb
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+        }
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"], "level": "ERROR", },
+        "bims": {
+            "handlers": ["console"], "level": "DEBUG", },
+        "geonode": {
+            "handlers": ["console"], "level": "INFO", },
+        "geonode.qgis_server": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "gsconfig.catalog": {
+            "handlers": ["console"], "level": "ERROR", },
+        "owslib": {
+            "handlers": ["console"], "level": "ERROR", },
+        "pycsw": {
+            "handlers": ["console"], "level": "ERROR", },
+        "celery": {
+            'handlers': ['celery', 'console'], 'level': 'DEBUG', },
+    },
+}
+
+ASYNC_SIGNALS = True
+
+from .geonode_queue_settings import *  # noqa
+
+CELERY_TASK_QUEUES += GEONODE_QUEUES
+
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+CELERY_TASK_ALWAYS_EAGER = False

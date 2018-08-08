@@ -52,6 +52,7 @@ class BiologicalCollectionRecord(models.Model):
         max_length=100,
         blank=True,
         default='',
+        verbose_name='collector or observer',
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -78,6 +79,11 @@ class BiologicalCollectionRecord(models.Model):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
+        permissions = (
+            ('can_upload_csv', 'Can upload CSV'),
+            ('can_upload_shapefile', 'Can upload Shapefile'),
+            ('can_validate_data', 'Can validate data'),
+        )
 
     def on_post_save(self):
         if not self.taxon_gbif_id:
@@ -105,6 +111,17 @@ class BiologicalCollectionRecord(models.Model):
             related_models.append(rel_obj.related_model)
         return related_models
 
+    def __init__(self, *args, **kwargs):
+        super(BiologicalCollectionRecord, self).__init__(*args, **kwargs)
+        self.__original_validated = self.validated
+
+    def is_cluster_generation_applied(self):
+        if self.__original_validated != self.validated:
+            return True
+        if self.validated:
+            return True
+        return False
+
 
 @receiver(models.signals.post_save)
 def collection_post_save_handler(sender, instance, **kwargs):
@@ -113,11 +130,12 @@ def collection_post_save_handler(sender, instance, **kwargs):
     """
     if not issubclass(sender, BiologicalCollectionRecord):
         return
-
     models.signals.post_save.disconnect(
         collection_post_save_handler,
     )
     instance.on_post_save()
+    if instance.is_cluster_generation_applied():
+        update_cluster_by_collection(instance)
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
@@ -135,6 +153,7 @@ def cluster_post_delete_handler(sender, instance, using, **kwargs):
             not issubclass(sender, LocationSite):
         return
     if issubclass(sender, BiologicalCollectionRecord):
-        update_cluster_by_collection(instance)
+        if instance.is_cluster_generation_applied():
+            update_cluster_by_collection(instance)
     if issubclass(sender, LocationSite):
         update_cluster_by_site(instance)

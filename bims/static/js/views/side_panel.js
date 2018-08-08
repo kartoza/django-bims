@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbone, _) {
+define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backbone, _) {
     return Backbone.View.extend({
         template: _.template($('#side-panel-template').html()),
         className: 'panel-wrapper',
@@ -10,11 +10,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
             // Events
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
-            Shared.Dispatcher.on('sidePanel:updateSidePanelDetail', this.updateSidePanelDetail, this);
+            Shared.Dispatcher.on('sidePanel:updateSidePanelHtml', this.updateSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
+            Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
             Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
         },
-        render: function() {
+        render: function () {
             this.$el.html(this.template());
             // $('#map-container').append(this.$el);
 
@@ -24,81 +25,66 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function(Shared, Backbo
 
             return this;
         },
-        isSidePanelOpen:function () {
-          return this.rightPanel.is(":visible");
+        isSidePanelOpen: function () {
+            return this.rightPanel.is(":visible");
         },
         openSidePanel: function (properties) {
             $('#geocontext-information-container').hide();
-            this.rightPanel.show('slide', { direction: 'right'}, 200);
-            if(typeof properties !== 'undefined') {
+            this.rightPanel.show('slide', {direction: 'right'}, 200);
+            if (typeof properties !== 'undefined') {
                 this.clearSidePanel();
                 this.$el.find('.panel-loading').show();
-                this.updateSidePanelTitle('<i class="fa fa-map-marker"></i> '+ properties['name'] +'</span>');
-                if(properties.hasOwnProperty('location_type')) {
+                this.updateSidePanelTitle('<i class="fa fa-map-marker"></i> ' + properties['name'] + '</span>');
+                if (properties.hasOwnProperty('location_type')) {
                     this.fillSidePanel(properties['location_type']);
                 }
             }
         },
-        updateSidePanelDetail: function(data, sidePanelDataType) {
-            $('.panel-icons').html('');
-            this.$el.find('.panel-loading').hide();
-            this.switchToDetailResultPanel();
-            if(data.hasOwnProperty('biological_collection_record')) {
-                var biologicalCollectionRecords = data['biological_collection_record'];
-                var collections = {};
-                var $panelIcons = this.$el.find('.panel-icons');
-                for(var i=0; i<biologicalCollectionRecords.length; i++) {
-                    var record = biologicalCollectionRecords[i];
-                    var recordName = record['children_fields']['name'];
-                    if(!collections.hasOwnProperty(recordName)) {
-                        collections[recordName] = 1;
-                        $panelIcons.append(
-                            '<div class="col-lg-3 text-center">'+
-                                '<img src="/static/img/'+ recordName +'.svg" class="right-panel-icon">' +
-                                '<p class="data-'+ recordName +' text-bold">'+collections[recordName]+'</p>'+
-                                '<p>'+ recordName +' species</p>'+
-                            '</div>'
-                        )
-                    } else {
-                        collections[recordName] += 1;
-                        this.$el.find('.data-'+recordName).html(collections[recordName]);
-                    }
-                }
-            } else{
-                $('#content-panel').html(JSON.stringify(data));
-            }
+        showSearchLoading: function () {
+            $('.panel-loading').show();
+            $('.side-panel-info').removeClass('full-height');
         },
-        switchToSearchResultPanel:function () {
+        switchToSearchResultPanel: function () {
+            $('.panel-loading').hide();
             $('.title-side-panel').show();
             $('.search-result-info').show();
             $('.side-panel-info').addClass('full-height');
         },
-        switchToDetailResultPanel:function () {
+        switchToDetailResultPanel: function () {
+            $('.panel-loading').hide();
             $('.title-side-panel').hide();
             $('.search-result-info').hide();
             $('.side-panel-info').removeClass('full-height');
         },
-        updateSidePanelTitle: function(title) {
+        updateSidePanelTitle: function (title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');
             $rightPanelTitle.html(title);
+        },
+        closeSidePanelAnimation: function () {
+            var self = this;
+            this.rightPanel.hide('slide', {direction: 'right'}, 200, function () {
+                self.clearSidePanel();
+            });
         },
         closeSidePanel: function (e) {
             Shared.Dispatcher.trigger('searchResult:clicked', null);
             Shared.Router.clearSearch();
-            var self = this;
-            this.rightPanel.hide('slide', { direction: 'right'}, 200, function () {
-                self.clearSidePanel();
-            });
+            this.closeSidePanelAnimation();
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {
                 if (contents.hasOwnProperty(key)) {
-                    $('#content-panel').append('<p>'+ key.charAt(0).toUpperCase() + key.substring(1) +' : '+ contents[key] +'</p>');
+                    $('#content-panel').append('<p>' + key.charAt(0).toUpperCase() + key.substring(1) + ' : ' + contents[key] + '</p>');
                 }
             }
         },
         fillSidePanelHtml: function (htmlData) {
+            this.switchToSearchResultPanel();
             $('#content-panel').html(htmlData);
+        },
+        updateSidePanelHtml: function (htmlData) {
+            this.switchToSearchResultPanel();
+            $('#content-panel').append(htmlData);
         },
         appendSidePanelContent: function (htmlData) {
             $('#content-panel').append(htmlData);
