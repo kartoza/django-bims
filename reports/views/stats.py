@@ -50,11 +50,14 @@ def create_pdf(pathname, current_site):
     # page.drawString(260,
     #                 580,
     #                 'Date: {}'.format(time))
-
     margin_left = 50
     margin_bottom = 500
 
-    # Overview section
+    page.setFont('Helvetica-Bold', 20)
+    page.drawString(margin_left + 200, margin_bottom + 10,
+                    'LBIMS species - Focused report')
+
+    # SECTION: OVERVIEW
 
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left, margin_bottom - 30,
@@ -228,7 +231,95 @@ def create_pdf(pathname, current_site):
     page.drawString(margin_left + 305, margin_bottom - 360,
                     '25,732,563')
 
-    # Common names section
+    # SECTION: RECORDS PER AREA
+
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left, margin_bottom - 400,
+                    'Records per area')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 5, margin_bottom - 420,
+                    'Area')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 105, margin_bottom - 420,
+                    'Records')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 205, margin_bottom - 420,
+                    '%')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 305, margin_bottom - 420,
+                    'Since')
+
+    # set an additional 5 to bottom differenct on the line so as we
+    #  have a little margin-botton on the text
+    page.line(
+            (margin_left + 5), (margin_bottom - 425),
+            (margin_left + 380), (margin_bottom - 425))
+
+    # insert a 30 value difference on height
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 440,
+                    'North Atlantic')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 440,
+                    '17, 433')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 440,
+                    '17')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 440,
+                    '1957')
+
+    # ------------------------------------------
+    page.line(
+            (margin_left + 5), (margin_bottom - 445),
+            (margin_left + 380), (margin_bottom - 445))
+
+    # insert a 30 value difference on height
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 460,
+                    'Kingdom')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 460,
+                    'Animalia')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 460,
+                    'Haekel, 1874')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 460,
+                    '25,732,563')
+
+    # SECTION: DISTRIBUTION
+
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left + 400, margin_bottom - 400,
+                    'Distribution')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 500,  margin_bottom - 400,
+                    'First Record')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 600, margin_bottom - 400,
+                    'Last Record')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 700, margin_bottom - 400,
+                    'Occurences')
+
+
+    # SECTION: COMMON NAMES
 
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left + 500, margin_bottom - 30,
