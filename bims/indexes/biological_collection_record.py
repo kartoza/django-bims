@@ -8,42 +8,83 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
 
     original_species_name = indexes.NgramField(
-            model_attr='original_species_name',
-            indexed=True
+        model_attr='original_species_name',
+        indexed=True
     )
 
     collector = indexes.NgramField(
-            model_attr='collector',
-            indexed=True
+        model_attr='collector',
+        indexed=True
+    )
+
+    collection_date_year = indexes.IntegerField(
+        model_attr='collection_date__year',
+        indexed=True
+    )
+
+    collection_date_month = indexes.IntegerField(
+        model_attr='collection_date__month'
     )
 
     category = indexes.CharField(
-            model_attr='category'
+        model_attr='category'
     )
 
     present = indexes.BooleanField(
-            model_attr='present'
+        model_attr='present'
     )
 
     absent = indexes.BooleanField(
-            model_attr='absent'
+        model_attr='absent'
+    )
+
+    validated = indexes.BooleanField(
+        model_attr='validated'
     )
 
     collection_date = indexes.DateField(
-            model_attr='collection_date'
+        model_attr='collection_date'
     )
 
     owner = indexes.CharField(
-            model_attr='owner__username'
+        model_attr='owner__username'
     )
 
     notes = indexes.CharField(
-            model_attr='notes'
+        model_attr='notes'
     )
 
     location_site_name = indexes.CharField(
-            model_attr='site__name'
+        model_attr='site__name'
     )
+
+    location_center = indexes.LocationField()
+
+    taxon_gbif = indexes.IntegerField(indexed=True)
+
+    taxon_gbif_not_null = indexes.BooleanField(indexed=True)
+
+    id = indexes.CharField()
+
+    def prepare_id(self, obj):
+        if obj.pk:
+            return obj.pk
+        return 0
+
+    def prepare_taxon_gbif(self, obj):
+        if obj.taxon_gbif_id:
+            return obj.taxon_gbif_id.id
+        return 0
+
+    def prepare_taxon_gbif_not_null(self, obj):
+        if obj.taxon_gbif_id:
+            return True
+        return False
+
+    def prepare_location_center(self, obj):
+        if obj.site:
+            return '%s,%s' % obj.site.get_centroid().coords
+        return ''
 
     class Meta:
         app_label = 'bims'

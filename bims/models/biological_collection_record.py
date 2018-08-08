@@ -3,18 +3,18 @@
 
 """
 
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
-from django.utils import timezone
 from django.dispatch import receiver
+from django.utils import timezone
 
 from bims.models.location_site import LocationSite
-from bims.utils.gbif import update_fish_collection_record
+from bims.models.taxon import Taxon
 from bims.utils.cluster import (
     update_cluster_by_collection,
     update_cluster_by_site
 )
-from bims.models.taxon import Taxon
+from bims.utils.gbif import update_collection_record
 
 
 class BiologicalCollectionRecord(models.Model):
@@ -52,9 +52,10 @@ class BiologicalCollectionRecord(models.Model):
         max_length=100,
         blank=True,
         default='',
+        verbose_name='collector or observer',
     )
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         models.SET_NULL,
         blank=True,
         null=True,
@@ -78,9 +79,15 @@ class BiologicalCollectionRecord(models.Model):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
+        permissions = (
+            ('can_upload_csv', 'Can upload CSV'),
+            ('can_upload_shapefile', 'Can upload Shapefile'),
+            ('can_validate_data', 'Can validate data'),
+        )
 
     def on_post_save(self):
-        update_fish_collection_record(self)
+        if not self.taxon_gbif_id:
+            update_collection_record(self)
 
     def get_children(self):
         rel_objs = [f for f in self._meta.get_fields(include_parents=False)
@@ -104,6 +111,17 @@ class BiologicalCollectionRecord(models.Model):
             related_models.append(rel_obj.related_model)
         return related_models
 
+    def __init__(self, *args, **kwargs):
+        super(BiologicalCollectionRecord, self).__init__(*args, **kwargs)
+        self.__original_validated = self.validated
+
+    def is_cluster_generation_applied(self):
+        if self.__original_validated != self.validated:
+            return True
+        if self.validated:
+            return True
+        return False
+
 
 @receiver(models.signals.post_save)
 def collection_post_save_handler(sender, instance, **kwargs):
@@ -112,15 +130,21 @@ def collection_post_save_handler(sender, instance, **kwargs):
     """
     if not issubclass(sender, BiologicalCollectionRecord):
         return
-
     models.signals.post_save.disconnect(
         collection_post_save_handler,
     )
     instance.on_post_save()
-    update_cluster_by_collection(instance)
+    if instance.is_cluster_generation_applied():
+        update_cluster_by_collection(instance)
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
+
+
+@receiver(models.signals.post_save)
+def collection_post_save_update_cluster(sender, instance, **kwargs):
+    if not issubclass(sender, BiologicalCollectionRecord):
+        return
 
 
 @receiver(models.signals.post_delete)
@@ -129,6 +153,7 @@ def cluster_post_delete_handler(sender, instance, using, **kwargs):
             not issubclass(sender, LocationSite):
         return
     if issubclass(sender, BiologicalCollectionRecord):
-        update_cluster_by_collection(instance)
+        if instance.is_cluster_generation_applied():
+            update_cluster_by_collection(instance)
     if issubclass(sender, LocationSite):
         update_cluster_by_site(instance)

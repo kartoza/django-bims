@@ -26,11 +26,18 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
             indexed=True
     )
 
+    id = indexes.CharField()
+
     def prepare_iucn_status_category(self, obj):
         if obj.iucn_status:
             return obj.iucn_status.get_status()
         else:
             return ''
+
+    def prepare_id(self, obj):
+        if obj.pk:
+            return obj.pk
+        return ''
 
     class Meta:
         app_label = 'bims'

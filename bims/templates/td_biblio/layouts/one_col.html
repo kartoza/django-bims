@@ -1,0 +1,21 @@
+{% extends "_layouts/base.html" %}
+
+{% load static from staticfiles %}
+
+{% block content %}
+        <!-- Google Fonts -->
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <!-- CSS Reset -->
+    <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+    <!-- Milligram CSS minified -->
+    <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+    <!-- Override styles -->
+<div id="content-wrapper">
+    <div id="main-content" class="{% block main_content_class %}{% endblock main_content_class %}">
+        {% block main_content %}{% endblock main_content %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+{% endblock javascripts %}

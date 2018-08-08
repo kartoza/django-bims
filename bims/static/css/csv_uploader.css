@@ -128,3 +128,21 @@ body {
     transform: rotate(360deg);
   }
 }
+
+.help-block-space {
+  height: 20px;
+}
+
+.help-block-schema {
+  background-color: #e1e1e1;
+  padding: 10px;
+  font-style: italic;
+}
+
+.reupload {
+  text-align: center;
+}
+
+#reupload-button:hover {
+  cursor: pointer;
+}

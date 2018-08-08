@@ -17,4 +17,4 @@ class Command(UpdateBoundary, BaseCommand):
                 settings.STATIC_ROOT,
                 'data/country/ne_10m_admin_0_countries.shp'
             ),
-            'country', 'NAME')
+            'country', 'NAME', 'SOV_A3', 1)

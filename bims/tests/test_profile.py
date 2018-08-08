@@ -20,49 +20,49 @@ class TestProfile(TestCase):
         Tests profile creation
         """
         user = UserF.create()
-        ProfileF.create(user=user)
+        profile = ProfileF.create(user=user)
 
         # check if pk exists
-        self.assertTrue(user.profile.pk is not None)
+        self.assertTrue(profile.user is not None)
 
         # check if qualifications and other exists
-        self.assertTrue(user.profile.qualifications is not None)
-        self.assertTrue(user.profile.other is not None)
+        self.assertTrue(profile.qualifications is not None)
+        self.assertTrue(profile.other is not None)
 
     def test_profile_read(self):
         """
         Tests profile creation
         """
         user = UserF.create()
-        ProfileF.create(
+        profile = ProfileF.create(
             user=user,
             qualifications='qualifications',
             other='other'
         )
-        user.profile.save()
+        profile.save()
 
-        self.assertTrue(user.profile.qualifications == 'qualifications')
+        self.assertTrue(profile.qualifications == 'qualifications')
         self.assertTrue(
-            user.profile.other == 'other')
+            profile.other == 'other')
 
     def test_profile_update(self):
         """
         Tests profile creation
         """
         user = UserF.create()
-        ProfileF.create(
+        profile = ProfileF.create(
             user=user
         )
         profile_data = {
             'qualifications': 'qualifications',
             'other': 'other'
         }
-        user.profile.__dict__.update(profile_data)
-        user.profile.save()
+        profile.__dict__.update(profile_data)
+        profile.save()
 
         # check if updated
         for key, val in profile_data.items():
-            self.assertEqual(getattr(user.profile, key), val)
+            self.assertEqual(getattr(profile, key), val)
 
     def test_profile_delete(self):
         """
@@ -75,4 +75,4 @@ class TestProfile(TestCase):
         profile.delete()
 
         # check if deleted
-        self.assertTrue(user.profile.pk is None)
+        self.assertTrue(profile.pk is None)

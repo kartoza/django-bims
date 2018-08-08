@@ -1,7 +1,7 @@
 # noinspection PyUnresolvedReferences,PyPackageRequirements
 import factory
 import random
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.utils import timezone
 from django.db.models import signals
@@ -12,25 +12,11 @@ from bims.models import (
     IUCNStatus,
     Taxon,
     Survey,
-    LocationContext,
     BiologicalCollectionRecord,
     Boundary,
     BoundaryType,
     Cluster
 )
-
-
-class LocationContextF(factory.django.DjangoModelFactory):
-    """
-    Location context factory
-    """
-    class Meta:
-        model = LocationContext
-
-    context_document = '{"type": "FeatureCollection", "features":' \
-                       ' [{"type": "Feature","properties": {},' \
-                       '"geometry": {"type": "Point",' \
-                       '"coordinates": [20.654296875,-33.275435412981615]}}]}'
 
 
 class LocationTypeF(factory.django.DjangoModelFactory):
@@ -59,20 +45,6 @@ class LocationSiteF(factory.django.DjangoModelFactory):
         random.uniform(-180.0, 180.0),
         random.uniform(-90.0, 90.0)
     )
-    location_context = factory.SubFactory(LocationContextF)
-
-
-class ProfileF(factory.django.DjangoModelFactory):
-    """
-    Profile site factory
-    """
-
-    class Meta:
-        model = Profile
-
-    user = factory.SubFactory(User)
-    qualifications = factory.Sequence(lambda n: "qualifications%s" % n)
-    other = factory.Sequence(lambda n: "other%s" % n)
 
 
 class IUCNStatusF(factory.django.DjangoModelFactory):
@@ -124,7 +96,7 @@ class SurveyF(factory.django.DjangoModelFactory):
 
 class UserF(factory.DjangoModelFactory):
     class Meta:
-        model = User
+        model = settings.AUTH_USER_MODEL
 
     username = factory.Sequence(lambda n: "username%s" % n)
     first_name = factory.Sequence(lambda n: "first_name%s" % n)
@@ -147,6 +119,19 @@ class UserF(factory.DjangoModelFactory):
             if create:
                 user.save()
         return user
+
+
+class ProfileF(factory.django.DjangoModelFactory):
+    """
+    Profile site factory
+    """
+
+    class Meta:
+        model = Profile
+
+    user = factory.SubFactory(UserF)
+    qualifications = factory.Sequence(lambda n: "qualifications%s" % n)
+    other = factory.Sequence(lambda n: "other%s" % n)
 
 
 @factory.django.mute_signals(signals.post_save)

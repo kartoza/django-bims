@@ -12,10 +12,20 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
             indexed=True,
             model_attr='location_type__name'
     )
-    location_site_point = indexes.LocationField(
-            model_attr='geometry_point'
-    )
+
+    location_site_point = indexes.LocationField()
+
+    def prepare_location_site_point(self, obj):
+        try:
+            return '{lat},{lon}'.format(
+                    lat=obj.get_centroid().y,
+                    lon=obj.get_centroid().x
+            )
+        except AttributeError:
+            return None
+
     location_site_geometry = indexes.CharField()
+    id = indexes.CharField()
 
     def prepare_location_site_geometry(self, obj):
         geometry = obj.get_geometry()
@@ -23,6 +33,11 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
             return geometry.json
         else:
             return ''
+
+    def prepare_id(self, obj):
+        if obj.pk:
+            return obj.pk
+        return ''
 
     class Meta:
         app_label = 'bims'

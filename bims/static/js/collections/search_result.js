@@ -6,10 +6,23 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         viewCollection: [],
         sidePanel: null,
         searchValue: '',
-        search: function (searchValue, sidePanel) {
-            this.searchValue = searchValue;
-            this.url = this.searchUrl + searchValue;
+        search: function (sidePanel, parameters) {
+            this.searchValue = parameters['search'];
+            this.collectorValue = parameters['collector'];
+            this.categoryValue = parameters['category'];
+            this.yearFrom = parameters['yearFrom'];
+            this.yearTo = parameters['yearTo'];
+            this.months = parameters['months'];
+
+            this.url = this.searchUrl +
+                '?search=' + this.searchValue +
+                '&collector=' + this.collectorValue +
+                '&category=' + this.categoryValue +
+                '&yearFrom=' + this.yearFrom +
+                '&yearTo=' + this.yearTo +
+                '&months=' + this.months;
             this.sidePanel = sidePanel;
+            this.sidePanel.showSearchLoading();
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {
@@ -22,12 +35,15 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
 
         },
         parse: function (response) {
-            var result = $.extend(response['biological_collection_record'], response['taxa']);
-            return $.extend(result, response['location_site']);
+            var result = response['biological_collection_record'];
+            result = result.concat(response['taxa']);
+            result = result.concat(response['location_site']);
+            return result
         },
         renderCollection: function () {
             var self = this;
             this.sidePanel.updateSidePanelTitle(this.searchValue);
+            this.sidePanel.switchToSearchResultPanel();
 
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {
@@ -37,15 +53,15 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             }
 
             var $searchResultsWrapper = $('<div></div>');
-            $searchResultsWrapper.append('<div id="biological-record-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Biological Collection Records (<span class="number"></span>) </div>' +
-                '</div>');
-            $searchResultsWrapper.append('<div id="taxa-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Taxa (<span class="number"></span>) </div>' +
-                '</div>');
-            $searchResultsWrapper.append('<div id="site-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Location Sites (<span class="number"></span>) </div>' +
-                '</div>');
+            $searchResultsWrapper.append(
+                '<div id="biological-record-list" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> Biological Collection Records (<span class="number"></span>) </div></div>');
+            $searchResultsWrapper.append(
+                '<div id="taxa-list" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> Taxa (<span class="number"></span>) </div></div>');
+            $searchResultsWrapper.append(
+                '<div id="site-list" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> Location Sites (<span class="number"></span>) </div></div>');
 
             self.sidePanel.fillSidePanelHtml($searchResultsWrapper);
 
@@ -65,7 +81,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
 
                 // update count
                 if (searchResultView.getResultType() == 'bio') {
-                    biologicalCount += 1;
+                    biologicalCount += searchResultView.model.attributes.count;
                 } else if (searchResultView.getResultType() == 'taxa') {
                     taxaCount += 1;
                 } else if (searchResultView.getResultType() == 'site') {

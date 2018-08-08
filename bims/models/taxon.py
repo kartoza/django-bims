@@ -5,6 +5,7 @@
 
 from django.db import models
 from django.dispatch import receiver
+from django.contrib.postgres.fields import ArrayField
 from bims.models.iucn_status import IUCNStatus
 from bims.utils.iucn import get_iucn_status
 
@@ -13,12 +14,12 @@ class TaxonomyField(models.CharField):
 
     description = 'A taxonomy field.'
 
-    def __init__(self, *args, taxonomy_key=None, **kwargs):
+    def __init__(self, taxonomy_key=None, *args, **kwargs):
         kwargs['max_length'] = 100
         kwargs['blank'] = True
         kwargs['default'] = ''
         self.taxonomy_key = taxonomy_key
-        super().__init__(*args, **kwargs)
+        super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
 class Taxon(models.Model):
@@ -97,6 +98,17 @@ class Taxon(models.Model):
     accepted_key = TaxonomyField(
         verbose_name='Accepted Key',
         taxonomy_key='acceptedKey'
+    )
+
+    vernacular_names = ArrayField(
+        models.CharField(
+                max_length=100,
+                blank=True,
+                default=''),
+        verbose_name = 'Vernacular Names',
+        default=[],
+        null=True,
+        blank=True
     )
 
     # noinspection PyClassicStyleClass
