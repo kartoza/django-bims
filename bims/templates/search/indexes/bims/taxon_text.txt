@@ -1,4 +1,7 @@
+{{ object.title }}
+{{ object.pk }}
 {{ object.common_name }}
 {{ object.scientific_name }}
 {{ object.author }}
 {{ object.iucn_status_category }}
+{{ object.body }}

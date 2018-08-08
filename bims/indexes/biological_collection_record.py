@@ -58,6 +58,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         model_attr='site__name'
     )
 
+    location_site_id = indexes.CharField(
+        model_attr='site__id'
+    )
+
     location_center = indexes.LocationField()
 
     taxon_gbif = indexes.IntegerField(indexed=True)

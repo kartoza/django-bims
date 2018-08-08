@@ -1,11 +1,11 @@
 # coding=utf-8
-from bims.models.taxon import Taxon
+from bims.models import Taxon, BiologicalCollectionRecord
 from haystack import indexes
 
 
 class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
-
-    text = indexes.CharField(document=True, use_template=True)
+    model_pk = indexes.IntegerField(model_attr='pk')
+    text = indexes.EdgeNgramField(document=True)
 
     common_name = indexes.NgramField(
             indexed=True,
@@ -26,7 +26,16 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
             indexed=True
     )
 
-    id = indexes.CharField()
+    id = indexes.IntegerField(indexed=True)
+
+    validated_collections = indexes.IntegerField()
+
+    def prepare_validated_collections(self, obj):
+        bios = BiologicalCollectionRecord.objects.filter(
+                taxon_gbif_id=obj.pk,
+                validated=True
+        )
+        return bios.count()
 
     def prepare_iucn_status_category(self, obj):
         if obj.iucn_status:
@@ -37,14 +46,10 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_id(self, obj):
         if obj.pk:
             return obj.pk
-        return ''
+        return 0
 
     class Meta:
         app_label = 'bims'
-
-    def index_queryset(self, using=None):
-        """Used to reindex model"""
-        return self.get_model().objects.all()
 
     def get_model(self):
         return Taxon

@@ -235,7 +235,7 @@ define([
                 view: new ol.View({
                     center: ol.proj.fromLonLat(center),
                     zoom: 7,
-                    minZoom: 7,
+                    minZoom: 5,
                     extent: [579700.2488501729, -4540000.22437294, 5275991.266691402, -2101353.2739626765]
                 }),
                 controls: ol.control.defaults({

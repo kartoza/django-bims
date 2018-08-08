@@ -1,13 +1,17 @@
 # coding=utf-8
 import json
 from django.conf import settings
+from django.db.models import Count, Case, When
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from haystack.query import SearchQuerySet, SQ
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxon import Taxon
+from bims.models.location_site import LocationSite
 from bims.serializers.taxon_serializer import TaxonSerializer
+from bims.serializers.location_site_serializer import \
+    LocationSiteClusterSerializer
 
 
 class SearchObjects(APIView):
@@ -19,15 +23,16 @@ class SearchObjects(APIView):
 
         # Biological records
         query_value = request.GET.get('search')
+
         if query_value:
             clean_query = sqs.query.clean(query_value)
+            settings.ELASTIC_MIN_SCORE = 2
             results = sqs.filter(
                 original_species_name=clean_query
-            ).models(BiologicalCollectionRecord)
-            settings.ELASTIC_MIN_SCORE = 1
+            ).models(BiologicalCollectionRecord, Taxon).order_by('-_score')
         else:
-            results = sqs.all().models(BiologicalCollectionRecord)
             settings.ELASTIC_MIN_SCORE = 0
+            results = sqs.all().models(BiologicalCollectionRecord)
 
         query_collector = request.GET.get('collector')
         query_category = request.GET.get('category')
@@ -71,46 +76,32 @@ class SearchObjects(APIView):
         results = results.filter(
             validated=True
         )
+
         # group data of biological collection record
-        # TODO : Move it to query of haystack and use count aggregations
-        records = {}
-        sites = {}
-        for r in results:
-            model = r.object
-            if model.taxon_gbif_id:
-                taxon_gbif_id = model.taxon_gbif_id.id
-                if taxon_gbif_id not in records:
-                    records[taxon_gbif_id] = {
-                        'common_name': model.taxon_gbif_id.common_name,
-                        'record_type': 'bio',
-                        'taxon_gbif_id': taxon_gbif_id,
-                        'count': 0
-                    }
+        taxon_ids = list(set(results.values_list('taxon_gbif', flat=True)))
+        bio_ids = results.values_list('id', flat=True)
+        location_site_ids = list(
+                set(results.values_list('location_site_id', flat=True)))
 
-                if model.site.id not in sites:
-                    sites[model.site.id] = {
-                        'name': model.site.name,
-                        'record_type': 'site',
-                        'site_id': model.site.id,
-                        'count': 0
-                    }
-                records[taxon_gbif_id]['count'] += 1
-                sites[model.site.id]['count'] += 1
+        taxons = Taxon.objects.filter(id__in=taxon_ids).annotate(
+                num_occurences = Count(
+                        Case(When(
+                                biologicalcollectionrecord__id__in=bio_ids,
+                                then=1))))
 
-        search_result['biological_collection_record'] = [
-            value for key, value in records.iteritems()]
-        search_result['location_site'] = [
-            value for key, value in sites.iteritems()]
+        location_sites = LocationSite.objects.filter(
+                id__in=location_site_ids).annotate(
+                num_occurences = Count(Case(When(
+                        biological_collection_record__id__in=bio_ids,
+                        then=1
+                ))))
 
-        # Taxon records
-        results = sqs.all().models(Taxon)
-        if query_value:
-            clean_query = sqs.query.clean(query_value)
-            results = results.filter(
-                common_name=clean_query
-            )
-
-        serializer = TaxonSerializer(
-            [r.object for r in results], many=True)
-        search_result['taxa'] = serializer.data
+        context = {
+            'record_type': 'bio'
+        }
+        serializer = TaxonSerializer(taxons, many=True, context=context)
+        search_result['biological_collection_record'] = serializer.data
+        search_result['location_site'] = LocationSiteClusterSerializer(
+                location_sites, many=True, context=context
+        ).data
         return Response(search_result)

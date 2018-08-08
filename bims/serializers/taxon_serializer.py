@@ -9,8 +9,15 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_sensitive = serializers.SerializerMethodField()
     iucn_status_name = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
+    count = serializers.SerializerMethodField()
+    taxon_gbif_id = serializers.SerializerMethodField()
+
+    def get_taxon_gbif_id(self, obj):
+        return obj.id
 
     def get_record_type(self, obj):
+        if 'record_type' in self.context:
+            return self.context['record_type']
         return 'taxa'
 
     def get_iucn_status_sensitive(self, obj):
@@ -24,6 +31,12 @@ class TaxonSerializer(serializers.ModelSerializer):
             return obj.iucn_status.category
         else:
             return None
+
+    def get_count(self, obj):
+        if hasattr(obj, 'num_occurences'):
+            return obj.num_occurences
+        else:
+            return 0
 
     class Meta:
         model = Taxon
