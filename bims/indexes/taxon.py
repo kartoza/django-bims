@@ -5,7 +5,7 @@ from haystack import indexes
 
 class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
     model_pk = indexes.IntegerField(model_attr='pk')
-    text = indexes.EdgeNgramField(document=True)
+    text = indexes.EdgeNgramField(document=True, use_template=True)
 
     common_name = indexes.NgramField(
             indexed=True,
@@ -28,14 +28,14 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
 
     id = indexes.IntegerField(indexed=True)
 
-    validated_collections = indexes.IntegerField()
+    validated_collections = indexes.CharField()
 
     def prepare_validated_collections(self, obj):
         bios = BiologicalCollectionRecord.objects.filter(
                 taxon_gbif_id=obj.pk,
                 validated=True
-        )
-        return bios.count()
+        ).values_list('pk', flat=True).distinct()
+        return ','.join(str(bio) for bio in bios)
 
     def prepare_iucn_status_category(self, obj):
         if obj.iucn_status:
@@ -50,6 +50,10 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
 
     class Meta:
         app_label = 'bims'
+
+    def index_queryset(self, using=None):
+        """Used when the entire index for model is updated."""
+        return self.get_model().objects.all()
 
     def get_model(self):
         return Taxon

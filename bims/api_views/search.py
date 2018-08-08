@@ -1,5 +1,6 @@
 # coding=utf-8
 import json
+import numpy as np
 from django.conf import settings
 from django.db.models import Count, Case, When
 from rest_framework.views import APIView
@@ -79,7 +80,7 @@ class SearchObjects(APIView):
 
         # group data of biological collection record
         taxon_ids = list(set(results.values_list('taxon_gbif', flat=True)))
-        bio_ids = results.values_list('id', flat=True)
+        bio_ids = results.values_list('model_pk', flat=True)
         location_site_ids = list(
                 set(results.values_list('location_site_id', flat=True)))
 
