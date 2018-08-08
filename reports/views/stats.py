@@ -69,8 +69,8 @@ def create_pdf(pathname, current_site):
                     'Species')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 100),
-            (margin_left + 380), (margin_bottom - 100))
+            (margin_left + 5), (margin_bottom - 105),
+            (margin_left + 380), (margin_bottom - 105))
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 100,
@@ -81,8 +81,8 @@ def create_pdf(pathname, current_site):
                     '636268')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 120),
-            (margin_left + 380), (margin_bottom - 120))
+            (margin_left + 5), (margin_bottom - 125),
+            (margin_left + 380), (margin_bottom - 125))
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 120,
@@ -93,8 +93,8 @@ def create_pdf(pathname, current_site):
                     '636268')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 140),
-            (margin_left + 380), (margin_bottom - 140))
+            (margin_left + 5), (margin_bottom - 145),
+            (margin_left + 380), (margin_bottom - 145))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 140,
                     'Aphia ID')
@@ -104,8 +104,8 @@ def create_pdf(pathname, current_site):
                     '127081')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 160),
-            (margin_left + 380), (margin_bottom - 160))
+            (margin_left + 5), (margin_bottom - 165),
+            (margin_left + 380), (margin_bottom - 165))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 160,
                     'Records')
@@ -115,8 +115,8 @@ def create_pdf(pathname, current_site):
                     '100, 768')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 180),
-            (margin_left + 380), (margin_bottom - 180))
+            (margin_left + 5), (margin_bottom - 185),
+            (margin_left + 380), (margin_bottom - 185))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 180,
                     'Datasets')
@@ -126,8 +126,8 @@ def create_pdf(pathname, current_site):
                     '60')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 200),
-            (margin_left + 380), (margin_bottom - 200))
+            (margin_left + 5), (margin_bottom - 205),
+            (margin_left + 380), (margin_bottom - 205))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 200,
                     'Red List status')
@@ -137,8 +137,8 @@ def create_pdf(pathname, current_site):
                     'LC')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 220),
-            (margin_left + 380), (margin_bottom - 220))
+            (margin_left + 5), (margin_bottom - 225),
+            (margin_left + 380), (margin_bottom - 225))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 220,
                     'Global Invasive Species Database')
@@ -148,8 +148,8 @@ def create_pdf(pathname, current_site):
                     '-')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 240),
-            (margin_left + 380), (margin_bottom - 240))
+            (margin_left + 5), (margin_bottom - 245),
+            (margin_left + 380), (margin_bottom - 245))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5,  margin_bottom - 240,
                     'Hamful Micro Algae')
@@ -157,6 +157,102 @@ def create_pdf(pathname, current_site):
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300,  margin_bottom - 240,
                     '-')
+
+
+    # Taxonomy from (from specified source)
+
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left, margin_bottom - 280,
+                    'Taxonomy (from WORMS)')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 5, margin_bottom - 300,
+                    'Rank')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 105, margin_bottom - 300,
+                    'Taxon')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 205, margin_bottom - 300,
+                    'Author')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 305, margin_bottom - 300,
+                    'Records')
+
+    # set an additional 5 to bottom differenct on the line so as we
+    #  have a little margin-botton on the text
+    page.line(
+            (margin_left + 5), (margin_bottom - 305),
+            (margin_left + 380), (margin_bottom - 305))
+
+    # insert a 30 value difference on height
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 330,
+                    'Kingdom')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 330,
+                    'Animalia')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 330,
+                    'Haekel, 1874')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 330,
+                    '25,732,563')
+
+    # ------------------------------------------
+    page.line(
+            (margin_left + 5), (margin_bottom - 335),
+            (margin_left + 380), (margin_bottom - 335))
+
+    # insert a 30 value difference on height
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 360,
+                    'Kingdom')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 360,
+                    'Animalia')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 360,
+                    'Haekel, 1874')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 360,
+                    '25,732,563')
+
+    # Common names section
+
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left + 500, margin_bottom - 30,
+                    'Common names')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 500,  margin_bottom - 70,
+                    'Name')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 700, margin_bottom - 70,
+                    'Language')
+
+    page.line(
+            (margin_left + 500), (margin_bottom - 105),
+            (margin_left + 750), (margin_bottom - 105))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 500,  margin_bottom - 100,
+                    'Bonito')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 700,  margin_bottom - 100,
+                    'English')
 
     # page.setFillColorRGB(0.1, 0.1, 0.1)
     # page.setFont('Helvetica-Bold', 14)
