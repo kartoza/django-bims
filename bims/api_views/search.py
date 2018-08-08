@@ -27,7 +27,7 @@ class SearchObjects(APIView):
 
         if query_value:
             clean_query = sqs.query.clean(query_value)
-            settings.ELASTIC_MIN_SCORE = 2
+            settings.ELASTIC_MIN_SCORE = 1.5
             results = sqs.filter(
                 original_species_name=clean_query
             ).models(BiologicalCollectionRecord, Taxon).order_by('-_score')
