@@ -10,16 +10,16 @@ from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib.colors import yellowgreen, darkred, yellow
-from reportlab.lib.pagesizes import landscape, A4
+from reportlab.lib.pagesizes import ELEVENSEVENTEEN
 
 from bims.models.taxon import Taxon
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-
 def create_pdf(pathname, current_site):
 
     # initialising the PDF for drawing content on it
-    page = canvas.Canvas(pathname, pagesize=landscape(A4))
+    # page = canvas.Canvas(pathname, pagesize=landscape(A4))
+    page = canvas.Canvas(pathname, pagesize=ELEVENSEVENTEEN)
 
     # page.radialGradient(105 * mm, 240 * mm, 60 * mm, (darkred, yellow,
     #                                             yellowgreen), (0, 0.8, 1))
@@ -51,8 +51,7 @@ def create_pdf(pathname, current_site):
     #                 580,
     #                 'Date: {}'.format(time))
     margin_left = 50
-    margin_bottom = 500
-
+    margin_bottom = 1150
     page.setFont('Helvetica-Bold', 20)
     page.drawString(margin_left + 200, margin_bottom + 10,
                     'LBIMS species - Focused report')
@@ -303,47 +302,70 @@ def create_pdf(pathname, current_site):
     # SECTION: DISTRIBUTION
 
     page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left + 400, margin_bottom - 400,
+    page.drawString(margin_left + 5, margin_bottom - 500,
                     'Distribution')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 500,  margin_bottom - 400,
+    page.drawString(margin_left + 105,  margin_bottom - 500,
                     'First Record')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 600, margin_bottom - 400,
+    page.drawString(margin_left + 205, margin_bottom - 500,
                     'Last Record')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 700, margin_bottom - 400,
+    page.drawString(margin_left + 305, margin_bottom - 500,
                     'Occurences')
+
+    # SECTION: IMAGES - right section
+
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left + 410, margin_bottom - 70,
+                    'Images')
+
+    page.line(
+            (margin_left + 410), (margin_bottom - 80),
+            (margin_left + 800), (margin_bottom - 80))
+
+    # insert a 30 value difference on height
+
+
+    fish_image = 'reports/static/img/fishes.png'
+
+    page.drawImage(
+            fish_image, margin_left + 410, margin_bottom - 290,
+            width = 300,
+            height = 200,
+            preserveAspectRatio = True, mask = 'auto')
+            # page.drawString(255, 500, 'fish images')
+
 
 
     # SECTION: COMMON NAMES
-
-    page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left + 500, margin_bottom - 30,
-                    'Common names')
-
-    page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 500,  margin_bottom - 70,
-                    'Name')
-
-    page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 700, margin_bottom - 70,
-                    'Language')
-
-    page.line(
-            (margin_left + 500), (margin_bottom - 105),
-            (margin_left + 750), (margin_bottom - 105))
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 500,  margin_bottom - 100,
-                    'Bonito')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 700,  margin_bottom - 100,
-                    'English')
+    #
+    # page.setFont('Helvetica-Bold', 16)
+    # page.drawString(margin_left + 5, margin_bottom - 900,
+    #                 'Common names')
+    #
+    # page.setFont('Helvetica-Bold', 14)
+    # page.drawString(margin_left + 5,  margin_bottom - 1000,
+    #                 'Name')
+    #
+    # page.setFont('Helvetica-Bold', 14)
+    # page.drawString(margin_left + 205, margin_bottom - 1000,
+    #                 'Language')
+    #
+    # page.line(
+    #         (margin_left + 5), (margin_bottom - 1005),
+    #         (margin_left + 380), (margin_bottom - 1005))
+    #
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 5,  margin_bottom - 2000,
+    #                 'Bonito')
+    #
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 205,  margin_bottom - 2000,
+    #                 'English')
 
     # page.setFillColorRGB(0.1, 0.1, 0.1)
     # page.setFont('Helvetica-Bold', 14)
