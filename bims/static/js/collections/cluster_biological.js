@@ -43,8 +43,15 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
             return this.parameters['taxon'];
         },
         toggleTaxonIndicator: function (taxonName) {
+            var self = this;
             if (this.parameters['taxon']) {
-                $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName);
+                $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName +
+                    ' <i class="fa fa-times" style="color: red"></i> ');
+                $('#taxon-filter .fa-times').click(function () {
+                    self.parameters['taxon'] = null;
+                    self.toggleTaxonIndicator('');
+                    Shared.Dispatcher.trigger('map:reloadXHR');
+                });
                 if ($('#taxon-filter').is(":hidden")) {
                     $('#taxon-filter').toggle("slide");
                 }
