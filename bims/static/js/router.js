@@ -9,7 +9,11 @@ define(['backbone', 'views/olmap', 'shared'], function (Backbone, olmap, Shared)
             this.map = new olmap();
         },
         search: function (query) {
-            Shared.Dispatcher.trigger('search:searchCollection', query);
+            if ($('.search-control').is(":visible")) {
+                $('.search-control').click();
+            }
+            $('#search').val(query);
+            Shared.Dispatcher.trigger('search:checkSearchCollection', true);
         },
         clearSearch: function () {
             this.navigate('', true);
