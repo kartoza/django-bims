@@ -21,7 +21,9 @@ DATABASES = {
         'PASSWORD': 'docker',
         'HOST': 'db',
         'PORT': 5432,
-        'TEST_NAME': 'unittests',
+        'TEST': {
+            'NAME': 'gis_test'
+        },
     }
 }
 
