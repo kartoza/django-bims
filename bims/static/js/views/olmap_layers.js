@@ -70,6 +70,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 url: listNonBiodiversityLayerAPIUrl,
                 dataType: 'json',
                 success: function (data) {
+                    console.log(data);
                     $.each(data.reverse(), function (index, value) {
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
                             return;
@@ -132,6 +133,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             this.changeLayerVisibility(this.administrativeKeyword, true);
         },
         changeLayerVisibility: function (layerName, visible) {
+            if(Object.keys(this.layers).length === 0) {
+                return false;
+            }
             if (layerName !== this.administrativeKeyword) {
                 this.layers[layerName]['layer'].setVisible(visible);
             } else {
