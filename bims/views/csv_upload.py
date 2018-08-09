@@ -9,6 +9,7 @@ from django.urls import reverse_lazy
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from django.views.generic import FormView
+from django.http import JsonResponse
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
 from bims.forms.csv_upload import CsvUploadForm
@@ -24,7 +25,6 @@ from bims.models.biological_collection_record import (
     collection_post_save_update_cluster
 )
 from bims.utils.gbif import update_collection_record
-from bims.tasks.collection_record import update_search_index, update_cluster
 
 
 class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
@@ -163,10 +163,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
             collection_post_save_update_cluster,
         )
 
-        # Update search index
-        update_search_index.delay()
-
-        # Update cluster
-        update_cluster.delay()
-
-        return super(CsvUploadView, self).form_valid(form)
+        return JsonResponse({
+            'message': self.context_data['uploaded']
+        })

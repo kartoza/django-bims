@@ -7,7 +7,6 @@ define([
     'collections/cluster_biological',
     'views/map_control_panel',
     'views/side_panel',
-    'views/boundary',
     'ol',
     'jquery',
     'layerSwitcher',
@@ -17,7 +16,7 @@ define([
     'views/location_site_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail) {
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -43,14 +42,12 @@ define([
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             this.layers = new Layers();
-            this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
             this.locationSiteDetail = new LocationSiteDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
-            Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
@@ -331,8 +328,7 @@ define([
                     }
                     this.fetchingReset();
                     // generate boundary
-                    this.boundaryView.renderAdministrativeBoundary(
-                        administrative, this.getCurrentBbox());
+                    this.layers.changeLayerAdministrative(administrative);
 
                     // if layer is shows
                     if (!this.layers.isBiodiversityLayerShow()) {
@@ -425,9 +421,6 @@ define([
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
-        },
-        updateAdministrativeBoundaryFeatures: function (features) {
-            this.layers.administrativeBoundarySource.addFeatures(features);
         },
         closeHighlight: function () {
             this.hidePopup();

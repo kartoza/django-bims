@@ -52,6 +52,9 @@ require([
 
     // A $( document ).ready() block.
     $(document).ready(function () {
+
+        $('[data-toggle="tooltip"]').tooltip();
+
         $.ajax({
             type: 'GET',
             url: listCollectorAPIUrl,
