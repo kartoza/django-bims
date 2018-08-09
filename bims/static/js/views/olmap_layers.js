@@ -286,11 +286,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 });
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
-                        $(this).tooltip('option','content', 'Hide Legend');
+                        $(this).tooltip('option','content', 'Hide Legends');
                         $(this).removeClass('hide-legend');
                         $(this).addClass('show-legend');
                     } else {
-                        $(this).tooltip('option','content', 'Show Legend');
+                        $(this).tooltip('option','content', 'Show Legends');
                         $(this).addClass('hide-legend');
                         $(this).removeClass('show-legend');
                     }
