@@ -82,7 +82,7 @@ class GetCollectionAbstract(APIView):
 
         # additional filters
         # query by collectors
-        query_collector = request.GET.get('collector')
+        query_collector = request_data.get('collector')
         if query_collector:
             qs_collector = SQ()
             qs = json.loads(query_collector)
@@ -91,7 +91,7 @@ class GetCollectionAbstract(APIView):
             results = results.filter(qs_collector)
 
         # query by category
-        query_category = request.GET.get('category')
+        query_category = request_data.get('category')
         if query_category:
             qs_category = SQ()
             qs = json.loads(query_category)
@@ -100,21 +100,21 @@ class GetCollectionAbstract(APIView):
             results = results.filter(qs_category)
 
         # query by year from
-        year_from = request.GET.get('yearFrom')
+        year_from = request_data.get('yearFrom')
         if year_from:
             clean_query_year_from = sqs.query.clean(year_from)
             results = results.filter(
                 collection_date_year__gte=clean_query_year_from)
 
         # query by year to
-        year_to = request.GET.get('yearTo')
+        year_to = request_data.get('yearTo')
         if year_to:
             clean_query_year_to = sqs.query.clean(year_to)
             results = results.filter(
                 collection_date_year__lte=clean_query_year_to)
 
         # query by months
-        months = request.GET.get('months')
+        months = request_data.get('months')
         if months:
             qs = months.split(',')
             qs_month = SQ()

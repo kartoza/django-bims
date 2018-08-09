@@ -105,20 +105,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     // render species list
                     var $specialListWrapper = self.renderSpeciesList(data);
                     $('#species-list').append($specialListWrapper);
-                    $specialListWrapper.find('.result-search').click(function (e) {
-                        var $element = $(e.target);
-                        var taxonID = $(e.target).data('taxon-id');
-                        if (!taxonID) {
-                            $element = $(e.target).closest('.result-search');
-                            taxonID = $element.data('taxon-id');
-                        }
-                        Shared.Dispatcher.trigger(
-                            'searchResult:updateTaxon',
-                            taxonID,
-                            $element.find('.group-title').html()
-                        );
-                    });
-
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
                     Shared.LocationSiteDetailXHRRequest = null;
                 },

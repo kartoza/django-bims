@@ -72,6 +72,7 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         getExtentOfRecords: function () {
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
+            Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             var self = this;
             if (this.isActive()) {
                 var extentUrl = '/api/collection/extent/' + this.apiParameters(this.parameters);
