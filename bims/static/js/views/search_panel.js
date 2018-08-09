@@ -1,6 +1,9 @@
 define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backbone, _) {
     return Backbone.View.extend({
         template: _.template($('#map-search-result-template').html()),
+        events: {
+            'click .map-result-close': 'closeSidePanelAnimation'
+        },
         initialize: function () {
         },
         render: function () {
@@ -25,7 +28,6 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             this.$el.hide()
         },
         openSidePanel: function () {
-            console.log('te')
             this.$el.show();
         },
         clearSidePanel: function () {
@@ -33,8 +35,11 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             this.$el.find('#search-result-content').html('');
         },
         closeSidePanelAnimation: function () {
-            this.$el.hide()
+            this.$el.hide();
             this.clearSidePanel();
+        },
+        isPanelOpen: function () {
+            return this.$el.is(":visible");
         }
     })
 });

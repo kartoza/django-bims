@@ -9,11 +9,27 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
             this.render();
         },
         clicked: function (e) {
-            if (this.getResultType() == 'taxa') {
+            if (this.getResultType() === 'taxa') {
                 Shared.Dispatcher.trigger('searchResult:updateTaxon',
                     this.model.get('id'),
                     this.model.get('species')
                 );
+            } else if (this.getResultType() === 'site') {
+                Shared.Dispatcher.trigger('siteDetail:show',
+                    this.model.get('id'), this.model.get('name'));
+                if (this.model.get('geometry')) {
+                    var feature = {
+                        id: this.model.get('id'),
+                        type: "Feature",
+                        geometry: JSON.parse(this.model.get('geometry')),
+                        properties: {}
+                    };
+                    var features = new ol.format.GeoJSON().readFeatures(feature, {
+                        featureProjection: 'EPSG:3857'
+                    });
+                    console.log(features);
+                    Shared.Dispatcher.trigger('map:switchHighlight', features);
+                }
             }
         },
         getResultType: function () {
@@ -21,11 +37,11 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
         },
         render: function () {
             this.data = this.model.toJSON();
-            if (this.getResultType() == 'taxa') {
+            if (this.getResultType() === 'taxa') {
                 var template = _.template($('#search-result-taxa-template').html());
                 this.$el.html(template(this.model.attributes));
                 $('#taxa-list').append(this.$el);
-            } else if (this.getResultType() == 'site') {
+            } else if (this.getResultType() === 'site') {
                 var template = _.template($('#search-result-site-template').html());
                 this.$el.html(template(this.model.attributes));
                 $('#site-list').append(this.$el);

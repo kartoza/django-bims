@@ -105,6 +105,7 @@ html, body, .map, .map-wrapper, #map-container {
 .right-panel-title {
     padding-top: 10px;
     padding-left: 0;
+    white-space: nowrap;
 }
 
 .close-panel {

@@ -49,7 +49,7 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
                 $('#taxon-filter .fa-times').click(function () {
                     self.parameters['taxon'] = null;
                     self.toggleTaxonIndicator('');
-                    Shared.Dispatcher.trigger('map:reloadXHR');
+                    self.getExtentOfRecords();
                 });
                 if ($('#taxon-filter').is(":hidden")) {
                     $('#taxon-filter').toggle("slide");
@@ -62,7 +62,6 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         updateTaxon: function (taxon, taxonName) {
             this.parameters['taxon'] = taxon;
-            this.parameters['search'] = null;
             this.toggleTaxonIndicator(taxonName);
             this.refresh();
         },

@@ -46,6 +46,7 @@ class LocationOccurrencesSerializer(serializers.ModelSerializer):
     """
     count = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
+    geometry = serializers.SerializerMethodField()
 
     def get_count(self, obj):
         if hasattr(obj, 'num_occurrences'):
@@ -56,6 +57,12 @@ class LocationOccurrencesSerializer(serializers.ModelSerializer):
     def get_record_type(self, obj):
         return 'site'
 
+    def get_geometry(self, obj):
+        geometry = obj.get_geometry()
+        if geometry:
+            return obj.get_geometry().json
+        return ''
+
     class Meta:
         model = LocationSite
-        fields = ['id', 'name', 'count', 'record_type']
+        fields = ['id', 'name', 'count', 'record_type', 'geometry']

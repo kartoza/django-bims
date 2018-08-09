@@ -13,10 +13,11 @@ define([
     'layerSwitcher',
     'views/olmap_basemap',
     'views/olmap_layers',
-    'views/geocontext'
+    'views/geocontext',
+    'views/location_site_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext) {
+             BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -46,6 +47,7 @@ define([
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
+            this.locationSiteDetail = new LocationSiteDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
@@ -54,6 +56,7 @@ define([
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
+            Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
@@ -92,6 +95,9 @@ define([
                 ]
             });
             this.map.getView().setZoom(this.getCurrentZoom());
+            if (this.getCurrentZoom() > 18) {
+                this.map.getView().setZoom(18);
+            }
         },
         mapClicked: function (e) {
             var self = this;
@@ -388,7 +394,7 @@ define([
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
             this.closeHighlight();
-            if (!this.sidePanelView.isSidePanelOpen()) {
+            if (!this.sidePanelView.isSidePanelOpen() && !this.mapControlPanel.searchView.searchPanel.isPanelOpen()) {
                 return
             }
             this.clusterBiologicalCollection.updateTaxon(taxonID, taxonName);
@@ -406,6 +412,16 @@ define([
         },
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
+        },
+        switchHighlight: function (features) {
+            this.closeHighlight();
+            this.addHighlightFeature(features[0]);
+            var extent = this.layers.highlightVectorSource.getExtent();
+            this.map.getView().fit(extent, {
+                size: this.map.getSize(), padding: [
+                    0, $('.right-panel').width(), 0, 0
+                ]
+            });
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
