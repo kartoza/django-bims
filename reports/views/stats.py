@@ -1,55 +1,42 @@
 __author__ = 'Alison Mukoma <alison@kartoza.com'
 __copywrite__ = 'kartoza.com'
 
+
 import os
-from time import gmtime, strftime
 import datetime
+from time import gmtime, strftime
 
 from django.http import HttpResponse
 
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing
-from reportlab.lib.pagesizes import ELEVENSEVENTEEN
+from reportlab.lib.pagesizes import ELEVENSEVENTEEN, letter, \
+    landscape, A4
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 from bims.models.taxon import Taxon
-from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.biological_collection_record import \
+    BiologicalCollectionRecord
 
 def create_pdf(pathname, current_site):
 
     # initialising the PDF for drawing content on it
-    # page = canvas.Canvas(pathname, pagesize=landscape(A4))
     page = canvas.Canvas(pathname, pagesize=ELEVENSEVENTEEN)
+    # page = canvas.Canvas(pathname, pagesize=letter)
 
-    # page.radialGradient(105 * mm, 240 * mm, 60 * mm, (darkred, yellow,
-    #                                             yellowgreen), (0, 0.8, 1))
 
-    # wildlife_logo = 'reports/static/img/collection/wildlife.png'
-    # biodiversity_logo = 'reports/static/img/collection/biodiversity.png'
-    # page.setFont('Helvetica-Bold', 16)
-    #
-    # page.drawImage(
-    #         logo, 250, 650, width = 100, height = 100,
-    #         preserveAspectRatio = True, mask = 'auto')
-    # page.drawString(255, 500, 'Ledet Report')
-
-    # page.setFont('Helvetica-Bold', 12)
-    # page.drawString(220,
-    #                 600,
-    #                 'Protected area management role')
-    # now = datetime.date.today()
-    # time = now.strftime('%d, %b %Y')
-    #
-    # page.setFont('Helvetica', 10)
-    # page.drawString(260,
-    #                 580,
-    #                 'Date: {}'.format(time))
     margin_left = 50
     margin_bottom = 1150
     page.setFont('Helvetica-Bold', 20)
     page.drawString(margin_left + 200, margin_bottom + 10,
                     'LBIMS species - Focused report')
+    now = datetime.date.today()
+    time = now.strftime('%d, %b %Y')
+    page.setFont('Helvetica', 10)
+    page.drawString(
+            margin_left + 300, margin_bottom - 10,
+                    'Date: {}'.format(time))
 
     # SECTION: OVERVIEW
 
@@ -160,7 +147,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left, margin_bottom - 280,
-                    'Taxonomy (from WORMS)')
+                    'Taxonomy (from: Tinca tinca)')
 
     page.setFont('Helvetica-Bold', 14)
     page.drawString(margin_left + 5, margin_bottom - 300,
@@ -185,341 +172,251 @@ def create_pdf(pathname, current_site):
             (margin_left + 380), (margin_bottom - 305))
 
     # insert a 30 value difference on height
+    # TODO: implement a user defined query for which Taxon they
+    # want to see details for.
 
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 5, margin_bottom - 330,
+    #                 'Kingdom')
+    # # query to fetch specie family details.
+    # # anguillidae = Taxon.objects.get(family='Anguillidae')
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 105, margin_bottom - 330,
+    #                 'Anguillidae')
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 205, margin_bottom - 330,
+    #                 'anguillidae.author')
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 305, margin_bottom - 330,
+    #                 'record')
+    # tinca_tinca_record = Taxon.objects.get(common_name='Tinca tinca')
+    tinca_record = Taxon.objects.get(genus='Tinca')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 330,
-                    'Kingdom')
-
+                    tinca_record.common_name)
+    # query to fetch specie family details.
+    # anguillidae = Taxon.objects.get(family='Anguillidae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 105, margin_bottom - 330,
-                    'Animalia')
-
+                    'tinca_record')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 330,
-                    'Haekel, 1874')
-
+                    tinca_record.author)
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 330,
-                    '25,732,563')
+                    'record')
 
     # ------------------------------------------
     page.line(
             (margin_left + 5), (margin_bottom - 335),
             (margin_left + 380), (margin_bottom - 335))
 
-    # insert a 30 value difference on height
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5, margin_bottom - 360,
-                    'Kingdom')
+    page.drawString(margin_left + 5, margin_bottom - 350,
+                    tinca_record.phylum)
+    # atherinidae = Taxon.objects.get(family='Atherinidae')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 105, margin_bottom - 360,
-                    'Animalia')
-
+    page.drawString(margin_left + 105, margin_bottom - 350,
+                    'Atherinidae')
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 205, margin_bottom - 360,
-                    'Haekel, 1874')
-
+    page.drawString(margin_left + 205, margin_bottom - 350,
+                    'atherinidae.author')
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 305, margin_bottom - 360,
-                    '25,732,563')
-
-    # SECTION: RECORDS PER AREA
-
-    page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left, margin_bottom - 400,
-                    'Records per area')
-
-    page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 5, margin_bottom - 420,
-                    'Area')
-
-    page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 105, margin_bottom - 420,
-                    'Records')
-
-    page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 205, margin_bottom - 420,
-                    '%')
-
-    page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 305, margin_bottom - 420,
-                    'Since')
-
-    # set an additional 5 to bottom differenct on the line so as we
-    #  have a little margin-botton on the text
-    page.line(
-            (margin_left + 5), (margin_bottom - 425),
-            (margin_left + 380), (margin_bottom - 425))
-
-    # insert a 30 value difference on height
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5, margin_bottom - 440,
-                    'North Atlantic')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 105, margin_bottom - 440,
-                    '17, 433')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 205, margin_bottom - 440,
-                    '17')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 305, margin_bottom - 440,
-                    '1957')
-
-    # ------------------------------------------
-    page.line(
-            (margin_left + 5), (margin_bottom - 445),
-            (margin_left + 380), (margin_bottom - 445))
-
-    # insert a 30 value difference on height
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5, margin_bottom - 460,
-                    'Kingdom')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 105, margin_bottom - 460,
-                    'Animalia')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 205, margin_bottom - 460,
-                    'Haekel, 1874')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 305, margin_bottom - 460,
-                    '25,732,563')
-
-    # SECTION: SPECIES DISTRIBUTION
-
-    from bims.models import Taxon
-
-
-    page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left + 5, margin_bottom - 550,
-                    'SPECIES FOCUSED DETAILS')
-
-    page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 600,
-                    'Common name')
-
-    page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 210, margin_bottom - 600,
-                    'Species Name')
-
-    page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 510, margin_bottom - 600,
-                    'Origin')
-
-
-    page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 610, margin_bottom - 600,
-                    '# Records')
-
-    page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 710, margin_bottom - 600,
-                    '# Sites')
+    page.drawString(margin_left + 305, margin_bottom - 350,
+                    'records')
 
     page.line(
-            (margin_left + 5), (margin_bottom - 605),
-            (margin_left + 700), (margin_bottom - 605))
+            (margin_left + 5), (margin_bottom - 355),
+            (margin_left + 380), (margin_bottom - 355))
 
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 370,
+                    tinca_record.taxon_class)
+    # austroglanididae = Taxon.objects.get(family='Austroglanididae')
 
-    # specie_left_margin = margin_left + 5
-    # specie_bottom_margin = margin_bottom + 620
-
-
-    specie_left_margin = margin_left + 5
-    specie_bottom_margin = margin_bottom - 620
-
-    from bims.models import BiologicalCollectionRecord
-
-
-    species = Taxon.objects.all()
-
-    for taxa in species:
-
-        record_site = BiologicalCollectionRecord.objects.filter(
-                taxon_gbif_id=taxa.gbif_id)
-
-        page.setFont('Helvetica-Bold', 12)
-        page.drawString(specie_left_margin, specie_bottom_margin,
-                        taxa.common_name)
-        # page.setFont('Helvetica-Bold', 12)
-        # page.drawString(specie_left_margin, specie_bottom_margin,
-        #                 'English Name')
-
-        page.setFont('Helvetica-Bold', 12)
-        page.drawString(specie_left_margin + 210, \
-                                               specie_bottom_margin,
-                        taxa.scientific_name)
-
-        page.setFont('Helvetica-Bold', 12)
-        page.drawString(specie_left_margin + 510,
-                        specie_bottom_margin,
-                        taxa.family)
-
-        page.setFont('Helvetica-Bold', 12)
-        page.drawString(specie_left_margin + 610,
-                        specie_bottom_margin,
-                        '# Records')
-
-        page.setFont('Helvetica-Bold', 12)
-        page.drawString(specie_left_margin + 710,
-                        specie_bottom_margin,
-                        record_site.count())
-
-
-        # specie_left_margin = specie_left_margin
-        specie_bottom_margin = (specie_bottom_margin - 20)
-
-
-    # SECTION: IMAGES - right section
-
-    page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left + 410, margin_bottom - 70,
-                    'Images')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 370,
+                    'Austroglanididae')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 370,
+                    'austroglanididae.author')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 370,
+                    'records')
 
     page.line(
-            (margin_left + 410), (margin_bottom - 80),
-            (margin_left + 800), (margin_bottom - 80))
+            (margin_left + 5), (margin_bottom - 375),
+            (margin_left + 380), (margin_bottom - 375))
 
-    # insert a 30 value difference on height
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 390,
+                    tinca_record.order)
+    # emberizidae = Taxon.objects.get(family='Emberizidae')
 
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 390,
+                    'Emberizidae')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 390,
+                    'emberizidae.author')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 390,
+                    'records')
 
-    fish_image = 'reports/static/img/fishes.png'
+    page.line(
+            (margin_left + 5), (margin_bottom - 395),
+            (margin_left + 380), (margin_bottom - 395))
 
-    page.drawImage(
-            fish_image, margin_left + 410, margin_bottom - 290,
-            width = 300,
-            height = 200,
-            preserveAspectRatio = True, mask = 'auto')
-            # page.drawString(255, 500, 'fish images')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 410,
+                    tinca_record.family)
+    # cyprinidae = Taxon.objects.get(family='Cyprinidae')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 410,
+                    'Cyprinidae')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 410,
+                    'cyprinidae.author')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 410,
+                    'records')
+
+    page.line(
+            (margin_left + 5), (margin_bottom - 415),
+            (margin_left + 380), (margin_bottom - 415))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 430,
+                    tinca_record.genus)
+    # mugilidae = Taxon.objects.get(family='Mugilidae')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 430,
+                    'Mugilidae')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 430,
+                    'mugilidae.author')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 430,
+                    'records')
+    page.line(
+            (margin_left + 5), (margin_bottom - 435),
+            (margin_left + 380), (margin_bottom - 435))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 450,
+                    tinca_record.species)
+    # Cyprinidae = Taxon.objects.get(family='Cyprinidae')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 105, margin_bottom - 450,
+                    'Cyprinidae')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 205, margin_bottom - 450,
+                    'Cyprinidae.author')
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 305, margin_bottom - 450,
+                    'records')
+    page.line(
+            (margin_left + 5), (margin_bottom - 455),
+            (margin_left + 380), (margin_bottom - 455))
+
 
     # SECTION: ENVIRONMENTAL CONDITIONS
 
     page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left + 410, margin_bottom - 350,
+    page.drawString(margin_left + 410, margin_bottom - 70,
                     'Environmental conditions')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 410,  margin_bottom - 400,
+    page.drawString(margin_left + 410,  margin_bottom - 100,
                     'Temperature')
 
-
-    # page.setFont('Helvetica', 12)
-    # page.drawString(margin_left + 500, margin_bottom - 400,
-    #                 'Salinity')
-    #
-    # page.setFont('Helvetica', 12)
-    # page.drawString(margin_left + 600, margin_bottom - 400,
-    #                 'Depth')
-
-
-    drawing = Drawing(margin_left + 410,  margin_bottom - 600)
-
+    drawing = Drawing(margin_left + 410,  margin_bottom - 100)
 
     data = [
-        (13, 5, 20, 22, 37, 98, 19, 4),
+        (32, 15, 20, 22, 37, 98, 21, 9),
     ]
 
     max_x = list(range(-5, 30, 5))
     names = ["%s" % i for i in max_x]
 
-    bc = VerticalBarChart   ()
-    bc.x = 20
-    bc.y = 50
-    bc.height = 100
-    bc.width = 250
-    bc.data = data
-    bc.strokeColor = colors.white
-    bc.valueAxis.valueMin = 0
-    bc.valueAxis.valueMax = 1527
-    bc.valueAxis.valueStep = 500
-    bc.categoryAxis.labels.boxAnchor = 'ne'
-    bc.categoryAxis.labels.dx = -10
-    bc.categoryAxis.labels.fontName = 'Helvetica'
-    bc.categoryAxis.categoryNames = names
+    bar_chart = VerticalBarChart()
+    bar_chart.x = 20
+    bar_chart.y = 50
+    bar_chart.height = 100
+    bar_chart.width = 250
+    bar_chart.data = data
+    bar_chart.strokeColor = colors.white
+    bar_chart.valueAxis.valueMin = 0
+    bar_chart.valueAxis.valueMax = 1527
+    bar_chart.valueAxis.valueStep = 500
+    bar_chart.categoryAxis.labels.boxAnchor = 'ne'
+    bar_chart.categoryAxis.labels.dx = -10
+    bar_chart.categoryAxis.labels.fontName = 'Helvetica'
+    bar_chart.categoryAxis.categoryNames = names
 
-    drawing.add(bc)
-    drawing.drawOn(page, margin_left + 410, margin_bottom - 600)
+    drawing.add(bar_chart)
+    drawing.drawOn(page, margin_left + 410, margin_bottom - 300)
 
-    # SECTION: COMMON NAMES
-    #
-    # page.setFont('Helvetica-Bold', 16)
-    # page.drawString(margin_left + 5, margin_bottom - 900,
-    #                 'Common names')
-    #
-    # page.setFont('Helvetica-Bold', 14)
-    # page.drawString(margin_left + 5,  margin_bottom - 1000,
-    #                 'Name')
-    #
-    # page.setFont('Helvetica-Bold', 14)
-    # page.drawString(margin_left + 205, margin_bottom - 1000,
-    #                 'Language')
-    #
-    # page.line(
-    #         (margin_left + 5), (margin_bottom - 1005),
-    #         (margin_left + 380), (margin_bottom - 1005))
-    #
-    # page.setFont('Helvetica', 12)
-    # page.drawString(margin_left + 5,  margin_bottom - 2000,
-    #                 'Bonito')
-    #
-    # page.setFont('Helvetica', 12)
-    # page.drawString(margin_left + 205,  margin_bottom - 2000,
-    #                 'English')
+    page.showPage()
+    # --------------------------------------
 
-    # page.setFillColorRGB(0.1, 0.1, 0.1)
-    # page.setFont('Helvetica-Bold', 14)
-    # page.drawString(
-    #         380, 500, 'Common names')
-    #
-    #
-    # name_height = 480
-    # status_height = 420
-    #
-    # for specie in species_records:
-    #
-    #     page.setFillColorRGB(0.1, 0.1, 0.1)
-    #     page.setFont('Helvetica', 12)
-    #     page.drawString(
-    #             380, 420, 'Species Name')
-    #
-    #     page.setFont('Helvetica', 10)
-    #     page.drawString(
-    #             380, name_height, specie.scientific_name)
-    #
-    #     page.setFillColorRGB(0.1, 0.1, 0.1)
-    #     page.setFont('Helvetica', 12)
-    #     page.drawString(
-    #             520, 420, 'IUCN Status')
-    #
-    #     page.setFont('Helvetica', 10)
-    #     page.drawString(
-    #             400, status_height, 'Available')
-    #
-    #     name_height -= 20
-    #     status_height -= 20
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left + 5, margin_bottom - 10,
+                    'SPECIES FOCUSED DETAILS')
 
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 5, margin_bottom - 40,
+                    'Common name')
 
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 200, margin_bottom - 40,
+                    'Species Name')
 
-    # page.drawImage(biodiversity_logo, 90, 500, width = 30, height = 30,
-    #                preserveAspectRatio = True, mask = 'auto')
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 350, margin_bottom - 40,
+                    'Family')
 
-    # page.setFont('Times-Roman', 10)
-    # page.drawString(130,
-    #                 510,
-    #                 'Total Biological records: {0}'.format(biological_total))
-    #
-    # page.setFont('Helvetica-Bold', 12)
-    # page.drawString(90,
-    #                 450,
-    #                 'Environmental impact management role')
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 450, margin_bottom - 40,
+                    'Genus')
+
+    page.line(
+            (margin_left + 5), (margin_bottom - 45),
+            (margin_left + 500), (margin_bottom - 45))
+
+    specie_left_margin = margin_left + 5
+    specie_bottom_margin = margin_bottom - 60
+
+    species = Taxon.objects.all()
+
+    for taxa in species:
+        page.setFont('Helvetica', 8)
+        page.drawString(specie_left_margin, specie_bottom_margin,
+                        taxa.common_name)
+
+        page.setFont('Helvetica', 8)
+        page.drawString(
+                specie_left_margin + 120,
+                specie_bottom_margin, taxa.scientific_name)
+
+        page.setFont('Helvetica', 8)
+        page.drawString(
+                specie_left_margin + 350,
+                specie_bottom_margin, taxa.family)
+
+        page.setFont('Helvetica', 8)
+        page.drawString(
+                specie_left_margin + 450,
+                specie_bottom_margin, taxa.genus)
+
+        specie_bottom_margin = (specie_bottom_margin - 20)
+
+    # second page
     page.showPage()
     page.save()
 
