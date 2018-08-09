@@ -56,7 +56,7 @@
         <div class="ol-control" id="taxon-filter">
         </div>
         <div id="popup"></div>
-        <div id="map-legend-wrapper" class="control-drop-shadow hide-legend">
+        <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
             <div id="map-legend-symbol">L</div>
             <div id="map-legend"></div>
         </div>
@@ -169,6 +169,33 @@
                     <button class="apply-filter">Apply Filter</button>
                     <button class="clear-filter">Clear Filter</button>
                 </div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/html" id="map-search-result-template">
+        <div class="map-search-box map-control-panel-box map-search-result">
+            <div class="row">
+                <div class="col-lg-12" style="padding-right: 0">
+                    <span class="title">
+                        SEARCH RESULT
+                    </span>
+                    <div class="close-button map-result-close pull-right">
+                        X
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="search-box">
+                    GILLI
+                </div>
+            </div>
+            <div class="row" style="margin-top: 10px; margin-bottom: 12px">
+                <div class="col-lg-12 search-info">
+                    Select an item to find more detailed information.
+                </div>
+            </div>
+            <div id="search-result-content">
             </div>
         </div>
     </script>
@@ -407,10 +434,9 @@
     </script>
 
     <script type="text/template" id="search-result-taxa-template">
-        <div class="result-search" data-search-result-id="">
-            <p>Scientific name: <%= scientific_name %></p>
-            <p>Common name: <%= common_name %></p>
-            <p>Author: <%= author %></p>
+        <div class="result-search" data-search-result-id="" data-taxon-id="<%= id %>">
+            <p class="group-title"><%= common_name %></p>
+            <a class="group-description"><%= count %> occurrences</a>
         </div>
     </script>
 

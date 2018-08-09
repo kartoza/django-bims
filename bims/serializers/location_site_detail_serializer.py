@@ -31,14 +31,13 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
                 species_list = records[taxon_class]
                 try:
-                    species_list[taxon_id]
+                    species_list[taxon_gbif_id.common_name]
                 except KeyError:
-                    species_list[taxon_id] = {
-                        'common_name': taxon_gbif_id.common_name,
+                    species_list[taxon_gbif_id.common_name] = {
                         'taxon_gbif_id': taxon_id,
                         'count': 0
                     }
-                species_list[taxon_id]['count'] += 1
+                species_list[taxon_gbif_id.common_name]['count'] += 1
 
         return records
 

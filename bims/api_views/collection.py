@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
+from bims.models.taxon import Taxon
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
     BioCollectionOneRowSerializer,
@@ -40,7 +41,17 @@ class GetCollectionAbstract(APIView):
             request_data = request
 
         sqs = SearchQuerySet()
-        results = sqs
+
+        query_value = request_data.get('search')
+        if query_value:
+            clean_query = sqs.query.clean(query_value)
+            settings.ELASTIC_MIN_SCORE = 1.5
+            results = sqs.filter(
+                original_species_name=clean_query
+            ).models(BiologicalCollectionRecord, Taxon).order_by('-_score')
+        else:
+            settings.ELASTIC_MIN_SCORE = 0
+            results = sqs.all().models(BiologicalCollectionRecord)
 
         taxon = request_data.get('taxon', None)
         if taxon:
@@ -48,58 +59,61 @@ class GetCollectionAbstract(APIView):
                 taxon_gbif=taxon
             ).models(BiologicalCollectionRecord)
 
-        search = request_data.get('search')
-        if search:
-            results = sqs.filter(
-                    original_species_name=search,
-                    taxon_gbif_not_null=True,
-            ).models(BiologicalCollectionRecord)
-
+        results = results.filter(
+            validated=True
+        )
         # get by bbox
         if not ignore_bbox:
             bbox = request_data.get('bbox', None)
             if bbox:
                 bbox_array = bbox.split(',')
+                downtown_bottom_left = Point(
+                    float(bbox_array[1]),
+                    float(bbox_array[0]))
 
-                downtown_bottom_left = Point(float(bbox_array[1]),
-                                             float(bbox_array[0]))
+                downtown_top_right = Point(
+                    float(bbox_array[3]),
+                    float(bbox_array[2]))
 
-                downtown_top_right = Point(float(bbox_array[3]),
-                                           float(bbox_array[2]))
-
-                results = results.within('location_center',
-                                         downtown_bottom_left,
-                                         downtown_top_right)
+                results = results.within(
+                    'location_center',
+                    downtown_bottom_left,
+                    downtown_top_right)
 
         # additional filters
-        collector = request_data.get('collector')
-        if collector:
+        # query by collectors
+        query_collector = request_data.get('collector')
+        if query_collector:
             qs_collector = SQ()
-            qs = json.loads(collector)
+            qs = json.loads(query_collector)
             for query in qs:
                 qs_collector.add(SQ(collector=query), SQ.OR)
             results = results.filter(qs_collector)
 
-        category = request_data.get('category')
-        if category:
+        # query by category
+        query_category = request_data.get('category')
+        if query_category:
             qs_category = SQ()
-            qs = json.loads(category)
+            qs = json.loads(query_category)
             for query in qs:
                 qs_category.add(SQ(category=query), SQ.OR)
             results = results.filter(qs_category)
 
+        # query by year from
         year_from = request_data.get('yearFrom')
         if year_from:
             clean_query_year_from = sqs.query.clean(year_from)
             results = results.filter(
-                    collection_date_year__gte=clean_query_year_from)
+                collection_date_year__gte=clean_query_year_from)
 
+        # query by year to
         year_to = request_data.get('yearTo')
         if year_to:
             clean_query_year_to = sqs.query.clean(year_to)
             results = results.filter(
-                    collection_date_year__lte=clean_query_year_to)
+                collection_date_year__lte=clean_query_year_to)
 
+        # query by months
         months = request_data.get('months')
         if months:
             qs = months.split(',')
@@ -107,9 +121,8 @@ class GetCollectionAbstract(APIView):
             for month in qs:
                 clean_query_month = sqs.query.clean(month)
                 qs_month.add(
-                        SQ(collection_date_month=clean_query_month), SQ.OR)
+                    SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
-
         return results
 
 
@@ -305,6 +318,6 @@ class ClusterCollection(GetCollectionAbstract):
                 'icon_pixel_y: size y of icon in pixel. ')
         results = self.apply_filter(request)
         cluster = self.clustering_process(
-                results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
+            results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])
