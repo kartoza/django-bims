@@ -70,7 +70,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 url: listNonBiodiversityLayerAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    console.log(data);
                     $.each(data.reverse(), function (index, value) {
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
                             return;

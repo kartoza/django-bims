@@ -11,7 +11,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     record_type = serializers.SerializerMethodField()
 
     def get_record_type(self, obj):
-        return 'taxa'
+        return 'bio'
 
     def get_iucn_status_sensitive(self, obj):
         if obj.iucn_status:
@@ -55,4 +55,29 @@ class TaxonExportSerializer(serializers.ModelSerializer):
             'scientific_name', 'kingdom', 'phylum',
             'taxon_class', 'order', 'family', 'genus', 'species',
             'iucn_status_sensitive', 'iucn_status_name'
+        ]
+
+
+class TaxonOccurencesSerializer(serializers.ModelSerializer):
+    """
+    Serializer for taxon collection model in occurrences format.
+    """
+    record_type = serializers.SerializerMethodField()
+    count = serializers.SerializerMethodField()
+
+    def get_record_type(self, obj):
+        return 'taxa'
+
+    def get_count(self, obj):
+        if hasattr(obj, 'num_occurrences'):
+            return obj.num_occurrences
+        else:
+            return 0
+
+    class Meta:
+        model = Taxon
+        fields = [
+            'id', 'common_name',
+            'taxon_class', 'record_type', 'species',
+            'count'
         ]

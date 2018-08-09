@@ -105,6 +105,7 @@ html, body, .map, .map-wrapper, #map-container {
 .right-panel-title {
     padding-top: 10px;
     padding-left: 0;
+    white-space: nowrap;
 }
 
 .close-panel {
@@ -258,6 +259,57 @@ html, body, .map, .map-wrapper, #map-container {
     margin-top: 60px;
 }
 
+.map-search-result {
+    margin-left: 351px !important;
+    padding-bottom: 0;
+}
+
+.map-search-result .search-box {
+    color: white;
+    padding-top: 10px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+#search-result-content {
+    margin-right: -15px;
+    margin-left: -15px;
+}
+
+#search-result-content .search-results-total {
+    background: ghostwhite;
+    padding-right: 15px;
+    padding-left: 15px;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-weight: normal;
+    font-size: 16px;
+}
+
+#search-result-content .result-search {
+    font-size: 8pt;
+    text-align: left;
+    padding-left: 17px;
+    margin-bottom: 0;
+    padding-right: 17px;
+    background-color: white;
+    color: #4e4e4e;
+    cursor: pointer;
+}
+
+#search-result-content .result-search:hover {
+    background: ghostwhite;
+}
+
+#search-result-content p {
+    margin-bottom: 0;
+}
+
+#search-result-content .search-results-section {
+    max-height: 500px;
+    overflow-y: scroll;
+}
+
 .layers-selector-container {
     display: none;
     padding-bottom: 0 !important;
@@ -370,6 +422,7 @@ html, body, .map, .map-wrapper, #map-container {
     font-size: 12pt;
     font-weight: bolder;
     line-height: 20px;
+    margin-right: 3px;
 }
 
 .map-control-panel-box .close-button:hover, .close-panel:hover {
@@ -606,10 +659,6 @@ html, body, .map, .map-wrapper, #map-container {
 
 }
 
-.result-search:hover {
-    cursor: pointer;
-}
-
 #search-results-wrapper {
     height: 200px;
     overflow-y: auto;
@@ -687,10 +736,6 @@ div:hover::-webkit-scrollbar {
     padding: 10px;
     padding-left: 20px;
     padding-right: 20px;
-}
-
-.result-search:hover {
-    background-color: rgba(255, 255, 255, 0.6);
 }
 
 .sub-filter {
