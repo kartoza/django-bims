@@ -11,19 +11,16 @@ from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing
-from reportlab.lib.pagesizes import ELEVENSEVENTEEN, letter, \
-    landscape, A4
+from reportlab.lib.pagesizes import ELEVENSEVENTEEN, letter
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 from bims.models.taxon import Taxon
-from bims.models.biological_collection_record import \
-    BiologicalCollectionRecord
+
 
 def create_pdf(pathname, current_site):
 
     # initialising the PDF for drawing content on it
     page = canvas.Canvas(pathname, pagesize=ELEVENSEVENTEEN)
-    # page = canvas.Canvas(pathname, pagesize=letter)
 
 
     margin_left = 50
