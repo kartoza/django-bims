@@ -139,7 +139,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             if (layerName !== this.administrativeKeyword) {
                 this.layers[layerName]['layer'].setVisible(visible);
             } else {
-                this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
+                if(this.currentAdministrativeLayer in this.layers) {
+                    this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
+                }
             }
         },
         selectorChanged: function (layerName, selected) {
@@ -284,9 +286,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 });
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
+                        $(this).tooltip('option','content', 'Hide Legends');
                         $(this).removeClass('hide-legend');
                         $(this).addClass('show-legend');
                     } else {
+                        $(this).tooltip('option','content', 'Show Legends');
                         $(this).addClass('hide-legend');
                         $(this).removeClass('show-legend');
                     }
