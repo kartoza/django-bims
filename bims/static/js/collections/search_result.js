@@ -4,9 +4,9 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         url: "",
         searchUrl: "/api/search/",
         viewCollection: [],
-        sidePanel: null,
+        searchPanel: null,
         searchValue: '',
-        search: function (sidePanel, parameters) {
+        search: function (searchPanel, parameters) {
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
             this.categoryValue = parameters['category'];
@@ -21,14 +21,18 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                 '&yearFrom=' + this.yearFrom +
                 '&yearTo=' + this.yearTo +
                 '&months=' + this.months;
-            this.sidePanel = sidePanel;
-            this.sidePanel.showSearchLoading();
+            this.searchPanel = searchPanel;
+            this.searchPanel.showSearchLoading();
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {
+                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-down');
+                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-up');
                 $(e.target).nextAll().hide();
                 $(e.target).data('visibility', false)
             } else {
+                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-down');
+                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-up');
                 $(e.target).nextAll().show();
                 $(e.target).data('visibility', true)
             }
@@ -41,25 +45,27 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         },
         renderCollection: function () {
             var self = this;
-            this.sidePanel.updateSidePanelTitle(this.searchValue);
-            this.sidePanel.switchToSearchResultPanel();
-
+            this.searchPanel.updatesearchPanelTitle(this.searchValue);
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {
-                    self.sidePanel.fillSidePanelHtml(this.models[0]['attributes']['results']);
+                    self.searchPanel.fillPanelHtml(this.models[0]['attributes']['results']);
                     return false;
                 }
             }
 
             var $searchResultsWrapper = $('<div></div>');
             $searchResultsWrapper.append(
-                '<div id="biological-record-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Biological Collection Records (<span class="number"></span>) </div></div>');
+                '<div class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> SITES (<span id="site-list-number"></span>) <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
+                '<div id="site-list" class="search-results-section"></div>' +
+                '</div>');
             $searchResultsWrapper.append(
-                '<div id="site-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Location Sites (<span class="number"></span>) </div></div>');
+                '<div class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> TAXA (<span id="taxa-list-number"></span>) <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
+                '<div id="taxa-list" class="search-results-section"></div>' +
+                '</div>');
 
-            self.sidePanel.fillSidePanelHtml($searchResultsWrapper);
+            self.searchPanel.fillPanelHtml($searchResultsWrapper);
 
             $.each(this.viewCollection, function (index, view) {
                 view.destroy();
@@ -67,7 +73,6 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             this.viewCollection = [];
 
             var biologicalCount = 0;
-            var taxaCount = 0;
             var siteCount = 0;
             $.each(this.models, function (index, model) {
                 var searchResultView = new SearchResultView({
@@ -82,9 +87,8 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                     siteCount += 1
                 }
             });
-            $('#biological-record-list .number').html(biologicalCount);
-            $('#taxa-list .number').html(taxaCount);
-            $('#site-list .number').html(siteCount);
+            $('#taxa-list-number').html(biologicalCount);
+            $('#site-list-number').html(siteCount);
             $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             $searchResultsWrapper.find('.search-results-total').click();
         }

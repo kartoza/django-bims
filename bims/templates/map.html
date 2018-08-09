@@ -173,6 +173,33 @@
         </div>
     </script>
 
+    <script type="text/html" id="map-search-result-template">
+        <div class="map-search-box map-control-panel-box map-search-result">
+            <div class="row">
+                <div class="col-lg-12" style="padding-right: 0">
+                    <span class="title">
+                        SEARCH RESULT
+                    </span>
+                    <div class="close-button map-result-close pull-right">
+                        X
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="search-box">
+                    GILLI
+                </div>
+            </div>
+            <div class="row" style="margin-top: 10px; margin-bottom: 12px">
+                <div class="col-lg-12 search-info">
+                    Select an item to find more detailed information.
+                </div>
+            </div>
+            <div id="search-result-content">
+            </div>
+        </div>
+    </script>
+
     <script type="text/html" id="map-control-panel">
         <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
             <div class="search-control sub-control-panel">

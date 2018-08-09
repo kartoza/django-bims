@@ -24,7 +24,7 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
             if (this.getResultType() == 'taxa') {
                 var template = _.template($('#search-result-taxa-template').html());
                 this.$el.html(template(this.model.attributes));
-                $('#biological-record-list').append(this.$el);
+                $('#taxa-list').append(this.$el);
             } else if (this.getResultType() == 'site') {
                 var template = _.template($('#search-result-site-template').html());
                 this.$el.html(template(this.model.attributes));
