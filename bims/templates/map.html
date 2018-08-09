@@ -407,10 +407,9 @@
     </script>
 
     <script type="text/template" id="search-result-taxa-template">
-        <div class="result-search" data-search-result-id="">
-            <p>Scientific name: <%= scientific_name %></p>
-            <p>Common name: <%= common_name %></p>
-            <p>Author: <%= author %></p>
+        <div class="result-search" data-search-result-id="" data-taxon-id="<%= id %>">
+            <p class="group-title"><%= common_name %></p>
+            <a class="group-description"><%= count %> occurrences</a>
         </div>
     </script>
 

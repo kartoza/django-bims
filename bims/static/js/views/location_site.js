@@ -28,22 +28,33 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
             if (data.hasOwnProperty('records_occurrence')) {
                 var records_occurrence = data['records_occurrence'];
                 var template = _.template($('#search-result-record-template').html());
-                $.each(records_occurrence, function (key, value) {
-                    if (key) {
-                        var $classWrapper = $('<div class="sub-species-wrapper"></div>');
-                        var classTemplate = _.template($('#search-result-sub-title').html());
-                        $classWrapper.append(classTemplate({
-                            name: key,
-                            count: Object.keys(value).length
-                        }));
-                        $.each(value, function (species, speciesValue) {
-                            $classWrapper.append(
-                                template(speciesValue)
-                            );
-                            speciesListCount += 1;
-                        });
-                        $specialListWrapper.append($classWrapper);
+                var classes = Object.keys(records_occurrence).sort();
+                $.each(classes, function (index, className) {
+                    var value = records_occurrence[className];
+                    if (!className) {
+                        className = 'Unknown';
+
                     }
+                    var $classWrapper = $('<div class="sub-species-wrapper"></div>');
+                    var classTemplate = _.template($('#search-result-sub-title').html());
+                    $classWrapper.append(classTemplate({
+                        name: className,
+                        count: Object.keys(value).length
+                    }));
+
+                    var species = Object.keys(value).sort();
+                    $.each(species, function (index, speciesName) {
+                        var speciesValue = value[speciesName];
+                        $classWrapper.append(
+                            template({
+                                common_name: speciesName,
+                                count: speciesValue.count,
+                                taxon_gbif_id: speciesValue.taxon_gbif_id
+                            })
+                        );
+                        speciesListCount += 1;
+                    });
+                    $specialListWrapper.append($classWrapper);
                 });
             } else {
                 $specialListWrapper.append('<div class="side-panel-content">No species found on this site.</div>');

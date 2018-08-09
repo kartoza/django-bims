@@ -35,9 +35,8 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
 
         },
         parse: function (response) {
-            var result = response['biological_collection_record'];
-            result = result.concat(response['taxa']);
-            result = result.concat(response['location_site']);
+            var result = response['records'];
+            result = result.concat(response['sites']);
             return result
         },
         renderCollection: function () {
@@ -56,9 +55,6 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             $searchResultsWrapper.append(
                 '<div id="biological-record-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> Biological Collection Records (<span class="number"></span>) </div></div>');
-            $searchResultsWrapper.append(
-                '<div id="taxa-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Taxa (<span class="number"></span>) </div></div>');
             $searchResultsWrapper.append(
                 '<div id="site-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> Location Sites (<span class="number"></span>) </div></div>');
@@ -80,10 +76,8 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                 self.viewCollection.push(searchResultView);
 
                 // update count
-                if (searchResultView.getResultType() == 'bio') {
+                if (searchResultView.getResultType() == 'taxa') {
                     biologicalCount += searchResultView.model.attributes.count;
-                } else if (searchResultView.getResultType() == 'taxa') {
-                    taxaCount += 1;
                 } else if (searchResultView.getResultType() == 'site') {
                     siteCount += 1
                 }

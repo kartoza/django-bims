@@ -1,12 +1,11 @@
 define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'shared'], function (Backbone, ClusterModel, ClusterView, Shared) {
     return Backbone.Collection.extend({
         model: ClusterModel,
-        clusterAPI: _.template(
-            "/api/collection/cluster/?taxon=<%= taxon %>&search=<%= search %>" +
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
-            ""),
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>"),
+        clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
         parameters: {
@@ -76,12 +75,12 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             var self = this;
             if (this.isActive()) {
+                var extentUrl = '/api/collection/extent/' + this.apiParameters(this.parameters);
                 $.ajax({
-                    url: '/api/collection/extent/',
-                    data: this.parameters,
+                    url: extentUrl,
                     dataType: "json",
                     success: function (data) {
-                        if (data.length == 4) {
+                        if (data.length === 4) {
                             Shared.Dispatcher.trigger('map:zoomToExtent', data);
                         } else {
                             Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
@@ -95,7 +94,7 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         refresh: function () {
             if (this.parameters['zoom'] &&
                 this.parameters['bbox']) {
-                this.url = this.clusterAPI(this.parameters);
+                this.url = this.clusterAPI + this.apiParameters(this.parameters);
             }
         },
         renderCollection: function () {

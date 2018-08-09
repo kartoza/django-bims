@@ -9,16 +9,10 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
             this.render();
         },
         clicked: function (e) {
-            if (this.getResultType() == 'bio') {
-                Shared.Dispatcher.trigger(
-                    'searchResult:updateTaxon',
-                    this.model.get('taxon_gbif_id'),
-                    this.model.get('common_name')
-                );
-            } else if (this.getResultType() == 'taxa') {
+            if (this.getResultType() == 'taxa') {
                 Shared.Dispatcher.trigger('searchResult:updateTaxon',
                     this.model.get('id'),
-                    this.model.get('common_name')
+                    this.model.get('species')
                 );
             }
         },
@@ -27,16 +21,10 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
         },
         render: function () {
             this.data = this.model.toJSON();
-            if (this.getResultType() == 'bio') {
-                var template = _.template($('#search-result-record-template').html());
-                this.$el.html(
-                    template(this.model.attributes)
-                );
-                $('#biological-record-list').append(this.$el);
-            } else if (this.getResultType() == 'taxa') {
+            if (this.getResultType() == 'taxa') {
                 var template = _.template($('#search-result-taxa-template').html());
                 this.$el.html(template(this.model.attributes));
-                $('#taxa-list').append(this.$el);
+                $('#biological-record-list').append(this.$el);
             } else if (this.getResultType() == 'site') {
                 var template = _.template($('#search-result-site-template').html());
                 this.$el.html(template(this.model.attributes));
