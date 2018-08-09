@@ -146,3 +146,12 @@ body {
 #reupload-button:hover {
   cursor: pointer;
 }
+
+.upload-status {
+    margin-top: 10px;
+    width: 300px;
+    padding: 10px;
+    background-color: rgba(103, 129, 85, 0.1);
+    border-radius: 10px;
+    display: none;
+}
