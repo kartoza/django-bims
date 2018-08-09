@@ -848,10 +848,11 @@ div:hover::-webkit-scrollbar {
     overflow-x: hidden;
     overflow-y: scroll;
     position: absolute;
-    left: .4em;
-    bottom: 5.3em;
+    left: 0.5em;
+    bottom: 80px;
     background-color: white;
     cursor: pointer;
+    z-index: 99;
 }
 
 #map-legend-symbol {
@@ -873,7 +874,7 @@ div:hover::-webkit-scrollbar {
 #map-legend-wrapper.hide-legend {
     max-width: 31px;
     max-height: 31px;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 #map-legend-wrapper .legend-row {
