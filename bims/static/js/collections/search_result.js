@@ -82,7 +82,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
 
                 // update count
                 if (searchResultView.getResultType() == 'taxa') {
-                    biologicalCount += searchResultView.model.attributes.count;
+                    biologicalCount += 1;
                 } else if (searchResultView.getResultType() == 'site') {
                     siteCount += 1
                 }

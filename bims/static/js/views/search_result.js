@@ -27,7 +27,6 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
                     var features = new ol.format.GeoJSON().readFeatures(feature, {
                         featureProjection: 'EPSG:3857'
                     });
-                    console.log(features);
                     Shared.Dispatcher.trigger('map:switchHighlight', features);
                 }
             }
