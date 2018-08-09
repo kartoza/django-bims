@@ -8,7 +8,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         },
         render: function () {
             this.$el.html(this.template());
-            this.$el.hide()
+            this.$el.hide();
             return this;
         },
         updatesearchPanelTitle: function (title) {
@@ -28,6 +28,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             this.$el.hide()
         },
         openSidePanel: function () {
+            $('.map-search-result').show();
             this.$el.show();
         },
         clearSidePanel: function () {
