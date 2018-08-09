@@ -8,9 +8,10 @@ import datetime
 from django.http import HttpResponse
 
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
-from reportlab.lib.colors import yellowgreen, darkred, yellow
+from reportlab.lib import colors
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib.pagesizes import ELEVENSEVENTEEN
+from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 from bims.models.taxon import Taxon
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -24,12 +25,6 @@ def create_pdf(pathname, current_site):
     # page.radialGradient(105 * mm, 240 * mm, 60 * mm, (darkred, yellow,
     #                                             yellowgreen), (0, 0.8, 1))
 
-    species_records = Taxon.objects.all()
-    species_total = species_records.count()
-
-    biological_total = BiologicalCollectionRecord.objects.count()
-
-    logo = 'reports/static/img/logo.png'
     # wildlife_logo = 'reports/static/img/collection/wildlife.png'
     # biodiversity_logo = 'reports/static/img/collection/biodiversity.png'
     # page.setFont('Helvetica-Bold', 16)
@@ -299,23 +294,89 @@ def create_pdf(pathname, current_site):
     page.drawString(margin_left + 305, margin_bottom - 460,
                     '25,732,563')
 
-    # SECTION: DISTRIBUTION
+    # SECTION: SPECIES DISTRIBUTION
+
+    from bims.models import Taxon
+
 
     page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left + 5, margin_bottom - 500,
-                    'Distribution')
+    page.drawString(margin_left + 5, margin_bottom - 550,
+                    'SPECIES FOCUSED DETAILS')
 
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 105,  margin_bottom - 500,
-                    'First Record')
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 5,  margin_bottom - 600,
+                    'Common name')
 
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 205, margin_bottom - 500,
-                    'Last Record')
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 210, margin_bottom - 600,
+                    'Species Name')
 
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 305, margin_bottom - 500,
-                    'Occurences')
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 510, margin_bottom - 600,
+                    'Origin')
+
+
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 610, margin_bottom - 600,
+                    '# Records')
+
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 710, margin_bottom - 600,
+                    '# Sites')
+
+    page.line(
+            (margin_left + 5), (margin_bottom - 605),
+            (margin_left + 700), (margin_bottom - 605))
+
+
+    # specie_left_margin = margin_left + 5
+    # specie_bottom_margin = margin_bottom + 620
+
+
+    specie_left_margin = margin_left + 5
+    specie_bottom_margin = margin_bottom - 620
+
+    from bims.models import BiologicalCollectionRecord
+
+
+    species = Taxon.objects.all()
+
+    for taxa in species:
+
+        record_site = BiologicalCollectionRecord.objects.filter(
+                taxon_gbif_id=taxa.gbif_id)
+
+        page.setFont('Helvetica-Bold', 12)
+        page.drawString(specie_left_margin, specie_bottom_margin,
+                        taxa.common_name)
+        # page.setFont('Helvetica-Bold', 12)
+        # page.drawString(specie_left_margin, specie_bottom_margin,
+        #                 'English Name')
+
+        page.setFont('Helvetica-Bold', 12)
+        page.drawString(specie_left_margin + 210, \
+                                               specie_bottom_margin,
+                        taxa.scientific_name)
+
+        page.setFont('Helvetica-Bold', 12)
+        page.drawString(specie_left_margin + 510,
+                        specie_bottom_margin,
+                        taxa.family)
+
+        page.setFont('Helvetica-Bold', 12)
+        page.drawString(specie_left_margin + 610,
+                        specie_bottom_margin,
+                        '# Records')
+
+        page.setFont('Helvetica-Bold', 12)
+        page.drawString(specie_left_margin + 710,
+                        specie_bottom_margin,
+                        record_site.count())
+
+
+        # specie_left_margin = specie_left_margin
+        specie_bottom_margin = (specie_bottom_margin - 20)
+
 
     # SECTION: IMAGES - right section
 
@@ -339,7 +400,53 @@ def create_pdf(pathname, current_site):
             preserveAspectRatio = True, mask = 'auto')
             # page.drawString(255, 500, 'fish images')
 
+    # SECTION: ENVIRONMENTAL CONDITIONS
 
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left + 410, margin_bottom - 350,
+                    'Environmental conditions')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 410,  margin_bottom - 400,
+                    'Temperature')
+
+
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 500, margin_bottom - 400,
+    #                 'Salinity')
+    #
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 600, margin_bottom - 400,
+    #                 'Depth')
+
+
+    drawing = Drawing(margin_left + 410,  margin_bottom - 600)
+
+
+    data = [
+        (13, 5, 20, 22, 37, 98, 19, 4),
+    ]
+
+    max_x = list(range(-5, 30, 5))
+    names = ["%s" % i for i in max_x]
+
+    bc = VerticalBarChart   ()
+    bc.x = 20
+    bc.y = 50
+    bc.height = 100
+    bc.width = 250
+    bc.data = data
+    bc.strokeColor = colors.white
+    bc.valueAxis.valueMin = 0
+    bc.valueAxis.valueMax = 1527
+    bc.valueAxis.valueStep = 500
+    bc.categoryAxis.labels.boxAnchor = 'ne'
+    bc.categoryAxis.labels.dx = -10
+    bc.categoryAxis.labels.fontName = 'Helvetica'
+    bc.categoryAxis.categoryNames = names
+
+    drawing.add(bc)
+    drawing.drawOn(page, margin_left + 410, margin_bottom - 600)
 
     # SECTION: COMMON NAMES
     #
