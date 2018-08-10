@@ -10,19 +10,22 @@ from django.http import JsonResponse
 from django.http import QueryDict
 
 
-def get_farm_ids(farm_id_pattern):
-    """Retrieve Farm IDs from a farm id pattern.
+def filter_farm_ids(farm_id_pattern):
+    """Retrieve Farm IDs with filtering by id pattern.
 
     :param farm_id_pattern: A pattern to farm ID.
     :type farm_id_pattern: basestring
 
-    :returns: A dictionary of farm ID as the key and its envelope as the value.
-    :rtype: dict
+    :returns: A list of farm ID.
+    :rtype: list
     """
     url = settings.FARM_GEOSERVER_URL
 
-    # Adding % in the end of pattern
-    if '%' not in farm_id_pattern:
+    # Adding % in front and end of pattern
+    if not farm_id_pattern.startswith('%'):
+        farm_id_pattern = '%' + farm_id_pattern
+
+    if not farm_id_pattern.endswith('%'):
         farm_id_pattern = farm_id_pattern + '%'
 
     parameters = {
@@ -46,7 +49,31 @@ def get_farm_ids(farm_id_pattern):
     request = requests.get(url)
     content = request.content
 
-    return parse_locate_return(content)
+    return parse_farm_ids(content)
+
+
+def parse_farm_ids(xml_document):
+    """Parse locate xml document from requesting GeoServer.
+
+    :param xml_document: XML document from GeoServer returns.
+    :type xml_document: basestring
+
+    :returns: A list of farm ID.
+    :rtype: list
+    """
+    xmldoc = minidom.parseString(xml_document)
+    farm_ids = []
+
+    try:
+        wfs_xml_features = xmldoc.getElementsByTagName('wfs:member')
+        for wfs_xml_feature in wfs_xml_features:
+            id_tag = settings.FARM_WORKSPACE + ':' + settings.FARM_ID_COLUMN
+            farm_id_xml = wfs_xml_feature.getElementsByTagName(id_tag)[0]
+            farm_id = farm_id_xml.childNodes[0].nodeValue
+            farm_ids.append(farm_id)
+        return farm_ids
+    except IndexError:
+        return farm_ids
 
 
 # TODO(IS): Separate into two method (filter and get)
@@ -82,9 +109,13 @@ def parse_locate_return(xml_document, with_envelope=False):
         return features
 
 
-def filter_farm_ids(request, farm_id_pattern):
+def filter_farm_ids_view(request, farm_id_pattern):
     """View to filter farm ID. Return JSON."""
 
-    farms = get_farm_ids(farm_id_pattern)
+    farm_ids = filter_farm_ids(farm_id_pattern)
 
-    return JsonResponse(farms)
+    data = {
+        'farm_ids': sorted(farm_ids)
+    }
+
+    return JsonResponse(data)
