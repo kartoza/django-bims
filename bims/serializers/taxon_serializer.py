@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from bims.models import Taxon
+from bims.models.iucn_status import IUCNStatus
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -8,6 +9,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     """
     iucn_status_sensitive = serializers.SerializerMethodField()
     iucn_status_name = serializers.SerializerMethodField()
+    iucn_status_full_name = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
 
     def get_record_type(self, obj):
@@ -22,6 +24,15 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_iucn_status_name(self, obj):
         if obj.iucn_status:
             return obj.iucn_status.category
+        else:
+            return None
+
+    def get_iucn_status_full_name(self, obj):
+        if obj.iucn_status:
+            for value in IUCNStatus.CATEGORY_CHOICES:
+                if value[0] == obj.iucn_status.category:
+                    return value[1]
+            return None
         else:
             return None
 

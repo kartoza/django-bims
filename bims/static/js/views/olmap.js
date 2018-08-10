@@ -13,10 +13,11 @@ define([
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
-    'views/location_site_detail'
+    'views/location_site_detail',
+    'views/taxon_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail) {
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail, TaxonDetail) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -45,7 +46,8 @@ define([
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
-            this.locationSiteDetail = new LocationSiteDetail();
+            new LocationSiteDetail();
+            new TaxonDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);

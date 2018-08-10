@@ -13,12 +13,12 @@ body {
 }
 
 #content-panel {
-    margin: 0 10px 10px 0;
+    padding-right: 0;
+    padding-left: 0;
     font-size: 8pt;
     font-weight: normal;
-    padding: 0 0 15px 0;
     word-wrap: break-word;
-    max-height: 85%;
+    max-height: 100%;
     overflow-y: auto;
 }
 
@@ -68,12 +68,21 @@ html, body, .map, .map-wrapper, #map-container {
     overflow: hidden;
 }
 
-.right-panel {
+.panel-wrapper {
     top: 0;
     right: 0;
     position: absolute;
     height: 100%;
     width: 250px;
+
+}
+
+.right-panel {
+    top: 0;
+    right: 0;
+    position: relative;
+    height: 100%;
+    width: 100%;
     max-width: 400px;
     background: rgba(204, 204, 204, 1);
     color: #4e4e4e;
@@ -96,16 +105,35 @@ html, body, .map, .map-wrapper, #map-container {
 
 .right-panel-header {
     font-size: 17pt;
-    padding-bottom: 5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     padding-left: 15px;
-    height: 100px;
-    background: rgba(255, 255, 255, 1);
+    padding-right: 10px;
+    min-height: 60px;
+    background: #666666;
+    color: white;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.right-panel-header .close-panel {
+    border: 2px solid white;
+}
+
+.right-panel-header .close-panel:hover {
+    border: 2px solid black;
+}
+
+.right-panel-header .fa-map-marker {
+    color: #AFC9FA;
 }
 
 .right-panel-title {
     padding-top: 10px;
     padding-left: 0;
-    white-space: nowrap;
+    line-height: 1.2;
 }
 
 .close-panel {
@@ -119,8 +147,11 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .side-panel-info {
-    height: 70px;
-    width: 100%
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding-top: 60px;
 }
 
 .map-control-panel, .download-control-panel {
@@ -201,13 +232,13 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 @media (max-width: 800px) and (min-width: 500px) {
-    .right-panel {
+    .panel-wrapper {
         width: 40%;
     }
 }
 
 @media (max-width: 500px) {
-    .right-panel {
+    .panel-wrapper {
         width: 100%;
     }
 }
@@ -1084,6 +1115,60 @@ div:hover::-webkit-scrollbar {
 .site-detail-content td {
     margin-top: 5px;
     margin-bottom: 5px;
+}
+
+#species-detail .content {
+    padding: 10px;
+    color: #131313;
+}
+
+#species-detail .content .species-count {
+    font-size: 16px;
+    text-align: center;
+}
+
+#species-detail .content .species-count b {
+    font-size: 32px;
+}
+
+#species-detail .content .iucn-status {
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#species-detail .content .iucn-status .name {
+    padding: 2px 10px;
+    display: inline-block;
+    font-size: 18px;
+    background-color: green;
+    color: white;
+}
+
+#species-detail .content .iucn-status.danger .name {
+    background-color: red;
+    color: white;
+}
+
+#species-detail .content .iucn-status .full-name {
+    padding: 1px 10px;
+    display: inline-block;
+    font-size: 18px;
+    color: green;
+    border: 1px solid green;
+}
+
+#species-detail .content .iucn-status.danger .full-name {
+    color: red;
+    border: 1px solid red;
+}
+
+#species-detail .content .taxonomy-system {
+    text-align: center;
+    border: 1px solid grey;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 12px;
 }
 
 .search-result-sub-title {
