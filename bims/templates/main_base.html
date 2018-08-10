@@ -77,7 +77,7 @@
                     </div>
                      {% if user.is_authenticated %}
                         <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="/profile/">PROFILE</a></li>
-                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/upload/">UPLOAD DATA</a></li>
+                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="{% block upload_data_url %}/upload/{% endblock %}">UPLOAD DATA</a></li>
                          {% if user.is_staff or user.is_superuser %}
                             <li><a class="nav-link js-scroll-trigger" href="/admin/">ADMINISTRATION</a></li>
                          {% endif %}
