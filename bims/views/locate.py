@@ -10,6 +10,42 @@ from django.http import JsonResponse
 from django.http import QueryDict
 
 
+def get_farm(farm_id):
+    """Retrieve farm geometry and properties from GeoServer.
+
+
+    :param farm_id: The farm farm ID.
+    :type farm_id: basestring
+
+    :returns: Dictionary that contains envelope, farm id, etc
+    :rtype: dict
+    """
+    url = settings.FARM_GEOSERVER_URL
+
+    parameters = {
+        'SERVICE': 'WFS',
+        'VERSION': '2.0.0',
+        'REQUEST': 'GETFEATURE',
+        'TYPENAME': settings.FARM_WORKSPACE + ':' + settings.FARM_LAYER_NAME,
+        'PROPERTYNAME': settings.FARM_ID_COLUMN,
+        'CQL_FILTER': "%s = '%s'" % (
+            settings.FARM_ID_COLUMN, farm_id)
+    }
+
+    query_dict = QueryDict('', mutable=True)
+    query_dict.update(parameters)
+
+    if '?' in url:
+        url = url + '&' + query_dict.urlencode()
+    else:
+        url = url + '?' + query_dict.urlencode()
+
+    request = requests.get(url)
+    content = request.content
+
+    return parse_farm(content)
+
+
 def filter_farm_ids(farm_id_pattern):
     """Retrieve Farm IDs with filtering by id pattern.
 
@@ -76,6 +112,36 @@ def parse_farm_ids(xml_document):
         return farm_ids
 
 
+def parse_farm(xml_document):
+    """Parse locate xml document from requesting GeoServer.
+
+    :param xml_document: XML document from GeoServer returns.
+    :type xml_document: basestring
+
+    :returns: Dictionary that contains envelope, farm id, etc
+    :rtype: dict
+    """
+    xmldoc = minidom.parseString(xml_document)
+    feature = {}
+
+    try:
+        wfs_xml_feature = xmldoc.getElementsByTagName('wfs:member')[0]
+
+        id_tag = settings.FARM_WORKSPACE + ':' + settings.FARM_ID_COLUMN
+        farm_id_xml = wfs_xml_feature.getElementsByTagName(id_tag)[0]
+        feature['farm_id'] = farm_id_xml.childNodes[0].nodeValue
+
+        bounded_gml = wfs_xml_feature.getElementsByTagName('gml:boundedBy')[0]
+        bounded_gml_dom = bounded_gml.childNodes[0]
+        envelope_extent = GEOSGeometry.from_gml(bounded_gml_dom.toxml()).extent
+        feature['envelope_extent'] = envelope_extent
+
+        return feature
+
+    except IndexError:
+        return feature
+
+
 # TODO(IS): Separate into two method (filter and get)
 def parse_locate_return(xml_document, with_envelope=False):
     """Parse locate xml document from requesting GeoServer.
@@ -119,3 +185,11 @@ def filter_farm_ids_view(request, farm_id_pattern):
     }
 
     return JsonResponse(data)
+
+
+def get_farm_view(request, farm_id):
+    """View to get a farm from an ID. Return JSON."""
+
+    farm = get_farm(farm_id)
+
+    return JsonResponse(farm)
