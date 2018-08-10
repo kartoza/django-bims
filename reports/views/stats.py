@@ -27,7 +27,7 @@ def create_pdf(pathname, current_site):
     margin_bottom = 1150
     page.setFont('Helvetica-Bold', 20)
     page.drawString(margin_left + 200, margin_bottom + 10,
-                    'LBIMS species - Focused report')
+                    'KBIMS species - Focused Report')
     now = datetime.date.today()
     time = now.strftime('%d, %b %Y')
     page.setFont('Helvetica', 10)
@@ -364,22 +364,22 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left + 5, margin_bottom - 10,
-                    'SPECIES FOCUSED DETAILS')
+                    'PLACE FOCUSED DETAILS')
 
     page.setFont('Helvetica-Bold', 12)
     page.drawString(margin_left + 5, margin_bottom - 40,
                     'Common name')
 
     page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 200, margin_bottom - 40,
+    page.drawString(margin_left + 120, margin_bottom - 40,
                     'Species Name')
 
     page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 350, margin_bottom - 40,
+    page.drawString(margin_left + 340, margin_bottom - 40,
                     'Family')
 
     page.setFont('Helvetica-Bold', 12)
-    page.drawString(margin_left + 450, margin_bottom - 40,
+    page.drawString(margin_left + 420, margin_bottom - 40,
                     'Genus')
 
     page.line(
@@ -398,17 +398,17 @@ def create_pdf(pathname, current_site):
 
         page.setFont('Helvetica', 8)
         page.drawString(
-                specie_left_margin + 120,
+                specie_left_margin + 115,
                 specie_bottom_margin, taxa.scientific_name)
 
         page.setFont('Helvetica', 8)
         page.drawString(
-                specie_left_margin + 350,
+                specie_left_margin + 340,
                 specie_bottom_margin, taxa.family)
 
         page.setFont('Helvetica', 8)
         page.drawString(
-                specie_left_margin + 450,
+                specie_left_margin + 420,
                 specie_bottom_margin, taxa.genus)
 
         specie_bottom_margin = (specie_bottom_margin - 20)
