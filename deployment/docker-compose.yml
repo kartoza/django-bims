@@ -1,0 +1,165 @@
+#
+# Production server with UWSGI configured to run on port 8080
+# and web configured to run directly on port 80
+#
+# docker-compose build
+# docker-compose up -d web
+#
+# See accompanying Make commands for easy collectstatic etc.
+
+version: '2'
+volumes:
+  geoserver-data-dir:
+services:
+  smtp:
+    image: catatnight/postfix
+    hostname: postfix
+    environment:
+      # You could change this to something more suitable
+      - maildomain=kartoza.com
+      - smtp_user=noreply:docker
+    restart: unless-stopped
+
+  db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - POSTGRES_USER=docker
+      - POSTGRES_PASS=docker
+    restart: unless-stopped
+
+  elasticsearch:
+    image: elasticsearch:2.4.2
+    restart: unless-stopped
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  data-dir-conf:
+    image: geosolutionsit/geoserver_data:2.13.x
+    restart: on-failure
+    command: /bin/true
+    volumes:
+      - geoserver-data-dir:/geoserver_data/data
+
+  geoserver:
+    image: geosolutionsit/geoserver-docker:2.13.x
+    restart: unless-stopped
+    depends_on:
+      - db
+      - data-dir-conf
+    volumes:
+      - geoserver-data-dir:/geoserver_data/data
+
+  bims_uwsgi:
+    build:
+      context: docker
+      dockerfile: Dockerfile
+    image: bims_uwsgi:latest
+
+  uwsgi:
+    build:
+      context: docker
+    hostname: uwsgi
+    working_dir: /usr/src/app
+    entrypoint: []
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - HAYSTACK_HOST=elasticsearch
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
+      - GEOCONTEXT_COLLECTION_KEY=climate
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+    links:
+      - smtp:smtp
+      - db:db
+      - elasticsearch:elasticsearch
+      - geoserver:geoserver
+      - worker:worker
+    volumes:
+      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    restart: unless-stopped
+    user: root
+
+  worker:
+    build:
+      context: docker
+    hostname: worker
+    working_dir: /home/web/django_project
+    command: celery worker --app=bims.celery:app -B -l INFO
+    entrypoint: []
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_worker
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - HAYSTACK_HOST=elasticsearch
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
+      - GEOCONTEXT_COLLECTION_KEY=climate
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+    links:
+      - smtp:smtp
+      - db:db
+      - elasticsearch:elasticsearch
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+      - cache:cache
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./logs:/var/log/
+    restart: unless-stopped
+    user: root
+
+  dbbackups:
+    image: kartoza/pg-backup:9.6
+    hostname: pg-backups
+    links:
+      - db:db
+    environment:
+      # take care to let the project name below match that
+      # declared in the top of the makefile
+      - DUMPPREFIX=PG_bims
+      # These are all defaults anyway, but setting explicitly in
+      # case we ever want to ever use different credentials
+      - PGUSER=docker
+      - PGPASSWORD=docker
+      - PGPORT=5432
+      - PGHOST=db
+      - PGDATABASE=gis
+    restart: unless-stopped
+
+  # This is normally the main entry point for a production server
+  web:
+    image: nginx
+    hostname: nginx
+    links:
+      - uwsgi:uwsgi"
+    restart: unless-stopped
+
+  rabbitmq:
+    image: library/rabbitmq:3.6
+    hostname: rabbitmq
+    environment:
+      - RABBIT_PASSWORD=rabbit_test_password
+      - USER=rabbit_user
+      - RABBITMQ_NODENAME=rabbit
+    restart: unless-stopped
+
+  cache:
+   image: memcached
+   entrypoint:
+    - memcached
+    - -m 64

@@ -15,7 +15,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -87,6 +86,7 @@ celerybeat-schedule
 venv/
 ENV/
 
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -99,3 +99,37 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Pycharm
+.idea
+.pycharm_helpers
+pycharm_project_251*
+
+# database stuff
+*.dmp
+
+# node modules
+ node_modules/
+
+# Pg cluster for docker
+deployment/pg
+deployment/pg/postgres_data/9.3
+deployment/pg/postgres_staging_data/9.3
+deployment/pg/postgres_dev_data/9.3
+deployment/sql
+# Template for apt-cacher
+# static and media dirs
+deployment/static
+deployment/media
+deployment/docker/71-apt-cacher-ng
+core/settings/secret.py
+deployment/backups
+
+# Ansible Project Dev Setup
+deployment/ansible/tmp
+!deployment/ansible/tmp/.gitkeep
+deployment/ansible/development/site.retry
+deployment/ansible/development/group_vars/all.yml
+deployment/docker-compose.override.yml
+deployment/logs
+deployment/sites-enabled

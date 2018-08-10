@@ -1,0 +1,20 @@
+.form-group .help-block {
+    display: none;
+}
+
+.form-group.has-error .help-block {
+    display: block;
+}
+
+input[name='decoy'],
+p.decoy {
+    display: none !important;
+}
+
+.custom-form-container {
+    margin-bottom: 20px;
+}
+
+.container {
+    padding-bottom: 20px;
+}

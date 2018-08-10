@@ -1,0 +1,88 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load i18n %}
+
+{% block title %}
+    Contact Us
+{% endblock %}
+{% block head %}
+
+    <link rel="stylesheet" href="{% static 'css/form.css' %}">
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <link rel="stylesheet" href="{% static 'css/contactus.css' %}">
+
+{% endblock %}
+
+
+{% block body_content %}
+    <div class="content" style="height: 100%;">
+
+        <div class="content" style="height: 100%;">
+            {% csrf_token %}
+            <div class="container">
+                <div class="custom-form-container">
+                    <h1>{% trans "Contact Us" %}</h1>
+                    <form class="signup" id="signup_form" method="POST">{% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-warning">
+                                {% for error in form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-group {% if form.name.errors %}has-error{% endif %}">
+                            <label for="name" id="name" class="control-label">Name</label>
+                            <div class="form-group">
+                                <input type="text" name="name" class="form-control"
+                                value="{% if form.data.name %}{{form.data.name}}{% else %}{{form.initial.name}}{% endif %}" />
+                                <p class="help-block">Name is a required field</p>
+                            </div>
+                        </div>
+                        <div class="visualclear"></div>
+                        <div class="form-group {% if form.email.errors %}has-error{% endif %}">
+                            <label for="email" id="email" class="form-group
+                            control-label">E-mail Address</label>
+                            <div class="form-group">
+                                <input class="form-control" type="text" name="email"
+                                 value=""/>
+                                <div class="visualclear"></div>
+                                <p class="help-block">A valid e-mail address is required.</p>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="visualclear"></div>
+                        <div class="form-group {% if form.subject.errors %}has-error{% endif %}">
+                            <label for="subject" id="subject" class="control-label">Subject</label>
+                            <div class="form-group">
+                                {{form.subject}}
+                                <p class="help-block">Subject is a required
+                                    field.</p>
+
+                        </div>
+                        <br />
+                        <div class="form-group {% if form.description.errors %}has-error{% endif %}">
+                            <label for="description"
+                                    id="description" class="control-label">Description</label>
+                            <div class="form-group">
+                                {{form.description}}
+                                <p class="help-block">Description is a required field.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group {% if form.decoy.errors %}has-error{% endif %}">
+                            <input type="text" name="decoy" value="" placeholder="Please leave blank" autofill="off" />
+                            <p class="help-block decoy">If you can see the decoy field, please leave it blank.</p>
+                        </div>
+
+                    <div class="row">
+                            <div class="offset-lg-2">
+                                <input class="btn-login pull-right pull-right" id="submitt" type="submit" value="Send Feedback"/>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div> <!-- /container -->
+        </div>
+
+    {% endblock %}
+    </div>

@@ -1,0 +1,108 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Uploader
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+            <div class="row">
+                <div class="col-lg-2"><button type="button" class="btn">Upload CSV</button></div>
+                <div class="col-lg-2"><a href="{% block upload_shp_url %}/upload_shp{% endblock %}" class="btn btn-info" role="button">Upload Shapefile</a></div>
+            </div>
+
+            <div class="help-block-space"></div>
+            <h3>This is the page for uploading {% block module_name %}generic{% endblock %} observation records</h3>
+            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+            </div>
+
+            <div class="modal-body">
+                <label for="file"><b>Upload csv here</b></label>
+                <button type="button" class="btn btn-primary js-upload-photos">
+                    <span class="glyphicon glyphicon-cloud-upload"></span> Upload CSV
+                </button>
+
+                <input id="fileupload" type="file" name="csv_file"
+                       style="display: none;"
+                       data-url=""
+                       data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+
+                <div class="upload-status">
+                </div>
+
+                <div class="help-block-space"></div>
+                <p class="help-block">These formats are supported: csv</p>
+                <div class="help-block">
+                    Your data must conform to this schema to be accepted :
+                    <div class="help-block-schema">
+                        {% block required_fields %}
+                            latitude(float), longitude(float), species_name(string), location_site(string), notes(string), category(string), date(yyyy-mm-dd), collector(string)
+                        {% endblock %}
+                    </div>
+                    <div class="help-block-space"></div>
+                    And these are optional fields :
+                    <div class="help-block-schema">
+                        {% block optional_fields %}
+                            present(int), absent(int)
+                        {% endblock %}
+                    </div>
+                </div>
+                <div class="help-block-space"></div>
+                <div class="help-block">
+                    Duplicates will be detected and rejected.
+                </div>
+
+            </div>
+
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/vendor/jquery.ui.widget.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/jquery.iframe-transport.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/jquery.fileupload.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/jquery.fileupload-process.js" %}"></script>
+    <script src="{% static "js/libs/jquery-fileupload/jquery.fileupload-validate.js" %}"></script>
+
+    <script type="text/javascript">
+
+        $(".js-upload-photos").click(function () {
+            $("#fileupload").click();
+        });
+
+        $("#fileupload").fileupload({
+            acceptFileTypes: /(\.|\/)(csv)$/i,
+            dataType: 'json',
+            done: function (e, data) {
+                $('.js-upload-photos').show();
+                if (data.result) {
+                    $('.upload-status').html(data.result.message);
+                }
+            },
+            progressall: function (e, data) {
+                $('.js-upload-photos').hide();
+                $('.upload-status').html('Processing...');
+                $('.upload-status').show();
+            }
+        });
+
+    </script>
+
+{% endblock %}

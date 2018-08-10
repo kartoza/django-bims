@@ -1,0 +1,58 @@
+psycopg2-binary
+# Django is provided by GeoNode
+django-braces==1.9.0
+django-model-utils==1.4.0
+django-pipeline==1.6.14
+django-role-permissions==2.2.0
+markdown==2.6.11
+celery==4.1.0
+
+# Raven pinned to 3.3.7 - see
+# https://github.com/getsentry/raven-python/issues/337
+raven==5.8.1
+django-sentry==1.13.5
+requests==2.18.4
+pytz
+# support special characters
+
+django-allauth==0.35.0
+
+# Django Easy Audit
+# https://github.com/soynatan/django-easy-audit
+git+https://github.com/soynatan/django-easy-audit.git
+django-grappelli==2.11.1
+
+djangorestframework==3.7.7
+djangorestframework-gis==0.13
+django-filter==1.1.0
+coreapi==2.3.3
+pygbif==0.2.0
+
+# Django BIMS
+# git+https://github.com/kartoza/django-bims.git
+
+# bibliography
+bibtexparser==1.0.1
+eutils==0.4.0
+habanero==0.3.0
+
+# documentation generation
+django-modelsdoc==0.1.9
+
+# contacts page
+django-contact-us==0.4.1
+Pillow==5.1.0
+django-ordered-model==1.4.3
+
+django-haystack==2.8.1
+elasticsearch==5.0.1
+
+# prometheus monitoring support
+django-prometheus==1.0.14
+prometheus_client==0.2.0
+
+pyshp==1.2.12
+
+# for django flatpages
+django-ckeditor==5.6.1
+djangorestframework-gis==0.13

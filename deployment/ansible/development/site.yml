@@ -1,0 +1,19 @@
+---
+- name: Setup development environment configuration
+  hosts: dev-env
+  remote_user: '{{ remote_user }}'
+  roles:
+    - { role: pycharm, when: use_pycharm, tags: development }
+    - docker_compose
+  vars_prompt:
+    - name: 'pycharm_version'
+      prompt: |
+        Choose PyCharm Version, available:
+        2016.3
+        2017.1
+        2017.2
+        2017.3
+        2018.1
+        If not using Pycharm, just skip.
+      default: '2018.1'
+      private: no

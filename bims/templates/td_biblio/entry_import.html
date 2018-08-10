@@ -1,0 +1,51 @@
+{% extends "td_biblio/layouts/one_col.html" %}
+{% load static from staticfiles %}
+{% load i18n %}
+
+{% block page_title %}{% trans "Import publications" %}{% endblock page_title %}
+
+{% block page_class %}bibliography import{% endblock page_class %}
+
+{% block main_content %}
+
+{% block content %}
+    <style>
+        .button, button,
+        input[type="button"],
+        input[type="reset"],
+        input[type="submit"] {
+                background-color: #526B43 !important;
+                border: 0.1rem solid #526B43 !important;
+            }
+
+
+    </style>
+    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
+
+    <h2>{% trans "Import new publications" %}</h2>
+<form
+  class="batch-import-form"
+  action="{% url 'td_biblio:import' %}"
+  method="post"
+>
+  {% csrf_token %}
+
+  {{ form }}
+
+  <div class="form-actions">
+    <input
+      type="reset"
+      name="{% trans "Cancel" %}"
+      value="{% trans "cancel" %}"
+      class="cancel">
+    <input
+      type="submit"
+      name="{% trans "Import" %}"
+      value="{% trans "submit" %}"
+      class="submit"
+    style="color: white;">
+  </div>
+</form>
+
+{% endblock content %}
+{% endblock main_content %}

@@ -1,0 +1,27 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Under Development
+{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block body_content %}
+    <style>
+    .dev-content {
+        text-align: center;
+        margin-top: 150px;
+    }
+    .dev-content p {
+        font-size: 20pt;
+        font-weight: bold;
+        margin-bottom: 25px;
+    }
+    </style>
+    <div class="container dev-content">
+        <p>This page is currently under development.</p>
+        <img src="{% static 'img/underdevelopment.gif' %}">
+    </div>
+{% endblock %}
