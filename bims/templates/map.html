@@ -34,6 +34,8 @@
         const csrfmiddlewaretoken = "{{ csrf_token }}";
         const biological_modules = "{{ biological_modules|safe }}";
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
+        const filterFarmIDUrl = '{% url "filter-farm-id" 123456789 %}';
+        const getFarmUrl = '{% url "get-farm" 123456789 %}';
     </script>
 {% endblock %}
 

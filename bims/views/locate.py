@@ -29,7 +29,8 @@ def get_farm(farm_id):
         'TYPENAME': settings.FARM_WORKSPACE + ':' + settings.FARM_LAYER_NAME,
         'PROPERTYNAME': settings.FARM_ID_COLUMN,
         'CQL_FILTER': "%s = '%s'" % (
-            settings.FARM_ID_COLUMN, farm_id)
+            settings.FARM_ID_COLUMN, farm_id),
+        'COUNT': 1
     }
 
     query_dict = QueryDict('', mutable=True)
@@ -71,7 +72,8 @@ def filter_farm_ids(farm_id_pattern):
         'TYPENAME': settings.FARM_WORKSPACE + ':' + settings.FARM_LAYER_NAME,
         'PROPERTYNAME': settings.FARM_ID_COLUMN,
         'CQL_FILTER': "%s LIKE '%s'" % (
-            settings.FARM_ID_COLUMN, farm_id_pattern)
+            settings.FARM_ID_COLUMN, farm_id_pattern),
+        'COUNT': 10
     }
 
     query_dict = QueryDict('', mutable=True)
