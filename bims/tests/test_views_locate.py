@@ -20,6 +20,11 @@ class TestLocateView(SimpleTestCase):
             self.assertIn('C0010000000000010000', farm_key)
         self.assertEqual(len(farms), 4)
 
+        farms = get_farm_ids('C0010000000000010000')
+        for farm_key in farms.keys():
+            self.assertIn('C0010000000000010000', farm_key)
+        self.assertEqual(len(farms), 4)
+
     def test_parse_locate_returns(self):
         """Test parsing locate returns xml document."""
         wfs_document_path = os.path.join(
@@ -28,6 +33,12 @@ class TestLocateView(SimpleTestCase):
         with open(wfs_document_path) as file:
             wfs_string = file.read()
 
-        features = parse_locate_return(wfs_string)
+        farms = parse_locate_return(wfs_string)
+        self.assertEqual(len(farms), 4)
+        for farm_value in farms.values():
+            self.assertIsNone(farm_value)
 
-        self.assertEqual(len(features), 4)
+        farms = parse_locate_return(wfs_string, with_envelope=True)
+        self.assertEqual(len(farms), 4)
+        for farm_value in farms.values():
+            self.assertIsNotNone(farm_value)

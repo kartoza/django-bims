@@ -38,6 +38,7 @@ from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.collection_upload import CollectionUploadView
+from bims.views.locate import filter_farm_ids
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -72,6 +73,8 @@ api_urls = [
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
         GetBioRecords.as_view(), name='get-bio-object'),
+    url(r'^api/filter-farm-id/(?P<farm_id_pattern>[\w-]+)/$',
+        filter_farm_ids, name='filter-farm-id'),
 ]
 
 
