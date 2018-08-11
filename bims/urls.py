@@ -73,7 +73,7 @@ api_urls = [
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
         GetBioRecords.as_view(), name='get-bio-object'),
-    url(r'^api/filter-farm-id/(?P<farm_id_pattern>[\w-]+)/$',
+    url(r'^api/filter-farm-id/$',
         filter_farm_ids_view, name='filter-farm-id'),
     url(r'^api/get-farm/(?P<farm_id>[\w-]+)/$',
         get_farm_view, name='get-farm'),

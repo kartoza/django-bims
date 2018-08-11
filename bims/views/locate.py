@@ -177,16 +177,14 @@ def parse_locate_return(xml_document, with_envelope=False):
         return features
 
 
-def filter_farm_ids_view(request, farm_id_pattern):
-    """View to filter farm ID. Return JSON."""
+def filter_farm_ids_view(request):
+    """View to filter farm ID. Return JSON of list farm ID."""
+
+    farm_id_pattern = request.GET.get('term')
 
     farm_ids = filter_farm_ids(farm_id_pattern)
 
-    data = {
-        'farm_ids': sorted(farm_ids)
-    }
-
-    return JsonResponse(data)
+    return JsonResponse(sorted(farm_ids), safe=False)
 
 
 def get_farm_view(request, farm_id):
