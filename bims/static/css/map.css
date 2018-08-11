@@ -1025,7 +1025,3 @@ div:hover::-webkit-scrollbar {
         margin-left: 55%;
     }
 }
-
-.ui-autocomplete {
-    z-index: 5000;
-}

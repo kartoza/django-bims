@@ -42,6 +42,7 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
           }else {
               var farmID = $('#farm-id').val();
               console.log('Search by Farm ID: ' + farmID);
+              this.searchFarmID(farmID);
           }
         },
         searchCoordinate: function (e) {
@@ -53,11 +54,35 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             Shared.Dispatcher.trigger('map:zoomToCoordinates', coordinates, 17);
             this.closeModal();
         },
-        searchFarmID: function (e) {
-            var farmID = $('#farm-id').val();
-            // Get bounding box for farmID
-            // Zoom to farmID
+        searchFarmID: function (farmID) {
+            var self = this;
+            if (self.locateFarmXhr) {
+                self.locateFarmXhr.abort();
+            }
 
+            var url = getFarmUrl.replace('123456789', farmID);
+
+            self.locateFarmXhr = $.get({
+                url: url,
+                dataType: 'json',
+                success: function (data) {
+                    // We need to rearrange the order since it has different
+                    // format
+                    var envelope_extent = [
+                        data['envelope_extent'][1],
+                        data['envelope_extent'][0],
+                        data['envelope_extent'][3],
+                        data['envelope_extent'][2],
+                    ];
+                    Shared.Dispatcher.trigger(
+                        'map:zoomToExtent', envelope_extent);
+                    self.closeModal();
+                },
+                error: function (req, err) {
+                    console.log(err);
+                    alert('Not able to zoom to farm ID: ' + farmID);
+                }
+            });
         }
 
     })

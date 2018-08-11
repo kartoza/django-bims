@@ -135,8 +135,9 @@ def parse_farm(xml_document):
 
         bounded_gml = wfs_xml_feature.getElementsByTagName('gml:boundedBy')[0]
         bounded_gml_dom = bounded_gml.childNodes[0]
-        envelope_extent = GEOSGeometry.from_gml(bounded_gml_dom.toxml()).extent
-        feature['envelope_extent'] = envelope_extent
+        envelope = GEOSGeometry.from_gml(bounded_gml_dom.toxml())
+        feature['envelope_extent'] = envelope.extent
+        feature['envelope_centroid'] = envelope.centroid.coords
 
         return feature
 
