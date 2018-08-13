@@ -29,7 +29,6 @@ class BioRecordsForm(forms.ModelForm):
         layout = Layout(
             Fieldset(
                 form_title,
-                Field('site', css_class='form-control'),
                 Field('original_species_name', css_class='form-control'),
                 Field('category', css_class='form-control'),
                 Field('present', css_class='form-control'),
@@ -37,6 +36,7 @@ class BioRecordsForm(forms.ModelForm):
                 Field('collection_date', css_class='form-control'),
                 Field('notes', css_class='form-control'),
                 Field('taxon_gbif_id', css_class='form-control'),
+                Field('site', css_class='form-control'),
             )
         )
         self.helper.layout = layout

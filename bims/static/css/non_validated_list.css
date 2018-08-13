@@ -107,3 +107,8 @@ select {
     font-size: 20pt;
     line-height: 50px;
 }
+
+
+#map {
+    min-height: 500px;
+}

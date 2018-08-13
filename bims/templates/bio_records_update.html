@@ -78,6 +78,34 @@
                 featureProjection: 'EPSG:3857'
             });
             source.addFeatures(geojson_feature);
+
+            $('#id_site').on('change', function () {
+                var location_pk = $(this).val();
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/location-site/'+ location_pk +'/',
+                    success: function (data) {
+                        source.clear();
+                        var geometry_location = JSON.parse(data['geometry']);
+                        $('#type').val(geometry_location['type']).change();
+                        var geojsonObject2 = {
+                            'type': 'FeatureCollection',
+                            'features': [{
+                              'type': 'Feature',
+                              'geometry': {
+                                'type': geometry_location['type'],
+                                'coordinates': geometry_location['coordinates']
+                              }
+                            }]
+                        };
+                        var geojson_feature2 = geojson.readFeatures(geojsonObject2, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857'
+                        });
+                        source.addFeatures(geojson_feature2);
+                    }
+                })
+            })
         });
 
         $('#form').on('submit', function () {
