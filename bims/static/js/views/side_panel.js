@@ -59,14 +59,18 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         updateSidePanelTitle: function (title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');
             $rightPanelTitle.html(title);
+            $('.side-panel-info').css("padding-top", $('.right-panel-header').outerHeight());
         },
-        closeSidePanel: function (e) {
-            Shared.Dispatcher.trigger('searchResult:clicked', null);
-            Shared.Router.clearSearch();
+        closeSidePanelAnimation: function () {
             var self = this;
             this.rightPanel.hide('slide', {direction: 'right'}, 200, function () {
                 self.clearSidePanel();
             });
+        },
+        closeSidePanel: function (e) {
+            Shared.Dispatcher.trigger('searchResult:clicked', null);
+            Shared.Router.clearSearch();
+            this.closeSidePanelAnimation();
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {

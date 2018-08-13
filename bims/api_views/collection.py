@@ -5,9 +5,8 @@ from hashlib import md5
 import datetime
 import os
 import errno
-from django.contrib.gis.db.models import Extent
-from django.contrib.gis.geos import Polygon
-from django.db.models import Q
+from haystack.query import SearchQuerySet, SQ
+from django.contrib.gis.geos import MultiPoint, Point
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.conf import settings
 from rest_framework.response import Response
@@ -32,71 +31,99 @@ class GetCollectionAbstract(APIView):
     """
     Abstract class for getting collection
     """
+
     @staticmethod
     def apply_filter(request, ignore_bbox=False):
         # get records with same taxon
-        queryset = BiologicalCollectionRecord.objects.filter(
-            validated=True
-        )
         try:
             request_data = request.GET
         except AttributeError:
             request_data = request
 
+        sqs = SearchQuerySet()
+
+        query_value = request_data.get('search')
+        if query_value:
+            clean_query = sqs.query.clean(query_value)
+            settings.ELASTIC_MIN_SCORE = 1.5
+            results = sqs.filter(
+                original_species_name=clean_query
+            ).models(BiologicalCollectionRecord, Taxon).order_by('-_score')
+        else:
+            settings.ELASTIC_MIN_SCORE = 0
+            results = sqs.all().models(BiologicalCollectionRecord)
+
         taxon = request_data.get('taxon', None)
         if taxon:
-            try:
-                queryset = queryset.filter(
-                    taxon_gbif_id=Taxon.objects.get(pk=taxon)
-                )
-            except Taxon.DoesNotExist:
-                pass
+            results = sqs.filter(
+                taxon_gbif=taxon
+            ).models(BiologicalCollectionRecord)
 
-        search = request_data.get('search')
-        if search:
-            queryset = queryset.filter(
-                original_species_name__contains=search
-            )
-
+        results = results.filter(
+            validated=True
+        )
         # get by bbox
         if not ignore_bbox:
             bbox = request_data.get('bbox', None)
             if bbox:
-                geom_bbox = Polygon.from_bbox(
-                    tuple([float(edge) for edge in bbox.split(',')]))
-                queryset = queryset.filter(
-                    Q(site__geometry_point__intersects=geom_bbox) |
-                    Q(site__geometry_line__intersects=geom_bbox) |
-                    Q(site__geometry_polygon__intersects=geom_bbox) |
-                    Q(site__geometry_multipolygon__intersects=geom_bbox)
-                )
+                bbox_array = bbox.split(',')
+                downtown_bottom_left = Point(
+                    float(bbox_array[1]),
+                    float(bbox_array[0]))
+
+                downtown_top_right = Point(
+                    float(bbox_array[3]),
+                    float(bbox_array[2]))
+
+                results = results.within(
+                    'location_center',
+                    downtown_bottom_left,
+                    downtown_top_right)
 
         # additional filters
-        collector = request_data.get('collector')
-        if collector:
-            queryset = queryset.filter(collector=collector)
+        # query by collectors
+        query_collector = request_data.get('collector')
+        if query_collector:
+            qs_collector = SQ()
+            qs = json.loads(query_collector)
+            for query in qs:
+                qs_collector.add(SQ(collector=query), SQ.OR)
+            results = results.filter(qs_collector)
 
-        category = request_data.get('category')
-        if category:
-            queryset = queryset.filter(category=category)
+        # query by category
+        query_category = request_data.get('category')
+        if query_category:
+            qs_category = SQ()
+            qs = json.loads(query_category)
+            for query in qs:
+                qs_category.add(SQ(category=query), SQ.OR)
+            results = results.filter(qs_category)
 
+        # query by year from
         year_from = request_data.get('yearFrom')
         if year_from:
-            queryset = queryset.filter(
-                collection_date__year__gte=year_from)
+            clean_query_year_from = sqs.query.clean(year_from)
+            results = results.filter(
+                collection_date_year__gte=clean_query_year_from)
 
+        # query by year to
         year_to = request_data.get('yearTo')
         if year_to:
-            queryset = queryset.filter(
-                collection_date__year__lte=year_to)
+            clean_query_year_to = sqs.query.clean(year_to)
+            results = results.filter(
+                collection_date_year__lte=clean_query_year_to)
 
+        # query by months
         months = request_data.get('months')
         if months:
-            months = months.split(',')
-            months = [int(month) for month in months]
-            queryset = queryset.filter(
-                collection_date__month__in=months)
-        return queryset
+            qs = months.split(',')
+            qs_month = SQ()
+            for month in qs:
+                clean_query_month = sqs.query.clean(month)
+                qs_month.add(
+                    SQ(collection_date_month=clean_query_month), SQ.OR)
+            results = results.filter(qs_month)
+        return results
 
 
 class GetCollectionExtent(GetCollectionAbstract):
@@ -105,10 +132,14 @@ class GetCollectionExtent(GetCollectionAbstract):
     """
 
     def get(self, request, format=None):
-        queryset = self.apply_filter(request, ignore_bbox=True)
-        extent = queryset.aggregate(Extent('site__geometry_point'))
-        if extent['site__geometry_point__extent']:
-            return Response(extent['site__geometry_point__extent'])
+        results = self.apply_filter(request, ignore_bbox=True)
+        multipoint = MultiPoint([result.location_center for result in results])
+        if multipoint:
+            extents = multipoint.extent
+            extents = [
+                extents[1], extents[0], extents[3], extents[2]
+            ]
+            return Response(extents)
         else:
             return Response([])
 
@@ -138,10 +169,10 @@ class CollectionDownloader(GetCollectionAbstract):
         # Filename
         today_date = datetime.date.today()
         filename = md5(
-                '%s%s%s' % (
-                    json.dumps(self.request.GET),
-                    queryset.count(),
-                    today_date)
+            '%s%s%s' % (
+                json.dumps(self.request.GET),
+                queryset.count(),
+                today_date)
         ).hexdigest()
         filename += '.csv'
 
@@ -164,8 +195,8 @@ class CollectionDownloader(GetCollectionAbstract):
             })
 
         download_data_to_csv.delay(
-                path_file,
-                self.request.GET,
+            path_file,
+            self.request.GET,
         )
 
         return JsonResponse({
@@ -236,6 +267,7 @@ class ClusterCollection(GetCollectionAbstract):
         cluster_points = []
         for record in records:
             # get x,y of site
+            record = record.object
             x = record.site.geometry_point.x
             y = record.site.geometry_point.y
 
@@ -284,8 +316,8 @@ class ClusterCollection(GetCollectionAbstract):
                 'zoom : zoom level of map. '
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
-        queryset = self.apply_filter(request)
+        results = self.apply_filter(request)
         cluster = self.clustering_process(
-            queryset, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
+            results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])

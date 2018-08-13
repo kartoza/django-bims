@@ -63,47 +63,6 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-location context(bims.models.location_context.LocationContext)
---------------------------------------------------------------
-
-::
-
- LocationContext(id, context_document)
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - context document
-     - context_document
-     - text
-     - 
-     - 
-     - 
-     - 
-     -
-
-
-Options::
-
- default_permissions : (u'add', u'change', u'delete')
-
-
 boundary type(bims.models.boundary_type.BoundaryType)
 -----------------------------------------------------
 
@@ -386,14 +345,14 @@ location site(bims.models.location_site.LocationSite)
      - 
      - Both
      - 
-   * - location context
-     - location_context
-     - integer
+   * - Document for location context as JSON.
+     - location_context_document
+     - text
      - 
      - 
-     - True
+     - 
      - Both
-     - FK:bims.models.location_context.LocationContext
+     -
 
 
 Options::
@@ -784,7 +743,7 @@ biological collection record(bims.models.biological_collection_record.Biological
      - 
      - 
      - 
-   * - collector
+   * - collector or observer
      - collector
      - varchar(100)
      - 
@@ -829,6 +788,7 @@ biological collection record(bims.models.biological_collection_record.Biological
 Options::
 
  default_permissions : (u'add', u'change', u'delete')
+ permissions : (('can_upload_csv', 'Can upload CSV'), ('can_upload_shapefile', 'Can upload Shapefile'), ('can_validate_data', 'Can validate data'))
 
 
 profile(bims.models.profile.Profile)
@@ -1260,8 +1220,116 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Author(bims.models.bibliography.Author)
----------------------------------------
+non biodiversity layer(bims.models.non_biodiversity_layer.NonBiodiversityLayer)
+-------------------------------------------------------------------------------
+
+
+::
+
+ Non biodiversity layer model.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - name
+     - name
+     - varchar(100)
+     - 
+     - True
+     - 
+     - 
+     - 
+   * - wms url
+     - wms_url
+     - varchar(256)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - wms layer name
+     - wms_layer_name
+     - varchar(128)
+     - 
+     - 
+     - 
+     - 
+     - 
+   * - wms format
+     - wms_format
+     - varchar(64)
+     - 
+     - 
+     - 
+     - 
+     -
+
+
+Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+CSV Document(bims.models.csv_document.CSVDocument)
+--------------------------------------------------
+
+::
+
+ Csv document model
+    
+
+.. list-table::
+   :header-rows: 1
+
+   * - Fullname
+     - Name
+     - Type
+     - PK
+     - Unique
+     - Index
+     - Null/Blank
+     - Comment
+   * - ID
+     - id
+     - serial
+     - True
+     - True
+     - 
+     - Blank
+     - 
+   * - csv file
+     - csv_file
+     - varchar(100)
+     - 
+     - 
+     - 
+     - 
+     -
+
+
+Options::
+
+ default_permissions : (u'add', u'change', u'delete')
+
+
+Author(td_biblio.models.bibliography.Author)
+--------------------------------------------
 
 ::
 
@@ -1326,8 +1394,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Editor(bims.models.bibliography.Editor)
----------------------------------------
+Editor(td_biblio.models.bibliography.Editor)
+--------------------------------------------
 
 ::
 
@@ -1392,12 +1460,12 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Journal(bims.models.bibliography.Journal)
------------------------------------------
+Journal(td_biblio.models.bibliography.Journal)
+----------------------------------------------
 
 ::
 
- Peer reviewed journal
+ Non biodiversity layer model.
 
 .. list-table::
    :header-rows: 1
@@ -1418,16 +1486,8 @@ Journal(bims.models.bibliography.Journal)
      - 
      - Blank
      - 
-   * - Name
+   * - name
      - name
-     - varchar(150)
-     - 
-     - 
-     - 
-     - 
-     - 
-   * - Entity abbreviation
-     - abbreviation
      - varchar(100)
      - 
      - 
@@ -1441,8 +1501,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Publisher(bims.models.bibliography.Publisher)
----------------------------------------------
+Publisher(td_biblio.models.bibliography.Publisher)
+--------------------------------------------------
 
 ::
 
@@ -1465,21 +1525,19 @@ Publisher(bims.models.bibliography.Publisher)
      - True
      - True
      - 
-     - Blank
-     - 
-   * - Name
-     - name
-     - varchar(150)
      - 
      - 
+   * - wms url
+     - wms_url
+     - varchar(256)
      - 
      - 
      - 
-   * - Entity abbreviation
-     - abbreviation
-     - varchar(100)
      - 
      - 
+   * - wms layer name
+     - wms_layer_name
+     - varchar(128)
      - 
      - Blank
      -
@@ -1490,8 +1548,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-entry-editor relationship(bims.models.bibliography.Entry_editors)
------------------------------------------------------------------
+entry-editor relationship(td_biblio.models.bibliography.Entry_editors)
+----------------------------------------------------------------------
 
 ::
 
@@ -1514,34 +1572,31 @@ entry-editor relationship(bims.models.bibliography.Entry_editors)
      - True
      - True
      - 
-     - Blank
-     - 
-   * - entry
-     - entry
-     - integer
      - 
      - 
-     - True
      - 
-     - FK:bims.models.bibliography.Entry
+   * - wms format
+     - wms_format
+     - varchar(64)
+     - 
+
+     - FK:td_biblio.models.bibliography.Entry
    * - editor
      - editor
      - integer
      - 
      - 
-     - True
      - 
-     - FK:bims.models.bibliography.Editor
+     - FK:td_biblio.models.bibliography.Editor
 
 
 Options::
 
- unique_together : (('entry', u'editor'),)
  default_permissions : (u'add', u'change', u'delete')
 
 
-from_entry-to_entry relationship(bims.models.bibliography.Entry_crossref)
--------------------------------------------------------------------------
+from_entry-to_entry relationship(td_biblio.models.bibliography.Entry_crossref)
+------------------------------------------------------------------------------
 
 ::
 
@@ -1573,7 +1628,7 @@ from_entry-to_entry relationship(bims.models.bibliography.Entry_crossref)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Entry
+     - FK:td_biblio.models.bibliography.Entry
    * - to entry
      - to_entry
      - integer
@@ -1581,7 +1636,7 @@ from_entry-to_entry relationship(bims.models.bibliography.Entry_crossref)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Entry
+     - FK:td_biblio.models.bibliography.Entry
 
 
 Options::
@@ -1590,8 +1645,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Entry(bims.models.bibliography.Entry)
--------------------------------------
+Entry(td_biblio.models.bibliography.Entry)
+------------------------------------------
 
 ::
 
@@ -1661,7 +1716,7 @@ Entry(bims.models.bibliography.Entry)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Journal
+     - FK:td_biblio.models.bibliography.Journal
    * - Publication date
      - publication_date
      - date
@@ -1789,7 +1844,7 @@ Entry(bims.models.bibliography.Entry)
      - 
      - True
      - Both
-     - FK:bims.models.bibliography.Publisher
+     - FK:td_biblio.models.bibliography.Publisher
    * - Address
      - address
      - varchar(250)
@@ -1821,7 +1876,7 @@ Entry(bims.models.bibliography.Entry)
      - 
      - 
      - 
-     - M2M:bims.models.bibliography.Author (through: bims.models.bibliography.AuthorEntryRank)
+     - M2M:td_biblio.models.bibliography.Author (through: td_biblio.models.bibliography.AuthorEntryRank)
    * - editors
      - editors
      - 
@@ -1829,7 +1884,7 @@ Entry(bims.models.bibliography.Entry)
      - 
      - 
      - Blank
-     - M2M:bims.models.bibliography.Editor (through: bims.models.bibliography.Entry_editors)
+     - M2M:td_biblio.models.bibliography.Editor (through: td_biblio.models.bibliography.Entry_editors)
    * - crossref
      - crossref
      - 
@@ -1837,7 +1892,7 @@ Entry(bims.models.bibliography.Entry)
      - 
      - 
      - Blank
-     - M2M:bims.models.bibliography.Entry (through: bims.models.bibliography.Entry_crossref)
+     - M2M:td_biblio.models.bibliography.Entry (through: td_biblio.models.bibliography.Entry_crossref)
 
 
 Options::
@@ -1846,8 +1901,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-collection-entry relationship(bims.models.bibliography.Collection_entries)
---------------------------------------------------------------------------
+collection-entry relationship(td_biblio.models.bibliography.Collection_entries)
+-------------------------------------------------------------------------------
 
 ::
 
@@ -1879,7 +1934,7 @@ collection-entry relationship(bims.models.bibliography.Collection_entries)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Collection
+     - FK:td_biblio.models.bibliography.Collection
    * - entry
      - entry
      - integer
@@ -1887,7 +1942,7 @@ collection-entry relationship(bims.models.bibliography.Collection_entries)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Entry
+     - FK:td_biblio.models.bibliography.Entry
 
 
 Options::
@@ -1896,8 +1951,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Collection(bims.models.bibliography.Collection)
------------------------------------------------
+Collection(td_biblio.models.bibliography.Collection)
+----------------------------------------------------
 
 ::
 
@@ -1945,7 +2000,7 @@ Collection(bims.models.bibliography.Collection)
      - 
      - 
      - 
-     - M2M:bims.models.bibliography.Entry (through: bims.models.bibliography.Collection_entries)
+     - M2M:td_biblio.models.bibliography.Entry (through: td_biblio.models.bibliography.Collection_entries)
 
 
 Options::
@@ -1953,8 +2008,8 @@ Options::
  default_permissions : (u'add', u'change', u'delete')
 
 
-Author Entry Rank(bims.models.bibliography.AuthorEntryRank)
------------------------------------------------------------
+Author Entry Rank(td_biblio.models.bibliography.AuthorEntryRank)
+----------------------------------------------------------------
 
 ::
 
@@ -1986,7 +2041,7 @@ Author Entry Rank(bims.models.bibliography.AuthorEntryRank)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Author
+     - FK:td_biblio.models.bibliography.Author
    * - entry
      - entry
      - integer
@@ -1994,13 +2049,13 @@ Author Entry Rank(bims.models.bibliography.AuthorEntryRank)
      - 
      - True
      - 
-     - FK:bims.models.bibliography.Entry
+     - FK:td_biblio.models.bibliography.Entry
    * - Rank
      - rank
      - integer
      - 
      - 
-     - 
+     -
      - 
      -
 
@@ -2008,462 +2063,6 @@ Author Entry Rank(bims.models.bibliography.AuthorEntryRank)
 Options::
 
  ordering : ('rank',)
- default_permissions : (u'add', u'change', u'delete')
-
-
-non biodiversity layer(bims.models.non_biodiversity_layer.NonBiodiversityLayer)
--------------------------------------------------------------------------------
-
-::
-
- Non biodiversity layer model.
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - name
-     - name
-     - varchar(100)
-     - 
-     - True
-     - 
-     - 
-     - 
-   * - wms url
-     - wms_url
-     - varchar(256)
-     - 
-     - 
-     - 
-     - 
-     - 
-   * - wms layer name
-     - wms_layer_name
-     - varchar(128)
-     - 
-     - 
-     - 
-     - 
-     - 
-   * - wms format
-     - wms_format
-     - varchar(64)
-     - 
-     - 
-     - 
-     - 
-     -
-
-
-Options::
-
- default_permissions : (u'add', u'change', u'delete')
-
-
-CSV Document(bims.models.csv_document.CSVDocument)
---------------------------------------------------
-
-::
-
- Csv document model
-    
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - csv file
-     - csv_file
-     - varchar(100)
-     - 
-     - 
-     - 
-     - 
-     -
-
-
-Options::
-
- default_permissions : (u'add', u'change', u'delete')
-
-
-fish(fish.models.fish_collection_record.FishCollectionRecord)
--------------------------------------------------------------
-
-::
-
- First collection model.
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - site
-     - site
-     - integer
-     - 
-     - 
-     - True
-     - 
-     - FK:bims.models.location_site.LocationSite
-   * - original species name
-     - original_species_name
-     - varchar(100)
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - category
-     - category
-     - varchar(50)
-     - 
-     - 
-     - 
-     - Blank
-     - alien:Alien, indigenous:Indigenous, translocated:Translocated
-   * - present
-     - present
-     - boolean
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - absent
-     - absent
-     - boolean
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - collection date
-     - collection_date
-     - date
-     - 
-     - 
-     - 
-     - 
-     - 
-   * - collector
-     - collector
-     - varchar(100)
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - owner
-     - owner
-     - integer
-     - 
-     - 
-     - True
-     - Both
-     - FK:geonode.people.models.Profile
-   * - notes
-     - notes
-     - text
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - Taxon GBIF 
-     - taxon_gbif_id
-     - integer
-     - 
-     - 
-     - True
-     - Both
-     - FK:bims.models.taxon.Taxon
-   * - validated
-     - validated
-     - boolean
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - biologicalcollectionrecord ptr
-     - biologicalcollectionrecord_ptr
-     - integer
-     - True
-     - True
-     - True
-     - 
-     - FK:bims.models.biological_collection_record.BiologicalCollectionRecord
-   * - habitat
-     - habitat
-     - varchar(50)
-     - 
-     - 
-     - 
-     - Blank
-     - euryhaline:Euryhaline, freshwater:Freshwater
-
-
-Options::
-
- default_permissions : (u'add', u'change', u'delete')
-
-
-CSV Document(fish.models.csv_document.CSVDocument)
---------------------------------------------------
-
-::
-
- Csv document model
-    
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - csv file
-     - csv_file
-     - varchar(100)
-     - 
-     - 
-     - 
-     - 
-     -
-
-
-Options::
-
- default_permissions : (u'add', u'change', u'delete')
-
-
-reptile(reptile.models.reptile_collection_record.ReptileCollectionRecord)
--------------------------------------------------------------------------
-
-::
-
- First collection model.
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - site
-     - site
-     - integer
-     - 
-     - 
-     - True
-     - 
-     - FK:bims.models.location_site.LocationSite
-   * - original species name
-     - original_species_name
-     - varchar(100)
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - category
-     - category
-     - varchar(50)
-     - 
-     - 
-     - 
-     - Blank
-     - alien:Alien, indigenous:Indigenous, translocated:Translocated
-   * - present
-     - present
-     - boolean
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - absent
-     - absent
-     - boolean
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - collection date
-     - collection_date
-     - date
-     - 
-     - 
-     - 
-     - 
-     - 
-   * - collector
-     - collector
-     - varchar(100)
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - owner
-     - owner
-     - integer
-     - 
-     - 
-     - True
-     - Both
-     - FK:geonode.people.models.Profile
-   * - notes
-     - notes
-     - text
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - Taxon GBIF 
-     - taxon_gbif_id
-     - integer
-     - 
-     - 
-     - True
-     - Both
-     - FK:bims.models.taxon.Taxon
-   * - validated
-     - validated
-     - boolean
-     - 
-     - 
-     - 
-     - Blank
-     - 
-   * - biologicalcollectionrecord ptr
-     - biologicalcollectionrecord_ptr
-     - integer
-     - True
-     - True
-     - True
-     - 
-     - FK:bims.models.biological_collection_record.BiologicalCollectionRecord
-
-
-Options::
-
- default_permissions : (u'add', u'change', u'delete')
-
-
-CSV Document(reptile.models.csv_document.CSVDocument)
------------------------------------------------------
-
-::
-
- Csv document model
-    
-
-.. list-table::
-   :header-rows: 1
-
-   * - Fullname
-     - Name
-     - Type
-     - PK
-     - Unique
-     - Index
-     - Null/Blank
-     - Comment
-   * - ID
-     - id
-     - serial
-     - True
-     - True
-     - 
-     - Blank
-     - 
-   * - csv file
-     - csv_file
-     - varchar(100)
-     - 
-     - 
-     - 
-     - 
-     -
-
-
-Options::
 
  default_permissions : (u'add', u'change', u'delete')
 

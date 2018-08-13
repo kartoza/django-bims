@@ -5,6 +5,8 @@ from haystack import indexes
 
 
 class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
+    model_pk = indexes.IntegerField(model_attr='pk')
+    id = indexes.CharField()
     text = indexes.CharField(document=True, use_template=True)
 
     original_species_name = indexes.NgramField(
@@ -23,7 +25,8 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     )
 
     collection_date_month = indexes.IntegerField(
-        model_attr='collection_date__month'
+        model_attr='collection_date__month',
+        indexed=True
     )
 
     category = indexes.CharField(
@@ -58,12 +61,30 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         model_attr='site__name'
     )
 
-    id = indexes.CharField()
+    location_site_id = indexes.CharField(
+        model_attr='site__id'
+    )
 
-    def prepare_id(self, obj):
-        if obj.pk:
-            return obj.pk
-        return ''
+    location_center = indexes.LocationField()
+
+    taxon_gbif = indexes.IntegerField(indexed=True)
+
+    taxon_gbif_not_null = indexes.BooleanField(indexed=True)
+
+    def prepare_taxon_gbif(self, obj):
+        if obj.taxon_gbif_id:
+            return obj.taxon_gbif_id.id
+        return 0
+
+    def prepare_taxon_gbif_not_null(self, obj):
+        if obj.taxon_gbif_id:
+            return True
+        return False
+
+    def prepare_location_center(self, obj):
+        if obj.site:
+            return '%s,%s' % obj.site.get_centroid().coords
+        return '0,0'
 
     class Meta:
         app_label = 'bims'
