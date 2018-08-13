@@ -361,11 +361,13 @@ def create_pdf(pathname, current_site):
 
     page.showPage()
     # --------------------------------------
-
+    species = Taxon.objects.all()
+    species_list = list(species)
+    species_total = Taxon.objects.all().count()
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left + 5, margin_bottom - 10,
                     'PLACE FOCUSED DETAILS(Showing the first 50 '
-                    'results)')
+                    'results of %s)' % (species_total))
 
     page.setFont('Helvetica-Bold', 12)
     page.drawString(margin_left + 5, margin_bottom - 40,
@@ -389,9 +391,6 @@ def create_pdf(pathname, current_site):
 
     specie_left_margin = margin_left + 5
     specie_bottom_margin = margin_bottom - 60
-
-    species = Taxon.objects.all()
-    species_list = list(species)
 
     for taxa in species_list[:50]:
         page.setFont('Helvetica', 8)
