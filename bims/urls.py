@@ -42,6 +42,7 @@ from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
 from bims.api_views.send_notification_to_validator import \
     SendNotificationValidation
+from bims.views.locate import filter_farm_ids_view, get_farm_view
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -78,6 +79,10 @@ api_urls = [
         GetBioRecords.as_view(), name='get-bio-object'),
     url(r'^api/send-email-validation/$',
         SendNotificationValidation.as_view(), name='send-email-validation')
+    url(r'^api/filter-farm-id/$',
+        filter_farm_ids_view, name='filter-farm-id'),
+    url(r'^api/get-farm/(?P<farm_id>[\w-]+)/$',
+        get_farm_view, name='get-farm'),
 ]
 
 
