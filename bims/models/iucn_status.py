@@ -5,6 +5,7 @@
 
 from django.db import models
 from django.dispatch import receiver
+from colorfield.fields import ColorField
 
 SENSITIVE_STATUS = ['CR', 'EN', 'VU']
 
@@ -30,6 +31,7 @@ class IUCNStatus(models.Model):
     sensitive = models.BooleanField(
         default=False
     )
+    colour = ColorField(default='#009106')
 
     def get_status(self):
         """"Return status name."""

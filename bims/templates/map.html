@@ -64,31 +64,18 @@
 
     <script type='text/html' id='side-panel-template'>
         <div class="right-panel">
-            <div class="right-panel-header">
-                <div class="pull-right">
-                    <i class="fa fa-times close-panel"></i>
-                </div>
-                <div class="row">
-                    <div class="col-lg-10">
-                        <span class="title-side-panel">Search Results:</span> <br><span class="right-panel-title"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="search-result-info">
-                Select an item to find more detailed information.
-            </div>
             <div class="row side-panel side-panel-info">
                 <div class="col-lg-12" id="content-panel">
                 </div>
             </div>
-            <div class="row side-panel panel-loading">
-                <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
-            </div>
-            <div class="row side-panel panel-icons">
-            </div>
-            <div id="geocontext-information-container" class="row side-panel">
-                <img src="{% static "img/small-loading.svg" %}" alt="Loading view">
-                <div class="content">
+            <div class="right-panel-header">
+                <div class="pull-right" style="padding-top: 5px;">
+                    <i class="fa fa-times close-panel"></i>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <span class="right-panel-title"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -444,6 +431,27 @@
         <div class="result-search" data-search-result-id="">
             <p class="group-title"><%= name %></p>
             <a class="group-description"><%= count %> records found</a>
+        </div>
+    </script>
+    <script type="text/template" id="species-template">
+        <div class="content">
+            <div class="iucn-status"><span class="name"><%= iucn_status_name %></span><span class="full-name"><%= iucn_status_full_name %></span></div>
+            <div class="species-count"><b><%= count %></b><br> records</div>
+            <div class="taxonomy-system">
+                <%= kingdom %><br>
+                <i class="fa fa-arrow-down"></i><br>
+                <%= phylum %><br>
+                <i class="fa fa-arrow-down"></i><br>
+                <%= taxon_class %><br>
+                <i class="fa fa-arrow-down"></i><br>
+                <%= order %><br>
+                <i class="fa fa-arrow-down"></i><br>
+                <%= family %><br>
+                <i class="fa fa-arrow-down"></i><br>
+                <%= genus %><br>
+                <i class="fa fa-arrow-down"></i><br>
+                <%= species %>
+            </div>
         </div>
     </script>
 

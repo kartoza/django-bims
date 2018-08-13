@@ -47,6 +47,7 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
                 $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName +
                     ' <i class="fa fa-times" style="color: red"></i> ');
                 $('#taxon-filter .fa-times').click(function () {
+                    Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
                     self.parameters['taxon'] = null;
                     self.toggleTaxonIndicator('');
                     self.getExtentOfRecords();
@@ -72,7 +73,6 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         },
         getExtentOfRecords: function () {
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
-            Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             var self = this;
             if (this.isActive()) {
                 var extentUrl = '/api/collection/extent/' + this.apiParameters(this.parameters);

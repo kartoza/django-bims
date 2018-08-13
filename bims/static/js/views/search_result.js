@@ -14,6 +14,10 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
                     this.model.get('id'),
                     this.model.get('species')
                 );
+                Shared.Dispatcher.trigger('taxonDetail:show',
+                    this.model.get('id'),
+                    this.model.get('species')
+                );
             } else if (this.getResultType() === 'site') {
                 Shared.Dispatcher.trigger('siteDetail:show',
                     this.model.get('id'), this.model.get('name'));
