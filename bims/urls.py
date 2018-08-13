@@ -78,7 +78,7 @@ api_urls = [
     url(r'^api/get-bio-object/$',
         GetBioRecords.as_view(), name='get-bio-object'),
     url(r'^api/send-email-validation/$',
-        SendNotificationValidation.as_view(), name='send-email-validation')
+        SendNotificationValidation.as_view(), name='send-email-validation'),
     url(r'^api/filter-farm-id/$',
         filter_farm_ids_view, name='filter-farm-id'),
     url(r'^api/get-farm/(?P<farm_id>[\w-]+)/$',
