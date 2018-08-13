@@ -30,7 +30,7 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                     source: filterFarmIDUrl,
                     minLength: 3
                 });
-                $("#farm-id").autocomplete( "option", "appendTo", ".form-inline" );
+                $("#farm-id").autocomplete( "option", "appendTo", "#locate-form" );
             }
         },
         closeModal: function () {
