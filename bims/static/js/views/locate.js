@@ -26,11 +26,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
 
             // Activate autocomplete for search by farm ID
             if (this.activeForm === '.farm-form'){
-                console.log('Activate autocomplete');
                 $('#farm-id').autocomplete({
                     source: filterFarmIDUrl,
                     minLength: 3
                 });
+                $("#farm-id").autocomplete( "option", "appendTo", ".form-inline" );
             }
         },
         closeModal: function () {
@@ -41,7 +41,6 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
               this.searchCoordinate(e)
           }else {
               var farmID = $('#farm-id').val();
-              console.log('Search by Farm ID: ' + farmID);
               this.searchFarmID(farmID);
           }
         },
@@ -80,7 +79,7 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 },
                 error: function (req, err) {
                     console.log(err);
-                    alert('Not able to zoom to farm ID: ' + farmID);
+                    alert('Not able to zoom to farm ID: ' + farmID + ' because of ' + err);
                 }
             });
         }
