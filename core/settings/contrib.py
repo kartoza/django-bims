@@ -36,6 +36,7 @@ AUTHENTICATION_BACKENDS = (
 # Django grappelli need to be added before django.contrib.admin
 INSTALLED_APPS = (
     'grappelli',
+    'colorfield',
 ) + INSTALLED_APPS
 
 # Grapelli settings

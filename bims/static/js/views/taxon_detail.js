@@ -53,9 +53,9 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 success: function (data) {
                     // render taxon detail
                     $('#species-detail').append(self.renderDetail(data));
-                    if (data.iucn_status_sensitive) {
-                        $('#species-detail .iucn-status').addClass('danger');
-                    }
+                    $('#species-detail .iucn-status .name').css('background-color', data.iucn_status_colour);
+                    $('#species-detail .iucn-status .full-name').css('color', data.iucn_status_colour);
+                    $('#species-detail .iucn-status .full-name').css('border-color', data.iucn_status_colour);
                     if (data.iucn_status_name == null) {
                         $('#species-detail .iucn-status').hide();
                     }

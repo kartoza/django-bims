@@ -83,7 +83,13 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
-    list_display = ('get_category_display', 'sensitive')
+    list_display = ('get_category_display', 'sensitive', 'iucn_colour')
+
+    def iucn_colour(self, obj):
+        return '<div style="background:%s; ' \
+               'width: 50px; height: 15px;"></div>' % obj.colour
+
+    iucn_colour.allow_tags = True
 
 
 class TaxonAdmin(admin.ModelAdmin):

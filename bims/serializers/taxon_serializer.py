@@ -10,6 +10,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_sensitive = serializers.SerializerMethodField()
     iucn_status_name = serializers.SerializerMethodField()
     iucn_status_full_name = serializers.SerializerMethodField()
+    iucn_status_colour = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
 
     def get_record_type(self, obj):
@@ -33,6 +34,12 @@ class TaxonSerializer(serializers.ModelSerializer):
                 if value[0] == obj.iucn_status.category:
                     return value[1]
             return None
+        else:
+            return None
+
+    def get_iucn_status_colour(self, obj):
+        if obj.iucn_status:
+            return obj.iucn_status.colour
         else:
             return None
 
