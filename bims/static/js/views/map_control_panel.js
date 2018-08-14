@@ -111,8 +111,9 @@ define(
             },
             closeSubFilter: function (e) {
                 var target = $(e.target);
-                target.parent().next().toggle();
-                target.children('.filter-icon-arrow').toggle();
+                var $wrapper = target.closest('.sub-filter');
+                $wrapper.next().toggle();
+                $wrapper.find('.filter-icon-arrow').toggle();
             },
             openFilterPanel: function () {
                 this.$el.find('.filter-control').addClass('control-panel-selected');

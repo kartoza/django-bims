@@ -70,6 +70,16 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     taxon_gbif = indexes.IntegerField(indexed=True)
 
     taxon_gbif_not_null = indexes.BooleanField(indexed=True)
+    
+    taxon_common_name = indexes.CharField(
+        model_attr='taxon_gbif_id__common_name',
+        indexed=True
+    )
+
+    taxon_scientific_name = indexes.CharField(
+        model_attr='taxon_gbif_id__scientific_name',
+        indexed=True
+    )
 
     def prepare_taxon_gbif(self, obj):
         if obj.taxon_gbif_id:
