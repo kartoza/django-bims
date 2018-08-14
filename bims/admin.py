@@ -78,8 +78,54 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     search_fields = ('name',)
     list_filter = (HasLocationContextDocument,)
 
+    actions = ['update_location_context', 'delete_location_context']
+
     def has_location_context(self, obj):
         return bool(obj.location_context_document)
+
+    def update_location_context(self, request, queryset):
+        """Action method to update selected location contexts."""
+        rows_updated = 0
+        rows_failed = 0
+        error_message = ''
+        for location_site in queryset:
+            success, message = location_site.update_location_context_document()
+            if success:
+                rows_updated += 1
+                location_site.save()
+            else:
+                rows_failed += 1
+                error_message += (
+                    'Failed to update site [%s] because [%s]\n') % (
+                    location_site.name, message)
+
+        if rows_updated == 1:
+            message_bit = "1 location context"
+        else:
+            message_bit = "%s location contexts" % rows_updated
+        full_message = "%s successfully updated." % message_bit
+
+        if rows_failed > 0:
+            error_message_bit = 'There are %s not updated site.' % rows_failed
+            error_message_bit += '\n' + error_message
+            full_message += '\n' + error_message_bit
+
+        self.message_user(request, full_message)
+
+    def delete_location_context(self, request, queryset):
+        """Action method to delete selected location contexts."""
+        rows_updated = queryset.update(location_context_document='')
+        if rows_updated == 1:
+            message_bit = "1 location context"
+        else:
+            message_bit = "%s location contexts" % rows_updated
+        self.message_user(request, "%s successfully deleted." % message_bit)
+
+    update_location_context.short_description = (
+        'Update the selected location context documents.')
+
+    delete_location_context.short_description = (
+        'Delete the selected location context documents.')
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
