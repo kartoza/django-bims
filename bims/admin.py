@@ -92,6 +92,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def update_location_context(self, request, queryset):
         """Action method to update selected location contexts."""
+        if len(queryset) > 5:
+            message = 'You can not update for more than 5 location site.'
+            self.message_user(request, message)
+            return
         rows_updated = 0
         rows_failed = 0
         error_message = ''
