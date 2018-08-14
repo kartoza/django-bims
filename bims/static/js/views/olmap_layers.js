@@ -11,13 +11,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         initialize: function () {
             this.layerStyle = new LayerStyle();
         },
-        isBiodiversityLayerShow: function () {
-            var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length === 0) {
-                return true
-            }
-            return $checkbox.is(':checked');
-        },
         initLayer: function (layer, layerName, visibleInDefault) {
             this.layers[layerName] = {
                 'layer': layer,
@@ -27,7 +20,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layer.setVisible(false);
             }
         },
-        addBiodiveristyLayersToMap: function (map) {
+        addBiodiversityLayersToMap: function (map) {
             var self = this;
 
             // ---------------------------------
@@ -97,16 +90,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
 
                     // add Administrative boundary
                     self.renderAdministrativeLayer(data);
-                    self.addBiodiveristyLayersToMap(map);
+                    self.addBiodiversityLayersToMap(map);
                 },
                 error: function (err) {
-                    self.addBiodiveristyLayersToMap(map);
+                    self.addBiodiversityLayersToMap(map);
                 }
             });
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length == 0) {
+            if ($checkbox.length === 0) {
                 return true
             }
             return $checkbox.is(':checked');
