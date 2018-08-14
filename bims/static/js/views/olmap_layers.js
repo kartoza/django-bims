@@ -9,13 +9,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         initialize: function () {
             this.layerStyle = new LayerStyle();
         },
-        isBiodiversityLayerShow: function () {
-            var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length === 0) {
-                return true
-            }
-            return $checkbox.is(':checked');
-        },
         initLayer: function (layer, layerName, visibleInDefault) {
             this.layers[layerName] = {
                 'layer': layer,
@@ -25,7 +18,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layer.setVisible(false);
             }
         },
-        addBiodiveristyLayersToMap: function (map) {
+        addBiodiversityLayersToMap: function (map) {
             var self = this;
 
             // ---------------------------------
@@ -63,43 +56,47 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var self = this;
             this.map = map;
 
+            // Adding layer from GeoNode, filtering is done by the API
+            var default_wms_url =  ogcServerDefaultLocation + 'wms';
+            var default_wms_format = 'image/png';
             $.ajax({
                 type: 'GET',
-                url: listNonBiodiversityLayerAPIUrl,
+                url: '/api/layers',
                 dataType: 'json',
                 success: function (data) {
-                    $.each(data.reverse(), function (index, value) {
+                    console.log('Number of layer: ' + data['objects'].length);
+                    $.each(data['objects'].reverse(), function (index, value) {
                         var options = {
-                            url: value.wms_url,
+                            url: default_wms_url,
                             params: {
-                                layers: value.wms_layer_name,
-                                format: value.wms_format
+                                layers: value.typename,
+                                format: default_wms_format
                             }
                         };
                         self.initLayer(
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, false
+                            value.title, false
                         );
                         self.renderLegend(
-                            value.name,
+                            value.title,
                             options['url'],
                             options['params']['layers'],
                             false
                         );
                     });
-
                     self.addBiodiveristyLayersToMap(map);
                 },
                 error: function (err) {
-                    self.addBiodiveristyLayersToMap(map);
+                    console.log('Error: ' + err);
+                    self.addBiodiversityLayersToMap(map);
                 }
             });
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length == 0) {
+            if ($checkbox.length === 0) {
                 return true
             }
             return $checkbox.is(':checked');

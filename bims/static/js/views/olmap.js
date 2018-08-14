@@ -118,10 +118,8 @@ define([
                     poiFound = featuresClickedResponseData[0];
                     featuresData = featuresClickedResponseData[1];
 
-                    if (poiFound) {
-                        var coordinates = geometry.getCoordinates();
-                        self.zoomToCoordinates(coordinates);
-                    }
+                    var coordinates = geometry.getCoordinates();
+                    self.zoomToCoordinates(coordinates);
                     // increase zoom level if it is clusters
                     if (features[0].getProperties()['count'] &&
                         features[0].getProperties()['count'] > 1) {
