@@ -26,19 +26,20 @@ class Command(BaseCommand):
                 "features": []
             }
             for query in queryset:
-                geojson['features'].append(
-                    {
-                        "id": query.id,
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "MultiPolygon",
-                            "coordinates": query.geometry.coords,
-                        },
-                        "properties": {
-                            "name": query.name,
+                if query.geometry:
+                    geojson['features'].append(
+                        {
+                            "id": query.id,
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "MultiPolygon",
+                                "coordinates": query.geometry.coords,
+                            },
+                            "properties": {
+                                "name": query.name,
+                            }
                         }
-                    }
-                )
+                    )
 
             file_name = os.path.join(
                 directory, '%s.geojson' % boundary_type.name

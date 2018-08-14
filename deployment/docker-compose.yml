@@ -82,6 +82,7 @@ services:
       - db:db
       - elasticsearch:elasticsearch
       - geoserver:geoserver
+      - worker:worker
     volumes:
       - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
     restart: unless-stopped
@@ -99,7 +100,7 @@ services:
       - DATABASE_USERNAME=docker
       - DATABASE_PASSWORD=docker
       - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_worker
       - VIRTUAL_HOST=bims.kartoza.com
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq
@@ -113,6 +114,7 @@ services:
       - elasticsearch:elasticsearch
       - geoserver:geoserver
       - rabbitmq:rabbitmq
+      - cache:cache
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
@@ -155,3 +157,9 @@ services:
       - USER=rabbit_user
       - RABBITMQ_NODENAME=rabbit
     restart: unless-stopped
+
+  cache:
+   image: memcached
+   entrypoint:
+    - memcached
+    - -m 64

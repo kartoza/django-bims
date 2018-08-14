@@ -17,6 +17,15 @@
     <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Alegreya:400,400i,500,500i,700,700i|Roboto+Condensed:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
 
+    <!-- Global Site Tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALYTIC_KEY }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ GOOGLE_ANALYTIC_KEY }}');
+    </script>
+
     {% block head %} {% endblock %}
 
 </head>
@@ -70,7 +79,7 @@
                     </div>
                      {% if user.is_authenticated %}
                         <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="/profile/">PROFILE</a></li>
-                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/upload/">UPLOAD DATA</a></li>
+                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="{% block upload_data_url %}/upload/{% endblock %}">UPLOAD DATA</a></li>
                          {% if user.is_staff or user.is_superuser %}
                             <li><a class="nav-link js-scroll-trigger" href="/admin/">ADMINISTRATION</a></li>
                          {% endif %}

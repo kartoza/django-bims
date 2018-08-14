@@ -4,8 +4,8 @@ from celery import Celery
 
 app = Celery('bims')
 
-app.config_from_object('django.conf:settings')
-app.autodiscover_tasks(['bims', ])
+app.config_from_object('django.conf:settings', namespace="CELERY")
+app.autodiscover_tasks()
 
 
 @app.task(bind=True)

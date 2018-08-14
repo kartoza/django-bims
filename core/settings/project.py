@@ -14,8 +14,6 @@ from .contrib import *  # noqa
 INSTALLED_APPS += (
     'bims',
     'td_biblio',
-    'fish',
-    'reptile',
 )
 
 # Set languages which want to be translated
@@ -59,3 +57,19 @@ GRUNT_MODULES = {
 }
 
 TEMP_FOLDER = MEDIA_ROOT + '/temp'
+
+# Saving geometry of country in focused countries
+FOCUSED_COUNTRIES = ["South Africa"]
+
+# Geometry used for others
+# Turn off if it is not used (like showing on map)
+# If it is not used, geometry that saved is just municipals
+# Because of calculating cluster is just for municipals
+USE_GEOMETRY_BOUNDARY = False
+
+# TODO(IS) Update unit test to be independent with this setting.
+# Farm ID GeoServer Layer
+FARM_GEOSERVER_URL = 'http://maps.kartoza.com/geoserver/wfs'
+FARM_WORKSPACE = 'kartoza'
+FARM_LAYER_NAME = 'farm_portion'
+FARM_ID_COLUMN = 'id'

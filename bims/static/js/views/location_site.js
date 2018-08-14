@@ -5,30 +5,15 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
             this.render();
         },
         clicked: function () {
-            var self = this;
-            var properties = this.model.attributes['properties'];
-            Shared.Dispatcher.trigger('sidePanel:openSidePanel', properties);
-            if (Shared.LocationSiteDetailXHRRequest) {
-                Shared.LocationSiteDetailXHRRequest.abort();
-                Shared.LocationSiteDetailXHRRequest = null;
-            }
-            Shared.LocationSiteDetailXHRRequest = $.get({
-                url: this.model.url,
-                dataType: 'json',
-                success: function (data) {
-                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelDetail', data);
-                    Shared.LocationSiteDetailXHRRequest = null;
-                },
-                error: function (req, err) {
-                    self.loadSuccess();
-                }
-            });
+            Shared.Dispatcher.trigger(
+                'siteDetail:show', this.id, this.name);
         },
         render: function () {
             var modelJson = this.model.toJSON();
             var properties = this.model.attributes['properties'];
             this.id = this.model.attributes['properties']['id'];
-            this.model.set('id', this.id)
+            this.name = this.model.attributes['properties']['name'];
+            this.model.set('id', this.id);
             if (!this.model.attributes['properties']['count']) {
                 Shared.Dispatcher.on('locationSite-' + this.id + ':clicked', this.clicked, this);
             }

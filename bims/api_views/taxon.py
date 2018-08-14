@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from bims.models.taxon import Taxon
 from bims.serializers.taxon_serializer import \
     TaxonSerializer
+from bims.models.biological_collection_record import \
+    BiologicalCollectionRecord
 
 
 class TaxonDetail(APIView):
@@ -21,4 +23,10 @@ class TaxonDetail(APIView):
     def get(self, request, pk, format=None):
         taxon = self.get_object(pk)
         serializer = TaxonSerializer(taxon)
-        return Response(serializer.data)
+        data = serializer.data
+
+        records = BiologicalCollectionRecord.objects.filter(
+            taxon_gbif_id=taxon
+        )
+        data['count'] = records.count()
+        return Response(data)

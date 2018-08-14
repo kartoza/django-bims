@@ -7,18 +7,17 @@ define([
     'collections/cluster_biological',
     'views/map_control_panel',
     'views/side_panel',
-    'views/boundary',
     'ol',
     'jquery',
     'layerSwitcher',
     'views/olmap_basemap',
     'views/olmap_layers',
-    'views/geocontext'
-    ], function (
-        Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
-        ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-        BoundaryView, ol, $, LayerSwitcher, Basemap, Layers, Geocontext
-        ) {
+    'views/geocontext',
+    'views/location_site_detail',
+    'views/taxon_detail'
+], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
+             ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail, TaxonDetail) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -44,18 +43,19 @@ define([
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             this.layers = new Layers();
-            this.boundaryView = new BoundaryView();
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
+            new LocationSiteDetail();
+            new TaxonDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
-            Shared.Dispatcher.on('map:updateAdministrativeBoundary', this.updateAdministrativeBoundaryFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
+            Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
@@ -79,61 +79,77 @@ define([
             })
         },
         zoomToCoordinates: function (coordinates, zoomLevel) {
+            this.previousZoom = this.getCurrentZoom();
             this.map.getView().setCenter(coordinates);
             if (typeof zoomLevel !== 'undefined') {
                 this.map.getView().setZoom(zoomLevel);
             }
         },
         zoomToExtent: function (coordinates) {
+            this.previousZoom = this.getCurrentZoom();
             var ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [
                     0, $('.right-panel').width(), 0, 0
                 ]
             });
+            this.map.getView().setZoom(this.getCurrentZoom());
+            if (this.getCurrentZoom() > 18) {
+                this.map.getView().setZoom(18);
+            }
         },
         mapClicked: function (e) {
             var self = this;
             var features = self.map.getFeaturesAtPixel(e.pixel);
             this.layers.highlightVectorSource.clear();
             this.hidePopup();
+
             // Point of interest flag
-            var pointFound = false;
+            var featuresClickedResponseData = [];
+            var poiFound = false;
+            var featuresData = '';
 
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
-                if (geometryType === 'Point') {
-                    pointFound = self.featureClicked(features[0]);
-                    if(pointFound) {
-                        var coordinates = geometry.getCoordinates();
-                        self.zoomToCoordinates(coordinates);
 
-                        // increase zoom level if it is clusters
-                        if (features[0].getProperties()['count'] &&
-                            features[0].getProperties()['count'] > 1) {
-                            self.map.getView().setZoom(self.getCurrentZoom() + 1);
-                        }
+                if (geometryType === 'Point') {
+                    featuresClickedResponseData = self.featureClicked(features[0], self.uploadDataState);
+                    poiFound = featuresClickedResponseData[0];
+                    featuresData = featuresClickedResponseData[1];
+
+                    var coordinates = geometry.getCoordinates();
+                    self.zoomToCoordinates(coordinates);
+                    // increase zoom level if it is clusters
+                    if (features[0].getProperties()['count'] &&
+                        features[0].getProperties()['count'] > 1) {
+                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                        poiFound = true;
                     }
                 }
             }
 
-            if (self.uploadDataState && !pointFound) {
+            if (self.uploadDataState && !poiFound) {
                 // Get lat and long map
                 var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
                 var lon = lonlat[0];
                 var lat = lonlat[1];
-                self.mapControlPanel.showUploadDataModal(lon, lat);
+                self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
             }
 
             // Close opened control panel
             this.mapControlPanel.closeSearchPanel();
         },
-        featureClicked: function (feature) {
+        featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
-            if(!properties.hasOwnProperty('record_type')) {
-                return false;
+            if (!properties.hasOwnProperty('record_type')) {
+                return [false, ''];
             }
+
+            if (uploadDataState) {
+                return [false, feature];
+            }
+
             if (properties['record_type'] === 'site') {
                 Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
 
@@ -147,7 +163,7 @@ define([
             if (this.layers.layerStyle.isIndividialCluster(feature)) {
                 this.addHighlightFeature(feature);
             }
-            return true;
+            return [true, properties];
         },
         hidePopup: function () {
             this.popup.setPosition(undefined);
@@ -222,14 +238,13 @@ define([
                 view: new ol.View({
                     center: ol.proj.fromLonLat(center),
                     zoom: 7,
-                    minZoom: 7,
+                    minZoom: 5,
                     extent: [579700.2488501729, -4540000.22437294, 5275991.266691402, -2101353.2739626765]
                 }),
                 controls: ol.control.defaults({
                     zoom: false
                 }).extend([mousePositionControl])
             });
-            this.initExtent = this.getCurrentBbox();
 
             // Create a popup overlay which will be used to display feature info
             this.popup = new ol.Overlay({
@@ -240,6 +255,7 @@ define([
             this.map.addOverlay(this.popup);
             this.layers.addLayersToMap(this.map);
             this.startOnHoverListener();
+            this.initExtent = this.getCurrentBbox();
         },
         reloadXHR: function () {
             this.previousZoom = -1;
@@ -312,8 +328,7 @@ define([
                     }
                     this.fetchingReset();
                     // generate boundary
-                    this.boundaryView.renderAdministrativeBoundary(
-                        administrative, this.getCurrentBbox());
+                    this.layers.changeLayerAdministrative(administrative);
 
                     // if layer is shows
                     if (!this.layers.isBiodiversityLayerShow()) {
@@ -375,7 +390,7 @@ define([
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
             this.closeHighlight();
-            if (!this.sidePanelView.isSidePanelOpen()) {
+            if (!this.sidePanelView.isSidePanelOpen() && !this.mapControlPanel.searchView.searchPanel.isPanelOpen()) {
                 return
             }
             this.clusterBiologicalCollection.updateTaxon(taxonID, taxonName);
@@ -394,22 +409,31 @@ define([
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
         },
+        switchHighlight: function (features) {
+            this.closeHighlight();
+            this.addHighlightFeature(features[0]);
+            var extent = this.layers.highlightVectorSource.getExtent();
+            this.map.getView().fit(extent, {
+                size: this.map.getSize(), padding: [
+                    0, $('.right-panel').width(), 0, 0
+                ]
+            });
+        },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
         },
-        updateAdministrativeBoundaryFeatures: function (features) {
-            this.layers.administrativeBoundarySource.addFeatures(features);
-        },
         closeHighlight: function () {
             this.hidePopup();
-            this.layers.highlightVectorSource.clear();
+            if (this.layers.highlightVectorSource) {
+                this.layers.highlightVectorSource.clear();
+            }
         },
         startOnHoverListener: function () {
             var that = this;
             this.pointerMoveListener = this.map.on('pointermove', function (e) {
                 var pixel = that.map.getEventPixel(e.originalEvent);
                 var hit = that.map.hasFeatureAtPixel(pixel);
-                if(that.uploadDataState) {
+                if (that.uploadDataState) {
                     $('#' + that.map.getTarget()).find('canvas').css('cursor', 'pointer');
                 } else if (hit) {
                     that.map.forEachFeatureAtPixel(pixel,

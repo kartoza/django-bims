@@ -10,8 +10,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             // Events
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
-            Shared.Dispatcher.on('sidePanel:updateSidePanelDetail', this.updateSidePanelDetail, this);
+            Shared.Dispatcher.on('sidePanel:updateSidePanelHtml', this.updateSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
+            Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
             Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
         },
         render: function () {
@@ -39,45 +40,18 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
                 }
             }
         },
-        updateSidePanelDetail: function (data, sidePanelDataType) {
-            $('.panel-icons').html('');
-            this.$el.find('.panel-loading').hide();
-            this.switchToDetailResultPanel();
-            if (data.hasOwnProperty('biological_collection_record')) {
-                var biologicalCollectionRecords = data['biological_collection_record'];
-                var collections = {};
-                var $panelIcons = this.$el.find('.panel-icons');
-                for (var i = 0; i < biologicalCollectionRecords.length; i++) {
-                    var record = biologicalCollectionRecords[i];
-                    var recordName = record['children_fields']['name'];
-                    if (!collections.hasOwnProperty(recordName)) {
-                        collections[recordName] = 1;
-                        $panelIcons.append(
-                            '<div class="col-lg-3 text-center">' +
-                            '<img src="/static/img/' + recordName + '.svg" class="right-panel-icon">' +
-                            '<p class="data-' + recordName + ' text-bold">' + collections[recordName] + '</p>' +
-                            '<p>' + recordName + ' species</p>' +
-                            '</div>'
-                        )
-                    } else {
-                        collections[recordName] += 1;
-                        this.$el.find('.data-' + recordName).html(collections[recordName]);
-                    }
-                }
-            } else {
-                $('#content-panel').html(JSON.stringify(data));
-            }
-        },
         showSearchLoading: function () {
-            $('.side-panel-info').removeClass('full-height');
             $('.panel-loading').show();
+            $('.side-panel-info').removeClass('full-height');
         },
         switchToSearchResultPanel: function () {
+            $('.panel-loading').hide();
             $('.title-side-panel').show();
             $('.search-result-info').show();
             $('.side-panel-info').addClass('full-height');
         },
         switchToDetailResultPanel: function () {
+            $('.panel-loading').hide();
             $('.title-side-panel').hide();
             $('.search-result-info').hide();
             $('.side-panel-info').removeClass('full-height');
@@ -85,14 +59,18 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         updateSidePanelTitle: function (title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');
             $rightPanelTitle.html(title);
+            $('.side-panel-info').css("padding-top", $('.right-panel-header').outerHeight());
         },
-        closeSidePanel: function (e) {
-            Shared.Dispatcher.trigger('searchResult:clicked', null);
-            Shared.Router.clearSearch();
+        closeSidePanelAnimation: function () {
             var self = this;
             this.rightPanel.hide('slide', {direction: 'right'}, 200, function () {
                 self.clearSidePanel();
             });
+        },
+        closeSidePanel: function (e) {
+            Shared.Dispatcher.trigger('searchResult:clicked', null);
+            Shared.Router.clearSearch();
+            this.closeSidePanelAnimation();
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {
@@ -102,7 +80,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             }
         },
         fillSidePanelHtml: function (htmlData) {
+            this.switchToSearchResultPanel();
             $('#content-panel').html(htmlData);
+        },
+        updateSidePanelHtml: function (htmlData) {
+            this.switchToSearchResultPanel();
+            $('#content-panel').append(htmlData);
         },
         appendSidePanelContent: function (htmlData) {
             $('#content-panel').append(htmlData);

@@ -1,5 +1,9 @@
 # coding=utf-8
 from datetime import timedelta
+import json
+from pygments import highlight
+from pygments.lexers.data import JsonLexer
+from pygments.formatters.html import HtmlFormatter
 
 from django import forms
 from django.utils.safestring import mark_safe
@@ -79,21 +83,99 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lat = -30
     default_lon = 25
 
+    readonly_fields = ('location_context_prettified',)
+
     list_display = (
         'name', 'location_type', 'get_centroid', 'has_location_context')
     search_fields = ('name',)
     list_filter = (HasLocationContextDocument,)
 
+    actions = ['update_location_context', 'delete_location_context']
+
     def has_location_context(self, obj):
         return bool(obj.location_context_document)
 
+    def update_location_context(self, request, queryset):
+        """Action method to update selected location contexts."""
+        if len(queryset) > 5:
+            message = 'You can not update for more than 5 location site.'
+            self.message_user(request, message)
+            return
+        rows_updated = 0
+        rows_failed = 0
+        error_message = ''
+        for location_site in queryset:
+            success, message = location_site.update_location_context_document()
+            if success:
+                rows_updated += 1
+                location_site.save()
+            else:
+                rows_failed += 1
+                error_message += (
+                    'Failed to update site [%s] because [%s]\n') % (
+                    location_site.name, message)
+
+        if rows_updated == 1:
+            message_bit = "1 location context"
+        else:
+            message_bit = "%s location contexts" % rows_updated
+        full_message = "%s successfully updated." % message_bit
+
+        if rows_failed > 0:
+            error_message_bit = 'There are %s not updated site.' % rows_failed
+            error_message_bit += '\n' + error_message
+            full_message += '\n' + error_message_bit
+
+        self.message_user(request, full_message)
+
+    def delete_location_context(self, request, queryset):
+        """Action method to delete selected location contexts."""
+        rows_updated = queryset.update(location_context_document='')
+        if rows_updated == 1:
+            message_bit = "1 location context"
+        else:
+            message_bit = "%s location contexts" % rows_updated
+        self.message_user(request, "%s successfully deleted." % message_bit)
+
+    update_location_context.short_description = (
+        'Update the selected location context documents.')
+
+    delete_location_context.short_description = (
+        'Delete the selected location context documents.')
+
+    def location_context_prettified(self, instance):
+        """Function to display pretty format of location context."""
+        # Convert the data to sorted, indented JSON
+        data = json.loads(instance.location_context_document)
+        json_data_string = json.dumps(data, indent=2)
+
+        # Get the Pygments formatter
+        formatter = HtmlFormatter(style='colorful', noclasses=True)
+
+        # Highlight the data
+        response = highlight(json_data_string, JsonLexer(), formatter)
+
+        # Get the stylesheet
+        style = "<style>" + formatter.get_style_defs() + "</style><br>"
+
+        # Safe the output
+        return mark_safe(style + response)
+
+    location_context_prettified.short_description = 'Pretty Location Context'
+
 
 class IUCNStatusAdmin(admin.ModelAdmin):
-    list_display = ('get_category_display', 'sensitive')
+    list_display = ('get_category_display', 'sensitive', 'iucn_colour')
+
+    def iucn_colour(self, obj):
+        return '<div style="background:%s; ' \
+               'width: 50px; height: 15px;"></div>' % obj.colour
+
+    iucn_colour.allow_tags = True
 
 
 class TaxonAdmin(admin.ModelAdmin):
-    list_display = ('common_name', 'author', 'iucn_status')
+    list_display = ('common_name', 'author', 'iucn_status', 'taxon_class')
 
 
 class BoundaryAdmin(admin.ModelAdmin):
