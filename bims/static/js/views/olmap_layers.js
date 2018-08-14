@@ -58,41 +58,40 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var self = this;
             this.map = map;
 
+            // Adding layer from GeoNode, filtering is done by the API
+            var default_wms_url =  ogcServerDefaultLocation + 'wms';
+            var default_wms_format = 'image/png';
             $.ajax({
                 type: 'GET',
-                url: listNonBiodiversityLayerAPIUrl,
+                url: '/api/layers',
                 dataType: 'json',
                 success: function (data) {
-                    $.each(data.reverse(), function (index, value) {
-                        if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
-                            return;
-                        }
+                    console.log('Number of layer: ' + data['objects'].length);
+                    $.each(data['objects'].reverse(), function (index, value) {
                         var options = {
-                            url: value.wms_url,
+                            url: default_wms_url,
                             params: {
-                                layers: value.wms_layer_name,
-                                format: value.wms_format
+                                layers: value.typename,
+                                format: default_wms_format
                             }
                         };
                         self.initLayer(
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, false
+                            value.title, false
                         );
                         self.renderLegend(
-                            value.name,
+                            value.title,
                             options['url'],
                             options['params']['layers'],
                             false
                         );
                     });
-
-                    // add Administrative boundary
-                    self.renderAdministrativeLayer(data);
                     self.addBiodiversityLayersToMap(map);
                 },
                 error: function (err) {
+                    console.log('Error: ' + err);
                     self.addBiodiversityLayersToMap(map);
                 }
             });
