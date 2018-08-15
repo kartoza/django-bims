@@ -70,13 +70,13 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     taxon_gbif = indexes.IntegerField(indexed=True)
 
     taxon_gbif_not_null = indexes.BooleanField(indexed=True)
-    
-    taxon_common_name = indexes.CharField(
+
+    taxon_common_name = indexes.NgramField(
         model_attr='taxon_gbif_id__common_name',
         indexed=True
     )
 
-    taxon_scientific_name = indexes.CharField(
+    taxon_scientific_name = indexes.NgramField(
         model_attr='taxon_gbif_id__scientific_name',
         indexed=True
     )
