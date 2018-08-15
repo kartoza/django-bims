@@ -36,7 +36,7 @@
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const filterFarmIDUrl = '{% url "filter-farm-id" %}';
         const getFarmUrl = '{% url "get-farm" 123456789 %}';
-        const ogcServerDefaultLocation = "{{ OGC_SERVER.default.LOCATION }}";
+        const ogcServerDefaultLocation = "{{ OGC_SERVER.default.PUBLIC_LOCATION }}";
     </script>
 {% endblock %}
 
