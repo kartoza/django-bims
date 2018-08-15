@@ -34,7 +34,6 @@ define([
                 return;
             }
             var self = this;
-            this.sidePanel.closeSidePanelAnimation();
             this.searchPanel.openSidePanel();
             this.searchPanel.clearSidePanel();
 
@@ -85,19 +84,17 @@ define([
                 parameters['yearTo'] = yearTo;
                 parameters['months'] = monthSelected.join(',');
             }
+
+            Shared.Dispatcher.trigger('map:closeHighlight');
+            Shared.Dispatcher.trigger('search:hit', parameters);
+            Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             if (!parameters['search']
                 && !parameters['collector']
                 && !parameters['category']
                 && !parameters['yearFrom']
                 && !parameters['yearTo']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
-                Shared.Dispatcher.trigger('map:closeHighlight');
-                Shared.Dispatcher.trigger('search:hit', parameters);
-                this.searchPanel.closeSidePanelAnimation();
                 return false
-            } else {
-                Shared.Dispatcher.trigger('map:closeHighlight');
-                Shared.Dispatcher.trigger('search:hit', parameters);
             }
             this.searchResultCollection.search(
                 this.searchPanel, parameters

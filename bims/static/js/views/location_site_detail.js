@@ -78,7 +78,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 '<div class="search-results-total" data-visibility="true"> Dashboard <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Species List (<span class="species-list-count"></span>)<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="true"> Species List (<span class="species-list-count"><i>loading</i></span>)<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="resources-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> Resources <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
@@ -99,13 +99,10 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 dataType: 'json',
                 success: function (data) {
                     // render site detail
-                    var siteDetailHtml = self.renderSiteDetail(data);
-                    $('#site-detail').append(siteDetailHtml);
+                    $('#site-detail').append(self.renderSiteDetail(data));
 
                     // render species list
-                    var $specialListWrapper = self.renderSpeciesList(data);
-                    $('#species-list').append($specialListWrapper);
-                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
+                    $('#species-list').append(self.renderSpeciesList(data));
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {

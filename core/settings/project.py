@@ -66,3 +66,10 @@ FOCUSED_COUNTRIES = ["South Africa"]
 # If it is not used, geometry that saved is just municipals
 # Because of calculating cluster is just for municipals
 USE_GEOMETRY_BOUNDARY = False
+
+# TODO(IS) Update unit test to be independent with this setting.
+# Farm ID GeoServer Layer
+FARM_GEOSERVER_URL = 'http://maps.kartoza.com/geoserver/wfs'
+FARM_WORKSPACE = 'kartoza'
+FARM_LAYER_NAME = 'farm_portion'
+FARM_ID_COLUMN = 'id'

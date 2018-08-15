@@ -47,7 +47,9 @@ class GetCollectionAbstract(APIView):
             clean_query = sqs.query.clean(query_value)
             settings.ELASTIC_MIN_SCORE = 1.5
             results = sqs.filter(
-                original_species_name=clean_query
+                SQ(original_species_name=clean_query) |
+                SQ(taxon_common_name__contains=clean_query) |
+                SQ(taxon_scientific_name__contains=clean_query)
             ).models(BiologicalCollectionRecord, Taxon).order_by('-_score')
         else:
             settings.ELASTIC_MIN_SCORE = 0
