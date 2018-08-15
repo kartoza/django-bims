@@ -339,6 +339,11 @@ html, body, .map, .map-wrapper, #map-container {
 #search-result-content .search-results-section {
     max-height: 500px;
     overflow-y: scroll;
+    margin-right: -17px;
+}
+
+.search-results-wrapper {
+    overflow-x: hidden;
 }
 
 .layers-selector-container {
