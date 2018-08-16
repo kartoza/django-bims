@@ -31,6 +31,7 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import GetBioRecords
+from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
@@ -83,6 +84,8 @@ api_urls = [
         filter_farm_ids_view, name='filter-farm-id'),
     url(r'^api/get-farm/(?P<farm_id>[\w-]+)/$',
         get_farm_view, name='get-farm'),
+    url(r'api/hide-popup-info/$',
+        HidePopupInfoUser.as_view(), name='hide-popup-user')
 ]
 
 
