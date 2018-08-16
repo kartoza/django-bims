@@ -5,6 +5,7 @@ define(
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
             uploadDataActive: false,
+            catchmentAreaActive: false,
             searchView: null,
             locateView: null,
             events: {
@@ -18,7 +19,6 @@ define(
                 'click .sub-filter': 'closeSubFilter',
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',
-                'click .catchment-filter': 'catchmentFilterClicked'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -58,7 +58,6 @@ define(
                 }
             },
             uploadDataClicked: function (e) {
-
                 var button = $(this.$el.find('.upload-data')[0]);
                 if (this.uploadDataActive) {
                     button.removeClass('control-panel-selected');
@@ -154,22 +153,6 @@ define(
                 $('.layer-switcher.shown button').click();
                 $('.map-control-panel-box:visible').hide();
                 $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
-            },
-            catchmentFilterClicked: function (e) {
-                var $target = $(e.target);
-                if($target.hasClass('filter-selected')){
-                    $target.removeClass('filter-selected');
-                    $('#footer-message span').html('-');
-                    $('#footer-message').hide();
-                    $('#filter-catchment-area').empty();
-                    $('#filter-catchment-area-wrapper').hide();
-                    Shared.Dispatcher.trigger('map:removeGetCoordinateClick');
-                }else {
-                    $target.addClass('filter-selected');
-                    $('#footer-message span').html('CLICK LOCATION ON THE MAP');
-                    $('#footer-message').show();
-                    Shared.Dispatcher.trigger('map:getCoordinatesOnClick');
-                }
             }
         })
     });

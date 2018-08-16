@@ -31,8 +31,7 @@ define([
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
-            'click .layer-control': 'layerControlClicked',
-            'click .catchment-area-list': 'catchmentAreaClicked',
+            'click .layer-control': 'layerControlClicked'
         },
         clusterLevel: {
             5: 'country',
@@ -57,8 +56,6 @@ define([
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
-            Shared.Dispatcher.on('map:getCoordinatesOnClick', this.startGetCoordinatesOnClick, this);
-            Shared.Dispatcher.on('map:removeGetCoordinateClick', this.startDefaultMapClicked, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
@@ -142,6 +139,7 @@ define([
 
             // Close opened control panel
             this.mapControlPanel.closeSearchPanel();
+
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
@@ -190,7 +188,7 @@ define([
             $('#map-container').append(this.$el);
             this.loadMap();
 
-            this.defaultMapClick = this.map.on('click', function (e) {
+            this.map.on('click', function (e) {
                 self.mapClicked(e);
             });
 
@@ -412,15 +410,20 @@ define([
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
         },
-        switchHighlight: function (features) {
+        switchHighlight: function (features, ignoreZoom) {
             this.closeHighlight();
             this.addHighlightFeature(features[0]);
             var extent = this.layers.highlightVectorSource.getExtent();
-            this.map.getView().fit(extent, {
-                size: this.map.getSize(), padding: [
-                    0, $('.right-panel').width(), 0, 0
-                ]
-            });
+            if (!ignoreZoom) {
+                this.map.getView().fit(extent, {
+                    size: this.map.getSize(), padding: [
+                        0, $('.right-panel').width(), 0, 0
+                    ]
+                });
+                if (this.getCurrentZoom() > 18) {
+                    this.map.getView().setZoom(18);
+                }
+            }
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
@@ -449,39 +452,6 @@ define([
                     $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
                 }
             });
-        },
-        startGetCoordinatesOnClick: function () {
-            var that = this;
-            ol.Observable.unByKey(that.defaultMapClick);
-            this.coordinateClick = this.map.on('click', function (e) {
-                that.getCoordinatesOnClick(e)
-            })
-        },
-        getCoordinatesOnClick: function (e) {
-            var coordinates = this.map.getEventCoordinate(e.originalEvent);
-            coordinates = ol.proj.transform(coordinates, 'EPSG:3857', 'EPSG:4326');
-            this.renderCatchmentAreaList(coordinates)
-        },
-        startDefaultMapClicked: function () {
-            var that = this;
-            ol.Observable.unByKey(that.coordinateClick);
-            this.defaultMapClick = this.map.on('click', function (e) {
-                that.mapClicked(e);
-            });
-        },
-        renderCatchmentAreaList: function (coordinates) {
-            var $catchmentAreaList = $('#filter-catchment-area');
-            $('#filter-catchment-area-wrapper').show();
-            $catchmentAreaList.empty();
-
-            // dummy
-            for(var i=1; i<4; i++){
-                $catchmentAreaList.append('<li class="catchment-area-list" id="area-' + i + '">Area ' + i + ' [' + coordinates[0].toFixed(2) + ', ' + coordinates[1].toFixed(2) +'] </li>')
-            }
-        },
-        catchmentAreaClicked: function (e) {
-            var $target = $(e.target);
-            console.log($target.attr('id'))
         }
     })
 });

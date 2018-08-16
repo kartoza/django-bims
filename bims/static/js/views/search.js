@@ -64,10 +64,21 @@ define([
             } else {
                 categoryValue = JSON.stringify(categoryValue)
             }
+
+            var boundaryValue = [];
+            $('input[name=boundary-value]:checked').each(function () {
+                boundaryValue.push($(this).val())
+            });
+            if (boundaryValue.length === 0) {
+                boundaryValue = ''
+            } else {
+                boundaryValue = JSON.stringify(boundaryValue)
+            }
             var parameters = {
                 'search': searchValue,
                 'collector': collectorValue,
                 'category': categoryValue,
+                'boundary': boundaryValue,
                 'yearFrom': '',
                 'yearTo': '',
                 'months': ''

@@ -75,6 +75,16 @@ require([
                 }
             }
         });
+        $.ajax({
+            type: 'GET',
+            url: listBoundaryAPIUrl,
+            dataType: 'json',
+            success: function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    $('#filter-catchment-area').append('<input type="checkbox" name="boundary-value" value="' + data[i]['id'] + '">&nbsp;' + data[i]['name'] + '<br>');
+                }
+            }
+        });
 
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)

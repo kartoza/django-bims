@@ -28,6 +28,7 @@
         const listCollectorAPIUrl = '{% url "list-collector" %}';
         const centerPointMap = '{{ center_point_map }}';
         const listCategoryAPIUrl = '{% url "list-date-category" %}';
+        const listBoundaryAPIUrl = '{% url "list-boundary" %}';
         const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
         const uploadDataUrl = '{% url "upload-collection" %}';
         const collectionCategory = "{{ collection_category|safe }}";
@@ -159,13 +160,17 @@
                     <button class="clear-filter">Clear Filter</button>
                 </div>
             </div>
-            <div class="row catchment-filter">
+            <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    CATCHMENT AREA
+                    CATCHMENT AREA <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row" id="filter-catchment-area-wrapper" style="display: none">
+            <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content" id="filter-catchment-area">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
                 </div>
             </div>
         </div>
@@ -294,17 +299,17 @@
                                         Latitude
                                     </label>
                                     <input type="number" step="0.1" max="90"
-                                            min="-90"
-                                            class="form-control mb-2 mr-sm-2"
-                                            id="latitude" placeholder="Latitude">
+                                           min="-90"
+                                           class="form-control mb-2 mr-sm-2"
+                                           id="latitude" placeholder="Latitude">
                                 </div>
                                 <div class="col-4 coordinate-form">
                                     <label for="longitude" class="sr-only">
                                         Longitude
                                     </label>
                                     <input type="number" step="0.1" min="-180"
-                                            max="180" class="form-control mb-2 mr-sm-2"
-                                            id="longitude" placeholder="Longitude">
+                                           max="180" class="form-control mb-2 mr-sm-2"
+                                           id="longitude" placeholder="Longitude">
                                 </div>
                                 <div class="col-6 farm-form">
                                     <label for="farm-id" class="sr-only">
@@ -441,6 +446,12 @@
         <div class="search-result-sub-title search-results-total" data-search-result-id="">
             <%= name %>
             <i class="pull-right"><%= count %> occurrences</i>
+        </div>
+    </script>
+
+    <script type="text/template" id="search-catchment-area-template">
+        <div class="result-search" data-id="<%= id %>">
+            <p class="group-title"><%= name %></p>
         </div>
     </script>
 
