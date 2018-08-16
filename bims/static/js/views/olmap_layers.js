@@ -6,17 +6,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         highlightVector: null,
         layers: {},
         currentAdministrativeLayer: "",
-        administrativeKeyword: "Administrative",
-        administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
-        },
-        isBiodiversityLayerShow: function () {
-            var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length === 0) {
-                return true
-            }
-            return $checkbox.is(':checked');
         },
         initLayer: function (layer, layerName, visibleInDefault) {
             this.layers[layerName] = {
@@ -27,7 +18,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layer.setVisible(false);
             }
         },
-        addBiodiveristyLayersToMap: function (map) {
+        addBiodiversityLayersToMap: function (map) {
             var self = this;
 
             // ---------------------------------
@@ -65,83 +56,59 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var self = this;
             this.map = map;
 
+            // Adding layer from GeoNode, filtering is done by the API
+            var default_wms_url =  ogcServerDefaultLocation + 'wms';
+            var default_wms_format = 'image/png';
             $.ajax({
                 type: 'GET',
-                url: listNonBiodiversityLayerAPIUrl,
+                url: '/api/layers',
                 dataType: 'json',
                 success: function (data) {
-                    $.each(data.reverse(), function (index, value) {
-                        if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
-                            return;
-                        }
+                    console.log('Number of layer: ' + data['objects'].length);
+                    $.each(data['objects'].reverse(), function (index, value) {
                         var options = {
-                            url: value.wms_url,
+                            url: default_wms_url,
                             params: {
-                                layers: value.wms_layer_name,
-                                format: value.wms_format
+                                layers: value.typename,
+                                format: default_wms_format
                             }
                         };
                         self.initLayer(
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, false
+                            value.title, false
                         );
                         self.renderLegend(
-                            value.name,
+                            value.title,
                             options['url'],
                             options['params']['layers'],
                             false
                         );
                     });
-
-                    // add Administrative boundary
-                    self.renderAdministrativeLayer(data);
                     self.addBiodiveristyLayersToMap(map);
                 },
                 error: function (err) {
-                    self.addBiodiveristyLayersToMap(map);
+                    console.log('Error: ' + err);
+                    self.addBiodiversityLayersToMap(map);
                 }
             });
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length == 0) {
+            if ($checkbox.length === 0) {
                 return true
             }
             return $checkbox.is(':checked');
         },
-        changeLayerAdministrative: function (administrative) {
-            var self = this;
-            switch (administrative) {
-                case 'province':
-                    self.currentAdministrativeLayer = self.administrativeLayersName[0];
-                    break;
-                case 'district':
-                    self.currentAdministrativeLayer = self.administrativeLayersName[1];
-                    break;
-                case 'municipal':
-                    self.currentAdministrativeLayer = self.administrativeLayersName[2];
-                    break;
-            }
-            $.each(self.administrativeLayersName, function (idx, layerName) {
-                if (self.layers[layerName]) {
-                    self.layers[layerName]['layer'].setVisible(false);
-                }
-            });
-            this.changeLayerVisibility(this.administrativeKeyword, true);
+        changeLayerAdministrative: function () {
+            return;
         },
         changeLayerVisibility: function (layerName, visible) {
-            if(Object.keys(this.layers).length === 0) {
+            if (Object.keys(this.layers).length === 0) {
                 return false;
             }
-            if (layerName !== this.administrativeKeyword) {
-                this.layers[layerName]['layer'].setVisible(visible);
-            } else {
-                if(this.currentAdministrativeLayer in this.layers) {
-                    this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
-                }
-            }
+            this.layers[layerName]['layer'].setVisible(visible);
         },
         selectorChanged: function (layerName, selected) {
             if (layerName === "Biodiversity") {
@@ -196,38 +163,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 '<img src="' + scr + '"></div>';
             $('#map-legend').prepend(html);
         },
-        renderAdministrativeLayer: function (data) {
-            var self = this;
-            var currentIndex = 0;
-            $.each(this.administrativeLayersName, function (idx, layerName) {
-                $.each(data, function (index, value) {
-                    if (value.name !== layerName) {
-                        return
-                    }
-                    var options = {
-                        url: value.wms_url,
-                        params: {
-                            layers: value.wms_layer_name,
-                            format: value.wms_format
-                        }
-                    };
-                    var initVisible = false;
-                    if (currentIndex === 0) {
-                        initVisible = true;
-                        self.currentAdministrativeLayer = layerName;
-                    }
-                    self.initLayer(
-                        new ol.layer.Tile({
-                            source: new ol.source.TileWMS(options)
-                        }),
-                        value.name, initVisible
-                    );
-                    currentIndex += 1;
-                    return false;
-                });
-            });
-
-        },
         renderLayersSelector: function (key, visibleInDefault) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
@@ -253,11 +188,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 keys.reverse();
                 $.each(keys, function (index, key) {
                     var value = self.layers[key];
-                    if (key.indexOf(self.administrativeKeyword) >= 0) {
-                        self.renderLayersSelector('Administrative', true);
-                    } else {
-                        self.renderLayersSelector(key, value['visibleInDefault']);
-                    }
+                    self.renderLayersSelector(key, value['visibleInDefault']);
                 });
                 $('.layer-selector-input').change(function (e) {
                     self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
@@ -265,31 +196,24 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 $('#layers-selector').sortable({
                     update: function () {
                         $($(".layer-selector-input").get().reverse()).each(function (index, value) {
-                            var layerName = $(value).val();
-                            if (layerName !== self.administrativeKeyword) {
-                                self.moveLayerToTop(
-                                    self.layers[layerName]['layer']);
-                                self.moveLegendToTop(layerName);
-                            } else {
-                                $.each(self.administrativeLayersName, function (idx, layerName) {
-                                    if (self.layers[layerName]) {
-                                        self.moveLayerToTop(
-                                            self.layers[layerName]['layer']);
-                                        self.moveLegendToTop(layerName);
-                                    }
-                                });
-                            }
+                            $.each(self.administrativeLayersName, function (idx, layerName) {
+                                if (self.layers[layerName]) {
+                                    self.moveLayerToTop(
+                                        self.layers[layerName]['layer']);
+                                    self.moveLegendToTop(layerName);
+                                }
+                            });
                         });
                         self.moveLayerToTop(self.highlightVector);
                     }
                 });
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
-                        $(this).tooltip('option','content', 'Hide Legends');
+                        $(this).tooltip('option', 'content', 'Hide Legends');
                         $(this).removeClass('hide-legend');
                         $(this).addClass('show-legend');
                     } else {
-                        $(this).tooltip('option','content', 'Show Legends');
+                        $(this).tooltip('option', 'content', 'Show Legends');
                         $(this).addClass('hide-legend');
                         $(this).removeClass('show-legend');
                     }
