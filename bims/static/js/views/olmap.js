@@ -31,7 +31,8 @@ define([
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
-            'click .layer-control': 'layerControlClicked'
+            'click .layer-control': 'layerControlClicked',
+            'click .catchment-area-list': 'catchmentAreaClicked',
         },
         clusterLevel: {
             5: 'country',
@@ -475,8 +476,12 @@ define([
 
             // dummy
             for(var i=1; i<4; i++){
-                $catchmentAreaList.append('<li>Area ' + i + ' [' + coordinates[0].toFixed(2) + ', ' + coordinates[1].toFixed(2) +'] </li>')
+                $catchmentAreaList.append('<li class="catchment-area-list" id="area-' + i + '">Area ' + i + ' [' + coordinates[0].toFixed(2) + ', ' + coordinates[1].toFixed(2) +'] </li>')
             }
+        },
+        catchmentAreaClicked: function (e) {
+            var $target = $(e.target);
+            console.log($target.attr('id'))
         }
     })
 });
