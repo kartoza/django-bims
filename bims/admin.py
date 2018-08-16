@@ -245,6 +245,7 @@ admin.site.register(Link, LinkAdmin)
 class ProfileInline(admin.StackedInline):
     model = BimsProfile
 
+
 # Inherits from GeoNode ProfileCreationForm
 class UserCreateForm(ProfileCreationForm):
     class Meta:
