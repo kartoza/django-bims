@@ -1210,3 +1210,12 @@ div:hover::-webkit-scrollbar {
         margin-left: 55%;
     }
 }
+
+.catchment-filter {
+    cursor: pointer;
+}
+
+.filter-selected {
+    background-color: #1b900d !important;
+    color: white !important;
+}
