@@ -46,7 +46,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             var format = $(e.target).data("format");
             this.parameters['fileType'] = format;
 
-            if (format == 'csv') {
+            if (format == 'csv' || format == 'pdf') {
                 $(this.notification).html('downloading ' + format);
                 $(this.notification).show();
                 this.$el.find('.row-format').addClass('disabled');
