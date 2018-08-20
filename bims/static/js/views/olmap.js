@@ -418,6 +418,9 @@ define([
                     0, $('.right-panel').width(), 0, 0
                 ]
             });
+            if (this.getCurrentZoom() > 18) {
+                this.map.getView().setZoom(18);
+            }
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
