@@ -22,8 +22,29 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             }
         },
         renderSiteDetail: function (data) {
-            var $detailWrapper = $('<div></div>');
-            $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
+            var $detailWrapper = $('<div class="geocontext"></div>');
+            if (data['location_context_document_json']) {
+                data = data['location_context_document_json'];
+                // Set title to collection name
+                $detailWrapper.append("<div class='geocontext-title'>" + data['name'] + "</div>\n");
+                // Iterate data for all context groups
+                $.each(data["context_group_values"], function (index, group_value) {
+                    $detailWrapper.append(
+                        "<div class='geocontext-title-group'>" + group_value['name'] + "</div>\n");
+
+                    var tableHtml = '<table>';
+                    $.each(group_value["service_registry_values"], function (index_csr, csr) {
+                        tableHtml += "<tr>" +
+                            "<td>" + csr['name'] + "</td>" +
+                            "<td>" + csr['value'] + "</td>" +
+                            "</tr>";
+                    });
+                    tableHtml += "</table>";
+                    $detailWrapper.append(tableHtml);
+                });
+            } else {
+                $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
+            }
             return $detailWrapper;
         },
         renderSpeciesList: function (data) {
