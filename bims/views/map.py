@@ -6,7 +6,6 @@ from bims.utils.get_key import get_key
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from django.conf import settings
 
 
 class MapPageView(TemplateView):

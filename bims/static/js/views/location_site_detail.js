@@ -100,6 +100,14 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 success: function (data) {
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetail(data));
+                    var recordOccurence = data['records_occurrence'];
+                    var countOccurence = 0;
+                    $.each(recordOccurence, function (index, object) {
+                        $.each(object, function (key, value) {
+                            countOccurence += value['count']
+                        })
+                    });
+                    $('#fish-endemic-num').html(countOccurence);
 
                     // render species list
                     $('#species-list').append(self.renderSpeciesList(data));
