@@ -1210,3 +1210,27 @@ div:hover::-webkit-scrollbar {
         margin-left: 55%;
     }
 }
+
+.geocontext {
+    padding: 10px;
+    color: #131313;
+}
+
+.geocontext table {
+    border-collapse: collapse;
+}
+
+.geocontext table, .geocontext th, .geocontext td {
+    border: 1px solid black;
+}
+
+.geocontext-title {
+    text-align: center;
+    font-size: 18px;
+}
+
+.geocontext-title-group {
+    font-size: 14px;
+    margin-top: 10px;
+    text-align: center;
+}
