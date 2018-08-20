@@ -74,12 +74,12 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_latitude(self, obj):
         if obj.location_center:
-            return obj.location_center.y
+            return obj.location_center.x
         return ''
 
     def get_longitude(self, obj):
         if obj.location_center:
-            return obj.location_center.x
+            return obj.location_center.y
         return ''
 
     def get_species_name(self, obj):
