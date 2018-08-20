@@ -5,6 +5,7 @@ from bims.utils.get_key import get_key
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
+from django.conf import settings
 
 
 class MapPageView(TemplateView):
@@ -46,4 +47,8 @@ class MapPageView(TemplateView):
             context['date_filter']['min'] = date_min.year
         if date_max:
             context['date_filter']['max'] = date_max.year
+        try:
+            context['is_healthyrivers'] = settings.IS_HEALTHYRIVERS
+        except AttributeError:
+            context['is_healthyrivers'] = False
         return context

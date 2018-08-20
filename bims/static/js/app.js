@@ -9,6 +9,7 @@ require.config({
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
+        chartJs: 'libs/chart/Chart-2.7.2',
     },
     shim: {
         ol: {
@@ -89,5 +90,8 @@ require([
             }
         });
         $(".date-filter").datepicker({dateFormat: 'yy-mm-dd'});
+        if(isHealthyrivers){
+            $('.panel-wrapper').css('width', '400px')
+        }
     });
 });

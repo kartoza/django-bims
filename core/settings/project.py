@@ -73,3 +73,5 @@ FARM_GEOSERVER_URL = 'http://maps.kartoza.com/geoserver/wfs'
 FARM_WORKSPACE = 'kartoza'
 FARM_LAYER_NAME = 'farm_portion'
 FARM_ID_COLUMN = 'id'
+
+IS_HEALTHYRIVERS = True
