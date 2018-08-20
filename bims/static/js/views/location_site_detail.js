@@ -107,7 +107,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                             countOccurence += value['count']
                         })
                     });
-                    $('#fish-endemic-num').html(countOccurence);
+                    $('#fish-occurence-count').html(countOccurence);
 
                     // render species list
                     $('#species-list').append(self.renderSpeciesList(data));
