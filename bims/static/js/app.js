@@ -90,8 +90,5 @@ require([
             }
         });
         $(".date-filter").datepicker({dateFormat: 'yy-mm-dd'});
-        if(isHealthyrivers){
-            $('.panel-wrapper').css('width', '400px')
-        }
     });
 });

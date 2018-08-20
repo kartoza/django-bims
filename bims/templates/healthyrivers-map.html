@@ -1,0 +1,91 @@
+{% extends 'map.html' %}
+{% load static from staticfiles %}
+{% load grunt %}
+
+{% block side_panel %}
+    <link href="{% static "css/healthyrivers-map.css" %}" rel="stylesheet">
+    <script type='text/html' id='side-panel-template'>
+            <div class="right-panel">
+                <div class="row side-panel side-panel-info">
+                    <div class="col-lg-12" id="content-panel">
+                    </div>
+                </div>
+                <div class="right-panel-header">
+                    <div class="pull-right" style="padding-top: 5px;">
+                        <i class="fa fa-times close-panel"></i>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span class="right-panel-title"></span>
+                        </div>
+                    </div>
+                </div>
+                <div id="healthyrivers-side-panel" class="right-panel-header-healthyrivers">
+                    <div class="healthyrivers-close-panel" style="text-align: center">
+                        <i class="fa fa-angle-left close-panel healthyrivers-icon-close"></i>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12 healthyrivers-site-header">
+                            <span class="right-panel-title"></span>
+                        </div>
+                        <div class="col-lg-6 healthyrivers-site-summary">
+                            <p>Site Summary:</p>
+                            <p><span>Region: </span><span id="region-summary">Western Cape</span></p>
+                            <p><span>River: </span><span id="river-summary">Breede River</span></p>
+                            <p><span>Catchment: </span><span id="catchment-summary">Breede River</span></p>
+                            <p><span>Subcatchment: </span><span id="subcatchment-summary">Breede River</span></p>
+                            <p><span>Size: </span><span id="size-summary">337km</span></p>
+                        </div>
+                        <div class="col-lg-6">
+                            <img src="{% static 'img/site-image.jpg' %}" height="110px">
+                        </div>
+                    </div>
+                    <div class="row healthyrivers-site-detail">
+                        <div class="col-lg-12 healthyrivers-table-title">
+                            <span>SPECIES DATABASE BREAKDOWN</span>
+                        </div>
+                        <div class="col-lg-12" style="padding: 0">
+                            <table>
+                                <tr>
+                                    <td><img src="{% static 'img/fish-2.svg' %}" height="100px"></td>
+                                    <td><img src="{% static 'img/aquatic-invertebrates.svg' %}" height="100px"></td>
+                                    <td><img src="{% static 'img/algae.svg' %}" height="100px"></td>
+                                </tr>
+                                <tr>
+                                    <td><canvas id="fish-graph" width="50px" height="50px"></canvas></td>
+                                    <td><canvas id="invertebrates-graph" width="50px" height="50px"></canvas></td>
+                                    <td><canvas id="algae-graph" width="50px" height="50px"></canvas></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="endemic-title">EN</span><span class="endemic-total">43</span></td>
+                                    <td><span class="endemic-title">EN</span><span class="endemic-total">12</span></td>
+                                    <td><span class="endemic-title">EN</span><span class="endemic-total">4</span></td>
+                                </tr>
+                                <tr>
+                                    <td><canvas id="fish-calculation-graph" width="50px" height="50px"></canvas></td>
+                                    <td><canvas id="invertebrates-calculation-graph" width="50px" height="50px"></canvas></td>
+                                    <td><canvas id="algae-calculation-graph" width="50px" height="50px"></canvas></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px"><canvas id="fish-pie-chart-major" width="50px" height="50px"></canvas></td>
+                                    <td style="padding: 5px"><canvas id="invertebrates-pie-chart-major" width="50px" height="50px"></canvas></td>
+                                    <td style="padding: 5px"><canvas id="algae-pie-chart-major" width="50px" height="50px"></canvas></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 5px"><canvas id="fish-pie-chart-minor" width="50px" height="50px"></canvas></td>
+                                    <td style="padding: 5px"><canvas id="invertebrates-pie-chart-minor" width="50px" height="50px"></canvas></td>
+                                    <td style="padding: 5px"><canvas id="algae-pie-chart-minor" width="50px" height="50px"></canvas></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row healthyrivers-side-panel-footer">
+                        <div class="col-lg-3"><i class="fa fa-link"></i></div>
+                        <div class="col-lg-7"><span style="text-decoration: underline">3rd party knowledge database</span></div>
+                        <div class="col-lg-2"><a href="#"><i class="fa fa-arrow-right"></i></a></div>
+                    </div>
+                </div>
+            </div>
+        </script>
+
+{% endblock %}

@@ -1,4 +1,5 @@
 # coding=utf-8
+import os
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from bims.utils.get_key import get_key
@@ -10,7 +11,15 @@ from django.conf import settings
 
 class MapPageView(TemplateView):
     """Template view for map page"""
-    template_name = 'map.html'
+    try:
+        healthyrivers = os.environ['IS_HEALTHYRIVERS']
+    except KeyError:
+        healthyrivers = False
+
+    if healthyrivers:
+        template_name = 'healthyrivers-map.html'
+    else:
+        template_name = 'map.html'
 
     def get_context_data(self, **kwargs):
         """Get the context data which is passed to a template.
@@ -48,7 +57,7 @@ class MapPageView(TemplateView):
         if date_max:
             context['date_filter']['max'] = date_max.year
         try:
-            context['is_healthyrivers'] = settings.IS_HEALTHYRIVERS
-        except AttributeError:
+            context['is_healthyrivers'] = os.environ['IS_HEALTHYRIVERS']
+        except KeyError:
             context['is_healthyrivers'] = False
         return context
