@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing
-from reportlab.lib.pagesizes import ELEVENSEVENTEEN, letter
+from reportlab.lib.pagesizes import ELEVENSEVENTEEN
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 from bims.models.taxon import Taxon
@@ -32,8 +32,9 @@ def create_pdf(pathname, current_site):
     time = now.strftime('%d, %b %Y')
     page.setFont('Helvetica', 10)
     page.drawString(
-            margin_left + 300, margin_bottom - 10,
-                    'Date: {}'.format(time))
+            margin_left + 300,
+            margin_bottom - 10,
+            'Date: {}'.format(time))
 
     # SECTION: OVERVIEW
 
@@ -42,7 +43,7 @@ def create_pdf(pathname, current_site):
                     'Overview')
 
     page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 5,  margin_bottom - 70,
+    page.drawString(margin_left + 5, margin_bottom - 70,
                     'Rank')
 
     page.setFont('Helvetica-Bold', 14)
@@ -54,11 +55,11 @@ def create_pdf(pathname, current_site):
             (margin_left + 380), (margin_bottom - 105))
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 100,
+    page.drawString(margin_left + 5, margin_bottom - 100,
                     'OBIS ID')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 100,
+    page.drawString(margin_left + 300, margin_bottom - 100,
                     '636268')
 
     page.line(
@@ -66,77 +67,77 @@ def create_pdf(pathname, current_site):
             (margin_left + 380), (margin_bottom - 125))
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 120,
+    page.drawString(margin_left + 5, margin_bottom - 120,
                     'Valid OBIS ID')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 120,
+    page.drawString(margin_left + 300, margin_bottom - 120,
                     '636268')
 
     page.line(
             (margin_left + 5), (margin_bottom - 145),
             (margin_left + 380), (margin_bottom - 145))
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 140,
+    page.drawString(margin_left + 5, margin_bottom - 140,
                     'Aphia ID')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 140,
+    page.drawString(margin_left + 300, margin_bottom - 140,
                     '127081')
 
     page.line(
             (margin_left + 5), (margin_bottom - 165),
             (margin_left + 380), (margin_bottom - 165))
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 160,
+    page.drawString(margin_left + 5, margin_bottom - 160,
                     'Records')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 160,
+    page.drawString(margin_left + 300, margin_bottom - 160,
                     '100, 768')
 
     page.line(
             (margin_left + 5), (margin_bottom - 185),
             (margin_left + 380), (margin_bottom - 185))
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 180,
+    page.drawString(margin_left + 5, margin_bottom - 180,
                     'Datasets')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 180,
+    page.drawString(margin_left + 300, margin_bottom - 180,
                     '60')
 
     page.line(
             (margin_left + 5), (margin_bottom - 205),
             (margin_left + 380), (margin_bottom - 205))
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 200,
+    page.drawString(margin_left + 5, margin_bottom - 200,
                     'Red List status')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 200,
+    page.drawString(margin_left + 300, margin_bottom - 200,
                     'LC')
 
     page.line(
             (margin_left + 5), (margin_bottom - 225),
             (margin_left + 380), (margin_bottom - 225))
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 220,
+    page.drawString(margin_left + 5, margin_bottom - 220,
                     'Global Invasive Species Database')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 220,
+    page.drawString(margin_left + 300, margin_bottom - 220,
                     '-')
 
     page.line(
             (margin_left + 5), (margin_bottom - 245),
             (margin_left + 380), (margin_bottom - 245))
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5,  margin_bottom - 240,
+    page.drawString(margin_left + 5, margin_bottom - 240,
                     'Hamful Micro Algae')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300,  margin_bottom - 240,
+    page.drawString(margin_left + 300, margin_bottom - 240,
                     '-')
 
 
@@ -329,10 +330,10 @@ def create_pdf(pathname, current_site):
                     'Environmental conditions')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 410,  margin_bottom - 100,
+    page.drawString(margin_left + 410, margin_bottom - 100,
                     'Temperature')
 
-    drawing = Drawing(margin_left + 410,  margin_bottom - 100)
+    drawing = Drawing(margin_left + 410, margin_bottom - 100)
 
     data = [
         (32, 15, 20, 22, 37, 98, 21, 9),
