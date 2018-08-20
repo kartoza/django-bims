@@ -1,4 +1,6 @@
-define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/search_result'], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection) {
+define([
+    'backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/search_result', 'views/search_panel'
+], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -32,8 +34,8 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
                 return;
             }
             var self = this;
-            this.sidePanel.openSidePanel();
-            this.sidePanel.clearSidePanel();
+            this.searchPanel.openSidePanel();
+            this.searchPanel.clearSidePanel();
 
             $('#search-results-wrapper').html('');
 
@@ -82,22 +84,20 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
                 parameters['yearTo'] = yearTo;
                 parameters['months'] = monthSelected.join(',');
             }
+
+            Shared.Dispatcher.trigger('map:closeHighlight');
+            Shared.Dispatcher.trigger('search:hit', parameters);
+            Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             if (!parameters['search']
                 && !parameters['collector']
                 && !parameters['category']
                 && !parameters['yearFrom']
                 && !parameters['yearTo']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
-                Shared.Dispatcher.trigger('map:closeHighlight');
-                Shared.Dispatcher.trigger('search:hit', parameters);
-                this.sidePanel.closeSidePanelAnimation();
                 return false
-            } else {
-                Shared.Dispatcher.trigger('map:closeHighlight');
-                Shared.Dispatcher.trigger('search:hit', parameters);
             }
             this.searchResultCollection.search(
-                this.sidePanel, parameters
+                this.searchPanel, parameters
             );
             this.searchResultCollection.fetch({
                 success: function () {
@@ -128,6 +128,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
             _.bindAll(this, 'render');
             this.parent = options.parent;
             this.sidePanel = options.sidePanel;
+            this.searchPanel = new SearchPanelView();
             this.searchResultCollection = new SearchResultCollection();
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
@@ -136,6 +137,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
             this.$el.html(this.template());
             this.searchBox = this.$el.find('.map-search-box');
             this.searchBox.hide();
+            this.$el.append(this.searchPanel.render().$el);
             return this;
         },
         initDateFilter: function () {
@@ -191,6 +193,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/sea
         hide: function () {
             this.searchBox.hide();
             this.searchBoxOpen = false;
+            this.searchPanel.hide();
         },
         isOpen: function () {
             return this.searchBoxOpen;

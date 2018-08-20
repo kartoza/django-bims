@@ -17,6 +17,7 @@ define(
                 'click .locate-options-container-close': 'closeLocatePanel',
                 'click .sub-filter': 'closeSubFilter',
                 'click .locate-coordinates': 'openLocateCoordinates',
+                'click .locate-farm': 'openLocateFarm',
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -110,8 +111,9 @@ define(
             },
             closeSubFilter: function (e) {
                 var target = $(e.target);
-                target.parent().next().toggle();
-                target.children('.filter-icon-arrow').toggle();
+                var $wrapper = target.closest('.sub-filter');
+                $wrapper.next().toggle();
+                $wrapper.find('.filter-icon-arrow').toggle();
             },
             openFilterPanel: function () {
                 this.$el.find('.filter-control').addClass('control-panel-selected');
@@ -131,7 +133,11 @@ define(
             },
             openLocateCoordinates: function (e) {
                 this.closeLocatePanel();
-                this.locateView.showModal();
+                this.locateView.showModal('.coordinate-form');
+            },
+            openLocateFarm: function (e) {
+                this.closeLocatePanel();
+                this.locateView.showModal('.farm-form');
             },
             resetAllControlState: function () {
                 $('#download-control-modal').hide();

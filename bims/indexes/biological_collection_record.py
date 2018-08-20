@@ -5,6 +5,8 @@ from haystack import indexes
 
 
 class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
+    model_pk = indexes.IntegerField(model_attr='pk')
+    id = indexes.CharField()
     text = indexes.CharField(document=True, use_template=True)
 
     original_species_name = indexes.NgramField(
@@ -23,7 +25,8 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     )
 
     collection_date_month = indexes.IntegerField(
-        model_attr='collection_date__month'
+        model_attr='collection_date__month',
+        indexed=True
     )
 
     category = indexes.CharField(
@@ -58,18 +61,25 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         model_attr='site__name'
     )
 
+    location_site_id = indexes.CharField(
+        model_attr='site__id'
+    )
+
     location_center = indexes.LocationField()
 
     taxon_gbif = indexes.IntegerField(indexed=True)
 
     taxon_gbif_not_null = indexes.BooleanField(indexed=True)
 
-    id = indexes.CharField()
+    taxon_common_name = indexes.NgramField(
+        model_attr='taxon_gbif_id__common_name',
+        indexed=True
+    )
 
-    def prepare_id(self, obj):
-        if obj.pk:
-            return obj.pk
-        return 0
+    taxon_scientific_name = indexes.NgramField(
+        model_attr='taxon_gbif_id__scientific_name',
+        indexed=True
+    )
 
     def prepare_taxon_gbif(self, obj):
         if obj.taxon_gbif_id:
@@ -84,7 +94,7 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_location_center(self, obj):
         if obj.site:
             return '%s,%s' % obj.site.get_centroid().coords
-        return ''
+        return '0,0'
 
     class Meta:
         app_label = 'bims'

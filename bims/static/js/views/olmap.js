@@ -12,10 +12,12 @@ define([
     'layerSwitcher',
     'views/olmap_basemap',
     'views/olmap_layers',
-    'views/geocontext'
+    'views/geocontext',
+    'views/location_site_detail',
+    'views/taxon_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, Basemap, Layers, Geocontext) {
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail, TaxonDetail) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -44,6 +46,8 @@ define([
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
+            new LocationSiteDetail();
+            new TaxonDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
@@ -51,6 +55,7 @@ define([
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
+            Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
@@ -89,6 +94,9 @@ define([
                 ]
             });
             this.map.getView().setZoom(this.getCurrentZoom());
+            if (this.getCurrentZoom() > 18) {
+                this.map.getView().setZoom(18);
+            }
         },
         mapClicked: function (e) {
             var self = this;
@@ -110,10 +118,8 @@ define([
                     poiFound = featuresClickedResponseData[0];
                     featuresData = featuresClickedResponseData[1];
 
-                    if (poiFound) {
-                        var coordinates = geometry.getCoordinates();
-                        self.zoomToCoordinates(coordinates);
-                    }
+                    var coordinates = geometry.getCoordinates();
+                    self.zoomToCoordinates(coordinates);
                     // increase zoom level if it is clusters
                     if (features[0].getProperties()['count'] &&
                         features[0].getProperties()['count'] > 1) {
@@ -232,7 +238,7 @@ define([
                 view: new ol.View({
                     center: ol.proj.fromLonLat(center),
                     zoom: 7,
-                    minZoom: 7,
+                    minZoom: 5,
                     extent: [579700.2488501729, -4540000.22437294, 5275991.266691402, -2101353.2739626765]
                 }),
                 controls: ol.control.defaults({
@@ -384,7 +390,7 @@ define([
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
             this.closeHighlight();
-            if (!this.sidePanelView.isSidePanelOpen()) {
+            if (!this.sidePanelView.isSidePanelOpen() && !this.mapControlPanel.searchView.searchPanel.isPanelOpen()) {
                 return
             }
             this.clusterBiologicalCollection.updateTaxon(taxonID, taxonName);
@@ -402,6 +408,16 @@ define([
         },
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
+        },
+        switchHighlight: function (features) {
+            this.closeHighlight();
+            this.addHighlightFeature(features[0]);
+            var extent = this.layers.highlightVectorSource.getExtent();
+            this.map.getView().fit(extent, {
+                size: this.map.getSize(), padding: [
+                    0, $('.right-panel').width(), 0, 0
+                ]
+            });
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);

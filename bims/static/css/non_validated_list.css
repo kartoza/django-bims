@@ -23,8 +23,21 @@ tr:nth-child(odd) {background: #f5f5f5}
     color: orange
 }
 
+.edit-action a {
+    text-align: center;
+    color: cadetblue;
+}
+
 .validate-action:hover {
     color: #1b900d;
+}
+
+.edit-action:hover a {
+    color: darkblue;
+}
+
+.ready-validate-action:hover a {
+    color: orange !important;
 }
 
 .site-link {
@@ -75,4 +88,27 @@ tr:nth-child(odd) {background: #f5f5f5}
 select {
     background: none;
     border: 1px solid gainsboro;
+}
+
+.form-wrapper {
+    border: 1px solid gainsboro;
+    padding: 25px;
+    border-radius: 2px;
+}
+
+#message-success {
+    background: #eaffe8 !important;
+    border: 1px solid #1b900d !important;
+    border-radius: 5px;
+    text-align: center !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    font-size: 20pt;
+    line-height: 50px;
+}
+
+
+#map {
+    min-height: 500px;
 }

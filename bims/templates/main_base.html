@@ -78,11 +78,12 @@
                     </div>
                      {% if user.is_authenticated %}
                         <li><a class="nav-link js-scroll-trigger" id="navbar-profile" href="/profile/">PROFILE</a></li>
-                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/upload/">UPLOAD DATA</a></li>
+                         <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="{% block upload_data_url %}/upload/{% endblock %}">UPLOAD DATA</a></li>
                          {% if user.is_staff or user.is_superuser %}
                             <li><a class="nav-link js-scroll-trigger" href="/admin/">ADMINISTRATION</a></li>
                          {% endif %}
                              <li><a class="nav-link js-scroll-trigger" id="navbar-upload" href="/nonvalidated-list/">VALIDATE RECORDS</a></li>
+                             <li><a class="nav-link js-scroll-trigger" href="/nonvalidated-user-list/">UPDATE RECORDS</a></li>
                              <li><a class="nav-link js-scroll-trigger" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a></li>
                      {% else %}
                         <li><a class="nav-link js-scroll-trigger" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a></li>
