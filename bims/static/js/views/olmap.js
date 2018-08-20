@@ -55,8 +55,12 @@ define([
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
+            Shared.Dispatcher.on('map:addHighlightFeature', this.addHighlightFeature, this);
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
+            Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
+            Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
+            Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -411,10 +415,13 @@ define([
             this.layers.biodiversitySource.addFeatures(features);
         },
         switchHighlight: function (features, ignoreZoom) {
+            var self = this;
             this.closeHighlight();
-            this.addHighlightFeature(features[0]);
-            var extent = this.layers.highlightVectorSource.getExtent();
+            $.each(features, function (index, feature) {
+                self.addHighlightFeature(feature);
+            });
             if (!ignoreZoom) {
+                var extent = this.layers.highlightVectorSource.getExtent();
                 this.map.getView().fit(extent, {
                     size: this.map.getSize(), padding: [
                         0, $('.right-panel').width(), 0, 0
@@ -432,6 +439,22 @@ define([
             this.hidePopup();
             if (this.layers.highlightVectorSource) {
                 this.layers.highlightVectorSource.clear();
+            }
+        },
+        switchHighlightPinned: function (features, ignoreZoom) {
+            var self = this;
+            this.closeHighlightPinned();
+            $.each(features, function (index, feature) {
+                self.addHighlightPinnedFeature(feature);
+            });
+        },
+        addHighlightPinnedFeature: function (feature) {
+            this.layers.highlightPinnedVectorSource.addFeature(feature);
+        },
+        closeHighlightPinned: function () {
+            this.hidePopup();
+            if (this.layers.highlightPinnedVectorSource) {
+                this.layers.highlightPinnedVectorSource.clear();
             }
         },
         startOnHoverListener: function () {

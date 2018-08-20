@@ -66,13 +66,16 @@ define([
             }
 
             var boundaryValue = [];
+            // just get the top one.
             $('input[name=boundary-value]:checked').each(function () {
                 boundaryValue.push($(this).val())
             });
             if (boundaryValue.length === 0) {
-                boundaryValue = ''
+                Shared.Dispatcher.trigger('catchmentArea:hide');
+                boundaryValue = '';
             } else {
-                boundaryValue = JSON.stringify(boundaryValue)
+                boundaryValue = JSON.stringify(boundaryValue);
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
             var parameters = {
                 'search': searchValue,
@@ -103,7 +106,8 @@ define([
                 && !parameters['collector']
                 && !parameters['category']
                 && !parameters['yearFrom']
-                && !parameters['yearTo']) {
+                && !parameters['yearTo']
+                && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false
             }

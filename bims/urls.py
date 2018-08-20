@@ -8,7 +8,10 @@ from django.views.generic import RedirectView
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
-from bims.api_views.boundary import BoundaryList
+from bims.api_views.boundary import (
+    BoundaryList,
+BoundaryGeojson
+)
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSiteDetail,
@@ -67,6 +70,8 @@ api_urls = [
         CollectionDownloader.as_view()),
     url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
+    url(r'^api/boundary/geojson$',
+        BoundaryGeojson.as_view(), name='boundary-geojson'),
     url(r'^api/list-boundary/$',
         BoundaryList.as_view(), name='list-boundary'),
     url(r'^api/list-collector/$',

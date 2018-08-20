@@ -6,13 +6,11 @@ import datetime
 import os
 import errno
 from haystack.query import SearchQuerySet, SQ
-from django.contrib.gis.geos import Polygon
 from django.contrib.gis.geos import MultiPoint, Point
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bims.models.boundary import Boundary
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxon import Taxon
@@ -96,13 +94,11 @@ class GetCollectionAbstract(APIView):
 
         boundary = request_data.get('boundary')
         if boundary:
-            boundaries = json.loads(boundary)
-            boundaries = Boundary.objects.filter(id__in=boundaries)
-            for boundary in boundaries:
-                geometry = boundary.geometry
-                results = results.polygon(
-                    'location_center',
-                    geometry[0])
+            qs_collector = SQ()
+            qs = json.loads(boundary)
+            for query in qs:
+                qs_collector.add(SQ(boundary=query), SQ.OR)
+            results = results.filter(qs_collector)
 
         # query by category
         query_category = request_data.get('category')
