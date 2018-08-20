@@ -15,7 +15,9 @@ class BoundaryList(APIView):
     def get(self, request, *args):
         boundaries = \
             Boundary.objects.exclude(type__level=1).filter().values(
-                'id', 'name', 'type__name', 'top_level_boundary', 'type__level').order_by('type__level', 'name')
+                'id', 'name', 'type__name',
+                'top_level_boundary', 'type__level'
+            ).order_by('type__level', 'name')
         return HttpResponse(json.dumps(list(boundaries)))
 
 
@@ -26,5 +28,6 @@ class BoundaryGeojson(APIView):
         ids = request.GET.get('ids', [])
         ids = json.loads(ids)
         boundaries = \
-            Boundary.objects.exclude(top_level_boundary__in=ids).filter(id__in=ids)
+            Boundary.objects.exclude(top_level_boundary__in=ids).filter(
+                id__in=ids)
         return Response(BoundaryGeojsonSerializer(boundaries, many=True).data)

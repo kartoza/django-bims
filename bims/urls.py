@@ -10,7 +10,7 @@ from bims.views.map import MapPageView
 from bims.views.landing_page import LandingPageView
 from bims.api_views.boundary import (
     BoundaryList,
-BoundaryGeojson
+    BoundaryGeojson
 )
 from bims.api_views.location_site import (
     LocationSiteList,

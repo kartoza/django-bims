@@ -107,8 +107,8 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             else:
                 rows_failed += 1
                 error_message += (
-                                     'Failed to update site [%s] because [%s]\n') % (
-                                     location_site.name, message)
+                    'Failed to update site [%s] because [%s]\n') % (
+                    location_site.name, message)
 
         if rows_updated == 1:
             message_bit = "1 location context"
@@ -156,8 +156,6 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
             # Safe the output
             return mark_safe(style + response)
-        else:
-            return ''
 
     location_context_prettified.short_description = 'Pretty Location Context'
 
@@ -204,6 +202,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
 
 
 class ShapefileInline(admin.TabularInline):
+
     def shapefile_name(self, obj):
         if obj.shapefile:
             return mark_safe("""<a href="%s" />%s</a>""" % (
