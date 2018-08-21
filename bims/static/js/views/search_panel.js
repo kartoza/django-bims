@@ -1,14 +1,17 @@
-define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backbone, _) {
+define(['shared', 'backbone', 'underscore', 'jqueryUi',
+    'views/catchment_area_control'], function (Shared, Backbone, _, jqueryUi, CatchmentAreaControl) {
     return Backbone.View.extend({
         template: _.template($('#map-search-result-template').html()),
         events: {
             'click .map-result-close': 'closeSidePanelAnimation'
         },
         initialize: function () {
+            this.catchmentArea = new CatchmentAreaControl();
         },
         render: function () {
             this.$el.html(this.template());
             this.$el.hide();
+            this.catchmentArea.render(this.$el);
             return this;
         },
         updatesearchPanelTitle: function (title) {

@@ -1,10 +1,11 @@
 define(
-    ['backbone', 'underscore', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader'],
-    function (Backbone, _, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
+    ['backbone', 'underscore', 'shared', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader'],
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
             uploadDataActive: false,
+            catchmentAreaActive: false,
             searchView: null,
             locateView: null,
             events: {
@@ -57,7 +58,6 @@ define(
                 }
             },
             uploadDataClicked: function (e) {
-
                 var button = $(this.$el.find('.upload-data')[0]);
                 if (this.uploadDataActive) {
                     button.removeClass('control-panel-selected');

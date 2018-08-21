@@ -75,6 +75,35 @@ require([
                 }
             }
         });
+        $.ajax({
+            type: 'GET',
+            url: listBoundaryAPIUrl,
+            dataType: 'json',
+            success: function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    var $wrapper = $('#filter-catchment-area');
+                    if (data[i]['top_level_boundary']) {
+                        if ($('#boundary-' + data[i]['top_level_boundary']).length > 0) {
+                            $wrapper = $('#boundary-' + data[i]['top_level_boundary']);
+                        }
+                    }
+                    $wrapper.append(
+                        '<div>' +
+                        '<input type="checkbox" name="boundary-value" value="' + data[i]['id'] + '" data-level="' + data[i]['type__level'] + '">&nbsp;' + data[i]['name'] +
+                        '<div id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div>' +
+                        '</div> ');
+                }
+                $('#filter-catchment-area input').click(function () {
+                    var child = $('#boundary-' + $(this).val());
+                    var level = $(this).data('level');
+                    if ($(this).is(':checked')) {
+                        $(child).find('input:checkbox:not(:checked)[data-level="' + (level + 1) + '"]').click();
+                    } else {
+                        $(child).find('input:checkbox:checked[data-level="' + (level + 1) + '"]').click();
+                    }
+                });
+            }
+        });
 
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)
