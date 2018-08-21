@@ -3,7 +3,7 @@
 {% load grunt %}
 
 {% block title %}
-    Home
+    BIMS Map
 {% endblock %}
 
 {% block head %}
@@ -37,6 +37,9 @@
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const filterFarmIDUrl = '{% url "filter-farm-id" %}';
         const getFarmUrl = '{% url "get-farm" 123456789 %}';
+        const hideBimsInfo = {% if hide_bims_info %} true {% else %} false {% endif %};
+        const hideBimsInfoUrl = '{% url "hide-popup-user" %}';
+        const bimsInfoContent = {% if flatpage %} true {% else %} false {% endif %};
     </script>
 {% endblock %}
 
@@ -560,6 +563,28 @@
             </table>
         </div>
     </script>
+
+    <div id="general-info-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Biodiversity Information Management System (BIMS)</h5>
+                    <button type="button" class="close close-info-popup">
+                      <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <article>
+                        {{ flatpage.content|safe }}
+                    </article>
+                </div>
+                <div class="modal-footer">
+                    <input type="checkbox" name="dont-show-info"> <span>Do not show this again.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 {% endblock %}
 

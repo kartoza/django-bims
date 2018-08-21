@@ -39,6 +39,8 @@ from bims.models import (
     NonBiodiversityLayer,
 )
 
+from bims.models.profile import Profile as BimsProfile
+
 
 class LocationSiteForm(forms.ModelForm):
     class Media:
@@ -241,6 +243,10 @@ admin.site.register(Category)
 admin.site.register(Link, LinkAdmin)
 
 
+class ProfileInline(admin.StackedInline):
+    model = BimsProfile
+
+
 # Inherits from GeoNode ProfileCreationForm
 class UserCreateForm(ProfileCreationForm):
     class Meta:
@@ -254,6 +260,7 @@ class UserCreateForm(ProfileCreationForm):
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
+    inlines = [ProfileInline]
 
     add_fieldsets = (
         (None, {
