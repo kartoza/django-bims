@@ -229,6 +229,12 @@ class CollectionDownloader(GetCollectionAbstract):
             'attachment; filename="download.geojson"'
         return response
 
+    def convert_to_pdf(self, queryset):
+        return JsonResponse({
+            'status': 'processing',
+            'filename': 'pdf file',
+        })
+
     def get(self, request):
         file_type = request.GET.get('fileType', None)
         if not file_type:
@@ -243,6 +249,8 @@ class CollectionDownloader(GetCollectionAbstract):
                 queryset,
                 BiologicalCollectionRecord,
                 BioCollectionGeojsonSerializer)
+        elif file_type == 'pdf':
+            return self.convert_to_pdf(queryset)
         else:
             return Response([])
 
