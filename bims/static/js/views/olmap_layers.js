@@ -200,6 +200,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         renderLegend: function (id, url, layer, visibleDefault) {
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
+            if (url.indexOf('.qgs') != -1) {
+                scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
+            }
             var html =
                 '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
