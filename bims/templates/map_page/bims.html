@@ -1,0 +1,79 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load grunt %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block head %}
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/map.css" %}" rel="stylesheet">
+    <link href="{% static "css/loading.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        const max_year_filter = '{{ date_filter.max }}';
+        const min_year_filter = '{{ date_filter.min }}';
+        const bingMapKey = '{{ bing_map_key }}';
+        const mapTilerKey = '{{ map_tiler_key }}';
+        const geocontextUrl = '{{ geocontext_url }}';
+        const geocontextCollectionKey = '{{ geocontext_collection_key }}';
+        const locationSiteDetailURL = '{% url "location-site-detail" 123456789 %}';
+        const listCollectorAPIUrl = '{% url "list-collector" %}';
+        const centerPointMap = '{{ center_point_map }}';
+        const listCategoryAPIUrl = '{% url "list-date-category" %}';
+        const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
+        const uploadDataUrl = '{% url "upload-collection" %}';
+        const collectionCategory = "{{ collection_category|safe }}";
+        const csrfmiddlewaretoken = "{{ csrf_token }}";
+        const biological_modules = "{{ biological_modules|safe }}";
+        const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
+        const filterFarmIDUrl = '{% url "filter-farm-id" %}';
+        const getFarmUrl = '{% url "get-farm" 123456789 %}';
+        const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
+    </script>
+    {% block extra_head %}
+
+    {% endblock %}
+{% endblock %}
+
+{% block body_content %}
+    <div id="map-container"></div>
+    <script type='text/html' id='map-template'>
+        <div id="map" class="map"></div>
+        <div id="loading-warning"><span>LOADING....</span></div>
+        <div id="footer-message"><span>Additional Info</span></div>
+        <div id="fetching-error">
+            <span class="try-again">Error when fetching data, please try again.
+                <a class="try-again-button">refresh</a>.
+                <a class="call-administrator">If this error still persists, please call administrator.</a>
+            </span>
+        </div>
+        <div class="ol-control mouse-position">
+            <button type="button"><i class="fa fa-globe"></i></button>
+            <div id="mouse-position-wrapper" style="display: none"></div>
+        </div>
+        <div class="ol-control" id="taxon-filter">
+        </div>
+        <div id="popup"></div>
+        <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
+            <div id="map-legend-symbol">L</div>
+            <div id="map-legend"></div>
+        </div>
+    </script>
+
+    {# HERE ARE THE TEMPLATES AREA #}
+    {% block additional_template %}
+    {% endblock %}
+
+    {% include 'map_page/map-templates.html' %}
+{% endblock %}
+
+{% block foot %}
+    <!-- Plugin JavaScript -->
+    {% grunt_module "map_view" %}
+{% endblock %}

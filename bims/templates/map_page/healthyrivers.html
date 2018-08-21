@@ -1,0 +1,247 @@
+{% extends 'map_page/bims.html' %}
+{% load static from staticfiles %}
+{% load grunt %}
+
+
+{% block extra_head %}
+    <link href="{% static "css/healthyrivers-map.css" %}" rel="stylesheet">
+{% endblock %}
+
+{% block additional_template %}
+    <script type='text/html' id='site-dashboard-template'>
+        <div id="healthyrivers-side-panel" class="right-panel-header-healthyrivers">
+            <div class="row healthyrivers-site-detail">
+                <div class="col-lg-12 healthyrivers-table-title">
+                    <span>SPECIES DATABASE BREAKDOWN</span>
+                </div>
+                <div class="col-lg-12" style="padding: 0">
+                    <table>
+                        <tr>
+                            <td><img src="{% static 'img/fish-2.svg' %}" height="100px"><br/><span id="fish-occurence-count">0</span></td>
+                            <td><img src="{% static 'img/invertebras-2.svg' %}" height="100px"><br/><span id="invertebra-occurence-count">0</span></td>
+                            <td><img src="{% static 'img/algae-2.svg' %}" height="100px"><br/><span id="algae-occurence-count">0</span></td>
+                        </tr>
+                        <tr>
+                            <td width="33%">
+                                <canvas id="fish-graph" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="invertebrates-graph" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="algae-graph" width="50px" height="50px"></canvas>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="33%">
+                                <span class="endemic-title">EN</span><span id="fish-endemic-num" class="endemic-total">43</span>
+                            </td>
+                            <td width="33%">
+                                <span class="endemic-title">EN</span><span id="invertebrates-endemic-num" class="endemic-total">12</span>
+                            </td>
+                            <td width="33%">
+                                <span class="endemic-title">EN</span><span id="algae-endemic-num" class="endemic-total">4</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="33%">
+                                <canvas id="fish-calculation-graph" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="invertebrates-calculation-graph" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="algae-calculation-graph" width="50px" height="50px"></canvas>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="33%">
+                                <canvas id="fish-pie-chart-major" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="invertebrates-pie-chart-major" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="algae-pie-chart-major" width="50px" height="50px"></canvas>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="33%">
+                                <canvas id="fish-pie-chart-minor" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="invertebrates-pie-chart-minor" width="50px" height="50px"></canvas>
+                            </td>
+                            <td width="33%">
+                                <canvas id="algae-pie-chart-minor" width="50px" height="50px"></canvas>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row healthyrivers-side-panel-footer">
+                <div class="col-lg-3"><i class="fa fa-link"></i></div>
+                <div class="col-lg-7"><span style="text-decoration: underline">3rd party knowledge database</span></div>
+                <div class="col-lg-2"><a href="#"><i class="fa fa-arrow-right"></i></a></div>
+            </div>
+        </div>
+    </script>
+    <script>
+        function createDataGraph(container, data, barType, labels, options, colorOptions) {
+            var myChart = new Chart(container, {
+                type: barType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colorOptions['backgroundColor'],
+                        borderColor: colorOptions['borderColor'],
+                        borderWidth: 1
+                    }]
+                },
+                options: options
+            });
+        }
+        function createPieChart(container, data, labels, options, colorOptions) {
+            var myPieChart = new Chart(container, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colorOptions,
+                        borderWidth: 1
+                    }]
+                },
+                options: options
+            });
+        }
+        function renderDashboard(data) {
+            var barOptions = {
+                scales: {
+                    xAxes: [{
+                        gridLines: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 90,
+                            minRotation: 90,
+                            padding: -100,
+                            fontColor: '#000000',
+                            fontStyle: 'bold',
+                        },
+                        categoryPercentage: 1,
+                        barPercentage: 1,
+                    }],
+                    yAxes: [{
+                        gridLines: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            display: false
+                        }
+                    }]
+                },
+                legend: {
+                    display: false
+                }
+            };
+
+            var barColor = {
+                'backgroundColor': [
+                    'rgba(222, 210, 65, 0.5)',
+                    'rgba(98, 156, 68, 0.5)',
+                    'rgba(62, 80, 50, 0.5)'
+                ],
+                'borderColor': [
+                    'rgba(222, 210, 65,1)',
+                    'rgba(98, 156, 68, 1)',
+                    'rgba(62, 80, 50, 1)'
+                ]
+            };
+
+            var options = {
+                layout: {
+                    padding: {
+                        left: -10,
+                        right: 0,
+                        top: 0,
+                        bottom: 0
+                    }
+                },
+                scales: {
+                    yAxes: [{
+                        gridLines: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            padding: -120,
+                            fontColor: '#000000',
+                            fontStyle: 'bold',
+                        },
+                        categoryPercentage: 1,
+                        barPercentage: 1,
+                    }],
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            display: false
+                        }
+                    }]
+                },
+                legend: {
+                    display: false
+                }
+            };
+
+            var horizontalBarColor = {
+                'backgroundColor': [
+                    'rgba(236, 230, 150, 0.5)',
+                    'rgba(222, 210, 65, 0.5)',
+                    'rgba(242, 237, 182, 0.5)'
+                ],
+                'borderColor': [
+                    'rgba(0, 0, 0, 1)',
+                    'rgba(0, 0, 0, 1)',
+                    'rgba(0, 0, 0, 1)'
+                ]
+            };
+
+            // Note: data are dummies.
+            createDataGraph(document.getElementById("fish-graph").getContext('2d'), [12, 19, 3], 'bar', ["Native", "Non-Native", "Translocated"], barOptions, barColor);
+            createDataGraph(document.getElementById("invertebrates-graph").getContext('2d'), [5, 50, 20], 'bar', ["Native", "Non-Native", "Translocated"], barOptions, barColor);
+            createDataGraph(document.getElementById("algae-graph").getContext('2d'), [12, 19, 3], 'bar', ["Native", "Non-Native", "Translocated"], barOptions, barColor);
+            createDataGraph(document.getElementById("fish-calculation-graph").getContext('2d'), [12, 19, 3], 'horizontalBar', ["Species Richness", "Shannon Diversity", "Simpson Diversity"], options, horizontalBarColor);
+            createDataGraph(document.getElementById("invertebrates-calculation-graph").getContext('2d'), [5, 50, 20], 'horizontalBar', ["Species Richness", "Shannon Diversity", "Simpson Diversity"], options, horizontalBarColor);
+            createDataGraph(document.getElementById("algae-calculation-graph").getContext('2d'), [12, 19, 3], 'horizontalBar', ["Species Richness", "Shannon Diversity", "Simpson Diversity"], options, horizontalBarColor);
+
+            var pieData = [25, 2, 7, 10, 12, 25, 60];
+            var pieLabel = ['grey', 'black', 'red', 'orange', 'yellow', 'lightgreen', 'green'];
+            var pieColor = ['grey', 'black', 'red', 'orange', 'yellow', 'lightgreen', 'green'];
+            var pieOptions = {
+                legend: {
+                    display: false
+                },
+                cutoutPercentage: 0,
+                maintainAspectRatio: false
+            };
+            createPieChart(document.getElementById("fish-pie-chart-major").getContext('2d'), pieData, pieLabel, pieOptions, pieColor);
+            createPieChart(document.getElementById("invertebrates-pie-chart-major").getContext('2d'), pieData, pieLabel, pieOptions, pieColor);
+            createPieChart(document.getElementById("algae-pie-chart-major").getContext('2d'), pieData, pieLabel, pieOptions, pieColor);
+
+            var pieData2 = [25, 50, 12, 40, 10];
+            var pieLabel2 = ['purple', 'white', 'blue', 'green', 'orange'];
+            var pieColor2 = ['purple', 'white', 'blue', 'green', 'orange'];
+            createPieChart(document.getElementById("fish-pie-chart-minor").getContext('2d'), pieData2, pieLabel2, pieOptions, pieColor2);
+            createPieChart(document.getElementById("invertebrates-pie-chart-minor").getContext('2d'), pieData2, pieLabel2, pieOptions, pieColor2);
+            createPieChart(document.getElementById("algae-pie-chart-minor").getContext('2d'), pieData2, pieLabel2, pieOptions, pieColor2);
+        }
+    </script>
+
+{% endblock %}
