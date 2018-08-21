@@ -10,6 +10,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
+from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.cluster import update_cluster_by_site
 from bims.utils.get_key import get_key
@@ -57,6 +58,13 @@ class LocationSite(models.Model):
                   'management command or changing the geometry.',
         null=True,
         blank=True
+    )
+
+    boundary = models.ForeignKey(
+        Boundary,
+        help_text='This is lowest boundary where location is placed.',
+        blank=True,
+        null=True,
     )
 
     def get_centroid(self):
