@@ -726,7 +726,8 @@ div:hover::-webkit-scrollbar {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
 }
 
 .search-results-total {
@@ -926,7 +927,7 @@ div:hover::-webkit-scrollbar {
     min-width: 31px;
     max-width: 250px;
     max-height: 450px;
-    overflow-x: hidden;
+    overflow-x: scroll;
     overflow-y: scroll;
     position: absolute;
     left: 0.5em;
@@ -956,6 +957,7 @@ div:hover::-webkit-scrollbar {
     max-width: 31px;
     max-height: 31px;
     opacity: 0.7;
+    overflow: hidden;
 }
 
 #map-legend-wrapper .legend-row {

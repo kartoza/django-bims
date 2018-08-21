@@ -132,13 +132,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             this.changeLayerVisibility(this.administrativeKeyword, true);
         },
         changeLayerVisibility: function (layerName, visible) {
-            if(Object.keys(this.layers).length === 0) {
+            if (Object.keys(this.layers).length === 0) {
                 return false;
             }
             if (layerName !== this.administrativeKeyword) {
                 this.layers[layerName]['layer'].setVisible(visible);
             } else {
-                if(this.currentAdministrativeLayer in this.layers) {
+                if (this.currentAdministrativeLayer in this.layers) {
                     this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
                 }
             }
@@ -186,6 +186,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         renderLegend: function (id, url, layer, visibleDefault) {
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
+            if (url.indexOf('.qgs') != -1) {
+                scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
+            }
             var html =
                 '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
@@ -285,11 +288,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 });
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
-                        $(this).tooltip('option','content', 'Hide Legends');
+                        $(this).tooltip('option', 'content', 'Hide Legends');
                         $(this).removeClass('hide-legend');
                         $(this).addClass('show-legend');
                     } else {
-                        $(this).tooltip('option','content', 'Show Legends');
+                        $(this).tooltip('option', 'content', 'Show Legends');
                         $(this).addClass('hide-legend');
                         $(this).removeClass('show-legend');
                     }
