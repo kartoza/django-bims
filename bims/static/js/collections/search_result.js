@@ -13,6 +13,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             this.yearFrom = parameters['yearFrom'];
             this.yearTo = parameters['yearTo'];
             this.months = parameters['months'];
+            this.boundary = parameters['boundary'];
 
             this.url = this.searchUrl +
                 '?search=' + this.searchValue +
@@ -20,7 +21,8 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                 '&category=' + this.categoryValue +
                 '&yearFrom=' + this.yearFrom +
                 '&yearTo=' + this.yearTo +
-                '&months=' + this.months;
+                '&months=' + this.months +
+                '&boundary=' + this.boundary;
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
         },
