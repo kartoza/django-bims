@@ -115,6 +115,20 @@
                 <button class="clear-filter">Clear Filter</button>
             </div>
         </div>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                ADMINISTRATIVE AREA <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row" style="display: none">
+            <div class="col-lg-12 filter-content" id="filter-catchment-area">
+            </div>
+            <div class="button-filter-wrapper">
+                <button class="apply-filter">Apply Filter</button>
+                <button class="clear-filter">Clear Filter</button>
+            </div>
+        </div>
+
     </div>
 </script>
 
@@ -388,6 +402,12 @@
     <div class="search-result-sub-title search-results-total" data-search-result-id="">
         <%= name %>
         <i class="pull-right"><%= count %> occurrences</i>
+    </div>
+</script>
+
+<script type="text/template" id="search-catchment-area-template">
+    <div class="result-search" data-id="<%= id %>">
+        <p class="group-title"><%= name %></p>
     </div>
 </script>
 
