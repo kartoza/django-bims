@@ -1249,6 +1249,10 @@ div:hover::-webkit-scrollbar {
     font-family: Roboto;
 }
 
+.small-close span {
+    font-size: 25pt;
+}
+
 .close-info-popup {
     line-height: 0.8 !important;
     padding: 0 10px !important;
