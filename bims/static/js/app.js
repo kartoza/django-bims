@@ -9,7 +9,7 @@ require.config({
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
-        chartJs: 'libs/chart/Chart-2.7.2',
+        chartJs: 'libs/chart/Chart-2.7.2'
     },
     shim: {
         ol: {
@@ -43,7 +43,8 @@ require([
     'router',
     'views/olmap',
     'shared',
-    'app'
+    'app',
+    'chartJs'
 ], function (Router, olmap, Shared, App) {
     // Display the map
     Shared.Router = new Router();

@@ -26,9 +26,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             return template(data);
         },
         showDetail: function (name) {
-            if(isHealthyrivers){
-                $('#healthyrivers-side-panel').hide()
-            }
             var self = this;
             // Render basic information
             var $detailWrapper = $('<div></div>');

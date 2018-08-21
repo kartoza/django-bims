@@ -14,8 +14,7 @@ define([
     'views/olmap_layers',
     'views/geocontext',
     'views/location_site_detail',
-    'views/taxon_detail',
-    'chartJs'
+    'views/taxon_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail, TaxonDetail) {
