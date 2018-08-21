@@ -77,7 +77,7 @@ services:
       - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
-      - IS_HEALTHYRIVERS=false
+      - APP_NAME=bims
     links:
       - smtp:smtp
       - db:db
@@ -109,7 +109,7 @@ services:
       - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
-      - IS_HEALTHYRIVERS=false
+      - APP_NAME=bims
     links:
       - smtp:smtp
       - db:db

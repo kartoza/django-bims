@@ -10,15 +10,14 @@ from bims.models.biological_collection_record import (
 
 class MapPageView(TemplateView):
     """Template view for map page"""
-    try:
-        healthyrivers = os.environ['IS_HEALTHYRIVERS']
-    except KeyError:
-        healthyrivers = False
 
-    if healthyrivers:
-        template_name = 'healthyrivers-map.html'
-    else:
-        template_name = 'map.html'
+    # change template based on map
+    try:
+        app_name = os.environ['APP_NAME']
+    except KeyError:
+        app_name = 'bims'
+
+    template_name = 'map_page/%s.html' % app_name
 
     def get_context_data(self, **kwargs):
         """Get the context data which is passed to a template.
@@ -55,8 +54,4 @@ class MapPageView(TemplateView):
             context['date_filter']['min'] = date_min.year
         if date_max:
             context['date_filter']['max'] = date_max.year
-        try:
-            context['is_healthyrivers'] = os.environ['IS_HEALTHYRIVERS']
-        except KeyError:
-            context['is_healthyrivers'] = False
         return context
