@@ -4,6 +4,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         biodiversitySource: null,
         highlightVectorSource: null,
         highlightVector: null,
+        highlightPinnedVectorSource: null,
+        highlightPinnedVector: null,
         layers: {},
         currentAdministrativeLayer: "",
         administrativeKeyword: "Administrative",
@@ -29,6 +31,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         addBiodiveristyLayersToMap: function (map) {
             var self = this;
+            // ---------------------------------
+            // HIGHLIGHT PINNED LAYER
+            // ---------------------------------
+            self.highlightPinnedVectorSource = new ol.source.Vector({});
+            self.highlightPinnedVector = new ol.layer.Vector({
+                source: self.highlightPinnedVectorSource,
+                style: function (feature) {
+                    var geom = feature.getGeometry();
+                    return self.layerStyle.getHighlightStyle(geom.getType());
+                }
+            });
+            map.addLayer(self.highlightPinnedVector);
 
             // ---------------------------------
             // BIODIVERSITY LAYERS
@@ -132,13 +146,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             this.changeLayerVisibility(this.administrativeKeyword, true);
         },
         changeLayerVisibility: function (layerName, visible) {
-            if(Object.keys(this.layers).length === 0) {
+            if (Object.keys(this.layers).length === 0) {
                 return false;
             }
             if (layerName !== this.administrativeKeyword) {
                 this.layers[layerName]['layer'].setVisible(visible);
             } else {
-                if(this.currentAdministrativeLayer in this.layers) {
+                if (this.currentAdministrativeLayer in this.layers) {
                     this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
                 }
             }
@@ -280,16 +294,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                 });
                             }
                         });
+                        self.moveLayerToTop(self.highlightPinnedVector);
                         self.moveLayerToTop(self.highlightVector);
                     }
                 });
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
-                        $(this).tooltip('option','content', 'Hide Legends');
+                        $(this).tooltip('option', 'content', 'Hide Legends');
                         $(this).removeClass('hide-legend');
                         $(this).addClass('show-legend');
                     } else {
-                        $(this).tooltip('option','content', 'Show Legends');
+                        $(this).tooltip('option', 'content', 'Show Legends');
                         $(this).addClass('hide-legend');
                         $(this).removeClass('show-legend');
                     }

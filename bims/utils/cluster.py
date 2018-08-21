@@ -33,6 +33,9 @@ def update_cluster(boundary):
     )
     sites = records.values('site').distinct()
 
+    # update boundary of site
+    LocationSite.objects.filter(id__in=sites).update(boundary=boundary)
+
     # get all children model if no CollectionModel given
     verbose_name = LocationSite._meta.verbose_name
 
