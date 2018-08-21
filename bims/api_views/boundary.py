@@ -28,6 +28,6 @@ class BoundaryGeojson(APIView):
         ids = request.GET.get('ids', [])
         ids = json.loads(ids)
         boundaries = \
-            Boundary.objects.exclude(type__level=4).filter(
+            Boundary.objects.filter(type__level=4).filter(
                 id__in=ids)
         return Response(BoundaryGeojsonSerializer(boundaries, many=True).data)
