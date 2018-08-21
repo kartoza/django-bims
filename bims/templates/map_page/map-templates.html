@@ -1,3 +1,25 @@
+<script type='text/html' id='map-template'>
+    <div id="map" class="map"></div>
+    <div id="loading-warning"><span>LOADING....</span></div>
+    <div id="footer-message"><span>Additional Info</span></div>
+    <div id="fetching-error">
+            <span class="try-again">Error when fetching data, please try again.
+                <a class="try-again-button">refresh</a>.
+                <a class="call-administrator">If this error still persists, please call administrator.</a>
+            </span>
+    </div>
+    <div class="ol-control mouse-position">
+        <button type="button"><i class="fa fa-globe"></i></button>
+        <div id="mouse-position-wrapper" style="display: none"></div>
+    </div>
+    <div class="ol-control" id="taxon-filter">
+    </div>
+    <div id="popup"></div>
+    <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
+        <div id="map-legend-symbol">L</div>
+        <div id="map-legend"></div>
+    </div>
+</script>
 <script type='text/html' id='side-panel-template'>
     <div class="right-panel">
         <div class="row side-panel side-panel-info">

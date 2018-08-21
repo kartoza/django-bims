@@ -65,6 +65,7 @@ define([
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
             this.mapControlPanel.searchView.initDateFilter();
+            this.showInfoPopup();
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -475,6 +476,11 @@ define([
                     $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
                 }
             });
+        },
+        showInfoPopup: function () {
+            if(!hideBimsInfo && bimsInfoContent) {
+                $('#general-info-modal').fadeIn()
+            }
         }
     })
 });

@@ -120,5 +120,17 @@ require([
             }
         });
         $(".date-filter").datepicker({dateFormat: 'yy-mm-dd'});
+        $('.close-info-popup').click(function () {
+            if($('input[name=dont-show-info]').is(':checked')){
+                $.ajax({
+                    type: 'GET',
+                    url: hideBimsInfoUrl,
+                    success: function () {
+                        $('#general-info-modal').fadeOut();
+                    }
+                })
+            }
+            $('#general-info-modal').fadeOut();
+        })
     });
 });

@@ -3,7 +3,7 @@
 {% load grunt %}
 
 {% block title %}
-    Home
+    BIMS Map
 {% endblock %}
 
 {% block head %}
@@ -34,6 +34,9 @@
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const filterFarmIDUrl = '{% url "filter-farm-id" %}';
         const getFarmUrl = '{% url "get-farm" 123456789 %}';
+        const hideBimsInfo = {% if hide_bims_info %} true {% else %} false {% endif %};
+        const hideBimsInfoUrl = '{% url "hide-popup-user" %}';
+        const bimsInfoContent = {% if flatpage %} true {% else %} false {% endif %};
         const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
     </script>
     {% block extra_head %}
@@ -43,28 +46,26 @@
 
 {% block body_content %}
     <div id="map-container"></div>
-    <script type='text/html' id='map-template'>
-        <div id="map" class="map"></div>
-        <div id="loading-warning"><span>LOADING....</span></div>
-        <div id="footer-message"><span>Additional Info</span></div>
-        <div id="fetching-error">
-            <span class="try-again">Error when fetching data, please try again.
-                <a class="try-again-button">refresh</a>.
-                <a class="call-administrator">If this error still persists, please call administrator.</a>
-            </span>
+    <div id="general-info-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Biodiversity Information Management System (BIMS)</h5>
+                    <button type="button" class="close close-info-popup">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <article>
+                        {{ flatpage.content|safe }}
+                    </article>
+                </div>
+                <div class="modal-footer">
+                    <input type="checkbox" name="dont-show-info"> <span>Do not show this again.</span>
+                </div>
+            </div>
         </div>
-        <div class="ol-control mouse-position">
-            <button type="button"><i class="fa fa-globe"></i></button>
-            <div id="mouse-position-wrapper" style="display: none"></div>
-        </div>
-        <div class="ol-control" id="taxon-filter">
-        </div>
-        <div id="popup"></div>
-        <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
-            <div id="map-legend-symbol">L</div>
-            <div id="map-legend"></div>
-        </div>
-    </script>
+    </div>
 
     {# HERE ARE THE TEMPLATES AREA #}
     {% block additional_template %}
