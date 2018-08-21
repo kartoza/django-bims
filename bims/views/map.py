@@ -1,4 +1,5 @@
 # coding=utf-8
+import os
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from bims.utils.get_key import get_key
@@ -11,7 +12,14 @@ from django.contrib.flatpages.models import FlatPage
 
 class MapPageView(TemplateView):
     """Template view for map page"""
-    template_name = 'map.html'
+
+    # change template based on map
+    try:
+        app_name = os.environ['APP_NAME']
+    except KeyError:
+        app_name = 'bims'
+
+    template_name = 'map_page/%s.html' % app_name
 
     def get_context_data(self, **kwargs):
         """Get the context data which is passed to a template.

@@ -26,6 +26,15 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
             return $detailWrapper;
         },
+        renderDashboardDetail: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if ($('#site-dashboard-template').length == 0) {
+                $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
+            } else {
+                $detailWrapper.append(_.template($('#site-dashboard-template').html()));
+            }
+            return $detailWrapper;
+        },
         renderSpeciesList: function (data) {
             var $specialListWrapper = $('<div style="display: none"></div>');
             var speciesListCount = 0;
@@ -75,7 +84,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 '<div class="search-results-total" data-visibility="false"> Site details <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="dashboard-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Dashboard <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="false"> Dashboard <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> Species List (<span class="species-list-count"><i>loading</i></span>)<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
@@ -100,6 +109,14 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 success: function (data) {
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetail(data));
+
+                    // dashboard detail
+                    $('#dashboard-detail').append(self.renderDashboardDetail(data));
+                    try {
+                        renderDashboard(data);
+                    } catch (err) {
+
+                    }
 
                     // render species list
                     $('#species-list').append(self.renderSpeciesList(data));

@@ -1,0 +1,81 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load grunt %}
+
+{% block title %}
+    BIMS Map
+{% endblock %}
+
+{% block head %}
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/map.css" %}" rel="stylesheet">
+    <link href="{% static "css/loading.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        const max_year_filter = '{{ date_filter.max }}';
+        const min_year_filter = '{{ date_filter.min }}';
+        const bingMapKey = '{{ bing_map_key }}';
+        const mapTilerKey = '{{ map_tiler_key }}';
+        const geocontextUrl = '{{ geocontext_url }}';
+        const geocontextCollectionKey = '{{ geocontext_collection_key }}';
+        const locationSiteDetailURL = '{% url "location-site-detail" 123456789 %}';
+        const listCollectorAPIUrl = '{% url "list-collector" %}';
+        const centerPointMap = '{{ center_point_map }}';
+        const listCategoryAPIUrl = '{% url "list-date-category" %}';
+        const listBoundaryAPIUrl = '{% url "list-boundary" %}';
+        const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
+        const uploadDataUrl = '{% url "upload-collection" %}';
+        const collectionCategory = "{{ collection_category|safe }}";
+        const csrfmiddlewaretoken = "{{ csrf_token }}";
+        const biological_modules = "{{ biological_modules|safe }}";
+        const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
+        const filterFarmIDUrl = '{% url "filter-farm-id" %}';
+        const getFarmUrl = '{% url "get-farm" 123456789 %}';
+        const hideBimsInfo = {% if hide_bims_info %} true {% else %} false {% endif %};
+        const hideBimsInfoUrl = '{% url "hide-popup-user" %}';
+        const bimsInfoContent = {% if flatpage %} true {% else %} false {% endif %};
+        const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
+    </script>
+    {% block extra_head %}
+
+    {% endblock %}
+{% endblock %}
+
+{% block body_content %}
+    <div id="map-container"></div>
+    <div id="general-info-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Biodiversity Information Management System (BIMS)</h5>
+                    <button type="button" class="close close-info-popup">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <article>
+                        {{ flatpage.content|safe }}
+                    </article>
+                </div>
+                <div class="modal-footer">
+                    <input type="checkbox" name="dont-show-info"> <span>Do not show this again.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# HERE ARE THE TEMPLATES AREA #}
+    {% block additional_template %}
+    {% endblock %}
+
+    {% include 'map_page/map-templates.html' %}
+{% endblock %}
+
+{% block foot %}
+    <!-- Plugin JavaScript -->
+    {% grunt_module "map_view" %}
+{% endblock %}

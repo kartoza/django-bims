@@ -34,10 +34,10 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
                 '© <a href="http://www.openstreetmap.org/copyright">' +
                 'OpenStreetMap contributors</a>';
-            var openMapTiles = this.getOpenMapTilesTile(staticURL + 'mapbox-style/klokantech-terrain-gl-style.json');
+            var openMapTiles = this.getOpenMapTilesTile('/static/mapbox-style/klokantech-terrain-gl-style.json');
             var contours = this.getVectorTileMapBoxStyle(
                 'https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
-                staticURL + 'mapbox-style/klokantech-terrain-gl-style.json',
+                '/static/mapbox-style/klokantech-terrain-gl-style.json',
                 'contours',
                 attributions
             );
@@ -54,13 +54,13 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
         },
         getPositronBasemap: function () {
             var layer = this.getOpenMapTilesTile(
-                staticURL + 'mapbox-style/positron-gl-style.json');
+                '/static/mapbox-style/positron-gl-style.json');
             layer.set('title', 'Positron Map');
             return layer
         },
         getDarkMatterBasemap: function () {
             var layer = this.getOpenMapTilesTile(
-                staticURL + 'mapbox-style/dark-matter-gl-style.json');
+                '/static/mapbox-style/dark-matter-gl-style.json');
             layer.set('title', 'Dark Matter');
             return layer
         },
