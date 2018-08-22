@@ -40,107 +40,106 @@ def create_pdf(pathname, current_site):
 
     # SECTION: OVERVIEW
 
+    present_records = BiologicalCollectionRecord.objects.filter(
+            present=True).count()
+
+    absent_records = BiologicalCollectionRecord.objects.filter(
+            absent   =True).count()
+
+    validation_ready = BiologicalCollectionRecord.objects.filter(
+            ready_for_validation=True).count()
+
+    validation_not_ready = BiologicalCollectionRecord.objects.filter(
+            ready_for_validation=False).count()
+
+    validated = BiologicalCollectionRecord.objects.filter(
+            validated=True).count()
+
+
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left, margin_bottom - 30,
                     'Overview')
 
     page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 5, margin_bottom - 70,
+    page.drawString(margin_left + 5, margin_bottom - 90,
                     'Rank')
 
+
     page.setFont('Helvetica-Bold', 14)
-    page.drawString(margin_left + 300, margin_bottom - 70,
+    page.drawString(margin_left + 300, margin_bottom - 90,
                     'Species')
 
     page.line(
             (margin_left + 5), (margin_bottom - 105),
-            (margin_left + 380), (margin_bottom - 105))
+            (margin_left + 360), (margin_bottom - 105))
 
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5, margin_bottom - 100,
-                    'GBIF ID')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300, margin_bottom - 100,
-                    '636268')
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 5, margin_bottom - 100,
+    #                 'Present Records')
+    #
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 200, margin_bottom - 100,
+    #                 '636268')
+    #
+    # page.setFont('Helvetica', 12)
+    # page.drawString(margin_left + 300, margin_bottom - 100,
+    #                 '636268')
 
     page.line(
             (margin_left + 5), (margin_bottom - 125),
-            (margin_left + 380), (margin_bottom - 125))
+            (margin_left + 360), (margin_bottom - 125))
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 120,
-                    'Valid OBIS ID')
+                    'Present records')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 120,
-                    '636268')
+                    str(present_records))
 
     page.line(
             (margin_left + 5), (margin_bottom - 145),
-            (margin_left + 380), (margin_bottom - 145))
+            (margin_left + 360), (margin_bottom - 145))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 140,
-                    'Aphia ID')
+                    'Absent records')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 140,
-                    '127081')
+                    str(absent_records))
 
     page.line(
             (margin_left + 5), (margin_bottom - 165),
-            (margin_left + 380), (margin_bottom - 165))
+            (margin_left + 360), (margin_bottom - 165))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 160,
-                    'Records')
+                    'Ready for validtation')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 160,
-                    '100, 768')
+                    str(validation_ready))
 
     page.line(
             (margin_left + 5), (margin_bottom - 185),
-            (margin_left + 380), (margin_bottom - 185))
+            (margin_left + 360), (margin_bottom - 185))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 180,
-                    'Datasets')
+                    'Not ready for Validation')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 180,
-                    '60')
+                    str(validation_not_ready))
 
     page.line(
             (margin_left + 5), (margin_bottom - 205),
-            (margin_left + 380), (margin_bottom - 205))
+            (margin_left + 360), (margin_bottom - 205))
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 200,
-                    'Red List status')
+                    'Validated')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 200,
-                    'LC')
-
-    page.line(
-            (margin_left + 5), (margin_bottom - 225),
-            (margin_left + 380), (margin_bottom - 225))
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5, margin_bottom - 220,
-                    'Global Invasive Species Database')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300, margin_bottom - 220,
-                    '-')
-
-    page.line(
-            (margin_left + 5), (margin_bottom - 245),
-            (margin_left + 380), (margin_bottom - 245))
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 5, margin_bottom - 240,
-                    'Hamful Micro Algae')
-
-    page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 300, margin_bottom - 240,
-                    '-')
+                    str(validated))
 
 
     # Taxonomy from (from specified source)
@@ -169,7 +168,7 @@ def create_pdf(pathname, current_site):
     #  have a little margin-botton on the text
     page.line(
             (margin_left + 5), (margin_bottom - 305),
-            (margin_left + 380), (margin_bottom - 305))
+            (margin_left + 360), (margin_bottom - 305))
 
     # insert a 30 value difference on height
     # TODO: implement a user defined query for which Taxon they
@@ -193,18 +192,18 @@ def create_pdf(pathname, current_site):
     tinca_record = Taxon.objects.get(genus='Tinca')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 330,
-                    tinca_record.common_name)
+                    'Kingdom')
     # query to fetch specie family details.
     # anguillidae = Taxon.objects.get(family='Anguillidae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 105, margin_bottom - 330,
-                    'tinca_record')
+                    'taxon_record.kingdom')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 330,
-                    tinca_record.author)
+                    'tinca_record.author')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 330,
-                    'record')
+                    'tinca_record.gbif_id')
 
     # ------------------------------------------
     page.line(
@@ -214,7 +213,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 350,
-                    tinca_record.phylum)
+                    'Phylum')
     # atherinidae = Taxon.objects.get(family='Atherinidae')
 
     page.setFont('Helvetica', 12)
@@ -233,7 +232,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 370,
-                    tinca_record.taxon_class)
+                    'Class')
     # austroglanididae = Taxon.objects.get(family='Austroglanididae')
 
     page.setFont('Helvetica', 12)
@@ -252,7 +251,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 390,
-                    tinca_record.order)
+                    'Order')
     # emberizidae = Taxon.objects.get(family='Emberizidae')
 
     page.setFont('Helvetica', 12)
@@ -271,7 +270,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 410,
-                    tinca_record.family)
+                    'Family')
     # cyprinidae = Taxon.objects.get(family='Cyprinidae')
 
     page.setFont('Helvetica', 12)
@@ -290,7 +289,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 430,
-                    tinca_record.genus)
+                    'Genus')
     # mugilidae = Taxon.objects.get(family='Mugilidae')
 
     page.setFont('Helvetica', 12)
@@ -308,7 +307,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 450,
-                    tinca_record.species)
+                    'Species')
     # Cyprinidae = Taxon.objects.get(family='Cyprinidae')
 
     page.setFont('Helvetica', 12)
