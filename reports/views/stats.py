@@ -15,6 +15,8 @@ from reportlab.lib.pagesizes import ELEVENSEVENTEEN
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 from bims.models.taxon import Taxon
+from bims.models.biological_collection_record import \
+    BiologicalCollectionRecord
 
 
 def create_pdf(pathname, current_site):
@@ -56,7 +58,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 100,
-                    'OBIS ID')
+                    'GBIF ID')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 100,
@@ -327,10 +329,14 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left + 410, margin_bottom - 70,
+                    'Biological collection records: {}'.format(
+                            BiologicalCollectionRecord.objects.count()))
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left + 410, margin_bottom - 90,
                     'Environmental conditions')
 
     page.setFont('Helvetica', 12)
-    page.drawString(margin_left + 410, margin_bottom - 100,
+    page.drawString(margin_left + 410, margin_bottom - 110,
                     'Temperature')
 
     drawing = Drawing(margin_left + 410, margin_bottom - 100)
@@ -385,10 +391,13 @@ def create_pdf(pathname, current_site):
     page.setFont('Helvetica-Bold', 12)
     page.drawString(margin_left + 420, margin_bottom - 40,
                     'Genus')
+    page.setFont('Helvetica-Bold', 12)
+    page.drawString(margin_left + 520, margin_bottom - 40,
+                    'IUCN Status')
 
     page.line(
             (margin_left + 5), (margin_bottom - 45),
-            (margin_left + 500), (margin_bottom - 45))
+            (margin_left + 590), (margin_bottom - 45))
 
     specie_left_margin = margin_left + 5
     specie_bottom_margin = margin_bottom - 60
@@ -412,6 +421,11 @@ def create_pdf(pathname, current_site):
         page.drawString(
                 specie_left_margin + 420,
                 specie_bottom_margin, taxa.genus)
+
+        page.setFont('Helvetica', 8)
+        page.drawString(
+                specie_left_margin + 520,
+                specie_bottom_margin, str(taxa.iucn_status))
 
         specie_bottom_margin = (specie_bottom_margin - 20)
 

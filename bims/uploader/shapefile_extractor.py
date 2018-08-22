@@ -1,4 +1,4 @@
-__author__ = 'Irwan Fathurrahman <irwan@kartoza.com>'
+# __author__ = 'Irwan Fathurrahman <irwan@kartoza.com>'
 __date__ = '07/03/17'
 
 import os
