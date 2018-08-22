@@ -29,7 +29,7 @@ def create_pdf(pathname, current_site):
     margin_bottom = 1150
     page.setFont('Helvetica-Bold', 20)
     page.drawString(margin_left + 200, margin_bottom + 10,
-                    'KBIMS species - Focused Report')
+                    'FBIS species - Focused Report')
     now = datetime.date.today()
     time = now.strftime('%d, %b %Y')
     page.setFont('Helvetica', 10)
@@ -328,7 +328,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left, margin_bottom - 550,
-                    'SPECIES DATABASE BREAKDOWN')
+                    'SPECIES DATABASE BREAKDOWN (From Fish Species)')
 
     page.setFont('Helvetica-Bold', 14)
     page.drawString(margin_left + 5, margin_bottom - 580,
@@ -348,7 +348,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 630,
-                    'native count')
+                    '12')
     page.line(
             (margin_left + 5), (margin_bottom - 635),
             (margin_left + 360), (margin_bottom - 635))
@@ -359,7 +359,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 660,
-                    'none-native count')
+                    '19')
     page.line(
             (margin_left + 5), (margin_bottom - 665),
             (margin_left + 360), (margin_bottom - 665))
@@ -370,7 +370,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 690,
-                    'translocated count')
+                    '3')
     page.line(
             (margin_left + 5), (margin_bottom - 695),
             (margin_left + 360), (margin_bottom - 695))
@@ -381,7 +381,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 720,
-                    'species richness count')
+                    '12')
     page.line(
             (margin_left + 5), (margin_bottom - 725),
             (margin_left + 360), (margin_bottom - 725))
@@ -392,7 +392,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 750,
-                    'Shannon count')
+                    '19')
     page.line(
             (margin_left + 5), (margin_bottom - 755),
             (margin_left + 360), (margin_bottom - 755))
@@ -403,7 +403,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 780,
-                    'Simpson count')
+                    '3')
     page.line(
             (margin_left + 5), (margin_bottom - 785),
             (margin_left + 360), (margin_bottom - 785))
@@ -449,6 +449,57 @@ def create_pdf(pathname, current_site):
     drawing.add(bar_chart)
     drawing.drawOn(page, margin_left + 410, margin_bottom - 300)
 
+
+    fish_icon = 'reports/static/img/collection/fish.png'
+    invertabrate_icon = 'reports/static/img/collection/invertabrate.png'
+    algae_icon = 'reports/static/img/collection/algae.png'
+
+    page.drawImage(
+            fish_icon, margin_left + 450,
+            margin_bottom - 400, height=100,
+            width=100,
+            preserveAspectRatio=True, anchor='c', mask='auto')
+
+    page.setFont('Helvetica', 10)
+    page.drawString(margin_left + 550, margin_bottom - 410,
+                    'Fish Species')
+    page.setFont('Helvetica', 18)
+    page.drawString(margin_left + 620, margin_bottom - 400,
+                    '123')
+    page.setFont('Helvetica', 16)
+    page.drawString(margin_left + 500, margin_bottom - 450,
+                    '')
+
+    page.drawImage(
+            invertabrate_icon, margin_left + 450,
+                       margin_bottom - 550, height=100,
+            width=100,
+            preserveAspectRatio=True, anchor='c', mask='auto')
+
+    page.setFont('Helvetica', 10)
+    page.drawString(margin_left + 550, margin_bottom - 560,
+                    'Aquatic Invertebrates')
+
+    page.setFont('Helvetica', 18)
+    page.drawString(margin_left + 650, margin_bottom - 550,
+                    '456')
+    page.setFont('Helvetica', 16)
+    page.drawString(margin_left + 500, margin_bottom - 480,
+                    '')
+
+    page.drawImage(
+            algae_icon, margin_left + 450,
+                       margin_bottom - 700, height=100,
+            width=100,
+            preserveAspectRatio=True, anchor='c', mask='auto')
+    page.setFont('Helvetica', 10)
+    page.drawString(margin_left + 550, margin_bottom - 710,
+                    'Algae ')
+    page.setFont('Helvetica', 18)
+    page.drawString(margin_left + 580, margin_bottom - 700,
+                    '789')
+
+    # PAGE 2
     page.showPage()
     # --------------------------------------
     species = Taxon.objects.all()
@@ -520,7 +571,7 @@ def create_pdf(pathname, current_site):
 def view_pdf(request):
 
     current_site = request.META['HTTP_HOST']
-    pdf_name = 'kbims_report_{}'.format(strftime("%Y-%m-%d"+'_'+
+    pdf_name = 'FBIS_report_{}'.format(strftime("%Y-%m-%d"+'_'+
                                                   "%H:%M:%S",
                                          gmtime()))
 

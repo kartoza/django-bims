@@ -107,6 +107,7 @@ Thank you to the individual contributors who have helped to build HealthyRivers:
 * Tim Sutton (Lead developer): tim@kartoza.com
 * Dimas Ciptura: dimas@kartoza.com
 * Irwan Fathurrahman: irwan@kartoza.com
+* Alison Mukoma: alison@kartoza.com
 * Anita Hapsari: anita@kartoza.com
 
 .. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
