@@ -324,6 +324,90 @@ def create_pdf(pathname, current_site):
             (margin_left + 380), (margin_bottom - 455))
 
 
+    # SPECIES DATABASE BREAKDOWN
+
+    page.setFont('Helvetica-Bold', 16)
+    page.drawString(margin_left, margin_bottom - 550,
+                    'SPECIES DATABASE BREAKDOWN')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 5, margin_bottom - 580,
+                    'Rank')
+
+    page.setFont('Helvetica-Bold', 14)
+    page.drawString(margin_left + 300, margin_bottom - 580,
+                    'Species')
+
+    page.line(
+            (margin_left + 5), (margin_bottom - 605),
+            (margin_left + 360), (margin_bottom - 605))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 630,
+                    'Native')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 300, margin_bottom - 630,
+                    'native record count')
+    page.line(
+            (margin_left + 5), (margin_bottom - 635),
+            (margin_left + 360), (margin_bottom - 635))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 660,
+                    'Non Native')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 300, margin_bottom - 660,
+                    'none-native record count')
+    page.line(
+            (margin_left + 5), (margin_bottom - 665),
+            (margin_left + 360), (margin_bottom - 665))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 690,
+                    'Translocated')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 300, margin_bottom - 690,
+                    'translocated count')
+    page.line(
+            (margin_left + 5), (margin_bottom - 695),
+            (margin_left + 360), (margin_bottom - 695))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 720,
+                    'Species Richness')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 300, margin_bottom - 720,
+                    'species richness count')
+    page.line(
+            (margin_left + 5), (margin_bottom - 725),
+            (margin_left + 360), (margin_bottom - 725))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 750,
+                    'Shannon Diversity')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 300, margin_bottom - 750,
+                    'Shannon Diversity count')
+    page.line(
+            (margin_left + 5), (margin_bottom - 755),
+            (margin_left + 360), (margin_bottom - 755))
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 5, margin_bottom - 780,
+                    'Simpson Diversity')
+
+    page.setFont('Helvetica', 12)
+    page.drawString(margin_left + 300, margin_bottom - 780,
+                    'Simpson Diversity count')
+    page.line(
+            (margin_left + 5), (margin_bottom - 785),
+            (margin_left + 360), (margin_bottom - 785))
+
     # SECTION: ENVIRONMENTAL CONDITIONS
 
     page.setFont('Helvetica-Bold', 16)
@@ -436,7 +520,9 @@ def create_pdf(pathname, current_site):
 def view_pdf(request):
 
     current_site = request.META['HTTP_HOST']
-    pdf_name = 'ledet_report_' + strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    pdf_name = 'kbims_report_{}'.format(strftime("%Y-%m-%d"+'_'+
+                                                  "%H:%M:%S",
+                                         gmtime()))
 
     filename = '{}.{}'.format(pdf_name, 'pdf')
     storage_folder = 'reports'
