@@ -16,7 +16,6 @@ from django.conf.urls import url, include
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
-from reports.views.stats import view_pdf
 
 from geonode.urls import urlpatterns as geonode_urlpatterns
 
@@ -32,7 +31,8 @@ urlpatterns = [
     url(r'^bibliography/',
         include(('td_biblio.urls', 'bibliography'),
                 namespace = 'td_biblio')),
-    url(r'^report/', view_pdf, name='report'),
+
+    url(r'^', include('reports.urls')),
 
     url(r'^', include('example.urls')),
 
