@@ -20,6 +20,9 @@ class Profile(models.Model):
         blank=True,
         default=''
     )
+    hide_bims_info = models.BooleanField(
+        default=False
+    )
 
     class Meta:
         app_label = 'bims'

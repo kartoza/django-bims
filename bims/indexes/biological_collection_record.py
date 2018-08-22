@@ -81,6 +81,8 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    boundary = indexes.IntegerField()
+
     def prepare_taxon_gbif(self, obj):
         if obj.taxon_gbif_id:
             return obj.taxon_gbif_id.id
@@ -95,6 +97,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.site:
             return '%s,%s' % obj.site.get_centroid().coords
         return '0,0'
+
+    def prepare_boundary(self, obj):
+        if obj.site.boundary:
+            return obj.site.boundary.id
+        return 0
 
     class Meta:
         app_label = 'bims'

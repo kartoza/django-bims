@@ -92,6 +92,14 @@ class GetCollectionAbstract(APIView):
                 qs_collector.add(SQ(collector=query), SQ.OR)
             results = results.filter(qs_collector)
 
+        boundary = request_data.get('boundary')
+        if boundary:
+            qs_collector = SQ()
+            qs = json.loads(boundary)
+            for query in qs:
+                qs_collector.add(SQ(boundary=query), SQ.OR)
+            results = results.filter(qs_collector)
+
         # query by category
         query_category = request_data.get('category')
         if query_category:

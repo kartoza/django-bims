@@ -9,6 +9,10 @@ from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import LandingPageView
+from bims.api_views.boundary import (
+    BoundaryList,
+    BoundaryGeojson
+)
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSiteDetail,
@@ -32,6 +36,7 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import GetBioRecords
+from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
@@ -67,6 +72,10 @@ api_urls = [
         CollectionDownloader.as_view()),
     url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
+    url(r'^api/boundary/geojson$',
+        BoundaryGeojson.as_view(), name='boundary-geojson'),
+    url(r'^api/list-boundary/$',
+        BoundaryList.as_view(), name='list-boundary'),
     url(r'^api/list-collector/$',
         CollectorList.as_view(), name='list-collector'),
     url(r'^api/list-category/$',
@@ -84,6 +93,8 @@ api_urls = [
         filter_farm_ids_view, name='filter-farm-id'),
     url(r'^api/get-farm/(?P<farm_id>[\w-]+)/$',
         get_farm_view, name='get-farm'),
+    url(r'api/hide-popup-info/$',
+        HidePopupInfoUser.as_view(), name='hide-popup-user')
 ]
 
 

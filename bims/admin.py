@@ -43,6 +43,7 @@ from bims.models import (
 )
 
 from bims.conf import TRACK_PAGEVIEWS
+from bims.models.profile import Profile as BimsProfile
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -83,7 +84,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lat = -30
     default_lon = 25
 
-    readonly_fields = ('location_context_prettified',)
+    readonly_fields = ('location_context_prettified', 'boundary')
 
     list_display = (
         'name', 'location_type', 'get_centroid', 'has_location_context')
@@ -146,20 +147,21 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     def location_context_prettified(self, instance):
         """Function to display pretty format of location context."""
         # Convert the data to sorted, indented JSON
-        data = json.loads(instance.location_context_document)
-        json_data_string = json.dumps(data, indent=2)
+        if instance.location_context_document:
+            data = json.loads(instance.location_context_document)
+            json_data_string = json.dumps(data, indent=2)
 
-        # Get the Pygments formatter
-        formatter = HtmlFormatter(style='colorful', noclasses=True)
+            # Get the Pygments formatter
+            formatter = HtmlFormatter(style='colorful', noclasses=True)
 
-        # Highlight the data
-        response = highlight(json_data_string, JsonLexer(), formatter)
+            # Highlight the data
+            response = highlight(json_data_string, JsonLexer(), formatter)
 
-        # Get the stylesheet
-        style = "<style>" + formatter.get_style_defs() + "</style><br>"
+            # Get the stylesheet
+            style = "<style>" + formatter.get_style_defs() + "</style><br>"
 
-        # Safe the output
-        return mark_safe(style + response)
+            # Safe the output
+            return mark_safe(style + response)
 
     location_context_prettified.short_description = 'Pretty Location Context'
 
@@ -245,6 +247,10 @@ admin.site.register(Category)
 admin.site.register(Link, LinkAdmin)
 
 
+class ProfileInline(admin.StackedInline):
+    model = BimsProfile
+
+
 # Inherits from GeoNode ProfileCreationForm
 class UserCreateForm(ProfileCreationForm):
     class Meta:
@@ -258,6 +264,7 @@ class UserCreateForm(ProfileCreationForm):
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
+    inlines = [ProfileInline]
 
     add_fieldsets = (
         (None, {

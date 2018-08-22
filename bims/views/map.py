@@ -1,15 +1,25 @@
 # coding=utf-8
+import os
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from bims.utils.get_key import get_key
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
+from bims.models.profile import Profile as BimsProfile
+from django.contrib.flatpages.models import FlatPage
 
 
 class MapPageView(TemplateView):
     """Template view for map page"""
-    template_name = 'map.html'
+
+    # change template based on map
+    try:
+        app_name = os.environ['APP_NAME']
+    except KeyError:
+        app_name = 'bims'
+
+    template_name = 'map_page/%s.html' % app_name
 
     def get_context_data(self, **kwargs):
         """Get the context data which is passed to a template.
@@ -46,4 +56,17 @@ class MapPageView(TemplateView):
             context['date_filter']['min'] = date_min.year
         if date_max:
             context['date_filter']['max'] = date_max.year
+
+        if self.request.user:
+            try:
+                user_profile = BimsProfile.objects.get(user=self.request.user)
+                context['hide_bims_info'] = user_profile.hide_bims_info
+            except (BimsProfile.DoesNotExist, TypeError):
+                pass
+
+        try:
+            context['flatpage'] = FlatPage.objects.get(title__icontains='info')
+        except FlatPage.DoesNotExist:
+            pass
+
         return context
