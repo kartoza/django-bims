@@ -348,18 +348,18 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 630,
-                    'native record count')
+                    'native count')
     page.line(
             (margin_left + 5), (margin_bottom - 635),
             (margin_left + 360), (margin_bottom - 635))
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 5, margin_bottom - 660,
-                    'Non Native')
+                    'Non-Native')
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 660,
-                    'none-native record count')
+                    'none-native count')
     page.line(
             (margin_left + 5), (margin_bottom - 665),
             (margin_left + 360), (margin_bottom - 665))
@@ -392,7 +392,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 750,
-                    'Shannon Diversity count')
+                    'Shannon count')
     page.line(
             (margin_left + 5), (margin_bottom - 755),
             (margin_left + 360), (margin_bottom - 755))
@@ -403,7 +403,7 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 300, margin_bottom - 780,
-                    'Simpson Diversity count')
+                    'Simpson count')
     page.line(
             (margin_left + 5), (margin_bottom - 785),
             (margin_left + 360), (margin_bottom - 785))
