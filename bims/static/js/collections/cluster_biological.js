@@ -2,7 +2,7 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
-            "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
+            "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>"),
         clusterAPI: "/api/collection/cluster/",
@@ -10,7 +10,8 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
         viewCollection: [],
         parameters: {
             taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', yearFrom: '', yearTo: '', months: '', boundary: ''
+            collector: '', category: '', yearFrom: '', yearTo: '', months: '', boundary: '',
+            clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {
             this.initExtent = initExtent;
