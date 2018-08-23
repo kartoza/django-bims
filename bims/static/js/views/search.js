@@ -136,7 +136,7 @@ define([
         clearSearch: function () {
             $('#search').val('');
             Shared.Router.clearSearch();
-            this.search('');
+            $('.clear-filter').click();
             $('.map-search-result').hide();
         },
         datePickerToDate: function (element) {
