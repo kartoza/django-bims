@@ -20,8 +20,8 @@ from bims.utils.gbif import update_collection_record
 class BiologicalCollectionRecord(models.Model):
     """Biological collection model."""
     CATEGORY_CHOICES = (
-        ('alien', 'Alien'),
-        ('indigenous', 'Indigenous'),
+        ('alien', 'Non-native'),
+        ('indigenous', 'Native'),
         ('translocated', 'Translocated')
     )
     site = models.ForeignKey(

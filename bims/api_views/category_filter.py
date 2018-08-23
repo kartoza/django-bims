@@ -9,8 +9,6 @@ class CategoryList(APIView):
     """API for listing all biological collection record category."""
 
     def get(self, request, *args):
-        category = \
-            BiologicalCollectionRecord.objects.all().values_list(
-                'category', flat=True).distinct().order_by('category')
+        category = BiologicalCollectionRecord.CATEGORY_CHOICES
         return HttpResponse(
             json.dumps(list(category)), content_type='application/json')
