@@ -15,10 +15,11 @@ from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxon import Taxon
 from bims.serializers.bio_collection_serializer import (
-    BioCollectionSerializer,
     BioCollectionOneRowSerializer,
     BioCollectionGeojsonSerializer
 )
+from bims.serializers.location_site_serializer import \
+    LocationSiteClusterSerializer
 from bims.utils.cluster_point import (
     within_bbox,
     overlapping_area,
@@ -275,11 +276,16 @@ class ClusterCollection(GetCollectionAbstract):
         """
 
         cluster_points = []
+        sites = []
         for record in records:
             # get x,y of site
             record = record.object
             x = record.site.geometry_point.x
             y = record.site.geometry_point.y
+
+            if record.site_id in sites:
+                continue
+            sites.append(record.site_id)
 
             # check every point in cluster_points
             for pt in cluster_points:
@@ -301,8 +307,8 @@ class ClusterCollection(GetCollectionAbstract):
                     x - x_range * 1.5, y - y_range * 1.5,
                     x + x_range * 1.5, y + y_range * 1.5
                 )
-                serializer = BioCollectionSerializer(
-                    record)
+                serializer = LocationSiteClusterSerializer(
+                    record.site)
                 new_cluster = {
                     'count': 1,
                     'bbox': bbox,

@@ -1,4 +1,4 @@
-define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'shared'], function (Backbone, ClusterModel, ClusterView, Shared) {
+define(['backbone', 'models/location_site', 'views/location_site', 'shared'], function (Backbone, ClusterModel, ClusterView, Shared) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
