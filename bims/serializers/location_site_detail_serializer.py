@@ -74,7 +74,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             except KeyError:
                 module_info[module] = {
                     'count': 0,
-                    'categories': {}
+                    'categories': {},
+                    'iucn_status': {
+                        'sensitive': 0,
+                        'non-sensitive': 0
+                    }
                 }
             module_info[module]['count'] += 1
 
@@ -85,6 +89,13 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             except KeyError:
                 module_info[module]['categories'][category] = 0
             module_info[module]['categories'][category] += 1
+
+            # get per iucn_status info
+            sensitive = model.taxon_gbif_id.iucn_status.sensitive
+            if sensitive:
+                module_info[module]['iucn_status']['sensitive'] += 1
+            else:
+                module_info[module]['iucn_status']['non-sensitive'] += 1
 
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
