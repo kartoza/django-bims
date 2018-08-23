@@ -81,6 +81,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    taxon_class = indexes.NgramField(
+        model_attr='taxon_gbif_id__taxon_class',
+        indexed=True
+    )
+
     boundary = indexes.IntegerField()
 
     def prepare_taxon_gbif(self, obj):
