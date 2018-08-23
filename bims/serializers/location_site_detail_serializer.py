@@ -67,7 +67,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             # get per module info
             module = model.get_children()
             if not module:
-                module = 'fish'
+                module = 'base'
+            else:
+                module = module._meta.verbose_name
 
             try:
                 module_info[module]
@@ -83,19 +85,21 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             module_info[module]['count'] += 1
 
             # get per category info
-            category = model.category
-            try:
-                module_info[module]['categories'][category]
-            except KeyError:
-                module_info[module]['categories'][category] = 0
-            module_info[module]['categories'][category] += 1
+            if model.category:
+                category = model.category
+                try:
+                    module_info[module]['categories'][category]
+                except KeyError:
+                    module_info[module]['categories'][category] = 0
+                module_info[module]['categories'][category] += 1
 
             # get per iucn_status info
-            sensitive = model.taxon_gbif_id.iucn_status.sensitive
-            if sensitive:
-                module_info[module]['iucn_status']['sensitive'] += 1
-            else:
-                module_info[module]['iucn_status']['non-sensitive'] += 1
+            if model.taxon_gbif_id and model.taxon_gbif_id.iucn_status:
+                sensitive = model.taxon_gbif_id.iucn_status.sensitive
+                if sensitive:
+                    module_info[module]['iucn_status']['sensitive'] += 1
+                else:
+                    module_info[module]['iucn_status']['non-sensitive'] += 1
 
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
