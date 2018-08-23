@@ -514,6 +514,7 @@ def create_pdf(pathname, current_site):
                     footer_text)
     page.restoreState()
 
+
     # PAGE 2
     page.showPage()
     # --------------------------------------
@@ -523,7 +524,7 @@ def create_pdf(pathname, current_site):
     page.setFont('Helvetica-Bold', 16)
     page.drawString(margin_left + 5, margin_bottom - 10,
                     'PLACE FOCUSED DETAILS(Showing the first 50 '
-                    'results of %s)' % (species_total))
+                    'results of %s' % (species_total))
 
     page.setFont('Helvetica-Bold', 12)
     page.drawString(margin_left + 5, margin_bottom - 40,
