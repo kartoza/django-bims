@@ -39,7 +39,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 source: self.highlightPinnedVectorSource,
                 style: function (feature) {
                     var geom = feature.getGeometry();
-                    return self.layerStyle.getHighlightStyle(geom.getType());
+                    return self.layerStyle.getPinnedHighlightStyle(geom.getType());
                 }
             });
             map.addLayer(self.highlightPinnedVector);
