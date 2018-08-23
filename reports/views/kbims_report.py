@@ -57,7 +57,7 @@ def create_pdf(pathname, current_site):
 
 
     page.setFont('Helvetica-Bold', 16)
-    page.drawString(margin_left, margin_bottom - 30,
+    page.drawString(margin_left, margin_bottom - 60,
                     'Overview')
 
     page.setFont('Helvetica-Bold', 14)
@@ -197,13 +197,13 @@ def create_pdf(pathname, current_site):
     # anguillidae = Taxon.objects.get(family='Anguillidae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 105, margin_bottom - 330,
-                    'taxon_record.kingdom')
+                    'Animalia')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 330,
-                    'tinca_record.author')
+                    '')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 330,
-                    'tinca_record.gbif_id')
+                    '122')
 
     # ------------------------------------------
     page.line(
@@ -221,10 +221,10 @@ def create_pdf(pathname, current_site):
                     'Atherinidae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 350,
-                    'atherinidae.author')
+                    'Reichenow, 1901')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 350,
-                    'records')
+                    '98')
 
     page.line(
             (margin_left + 5), (margin_bottom - 355),
@@ -240,10 +240,10 @@ def create_pdf(pathname, current_site):
                     'Austroglanididae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 370,
-                    'austroglanididae.author')
+                    '')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 370,
-                    'records')
+                    '102')
 
     page.line(
             (margin_left + 5), (margin_bottom - 375),
@@ -259,10 +259,10 @@ def create_pdf(pathname, current_site):
                     'Emberizidae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 390,
-                    'emberizidae.author')
+                    '')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 390,
-                    'records')
+                    '32')
 
     page.line(
             (margin_left + 5), (margin_bottom - 395),
@@ -275,13 +275,13 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 105, margin_bottom - 410,
-                    'Cyprinidae')
+                    'Scincidae')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 410,
-                    'cyprinidae.author')
+                    'Branch Et Al')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 410,
-                    'records')
+                    '43')
 
     page.line(
             (margin_left + 5), (margin_bottom - 415),
@@ -294,13 +294,13 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 105, margin_bottom - 430,
-                    'Mugilidae')
+                    'Trachylepis')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 430,
-                    'mugilidae.author')
+                    '')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 430,
-                    'records')
+                    '32')
     page.line(
             (margin_left + 5), (margin_bottom - 435),
             (margin_left + 380), (margin_bottom - 435))
@@ -312,13 +312,13 @@ def create_pdf(pathname, current_site):
 
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 105, margin_bottom - 450,
-                    'Cyprinidae')
+                    'Trachylepis margaritifera')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 205, margin_bottom - 450,
-                    'Cyprinidae.author')
+                    '')
     page.setFont('Helvetica', 12)
     page.drawString(margin_left + 305, margin_bottom - 450,
-                    'records')
+                    '98')
     page.line(
             (margin_left + 5), (margin_bottom - 455),
             (margin_left + 380), (margin_bottom - 455))
