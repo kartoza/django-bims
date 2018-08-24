@@ -83,7 +83,6 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             var biologicalCount = 0;
             var siteCount = 0;
             $.each(this.models, function (index, model) {
-                console.log(model);
                 var searchResultView = new SearchResultView({
                     model: model
                 });
