@@ -40,6 +40,7 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
         },
         render: function () {
             this.data = this.model.toJSON();
+            console.log(this.getResultType());
             if (this.getResultType() === 'taxa') {
                 var template = _.template($('#search-result-taxa-template').html());
                 this.$el.html(template(this.model.attributes));

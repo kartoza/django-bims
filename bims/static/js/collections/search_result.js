@@ -6,6 +6,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
+        isFuzzySearch: false,
         search: function (searchPanel, parameters) {
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
@@ -43,11 +44,16 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         parse: function (response) {
             var result = response['records'];
             result = result.concat(response['sites']);
+            this.isFuzzySearch = response['fuzzy_search'];
             return result
         },
         renderCollection: function () {
             var self = this;
-            this.searchPanel.updatesearchPanelTitle(this.searchValue);
+            var searchResultTitle = this.searchValue;
+            if(this.isFuzzySearch) {
+                searchResultTitle = 'similar to ' + searchResultTitle;
+            }
+            this.searchPanel.updatesearchPanelTitle(searchResultTitle);
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {
                     self.searchPanel.fillPanelHtml(this.models[0]['attributes']['results']);
@@ -77,6 +83,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             var biologicalCount = 0;
             var siteCount = 0;
             $.each(this.models, function (index, model) {
+                console.log(model);
                 var searchResultView = new SearchResultView({
                     model: model
                 });

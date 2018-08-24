@@ -413,14 +413,14 @@
 
 <script type="text/template" id="search-result-record-template">
     <div class="result-search" data-search-result-id="" data-taxon-id="<%= taxon_gbif_id %>">
-        <p class="group-title"><%= common_name %></p>
+        <p class="group-title"><%= highlighted_common_name %></p>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>
 
 <script type="text/template" id="search-result-taxa-template">
     <div class="result-search" data-search-result-id="" data-taxon-id="<%= id %>">
-        <p class="group-title"><%= common_name %></p>
+        <p class="group-title"><%= highlighted_common_name %></p>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>

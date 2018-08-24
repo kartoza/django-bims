@@ -76,12 +76,20 @@ class TaxonExportSerializer(serializers.ModelSerializer):
         ]
 
 
+from bims.utils.highlighter import CustomHighlighter
 class TaxonOccurencesSerializer(serializers.ModelSerializer):
     """
     Serializer for taxon collection model in occurrences format.
     """
+
     record_type = serializers.SerializerMethodField()
     count = serializers.SerializerMethodField()
+    highlighted_common_name = serializers.SerializerMethodField()
+
+    def get_highlighted_common_name(self, obj):
+        query_value = self.context.get('query_value')
+        highlight = CustomHighlighter(query_value, max_length=100)
+        return highlight.highlight(obj.common_name)
 
     def get_record_type(self, obj):
         return 'taxa'
@@ -95,7 +103,7 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Taxon
         fields = [
-            'id', 'common_name',
-            'taxon_class', 'record_type', 'species',
+            'id', 'common_name', 'highlighted_common_name',
+            'taxon_class', 'record_type',
             'count'
         ]
