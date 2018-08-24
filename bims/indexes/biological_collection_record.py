@@ -14,6 +14,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    original_species_name_exact = indexes.CharField(
+        model_attr='original_species_name',
+        indexed=True
+    )
+
     collector = indexes.NgramField(
         model_attr='collector',
         indexed=True
@@ -77,6 +82,16 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     )
 
     taxon_scientific_name = indexes.NgramField(
+        model_attr='taxon_gbif_id__scientific_name',
+        indexed=True
+    )
+
+    taxon_common_name_exact = indexes.CharField(
+        model_attr='taxon_gbif_id__common_name',
+        indexed=True
+    )
+
+    taxon_scientific_name_exact = indexes.CharField(
         model_attr='taxon_gbif_id__scientific_name',
         indexed=True
     )

@@ -28,7 +28,9 @@ class SearchObjects(APIView):
     """
 
     def get(self, request):
-        results = GetCollectionAbstract.apply_filter(request, True)
+        query_value = request.GET.get('search')
+        results, fuzzy_search = GetCollectionAbstract.apply_filter(
+                request, True)
         bio_ids = results.values_list('model_pk', flat=True)
         taxon_ids = list(set(results.values_list('taxon_gbif', flat=True)))
         taxons = Taxon.objects.filter(
@@ -47,8 +49,11 @@ class SearchObjects(APIView):
                 then=1)))).order_by('name')
 
         search_result = dict()
+        search_result['fuzzy_search'] = fuzzy_search
         search_result['records'] = TaxonOccurencesSerializer(
-            taxons, many=True).data
+            taxons,
+            many=True,
+            context={'query_value': query_value}).data
         search_result['sites'] = LocationOccurrencesSerializer(
             location_sites, many=True).data
         return Response(search_result)

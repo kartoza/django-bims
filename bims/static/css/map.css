@@ -280,7 +280,7 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     top: 0;
     color: black;
-    padding: 5px 15px;
+    padding: 5px 15px 0;
     border: none;
     z-index: 10;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
@@ -294,6 +294,7 @@ html, body, .map, .map-wrapper, #map-container {
 .map-search-result {
     margin-left: 351px !important;
     padding-bottom: 0;
+    min-height: 209px;
 }
 
 .map-search-result .search-box {
@@ -312,8 +313,8 @@ html, body, .map, .map-wrapper, #map-container {
     background: ghostwhite;
     padding-right: 15px;
     padding-left: 15px;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding-top: 5px;
+    padding-bottom: 5px;
     font-weight: normal;
     font-size: 16px;
 }
@@ -339,7 +340,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 #search-result-content .search-results-section {
     max-height: 500px;
-    overflow-y: scroll;
+    overflow-y: auto;
     margin-right: -17px;
 }
 
@@ -438,7 +439,8 @@ html, body, .map, .map-wrapper, #map-container {
 .map-control-panel-box .subtitle, .search-results-total {
     background-color: ghostwhite;
     text-align: left;
-    border: 1px solid grey;
+    padding: 5px;
+    border-bottom: 1px solid rgb(227, 227, 227);
 }
 
 .filter-icon-arrow {
@@ -1293,4 +1295,8 @@ div:hover::-webkit-scrollbar {
 .filter-selected {
     background-color: #1b900d !important;
     color: white !important;
+}
+
+.highlighted {
+    background-color: rgba(250, 244, 0, 0.38);
 }

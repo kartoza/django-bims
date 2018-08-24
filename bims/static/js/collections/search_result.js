@@ -6,6 +6,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
+        isFuzzySearch: false,
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -46,11 +47,16 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         parse: function (response) {
             var result = response['records'];
             result = result.concat(response['sites']);
+            this.isFuzzySearch = response['fuzzy_search'];
             return result
         },
         renderCollection: function () {
             var self = this;
-            this.searchPanel.updatesearchPanelTitle(this.searchValue);
+            var searchResultTitle = this.searchValue;
+            if(this.isFuzzySearch) {
+                searchResultTitle = 'similar to ' + searchResultTitle;
+            }
+            this.searchPanel.updatesearchPanelTitle(searchResultTitle);
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {
                     self.searchPanel.fillPanelHtml(this.models[0]['attributes']['results']);

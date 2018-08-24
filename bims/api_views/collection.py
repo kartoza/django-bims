@@ -36,6 +36,9 @@ class GetCollectionAbstract(APIView):
     @staticmethod
     def apply_filter(request, ignore_bbox=False):
         # get records with same taxon
+
+        fuzzy_search = False
+
         try:
             request_data = request.GET
         except AttributeError:
@@ -46,15 +49,28 @@ class GetCollectionAbstract(APIView):
         query_value = request_data.get('search')
         if query_value:
             clean_query = sqs.query.clean(query_value)
-            settings.ELASTIC_MIN_SCORE = 1.5
             results = sqs.filter(
-                SQ(original_species_name=clean_query) |
-                SQ(taxon_common_name__contains=clean_query) |
-                SQ(taxon_scientific_name__contains=clean_query)
-            ).models(BiologicalCollectionRecord, Taxon).order_by('-_score')
+                    SQ(original_species_name_exact__contains=clean_query) |
+                    SQ(taxon_common_name_exact__contains=clean_query) |
+                    SQ(taxon_scientific_name_exact__contains=clean_query),
+                    validated=True
+            ).models(BiologicalCollectionRecord, Taxon)
+
+            if len(results) > 0:
+                fuzzy_search = False
+            else:
+                fuzzy_search = True
+                settings.ELASTIC_MIN_SCORE = 2
+                results = sqs.filter(
+                        SQ(original_species_name=clean_query) |
+                        SQ(taxon_common_name=clean_query) |
+                        SQ(taxon_scientific_name=clean_query),
+                        validated=True
+                ).models(BiologicalCollectionRecord, Taxon)
         else:
             settings.ELASTIC_MIN_SCORE = 0
             results = sqs.all().models(BiologicalCollectionRecord)
+            results = results.filter(validated=True)
 
         taxon = request_data.get('taxon', None)
         if taxon:
@@ -62,9 +78,6 @@ class GetCollectionAbstract(APIView):
                 taxon_gbif=taxon
             ).models(BiologicalCollectionRecord)
 
-        results = results.filter(
-            validated=True
-        )
         # get by bbox
         if not ignore_bbox:
             bbox = request_data.get('bbox', None)
@@ -134,7 +147,8 @@ class GetCollectionAbstract(APIView):
                 qs_month.add(
                     SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
-        return results
+
+        return results, fuzzy_search
 
 
 class GetCollectionExtent(GetCollectionAbstract):
@@ -143,7 +157,7 @@ class GetCollectionExtent(GetCollectionAbstract):
     """
 
     def get(self, request, format=None):
-        results = self.apply_filter(request, ignore_bbox=True)
+        results, fuzzy_search = self.apply_filter(request, ignore_bbox=True)
         multipoint = MultiPoint([result.location_center for result in results])
         if multipoint:
             extents = multipoint.extent
@@ -234,7 +248,7 @@ class CollectionDownloader(GetCollectionAbstract):
         file_type = request.GET.get('fileType', None)
         if not file_type:
             file_type = 'csv'
-        queryset = self.apply_filter(request, ignore_bbox=True)
+        queryset, fuzzy_search = self.apply_filter(request, ignore_bbox=True)
         if file_type == 'csv':
             return self.convert_to_cvs(
                 queryset,
@@ -332,7 +346,7 @@ class ClusterCollection(GetCollectionAbstract):
                 'zoom : zoom level of map. '
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
-        results = self.apply_filter(request)
+        results, fuzzy_search = self.apply_filter(request)
         cluster = self.clustering_process(
             results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
