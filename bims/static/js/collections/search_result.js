@@ -7,6 +7,9 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         searchPanel: null,
         searchValue: '',
         isFuzzySearch: false,
+        modelId: function (attrs) {
+            return attrs.record_type + "-" + attrs.id;
+        },
         search: function (searchPanel, parameters) {
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
