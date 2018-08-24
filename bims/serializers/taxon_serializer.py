@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from bims.models import Taxon
 from bims.models.iucn_status import IUCNStatus
+from bims.utils.highlighter import CustomHighlighter
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -76,7 +77,6 @@ class TaxonExportSerializer(serializers.ModelSerializer):
         ]
 
 
-from bims.utils.highlighter import CustomHighlighter
 class TaxonOccurencesSerializer(serializers.ModelSerializer):
     """
     Serializer for taxon collection model in occurrences format.
