@@ -26,12 +26,12 @@ STATICFILES_FINDERS += (
 
 # Django-allauth related settings
 AUTHENTICATION_BACKENDS = (
+    'oauth2_provider.backends.OAuth2Backend',
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
-
+    'guardian.backends.ObjectPermissionBackend',
     # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
-    'guardian.backends.ObjectPermissionBackend',
 )
 
 # Django grappelli need to be added before django.contrib.admin
