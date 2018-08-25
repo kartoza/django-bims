@@ -31,6 +31,7 @@ AUTHENTICATION_BACKENDS = (
 
     # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 # Django grappelli need to be added before django.contrib.admin
@@ -249,12 +250,11 @@ LOGGING = {
     },
 }
 
-ASYNC_SIGNALS = True
+ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
+        'ASYNC_SIGNALS_GEONODE', 'False'))
+CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS_GEONODE else True
 
-from .geonode_queue_settings import *  # noqa
-
-CELERY_TASK_QUEUES += GEONODE_QUEUES
-
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-
-CELERY_TASK_ALWAYS_EAGER = False
+if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
+    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+    from .geonode_queue_settings import *  # noqa
+    CELERY_TASK_QUEUES += GEONODE_QUEUES
