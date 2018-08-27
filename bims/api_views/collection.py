@@ -108,6 +108,7 @@ class GetCollectionAbstract(APIView):
 
         boundary = request_data.get('boundary')
         if boundary:
+            settings.ELASTIC_MIN_SCORE = 0
             qs_collector = SQ()
             qs = json.loads(boundary)
             for query in qs:
