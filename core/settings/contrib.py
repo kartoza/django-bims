@@ -26,9 +26,10 @@ STATICFILES_FINDERS += (
 
 # Django-allauth related settings
 AUTHENTICATION_BACKENDS = (
+    'oauth2_provider.backends.OAuth2Backend',
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
-
+    'guardian.backends.ObjectPermissionBackend',
     # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
 )
@@ -59,7 +60,7 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
-    'ckeditor',
+    'crispy_forms',
 )
 
 # workaround to get flatpages picked up in installed apps.
@@ -181,6 +182,12 @@ CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
 ELASTIC_MIN_SCORE = 2
 
+# site tracking stats settings
+TRACK_PAGEVIEWS = True
+TRACK_AJAX_REQUESTS = True
+TRACK_REFERER = True
+TRACK_IGNORE_STATUS_CODES = [403, 405, 410]
+
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
     'monitoring.RequestEvent',
@@ -248,12 +255,11 @@ LOGGING = {
     },
 }
 
-ASYNC_SIGNALS = True
+ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
+        'ASYNC_SIGNALS_GEONODE', 'False'))
+CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS_GEONODE else True
 
-from .geonode_queue_settings import *  # noqa
-
-CELERY_TASK_QUEUES += GEONODE_QUEUES
-
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-
-CELERY_TASK_ALWAYS_EAGER = False
+if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
+    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+    from .geonode_queue_settings import *  # noqa
+    CELERY_TASK_QUEUES += GEONODE_QUEUES

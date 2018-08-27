@@ -56,4 +56,5 @@ pyshp==1.2.12
 
 # for django flatpages
 django-ckeditor==5.6.1
+django-crispy-forms==1.7.2
 djangorestframework-gis==0.13

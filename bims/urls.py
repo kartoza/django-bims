@@ -7,7 +7,12 @@ from django.views.generic import RedirectView
 
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
+from bims.views.tracking import dashboard
 from bims.views.landing_page import LandingPageView
+from bims.api_views.boundary import (
+    BoundaryList,
+    BoundaryGeojson
+)
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSiteDetail,
@@ -31,13 +36,18 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import GetBioRecords
+from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
+from bims.views.non_validated_user_list import NonValidatedObjectsUserView
+from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
+from bims.api_views.send_notification_to_validator import \
+    SendNotificationValidation
 from bims.views.locate import filter_farm_ids_view, get_farm_view
 
 api_urls = [
@@ -62,6 +72,10 @@ api_urls = [
         CollectionDownloader.as_view()),
     url(r'^api/search/$',
         SearchObjects.as_view(), name='search-api'),
+    url(r'^api/boundary/geojson$',
+        BoundaryGeojson.as_view(), name='boundary-geojson'),
+    url(r'^api/list-boundary/$',
+        BoundaryList.as_view(), name='list-boundary'),
     url(r'^api/list-collector/$',
         CollectorList.as_view(), name='list-collector'),
     url(r'^api/list-category/$',
@@ -73,10 +87,14 @@ api_urls = [
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
         GetBioRecords.as_view(), name='get-bio-object'),
+    url(r'^api/send-email-validation/$',
+        SendNotificationValidation.as_view(), name='send-email-validation'),
     url(r'^api/filter-farm-id/$',
         filter_farm_ids_view, name='filter-farm-id'),
     url(r'^api/get-farm/(?P<farm_id>[\w-]+)/$',
         get_farm_view, name='get-farm'),
+    url(r'api/hide-popup-info/$',
+        HidePopupInfoUser.as_view(), name='hide-popup-user')
 ]
 
 
@@ -102,6 +120,12 @@ urlpatterns = [
         UnderDevelopmentView.as_view(), name='under-development'),
     url(r'^nonvalidated-list/$',
         NonValidatedObjectsView.as_view(), name='nonvalidated-list'),
+
+    url(r'^tracking/$', dashboard, name='tracking-dashboard'),
+    url(r'^nonvalidated-user-list/$',
+        NonValidatedObjectsUserView.as_view(), name='nonvalidated-user-list'),
+    url(r'^update/(?P<pk>\d+)/$',
+        BioRecordsUpdateView.as_view(), name='update-records'),
     url(r'^upload_collection/$', CollectionUploadView.as_view(),
         name='upload-collection'),
 ] + api_urls

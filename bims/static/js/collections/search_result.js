@@ -6,6 +6,10 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
+        isFuzzySearch: false,
+        modelId: function (attrs) {
+            return attrs.record_type + "-" + attrs.id;
+        },
         search: function (searchPanel, parameters) {
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
@@ -13,6 +17,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             this.yearFrom = parameters['yearFrom'];
             this.yearTo = parameters['yearTo'];
             this.months = parameters['months'];
+            this.boundary = parameters['boundary'];
 
             this.url = this.searchUrl +
                 '?search=' + this.searchValue +
@@ -20,7 +25,8 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                 '&category=' + this.categoryValue +
                 '&yearFrom=' + this.yearFrom +
                 '&yearTo=' + this.yearTo +
-                '&months=' + this.months;
+                '&months=' + this.months +
+                '&boundary=' + this.boundary;
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
         },
@@ -41,11 +47,16 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         parse: function (response) {
             var result = response['records'];
             result = result.concat(response['sites']);
+            this.isFuzzySearch = response['fuzzy_search'];
             return result
         },
         renderCollection: function () {
             var self = this;
-            this.searchPanel.updatesearchPanelTitle(this.searchValue);
+            var searchResultTitle = this.searchValue;
+            if(this.isFuzzySearch) {
+                searchResultTitle = 'similar to ' + searchResultTitle;
+            }
+            this.searchPanel.updatesearchPanelTitle(searchResultTitle);
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {
                     self.searchPanel.fillPanelHtml(this.models[0]['attributes']['results']);

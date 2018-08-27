@@ -1,0 +1,120 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    Edit Records
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
+
+    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
+
+    <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
+    <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
+{% endblock %}
+
+{% block body_content %}
+    <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 25px">
+        <h1 class="title-heading">UPDATE BIODIVERSITY RECORDS</h1>
+    </div>
+    <div class="container" style="margin-bottom: 50px">
+    <div class="form-wrapper form-control">
+        <form id="form" method="post">
+            {% csrf_token %}
+            {% crispy form %}
+            <input name="geometry_type" type="hidden">
+            <input name="geometry" type="hidden">
+        </form>
+        <div class="form-group">
+            <label>Geometry type</label>
+            <select id="type" class="form-control">
+                <option value="Point">Point</option>
+                <option value="LineString">LineString</option>
+                <option value="Polygon">Polygon</option>
+            </select>
+        </div>
+        <label class="control-label">Location</label>
+        <div id="map" class="map" style="height: 400px; width: 600px; margin-bottom: 50px"></div>
+        <input class="form-control btn btn-primary" form="form" type="submit" value="Update" />
+    </div>
+    </div>
+
+    <script src="{% static 'js/views/map-widget.js' %}"></script>
+    <script>
+        var geometryType = {
+            'POINT': 'Point',
+            'LINE': 'LineString',
+            'POLYGON': 'Polygon'
+        };
+        var geojson  = new ol.format.GeoJSON;
+
+        $(document).ready(function () {
+            $('input[name=collection_date]').datepicker(
+                {
+                    dateFormat: 'yyyy-mm-dd',
+                    changeMonth: true,
+                    changeYear: true
+                }
+            ).attr('type', 'text');
+            $('#type').val(geometryType['{{ geometry_type }}']).change();
+            var geometry = '{{ geometry }}';
+            var geometry_json = JSON.parse(geometry.replace(/&quot;/g,'"'));
+            var geojsonObject = {
+                'type': 'FeatureCollection',
+                'features': [{
+                  'type': 'Feature',
+                  'geometry': {
+                    'type': geometry_json['type'],
+                    'coordinates': geometry_json['coordinates']
+                  }
+                }]
+            };
+            var geojson_feature = geojson.readFeatures(geojsonObject, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            source.addFeatures(geojson_feature);
+
+            $('#id_site').on('change', function () {
+                var location_pk = $(this).val();
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/location-site/'+ location_pk +'/',
+                    success: function (data) {
+                        source.clear();
+                        var geometry_location = JSON.parse(data['geometry']);
+                        $('#type').val(geometry_location['type']).change();
+                        var geojsonObject2 = {
+                            'type': 'FeatureCollection',
+                            'features': [{
+                              'type': 'Feature',
+                              'geometry': {
+                                'type': geometry_location['type'],
+                                'coordinates': geometry_location['coordinates']
+                              }
+                            }]
+                        };
+                        var geojson_feature2 = geojson.readFeatures(geojsonObject2, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857'
+                        });
+                        source.addFeatures(geojson_feature2);
+                    }
+                })
+            })
+        });
+
+        $('#form').on('submit', function () {
+            var features = source.getFeatures();
+            var json = geojson.writeFeatures(features, {
+                featureProjection: 'EPSG:3857'
+            });
+            $('input[name=geometry_type]').val(typeSelect.value);
+            $('input[name=geometry]').val(json);
+        })
+    </script>
+{% endblock %}

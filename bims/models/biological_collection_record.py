@@ -20,8 +20,8 @@ from bims.utils.gbif import update_collection_record
 class BiologicalCollectionRecord(models.Model):
     """Biological collection model."""
     CATEGORY_CHOICES = (
-        ('alien', 'Alien'),
-        ('indigenous', 'Indigenous'),
+        ('alien', 'Non-native'),
+        ('indigenous', 'Native'),
         ('translocated', 'Translocated')
     )
     site = models.ForeignKey(
@@ -72,6 +72,9 @@ class BiologicalCollectionRecord(models.Model):
         verbose_name='Taxon GBIF ',
     )
     validated = models.BooleanField(
+        default=False,
+    )
+    ready_for_validation = models.BooleanField(
         default=False,
     )
 

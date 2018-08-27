@@ -62,31 +62,31 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     taxon_class = serializers.SerializerMethodField()
 
     def get_taxon_class(self, obj):
-        if obj.taxon_gbif_id:
-            return obj.taxon_gbif_id.taxon_class
+        if obj.taxon_class:
+            return obj.taxon_class
         else:
             return ''
 
     def get_location_site(self, obj):
-        if obj.site:
-            return obj.site.name.encode('utf8')
+        if obj.location_site_name:
+            return obj.location_site_name.encode('utf8')
         return ''
 
     def get_latitude(self, obj):
-        if obj.site and obj.site.geometry_point:
-            return obj.site.geometry_point.y
+        if obj.location_center:
+            return obj.location_center.x
         return ''
 
     def get_longitude(self, obj):
-        if obj.site and obj.site.geometry_point:
-            return obj.site.geometry_point.x
+        if obj.location_center:
+            return obj.location_center.y
         return ''
 
     def get_species_name(self, obj):
         return obj.original_species_name.encode('utf8')
 
     def get_notes(self, obj):
-        return obj.notes.encode('utf8')
+        return obj.notes.replace(';', '-').encode('utf8')
 
     def get_category(self, obj):
         return obj.category.encode('utf8')

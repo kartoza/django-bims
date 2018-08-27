@@ -4,6 +4,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         biodiversitySource: null,
         highlightVectorSource: null,
         highlightVector: null,
+        highlightPinnedVectorSource: null,
+        highlightPinnedVector: null,
         layers: {},
         currentAdministrativeLayer: "",
         initialize: function () {
@@ -20,6 +22,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         addBiodiversityLayersToMap: function (map) {
             var self = this;
+            // ---------------------------------
+            // HIGHLIGHT PINNED LAYER
+            // ---------------------------------
+            self.highlightPinnedVectorSource = new ol.source.Vector({});
+            self.highlightPinnedVector = new ol.layer.Vector({
+                source: self.highlightPinnedVectorSource,
+                style: function (feature) {
+                    var geom = feature.getGeometry();
+                    return self.layerStyle.getPinnedHighlightStyle(geom.getType());
+                }
+            });
+            map.addLayer(self.highlightPinnedVector);
 
             // ---------------------------------
             // BIODIVERSITY LAYERS
@@ -109,6 +123,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 return false;
             }
             this.layers[layerName]['layer'].setVisible(visible);
+            // if (layerName !== this.administrativeKeyword) {
+            //     this.layers[layerName]['layer'].setVisible(visible);
+            // } else {
+            //     if (this.currentAdministrativeLayer in this.layers) {
+            //         this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
+            //     }
+            // }
         },
         selectorChanged: function (layerName, selected) {
             if (layerName === "Biodiversity") {
@@ -153,6 +174,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         renderLegend: function (id, url, layer, visibleDefault) {
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
+            if (url.indexOf('.qgs') != -1) {
+                scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
+            }
             var html =
                 '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
@@ -204,6 +228,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                 }
                             });
                         });
+                        self.moveLayerToTop(self.highlightPinnedVector);
                         self.moveLayerToTop(self.highlightVector);
                     }
                 });

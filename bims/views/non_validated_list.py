@@ -51,10 +51,13 @@ class NonValidatedObjectsView(
         filter_owner = self.request.GET.get('owner', None)
         filter_date_to = self.request.GET.get('date_to', None)
         filter_date_from = self.request.GET.get('date_from', None)
+        filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
             queryset = \
                 BiologicalCollectionRecord.objects.filter(
                     validated=False).order_by('original_species_name')
+            if filter_pk is not None:
+                queryset = queryset.filter(pk=filter_pk)
             if filter_name is not None:
                 queryset = queryset.filter(
                     original_species_name__icontains=filter_name)

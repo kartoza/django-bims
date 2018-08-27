@@ -55,12 +55,17 @@ define([
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
+            Shared.Dispatcher.on('map:addHighlightFeature', this.addHighlightFeature, this);
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
+            Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
+            Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
+            Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
             this.mapControlPanel.searchView.initDateFilter();
+            this.showInfoPopup();
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -139,6 +144,7 @@ define([
 
             // Close opened control panel
             this.mapControlPanel.closeSearchPanel();
+
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
@@ -409,15 +415,23 @@ define([
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
         },
-        switchHighlight: function (features) {
+        switchHighlight: function (features, ignoreZoom) {
+            var self = this;
             this.closeHighlight();
-            this.addHighlightFeature(features[0]);
-            var extent = this.layers.highlightVectorSource.getExtent();
-            this.map.getView().fit(extent, {
-                size: this.map.getSize(), padding: [
-                    0, $('.right-panel').width(), 0, 0
-                ]
+            $.each(features, function (index, feature) {
+                self.addHighlightFeature(feature);
             });
+            if (!ignoreZoom) {
+                var extent = this.layers.highlightVectorSource.getExtent();
+                this.map.getView().fit(extent, {
+                    size: this.map.getSize(), padding: [
+                        0, $('.right-panel').width(), 0, 0
+                    ]
+                });
+                if (this.getCurrentZoom() > 18) {
+                    this.map.getView().setZoom(18);
+                }
+            }
         },
         addHighlightFeature: function (feature) {
             this.layers.highlightVectorSource.addFeature(feature);
@@ -426,6 +440,22 @@ define([
             this.hidePopup();
             if (this.layers.highlightVectorSource) {
                 this.layers.highlightVectorSource.clear();
+            }
+        },
+        switchHighlightPinned: function (features, ignoreZoom) {
+            var self = this;
+            this.closeHighlightPinned();
+            $.each(features, function (index, feature) {
+                self.addHighlightPinnedFeature(feature);
+            });
+        },
+        addHighlightPinnedFeature: function (feature) {
+            this.layers.highlightPinnedVectorSource.addFeature(feature);
+        },
+        closeHighlightPinned: function () {
+            this.hidePopup();
+            if (this.layers.highlightPinnedVectorSource) {
+                this.layers.highlightPinnedVectorSource.clear();
             }
         },
         startOnHoverListener: function () {
@@ -446,6 +476,11 @@ define([
                     $('#' + that.map.getTarget()).find('canvas').css('cursor', 'move');
                 }
             });
+        },
+        showInfoPopup: function () {
+            if(!hideBimsInfo && bimsInfoContent) {
+                $('#general-info-modal').fadeIn()
+            }
         }
     })
 });

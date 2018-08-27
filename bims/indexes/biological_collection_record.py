@@ -14,6 +14,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    original_species_name_exact = indexes.CharField(
+        model_attr='original_species_name',
+        indexed=True
+    )
+
     collector = indexes.NgramField(
         model_attr='collector',
         indexed=True
@@ -71,6 +76,33 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     taxon_gbif_not_null = indexes.BooleanField(indexed=True)
 
+    taxon_common_name = indexes.NgramField(
+        model_attr='taxon_gbif_id__common_name',
+        indexed=True
+    )
+
+    taxon_scientific_name = indexes.NgramField(
+        model_attr='taxon_gbif_id__scientific_name',
+        indexed=True
+    )
+
+    taxon_common_name_exact = indexes.CharField(
+        model_attr='taxon_gbif_id__common_name',
+        indexed=True
+    )
+
+    taxon_scientific_name_exact = indexes.CharField(
+        model_attr='taxon_gbif_id__scientific_name',
+        indexed=True
+    )
+
+    taxon_class = indexes.NgramField(
+        model_attr='taxon_gbif_id__taxon_class',
+        indexed=True
+    )
+
+    boundary = indexes.IntegerField()
+
     def prepare_taxon_gbif(self, obj):
         if obj.taxon_gbif_id:
             return obj.taxon_gbif_id.id
@@ -85,6 +117,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.site:
             return '%s,%s' % obj.site.get_centroid().coords
         return '0,0'
+
+    def prepare_boundary(self, obj):
+        if obj.site.boundary:
+            return obj.site.boundary.id
+        return 0
 
     class Meta:
         app_label = 'bims'

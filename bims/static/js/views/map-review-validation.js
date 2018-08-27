@@ -104,6 +104,17 @@ function validateObject(pk) {
     });
 }
 
+function sendEmailValidation(pk) {
+    $.ajax({
+        url: '/api/send-email-validation/',
+        data: {'pk': pk},
+        success: function () {
+            $('#message-success').show().html('Validation notification is sent.');
+            setTimeout(location.reload(), 3000)
+        }
+    });
+}
+
 function dynamicInputFilter(that) {
     $('.input-options').hide().val('');
     $('.' + that.value).show();
@@ -111,7 +122,7 @@ function dynamicInputFilter(that) {
 
 $('input[name=filter_result]').click(function () {
     var selected_filter = $('#filter-select').val();
-    var url = '/nonvalidated-list/';
+    var url = pageUrl;
     if(selected_filter === 'collection_date'){
         var filter_date_to = $('input[name=date_to]').val();
         var filter_date_from = $('input[name=date_from]').val();
