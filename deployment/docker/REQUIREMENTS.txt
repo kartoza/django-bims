@@ -49,6 +49,8 @@ django-ordered-model==1.4.3
 git+https://github.com/dimasciput/django-haystack.git
 elasticsearch==5.0.1
 
+# Statistics Dashboard
+
 # prometheus monitoring support
 django-prometheus==1.0.14
 prometheus_client==0.2.0

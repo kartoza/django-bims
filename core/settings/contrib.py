@@ -60,7 +60,6 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
-    'ckeditor',
     'crispy_forms',
 )
 
@@ -182,6 +181,12 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
 
 ELASTIC_MIN_SCORE = 2
+
+# site tracking stats settings
+TRACK_PAGEVIEWS = True
+TRACK_AJAX_REQUESTS = True
+TRACK_REFERER = True
+TRACK_IGNORE_STATUS_CODES = [403, 405, 410]
 
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
