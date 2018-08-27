@@ -77,7 +77,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
                             $(self.notification).html(data['message']);
                             setTimeout(
                                 function () {
-                                    self.resetModal()
+                                    $(self.notification).css('animation', 'blinker 1s linear infinite');
+                                    self.resetModal();
                                 }, 1000);
                         } else {
                             setTimeout(
