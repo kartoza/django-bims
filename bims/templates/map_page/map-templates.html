@@ -294,7 +294,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Upload Data</h5>
-                    <button type="button" class="close"
+                    <button type="button" class="close small-close"
                             aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -305,16 +305,19 @@
                         </div>
                         <div class="alert alert-success" role="alert">
                         </div>
-                        <label for="ud_module" class="upload-input-label">
-                            Module *
-                        </label>
-                        <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
-                            <option value="">-</option>
-                            <option value="base">base</option>
-                            {% for key, value in biological_modules.items %}
-                                <option value="{{ value }}">{{ key }}</option>
-                            {% endfor %}
-                        </select>
+                        {% if biological_modules|length > 1 %}
+                            <label for="ud_module" class="upload-input-label">
+                                Module *
+                            </label>
+                            <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                <option value="">-</option>
+                                {% for key, value in biological_modules.items %}
+                                    <option value="{{ value }}">{{ key }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
+                        {% endif %}
                         <label for="ud_species_name" class="upload-input-label">
                             Species Name *
                         </label>
