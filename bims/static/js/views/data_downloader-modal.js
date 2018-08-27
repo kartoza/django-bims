@@ -69,10 +69,23 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
                 dataType: 'json',
                 success: function (data) {
                     if (data['status'] !== "success") {
-                        setTimeout(
-                            function () {
-                                self.downloading(url);
-                            }, 5000);
+                        if (data['status'] === "failed") {
+                            if (self.xhr) {
+                                self.xhr.abort();
+                            }
+                            $(self.notification).css('animation', 'none');
+                            $(self.notification).html(data['message']);
+                            setTimeout(
+                                function () {
+                                    $(self.notification).css('animation', 'blinker 1s linear infinite');
+                                    self.resetModal();
+                                }, 1000);
+                        } else {
+                            setTimeout(
+                                function () {
+                                    self.downloading(url);
+                                }, 5000);
+                        }
                     } else {
                         self.downloadFile(data);
                     }
