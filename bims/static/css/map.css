@@ -351,6 +351,28 @@ html, body, .map, .map-wrapper, #map-container {
 .layers-selector-container {
     display: none;
     padding-bottom: 0 !important;
+    max-height: 500px;
+}
+
+.layers-selector-container .content {
+    border-top: 1px solid darkgray;
+    margin-top: 3px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#layers-selector {
+    max-height: 450px;
+}
+
+.ui-state-default {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    max-height: 500px;
+    font-size: 11pt;
+    text-overflow: ellipsis;
+    max-width: 245px;
 }
 
 .download-format-selector-container {
@@ -368,6 +390,7 @@ html, body, .map, .map-wrapper, #map-container {
     list-style-type: none;
     padding: 5px;
     margin-bottom: 0;
+    display: block;
 }
 
 .map-control-panel-box li {
@@ -389,11 +412,6 @@ html, body, .map, .map-wrapper, #map-container {
 .layer-selector-input {
     margin-right: 5px;
     cursor: pointer;
-}
-
-.layers-selector-container .content {
-    border-top: 1px solid darkgray;
-    margin-top: 3px;
 }
 
 .locate-options-container {
