@@ -30,6 +30,7 @@ define([
             }
         },
         search: function (searchValue) {
+            Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
                 return;
             }
