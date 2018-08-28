@@ -21,8 +21,7 @@
   {% endif %}
   <div class="paginate-contents">
   {% comments resource as comment_list %}
-  {% autopaginate comment_list 5 %}
-  {% for comment in comment_list %}      
+  {% for comment in comment_list %}
     <article class="col-md-8 comment">
       <div class="avatar pull-left"><a href="{{ comment.author.get_absolute_url }}">{% autoescape off %}{% avatar comment.author 40 %}{% endautoescape %}</a></div>
       <p class="comment-description">
