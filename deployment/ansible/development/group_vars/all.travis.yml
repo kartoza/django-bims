@@ -1,5 +1,4 @@
 ---
-
 # Set to yes, if you're using pycharm for development
 # Otherwise, set no
 use_pycharm: no
@@ -44,6 +43,7 @@ geonode:
     IS_CELERY: False
     C_FORCE_ROOT: 1
     # replaced with defaults in settings
+    # Must have protocol
     GEOSERVER_PUBLIC_LOCATION: http://uwsgi/geoserver/
     GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
     STATIC_ROOT: /home/web/static
@@ -73,3 +73,4 @@ docker_port_forward:
     http: 80
     ssh: 63303
     karma_tests: 63304
+    geoserver: 63305

@@ -9,9 +9,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         layers: {},
         currentAdministrativeLayer: "",
         administrativeKeyword: "Administrative",
+        initialLoadBiodiversityLayersToMap: false,
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
+        },
+        isBiodiversityLayerLoaded: function () {
+            return this.initialLoadBiodiversityLayersToMap
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
@@ -20,10 +24,26 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
             return $checkbox.is(':checked');
         },
+        isAdministrativeLayerSelected: function () {
+            var $checkbox = $('.layer-selector-input[value="Administrative"]');
+            if ($checkbox.length === 0) {
+                return true
+            }
+            return $checkbox.is(':checked');
+        },
         initLayer: function (layer, layerName, visibleInDefault) {
-            this.layers[layerName] = {
+            var layerOptions = layer.getSource()['i'];
+            var layerType = layerName;
+            if(layerOptions !== null) {
+                layerType = layer.getSource()['i']['layers'];
+            }
+            if (layerName.indexOf(this.administrativeKeyword) >= 0) {
+                layerType = layerName;
+            }
+            this.layers[layerType] = {
                 'layer': layer,
-                'visibleInDefault': visibleInDefault
+                'visibleInDefault': visibleInDefault,
+                'layerName': layerName
             };
             if (!visibleInDefault) {
                 layer.setVisible(false);
@@ -55,6 +75,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             }), 'Biodiversity', true);
 
+            if(!self.initialLoadBiodiversityLayersToMap) {
+               self.initialLoadBiodiversityLayersToMap = true;
+            }
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
@@ -78,7 +101,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         addLayersToMap: function (map) {
             var self = this;
             this.map = map;
-
             $.ajax({
                 type: 'GET',
                 url: listNonBiodiversityLayerAPIUrl,
@@ -108,25 +130,63 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             false
                         );
                     });
-
-                    // add Administrative boundary
-                    self.renderAdministrativeLayer(data);
-                    self.addBiodiveristyLayersToMap(map);
+                    self.addLayersFromGeonode(map, data);
                 },
                 error: function (err) {
                     self.addBiodiveristyLayersToMap(map);
-                }
+                 }
             });
         },
-        isBiodiversityLayerShow: function () {
-            var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
-            if ($checkbox.length == 0) {
-                return true
-            }
-            return $checkbox.is(':checked');
+        addLayersFromGeonode: function (map, nonbiodiversityData) {
+            // Adding layer from GeoNode, filtering is done by the API
+            var default_wms_url =  ogcServerDefaultLocation + 'wms';
+            var default_wms_format = 'image/png';
+            var self = this;
+
+            $.ajax({
+                type: 'GET',
+                url: '/api/layers',
+                dataType: 'json',
+                success: function (data) {
+
+                    $.each(data['objects'].reverse(), function (index, value) {
+                        if (value['title'].indexOf(self.administrativeKeyword) >= 0) {
+                            return;
+                        }
+                        var options = {
+                            url: default_wms_url,
+                            params: {
+                                layers: value.typename,
+                                format: default_wms_format
+                            }
+                        };
+
+                        self.initLayer(
+                            new ol.layer.Tile({
+                                source: new ol.source.TileWMS(options)
+                            }),
+                            value.title, false
+                        );
+
+                        self.renderLegend(
+                            value.title,
+                            options['url'],
+                            options['params']['layers'],
+                            false
+                        );
+                    });
+
+                    self.renderAdministrativeLayer(nonbiodiversityData);
+                    self.addBiodiveristyLayersToMap(map);
+                    Shared.Dispatcher.trigger('map:reloadXHR');
+                }
+            })
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;
+            if(!self.isAdministrativeLayerSelected()) {
+                return false;
+            }
             switch (administrative) {
                 case 'province':
                     self.currentAdministrativeLayer = self.administrativeLayersName[0];
@@ -158,7 +218,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
         },
         selectorChanged: function (layerName, selected) {
-            if (layerName === "Biodiversity") {
+            if (layerName === "Biodiversity" && this.isBiodiversityLayerLoaded()) {
                 Shared.Dispatcher.trigger('map:reloadXHR');
             }
             this.changeLayerVisibility(layerName, selected);
@@ -245,7 +305,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             });
 
         },
-        renderLayersSelector: function (key, visibleInDefault) {
+        renderLayersSelector: function (key, name, visibleInDefault) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
@@ -255,10 +315,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 selector += 'checked';
             }
             selector += '>';
-            if (key === mostTop) {
-                selector += '<b>' + key + '</b>';
+            if (name === mostTop) {
+                selector += '<b>' + name + '</b>';
             } else {
-                selector += key;
+                selector += name;
             }
             selector += '</li>';
             $('#layers-selector').append(selector);
@@ -270,10 +330,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 keys.reverse();
                 $.each(keys, function (index, key) {
                     var value = self.layers[key];
-                    if (key.indexOf(self.administrativeKeyword) >= 0) {
-                        self.renderLayersSelector('Administrative', true);
+                    if (value['layerName'].indexOf(self.administrativeKeyword) >= 0) {
+                        self.renderLayersSelector('Administrative', 'Administrative', true);
                     } else {
-                        self.renderLayersSelector(key, value['visibleInDefault']);
+                        self.renderLayersSelector(key, value['layerName'], value['visibleInDefault']);
                     }
                 });
                 $('.layer-selector-input').change(function (e) {

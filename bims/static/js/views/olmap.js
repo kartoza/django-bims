@@ -321,6 +321,9 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
+            if(!this.layers.isBiodiversityLayerLoaded()) {
+                return
+            }
             self.updateClusterBiologicalCollectionZoomExt();
             if (!this.clusterBiologicalCollection.isActive()) {
                 var administrative = this.checkAdministrativeLevel();
