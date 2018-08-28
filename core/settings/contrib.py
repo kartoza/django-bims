@@ -166,9 +166,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
-CELERY_BROKER_URL = BROKER_URL
-
 # django modelsdoc settings
 MODELSDOC_APPS = ('bims', 'td_biblio',)
 
@@ -190,9 +187,13 @@ TRACK_IGNORE_STATUS_CODES = [403, 405, 410]
 
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
-    'monitoring.RequestEvent',
-    'monitoring.MonitoredResource',
 ]
+
+if MONITORING_ENABLED:
+    DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA += [
+        'monitoring.RequestEvent',
+        'monitoring.MonitoredResource',
+    ]
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
@@ -260,6 +261,8 @@ ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
 CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS_GEONODE else True
 
 if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
+    BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+    CELERY_BROKER_URL = BROKER_URL
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
     from .geonode_queue_settings import *  # noqa
     CELERY_TASK_QUEUES += GEONODE_QUEUES

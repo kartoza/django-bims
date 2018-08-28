@@ -1,8 +1,13 @@
 define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
     return Backbone.View.extend({
         id: 0,
+        currentSpeciesSearchResult: [],
         initialize: function () {
             Shared.Dispatcher.on('siteDetail:show', this.show, this);
+            Shared.Dispatcher.on('siteDetail:updateCurrentSpeciesSearchResult', this.updateCurrentSpeciesSearchResult, this);
+        },
+        updateCurrentSpeciesSearchResult: function (newList) {
+            this.currentSpeciesSearchResult = newList;
         },
         show: function (id, name) {
             this.url = '/api/location-site/' + id;
@@ -36,6 +41,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             return $detailWrapper;
         },
         renderSpeciesList: function (data) {
+            var that = this;
             var $specialListWrapper = $('<div style="display: none"></div>');
             var speciesListCount = 0;
             if (data.hasOwnProperty('records_occurrence')) {
@@ -46,17 +52,23 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     var value = records_occurrence[className];
                     if (!className) {
                         className = 'Unknown';
-
                     }
                     var $classWrapper = $('<div class="sub-species-wrapper"></div>');
                     var classTemplate = _.template($('#search-result-sub-title').html());
                     $classWrapper.append(classTemplate({
                         name: className,
-                        count: Object.keys(value).length
+                        count: 0
                     }));
+                    $classWrapper.hide();
 
                     var species = Object.keys(value).sort();
                     $.each(species, function (index, speciesName) {
+                        if (that.currentSpeciesSearchResult.length > 0) {
+                            // check if species name is on search mode
+                            if ($.inArray(speciesName, that.currentSpeciesSearchResult) < 0) {
+                                return true;
+                            }
+                        }
                         var speciesValue = value[speciesName];
                         $classWrapper.append(
                             template({
@@ -65,6 +77,10 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                                 taxon_gbif_id: speciesValue.taxon_gbif_id
                             })
                         );
+
+                        var $occurencesIndicator = $classWrapper.find('.total-occurences');
+                        $occurencesIndicator.html(parseInt($occurencesIndicator.html()) + speciesValue.count);
+                        $classWrapper.show();
                         speciesListCount += 1;
                     });
                     $specialListWrapper.append($classWrapper);

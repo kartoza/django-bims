@@ -1,4 +1,4 @@
-define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], function ($, Backbone, SearchModel, SearchResultView) {
+define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'shared'], function ($, Backbone, SearchModel, SearchResultView, Shared) {
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
@@ -53,7 +53,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
         renderCollection: function () {
             var self = this;
             var searchResultTitle = this.searchValue;
-            if(this.isFuzzySearch) {
+            if (this.isFuzzySearch) {
                 searchResultTitle = 'similar to ' + searchResultTitle;
             }
             this.searchPanel.updatesearchPanelTitle(searchResultTitle);
@@ -85,6 +85,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
 
             var biologicalCount = 0;
             var siteCount = 0;
+            var speciesListName = [];
             $.each(this.models, function (index, model) {
                 var searchResultView = new SearchResultView({
                     model: model
@@ -94,6 +95,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
                 // update count
                 if (searchResultView.getResultType() == 'taxa') {
                     biologicalCount += 1;
+                    speciesListName.push(searchResultView.model.get('common_name'));
                 } else if (searchResultView.getResultType() == 'site') {
                     siteCount += 1
                 }
@@ -102,6 +104,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result'], fu
             $('#site-list-number').html(siteCount);
             $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             $searchResultsWrapper.find('.search-results-total').click();
+            Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
         }
     })
 });
