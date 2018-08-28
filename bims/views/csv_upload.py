@@ -58,8 +58,22 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
     def form_valid(self, form):
         form.save(commit=True)
         collection_processed = {
-            'added': 0,
-            'failed': 0
+            'added': {
+                'count': 0,
+                'message': 'added'
+            },
+            'duplicated': {
+                'count': 0,
+                'message': 'rejected because duplicates'
+            },
+            'failed': {
+                'count': 0,
+                'message': 'failed'
+            },
+            'different_format': {
+                'count': 0,
+                'message': 'failed due to wrong format'
+            }
         }
 
         # Read csv
@@ -142,18 +156,29 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
 
                     if created:
                         print('%s Added' % record['species_name'])
-                        collection_processed['added'] += 1
+                        collection_processed['added']['count'] += 1
                     else:
+                        collection_processed['duplicated']['count'] += 1
                         if not taxon_gbif:
                             print('Update taxon gbif')
                             update_collection_record(collection_records)
 
-                except (ValueError, KeyError):
-                    collection_processed['failed'] += 1
+                except KeyError:
+                    collection_processed['different_format']['count'] += 1
+                except ValueError:
+                    collection_processed['failed']['count'] += 1
                 print('------------------------------------')
 
-        self.context_data['uploaded'] = 'Collection added ' + \
-                                        str(collection_processed['added'])
+        csv_upload_message = ''
+
+        for processed in collection_processed:
+            if collection_processed[processed]['count'] > 0:
+                csv_upload_message += '%s %s <br/>' % (
+                    collection_processed[processed]['count'],
+                    collection_processed[processed]['message']
+                )
+
+        self.context_data['uploaded'] = csv_upload_message
 
         # reconnect post save handler of location sites
         models.signals.post_save.connect(
