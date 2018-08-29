@@ -266,3 +266,6 @@ if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
     from .geonode_queue_settings import *  # noqa
     CELERY_TASK_QUEUES += GEONODE_QUEUES
+
+# Set institutionID default value
+INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')

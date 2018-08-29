@@ -38,6 +38,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
             module = request.POST['ud_module']
             lat = request.POST['lat']
             lon = request.POST['lon']
+            custodian = request.POST['ud_custodian']
 
             if module != 'base':
                 # Find model
@@ -96,6 +97,11 @@ class CollectionUploadView(View, LoginRequiredMixin):
             if existed_collections:
                 taxon_gbif = existed_collections[0].taxon_gbif_id
 
+            # Optional fields and value
+            optional_records = {}
+            if custodian:
+                optional_records['institution_id'] = custodian
+
             collection_record, created = collection_model. \
                 objects. \
                 get_or_create(
@@ -108,6 +114,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
                     notes=notes,
                     taxon_gbif_id=taxon_gbif,
                     owner=self.request.user,
+                    **optional_records
                 )
 
             # reconnect post save handler of location sites
