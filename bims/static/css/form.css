@@ -1,3 +1,6 @@
+.form-space {
+    height: 50px;
+}
 
 .custom-form-container {
     padding: 30px;
@@ -84,6 +87,8 @@
 
 .login-help{
     font-size: 12px;
+    color: #3a3a3a;
+    padding-top: 10px;
 }
 
 .remember {
@@ -208,4 +213,12 @@ h1 {
 .password-message {
     font-size: 11pt !important;
     padding-bottom: 0 !important;
+}
+
+.btn-verification {
+    text-align: center;
+}
+
+.btn-verification a {
+    text-decoration: none !important;
 }
