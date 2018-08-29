@@ -156,7 +156,6 @@ def cluster_post_delete_handler(sender, instance, using, **kwargs):
             not issubclass(sender, LocationSite):
         return
     if issubclass(sender, BiologicalCollectionRecord):
-        if instance.is_cluster_generation_applied():
-            update_cluster_by_collection(instance)
+        update_cluster_by_collection(instance)
     if issubclass(sender, LocationSite):
         update_cluster_by_site(instance)
