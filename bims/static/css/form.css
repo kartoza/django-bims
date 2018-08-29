@@ -214,3 +214,11 @@ h1 {
     font-size: 11pt !important;
     padding-bottom: 0 !important;
 }
+
+.btn-verification {
+    text-align: center;
+}
+
+.btn-verification a {
+    text-decoration: none !important;
+}
