@@ -83,7 +83,11 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 });
             } else {
                 radius = 16;
-                radius += ((count / 10) * 1);
+                var currentCount = count;
+                if (currentCount > 100) {
+                    currentCount = 100;
+                }
+                radius += (currentCount / 5);
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
