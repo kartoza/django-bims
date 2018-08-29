@@ -82,6 +82,7 @@ class BiologicalCollectionRecord(models.Model):
         help_text='An identifier for the institution having custody of the '
                   'object(s) or information referred to in the record.',
         max_length=50,
+        verbose_name='Custodian',
     )
 
     # noinspection PyClassicStyleClass

@@ -139,6 +139,11 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                 record[opt_field] = record[opt_field].lower()
                             optional_records[opt_field] = record[opt_field]
 
+                    # custodian field
+                    if 'custodian' in record:
+                        optional_records['institution_id'] = \
+                            record['custodian']
+
                     collection_records, created = self.collection_record.\
                         objects.\
                         get_or_create(
