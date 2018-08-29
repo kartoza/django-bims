@@ -77,6 +77,12 @@ class BiologicalCollectionRecord(models.Model):
     ready_for_validation = models.BooleanField(
         default=False,
     )
+    institution_id = models.CharField(
+        default=settings.INSTITUTION_ID_DEFAULT,
+        help_text='An identifier for the institution having custody of the '
+                  'object(s) or information referred to in the record.',
+        max_length=50,
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:
