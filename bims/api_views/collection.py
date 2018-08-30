@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxon import Taxon
+from bims.models.location_site import LocationSite
 from bims.serializers.bio_collection_serializer import (
     BioCollectionOneRowSerializer,
     BioCollectionGeojsonSerializer
@@ -32,29 +33,40 @@ class GetCollectionAbstract(APIView):
     """
     Abstract class for getting collection
     """
+    @staticmethod
+    def queryset_gen(sqs, exlude_ids=[]):
+        """Return queryset from sqs"""
+        for item in sqs:
+            if item.id not in exlude_ids:
+                yield item.object
 
     @staticmethod
-    def apply_filter(request, ignore_bbox=False):
-        # get records with same taxon
+    def apply_filter(query_value, filters, ignore_bbox=False):
+        """
+        Apply filter and do the search to biological collection
+        record and location site
+
+        :param query_value: str
+        :param filters: dict
+        :param ignore_bbox: bool
+        :returns:
+        - collection_results : results from bio collection record
+        - site_results : results from location site
+        - fuzzy_search : if results from search is fuzzy search
+        """
 
         fuzzy_search = False
 
-        try:
-            request_data = request.GET
-        except AttributeError:
-            request_data = request
-
         sqs = SearchQuerySet()
 
-        query_value = request_data.get('search')
         if query_value:
+            settings.ELASTIC_MIN_SCORE = 1
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
                     SQ(original_species_name_exact__contains=clean_query) |
-                    SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
                     validated=True
-            ).models(BiologicalCollectionRecord, Taxon)
+            ).models(BiologicalCollectionRecord)
 
             if len(results) > 0:
                 fuzzy_search = False
@@ -63,16 +75,15 @@ class GetCollectionAbstract(APIView):
                 settings.ELASTIC_MIN_SCORE = 2
                 results = sqs.filter(
                         SQ(original_species_name=clean_query) |
-                        SQ(taxon_common_name=clean_query) |
                         SQ(taxon_scientific_name=clean_query),
                         validated=True
-                ).models(BiologicalCollectionRecord, Taxon)
+                ).models(BiologicalCollectionRecord)
         else:
             settings.ELASTIC_MIN_SCORE = 0
             results = sqs.all().models(BiologicalCollectionRecord)
             results = results.filter(validated=True)
 
-        taxon = request_data.get('taxon', None)
+        taxon = filters.get('taxon', None)
         if taxon:
             results = sqs.filter(
                 taxon_gbif=taxon
@@ -80,7 +91,7 @@ class GetCollectionAbstract(APIView):
 
         # get by bbox
         if not ignore_bbox:
-            bbox = request_data.get('bbox', None)
+            bbox = filters.get('bbox', None)
             if bbox:
                 bbox_array = bbox.split(',')
                 downtown_bottom_left = Point(
@@ -98,7 +109,7 @@ class GetCollectionAbstract(APIView):
 
         # additional filters
         # query by collectors
-        query_collector = request_data.get('collector')
+        query_collector = filters.get('collector')
         if query_collector:
             qs_collector = SQ()
             qs = json.loads(query_collector)
@@ -106,7 +117,7 @@ class GetCollectionAbstract(APIView):
                 qs_collector.add(SQ(collector=query), SQ.OR)
             results = results.filter(qs_collector)
 
-        boundary = request_data.get('boundary')
+        boundary = filters.get('boundary')
         if boundary:
             settings.ELASTIC_MIN_SCORE = 0
             qs_collector = SQ()
@@ -116,7 +127,7 @@ class GetCollectionAbstract(APIView):
             results = results.filter(qs_collector)
 
         # query by category
-        query_category = request_data.get('category')
+        query_category = filters.get('category')
         if query_category:
             qs_category = SQ()
             qs = json.loads(query_category)
@@ -125,21 +136,21 @@ class GetCollectionAbstract(APIView):
             results = results.filter(qs_category)
 
         # query by year from
-        year_from = request_data.get('yearFrom')
+        year_from = filters.get('yearFrom')
         if year_from:
             clean_query_year_from = sqs.query.clean(year_from)
             results = results.filter(
                 collection_date_year__gte=clean_query_year_from)
 
         # query by year to
-        year_to = request_data.get('yearTo')
+        year_to = filters.get('yearTo')
         if year_to:
             clean_query_year_to = sqs.query.clean(year_to)
             results = results.filter(
                 collection_date_year__lte=clean_query_year_to)
 
         # query by months
-        months = request_data.get('months')
+        months = filters.get('months')
         if months:
             qs = months.split(',')
             qs_month = SQ()
@@ -149,7 +160,25 @@ class GetCollectionAbstract(APIView):
                     SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
 
-        return results, fuzzy_search
+        collection_results = results
+
+        # Search location site by name
+        settings.ELASTIC_MIN_SCORE = 1
+        location_site_search = SearchQuerySet().filter(
+                site_name__contains=query_value
+        ).models(LocationSite)
+
+        if len(location_site_search) > 0:
+            # If there are fuzzy results from collection search but we
+            # got non fuzzy results from location site, then remove
+            # all the fuzzy results from collection
+            if fuzzy_search and \
+                    len(collection_results) > 0:
+                collection_results = []
+            fuzzy_search = False
+        site_results = location_site_search
+
+        return collection_results, site_results, fuzzy_search
 
 
 class GetCollectionExtent(GetCollectionAbstract):
@@ -158,8 +187,20 @@ class GetCollectionExtent(GetCollectionAbstract):
     """
 
     def get(self, request, format=None):
-        results, fuzzy_search = self.apply_filter(request, ignore_bbox=True)
-        multipoint = MultiPoint([result.location_center for result in results])
+        query_value = request.GET.get('search')
+        filters = request.GET
+
+        collection_results, \
+        site_results, \
+        fuzzy_search = self.apply_filter(
+                query_value,
+                filters,
+                ignore_bbox=True)
+
+        multipoint = MultiPoint(
+                [result.location_center for result in collection_results] +
+                [result.location_site_point for result in site_results]
+        )
         if multipoint:
             extents = multipoint.extent
             extents = [
@@ -246,17 +287,24 @@ class CollectionDownloader(GetCollectionAbstract):
         return response
 
     def get(self, request):
+        query_value = request.GET.get('search')
+        filters = request.GET
         file_type = request.GET.get('fileType', None)
         if not file_type:
             file_type = 'csv'
-        queryset, fuzzy_search = self.apply_filter(request, ignore_bbox=True)
+        collection_results, \
+        site_results, \
+        fuzzy_search = self.apply_filter(
+                query_value,
+                filters,
+                ignore_bbox=True)
         if file_type == 'csv':
             return self.convert_to_cvs(
-                queryset,
+                collection_results,
                 BioCollectionOneRowSerializer)
         elif file_type == 'geojson':
             return self.convert_to_geojson(
-                queryset,
+                collection_results,
                 BiologicalCollectionRecord,
                 BioCollectionGeojsonSerializer)
         else:
@@ -277,8 +325,8 @@ class ClusterCollection(GetCollectionAbstract):
         If a point is within a cluster 'catchment' area increase point
         count for that cluster and recalculate clusters minimum bbox
 
-        :param records: list of records.
-        :type records: list
+        :param records: generator of records.
+        :type records: generator
 
         :param zoom: zoom level of map
         :type zoom: int
@@ -294,13 +342,22 @@ class ClusterCollection(GetCollectionAbstract):
         sites = []
         for record in records:
             # get x,y of site
-            record = record.object
-            x = record.site.geometry_point.x
-            y = record.site.geometry_point.y
-
-            if record.site_id in sites:
+            if isinstance(record, BiologicalCollectionRecord):
+                x = record.site.geometry_point.x
+                y = record.site.geometry_point.y
+                location_site = record.site
+                if record.site.id in sites:
+                    continue
+                sites.append(record.site_id)
+            elif isinstance(record, LocationSite):
+                x = record.geometry_point.x
+                y = record.geometry_point.y
+                location_site = record
+                if record.id in sites:
+                    continue
+                sites.append(record.id)
+            else:
                 continue
-            sites.append(record.site_id)
 
             # check every point in cluster_points
             for pt in cluster_points:
@@ -323,7 +380,7 @@ class ClusterCollection(GetCollectionAbstract):
                     x + x_range * 1.5, y + y_range * 1.5
                 )
                 serializer = LocationSiteClusterSerializer(
-                    record.site)
+                    location_site)
                 new_cluster = {
                     'count': 1,
                     'bbox': bbox,
@@ -339,6 +396,8 @@ class ClusterCollection(GetCollectionAbstract):
         zoom = request.GET.get('zoom', None)
         icon_pixel_x = request.GET.get('icon_pixel_x', None)
         icon_pixel_y = request.GET.get('icon_pixel_y', None)
+        query_value = request.GET.get('search')
+        filters = request.GET
 
         if not zoom or not icon_pixel_x or not icon_pixel_y:
             return HttpResponseBadRequest(
@@ -347,7 +406,13 @@ class ClusterCollection(GetCollectionAbstract):
                 'zoom : zoom level of map. '
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
-        results, fuzzy_search = self.apply_filter(request)
+        collection_results, \
+        site_results, \
+        fuzzy_search = self.apply_filter(query_value, filters)
+
+        results = list(self.queryset_gen(collection_results))
+        results += list(self.queryset_gen(site_results))
+
         cluster = self.clustering_process(
             results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
         )
