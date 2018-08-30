@@ -1328,3 +1328,8 @@ div:hover::-webkit-scrollbar {
     width: 180px;
     margin-left: 15px;
 }
+
+.upload-alert a {
+    color: #484848 !important;
+    text-decoration: underline !important;
+}
