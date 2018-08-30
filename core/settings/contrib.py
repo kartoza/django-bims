@@ -275,3 +275,6 @@ ACCOUNT_APPROVAL_REQUIRED = False
 SOCIALACCOUNT_AUTO_SIGNUP = True
 ACCOUNT_ADAPTER = 'bims.adapters.account_adapter.AccountAdapter'
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+
+OGC_SERVER['default']['DATASTORE'] = os.environ.get(
+        'DEFAULT_BACKEND_DATASTORE', '')
