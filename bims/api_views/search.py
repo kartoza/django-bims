@@ -1,9 +1,7 @@
 # coding=utf-8
 from django.db.models import Count, Case, When
-from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from haystack.query import SearchQuerySet
 from bims.models.taxon import Taxon
 from bims.models.location_site import LocationSite
 from bims.serializers.taxon_serializer import TaxonOccurencesSerializer
@@ -37,8 +35,8 @@ class SearchObjects(APIView):
 
         # Search collection
         collection_results, \
-        site_results, \
-        fuzzy_search = GetCollectionAbstract.apply_filter(
+            site_results, \
+            fuzzy_search = GetCollectionAbstract.apply_filter(
                 query_value,
                 filters,
                 ignore_bbox=True)

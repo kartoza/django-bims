@@ -13,7 +13,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from bims.models.taxon import Taxon
 from bims.models.location_site import LocationSite
 from bims.serializers.bio_collection_serializer import (
     BioCollectionOneRowSerializer,
@@ -191,8 +190,8 @@ class GetCollectionExtent(GetCollectionAbstract):
         filters = request.GET
 
         collection_results, \
-        site_results, \
-        fuzzy_search = self.apply_filter(
+            site_results, \
+            fuzzy_search = self.apply_filter(
                 query_value,
                 filters,
                 ignore_bbox=True)
@@ -293,8 +292,8 @@ class CollectionDownloader(GetCollectionAbstract):
         if not file_type:
             file_type = 'csv'
         collection_results, \
-        site_results, \
-        fuzzy_search = self.apply_filter(
+            site_results, \
+            fuzzy_search = self.apply_filter(
                 query_value,
                 filters,
                 ignore_bbox=True)
@@ -407,8 +406,10 @@ class ClusterCollection(GetCollectionAbstract):
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
         collection_results, \
-        site_results, \
-        fuzzy_search = self.apply_filter(query_value, filters)
+            site_results, \
+            fuzzy_search = self.apply_filter(
+                query_value,
+                filters)
 
         results = list(self.queryset_gen(collection_results))
         results += list(self.queryset_gen(site_results))

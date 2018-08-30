@@ -54,8 +54,8 @@ def download_data_to_csv(path_file, request):
             query_value = request['search']
             filters = request
             collection_results, \
-            site_results, \
-            fuzzy_search = GetCollectionAbstract.\
+                site_results, \
+                fuzzy_search = GetCollectionAbstract.\
                 apply_filter(
                     query_value,
                     filters,
