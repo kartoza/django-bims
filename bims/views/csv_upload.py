@@ -60,11 +60,11 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
         collection_processed = {
             'added': {
                 'count': 0,
-                'message': 'added'
+                'message': 'records added'
             },
             'duplicated': {
                 'count': 0,
-                'message': 'rejected because duplicates'
+                'message': 'not accepted because duplicates'
             },
             'failed': {
                 'count': 0,
@@ -160,7 +160,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         )
 
                     if created:
-                        print('%s Added' % record['species_name'])
+                        print('%s records added' % record['species_name'])
                         collection_processed['added']['count'] += 1
                     else:
                         collection_processed['duplicated']['count'] += 1
@@ -182,6 +182,12 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                     collection_processed[processed]['count'],
                     collection_processed[processed]['message']
                 )
+
+        if collection_processed['added']['count'] > 0:
+            csv_upload_message += 'Verify your records ' \
+                                  '<a target="_blank" ' \
+                                  'href="/nonvalidated-user-list/">' \
+                                  'here</a> <br/>'
 
         self.context_data['uploaded'] = csv_upload_message
 
