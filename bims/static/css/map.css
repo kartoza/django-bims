@@ -403,6 +403,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-right: 5px;
     border: none;
     cursor: pointer;
+    height: 40px;
 }
 
 .map-control-panel-box li:hover {
@@ -1321,4 +1322,9 @@ div:hover::-webkit-scrollbar {
 
 .highlighted {
     background-color: rgba(250, 244, 0, 0.38);
+}
+
+.layer-transparency {
+    width: 180px;
+    margin-left: 15px;
 }
