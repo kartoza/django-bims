@@ -217,6 +217,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             }
         },
+        changeLayerTransparency: function (layername, opacity) {
+            if (Object.keys(this.layers).length === 0) {
+                return false;
+            }
+            if (layername !== this.administrativeKeyword) {
+                this.layers[layername]['layer'].setOpacity(opacity);
+            } else {
+                if (this.currentAdministrativeLayer in this.layers) {
+                    this.layers[this.currentAdministrativeLayer]['layer'].setOpacity(opacity);
+                }
+            }
+        },
         selectorChanged: function (layerName, selected) {
             if (layerName === "Biodiversity" && this.isBiodiversityLayerLoaded()) {
                 Shared.Dispatcher.trigger('map:reloadXHR');
@@ -310,7 +322,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 return
             }
             var mostTop = 'Biodiversity';
-            var selector = '<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" value="' + key + '" class="layer-selector-input" ';
+            var selector = '<li class="ui-state-default">' +
+                '<span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' +
+                '<input type="checkbox" value="' + key + '" class="layer-selector-input" ';
             if (visibleInDefault) {
                 selector += 'checked';
             }
@@ -320,7 +334,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             } else {
                 selector += name;
             }
+            selector += '<div class="layer-transparency"></div>';
             selector += '</li>';
+
             $('#layers-selector').append(selector);
         },
         renderLayers: function () {
@@ -334,6 +350,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         self.renderLayersSelector('Administrative', 'Administrative', true);
                     } else {
                         self.renderLayersSelector(key, value['layerName'], value['visibleInDefault']);
+                    }
+                });
+                $('.layer-transparency').slider({
+                    range: 'max',
+                    min: 1,
+                    max: 100,
+                    value: 100,
+                    slide: function (event, ui) {
+                        var layername = $(event.target).prev().val();
+                        if(!layername) {
+                            layername = 'Biodiversity';
+                        }
+                        self.changeLayerTransparency(layername, ui.value/100);
                     }
                 });
                 $('.layer-selector-input').change(function (e) {
