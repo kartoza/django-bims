@@ -17,6 +17,10 @@ class FuzzyElasticBackend(ElasticsearchSearchBackend):
     def build_search_kwargs(self, query_string, **kwargs):
         """Build search kwargs with fuzziness.
         """
+        query_string = query_string\
+            .replace('False', 'false')\
+            .replace('True', 'true')
+
         search_kwargs = super(FuzzyElasticBackend, self).build_search_kwargs(
             query_string, **kwargs)
 
