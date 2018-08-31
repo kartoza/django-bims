@@ -34,7 +34,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         initLayer: function (layer, layerName, visibleInDefault) {
             var layerOptions = layer.getSource()['i'];
             var layerType = layerName;
-            if(layerOptions !== null) {
+            if (layerOptions !== null) {
                 layerType = layer.getSource()['i']['layers'];
             }
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
@@ -75,8 +75,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             }), 'Biodiversity', true);
 
-            if(!self.initialLoadBiodiversityLayersToMap) {
-               self.initialLoadBiodiversityLayersToMap = true;
+            if (!self.initialLoadBiodiversityLayersToMap) {
+                self.initialLoadBiodiversityLayersToMap = true;
             }
 
             // RENDER LAYERS
@@ -124,6 +124,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             value.name, false
                         );
                         self.renderLegend(
+                            value.wms_layer_name,
                             value.name,
                             options['url'],
                             options['params']['layers'],
@@ -134,12 +135,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 },
                 error: function (err) {
                     self.addBiodiveristyLayersToMap(map);
-                 }
+                }
             });
         },
         addLayersFromGeonode: function (map, nonbiodiversityData) {
             // Adding layer from GeoNode, filtering is done by the API
-            var default_wms_url =  ogcServerDefaultLocation + 'wms';
+            var default_wms_url = ogcServerDefaultLocation + 'wms';
             var default_wms_format = 'image/png';
             var self = this;
 
@@ -148,7 +149,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 url: '/api/layers',
                 dataType: 'json',
                 success: function (data) {
-
                     $.each(data['objects'].reverse(), function (index, value) {
                         if (value['title'].indexOf(self.administrativeKeyword) >= 0) {
                             return;
@@ -169,6 +169,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         );
 
                         self.renderLegend(
+                            value.typename,
                             value.title,
                             options['url'],
                             options['params']['layers'],
@@ -184,7 +185,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;
-            if(!self.isAdministrativeLayerSelected()) {
+            if (!self.isAdministrativeLayerSelected()) {
                 return false;
             }
             switch (administrative) {
@@ -236,10 +237,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             this.changeLayerVisibility(layerName, selected);
 
             // show/hide legend
+            var $legendElement = this.getLegendElement(layerName);
+            var $legendWrapper = $('#map-legend-wrapper');
             if (selected) {
-                this.getLegendElement(layerName).show();
+                $legendElement.show();
+                if (selected && $legendElement.length > 0) {
+                    if ($legendWrapper.hasClass("hide-legend")) {
+                        $legendWrapper.click();
+                    }
+                }
             } else {
-                this.getLegendElement(layerName).hide();
+                $legendElement.hide();
             }
         },
         ol3_checkLayer: function (layer) {
@@ -270,7 +278,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             return $(".control-drop-shadow").find(
                 "[data-name='" + layerName + "']");
         },
-        renderLegend: function (id, url, layer, visibleDefault) {
+        renderLegend: function (id, name, url, layer, visibleDefault) {
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
             if (url.indexOf('.qgs') != -1) {
                 scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
@@ -281,7 +289,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 html += ' style="display: None"'
             }
             html += '>' +
-                '<b>' + id + '</b><br>' +
+                '<b>' + name + '</b><br>' +
                 '<img src="' + scr + '"></div>';
             $('#map-legend').prepend(html);
         },
@@ -322,22 +330,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 return
             }
             var mostTop = 'Biodiversity';
-            var selector = '<li class="ui-state-default">' +
-                '<span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' +
-                '<input type="checkbox" value="' + key + '" class="layer-selector-input" ';
+            var checked = '';
             if (visibleInDefault) {
-                selector += 'checked';
+                checked += 'checked';
             }
-            selector += '>';
             if (name === mostTop) {
-                selector += '<b>' + name + '</b>';
-            } else {
-                selector += name;
+                name = '<b>' + name + '</b>';
             }
-            selector += '<div class="layer-transparency"></div>';
-            selector += '</li>';
 
-            $('#layers-selector').append(selector);
+            var rowTemplate = _.template($('#layer-selector-row').html());
+            $('#layers-selector').append(
+                rowTemplate({
+                    name: name,
+                    key: key,
+                    checked: checked
+                })
+            );
         },
         renderLayers: function () {
             var self = this;
@@ -358,11 +366,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     max: 100,
                     value: 100,
                     slide: function (event, ui) {
-                        var layername = $(event.target).prev().val();
-                        if(!layername) {
-                            layername = 'Biodiversity';
+                        var $label = $(event.target).closest('li').find('.layer-selector-input');
+                        var layername = 'Biodiversity';
+                        if ($label.length > 0) {
+                            layername = $label.val();
                         }
-                        self.changeLayerTransparency(layername, ui.value/100);
+                        self.changeLayerTransparency(layername, ui.value / 100);
                     }
                 });
                 $('.layer-selector-input').change(function (e) {

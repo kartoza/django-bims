@@ -159,6 +159,20 @@
     </div>
 </script>
 
+<script type="text/html" id="layer-selector-row">
+    <li class="ui-state-default">
+        <div class="row-title">
+            <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
+            <input type="checkbox" value="<%= key %>" class="layer-selector-input" <%= checked %>>
+            <label><%= name %></label>
+        </div>
+        <div class="options">
+            <div class="group">
+                <label>Transparency</label>
+                <div class="layer-transparency"></div>
+            </div>
+        </div>
+</script>
 <script type="text/html" id="map-control-panel">
     <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
         <div class="search-control sub-control-panel">

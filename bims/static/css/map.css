@@ -363,6 +363,38 @@ html, body, .map, .map-wrapper, #map-container {
 
 #layers-selector {
     max-height: 450px;
+    padding: 0;
+}
+
+#layers-selector li {
+    max-width: 100%;
+    height: auto;
+    padding: 0;
+}
+
+#layers-selector li:hover .options {
+    display: block;
+}
+
+#layers-selector li .row-title {
+    padding: 5px;
+}
+
+#layers-selector li .row-title label {
+    margin-bottom: 0;
+}
+
+#layers-selector .options {
+    display: none;
+    padding-left: 25px;
+    padding-bottom: 20px;
+    padding-top: 5px;
+    background: #ededed;
+    box-shadow: inset 0 0 4px #888;
+}
+
+#layers-selector .options label {
+    font-size: 12px;
 }
 
 .ui-state-default {
@@ -983,8 +1015,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #map-legend-wrapper .legend-row {
-    margin-bottom: 10px;
-    border-bottom: 1px solid darkgray;
     padding: 10px;
 }
 
@@ -1297,18 +1327,18 @@ div:hover::-webkit-scrollbar {
 }
 
 #general-info-modal .modal-body::-webkit-scrollbar {
-	width: 10px;
-	background-color: #F5F5F5;
+    width: 10px;
+    background-color: #F5F5F5;
 }
 
 #general-info-modal .modal-body::-webkit-scrollbar-track {
-	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-	background-color: #F5F5F5;
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: #F5F5F5;
 }
 
 #general-info-modal .modal-body::-webkit-scrollbar-thumb {
-	background-color: #000000;
-	border: 2px solid #555555;
+    background-color: #000000;
+    border: 2px solid #555555;
 }
 
 .catchment-filter {
@@ -1325,8 +1355,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .layer-transparency {
-    width: 180px;
-    margin-left: 15px;
+    width: 210px;
 }
 
 .upload-alert a {
