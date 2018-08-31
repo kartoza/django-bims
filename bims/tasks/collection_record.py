@@ -51,12 +51,17 @@ def download_data_to_csv(path_file, request):
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            queryset, fuzzy_search = GetCollectionAbstract.\
+            query_value = request['search']
+            filters = request
+            collection_results, \
+                site_results, \
+                fuzzy_search = GetCollectionAbstract.\
                 apply_filter(
-                    request,
+                    query_value,
+                    filters,
                     ignore_bbox=True)
             serializer = BioCollectionOneRowSerializer(
-                    queryset,
+                    collection_results,
                     many=True
             )
             headers = serializer.data[0].keys()

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.serializers.location_type_serializer import LocationTypeSerializer
+from bims.utils.highlighter import CustomHighlighter
 
 
 class LocationSiteSerializer(serializers.ModelSerializer):
@@ -47,6 +48,15 @@ class LocationOccurrencesSerializer(serializers.ModelSerializer):
     count = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
     geometry = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        query_value = self.context.get('query_value')
+        if query_value:
+            highlight = CustomHighlighter(query_value, max_length=100)
+            return highlight.highlight(obj.name)
+        else:
+            return obj.name
 
     def get_count(self, obj):
         if hasattr(obj, 'num_occurrences'):

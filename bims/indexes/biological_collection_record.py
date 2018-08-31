@@ -63,7 +63,8 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     )
 
     location_site_name = indexes.CharField(
-        model_attr='site__name'
+        model_attr='site__name',
+        indexed=True
     )
 
     location_site_id = indexes.CharField(
