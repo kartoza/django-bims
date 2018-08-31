@@ -6,7 +6,7 @@ from haystack import indexes
 
 class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    name = indexes.NgramField(indexed=True, model_attr='name')
+    site_name = indexes.CharField(indexed=True, model_attr='name')
 
     location_type_name = indexes.NgramField(
             indexed=True,
@@ -16,13 +16,7 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
     location_site_point = indexes.LocationField()
 
     def prepare_location_site_point(self, obj):
-        try:
-            return '{lat},{lon}'.format(
-                    lat=obj.get_centroid().y,
-                    lon=obj.get_centroid().x
-            )
-        except AttributeError:
-            return None
+        return '%s,%s' % obj.get_centroid().coords
 
     location_site_geometry = indexes.CharField()
     id = indexes.CharField()
