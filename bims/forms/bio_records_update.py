@@ -20,7 +20,8 @@ class BioRecordsForm(forms.ModelForm):
             'absent',
             'collection_date',
             'notes',
-            'taxon_gbif_id'
+            'taxon_gbif_id',
+            'ready_for_validation',
         )
 
     def __init__(self, *args, **kwargs):
@@ -30,6 +31,7 @@ class BioRecordsForm(forms.ModelForm):
             Fieldset(
                 form_title,
                 Field('original_species_name', css_class='form-control'),
+                Field('ready_for_validation', css_class='form-control'),
                 Field('category', css_class='form-control'),
                 Field('present', css_class='form-control'),
                 Field('absent', css_class='form-control'),

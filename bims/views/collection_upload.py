@@ -128,7 +128,10 @@ class CollectionUploadView(View, LoginRequiredMixin):
             if created:
                 return JsonResponse({
                     'status': 'success',
-                    'message': 'Collection added, waiting for validation'})
+                    'message': 'Records added, '
+                               'verify your data '
+                               '<a target="_blank" href="/update/%s">here</a>'
+                               % collection_record.id})
             else:
                 return JsonResponse({
                     'status': 'failed',
