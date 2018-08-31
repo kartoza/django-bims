@@ -378,6 +378,9 @@ html, body, .map, .map-wrapper, #map-container {
 
 #layers-selector li .row-title {
     padding: 5px;
+    text-overflow: ellipsis;
+    max-width: 250px;
+    overflow: hidden;
 }
 
 #layers-selector li .row-title label {
