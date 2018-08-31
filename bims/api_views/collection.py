@@ -63,6 +63,7 @@ class GetCollectionAbstract(APIView):
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
                     SQ(original_species_name_exact__contains=clean_query) |
+                    SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
                     validated=True
             ).models(BiologicalCollectionRecord)
@@ -74,6 +75,7 @@ class GetCollectionAbstract(APIView):
                 settings.ELASTIC_MIN_SCORE = 2
                 results = sqs.filter(
                         SQ(original_species_name=clean_query) |
+                        SQ(taxon_common_name=clean_query) |
                         SQ(taxon_scientific_name=clean_query),
                         validated=True
                 ).models(BiologicalCollectionRecord)
