@@ -11,12 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, name='bims.tasks.update_search_index', queue='update')
-def update_search_index(self):
+def update_search_index():
     call_command('update_index', '--noinput')
 
 
 @shared_task(bind=True, name='bims.tasks.update_cluster', queue='update')
-def update_cluster(self, ids=None):
+def update_cluster(ids=None):
     if not ids:
         for boundary_type in BoundaryType.objects.all().order_by('-level'):
             for boundary in Boundary.objects.filter(type=boundary_type):

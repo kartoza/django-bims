@@ -15,6 +15,7 @@ from bims.utils.cluster import (
     update_cluster_by_site
 )
 from bims.utils.gbif import update_collection_record
+from bims.tasks.collection_record import update_search_index
 
 
 class BiologicalCollectionRecord(models.Model):
@@ -146,6 +147,7 @@ def collection_post_save_handler(sender, instance, **kwargs):
     instance.on_post_save()
     if instance.is_cluster_generation_applied():
         update_cluster_by_collection(instance)
+        update_search_index.delay()
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
