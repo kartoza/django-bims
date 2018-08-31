@@ -164,10 +164,12 @@ class GetCollectionAbstract(APIView):
         collection_results = results
 
         # Search location site by name
-        settings.ELASTIC_MIN_SCORE = 1
-        location_site_search = SearchQuerySet().filter(
-                site_name__contains=query_value
-        ).models(LocationSite)
+        location_site_search = []
+        if query_value:
+            settings.ELASTIC_MIN_SCORE = 1
+            location_site_search = SearchQuerySet().filter(
+                    site_name__contains=query_value
+            ).models(LocationSite)
 
         if len(location_site_search) > 0:
             # If there are fuzzy results from collection search but we
