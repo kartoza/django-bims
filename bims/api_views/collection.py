@@ -57,11 +57,11 @@ class GetCollectionAbstract(APIView):
         fuzzy_search = False
 
         sqs = SearchQuerySet()
+        settings.ELASTIC_MIN_SCORE = 0
 
         if query_value:
-            settings.ELASTIC_MIN_SCORE = 1
             clean_query = sqs.query.clean(query_value)
-            results = sqs.filter(
+            results = SearchQuerySet().filter(
                     SQ(original_species_name_exact__contains=clean_query) |
                     SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
@@ -72,16 +72,17 @@ class GetCollectionAbstract(APIView):
                 fuzzy_search = False
             else:
                 fuzzy_search = True
+                # Set min score bigger for fuzzy search
                 settings.ELASTIC_MIN_SCORE = 2
-                results = sqs.filter(
+                results = SearchQuerySet().filter(
                         SQ(original_species_name=clean_query) |
                         SQ(taxon_common_name=clean_query) |
                         SQ(taxon_scientific_name=clean_query),
                         validated=True
                 ).models(BiologicalCollectionRecord)
+                settings.ELASTIC_MIN_SCORE = 0
         else:
-            settings.ELASTIC_MIN_SCORE = 0
-            results = sqs.all().models(BiologicalCollectionRecord)
+            results = SearchQuerySet().all().models(BiologicalCollectionRecord)
             results = results.filter(validated=True)
 
         taxon = filters.get('taxon', None)
@@ -120,7 +121,6 @@ class GetCollectionAbstract(APIView):
 
         boundary = filters.get('boundary')
         if boundary:
-            settings.ELASTIC_MIN_SCORE = 0
             qs_collector = SQ()
             qs = json.loads(boundary)
             for query in qs:
@@ -166,10 +166,16 @@ class GetCollectionAbstract(APIView):
         # Search location site by name
         location_site_search = []
         if query_value:
-            settings.ELASTIC_MIN_SCORE = 1
             location_site_search = SearchQuerySet().filter(
                     site_name__contains=query_value
             ).models(LocationSite)
+
+        if boundary:
+            qs_collector = SQ()
+            qs = json.loads(boundary)
+            for query in qs:
+                qs_collector.add(SQ(boundary=query), SQ.OR)
+            location_site_search = location_site_search.filter(qs_collector)
 
         if len(location_site_search) > 0:
             # If there are fuzzy results from collection search but we

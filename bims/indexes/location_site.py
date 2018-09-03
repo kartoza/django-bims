@@ -7,6 +7,7 @@ from haystack import indexes
 class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     site_name = indexes.CharField(indexed=True, model_attr='name')
+    boundary = indexes.IntegerField()
 
     location_type_name = indexes.NgramField(
             indexed=True,
@@ -32,6 +33,11 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.pk:
             return obj.pk
         return ''
+
+    def prepare_boundary(self, obj):
+        if obj.boundary:
+            return obj.boundary.id
+        return 0
 
     class Meta:
         app_label = 'bims'
