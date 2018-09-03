@@ -9,6 +9,7 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
+    <link href="{% static "css/links.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
 
 {% endblock %}
 
@@ -26,16 +27,26 @@
                     {% for category in categories %}
                       <div class="col-lg-6">
                                 <ul>
-                                    <li class="nav-header title" style="list-style-type: none;">
-                                        <h3>{{ category.name }}
+                                    <li class="nav-header title category-title" style="list-style-type: none;">
+                                        <h3 class="category-name">{{ category.name }}
                                         <small><span class="badge badge-info">{{ category.link_set.count }}</span></small>
                                         </h3>
+                                        <span class="category-description">
+                                            {{ category.description }}
+                                        </span>
                                     </li>
                                     {% for link in category.link_set.all %}
                                         <div class="list-group borderless">
                                             {% if link.url %}
-                                                    <a href="{{ link.url }}" target="_blank" class="list-group-item list-group-item-action flex-column align-items-start">
-                                                        {{ link.description|truncatechars:65 }}</a>
+                                                    <a href="{{ link.url }}" target="_blank"
+                                                       class="list-group-item list-group-item-action flex-column align-items-start link-wrapper">
+                                                        <span class="link-name">{{ link.name }}</span>
+                                                        {% if link.description %}
+                                                        <p class="link-description">
+                                                            {{ link.description|truncatechars:65 }}
+                                                        </p>
+                                                        {% endif %}
+                                                    </a>
                                                 {% else %}
                                                     {{ link }}
                                             {% endif %}
@@ -76,10 +87,7 @@
     <script src="{% static "js/libs/jquery-easing/jquery.easing.min.js" %}"></script>
     <script src="{% static "js/libs/scrollreveal/scrollreveal.min.js" %}"></script>
     <script src="{% static "js/libs/magnific-popup/jquery.magnific-popup.min.js" %}"></script>
-    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
-    <script src="{% static "js/views/donut-chart.js" %}"></script>
-    <script src="{% static "js/views/generate-donut-chart.js" %}"></script>
 
     <!-- Custom scripts for this template -->
-    <script src="{% static "js/creative.js" %}"></script>
+    <script src="{% static "js/creative.js" %}"></sscript>
 {% endblock %}
