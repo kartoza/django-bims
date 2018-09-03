@@ -241,11 +241,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var $legendWrapper = $('#map-legend-wrapper');
             if (selected) {
                 $legendElement.show();
-                if (selected && $legendElement.length > 0) {
-                    if ($legendWrapper.hasClass("hide-legend")) {
-                        $legendWrapper.click();
-                    }
-                }
             } else {
                 $legendElement.hide();
             }

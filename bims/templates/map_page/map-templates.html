@@ -15,7 +15,7 @@
     <div class="ol-control" id="taxon-filter">
     </div>
     <div id="popup"></div>
-    <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
+    <div id="map-legend-wrapper" class="control-drop-shadow show-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
         <div id="map-legend-symbol">L</div>
         <div id="map-legend"></div>
     </div>
@@ -164,7 +164,7 @@
         <div class="row-title">
             <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
             <input type="checkbox" value="<%= key %>" class="layer-selector-input" <%= checked %>>
-            <label><%= name %></label>
+            <%= name %>
         </div>
         <div class="options">
             <div class="group">
