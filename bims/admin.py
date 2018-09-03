@@ -33,7 +33,7 @@ from bims.models import (
     Cluster,
     CarouselHeader,
     BiologicalCollectionRecord,
-    Category,
+    LinkCategory,
     Link,
     Visitor,
     Pageview,
@@ -243,7 +243,7 @@ class LinkAdmin(admin.ModelAdmin):
     list_filter = ('category',)
 
 
-admin.site.register(Category)
+admin.site.register(LinkCategory)
 admin.site.register(Link, LinkAdmin)
 
 

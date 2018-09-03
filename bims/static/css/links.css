@@ -1,0 +1,24 @@
+.link-name {
+    font-size: 13pt;
+    font-weight: bolder;
+}
+
+.link-wrapper {
+    margin-bottom: 5px !important;
+}
+
+.link-description {
+    font-size: 11pt;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-bottom: 0 !important;
+}
+
+.category-description {
+    font-size: 11pt;
+    padding-bottom: 10px;
+}
+
+.category-title {
+    padding-bottom: 10px;
+}
