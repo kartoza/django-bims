@@ -77,7 +77,7 @@ define([
                 duration: 250
             })
         },
-        boundaryEnabled(value) {
+        boundaryEnabled: function (value) {
             this.isBoundaryEnabled = value;
         },
         zoomOutMap: function (e) {
