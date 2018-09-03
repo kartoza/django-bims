@@ -1250,6 +1250,7 @@ div:hover::-webkit-scrollbar {
 
 .sub-species-wrapper .search-result-sub-title {
     background-color: rgba(255, 255, 255, 0.5) !important;
+    border-bottom: 1px solid rgba(209, 209, 209, 0.66);
 }
 
 .site-detail-content .text-center {
