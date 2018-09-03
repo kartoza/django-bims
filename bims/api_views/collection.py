@@ -84,6 +84,7 @@ class GetCollectionAbstract(APIView):
             results = sqs.all().models(BiologicalCollectionRecord)
             results = results.filter(validated=True)
 
+        settings.ELASTIC_MIN_SCORE = 0
         taxon = filters.get('taxon', None)
         if taxon:
             results = sqs.filter(
@@ -120,7 +121,6 @@ class GetCollectionAbstract(APIView):
 
         boundary = filters.get('boundary')
         if boundary:
-            settings.ELASTIC_MIN_SCORE = 0
             qs_collector = SQ()
             qs = json.loads(boundary)
             for query in qs:
@@ -166,7 +166,6 @@ class GetCollectionAbstract(APIView):
         # Search location site by name
         location_site_search = []
         if query_value:
-            settings.ELASTIC_MIN_SCORE = 1
             location_site_search = SearchQuerySet().filter(
                     site_name__contains=query_value
             ).models(LocationSite)
