@@ -27,7 +27,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                             } else {
                                 Shared.Dispatcher.trigger('map:addHighlightPinnedFeature', olfeature[0]);
                             }
-                        })
+                        });
+                        Shared.Dispatcher.trigger('map:zoomToHighlightPinnedFeatures');
                     }
                 },
                 error: function () {
