@@ -57,11 +57,11 @@ class GetCollectionAbstract(APIView):
         fuzzy_search = False
 
         sqs = SearchQuerySet()
+        settings.ELASTIC_MIN_SCORE = 0
 
         if query_value:
-            settings.ELASTIC_MIN_SCORE = 1
             clean_query = sqs.query.clean(query_value)
-            results = sqs.filter(
+            results = SearchQuerySet().filter(
                     SQ(original_species_name_exact__contains=clean_query) |
                     SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
@@ -72,19 +72,19 @@ class GetCollectionAbstract(APIView):
                 fuzzy_search = False
             else:
                 fuzzy_search = True
+                # Set min score bigger for fuzzy search
                 settings.ELASTIC_MIN_SCORE = 2
-                results = sqs.filter(
+                results = SearchQuerySet().filter(
                         SQ(original_species_name=clean_query) |
                         SQ(taxon_common_name=clean_query) |
                         SQ(taxon_scientific_name=clean_query),
                         validated=True
                 ).models(BiologicalCollectionRecord)
+                settings.ELASTIC_MIN_SCORE = 0
         else:
-            settings.ELASTIC_MIN_SCORE = 0
-            results = sqs.all().models(BiologicalCollectionRecord)
+            results = SearchQuerySet().all().models(BiologicalCollectionRecord)
             results = results.filter(validated=True)
 
-        settings.ELASTIC_MIN_SCORE = 0
         taxon = filters.get('taxon', None)
         if taxon:
             results = sqs.filter(
