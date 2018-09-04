@@ -46,8 +46,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         module_info = {}
         for model in collections:
             taxon_gbif_id = model.taxon_gbif_id
+            category = model.category
             if taxon_gbif_id:
-                taxon_id = taxon_gbif_id.id
+                taxon_id = taxon_gbif_id.gbif_id
                 taxon_class = taxon_gbif_id.taxon_class
                 try:
                     records_occurrence[taxon_class]
@@ -60,6 +61,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 except KeyError:
                     species_list[taxon_gbif_id.common_name] = {
                         'taxon_gbif_id': taxon_id,
+                        'category': category,
                         'count': 0
                     }
                 species_list[taxon_gbif_id.common_name]['count'] += 1

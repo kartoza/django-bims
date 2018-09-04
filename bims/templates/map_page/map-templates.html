@@ -447,9 +447,54 @@
     </div>
 </script>
 
+<script type="text/template" id="search-result-dashboard-detail-template">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title"><%= name %></p>
+        <a class="group-description"><%= description %></a>
+    </div>
+</script>
+
+<script type="text/template" id="search-result-dashboard-origin-template">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title" style="margin-bottom: 10px"><%= name %></p>
+        <a class="group-description">
+            <div class="progress">
+                <div class="progress-text">Native</div>
+                <div class="progress-bar progress-native" role="progressbar"
+                     style="width: <%= nativeValue %>%"
+                     aria-valuenow="<%= nativeValue %>"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="progress">
+                <div class="progress-text">Non-Native</div>
+                <div class="progress-bar progress-non-native" role="progressbar"
+                     style="width: <%= nonNativeValue %>%"
+                     aria-valuenow="<%= nonNativeValue %>"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="progress">
+                <div class="progress-text">Translocated</div>
+                <div class="progress-bar progress-translocated" role="progressbar"
+                     style="width: <%= translocatedValue %>%"
+                     aria-valuenow="<%= translocatedValue %>"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+
+        </a>
+    </div>
+</script>
+
 <script type="text/template" id="search-result-record-template">
     <div class="result-search" data-search-result-id="" data-taxon-id="<%= taxon_gbif_id %>">
-        <p class="group-title"><%= common_name %></p>
+        <a href="https://www.gbif.org/species/<%= taxon_gbif_id %>" target="_blank">
+            <p class="group-title"><%= common_name %></p>
+        </a>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>

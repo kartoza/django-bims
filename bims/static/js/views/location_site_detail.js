@@ -81,11 +81,74 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
         },
         renderDashboardDetail: function (data) {
             var $detailWrapper = $('<div></div>');
-            if ($('#site-dashboard-template').length == 0) {
-                $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
-            } else {
-                $detailWrapper.append(_.template($('#site-dashboard-template').html()));
+
+            if (!data.hasOwnProperty('records_occurrence')) {
+                $detailWrapper.append('<div class="side-panel-content">' +
+                    'No detail for this site.' +
+                    '</div>');
+                return $detailWrapper;
             }
+
+            var recordsOccurence = data['records_occurrence'];
+            var dashboardTemplate = _.template($('#search-result-dashboard-detail-template').html());
+            var originTemplate = _.template($('#search-result-dashboard-origin-template').html());
+            var classes = Object.keys(recordsOccurence).sort();
+
+            if (recordsOccurence.length === 0) {
+                 $detailWrapper.append('<div class="side-panel-content">' +
+                    'No detail for this site.' +
+                    '</div>');
+                return $detailWrapper;
+            }
+
+            $.each(classes, function (index, className) {
+                var record = recordsOccurence[className];
+                if (!className) {
+                    className = 'Unknown Class';
+                }
+                var $classWrapper = $('<div class="sub-species-wrapper"></div>');
+
+                var classTemplate = _.template($('#search-result-sub-title').html());
+                $classWrapper.append(classTemplate({
+                    name: className,
+                    count: 0,
+                }));
+
+                var species = Object.keys(record).sort();
+                var totalRecords = 0;
+                var category = {
+                    'alien': 0,
+                    'indigenous': 0,
+                    'translocated': 0
+                };
+
+                $.each(species, function (index, speciesName) {
+                    var speciesValue = record[speciesName];
+                    var $occurencesIndicator = $classWrapper.find('.total-occurences');
+                    totalRecords += speciesValue.count;
+                    $occurencesIndicator.html(
+                        parseInt($occurencesIndicator.html()) + speciesValue.count);
+                    category[speciesValue['category']] += 1;
+                });
+
+                // Origin
+                $classWrapper.append(originTemplate({
+                    name: 'Origin',
+                    nativeValue: category['indigenous'] / totalRecords * 100,
+                    nonNativeValue: category['alien'] / totalRecords * 100,
+                    translocatedValue: category['translocated'] / totalRecords * 100
+                }));
+
+                $detailWrapper.append($classWrapper);
+
+                // Add click event
+                var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
+
+                $wrapperTitleDiv.click(function (e) {
+                    $(this).parent().find('.result-search').toggle();
+                });
+            });
+
             return $detailWrapper;
         },
         renderSpeciesList: function (data) {
@@ -145,16 +208,16 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $siteDetailWrapper = $('<div></div>');
             $siteDetailWrapper.append(
                 '<div id="site-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> Site details <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="false"> <span class="search-result-title"> SITE DETAILS </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="dashboard-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> Dashboard <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="false"> <span class="search-result-title"> DASHBOARD </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Species List (<span class="species-list-count"><i>loading</i></span>)<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="true"> <span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="resources-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> Resources <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="true"> <span class="search-result-title"> RESOURCES </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
