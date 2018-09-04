@@ -15,7 +15,7 @@
     <div class="ol-control" id="taxon-filter">
     </div>
     <div id="popup"></div>
-    <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
+    <div id="map-legend-wrapper" class="control-drop-shadow show-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
         <div id="map-legend-symbol">L</div>
         <div id="map-legend"></div>
     </div>
@@ -159,6 +159,20 @@
     </div>
 </script>
 
+<script type="text/html" id="layer-selector-row">
+    <li class="ui-state-default">
+        <div class="row-title">
+            <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
+            <input type="checkbox" value="<%= key %>" class="layer-selector-input" <%= checked %>>
+            <%= name %>
+        </div>
+        <div class="options">
+            <div class="group">
+                <label>Transparency</label>
+                <div class="layer-transparency"></div>
+            </div>
+        </div>
+</script>
 <script type="text/html" id="map-control-panel">
     <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
         <div class="search-control sub-control-panel">
@@ -294,27 +308,30 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Upload Data</h5>
-                    <button type="button" class="close"
+                    <button type="button" class="close small-close"
                             aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <form class="form">
-                        <div class="alert alert-danger" role="alert">
+                        <div class="alert alert-danger upload-alert" role="alert">
                         </div>
-                        <div class="alert alert-success" role="alert">
+                        <div class="alert alert-success upload-alert" role="alert">
                         </div>
-                        <label for="ud_module" class="upload-input-label">
-                            Module *
-                        </label>
-                        <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
-                            <option value="">-</option>
-                            <option value="base">base</option>
-                            {% for key, value in biological_modules.items %}
-                                <option value="{{ value }}">{{ key }}</option>
-                            {% endfor %}
-                        </select>
+                        {% if biological_modules|length > 1 %}
+                            <label for="ud_module" class="upload-input-label">
+                                Module *
+                            </label>
+                            <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                <option value="">-</option>
+                                {% for key, value in biological_modules.items %}
+                                    <option value="{{ value }}">{{ key }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
+                        {% endif %}
                         <label for="ud_species_name" class="upload-input-label">
                             Species Name *
                         </label>
@@ -353,6 +370,13 @@
                         </label>
                         <textarea class="form-control ud-item"
                                   id="ud_notes" placeholder=""></textarea>
+                        <label for="ud_custodian" class="upload-input-label" style="margin-top: 5px;">
+                            Custodian
+                        </label>
+                        <input type="text"
+                               class="form-control mb-2 mr-sm-2 ud-item"
+                               id="ud_custodian" name="Custodian" placeholder="">
+
                         <p class="required-text ">* = Required </p>
 
                         <button type="button" class="btn btn-info upload-data-button">Upload</button>
@@ -398,10 +422,22 @@
     </div>
 </script>
 
+<script type="text/template" id="site-detail-sub-title">
+    <div class="search-result-sub-title search-results-total" data-search-result-id="">
+        <%= name %>
+    </div>
+</script>
+<script type="text/template" id="site-detail-registry-values">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title"><%= name %></p>
+        <a class="group-description"><%= value %></a>
+    </div>
+</script>
+
 <script type="text/template" id="search-result-sub-title">
     <div class="search-result-sub-title search-results-total" data-search-result-id="">
         <%= name %>
-        <i class="pull-right"><%= count %> occurrences</i>
+        <i class="pull-right"><span class="total-occurences"><%= count %></span> occurrences</i>
     </div>
 </script>
 
@@ -411,16 +447,80 @@
     </div>
 </script>
 
+<script type="text/template" id="search-result-dashboard-detail-template">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title"><%= name %></p>
+        <a class="group-description"><%= description %></a>
+    </div>
+</script>
+
+<script type="text/template" id="search-result-dashboard-origin-template">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title" style="margin-bottom: 10px"><%= name %></p>
+        <a class="group-description">
+            <div class="progress">
+                <div class="progress-text">Native</div>
+                <div class="progress-bar progress-native" role="progressbar"
+                     style="width: <%= nativeValue %>%"
+                     aria-valuenow="<%= nativeValue %>"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="progress">
+                <div class="progress-text">Non-Native</div>
+                <div class="progress-bar progress-non-native" role="progressbar"
+                     style="width: <%= nonNativeValue %>%"
+                     aria-valuenow="<%= nonNativeValue %>"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="progress">
+                <div class="progress-text">Translocated</div>
+                <div class="progress-bar progress-translocated" role="progressbar"
+                     style="width: <%= translocatedValue %>%"
+                     aria-valuenow="<%= translocatedValue %>"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+        </a>
+    </div>
+</script>
+
+<script type="text/template" id="search-result-dashboard-richness-index-template">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title" style="margin-bottom: 10px"><%= name %></p>
+        <a class="group-description">
+            <div class="species-richness-text row">
+                <div class="col-lg-6">Species Richness </div>
+                <div class="col-lg-5">: <%= speciesRichness %> </div>
+            </div>
+            <div class="species-richness-text row">
+                <div class="col-lg-6">Shanon Diversity </div>
+                <div class="col-lg-5">: <%= shanonDiversity %> </div>
+            </div>
+            <div class="species-richness-text row">
+                <div class="col-lg-6">Simpson Diversity </div>
+                <div class="col-lg-5">: <%= simpsonDiversity %> </div>
+            </div>
+        </a>
+    </div>
+</script>
+
 <script type="text/template" id="search-result-record-template">
     <div class="result-search" data-search-result-id="" data-taxon-id="<%= taxon_gbif_id %>">
-        <p class="group-title"><%= common_name %></p>
+        <a href="https://www.gbif.org/species/<%= taxon_gbif_id %>" target="_blank">
+            <p class="group-title"><%= common_name %></p>
+        </a>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>
 
 <script type="text/template" id="search-result-taxa-template">
     <div class="result-search" data-search-result-id="" data-taxon-id="<%= id %>">
-        <p class="group-title"><%= common_name %></p>
+        <p class="group-title"><%= highlighted_common_name %></p>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>

@@ -20,6 +20,7 @@ class IUCNStatus(models.Model):
         ('CR', 'Critically Endangered'),
         ('EW', 'Extinct In The Wild'),
         ('EX', 'Extinct'),
+        ('DD', 'Data Deficient'),
     )
 
     category = models.CharField(

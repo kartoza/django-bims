@@ -24,6 +24,15 @@ DATABASES = {
     }
 }
 
+if os.getenv('DEFAULT_BACKEND_DATASTORE'):
+    DATABASES[os.getenv('DEFAULT_BACKEND_DATASTORE')] = {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': os.environ.get('GEONODE_GEODATABASE'),
+        'USER': os.environ.get('GEONODE_GEODATABASE_USERNAME'),
+        'PASSWORD': os.environ.get('GEONODE_GEODATABASE_PASSWORD'),
+        'HOST': os.environ.get('GEONODE_GEODATABASE_HOST'),
+        'PORT': 5432
+    }
 
 # See fig.yml file for postfix container definition
 #

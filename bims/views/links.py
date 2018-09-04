@@ -4,7 +4,7 @@ __copyright__ = 'kartoza.com'
 
 from django.views.generic import ListView
 
-from bims.models import Category
+from bims.models import LinkCategory
 
 
 class LinksCategoryView(ListView):
@@ -12,10 +12,10 @@ class LinksCategoryView(ListView):
 
     template_name = 'links/links.html'
     paginate_by = 10
-    queryset = Category.objects.all()
+    queryset = LinkCategory.objects.all()
 
     def get_context_data(self, **kwargs):
         """Create context variables for use in templates."""
         context = super(LinksCategoryView, self).get_context_data()
-        context['categories'] = self.queryset
+        context['categories'] = LinkCategory.objects.all()
         return context

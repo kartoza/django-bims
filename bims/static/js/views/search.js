@@ -30,6 +30,7 @@ define([
             }
         },
         search: function (searchValue) {
+            Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
                 return;
             }
@@ -73,9 +74,11 @@ define([
             if (boundaryValue.length === 0) {
                 Shared.Dispatcher.trigger('catchmentArea:hide');
                 boundaryValue = '';
+                Shared.Dispatcher.trigger('map:boundaryEnabled', false);
             } else {
                 boundaryValue = JSON.stringify(boundaryValue);
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
+                Shared.Dispatcher.trigger('map:boundaryEnabled', true);
             }
             var parameters = {
                 'search': searchValue,

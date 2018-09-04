@@ -140,5 +140,36 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
             }
             return style;
         },
+        getPinnedHighlightStyle: function (geometryType) {
+            var style;
+            if (geometryType != 'Point') {
+                style = new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: [0, 255, 0, 1],
+                        width: 2
+                    }),
+                    fill: new ol.style.Fill({
+                        color: [0, 255, 0, 0.2]
+                    })
+                })
+            } else {
+                style = new ol.style.Style({
+                    image: new ol.style.Icon(({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        opacity: 0.75,
+                        src: '/static/img/map-marker-highlight.png'
+                    })),
+                    text: new ol.style.Text({
+                        scale: 1,
+                        fill: new ol.style.Fill({
+                            color: '#000000'
+                        })
+                    })
+                })
+            }
+            return style;
+        }
     })
 });

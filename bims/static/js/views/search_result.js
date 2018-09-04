@@ -12,11 +12,11 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], funct
             if (this.getResultType() === 'taxa') {
                 Shared.Dispatcher.trigger('searchResult:updateTaxon',
                     this.model.get('id'),
-                    this.model.get('species')
+                    this.model.get('common_name')
                 );
                 Shared.Dispatcher.trigger('taxonDetail:show',
                     this.model.get('id'),
-                    this.model.get('species')
+                    this.model.get('common_name')
                 );
             } else if (this.getResultType() === 'site') {
                 Shared.Dispatcher.trigger('siteDetail:show',

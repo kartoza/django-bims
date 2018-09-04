@@ -94,14 +94,14 @@ services:
       context: docker
     hostname: worker
     working_dir: /home/web/django_project
-    command: celery worker --app=bims.celery:app -B -l INFO
+    command: celery worker --app=bims.celery:app -B -l debug
     entrypoint: []
     environment:
       - DATABASE_NAME=gis
       - DATABASE_USERNAME=docker
       - DATABASE_PASSWORD=docker
       - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.prod_worker
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_worker
       - VIRTUAL_HOST=bims.kartoza.com
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq
@@ -110,6 +110,7 @@ services:
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
       - APP_NAME=bims
+      - ASYNC_SIGNALS_GEONODE=True
     links:
       - smtp:smtp
       - db:db

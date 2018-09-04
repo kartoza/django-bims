@@ -5,6 +5,8 @@ body {
     -o-box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
 }
 
 .bg-primary {
@@ -38,6 +40,10 @@ section {
     color: white;
     width: 100%;
     padding: 12px 0;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
 }
 
 .footer-shrink {
