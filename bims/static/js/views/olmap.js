@@ -28,6 +28,8 @@ define([
         mapInteractionEnabled: true,
         previousZoom: 0,
         sidePanelView: null,
+        initZoom: 7,
+        initCenter: [22.937506, -30.559482],
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
@@ -61,7 +63,7 @@ define([
             Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
-            Shared.Dispatcher.on('map:resetMap', this.resetMap, this);
+            Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
             Shared.Dispatcher.on('map:zoomToHighlightPinnedFeatures', this.zoomToHighlightPinnedFeatures, this);
             Shared.Dispatcher.on('map:boundaryEnabled', this.boundaryEnabled, this);
 
@@ -239,7 +241,7 @@ define([
             });
             var basemap = new Basemap();
 
-            var center = [22.937506, -30.559482];
+            var center = this.initCenter;
             if (centerPointMap) {
                 var centerArray = centerPointMap.split(',');
                 for (var i in centerArray) {
@@ -253,7 +255,7 @@ define([
                 layers: basemap.getBaseMaps(),
                 view: new ol.View({
                     center: ol.proj.fromLonLat(center),
-                    zoom: 7,
+                    zoom: this.initZoom,
                     minZoom: 5,
                     extent: [579700.2488501729, -4540000.22437294, 5275991.266691402, -2101353.2739626765]
                 }),
@@ -505,9 +507,16 @@ define([
                 $('#general-info-modal').fadeIn()
             }
         },
-        resetMap: function () {
-            var center = [22.937506, -30.559482];
-            this.zoomToCoordinates(ol.proj.fromLonLat(center), 7);
+        refetchRecords: function () {
+            var center = this.initCenter;
+            if (centerPointMap) {
+                var centerArray = centerPointMap.split(',');
+                for (var i in centerArray) {
+                    centerArray[i] = parseFloat(centerArray[i]);
+                }
+                center = centerArray;
+            }
+            this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
             this.fetchingRecords();
         }
     })

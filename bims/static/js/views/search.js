@@ -141,7 +141,7 @@ define([
             Shared.Router.clearSearch();
             $('.clear-filter').click();
             $('.map-search-result').hide();
-            Shared.Dispatcher.trigger('map:resetMap');
+            Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {
