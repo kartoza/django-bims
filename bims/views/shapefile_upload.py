@@ -153,6 +153,10 @@ def process_shapefiles(request,
                         properties[opt_field] = properties[opt_field].lower()
                     optional_records[opt_field] = properties[opt_field]
 
+            # Add custodian
+            if 'custodian' in properties:
+                optional_records['institution_id'] = properties['custodian']
+
             if geojson['geometry']['type'] == 'Polygon':
                 location_type, status = LocationType.objects.get_or_create(
                         name='PolygonObservation',
@@ -233,7 +237,13 @@ def process_shapefiles(request,
             collection_post_save_update_cluster,
     )
 
+    response_message = 'Added %s records <br/>' % collection_added
+    if collection_added > 0:
+        response_message += 'Verify your records ' \
+                            '<a target="_blank" ' \
+                            'href="/nonvalidated-user-list/">' \
+                            'here</a> <br/>'
     data = {
-        'message': 'Added %s collections' % collection_added
+        'message': response_message
     }
     return JsonResponse(data)

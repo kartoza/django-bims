@@ -15,13 +15,14 @@ from bims.utils.cluster import (
     update_cluster_by_site
 )
 from bims.utils.gbif import update_collection_record
+from bims.tasks.collection_record import update_search_index
 
 
 class BiologicalCollectionRecord(models.Model):
     """Biological collection model."""
     CATEGORY_CHOICES = (
-        ('alien', 'Alien'),
-        ('indigenous', 'Indigenous'),
+        ('alien', 'Non-native'),
+        ('indigenous', 'Native'),
         ('translocated', 'Translocated')
     )
     site = models.ForeignKey(
@@ -76,6 +77,13 @@ class BiologicalCollectionRecord(models.Model):
     )
     ready_for_validation = models.BooleanField(
         default=False,
+    )
+    institution_id = models.CharField(
+        default=settings.INSTITUTION_ID_DEFAULT,
+        help_text='An identifier for the institution having custody of the '
+                  'object(s) or information referred to in the record.',
+        max_length=50,
+        verbose_name='Custodian',
     )
 
     # noinspection PyClassicStyleClass
@@ -139,6 +147,7 @@ def collection_post_save_handler(sender, instance, **kwargs):
     instance.on_post_save()
     if instance.is_cluster_generation_applied():
         update_cluster_by_collection(instance)
+        update_search_index.delay()
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
@@ -156,7 +165,6 @@ def cluster_post_delete_handler(sender, instance, using, **kwargs):
             not issubclass(sender, LocationSite):
         return
     if issubclass(sender, BiologicalCollectionRecord):
-        if instance.is_cluster_generation_applied():
-            update_cluster_by_collection(instance)
+        update_cluster_by_collection(instance)
     if issubclass(sender, LocationSite):
         update_cluster_by_site(instance)

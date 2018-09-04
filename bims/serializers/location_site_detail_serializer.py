@@ -9,37 +9,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     """
     Serializer for location site detail.
     """
-    records_occurrence = serializers.SerializerMethodField()
     geometry = serializers.SerializerMethodField()
     location_context_document_json = serializers.SerializerMethodField()
-
-    def get_records_occurrence(self, obj):
-        collections = BiologicalCollectionRecord.objects.filter(
-            site=obj,
-            validated=True
-        )
-        records = {}
-        for model in collections:
-            taxon_gbif_id = model.taxon_gbif_id
-            if taxon_gbif_id:
-                taxon_id = taxon_gbif_id.id
-                taxon_class = taxon_gbif_id.taxon_class
-                try:
-                    records[taxon_class]
-                except KeyError:
-                    records[taxon_class] = {}
-
-                species_list = records[taxon_class]
-                try:
-                    species_list[taxon_gbif_id.common_name]
-                except KeyError:
-                    species_list[taxon_gbif_id.common_name] = {
-                        'taxon_gbif_id': taxon_id,
-                        'count': 0
-                    }
-                species_list[taxon_gbif_id.common_name]['count'] += 1
-
-        return records
 
     def get_geometry(self, obj):
         geometry = obj.get_geometry()
@@ -60,6 +31,76 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'name',
             'geometry',
             'location_type',
-            'records_occurrence',
             'location_context_document_json',
         ]
+
+    def to_representation(self, instance):
+        result = super(
+            LocationSiteDetailSerializer, self).to_representation(
+            instance)
+        collections = BiologicalCollectionRecord.objects.filter(
+            site=instance,
+            validated=True
+        )
+        records_occurrence = {}
+        module_info = {}
+        for model in collections:
+            taxon_gbif_id = model.taxon_gbif_id
+            if taxon_gbif_id:
+                taxon_id = taxon_gbif_id.id
+                taxon_class = taxon_gbif_id.taxon_class
+                try:
+                    records_occurrence[taxon_class]
+                except KeyError:
+                    records_occurrence[taxon_class] = {}
+
+                species_list = records_occurrence[taxon_class]
+                try:
+                    species_list[taxon_gbif_id.common_name]
+                except KeyError:
+                    species_list[taxon_gbif_id.common_name] = {
+                        'taxon_gbif_id': taxon_id,
+                        'count': 0
+                    }
+                species_list[taxon_gbif_id.common_name]['count'] += 1
+
+            # get per module info
+            module = model.get_children()
+            if not module:
+                module = 'base'
+            else:
+                module = module._meta.verbose_name
+
+            try:
+                module_info[module]
+            except KeyError:
+                module_info[module] = {
+                    'count': 0,
+                    'categories': {},
+                    'iucn_status': {
+                        'sensitive': 0,
+                        'non-sensitive': 0
+                    }
+                }
+            module_info[module]['count'] += 1
+
+            # get per category info
+            if model.category:
+                category = model.category
+                try:
+                    module_info[module]['categories'][category]
+                except KeyError:
+                    module_info[module]['categories'][category] = 0
+                module_info[module]['categories'][category] += 1
+
+            # get per iucn_status info
+            if model.taxon_gbif_id and model.taxon_gbif_id.iucn_status:
+                sensitive = model.taxon_gbif_id.iucn_status.sensitive
+                if sensitive:
+                    module_info[module]['iucn_status']['sensitive'] += 1
+                else:
+                    module_info[module]['iucn_status']['non-sensitive'] += 1
+
+        result['records_occurrence'] = records_occurrence
+        result['modules_info'] = module_info
+        return result

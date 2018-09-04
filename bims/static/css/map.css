@@ -155,6 +155,10 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 60px;
 }
 
+.layer-switcher {
+    z-index: 100;
+}
+
 .map-control-panel, .download-control-panel {
     background-color: white;
     position: absolute;
@@ -171,6 +175,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 0;
     border-top: none;
     width: 54px;
+    z-index: 100;
 }
 
 .no-upload {
@@ -280,7 +285,7 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     top: 0;
     color: black;
-    padding: 5px 15px;
+    padding: 5px 15px 0;
     border: none;
     z-index: 10;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
@@ -289,11 +294,13 @@ html, body, .map, .map-wrapper, #map-container {
     border-radius: 0;
     margin-left: 85px;
     margin-top: 60px;
+    z-index: 100;
 }
 
 .map-search-result {
     margin-left: 351px !important;
     padding-bottom: 0;
+    min-height: 209px;
 }
 
 .map-search-result .search-box {
@@ -312,8 +319,8 @@ html, body, .map, .map-wrapper, #map-container {
     background: ghostwhite;
     padding-right: 15px;
     padding-left: 15px;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding-top: 5px;
+    padding-bottom: 5px;
     font-weight: normal;
     font-size: 16px;
 }
@@ -339,7 +346,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 #search-result-content .search-results-section {
     max-height: 500px;
-    overflow-y: scroll;
+    overflow-y: auto;
     margin-right: -17px;
 }
 
@@ -350,6 +357,63 @@ html, body, .map, .map-wrapper, #map-container {
 .layers-selector-container {
     display: none;
     padding-bottom: 0 !important;
+    max-height: 500px;
+}
+
+.layers-selector-container .content {
+    border-top: 1px solid darkgray;
+    margin-top: 3px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#layers-selector {
+    max-height: 450px;
+    padding: 0;
+}
+
+#layers-selector li {
+    max-width: 100%;
+    height: auto;
+    padding: 0;
+}
+
+#layers-selector li:hover .options {
+    display: block;
+}
+
+#layers-selector li .row-title {
+    padding: 5px;
+    text-overflow: ellipsis;
+    max-width: 250px;
+    overflow: hidden;
+}
+
+#layers-selector li .row-title label {
+    margin-bottom: 0;
+}
+
+#layers-selector .options {
+    display: none;
+    padding-left: 25px;
+    padding-bottom: 20px;
+    padding-top: 5px;
+    background: #ededed;
+    box-shadow: inset 0 0 4px #888;
+}
+
+#layers-selector .options label {
+    font-size: 12px;
+}
+
+.ui-state-default {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    max-height: 500px;
+    font-size: 11pt;
+    text-overflow: ellipsis;
+    max-width: 245px;
 }
 
 .download-format-selector-container {
@@ -367,6 +431,7 @@ html, body, .map, .map-wrapper, #map-container {
     list-style-type: none;
     padding: 5px;
     margin-bottom: 0;
+    display: block;
 }
 
 .map-control-panel-box li {
@@ -379,6 +444,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-right: 5px;
     border: none;
     cursor: pointer;
+    height: 40px;
 }
 
 .map-control-panel-box li:hover {
@@ -388,11 +454,6 @@ html, body, .map, .map-wrapper, #map-container {
 .layer-selector-input {
     margin-right: 5px;
     cursor: pointer;
-}
-
-.layers-selector-container .content {
-    border-top: 1px solid darkgray;
-    margin-top: 3px;
 }
 
 .locate-options-container {
@@ -438,7 +499,8 @@ html, body, .map, .map-wrapper, #map-container {
 .map-control-panel-box .subtitle, .search-results-total {
     background-color: ghostwhite;
     text-align: left;
-    border: 1px solid grey;
+    padding: 5px;
+    border-bottom: 1px solid rgb(227, 227, 227);
 }
 
 .filter-icon-arrow {
@@ -962,8 +1024,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #map-legend-wrapper .legend-row {
-    margin-bottom: 10px;
-    border-bottom: 1px solid darkgray;
     padding: 10px;
 }
 
@@ -1190,6 +1250,7 @@ div:hover::-webkit-scrollbar {
 
 .sub-species-wrapper .search-result-sub-title {
     background-color: rgba(255, 255, 255, 0.5) !important;
+    border-bottom: 1px solid rgba(209, 209, 209, 0.66);
 }
 
 .site-detail-content .text-center {
@@ -1249,6 +1310,10 @@ div:hover::-webkit-scrollbar {
     font-family: Roboto;
 }
 
+.small-close span {
+    font-size: 25pt;
+}
+
 .close-info-popup {
     line-height: 0.8 !important;
     padding: 0 10px !important;
@@ -1272,18 +1337,18 @@ div:hover::-webkit-scrollbar {
 }
 
 #general-info-modal .modal-body::-webkit-scrollbar {
-	width: 10px;
-	background-color: #F5F5F5;
+    width: 10px;
+    background-color: #F5F5F5;
 }
 
 #general-info-modal .modal-body::-webkit-scrollbar-track {
-	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-	background-color: #F5F5F5;
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: #F5F5F5;
 }
 
 #general-info-modal .modal-body::-webkit-scrollbar-thumb {
-	background-color: #000000;
-	border: 2px solid #555555;
+    background-color: #000000;
+    border: 2px solid #555555;
 }
 
 .catchment-filter {
@@ -1293,4 +1358,17 @@ div:hover::-webkit-scrollbar {
 .filter-selected {
     background-color: #1b900d !important;
     color: white !important;
+}
+
+.highlighted {
+    background-color: rgba(250, 244, 0, 0.38);
+}
+
+.layer-transparency {
+    width: 210px;
+}
+
+.upload-alert a {
+    color: #484848 !important;
+    text-decoration: underline !important;
 }

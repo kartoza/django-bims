@@ -23,7 +23,7 @@ define([
         className: 'map-wrapper',
         map: null,
         uploadDataState: false,
-
+        isBoundaryEnabled: false,
         // attributes
         mapInteractionEnabled: true,
         previousZoom: 0,
@@ -62,6 +62,8 @@ define([
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
             Shared.Dispatcher.on('map:resetMap', this.resetMap, this);
+            Shared.Dispatcher.on('map:zoomToHighlightPinnedFeatures', this.zoomToHighlightPinnedFeatures, this);
+            Shared.Dispatcher.on('map:boundaryEnabled', this.boundaryEnabled, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -75,6 +77,9 @@ define([
                 zoom: zoom - 1,
                 duration: 250
             })
+        },
+        boundaryEnabled: function (value) {
+            this.isBoundaryEnabled = value;
         },
         zoomOutMap: function (e) {
             var view = this.map.getView();
@@ -92,11 +97,15 @@ define([
             }
         },
         zoomToExtent: function (coordinates) {
+            if (this.isBoundaryEnabled) {
+                this.fetchingRecords();
+                return false;
+            }
             this.previousZoom = this.getCurrentZoom();
             var ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [
-                    0, $('.right-panel').width(), 0, 0
+                    0, $('.right-panel').width(), 0, 250
                 ]
             });
             this.map.getView().setZoom(this.getCurrentZoom());
@@ -322,6 +331,9 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
+            if(!this.layers.isBiodiversityLayerLoaded()) {
+                return
+            }
             self.updateClusterBiologicalCollectionZoomExt();
             if (!this.clusterBiologicalCollection.isActive()) {
                 var administrative = this.checkAdministrativeLevel();
@@ -426,7 +438,7 @@ define([
                 var extent = this.layers.highlightVectorSource.getExtent();
                 this.map.getView().fit(extent, {
                     size: this.map.getSize(), padding: [
-                        0, $('.right-panel').width(), 0, 0
+                        0, $('.right-panel').width(), 0, 250
                     ]
                 });
                 if (this.getCurrentZoom() > 18) {
@@ -449,6 +461,16 @@ define([
             $.each(features, function (index, feature) {
                 self.addHighlightPinnedFeature(feature);
             });
+        },
+        zoomToHighlightPinnedFeatures: function () {
+            this.map.getView().fit(
+                this.layers.highlightPinnedVectorSource.getExtent(),
+                {
+                    size: this.map.getSize(),
+                    padding: [
+                        0, $('.right-panel').width(), 0, 250
+                    ]
+                });
         },
         addHighlightPinnedFeature: function (feature) {
             this.layers.highlightPinnedVectorSource.addFeature(feature);

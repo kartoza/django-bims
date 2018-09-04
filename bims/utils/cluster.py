@@ -80,9 +80,11 @@ def update_cluster_by_collection(collection):
     :param collection: Biological collection record model
     """
     boundary_type = BoundaryType.objects.all().order_by('-level')[0]
-    boundaries = Boundary.objects.filter().filter(
+    boundaries = Boundary.objects.filter(
         type=boundary_type).filter(
-        geometry__contains=collection.site.get_geometry())
+        geometry__contains=collection.site.get_geometry()).values_list(
+        'id', flat=True)
+    boundaries = list(set(boundaries))
 
     task_update_cluster.delay(boundaries)
 

@@ -40,6 +40,10 @@ services:
 
       {% endfor %}
 
+    ports:
+      # for geoserver
+      - "{{ docker_port_forward.django.geoserver }}:8080"
+
   uwsgi:
     build:
       context: docker

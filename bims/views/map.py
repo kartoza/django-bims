@@ -42,9 +42,13 @@ class MapPageView(TemplateView):
         context['collection_category'] = [list(x) for x in categories]
 
         bio_childrens = BiologicalCollectionRecord.get_children_model()
+
+        # add additional module
         context['biological_modules'] = {
             bio._meta.app_label: str(bio._meta.label) for bio in bio_childrens
         }
+        # add base module
+        context['biological_modules']['base'] = 'base'
 
         # get date filter
         context['date_filter'] = {'min': '1900', 'max': '2008'}

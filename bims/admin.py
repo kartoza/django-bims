@@ -1,4 +1,5 @@
 # coding=utf-8
+from datetime import timedelta
 import json
 from pygments import highlight
 from pygments.lexers.data import JsonLexer
@@ -32,13 +33,16 @@ from bims.models import (
     Cluster,
     CarouselHeader,
     BiologicalCollectionRecord,
-    Category,
+    LinkCategory,
     Link,
+    Visitor,
+    Pageview,
     ShapefileUploadSession,
     Shapefile,
     NonBiodiversityLayer,
 )
 
+from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
 
 
@@ -192,7 +196,7 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
-    list_filter = ('taxon_gbif_id', 'collection_date')
+    list_filter = ('taxon_gbif_id', 'collection_date', 'category')
     list_display = (
         'original_species_name',
         'category',
@@ -239,7 +243,7 @@ class LinkAdmin(admin.ModelAdmin):
     list_filter = ('category',)
 
 
-admin.site.register(Category)
+admin.site.register(LinkCategory)
 admin.site.register(Link, LinkAdmin)
 
 
@@ -317,6 +321,38 @@ class FlatPageCustomAdmin(FlatPageAdmin):
     }
 
 
+class VisitorAdmin(admin.ModelAdmin):
+    date_hierarchy = 'start_time'
+
+    list_display = (
+        'session_key',
+        'user',
+        'start_time',
+        'session_over',
+        'pretty_time_on_site',
+        'ip_address',
+        'user_agent')
+
+    list_filter = ('user', 'ip_address')
+
+    def session_over(self, obj):
+        return obj.session_ended() or obj.session_expired()
+
+    session_over.boolean = True
+
+    def pretty_time_on_site(self, obj):
+        if obj.time_on_site is not None:
+            return timedelta(seconds=obj.time_on_site)
+
+    pretty_time_on_site.short_description = 'Time on site'
+
+
+class PageviewAdmin(admin.ModelAdmin):
+    date_hierarchy = 'view_time'
+
+    list_display = ('url', 'view_time')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -339,3 +375,7 @@ admin.site.register(Shapefile, ShapefileAdmin)
 
 admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, FlatPageCustomAdmin)
+
+admin.site.register(Visitor, VisitorAdmin)
+if TRACK_PAGEVIEWS:
+    admin.site.register(Pageview, PageviewAdmin)

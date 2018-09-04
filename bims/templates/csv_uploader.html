@@ -18,7 +18,7 @@
     <div class="container">
         <div class="jumbotron csv-uploader-wrapper">
             <div class="row">
-                <div class="col-lg-2"><button type="button" class="btn">Upload CSV</button></div>
+                <div class="col-lg-2"><button type="button" class="btn btn-outline-dark disabled" style="padding-left: 0 !important;">Upload CSV</button></div>
                 <div class="col-lg-2"><a href="{% block upload_shp_url %}/upload_shp{% endblock %}" class="btn btn-info" role="button">Upload Shapefile</a></div>
             </div>
 
@@ -28,21 +28,8 @@
             </div>
 
             <div class="modal-body">
-                <label for="file"><b>Upload csv here</b></label>
-                <button type="button" class="btn btn-primary js-upload-photos">
-                    <span class="glyphicon glyphicon-cloud-upload"></span> Upload CSV
-                </button>
-
-                <input id="fileupload" type="file" name="csv_file"
-                       style="display: none;"
-                       data-url=""
-                       data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
-
-                <div class="upload-status">
-                </div>
 
                 <div class="help-block-space"></div>
-                <p class="help-block">These formats are supported: csv</p>
                 <div class="help-block">
                     Your data must conform to this schema to be accepted :
                     <div class="help-block-schema">
@@ -51,17 +38,44 @@
                         {% endblock %}
                     </div>
                     <div class="help-block-space"></div>
+                    <div class="help-block-schema">
+                            coordinates or geometry must be geographic on WGS84 datum
+                    </div>
+                    <div class="help-block-space"></div>
                     And these are optional fields :
                     <div class="help-block-schema">
                         {% block optional_fields %}
-                            present(int), absent(int)
+                            custodian(string), present(int), absent(int)
                         {% endblock %}
                     </div>
+                    <div class="help-block-space"></div>
+                    <strong>You can download the template here :</strong>
+                    {% block download_example_button %}
+                    <a href="{% static "data/data_example.csv" %}"
+                       download="data_example.csv">Download Template</a>
+                    {% endblock %}
+
+                    <div class="help-block-space"></div>
+                    <div class="help-block">
+                        Duplicates will be detected and rejected.
+                    </div>
+
+                    <div class="help-block-space"></div>
+                    <label for="file"><b>Upload csv here</b></label>
+                    <button type="button" class="btn btn-primary js-upload-photos">
+                        <span class="glyphicon glyphicon-cloud-upload"></span> Upload CSV
+                    </button>
+
+                    <input id="fileupload" type="file" name="csv_file"
+                       style="display: none;"
+                       data-url=""
+                       data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+
+                    <div class="upload-status">
+                    </div>
+
                 </div>
-                <div class="help-block-space"></div>
-                <div class="help-block">
-                    Duplicates will be detected and rejected.
-                </div>
+
 
             </div>
 
