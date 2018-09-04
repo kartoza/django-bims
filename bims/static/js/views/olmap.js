@@ -61,6 +61,7 @@ define([
             Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
+            Shared.Dispatcher.on('map:resetMap', this.resetMap, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -481,6 +482,11 @@ define([
             if(!hideBimsInfo && bimsInfoContent) {
                 $('#general-info-modal').fadeIn()
             }
+        },
+        resetMap: function () {
+            var center = [22.937506, -30.559482];
+            this.zoomToCoordinates(ol.proj.fromLonLat(center), 7);
+            this.fetchingRecords();
         }
     })
 });

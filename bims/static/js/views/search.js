@@ -138,6 +138,7 @@ define([
             Shared.Router.clearSearch();
             $('.clear-filter').click();
             $('.map-search-result').hide();
+            Shared.Dispatcher.trigger('map:resetMap');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {
