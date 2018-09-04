@@ -72,44 +72,47 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
         },
         getClusterStyle: function (feature) {
             var count = feature.getProperties()['count'];
-            if (this.isIndividialCluster(feature)) {
-                return this.styles['Point'];
-            }
-            var smallCluster = new ol.style.Circle({
-                radius: 15,
-                fill: new ol.style.Fill({
-                    color: 'red'
-                })
-            });
-            var mediumCluster = new ol.style.Circle({
-                radius: 30,
-                fill: new ol.style.Fill({
-                    color: 'yellow'
-                })
-            });
-            var largeCluster = new ol.style.Circle({
-                radius: 45,
-                fill: new ol.style.Fill({
-                    color: 'green'
-                })
-            });
+            var radius = 10;
             var image = null;
-            if (count < 10) {
-                image = smallCluster;
-            } else if (10 >= count <= 100) {
-                image = mediumCluster;
+            if (this.isIndividialCluster(feature)) {
+                image = new ol.style.Circle({
+                    radius: radius,
+                    fill: new ol.style.Fill({
+                        color: '#1b900d'
+                    })
+                });
             } else {
-                image = largeCluster
+                var currentCount = count;
+                var radiusDivider = 10;
+                if (currentCount > 1000) {
+                    currentCount = 1000;
+                    radiusDivider = 30;
+                }
+                if (currentCount > 250 && currentCount < 1000) {
+                    radiusDivider = 20;
+                }
+                radius += (currentCount / radiusDivider);
+                image = new ol.style.Circle({
+                    radius: radius,
+                    fill: new ol.style.Fill({
+                        color: '#dbaf00'
+                    })
+                });
+            }
+            var textStyle = {
+                scale: 1.3,
+                fill: new ol.style.Fill({
+                    color: '#fff'
+                })
+            };
+            if (count > 500) {
+                textStyle['text'] = '> 500';
+            } else if (count > 100) {
+                textStyle['text'] = '> 100' ;
             }
             return new ol.style.Style({
                 image: image,
-                text: new ol.style.Text({
-                    scale: 1,
-                    fill: new ol.style.Fill({
-                        color: '#000000'
-                    }),
-                    text: '' + count
-                })
+                text: new ol.style.Text(textStyle)
             });
         },
         getHighlightStyle: function (geometryType) {

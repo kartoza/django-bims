@@ -1,14 +1,15 @@
-define(['backbone', 'models/location_site', 'views/location_site'], function (Backbone, LocationSiteModel, LocationSiteView) {
+define(['backbone', 'models/location_site', 'views/location_site', 'shared'], function (Backbone, LocationSiteModel, LocationSiteView, Shared) {
     return Backbone.Collection.extend({
         model: LocationSiteModel,
         baseAPI: "/api/location-site/",
-        collectionAPI: _.template("/api/location-site/cluster/?icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>"),
+        collectionAPI: _.template("/api/location-site/cluster/?icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>"),
         url: "",
         viewCollection: [],
         updateUrl: function (bbox, zoom) {
             this.url = this.collectionAPI({
                 bbox: bbox,
-                zoom: zoom
+                zoom: zoom,
+                clusterSize: Shared.ClusterSize
             });
         },
         renderCollection: function () {

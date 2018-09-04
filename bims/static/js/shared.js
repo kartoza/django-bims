@@ -6,6 +6,7 @@ define(['backbone', 'underscore'], function (Backbone, _) {
         LocationSiteDetailXHRRequest: null,
         TaxonDetailXHRRequest: null,
         Dispatcher: _.extend({}, Backbone.Events),
-        Router: {}
+        Router: {},
+        ClusterSize: 30,
     };
 });
