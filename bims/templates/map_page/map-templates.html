@@ -485,7 +485,26 @@
                      aria-valuemax="100">
                 </div>
             </div>
+        </a>
+    </div>
+</script>
 
+<script type="text/template" id="search-result-dashboard-richness-index-template">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title" style="margin-bottom: 10px"><%= name %></p>
+        <a class="group-description">
+            <div class="species-richness-text row">
+                <div class="col-lg-6">Species Richness </div>
+                <div class="col-lg-5">: <%= speciesRichness %> </div>
+            </div>
+            <div class="species-richness-text row">
+                <div class="col-lg-6">Shanon Diversity </div>
+                <div class="col-lg-5">: <%= shanonDiversity %> </div>
+            </div>
+            <div class="species-richness-text row">
+                <div class="col-lg-6">Simpson Diversity </div>
+                <div class="col-lg-5">: <%= simpsonDiversity %> </div>
+            </div>
         </a>
     </div>
 </script>

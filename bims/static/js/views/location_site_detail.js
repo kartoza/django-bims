@@ -90,8 +90,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             }
 
             var recordsOccurence = data['records_occurrence'];
-            var dashboardTemplate = _.template($('#search-result-dashboard-detail-template').html());
             var originTemplate = _.template($('#search-result-dashboard-origin-template').html());
+            var richnessIndexTemplate = _.template($('#search-result-dashboard-richness-index-template').html());
             var classes = Object.keys(recordsOccurence).sort();
 
             if (recordsOccurence.length === 0) {
@@ -100,6 +100,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     '</div>');
                 return $detailWrapper;
             }
+
+            var totalSpeciesRichness = 0;
 
             $.each(classes, function (index, className) {
                 var record = recordsOccurence[className];
@@ -137,6 +139,40 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     nativeValue: category['indigenous'] / totalRecords * 100,
                     nonNativeValue: category['alien'] / totalRecords * 100,
                     translocatedValue: category['translocated'] / totalRecords * 100
+                }));
+
+                // Calculate species richness
+                var speciesRichness = species.length / Math.sqrt(totalRecords);
+                totalSpeciesRichness += speciesRichness;
+
+                // Calculate shanon diversity and simpson diversity
+                var totalShanonDiversity = 0;
+                var totalNSimpsonDiversity = 0;
+
+                $.each(species, function (index, speciesName) {
+
+                    // Shanon diversity
+                    var speciesValue = record[speciesName];
+                    var p = speciesValue.count / totalRecords;
+                    var logP = Math.log(p);
+                    totalShanonDiversity += -(p * logP);
+
+                    // Simpson diversity
+                    totalNSimpsonDiversity += speciesValue.count * (speciesValue.count - 1);
+                });
+
+                var simpsonDiversityIndex = 1 - (totalNSimpsonDiversity / (totalRecords * (totalRecords-1)));
+                if (isNaN(simpsonDiversityIndex)) {
+                    simpsonDiversityIndex = 0;
+                }
+
+                // Richness Index
+                $classWrapper.append(richnessIndexTemplate({
+                    name: 'Richness Index',
+                    className: className,
+                    speciesRichness: speciesRichness.toFixed(2),
+                    shanonDiversity: totalShanonDiversity.toFixed(2),
+                    simpsonDiversity: simpsonDiversityIndex.toFixed(2)
                 }));
 
                 $detailWrapper.append($classWrapper);

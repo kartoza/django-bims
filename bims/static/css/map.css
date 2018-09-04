@@ -1249,12 +1249,12 @@ div:hover::-webkit-scrollbar {
 }
 
 .sub-species-wrapper .search-result-sub-title {
-    background-color: rgba(237, 237, 237, 0.5) !important;
+    background-color: rgba(215, 215, 215, 0.5) !important;
     border-bottom: 1px solid rgba(209, 209, 209, 0.44);
 }
 
 .search-result-sub-title:hover {
-    background-color: rgba(224, 224, 224, 0.5) !important;
+    background-color: rgba(197, 197, 197, 0.5) !important;
 }
 
 .site-detail-content .text-center {
@@ -1379,7 +1379,7 @@ div:hover::-webkit-scrollbar {
 
 .search-result-title {
     font-weight: normal !important;
-    font-size: 10pt;
+    font-size: 14px;
 }
 
 .progress-text {
@@ -1405,4 +1405,14 @@ div:hover::-webkit-scrollbar {
 
 .progress-translocated {
     background-color: #3e5033;
+}
+
+.species-richness-text {
+    font-size: 9pt;
+    padding-left: 10px;
+}
+
+.species-richness-text .col-lg-6 {
+    border-left: 1px solid rgb(255, 215, 136);
+    margin-left: 5px;
 }
