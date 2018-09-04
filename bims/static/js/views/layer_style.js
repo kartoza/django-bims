@@ -82,12 +82,16 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                     })
                 });
             } else {
-                radius = 16;
                 var currentCount = count;
-                if (currentCount > 100) {
-                    currentCount = 100;
+                var radiusDivider = 10;
+                if (currentCount > 1000) {
+                    currentCount = 1000;
+                    radiusDivider = 30;
                 }
-                radius += (currentCount / 5);
+                if (currentCount > 250 && currentCount < 1000) {
+                    radiusDivider = 20;
+                }
+                radius += (currentCount / radiusDivider);
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
@@ -96,13 +100,15 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 });
             }
             var textStyle = {
-                scale: 1,
+                scale: 1.3,
                 fill: new ol.style.Fill({
-                    color: '#000000'
+                    color: '#fff'
                 })
             };
-            if (count) {
-                textStyle['text'] = '' + count;
+            if (count > 500) {
+                textStyle['text'] = '> 500';
+            } else if (count > 100) {
+                textStyle['text'] = '> 100' ;
             }
             return new ol.style.Style({
                 image: image,
