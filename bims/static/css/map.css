@@ -73,7 +73,7 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: absolute;
     height: 100%;
-    width: 250px;
+    width: 265px;
     pointer-events: none;
 }
 
@@ -84,7 +84,7 @@ html, body, .map, .map-wrapper, #map-container {
     height: 100%;
     width: 100%;
     max-width: 400px;
-    background: rgba(204, 204, 204, 1);
+    background: rgb(255, 255, 255);
     color: #4e4e4e;
     z-index: 2000;
     -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2); /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
@@ -111,7 +111,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-left: 15px;
     padding-right: 10px;
     min-height: 60px;
-    background: #666666;
+    background: #1b900d;
     color: white;
     position: absolute;
     top: 0;
@@ -742,9 +742,9 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .result-search {
-    background-color: rgba(188, 188, 188, 0.15);
+    background-color: rgba(237, 237, 237, 0.15);
     padding: 5px;
-    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(215, 217, 217, 0.39);
     overflow-x: hidden;
 }
 
@@ -796,8 +796,8 @@ div:hover::-webkit-scrollbar {
 .search-results-total {
     font-weight: bold;
     font-size: 9pt;
-    padding: 5px;
-    background-color: rgba(255, 255, 255, 1);
+    padding: 10px;
+    background-color: ghostwhite;
 }
 
 .search-results-total:hover {
@@ -1249,8 +1249,12 @@ div:hover::-webkit-scrollbar {
 }
 
 .sub-species-wrapper .search-result-sub-title {
-    background-color: rgba(255, 255, 255, 0.5) !important;
-    border-bottom: 1px solid rgba(209, 209, 209, 0.66);
+    background-color: rgba(215, 215, 215, 0.5) !important;
+    border-bottom: 1px solid rgba(209, 209, 209, 0.44);
+}
+
+.search-result-sub-title:hover {
+    background-color: rgba(197, 197, 197, 0.5) !important;
 }
 
 .site-detail-content .text-center {
@@ -1371,4 +1375,44 @@ div:hover::-webkit-scrollbar {
 .upload-alert a {
     color: #484848 !important;
     text-decoration: underline !important;
+}
+
+.search-result-title {
+    font-weight: normal !important;
+    font-size: 14px;
+}
+
+.progress-text {
+    position: absolute;
+    padding-left: 10px;
+    color: white;
+    font-size: 10pt;
+    text-shadow: 0 0 3px #000;
+}
+
+.group-description .progress {
+    height: 18px;
+    border-radius: 0 !important;
+}
+
+.progress-native {
+    background-color: #ddd14e;
+}
+
+.progress-non-native {
+    background-color: #649b49;
+}
+
+.progress-translocated {
+    background-color: #3e5033;
+}
+
+.species-richness-text {
+    font-size: 9pt;
+    padding-left: 10px;
+}
+
+.species-richness-text .col-lg-6 {
+    border-left: 1px solid rgb(255, 215, 136);
+    margin-left: 5px;
 }
