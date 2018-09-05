@@ -24,6 +24,9 @@ def update_cluster(boundary):
     )
     from bims.models.location_site import LocationSite
     from bims.models.survey import Survey
+    from bims.serializers.location_site_serializer import (
+        LocationSiteClusterSerializer
+    )
 
     records = BiologicalCollectionRecord.objects.filter(validated=True).filter(
         Q(site__geometry_point__intersects=boundary.geometry) |
@@ -55,8 +58,17 @@ def update_cluster(boundary):
     details = {
         'records': records.count(),
         'sites': sites.count(),
-        'survey': surveys.count()
+        'survey': surveys.count(),
     }
+    if sites.count() == 1:
+        try:
+            site = LocationSite.objects.get(id=sites[0]['site'])
+            details['site_detail'] = LocationSiteClusterSerializer(
+                site
+            ).data
+        except LocationSite.DoesNotExist:
+            pass
+
     cluster.details = json.dumps(details)
     cluster.save()
 
