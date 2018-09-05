@@ -1416,3 +1416,8 @@ div:hover::-webkit-scrollbar {
     border-left: 1px solid rgb(255, 215, 136);
     margin-left: 5px;
 }
+
+.result-chart {
+    min-height: 155px;
+    padding-top: 10px;
+}
