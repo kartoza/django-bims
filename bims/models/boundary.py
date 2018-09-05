@@ -6,7 +6,6 @@ import json
 from django.contrib.gis.db import models
 from bims.models.boundary_type import BoundaryType
 
-
 class Boundary(models.Model):
     """Boundary model."""
 
@@ -100,7 +99,12 @@ class Boundary(models.Model):
                     details['records'] += cluster_detail['records']
                     details['sites'] += cluster_detail['sites']
                     details['survey'] += cluster_detail['survey']
+                    try:
+                        details['site_detail'] = cluster_detail['site_detail']
+                    except KeyError:
+                        pass
                 except ValueError:
                     pass
+
                 self_cluster.details = json.dumps(details)
                 self_cluster.save()
