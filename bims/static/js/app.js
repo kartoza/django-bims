@@ -43,8 +43,7 @@ require([
     'router',
     'views/olmap',
     'shared',
-    'app',
-    'chartJs'
+    'app'
 ], function (Router, olmap, Shared, App) {
     // Display the map
     Shared.Router = new Router();

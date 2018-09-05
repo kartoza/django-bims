@@ -1,7 +1,22 @@
-define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
+define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, ChartJs) {
     return Backbone.View.extend({
         id: 0,
         currentSpeciesSearchResult: [],
+        siteChartData: {},
+        months: {
+            'january': 1,
+            'february': 2,
+            'march': 3,
+            'april': 4,
+            'may': 5,
+            'june': 6,
+            'july': 7,
+            'august': 8,
+            'september': 9,
+            'october': 10,
+            'november': 11,
+            'december': 12
+        },
         initialize: function () {
             Shared.Dispatcher.on('siteDetail:show', this.show, this);
             Shared.Dispatcher.on('siteDetail:updateCurrentSpeciesSearchResult', this.updateCurrentSpeciesSearchResult, this);
@@ -30,6 +45,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $detailWrapper = $('<div></div>');
             var locationContext = {};
             var maxPanelThatShouldBeOpen = 1;
+            var self = this;
 
             if (data.hasOwnProperty('location_context_document_json')) {
                 locationContext = data['location_context_document_json'];
@@ -49,26 +65,72 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                          name: value['name']
                      }));
 
-                     if (value.hasOwnProperty('service_registry_values')) {
-                         $.each(value['service_registry_values'], function (service_index, service_value) {
-                             if (service_value.hasOwnProperty('name') &&
-                                 service_value.hasOwnProperty('value')) {
-                                 var service_value_name = service_value['name'];
-                                 var service_value_value = service_value['value'];
-
-                                 if (service_value_value &&  service_value_name) {
-                                    $classWrapper.append(
-                                        siteDetailTemplate({
-                                            name: service_value_name,
-                                            value: service_value_value
-                                        })
-                                    );
-                                 }
-                             }
-                         })
+                     if (!value.hasOwnProperty('service_registry_values')) {
+                         return true;
                      }
 
+                     var isChart = value['name'].toLowerCase().includes('monthly');
+                     var chartData = [];
+
+                     $.each(value['service_registry_values'], function (service_index, service_value) {
+                         if (!service_value.hasOwnProperty('name') ||
+                             !service_value.hasOwnProperty('value')) {
+                                return true;
+                         }
+
+                         var service_value_name = service_value['name'];
+                         var service_value_value = service_value['value'];
+
+                         if (!service_value_name || !service_value_value) {
+                             return true;
+                         }
+
+                         // If this is chart data, put the data to dictionary
+                         if (isChart) {
+                             var date = '';
+                             $.each(self.months, function (key, value) {
+                                if (service_value_name.toLowerCase().includes(key)) {
+                                    date = value;
+                                }
+                             });
+                             if (!date) {
+                                 return true;
+                             }
+                             chartData.push(
+                                 {
+                                     'name': date,
+                                     'value': service_value_value
+                                 }
+                             );
+                             return true;
+                         }
+
+                        $classWrapper.append(
+                            siteDetailTemplate({
+                                name: service_value_name,
+                                value: service_value_value
+                            })
+                        );
+                     });
+
                      $detailWrapper.append($classWrapper);
+
+                     // Create canvas for chart, will create chart later after div ready
+                     if (chartData.length > 0) {
+                         var canvasKey = value['key'];
+
+                         var resultSarch = $('<div class="result-search result-chart"></div>');
+                         $('<canvas>').attr({
+                             id: canvasKey
+                         }).css({
+                             width: '250px',
+                             height: '145px'
+                         }).appendTo(resultSarch);
+
+                         $classWrapper.append(resultSarch);
+                         self.siteChartData[canvasKey] = chartData;
+                     }
+
                      if (index > maxPanelThatShouldBeOpen - 1) {
                          $classWrapper.find('.result-search').hide();
                      }
@@ -244,16 +306,24 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $siteDetailWrapper = $('<div></div>');
             $siteDetailWrapper.append(
                 '<div id="site-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> <span class="search-result-title"> SITE DETAILS </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> SITE DETAILS </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="dashboard-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> <span class="search-result-title"> DASHBOARD </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> DASHBOARD </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> <span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="true"> ' +
+                '<span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) ' +
+                '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $siteDetailWrapper.append(
                 '<div id="resources-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> <span class="search-result-title"> RESOURCES </span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="true"> ' +
+                '<span class="search-result-title"> RESOURCES </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
@@ -272,6 +342,61 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 success: function (data) {
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetail(data));
+                    $.each(self.siteChartData, function (key, value) {
+                        var chartConfig = {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: [{
+                                    backgroundColor: '#ddd14e',
+                                    borderColor: '#ddd14e',
+                                    data: [],
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                legend: {
+                                    display: false
+                                },
+                                title: {
+                                    display: false
+                                },
+                                hover: {
+                                    mode: 'nearest',
+                                    intersect: false
+                                },
+                                scales: {
+                                    xAxes: [{
+                                        display: true,
+                                        scaleLabel: {
+                                            display: true,
+                                            labelString: 'Month'
+                                        }
+                                    }],
+                                    yAxes: [{
+                                        display: true,
+                                        scaleLabel: {
+                                            display: false
+                                        }
+                                    }]
+                                }
+                            }
+                        };
+                        var canvas = document.getElementById(key);
+                        var ctx = canvas.getContext('2d');
+                        var labels = [];
+                        var chartData = [];
+                        $.each(value, function (index, record_value) {
+                           labels.push(record_value['name']);
+                           chartData.push(Number(record_value['value']).toFixed(2));
+                        });
+                        chartConfig['data']['labels'] = labels;
+                        chartConfig['data']['datasets'][0]['data'] = chartData;
+                        new ChartJs(ctx, chartConfig);
+                    });
+
+                    self.siteChartData = {};
 
                     // dashboard detail
                     $('#dashboard-detail').append(self.renderDashboardDetail(data));
