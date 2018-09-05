@@ -100,7 +100,8 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 scale: 1.3,
                 fill: new ol.style.Fill({
                     color: '#fff'
-                })
+                }),
+                'font': 'bold 11px "Roboto Condensed"'
             };
             if (count > this.maxCount) {
                 textStyle['text'] = '>' + this.maxCount;
