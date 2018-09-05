@@ -77,6 +77,7 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
             var radius = 10;
             var image = null;
             if (this.isIndividialCluster(feature)) {
+                radius = 5;
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
