@@ -175,7 +175,9 @@ class GetCollectionAbstract(APIView):
             qs = json.loads(boundary)
             for query in qs:
                 qs_collector.add(SQ(boundary=query), SQ.OR)
-            location_site_search = location_site_search.filter(qs_collector)
+            if isinstance(location_site_search, SearchQuerySet):
+                location_site_search = location_site_search.filter(
+                        qs_collector)
 
         if len(location_site_search) > 0:
             # If there are fuzzy results from collection search but we
