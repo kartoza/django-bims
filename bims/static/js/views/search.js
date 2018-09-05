@@ -12,7 +12,8 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
-            'click .clear-filter': 'clearFilter'
+            'click .clear-filter': 'clearFilter',
+            'click .search-reset': 'clearSearch',
         },
         checkSearch: function (forceSearch) {
             var searchValue = $('#search').val();
@@ -134,6 +135,13 @@ define([
                 Shared.Router.clearSearch();
                 this.search(searchValue);
             }
+        },
+        clearSearch: function () {
+            $('#search').val('');
+            Shared.Router.clearSearch();
+            $('.clear-filter').click();
+            $('.map-search-result').hide();
+            Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {
