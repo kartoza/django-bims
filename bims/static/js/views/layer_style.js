@@ -1,5 +1,7 @@
 define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol) {
     return Backbone.View.extend({
+        maxCount: 500,
+        maxRadius: 30,
         styles: {
             'Point': new ol.style.Style({
                 image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
@@ -83,15 +85,10 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 });
             } else {
                 var currentCount = count;
-                var radiusDivider = 10;
-                if (currentCount > 1000) {
-                    currentCount = 1000;
-                    radiusDivider = 30;
+                if (currentCount > this.maxCount) {
+                    currentCount = this.maxCount;
                 }
-                if (currentCount > 250 && currentCount < 1000) {
-                    radiusDivider = 20;
-                }
-                radius += (currentCount / radiusDivider);
+                radius += (currentCount / this.maxCount) * this.maxRadius;
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
@@ -105,10 +102,10 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                     color: '#fff'
                 })
             };
-            if (count > 500) {
-                textStyle['text'] = '> 500';
+            if (count > this.maxCount) {
+                textStyle['text'] = '>' + this.maxCount;
             } else if (count > 100) {
-                textStyle['text'] = '> 100' ;
+                textStyle['text'] = '>100';
             }
             return new ol.style.Style({
                 image: image,
