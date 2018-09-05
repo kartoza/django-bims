@@ -59,10 +59,12 @@ def update_collection_record(collection):
     if not result:
         return
 
-    try:
-        taxon_key = result['nubkey']
-    except KeyError:
+    if 'nubKey' in result:
+        taxon_key = result['nubKey']
+    elif 'speciesKey' in result:
         taxon_key = result['speciesKey']
+    else:
+        return
 
     taxon, created = Taxon.objects.get_or_create(
             gbif_id=taxon_key)
