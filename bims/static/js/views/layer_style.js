@@ -77,11 +77,15 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
             var radius = 10;
             var image = null;
             if (this.isIndividialCluster(feature)) {
-                radius = 5;
+                radius = 8;
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
                         color: '#1b900d'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#fff',
+                        width: 2
                     })
                 });
             } else {
@@ -94,6 +98,10 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                     radius: radius,
                     fill: new ol.style.Fill({
                         color: '#dbaf00'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#fff',
+                        width: 2
                     })
                 });
             }
