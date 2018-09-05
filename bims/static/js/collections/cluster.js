@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'models/cluster', 'views/location_site', 'views/cluster'], function (Shared, Backbone, ClusterModel, ClusterView) {
+define(['shared', 'backbone', 'models/cluster', 'views/location_site'], function (Shared, Backbone, ClusterModel, ClusterView) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         clusterAPI: "/api/cluster/",

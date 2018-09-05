@@ -2,8 +2,6 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.cluster import Cluster
-from bims.models.boundary_type import BoundaryType
-from bims.models.boundary import Boundary
 from bims.serializers.boundary_serializer import BoundaryClusterSerializer
 
 

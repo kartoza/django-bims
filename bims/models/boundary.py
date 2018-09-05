@@ -6,6 +6,7 @@ import json
 from django.contrib.gis.db import models
 from bims.models.boundary_type import BoundaryType
 
+
 class Boundary(models.Model):
     """Boundary model."""
 
