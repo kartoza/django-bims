@@ -29,16 +29,21 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             this.showDetail(name)
         },
         hideAll: function (e) {
-            if ($(e.target).data('visibility')) {
-                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-down');
-                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-up');
-                $(e.target).nextAll().hide();
-                $(e.target).data('visibility', false)
+            var className = $(e.target).attr('class');
+            var target = $(e.target);
+            if (className === 'search-result-title') {
+                target = target.parent();
+            }
+            if (target.data('visibility')) {
+                target.find('.filter-icon-arrow').addClass('fa-angle-down');
+                target.find('.filter-icon-arrow').removeClass('fa-angle-up');
+                target.nextAll().hide();
+                target.data('visibility', false)
             } else {
-                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-up');
-                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-down');
-                $(e.target).nextAll().show();
-                $(e.target).data('visibility', true)
+                target.find('.filter-icon-arrow').addClass('fa-angle-up');
+                target.find('.filter-icon-arrow').removeClass('fa-angle-down');
+                target.nextAll().show();
+                target.data('visibility', true)
             }
         },
         renderSiteDetail: function (data) {
@@ -54,10 +59,6 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                  var contextGroups = locationContext['context_group_values'];
                  $.each(contextGroups, function (index, value) {
                      var $classWrapper = $('<div class="sub-species-wrapper"></div>');
-
-                     $classWrapper.click(function (e) {
-                         $(this).find('.result-search').toggle();
-                     });
 
                      var subPanel = _.template($('#site-detail-sub-title').html());
                      var siteDetailTemplate = _.template($('#site-detail-registry-values').html());
@@ -114,6 +115,10 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                      });
 
                      $detailWrapper.append($classWrapper);
+                     var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
+                     $wrapperTitleDiv.click(function (e) {
+                        $(this).parent().find('.result-search').toggle();
+                     });
 
                      // Create canvas for chart, will create chart later after div ready
                      if (chartData.length > 0) {
@@ -293,6 +298,10 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                         speciesListCount += 1;
                     });
                     $specialListWrapper.append($classWrapper);
+                    var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
+                    $wrapperTitleDiv.click(function (e) {
+                        $(this).parent().find('.result-search').toggle();
+                    });
                 });
             } else {
                 $specialListWrapper.append('<div class="side-panel-content">No species found on this site.</div>');
@@ -319,11 +328,6 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                 '<div class="search-results-total" data-visibility="true"> ' +
                 '<span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) ' +
                 '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $siteDetailWrapper.append(
-                '<div id="resources-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> ' +
-                '<span class="search-result-title"> RESOURCES </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
