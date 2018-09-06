@@ -26,7 +26,13 @@
             <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
             <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
         {% else %}
-            <a class="btn btn-account btn-l js-scroll-trigger" href="/map">OPEN MAP</a>
+            <div class="container-1">
+                <span class="icon"><i class="fa fa-search"></i></span>
+                <input type="search" id="search-on-map" placeholder="Search on map..." onkeyup="searchOnMap(event)"/>
+            </div>
+            <a class="btn btn-account btn-l js-scroll-trigger" href="/profile/">MY PROFILE</a>
+            <a class="btn btn-account btn-l js-scroll-trigger" href="/map">MAP</a>
+            <a class="btn btn-account btn-l js-scroll-trigger" href="/upload/">UPLOAD</a>
         {% endif %}
     </div>
 </div>
