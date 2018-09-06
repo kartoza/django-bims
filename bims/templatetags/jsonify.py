@@ -8,6 +8,7 @@ import json
 
 register = Library()
 
+
 @register.filter(is_safe=True)
 def jsonify(object):
     if isinstance(object, QuerySet):
