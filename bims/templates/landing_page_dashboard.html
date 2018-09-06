@@ -1,6 +1,6 @@
-<div class="row">
+<div class="row dashboard-row">
     {% for class_name, class_data in summaries.items %}
-        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 text-center" id="total-{{ class_name }}">
+        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 dashboard-data text-center" id="total-{{ class_name }}">
             <div class="chrt-icon-wrapper">
                 <p class="total-data green">{{ class_data.total }}</p>
                 <p class="total-data-desc green">{{ class_name }}</p>
