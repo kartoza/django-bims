@@ -23,8 +23,8 @@
 <div id="title-header">
     <div class="title-header-buttons">
         {% if not user.is_authenticated %}
-            <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
-            <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
+            <a class="btn btn-account btn-l js-scroll-trigger login-carousel" href="/accounts/login/">Login</a>
+            <a class="btn btn-account btn-l js-scroll-trigger login-carousel" href="/accounts/signup/">Sign Up</a>
         {% else %}
             <div class="container-1">
                 <span class="icon"><i class="fa fa-search"></i></span>
