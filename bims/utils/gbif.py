@@ -34,7 +34,6 @@ def find_species(original_species_name):
             q=original_species_name,
             limit=3
         )
-        print(response)
         if 'results' in response:
             results = response['results']
             for result in results:
