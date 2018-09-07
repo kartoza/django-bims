@@ -60,6 +60,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     species_list[taxon_gbif_id.common_name]
                 except KeyError:
                     species_list[taxon_gbif_id.common_name] = {
+                        'taxon_id': taxon_gbif_id.id,
                         'taxon_gbif_id': taxon_id,
                         'category': category,
                         'count': 0
