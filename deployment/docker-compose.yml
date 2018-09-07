@@ -101,7 +101,7 @@ services:
       - DATABASE_USERNAME=docker
       - DATABASE_PASSWORD=docker
       - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_worker
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
       - VIRTUAL_HOST=bims.kartoza.com
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq

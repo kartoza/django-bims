@@ -51,7 +51,7 @@ def download_data_to_csv(path_file, request):
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            query_value = request['search']
+            query_value = request.get('search', '')
             filters = request
             collection_results, \
                 site_results, \
