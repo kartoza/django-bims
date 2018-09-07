@@ -40,7 +40,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
 
             $.get({
-                url: 'http://api.gbif.org/v1/occurrence/search?taxonKey='+gbifId+'&limit=5',
+                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+gbifId+'&limit=5',
                 dataType: 'json',
                 success: function (data) {
                     var results = data['results'];
