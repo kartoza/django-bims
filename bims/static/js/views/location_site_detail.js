@@ -3,6 +3,8 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
         id: 0,
         currentSpeciesSearchResult: [],
         siteChartData: {},
+        siteId: null,
+        siteName: null,
         months: {
             'january': 1,
             'february': 2,
@@ -25,6 +27,8 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             this.currentSpeciesSearchResult = newList;
         },
         show: function (id, name) {
+            this.siteId = id;
+            this.siteName = name;
             this.url = '/api/location-site/' + id;
             this.showDetail(name)
         },
@@ -292,6 +296,19 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                             })
                         );
 
+                        // Species clicked
+                        $classWrapper.find('#'+speciesValue.taxon_gbif_id).click(function (e) {
+                            e.preventDefault();
+                            Shared.Dispatcher.trigger('taxonDetail:show',
+                                speciesValue.taxon_id,
+                                speciesName,
+                                {
+                                    'id': that.siteId,
+                                    'name': that.siteName
+                                }
+                            );
+                        });
+
                         var $occurencesIndicator = $classWrapper.find('.total-occurences');
                         $occurencesIndicator.html(parseInt($occurencesIndicator.html()) + speciesValue.count);
                         $classWrapper.show();
@@ -360,16 +377,9 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                             },
                             options: {
                                 responsive: true,
-                                legend: {
-                                    display: false
-                                },
-                                title: {
-                                    display: false
-                                },
-                                hover: {
-                                    mode: 'nearest',
-                                    intersect: false
-                                },
+                                legend: { display: false },
+                                title: { display: false },
+                                hover: { mode: 'nearest', intersect: false},
                                 scales: {
                                     xAxes: [{
                                         display: true,

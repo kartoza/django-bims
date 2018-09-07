@@ -27,8 +27,11 @@
             </div>
         </div>
         <div class="right-panel-header">
-            <div class="pull-right" style="padding-top: 5px;">
-                <i class="fa fa-times close-panel"></i>
+            <div class="pull-right">
+                <i class="fa fa-window-close-o close-panel header-panel-button"></i>
+            </div>
+            <div class="pull-left">
+                <i class="fa fa-caret-square-o-left return-panel header-panel-button"></i>
             </div>
             <div class="row">
                 <div class="col-lg-12">
@@ -513,8 +516,8 @@
 </script>
 
 <script type="text/template" id="search-result-record-template">
-    <div class="result-search" data-search-result-id="" data-taxon-id="<%= taxon_gbif_id %>">
-        <a href="https://www.gbif.org/species/<%= taxon_gbif_id %>" target="_blank">
+    <div class="result-search" data-search-result-id="">
+        <a href="#" id="<%= taxon_gbif_id %>">
             <p class="group-title"><%= common_name %></p>
         </a>
         <a class="group-description"><%= count %> occurrences</a>

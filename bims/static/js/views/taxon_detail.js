@@ -1,12 +1,13 @@
 define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
     return Backbone.View.extend({
         id: 0,
+        siteDetail: null,
         initialize: function () {
             Shared.Dispatcher.on('taxonDetail:show', this.show, this);
         },
-        show: function (id, taxonName) {
+        show: function (id, taxonName, siteDetail) {
             this.url = '/api/taxon/' + id;
-            this.showDetail(taxonName)
+            this.showDetail(taxonName, siteDetail);
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {
@@ -25,20 +26,32 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var template = _.template($('#species-template').html());
             return template(data);
         },
-        showDetail: function (name) {
+        showDetail: function (name, siteDetail) {
             var self = this;
             // Render basic information
             var $detailWrapper = $('<div></div>');
             $detailWrapper.append(
                 '<div id="species-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> Species details <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="false"> Species details ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $detailWrapper.append(
                 '<div id="third-party" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> 3rd Party Data <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div class="search-results-total" data-visibility="true"> 3rd Party Data ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
             Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', name);
+
+            if (siteDetail) {
+                Shared.Dispatcher.trigger('sidePanel:showReturnButton');
+                Shared.Dispatcher.trigger('sidePanel:addEventToReturnButton', function () {
+                    Shared.Dispatcher.trigger('sidePanel:hideReturnButton');
+                    Shared.Dispatcher.trigger(
+                        'siteDetail:show', siteDetail.id, siteDetail.name);
+                });
+            }
+
             $detailWrapper.find('.search-results-total').click(self.hideAll);
             $detailWrapper.find('.search-results-total').click();
 

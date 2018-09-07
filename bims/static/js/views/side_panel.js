@@ -3,6 +3,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         template: _.template($('#side-panel-template').html()),
         className: 'panel-wrapper',
         rightPanel: null,
+        returnButton: null,
         events: {
             'click .close-panel': 'closeSidePanel'
         },
@@ -14,6 +15,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
             Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
+
+            Shared.Dispatcher.on('sidePanel:addEventToReturnButton', this.addEventToReturnButton, this);
+            Shared.Dispatcher.on('sidePanel:showReturnButton', this.showReturnButton, this);
+            Shared.Dispatcher.on('sidePanel:hideReturnButton', this.hideReturnButton, this);
         },
         render: function () {
             this.$el.html(this.template());
@@ -21,6 +26,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
 
             // Hide the side panel
             this.rightPanel = this.$el.find('.right-panel');
+            this.returnButton = this.rightPanel.find('.return-panel');
+
+            this.hideReturnButton();
+
             this.rightPanel.css('display', 'none');
 
             return this;
@@ -71,6 +80,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             Shared.Dispatcher.trigger('searchResult:clicked', null);
             Shared.Router.clearSearch();
             this.closeSidePanelAnimation();
+            this.hideReturnButton();
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {
@@ -94,6 +104,20 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             $('#content-panel').html('');
             $('.panel-icons').html('');
             this.updateSidePanelTitle('');
+        },
+        addEventToReturnButton: function (eventFunction) {
+            this.returnButton.on('click', eventFunction);
+        },
+        clearReturnButtonFunction: function () {
+            this.returnButton.off();
+        },
+        showReturnButton: function () {
+            this.clearReturnButtonFunction();
+            this.returnButton.show();
+        },
+        hideReturnButton: function () {
+            this.clearReturnButtonFunction();
+            this.returnButton.hide();
         }
     })
 });

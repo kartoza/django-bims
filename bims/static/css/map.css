@@ -119,14 +119,6 @@ html, body, .map, .map-wrapper, #map-container {
     width: 100%;
 }
 
-.right-panel-header .close-panel {
-    border: 2px solid white;
-}
-
-.right-panel-header .close-panel:hover {
-    border: 2px solid black;
-}
-
 .right-panel-header .fa-map-marker {
     color: #AFC9FA;
 }
@@ -137,13 +129,7 @@ html, body, .map, .map-wrapper, #map-container {
     line-height: 1.2;
 }
 
-.close-panel {
-    float: right;
-    padding-right: 30px;
-    padding-top: 15px;
-}
-
-.close-panel:hover {
+.header-panel-button:hover {
     cursor: pointer;
 }
 
@@ -514,7 +500,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 5px;
 }
 
-.map-control-panel-box .close-button, .close-panel {
+.map-control-panel-box .close-button {
     cursor: pointer;
     padding: 0 5px;
     border: 2px solid black;
@@ -524,7 +510,7 @@ html, body, .map, .map-wrapper, #map-container {
     margin-right: 3px;
 }
 
-.map-control-panel-box .close-button:hover, .close-panel:hover {
+.map-control-panel-box .close-button:hover {
     background-color: rgba(0, 0, 0, 0.7) !important;
     color: white !important;
 }
