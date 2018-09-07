@@ -62,7 +62,9 @@ require([
             dataType: 'json',
             success: function (data) {
                 for (var i = 0; i < data.length; i++) {
-                    $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> ' + data[i] + '<br>');
+                    if(data[i]) {
+                        $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> ' + data[i] + '<br>');
+                    }
                 }
             }
         });
