@@ -18,6 +18,7 @@ define([
        initialize: function () {
             Shared.Dispatcher.on('biodiversityLegend:moveLeft', this.moveLeft, this);
             Shared.Dispatcher.on('biodiversityLegend:moveRight', this.moveRight, this);
+            Shared.Dispatcher.on('biodiversityLegend:toggle', this.toggle, this);
        },
        moveLeft: function () {
            var self = this;
@@ -42,6 +43,9 @@ define([
                // Animation complete
                self.moved = false;
            })
+       },
+       toggle: function () {
+           this.container.toggle();
        },
        hide: function () {
            this.container.hide();
