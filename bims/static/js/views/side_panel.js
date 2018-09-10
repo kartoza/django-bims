@@ -38,6 +38,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
             return this.rightPanel.is(":visible");
         },
         openSidePanel: function (properties) {
+            Shared.Dispatcher.trigger('biodiversityLegend:moveLeft');
             this.hideReturnButton();
             $('#geocontext-information-container').hide();
             this.rightPanel.show('slide', {direction: 'right'}, 200);
@@ -80,6 +81,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backb
         closeSidePanel: function (e) {
             Shared.Dispatcher.trigger('searchResult:clicked', null);
             Shared.Router.clearSearch();
+            Shared.Dispatcher.trigger('biodiversityLegend:moveRight');
             this.closeSidePanelAnimation();
             this.hideReturnButton();
         },

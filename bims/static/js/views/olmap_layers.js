@@ -233,7 +233,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         selectorChanged: function (layerName, selected) {
             if (layerName === "Biodiversity" && this.isBiodiversityLayerLoaded()) {
                 Shared.Dispatcher.trigger('map:reloadXHR');
+                Shared.Dispatcher.trigger('biodiversityLegend:toggle');
             }
+
             this.changeLayerVisibility(layerName, selected);
 
             // show/hide legend

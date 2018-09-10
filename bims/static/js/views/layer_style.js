@@ -90,14 +90,26 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 });
             } else {
                 var currentCount = count;
+                var clusterColor = '';
                 if (currentCount > this.maxCount) {
                     currentCount = this.maxCount;
                 }
                 radius += (currentCount / this.maxCount) * this.maxRadius;
+
+                if (count >= 500) {
+                    clusterColor = '#9a791d';
+                } else if (count >= 100) {
+                    clusterColor = '#bd9524';
+                } else if (count >= 10) {
+                    clusterColor = '#d0b547';
+                } else {
+                    clusterColor = '#e8e251';
+                }
+
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
-                        color: '#dbaf00'
+                        color: clusterColor
                     }),
                     stroke: new ol.style.Stroke({
                         color: '#fff',
