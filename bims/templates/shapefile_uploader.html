@@ -19,7 +19,7 @@
         <div class="jumbotron csv-uploader-wrapper">
             <div class="row">
                 <div class="col-lg-2"><a href="{% block upload_csv_url %}/upload{% endblock %}" class="btn btn-info" role="button">Upload CSV</a></div>
-                <div class="col-lg-2"><button type="button" class="btn">Upload Shapefile</button></div>
+                <div class="col-lg-2"><button type="button" class="btn btn-outline-dark disabled">Upload Shapefile</button></div>
             </div>
 
             <div class="help-block-space"></div>
@@ -38,10 +38,14 @@
                         {% endblock %}
                     </div>
                     <div class="help-block-space"></div>
+                    <div class="help-block-schema">
+                            coordinates or geometry must be geographic on WGS84 datum
+                    </div>
+                    <div class="help-block-space"></div>
                     And these are optional properties :
                     <div class="help-block-schema">
                         {% block optional_fields %}
-                            present(int), absent(int)
+                            custodian(string), present(int), absent(int)
                         {% endblock %}
                     </div>
 

@@ -12,7 +12,8 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
-            'click .clear-filter': 'clearFilter'
+            'click .clear-filter': 'clearFilter',
+            'click .search-reset': 'clearSearch',
         },
         checkSearch: function (forceSearch) {
             var searchValue = $('#search').val();
@@ -30,6 +31,7 @@ define([
             }
         },
         search: function (searchValue) {
+            Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
                 return;
             }
@@ -64,10 +66,26 @@ define([
             } else {
                 categoryValue = JSON.stringify(categoryValue)
             }
+
+            var boundaryValue = [];
+            // just get the top one.
+            $('input[name=boundary-value]:checked').each(function () {
+                boundaryValue.push($(this).val())
+            });
+            if (boundaryValue.length === 0) {
+                Shared.Dispatcher.trigger('catchmentArea:hide');
+                boundaryValue = '';
+                Shared.Dispatcher.trigger('map:boundaryEnabled', false);
+            } else {
+                boundaryValue = JSON.stringify(boundaryValue);
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
+                Shared.Dispatcher.trigger('map:boundaryEnabled', true);
+            }
             var parameters = {
                 'search': searchValue,
                 'collector': collectorValue,
                 'category': categoryValue,
+                'boundary': boundaryValue,
                 'yearFrom': '',
                 'yearTo': '',
                 'months': ''
@@ -92,7 +110,8 @@ define([
                 && !parameters['collector']
                 && !parameters['category']
                 && !parameters['yearFrom']
-                && !parameters['yearTo']) {
+                && !parameters['yearTo']
+                && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false
             }
@@ -116,6 +135,13 @@ define([
                 Shared.Router.clearSearch();
                 this.search(searchValue);
             }
+        },
+        clearSearch: function () {
+            $('#search').val('');
+            Shared.Router.clearSearch();
+            $('.clear-filter').click();
+            $('.map-search-result').hide();
+            Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {

@@ -1,5 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
+{% load jsonify %}
 
 {% block title %}
     Home
@@ -9,6 +10,9 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page.css" %}" rel="stylesheet">
+    <script type="text/javascript">
+        const summaries = '{{ summaries|jsonify|safe }}';
+    </script>
 
 {% endblock %}
 
@@ -25,41 +29,7 @@
             <h2 class="section-heading">BIODIVERSITY RECORDS</h2>
           </div>
         </div>
-        <div class="row">
-          <div class="col-lg-3 ml-auto text-center" id="total-fish">
-            <div class="chart-icon-wrapper">
-                <p class="total-data green">123</p>
-                <p class="total-data-desc green">X Species</p>
-                <img src="static/img/x_icon.svg" class="fish-icon fish">
-                <span class="bullet"></span>
-                <div class="donut-chart">
-                  <canvas id="chart-fish" width="170" height="170"></canvas>
-                </div>
-            </div>
-          </div>
-          <div class="col-lg-3 text-center" id="total-invertebra" c>
-            <div class="chart-icon-wrapper">
-              <p class="total-data green">456</p>
-              <p class="total-data-desc green">Y Species</p>
-              <img src="static/img/y_icon.svg" class="fish-icon crab">
-              <span class="bullet"></span>
-              <div class="donut-chart">
-                  <canvas id="chart-crab" width="170" height="170"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-3 mr-auto text-center" id="total-algae">
-              <div class="chart-icon-wrapper">
-                <p class="total-data green">789</p>
-                <p class="total-data-desc green">Z Species</p>
-                <img src="static/img/z_icon.svg" class="fish-icon algae">
-                <span class="bullet"></span>
-                <div class="donut-chart">
-                  <canvas id="chart-algae" width="170" height="170"></canvas>
-                </div>
-              </div>
-          </div>
-        </div>
+    {% include 'landing_page_dashboard.html' %}
       </div>
     </section>
     </div>

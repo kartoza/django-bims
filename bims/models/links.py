@@ -5,7 +5,7 @@ __copyright__ = 'kartoza.com'
 from django.db import models
 
 
-class Category(models.Model):
+class LinkCategory(models.Model):
     """Category model for a link."""
 
     name = models.CharField(max_length=50, unique=True)
@@ -23,7 +23,7 @@ class Category(models.Model):
 class Link(models.Model):
     """Link model definition."""
 
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(LinkCategory, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, unique=True)
     url = models.URLField(null=True, blank=True)
     description = models.TextField(default='', blank=True)

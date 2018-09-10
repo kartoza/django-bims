@@ -24,6 +24,9 @@ def update_cluster(boundary):
     )
     from bims.models.location_site import LocationSite
     from bims.models.survey import Survey
+    from bims.serializers.location_site_serializer import (
+        LocationSiteClusterSerializer
+    )
 
     records = BiologicalCollectionRecord.objects.filter(validated=True).filter(
         Q(site__geometry_point__intersects=boundary.geometry) |
@@ -32,6 +35,9 @@ def update_cluster(boundary):
         Q(site__geometry_multipolygon__intersects=boundary.geometry)
     )
     sites = records.values('site').distinct()
+
+    # update boundary of site
+    LocationSite.objects.filter(id__in=sites).update(boundary=boundary)
 
     # get all children model if no CollectionModel given
     verbose_name = LocationSite._meta.verbose_name
@@ -52,8 +58,17 @@ def update_cluster(boundary):
     details = {
         'records': records.count(),
         'sites': sites.count(),
-        'survey': surveys.count()
+        'survey': surveys.count(),
     }
+    if sites.count() == 1:
+        try:
+            site = LocationSite.objects.get(id=sites[0]['site'])
+            details['site_detail'] = LocationSiteClusterSerializer(
+                site
+            ).data
+        except LocationSite.DoesNotExist:
+            pass
+
     cluster.details = json.dumps(details)
     cluster.save()
 
@@ -77,9 +92,11 @@ def update_cluster_by_collection(collection):
     :param collection: Biological collection record model
     """
     boundary_type = BoundaryType.objects.all().order_by('-level')[0]
-    boundaries = Boundary.objects.filter().filter(
+    boundaries = Boundary.objects.filter(
         type=boundary_type).filter(
-        geometry__contains=collection.site.get_geometry())
+        geometry__contains=collection.site.get_geometry()).values_list(
+        'id', flat=True)
+    boundaries = list(set(boundaries))
 
     task_update_cluster.delay(boundaries)
 

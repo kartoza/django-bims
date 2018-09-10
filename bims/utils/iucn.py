@@ -33,10 +33,15 @@ def get_iucn_status(taxon_id=None, species_name=None):
         response = requests.get(api_url)
         json_result = response.json()
         if len(json_result['result']) > 0:
-            iucn_status, created = IUCNStatus.objects.get_or_create(
+            iucn_status = IUCNStatus.objects.filter(
                 category=json_result['result'][0]['category']
             )
-            return iucn_status
+            if not iucn_status:
+                iucn_status = IUCNStatus.objects.create(
+                    category=json_result['result'][0]['category']
+                )
+                return iucn_status
+            return iucn_status[0]
         return None
     except (HTTPError, KeyError) as e:
         print(e)

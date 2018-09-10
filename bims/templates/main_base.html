@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=0">
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>{% block title %} Title {% endblock %}</title>
+    <title>{% block title %} Django BIMS | {% block subtitle %}{% endblock %} {% endblock %}</title>
 
     <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet">
@@ -52,7 +52,9 @@
                         <li><a class="nav-link js-scroll-trigger" href="/">HOME</a></li>
                         <li><a class="nav-link js-scroll-trigger" href="/map">MAP</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-ext-resources" href="{% url 'link_list' %}">LINKS</a></li>
-                        <li><a class="nav-link js-scroll-trigger" id="navbar-doc-report" href="/under-development/">DOCUMENTS & REPORTS</a></li>
+                        <li><a class="nav-link js-scroll-trigger" href="/tracking/">SITE
+                            STATISTICS</a></li>
+                        <li><a class="nav-link js-scroll-trigger" id="navbar-doc-report" href="/documents/">DOCUMENTS & REPORTS</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-contact" href="/contact/">CONTACT</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-biblio" href="/bibliography/">BIBLIOGRAPHY</a></li>
                         <li><a class="nav-link js-scroll-trigger" id="navbar-geonode" href="/layers">GIS CATALOGUE</a></li>

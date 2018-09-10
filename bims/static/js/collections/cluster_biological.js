@@ -1,16 +1,17 @@
-define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'shared'], function (Backbone, ClusterModel, ClusterView, Shared) {
+define(['backbone', 'models/location_site', 'views/location_site', 'shared'], function (Backbone, ClusterModel, ClusterView, Shared) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
-            "&icon_pixel_x=30&icon_pixel_y=30&zoom=<%= zoom %>&bbox=<%= bbox %>" +
+            "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>"),
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>"),
         clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
         parameters: {
             taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', yearFrom: '', yearTo: '', months: ''
+            collector: '', category: '', yearFrom: '', yearTo: '', months: '', boundary: '',
+            clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {
             this.initExtent = initExtent;
@@ -32,7 +33,8 @@ define(['backbone', 'models/cluster_biological', 'views/cluster_biological', 'sh
                 && !this.parameters['collector']
                 && !this.parameters['category']
                 && !this.parameters['yearFrom']
-                && !this.parameters['yearTo']) {
+                && !this.parameters['yearTo']
+                && !this.parameters['boundary']) {
                 return false
             } else {
                 return true;

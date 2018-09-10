@@ -10,7 +10,7 @@ class CollectorList(APIView):
 
     def get(self, request, *args):
         collectors = \
-            BiologicalCollectionRecord.objects.all().values_list(
+            BiologicalCollectionRecord.objects.filter(validated=True).values_list(
                 'collector', flat=True).distinct().order_by('collector')
         return HttpResponse(
             json.dumps(list(collectors)), content_type='application/json')

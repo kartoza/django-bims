@@ -26,9 +26,10 @@ STATICFILES_FINDERS += (
 
 # Django-allauth related settings
 AUTHENTICATION_BACKENDS = (
+    'oauth2_provider.backends.OAuth2Backend',
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
-
+    'guardian.backends.ObjectPermissionBackend',
     # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
 )
@@ -59,7 +60,6 @@ INSTALLED_APPS += (
     'contactus',
     'haystack',
     'django_prometheus',
-    'ckeditor',
     'crispy_forms',
 )
 
@@ -166,9 +166,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
-CELERY_BROKER_URL = BROKER_URL
-
 # django modelsdoc settings
 MODELSDOC_APPS = ('bims', 'td_biblio',)
 
@@ -178,15 +175,26 @@ MODELSDOC_FIELD_WRAPPER = 'modelsdoc.wrappers.FieldWrapper'
 MODELSDOC_INCLUDE_AUTO_CREATED = True
 
 # contact us email
-CONTACT_US_EMAIL = os.environ['CONTACT_US_EMAIL']
+CONTACT_US_EMAIL = os.environ.get('CONTACT_US_EMAIL', '')
 
-ELASTIC_MIN_SCORE = 2
+ELASTIC_MIN_SCORE = 0
+
+# site tracking stats settings
+TRACK_PAGEVIEWS = True
+TRACK_AJAX_REQUESTS = True
+TRACK_REFERER = True
+TRACK_IGNORE_STATUS_CODES = [403, 405, 410]
 
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
-    'monitoring.RequestEvent',
-    'monitoring.MonitoredResource',
+    'people.Profile',
 ]
+
+if MONITORING_ENABLED:
+    DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA += [
+        'monitoring.RequestEvent',
+        'monitoring.MonitoredResource',
+    ]
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
@@ -249,12 +257,24 @@ LOGGING = {
     },
 }
 
-ASYNC_SIGNALS = True
+ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
+        'ASYNC_SIGNALS_GEONODE', 'False'))
+CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS_GEONODE else True
 
-from .geonode_queue_settings import *  # noqa
+if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
+    BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
+    CELERY_BROKER_URL = BROKER_URL
+    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+    from .geonode_queue_settings import *  # noqa
+    CELERY_TASK_QUEUES += GEONODE_QUEUES
 
-CELERY_TASK_QUEUES += GEONODE_QUEUES
+# Set institutionID default value
+INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')
 
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+ACCOUNT_APPROVAL_REQUIRED = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
+ACCOUNT_ADAPTER = 'bims.adapters.account_adapter.AccountAdapter'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
-CELERY_TASK_ALWAYS_EAGER = False
+OGC_SERVER['default']['DATASTORE'] = os.environ.get(
+        'DEFAULT_BACKEND_DATASTORE', '')

@@ -45,8 +45,11 @@ django-contact-us==0.4.1
 Pillow==5.1.0
 django-ordered-model==1.4.3
 
-django-haystack==2.8.1
+# Django haystack support
+git+https://github.com/dimasciput/django-haystack.git
 elasticsearch==5.0.1
+
+# Statistics Dashboard
 
 # prometheus monitoring support
 django-prometheus==1.0.14

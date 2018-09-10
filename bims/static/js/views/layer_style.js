@@ -1,5 +1,7 @@
 define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol) {
     return Backbone.View.extend({
+        maxCount: 500,
+        maxRadius: 30,
         styles: {
             'Point': new ol.style.Style({
                 image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
@@ -72,44 +74,52 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
         },
         getClusterStyle: function (feature) {
             var count = feature.getProperties()['count'];
-            if (this.isIndividialCluster(feature)) {
-                return this.styles['Point'];
-            }
-            var smallCluster = new ol.style.Circle({
-                radius: 15,
-                fill: new ol.style.Fill({
-                    color: 'red'
-                })
-            });
-            var mediumCluster = new ol.style.Circle({
-                radius: 30,
-                fill: new ol.style.Fill({
-                    color: 'yellow'
-                })
-            });
-            var largeCluster = new ol.style.Circle({
-                radius: 45,
-                fill: new ol.style.Fill({
-                    color: 'green'
-                })
-            });
+            var radius = 10;
             var image = null;
-            if (count < 10) {
-                image = smallCluster;
-            } else if (10 >= count <= 100) {
-                image = mediumCluster;
+            if (this.isIndividialCluster(feature)) {
+                radius = 8;
+                image = new ol.style.Circle({
+                    radius: radius,
+                    fill: new ol.style.Fill({
+                        color: '#1b900d'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#fff',
+                        width: 2
+                    })
+                });
             } else {
-                image = largeCluster
+                var currentCount = count;
+                if (currentCount > this.maxCount) {
+                    currentCount = this.maxCount;
+                }
+                radius += (currentCount / this.maxCount) * this.maxRadius;
+                image = new ol.style.Circle({
+                    radius: radius,
+                    fill: new ol.style.Fill({
+                        color: '#dbaf00'
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#fff',
+                        width: 2
+                    })
+                });
+            }
+            var textStyle = {
+                scale: 1.3,
+                fill: new ol.style.Fill({
+                    color: '#fff'
+                }),
+                'font': 'bold 11px "Roboto Condensed"'
+            };
+            if (count > this.maxCount) {
+                textStyle['text'] = '>' + this.maxCount;
+            } else if (count > 100) {
+                textStyle['text'] = '>100';
             }
             return new ol.style.Style({
                 image: image,
-                text: new ol.style.Text({
-                    scale: 1,
-                    fill: new ol.style.Fill({
-                        color: '#000000'
-                    }),
-                    text: '' + count
-                })
+                text: new ol.style.Text(textStyle)
             });
         },
         getHighlightStyle: function (geometryType) {
@@ -143,5 +153,36 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
             }
             return style;
         },
+        getPinnedHighlightStyle: function (geometryType) {
+            var style;
+            if (geometryType != 'Point') {
+                style = new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: [0, 255, 0, 1],
+                        width: 2
+                    }),
+                    fill: new ol.style.Fill({
+                        color: [0, 255, 0, 0.2]
+                    })
+                })
+            } else {
+                style = new ol.style.Style({
+                    image: new ol.style.Icon(({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        opacity: 0.75,
+                        src: '/static/img/map-marker-highlight.png'
+                    })),
+                    text: new ol.style.Text({
+                        scale: 1,
+                        fill: new ol.style.Fill({
+                            color: '#000000'
+                        })
+                    })
+                })
+            }
+            return style;
+        }
     })
 });

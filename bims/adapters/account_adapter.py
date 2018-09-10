@@ -1,9 +1,9 @@
 import re
 from django.core.exceptions import ValidationError
-from allauth.account.adapter import DefaultAccountAdapter
+from geonode.people.adapters import LocalAccountAdapter
 
 
-class AccountAdapter(DefaultAccountAdapter):
+class AccountAdapter(LocalAccountAdapter):
 
     def clean_password(self, password, user=None):
         if re.match(r'^(?=.*?\d)(?=.*?[A-Z])(?=.*?[a-z])[A-Za-z\d]{6,}$',

@@ -4,12 +4,14 @@ define(['backbone', 'models/cluster_biological', 'ol', 'shared'], function (Back
             this.render();
         },
         clicked: function () {
-            var coord = ol.proj.transform(
-                this.model.attributes['geometry']['coordinates'],
-                "EPSG:4326", "EPSG:3857");
             var properties = this.model.attributes['properties'];
-            var template = _.template($('#record-detail-template').html());
-            Shared.Dispatcher.trigger('map:showPopup', coord, template(properties));
+            if (properties['taxon_gbif_id']) {
+                Shared.Dispatcher.trigger(
+                    'taxonDetail:show',
+                    properties.taxon_gbif_id,
+                    properties.taxonomy.species
+                );
+            }
         },
         render: function () {
             var modelJson = this.model.toJSON();

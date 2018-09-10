@@ -32,13 +32,13 @@ def find_species(original_species_name):
     try:
         response = species.name_lookup(
             q=original_species_name,
-            limit=3,
-            offset=2
+            limit=3
         )
         if 'results' in response:
             results = response['results']
             for result in results:
-                if 'nubKey' in result and 'taxonomicStatus' in result:
+                key_found = 'nubKey' in result or 'speciesKey' in result
+                if key_found and 'taxonomicStatus' in result:
                     if result['taxonomicStatus'] == 'ACCEPTED' or \
                             result['taxonomicStatus'] == 'SYNONYM':
                         return result
@@ -58,8 +58,15 @@ def update_collection_record(collection):
     if not result:
         return
 
+    if 'nubKey' in result:
+        taxon_key = result['nubKey']
+    elif 'speciesKey' in result:
+        taxon_key = result['speciesKey']
+    else:
+        return
+
     taxon, created = Taxon.objects.get_or_create(
-            gbif_id=result['nubKey'])
+            gbif_id=taxon_key)
     update_taxonomy_fields(taxon, result)
     collection.taxon_gbif_id = taxon
     collection.save()
