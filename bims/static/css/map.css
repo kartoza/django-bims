@@ -1460,3 +1460,55 @@ div:hover::-webkit-scrollbar {
     text-align: center;
     color: rgb(139, 139, 139);
 }
+
+.bio-legend-wrapper {
+    bottom: 0;
+    right: 0;
+    margin-bottom: 45px;
+    margin-right: 10px;
+    position: absolute;
+    background-color: rgba(100, 100, 100, 0.67);
+    border-radius: 8px;
+    padding: 10px;
+    height: 150px;
+    width: 140px;
+}
+
+.bio-legend-container {
+    height: 100%;
+    width: 100%;
+    color: white;
+    font-weight: normal;
+    font-size: 10pt;
+}
+
+.bio-legend-content {
+    margin-top: 8px;
+}
+
+.bio-legend-color {
+    background-color: red;
+    margin-left: 15px;
+    height: 20px;
+    border: 1px solid white;
+}
+
+.bio-one-site {
+    background-color: #238f1c;
+}
+
+.bio-cluster-low {
+    background-color: #e8e251;
+}
+
+.bio-cluster-normal {
+    background-color: #d0b547;
+}
+
+.bio-cluster-high {
+    background-color: #bd9524;
+}
+
+.bio-cluster-max {
+    background-color: #9a791d;
+}

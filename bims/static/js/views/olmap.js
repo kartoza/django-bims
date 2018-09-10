@@ -14,10 +14,12 @@ define([
     'views/olmap_layers',
     'views/geocontext',
     'views/location_site_detail',
-    'views/taxon_detail'
+    'views/taxon_detail',
+    'views/biodiversity_legend'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail, TaxonDetail) {
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
+             LocationSiteDetail, TaxonDetail, BioLegendView) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -223,6 +225,9 @@ define([
             this.map.on('moveend', function (evt) {
                 self.mapMoved();
             });
+
+            this.bioLegendView = new BioLegendView();
+            this.$el.append(this.bioLegendView.render().$el);
 
             return this;
         },
