@@ -13,7 +13,7 @@ define([
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
-    'views/location_site_detail',
+    'views/right_panel/location_site_detail',
     'views/taxon_detail',
     'views/biodiversity_legend'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
