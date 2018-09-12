@@ -1511,3 +1511,32 @@ div:hover::-webkit-scrollbar {
 .bio-cluster-max {
     background-color: #9a791d;
 }
+
+.info-popup {
+    width: 300px;
+}
+
+.info-wrapper-tab {
+    display: inline-block;
+    font-size: 12px;
+    padding: 5px;
+    border: 1px solid #1b900d;
+    color: black;
+    margin-left: -1px;
+    margin-top: -1px;
+    cursor: pointer;
+}
+
+.info-wrapper-tab.selected {
+    background: #1b900d;
+    color: white;
+}
+
+.info-wrapper {
+    display: none;
+    margin-top: 10px;
+}
+
+.info-wrapper table {
+    width: 100%;
+}
