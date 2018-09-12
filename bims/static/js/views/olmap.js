@@ -14,12 +14,13 @@ define([
     'views/olmap_layers',
     'views/geocontext',
     'views/right_panel/location_site_detail',
-    'views/taxon_detail',
+    'views/right_panel/taxon_detail',
+    'views/right_panel/records_detail',
     'views/biodiversity_legend'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
-             LocationSiteDetail, TaxonDetail, BioLegendView) {
+             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -52,6 +53,7 @@ define([
             this.geocontext = new Geocontext();
             new LocationSiteDetail();
             new TaxonDetail();
+            new RecordsDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
