@@ -28,9 +28,7 @@ module.exports = function(config) {
 
         // list of files to exclude
         exclude: [
-            'static/js/app.js',
-            'static/js/views/donut-chart.js',
-            'static/js/views/generate-donut-chart.js'
+            'static/js/app.js'
         ],
 
         // test results reporter to use
