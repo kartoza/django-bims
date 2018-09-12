@@ -273,7 +273,6 @@ html, body, .map, .map-wrapper, #map-container {
     color: black;
     padding: 5px 15px 0;
     border: none;
-    z-index: 10;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
     text-align: center;
     font-weight: normal;
@@ -983,7 +982,7 @@ div:hover::-webkit-scrollbar {
     bottom: 80px;
     background-color: white;
     cursor: pointer;
-    z-index: 99;
+    z-index: 999;
 }
 
 #map-legend-symbol {
