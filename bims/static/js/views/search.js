@@ -1,6 +1,6 @@
 define([
-    'backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/search_result', 'views/search_panel'
-], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView) {
+    'backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/search_result', 'views/search_panel', 'jquery'
+], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),

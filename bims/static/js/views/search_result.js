@@ -1,4 +1,4 @@
-define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol'], function (Backbone, SearchResult, Shared, _, ol) {
+define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquery'], function (Backbone, SearchResult, Shared, _, ol, $) {
     return Backbone.View.extend({
         id: 0,
         data: null,

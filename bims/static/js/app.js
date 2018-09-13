@@ -12,6 +12,11 @@ require.config({
         chartJs: 'libs/chart/Chart-2.7.2'
     },
     shim: {
+        bootstrap: {
+            deps: [
+                'jquery'
+            ]
+        },
         ol: {
             exports: ['ol']
         },
@@ -21,8 +26,7 @@ require.config({
         backbone: {
             deps: [
                 'underscore',
-                'jquery',
-                'bootstrap'
+                'jquery'
             ],
             exports: 'Backbone'
         },
@@ -41,11 +45,12 @@ require.config({
 });
 
 require([
+    'bootstrap',
     'router',
     'views/olmap',
     'shared',
     'app'
-], function (Router, olmap, Shared, App) {
+], function (Bootstrap, Router, olmap, Shared, App) {
     // Display the map
     Shared.Router = new Router();
 
