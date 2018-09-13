@@ -1515,3 +1515,12 @@ div:hover::-webkit-scrollbar {
 .records-list-wrapper {
     padding: 10px;
 }
+
+#menu-dropdown-burger {
+    margin-left: -12px !important;
+    margin-top: -15px !important;
+}
+
+.dropdown-menu-left {
+    margin-left: 0;
+}
