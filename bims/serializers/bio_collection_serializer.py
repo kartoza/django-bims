@@ -12,6 +12,15 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     """
     Serializer for biological collection record.
     """
+    class Meta:
+        model = BiologicalCollectionRecord
+        fields = '__all__'
+
+
+class BioCollectionDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for biological collection record detail.
+    """
     owner = serializers.SerializerMethodField()
     children_fields = serializers.SerializerMethodField()
     validated = serializers.BooleanField(required=True)

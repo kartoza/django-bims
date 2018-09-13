@@ -1511,6 +1511,10 @@ div:hover::-webkit-scrollbar {
     background-color: #9a791d;
 }
 
+.records-list-wrapper {
+    padding: 10px;
+}
+
 .info-popup {
     width: 330px;
 }
