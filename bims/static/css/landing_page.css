@@ -148,11 +148,13 @@ header.masthead p {
     color: #1b900d;
     border: 2px solid #1b900d;
     text-align: left;
+    border-radius: 4px;
 }
 
 #search-on-map {
     border: none;
     height: 30px;
+    padding-top: 4px;
 }
 
 #search-on-map:focus {
@@ -185,8 +187,8 @@ header.masthead p {
 }
 
 .carousel-indicators li {
-    width: 20px;
-    height: 20px;
+    width: 10px;
+    height: 10px;
     border-radius: 10px;
     border: 2px solid white;
 }
@@ -330,12 +332,12 @@ html, body {
 
 .btn-account {
     background-color: white;
-    border-radius: 0;
+    border-radius: 4px;
     margin: 10px;
     font-weight: normal;
     color: #1b900d;
-    padding: 3px 20px;
-    font-size: 13pt;
+    padding: 7px 22px;
+    font-size: 11pt;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease 0s;
     border: 2px solid #1b900d;
