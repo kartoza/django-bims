@@ -150,17 +150,6 @@ h6 {
   }
 }
 
-.user-icon {
-  border: 5px solid white;
-  font-size: 20px;
-  background-color: transparent;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-weight: lighter;
-}
-
 .navbar-shrink {
   background-color: rgba(255, 255, 255, 0.9) !important;
 }
@@ -168,33 +157,4 @@ h6 {
 .navbar-shrink .user-icon {
   color: #526B43 !important;
   border-color: #526B43 !important;
-}
-
-.dropdown-menu {
-  min-width: 10px !important;
-  font-weight: bold;
-  background-color: white;
-  color: #404040;
-  border: none;
-}
-
-.dropdown-menu li {
-  padding: 0 10px;
-}
-
-.dropdown-menu li:hover {
-  background-color: #f4f4f4 !important;
-}
-
-.dropdown-menu a {
-  color: #404040 !important;
-  white-space: nowrap;
-}
-
-.dropdown-menu a:hover {
-  color: #323437 !important;
-}
-
-.dropdown-toggle::after {
-  color: transparent;
 }

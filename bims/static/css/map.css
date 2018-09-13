@@ -1515,6 +1515,15 @@ div:hover::-webkit-scrollbar {
     padding: 10px;
 }
 
+#menu-dropdown-burger {
+    margin-left: -12px !important;
+    margin-top: -15px !important;
+}
+
+.dropdown-menu-left {
+    margin-left: 0;
+}
+
 .info-popup {
     width: 330px;
 }
