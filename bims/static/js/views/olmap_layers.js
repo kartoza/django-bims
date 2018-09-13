@@ -462,7 +462,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                 };
 
                                 // render popup
-                                var tabs = '';
+                                var tabs = '<ul class="nav nav-tabs">';
                                 var content = '';
                                 $.each(featuresInfo, function (key_feature, feature) {
                                     var layerName = feature['layerName'];
@@ -470,7 +470,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                         layerName = that.administrativeKeyword;
                                         key_feature = 'administrative';
                                     }
-                                    tabs += '<span class="info-wrapper-tab" data-tab="info-' + key_feature + '">' + layerName + '</span>';
+                                    tabs += '<li ' +
+                                        'role="presentation" class="info-wrapper-tab"  ' +
+                                        'title="' + layerName + '" ' +
+                                        'data-tab="info-' + key_feature + '">' +
+                                        layerName + '</li>';
                                     content += '<div class="info-wrapper" data-tab="info-' + key_feature + '">';
                                     content += '<table>';
                                     $.each(feature['properties'], function (key, property) {
@@ -482,17 +486,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                     content += '</table>';
                                     content += '</div>';
                                 });
+                                tabs += '</ul>';
                                 Shared.Dispatcher.trigger('map:hidePopup');
                                 Shared.Dispatcher.trigger('map:showPopup', coordinate,
                                     '<div class="info-popup">' + tabs + content + '</div>');
 
                                 $('.info-wrapper-tab').click(function () {
-                                    $('.info-wrapper-tab').removeClass('selected');
-                                    $(this).addClass('selected');
+                                    $('.info-wrapper-tab').removeClass('active');
+                                    $(this).addClass('active');
 
                                     $('.info-wrapper').hide();
                                     $('.info-wrapper[data-tab="' + $(this).data('tab') + '"').show();
                                 });
+                                if ($('.nav-tabs').innerHeight() > $($('.info-wrapper-tab')[0]).innerHeight()) {
+                                    var width = $('.info-popup').width() / $('.info-wrapper-tab').length;
+                                    $('.info-wrapper-tab').innerWidth(width);
+                                }
                                 $('.info-wrapper-tab')[0].click();
                             }
                         })
