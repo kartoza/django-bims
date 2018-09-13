@@ -13,6 +13,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
+            Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
         },
         isBiodiversityLayerLoaded: function () {
             return this.initialLoadBiodiversityLayersToMap
@@ -407,6 +408,107 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         $(this).removeClass('show-legend');
                     }
                 });
+            });
+        },
+        showFeatureInfo: function (coordinate) {
+            var that = this;
+            var lastCoordinate = coordinate;
+            var view = this.map.getView();
+            var featuresInfo = {};
+            $.each(this.layers, function (layer_key, layer) {
+                if (coordinate != lastCoordinate) {
+                    return;
+                }
+                if (layer['layer'].getVisible()) {
+                    try {
+                        var queryLayer = layer['layer'].getSource().getParams()['layers'];
+                        var layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
+                            coordinate,
+                            view.getResolution(),
+                            view.getProjection(),
+                            {'INFO_FORMAT': 'text/plain'}
+                        );
+                        layerSource += '&QUERY_LAYERS=' + queryLayer;
+                        $.ajax({
+                            type: 'GET',
+                            url: layerSource,
+                            success: function (data) {
+                                // process properties
+                                if (coordinate != lastCoordinate || !data) {
+                                    return;
+                                }
+                                var linesData = data.split("\n");
+                                var properties = {};
+
+                                //reformat plain text to be dictionary
+                                // because qgis can't support info format json
+                                $.each(linesData, function (index, string) {
+                                    var couple = string.split(' = ');
+                                    if (couple.length !== 2) {
+                                        return true;
+                                    } else {
+                                        if (couple[0] == 'geom') {
+                                            return true;
+                                        }
+                                        properties[couple[0]] = couple[1];
+                                    }
+                                });
+                                if ($.isEmptyObject(properties)) {
+                                    return;
+                                }
+                                featuresInfo[layer_key] = {
+                                    'layerName': layer['layerName'],
+                                    'properties': properties
+                                };
+
+                                // render popup
+                                var tabs = '<ul class="nav nav-tabs">';
+                                var content = '';
+                                $.each(featuresInfo, function (key_feature, feature) {
+                                    var layerName = feature['layerName'];
+                                    if (layerName.indexOf(that.administrativeKeyword) >= 0) {
+                                        layerName = that.administrativeKeyword;
+                                        key_feature = 'administrative';
+                                    }
+                                    tabs += '<li ' +
+                                        'role="presentation" class="info-wrapper-tab"  ' +
+                                        'title="' + layerName + '" ' +
+                                        'data-tab="info-' + key_feature + '">' +
+                                        layerName + '</li>';
+                                    content += '<div class="info-wrapper" data-tab="info-' + key_feature + '">';
+                                    content += '<table>';
+                                    $.each(feature['properties'], function (key, property) {
+                                        content += '<tr>';
+                                        content += '<td>' + key + '</td>';
+                                        content += '<td>' + property + '</td>';
+                                        content += '</tr>'
+                                    });
+                                    content += '</table>';
+                                    content += '</div>';
+                                });
+                                tabs += '</ul>';
+                                Shared.Dispatcher.trigger('map:hidePopup');
+                                Shared.Dispatcher.trigger('map:showPopup', coordinate,
+                                    '<div class="info-popup">' + tabs + content + '</div>');
+
+                                $('.info-wrapper-tab').click(function () {
+                                    $('.info-wrapper-tab').removeClass('active');
+                                    $(this).addClass('active');
+
+                                    $('.info-wrapper').hide();
+                                    $('.info-wrapper[data-tab="' + $(this).data('tab') + '"').show();
+                                });
+                                if ($('.nav-tabs').innerHeight() > $($('.info-wrapper-tab')[0]).innerHeight()) {
+                                    var width = $('.info-popup').width() / $('.info-wrapper-tab').length;
+                                    $('.info-wrapper-tab').innerWidth(width);
+                                }
+                                $('.info-wrapper-tab')[0].click();
+                            }
+                        })
+                    } catch (err) {
+
+                    }
+                }
             });
         }
     })
