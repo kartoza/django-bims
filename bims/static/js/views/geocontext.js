@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'shared', 'ol'], function (Backbone, _, Shared, ol) {
+define(['backbone', 'underscore', 'shared', 'ol', 'jquery'], function (Backbone, _, Shared, ol, $) {
     return Backbone.View.extend({
         geocontextUrl: _.template(
             "<%= geocontextUrl %>/api/v1/geocontext/value/collection/<%= latitude %>/<%= longitude %>/<%= geocontextCollectionKey %>"),

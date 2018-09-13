@@ -1,11 +1,13 @@
 define([
     'backbone',
     'underscore',
-    'shared'
+    'shared',
+    'jquery'
     ], function (
         Backbone,
         _,
-        Shared
+        Shared,
+        $
         ) {
    return Backbone.View.extend({
        template: _.template($('#biodiversity-legend').html()),

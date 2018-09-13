@@ -1,5 +1,5 @@
 define(['shared', 'backbone', 'underscore', 'jqueryUi',
-    'views/catchment_area_control'], function (Shared, Backbone, _, jqueryUi, CatchmentAreaControl) {
+    'views/catchment_area_control', 'jquery'], function (Shared, Backbone, _, jqueryUi, CatchmentAreaControl, $) {
     return Backbone.View.extend({
         template: _.template($('#map-search-result-template').html()),
         events: {
