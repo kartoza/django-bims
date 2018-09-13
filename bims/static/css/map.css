@@ -1511,3 +1511,7 @@ div:hover::-webkit-scrollbar {
 .bio-cluster-max {
     background-color: #9a791d;
 }
+
+.records-list-wrapper {
+    padding: 10px;
+}
