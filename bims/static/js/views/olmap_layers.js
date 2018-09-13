@@ -496,7 +496,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                     $(this).addClass('active');
 
                                     $('.info-wrapper').hide();
-                                    $('.info-wrapper[data-tab="' + $(this).data('tab') + '"').show();
+                                    $('.info-wrapper[data-tab="' + $(this).data('tab') + '"]').show();
                                 });
                                 if ($('.nav-tabs').innerHeight() > $($('.info-wrapper-tab')[0]).innerHeight()) {
                                     var width = $('.info-popup').width() / $('.info-wrapper-tab').length;
