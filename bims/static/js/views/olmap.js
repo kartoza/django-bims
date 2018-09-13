@@ -129,7 +129,6 @@ define([
             var featuresClickedResponseData = [];
             var poiFound = false;
             var featuresData = '';
-
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
@@ -150,12 +149,17 @@ define([
                 }
             }
 
+            // Get lat and long map
+            var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
+            var lon = lonlat[0];
+            var lat = lonlat[1];
+
             if (self.uploadDataState && !poiFound) {
-                // Get lat and long map
-                var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
-                var lon = lonlat[0];
-                var lat = lonlat[1];
+                // Show modal upload if in upload mode
                 self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
+            } else if (!self.uploadDataState && !poiFound) {
+                // Show feature info
+                Shared.Dispatcher.trigger('layers:showFeatureInfo', e.coordinate)
             }
 
             // Close opened control panel
@@ -275,7 +279,7 @@ define([
             this.popup = new ol.Overlay({
                 element: document.getElementById('popup'),
                 positioning: 'bottom-center',
-                offset: [0, -55]
+                offset: [0, 0]
             });
             this.map.addOverlay(this.popup);
             this.layers.addLayersToMap(this.map);
@@ -340,7 +344,7 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            if(!this.layers.isBiodiversityLayerLoaded()) {
+            if (!this.layers.isBiodiversityLayerLoaded()) {
                 return
             }
             self.updateClusterBiologicalCollectionZoomExt();
@@ -510,7 +514,7 @@ define([
             });
         },
         showInfoPopup: function () {
-            if(!hideBimsInfo && bimsInfoContent) {
+            if (!hideBimsInfo && bimsInfoContent) {
                 $('#general-info-modal').fadeIn()
             }
         },

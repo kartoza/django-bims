@@ -934,7 +934,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #popup td {
-    border: 1px solid grey;
     font-size: 8pt;
     padding: 3px;
 }
@@ -1523,4 +1522,52 @@ div:hover::-webkit-scrollbar {
 
 .dropdown-menu-left {
     margin-left: 0;
+}
+
+.info-popup {
+    width: 330px;
+}
+
+.info-wrapper-tab {
+    display: inline-block;
+    font-size: 12px;
+    text-align: center;
+    color: black;
+    padding: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-wrapper-tab:hover {
+    background-color: #f9f9f9;
+}
+
+.info-wrapper-tab.active {
+    color: #1b900d;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid white;
+    margin-bottom: -1px;
+}
+
+.info-wrapper-tab.active:hover {
+    background-color: white;
+}
+
+.info-wrapper {
+    display: none;
+    margin-top: -1px;
+    border: 1px solid #dee2e6;
+    padding: 10px;
+}
+
+.info-wrapper tr:nth-child(even) {
+    background: #f9f9f9
+}
+
+.info-wrapper table {
+    width: 100%;
 }
