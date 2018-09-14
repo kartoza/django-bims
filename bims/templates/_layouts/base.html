@@ -17,7 +17,6 @@
     <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
     <!-- Override styles -->
     <!-- Custom styles for this template -->
-    <link href="{% static "css/landing_page.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
     <link href="{% static "css/base.css"  %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
     <link href="{% static "css/fonts.css" %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
     <link rel="stylesheet" href="{% static "css/styles.css" %}">
@@ -37,45 +36,42 @@
             cursor: default;
             text-decoration: none;
         }
-        #mainNav {
-            margin-left: 10%;
-        }
-        .navbar-expand-lg .navbar-nav .nav-link {
 
-            font-size: 1.8rem;
-        }
+
     </style>
-  <body class="{% block page_class %}Bibliography ma
-  nagement{% endblock page_class %}">
-    {% block body %}
-    <header id="page-header">
-      <h1>
-        <a href="#" class="not-active" style="color: #526B43 !important;">
-          Bibliography
-        </a>
-        <span>
+
+    <body class="{% block page_class %}
+    Bibliography management{% endblock page_class %}">
+    <div class="container">
+        <div id="page-header">
+            <h1>
+                <a href="#" class="not-active" style="color: #526B43 !important;">
+                    Bibliography
+                </a>
+                <span>
           Manage your references.
         </span>
-      </h1>
-    </header>
+            </h1>
+        </div>
 
-    {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-        {{ message }}
-      </li>
-      {% endfor %}
-    </ul>
-    {% endif %}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
 
-    <div role="main">
-      {% block content %}{% endblock content %}
+        <div role="main">
+            {% block content %}{% endblock content %}
+        </div>
+
     </div>
 
     {% block javascripts %}{% endblock javascripts %}
-    {% endblock %}
-  </body>
+    </body>
 
 
 {% endblock %}
@@ -86,10 +82,5 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-easing/jquery.easing.min.js" %}"></script>
-    <script src="{% static "js/libs/scrollreveal/scrollreveal.min.js" %}"></script>
-    <script src="{% static "js/libs/magnific-popup/jquery.magnific-popup.min.js" %}"></script>
-    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
 
-    <!-- Custom scripts for this template -->
-    <script src="{% static "js/creative.js" %}"></script>
 {% endblock %}

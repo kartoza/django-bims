@@ -4,12 +4,17 @@ body {
   align-items: center;
 }
 
-body > * {
-  max-width: 1024px;
-
+.dropdown-menu-left {
+  margin-left: 6px !important;
+  margin-top: -3px !important;
 }
 
-header#page-header {
+.right-nav-dropdown {
+  margin-right: 7px !important;
+  margin-top: -3px !important;
+}
+
+header#page-header, div#page-header {
   width: 100%;
   margin-bottom: 2rem;
   padding: 1rem;
@@ -17,7 +22,7 @@ header#page-header {
   border-bottom: 3px solid #526B43 !important;
 }
 
-header#page-header h1 span {
+header#page-header h1 span, div#page-header h1 span {
   display: block;
   text-align: center;
   font-size: 1.6rem;
@@ -191,7 +196,7 @@ footer#page-footer {
 /* Larger than mobile screen */
 @media (min-width: 40.0rem) {
 
-  header#page-header h1 span {
+  header#page-header h1 span, div#page-header h1 span {
     display: inline-block;
     font-size: 2rem;
   }
