@@ -105,7 +105,7 @@ api_urls = [
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
-    url(r'^map/$', MapPageView.as_view()),
+    url(r'^map/$', MapPageView.as_view(), name='map-page'),
     url(r'^profile/$',
         login_required(lambda request: RedirectView.as_view(
             url=reverse_lazy('profile_detail', kwargs={
