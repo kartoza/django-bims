@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.gis.db import models
+from django.db.models import Q
 from bims.utils.gbif import update_collection_record
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord,
@@ -24,7 +25,8 @@ class Command(BaseCommand):
         only_update_missing_class = options.get('only_update_missing_class')
         if only_update_missing_class:
             collections_non_taxa = BiologicalCollectionRecord.objects.filter(
-                    taxon_gbif_id__taxon_class__isnull=True
+                    Q(taxon_gbif_id__taxon_class__isnull=True) |
+                    Q(taxon_gbif_id__taxon_class__exact='')
             )
         else:
             collections_non_taxa = BiologicalCollectionRecord.objects.filter(

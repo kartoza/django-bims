@@ -1571,3 +1571,8 @@ div:hover::-webkit-scrollbar {
 .info-wrapper table {
     width: 100%;
 }
+
+.dropdown-menu {
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: .25rem;
+}

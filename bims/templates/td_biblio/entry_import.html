@@ -37,7 +37,7 @@
       type="reset"
       name="{% trans "Cancel" %}"
       value="{% trans "cancel" %}"
-      class="cancel">
+      class="cancel" id="cancel">
     <input
       type="submit"
       name="{% trans "Import" %}"
@@ -46,6 +46,12 @@
     style="color: white;">
   </div>
 </form>
+
+    <script type="text/javascript">
+        document.getElementById("cancel").addEventListener("click", function (e) {
+            window.location = '/bibliography';
+        });
+    </script>
 
 {% endblock content %}
 {% endblock main_content %}
