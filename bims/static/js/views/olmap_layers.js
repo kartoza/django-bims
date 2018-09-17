@@ -41,6 +41,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
                 layerType = layerName;
             }
+
+            var savedLayerVisibility = Shared.StorageUtil.getItem(layerType);
+
+            if (savedLayerVisibility !== null) {
+                visibleInDefault = savedLayerVisibility;
+            }
+
             this.layers[layerType] = {
                 'layer': layer,
                 'visibleInDefault': visibleInDefault,
@@ -186,7 +193,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;
-            if (!self.isAdministrativeLayerSelected()) {
+            var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
+            if (!self.isAdministrativeLayerSelected() || !administrativeVisibility) {
                 return false;
             }
             switch (administrative) {
@@ -237,6 +245,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 Shared.Dispatcher.trigger('biodiversityLegend:toggle');
             }
 
+            Shared.StorageUtil.setItem(layerName, selected);
             this.changeLayerVisibility(layerName, selected);
 
             // show/hide legend
@@ -311,6 +320,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         initVisible = true;
                         self.currentAdministrativeLayer = layerName;
                     }
+
+                    var administrativeSelected = Shared.StorageUtil.getItem('Administrative');
+                    if (administrativeSelected !== null) {
+                        initVisible = administrativeSelected;
+                    }
+
                     self.initLayer(
                         new ol.layer.Tile({
                             source: new ol.source.TileWMS(options)
@@ -353,7 +368,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 $.each(keys, function (index, key) {
                     var value = self.layers[key];
                     if (value['layerName'].indexOf(self.administrativeKeyword) >= 0) {
-                        self.renderLayersSelector('Administrative', 'Administrative', true);
+                        var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
+                        if (administrativeVisibility === null) {
+                            administrativeVisibility = false;
+                        }
+                        self.renderLayersSelector('Administrative', 'Administrative', administrativeVisibility);
                     } else {
                         self.renderLayersSelector(key, value['layerName'], value['visibleInDefault']);
                     }
