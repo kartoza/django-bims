@@ -15,7 +15,7 @@ define([
        render: function () {
             this.$el.html(this.template());
             this.container = $(this.$el.find('.bio-legend-wrapper').get(0));
-            var biodiversitySelected = Shared.StorageUtil.getItem('Biodiversity');
+            var biodiversitySelected = Shared.StorageUtil.getItemDict('Biodiversity', 'selected');
             if (biodiversitySelected !== null && biodiversitySelected === false) {
                 this.hide();
             }
@@ -26,6 +26,7 @@ define([
             Shared.Dispatcher.on('biodiversityLegend:moveRight', this.moveRight, this);
             Shared.Dispatcher.on('biodiversityLegend:toggle', this.toggle, this);
             Shared.Dispatcher.on('biodiversityLegend:hide', this.hide, this);
+            Shared.Dispatcher.on('biodiversityLegend:show', this.show, this);
        },
        moveLeft: function () {
            var self = this;

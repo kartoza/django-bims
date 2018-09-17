@@ -254,17 +254,23 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
         },
         selectorChanged: function (layerName, selected) {
-            if (layerName === "Biodiversity" && this.isBiodiversityLayerLoaded()) {
-                Shared.Dispatcher.trigger('map:reloadXHR');
-                Shared.Dispatcher.trigger('biodiversityLegend:toggle');
-            }
-
             Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
             this.changeLayerVisibility(layerName, selected);
-
+            this.toggleLegend(layerName, selected);
+        },
+        toggleLegend: function (layerName, selected) {
             // show/hide legend
             var $legendElement = this.getLegendElement(layerName);
             var $legendWrapper = $('#map-legend-wrapper');
+            if (layerName === 'Biodiversity' && this.isBiodiversityLayerLoaded()) {
+                Shared.Dispatcher.trigger('map:reloadXHR');
+                if (selected) {
+                    Shared.Dispatcher.trigger('biodiversityLegend:show');
+                } else {
+                    Shared.Dispatcher.trigger('biodiversityLegend:hide');
+                }
+            }
+
             if (selected) {
                 $legendElement.show();
             } else {
@@ -381,6 +387,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     row_name: layerName
                 })
             );
+
+            self.toggleLegend(key, visibleInDefault);
 
             var layerDiv = $($('#'+layerName).find('.layer-transparency').get(0));
             if (typeof layerDiv === 'undefined') {
