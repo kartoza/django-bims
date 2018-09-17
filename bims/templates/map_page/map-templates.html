@@ -166,7 +166,7 @@
 </script>
 
 <script type="text/html" id="layer-selector-row">
-    <li class="ui-state-default">
+    <li class="ui-state-default" id="<%= row_name %>">
         <div class="row-title">
             <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
             <input type="checkbox" value="<%= key %>" class="layer-selector-input" <%= checked %>>
@@ -175,7 +175,7 @@
         <div class="options">
             <div class="group">
                 <label>Transparency</label>
-                <div class="layer-transparency"></div>
+                <div class="layer-transparency" data-value="<%= transparency_value %>"></div>
             </div>
         </div>
 </script>

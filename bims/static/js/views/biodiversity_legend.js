@@ -15,12 +15,17 @@ define([
        render: function () {
             this.$el.html(this.template());
             this.container = $(this.$el.find('.bio-legend-wrapper').get(0));
+            var biodiversitySelected = Shared.StorageUtil.getItem('Biodiversity');
+            if (biodiversitySelected !== null && biodiversitySelected === false) {
+                this.hide();
+            }
             return this;
         },
        initialize: function () {
             Shared.Dispatcher.on('biodiversityLegend:moveLeft', this.moveLeft, this);
             Shared.Dispatcher.on('biodiversityLegend:moveRight', this.moveRight, this);
             Shared.Dispatcher.on('biodiversityLegend:toggle', this.toggle, this);
+            Shared.Dispatcher.on('biodiversityLegend:hide', this.hide, this);
        },
        moveLeft: function () {
            var self = this;
