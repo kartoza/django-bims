@@ -10,10 +10,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         currentAdministrativeLayer: "",
         administrativeKeyword: "Administrative",
         initialLoadBiodiversityLayersToMap: false,
+        administrativeTransparency: 100,
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
+            var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'transparency');
+            if (administrativeVisibility !== null) {
+                this.administrativeTransparency = administrativeVisibility;
+            }
         },
         isBiodiversityLayerLoaded: function () {
             return this.initialLoadBiodiversityLayersToMap
@@ -222,6 +227,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             });
             this.changeLayerVisibility(this.administrativeKeyword, true);
+            this.changeLayerTransparency(this.administrativeKeyword, this.administrativeTransparency);
         },
         changeLayerVisibility: function (layerName, visible) {
             if (Object.keys(this.layers).length === 0) {
@@ -400,6 +406,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         layername = $label.val();
                     }
                     Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value/100);
+                    if (layername.indexOf(self.administrativeKeyword) >= 0) {
+                        self.administrativeTransparency = ui.value/100;
+                    }
                 }
             });
         },
@@ -408,17 +417,45 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             $(document).ready(function () {
                 var keys = Object.keys(self.layers);
                 keys.reverse();
+                var orderedKeys = [];
+                var shouldReverseOrder = false;
 
                 $.each(keys, function (index, key) {
+                    var itemName = key;
+                    if (key.indexOf(self.administrativeKeyword) >= 0) {
+                        itemName = 'Administrative'
+                    }
+
+                    var order = Shared.StorageUtil.getItemDict(itemName, 'order');
+
+                    if (order !== null) {
+                        orderedKeys[order] = itemName;
+                        shouldReverseOrder = true;
+                    } else {
+                        orderedKeys.push(itemName);
+                    }
+                });
+
+                if (shouldReverseOrder) {
+                    orderedKeys = orderedKeys.reverse();
+                }
+
+                $.each(orderedKeys, function (index, key) {
                     var value = self.layers[key];
-                    var layerName = value['layerName'];
+                    var layerName = '';
+                    var defaultVisibility = false;
+
+                    if (typeof value !== 'undefined') {
+                        layerName = value['layerName'];
+                        defaultVisibility = value['visibleInDefault'];
+                    } else {
+                        layerName = key;
+                    }
+
                     var currentLayerTransparency = 100;
 
                     // Get saved transparency data from storage
                     var itemName = key;
-                    if (value['layerName'].indexOf(self.administrativeKeyword) >= 0) {
-                        itemName = 'Administrative';
-                    }
                     var layerTransparency = Shared.StorageUtil.getItemDict(itemName, 'transparency');
                     if (layerTransparency !== null) {
                         currentLayerTransparency = layerTransparency * 100;
@@ -427,50 +464,50 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         currentLayerTransparency = 100;
                     }
 
-                    if (value['layerName'].indexOf(self.administrativeKeyword) >= 0) {
+                    if (layerName.indexOf(self.administrativeKeyword) >= 0) {
                         var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
                         if (administrativeVisibility === null) {
-                            administrativeVisibility = false;
+                            administrativeVisibility = true;
                         } else {
                             if (administrativeVisibility.hasOwnProperty('selected')) {
                                 administrativeVisibility = administrativeVisibility['selected'];
                             }
                         }
-                        layerName = 'Administrative';
-                        self.renderLayersSelector(layerName, layerName, administrativeVisibility, currentLayerTransparency);
-                    } else {
-                        self.renderLayersSelector(key, layerName, value['visibleInDefault'], currentLayerTransparency);
+                        defaultVisibility = administrativeVisibility;
                     }
 
-
-
+                    self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency);
                 });
 
                 $('.layer-selector-input').change(function (e) {
                     self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
                 });
-                $('#layers-selector').sortable({
-                    update: function () {
-                        $($(".layer-selector-input").get().reverse()).each(function (index, value) {
-                            var layerName = $(value).val();
-                            if (layerName !== self.administrativeKeyword) {
-                                self.moveLayerToTop(
-                                    self.layers[layerName]['layer']);
-                                self.moveLegendToTop(layerName);
-                            } else {
-                                $.each(self.administrativeLayersName, function (idx, layerName) {
-                                    if (self.layers[layerName]) {
-                                        self.moveLayerToTop(
-                                            self.layers[layerName]['layer']);
-                                        self.moveLegendToTop(layerName);
-                                    }
-                                });
-                            }
-                        });
-                        self.moveLayerToTop(self.highlightPinnedVector);
-                        self.moveLayerToTop(self.highlightVector);
-                    }
+
+                $('#layers-selector').sortable();
+                $('#layers-selector').on('sortupdate', function () {
+                    $($(".layer-selector-input").get().reverse()).each(function (index, value) {
+                        var layerName = $(value).val();
+                        if (layerName !== self.administrativeKeyword) {
+                            self.moveLayerToTop(
+                                self.layers[layerName]['layer']);
+                            self.moveLegendToTop(layerName);
+                        } else {
+                            $.each(self.administrativeLayersName, function (idx, layerName) {
+                                if (self.layers[layerName]) {
+                                    self.moveLayerToTop(
+                                        self.layers[layerName]['layer']);
+                                    self.moveLegendToTop(layerName);
+                                }
+                            });
+                        }
+
+                        Shared.StorageUtil.setItemDict(layerName, 'order', index);
+                    });
+                    self.moveLayerToTop(self.highlightPinnedVector);
+                    self.moveLayerToTop(self.highlightVector);
                 });
+                $('#layers-selector').trigger('sortupdate');
+
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
                         $(this).tooltip('option', 'content', 'Hide Legends');
@@ -483,6 +520,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     }
                 });
             });
+
         },
         showFeatureInfo: function (coordinate) {
             var that = this;
