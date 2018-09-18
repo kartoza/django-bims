@@ -413,11 +413,12 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                     self.siteChartData = {};
 
                     // dashboard detail
-                    $('#dashboard-detail').append(self.renderDashboardDetail(data));
                     try {
-                        renderDashboard(data);
+                        // Custom dashboard
+                        $('#dashboard-detail').append(renderDashboard(data));
+                        calculateChart($('#dashboard-detail'), data);
                     } catch (err) {
-
+                        $('#dashboard-detail').append(self.renderDashboardDetail(data));
                     }
 
                     // render species list
