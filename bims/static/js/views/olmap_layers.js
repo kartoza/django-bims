@@ -369,7 +369,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var self = this;
             var mostTop = 'Biodiversity';
             var checked = '';
-            var layerName = key.replace(/ /g,"_").toLowerCase().replace(/:/g,"_");
             if (visibleInDefault) {
                 checked += 'checked';
             }
@@ -383,8 +382,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     name: name,
                     key: key,
                     checked: checked,
-                    transparency_value: transparencyDefault,
-                    row_name: layerName
+                    transparency_value: transparencyDefault
                 })
             ).children().last();
 
