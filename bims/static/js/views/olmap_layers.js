@@ -369,7 +369,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var self = this;
             var mostTop = 'Biodiversity';
             var checked = '';
-            var layerName = name.replace(/ /g,"_").toLowerCase();
+            var layerName = key.replace(/ /g,"_").toLowerCase().replace(/:/g,"_");
             if (visibleInDefault) {
                 checked += 'checked';
             }
@@ -378,7 +378,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
 
             var rowTemplate = _.template($('#layer-selector-row').html());
-            $('#layers-selector').append(
+            var layerRow = $('#layers-selector').append(
                 rowTemplate({
                     name: name,
                     key: key,
@@ -386,12 +386,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     transparency_value: transparencyDefault,
                     row_name: layerName
                 })
-            );
+            ).children().last();
 
             self.toggleLegend(key, visibleInDefault);
 
-            var layerDiv = $($('#'+layerName).find('.layer-transparency').get(0));
-            if (typeof layerDiv === 'undefined') {
+            var layerDiv = $(layerRow.find('.layer-transparency').get(0));
+            if (typeof layerRow === 'undefined') {
                 return;
             }
             layerDiv.slider({
