@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'underscore', 'jqueryUi'], function (Shared, Backbone, _) {
+define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Shared, Backbone, _, $, JqueryUI) {
     return Backbone.View.extend({
         template: _.template($('#download-control-panel-template').html()),
         url: '/api/collection/download/',

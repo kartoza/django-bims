@@ -35,7 +35,10 @@ from bims.api_views.collector import CollectorList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
-from bims.api_views.get_biorecord import GetBioRecords
+from bims.api_views.get_biorecord import (
+    GetBioRecordDetail,
+    GetBioRecords
+)
 from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
@@ -86,7 +89,9 @@ api_urls = [
     url(r'^api/validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
-        GetBioRecords.as_view(), name='get-bio-object'),
+        GetBioRecordDetail.as_view(), name='get-bio-object'),
+    url(r'^api/get-bio-records/(?P<taxon_id>[\w-]+)/$',
+        GetBioRecords.as_view(), name='get-bio-records'),
     url(r'^api/send-email-validation/$',
         SendNotificationValidation.as_view(), name='send-email-validation'),
     url(r'^api/filter-farm-id/$',
@@ -100,7 +105,7 @@ api_urls = [
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
-    url(r'^map/$', MapPageView.as_view()),
+    url(r'^map/$', MapPageView.as_view(), name='map-page'),
     url(r'^profile/$',
         login_required(lambda request: RedirectView.as_view(
             url=reverse_lazy('profile_detail', kwargs={

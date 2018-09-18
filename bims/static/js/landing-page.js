@@ -1,6 +1,27 @@
+function searchOnMap(event) {
+    event.preventDefault();
+    if (event.keyCode === 13) {
+        location.href = '/map/#search/' + $('#search-on-map').val();
+    }
+}
+
+function generateDoughnutChart(container, data) {
+    var myChart = new Chart(container, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            legend: {
+                display: false
+             },
+            cutoutPercentage: 85,
+            maintainAspectRatio: false
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function (event) {
     var summaryData = JSON.parse(summaries);
-    
+
     $.each(summaryData, function (className, classData) {
         var labels = [];
         var category_data= [];

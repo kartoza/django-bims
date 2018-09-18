@@ -13,11 +13,14 @@ define([
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
-    'views/location_site_detail',
-    'views/taxon_detail'
+    'views/right_panel/location_site_detail',
+    'views/right_panel/taxon_detail',
+    'views/right_panel/records_detail',
+    'views/biodiversity_legend'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, Basemap, Layers, Geocontext, LocationSiteDetail, TaxonDetail) {
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
+             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -50,6 +53,7 @@ define([
             this.geocontext = new Geocontext();
             new LocationSiteDetail();
             new TaxonDetail();
+            new RecordsDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
@@ -125,7 +129,6 @@ define([
             var featuresClickedResponseData = [];
             var poiFound = false;
             var featuresData = '';
-
             if (features) {
                 var geometry = features[0].getGeometry();
                 var geometryType = geometry.getType();
@@ -146,12 +149,17 @@ define([
                 }
             }
 
+            // Get lat and long map
+            var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
+            var lon = lonlat[0];
+            var lat = lonlat[1];
+
             if (self.uploadDataState && !poiFound) {
-                // Get lat and long map
-                var lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
-                var lon = lonlat[0];
-                var lat = lonlat[1];
+                // Show modal upload if in upload mode
                 self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
+            } else if (!self.uploadDataState && !poiFound) {
+                // Show feature info
+                Shared.Dispatcher.trigger('layers:showFeatureInfo', e.coordinate)
             }
 
             // Close opened control panel
@@ -224,6 +232,9 @@ define([
                 self.mapMoved();
             });
 
+            this.bioLegendView = new BioLegendView();
+            this.$el.append(this.bioLegendView.render().$el);
+
             return this;
         },
         mapMoved: function () {
@@ -268,7 +279,7 @@ define([
             this.popup = new ol.Overlay({
                 element: document.getElementById('popup'),
                 positioning: 'bottom-center',
-                offset: [0, -55]
+                offset: [0, 0]
             });
             this.map.addOverlay(this.popup);
             this.layers.addLayersToMap(this.map);
@@ -333,7 +344,7 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            if(!this.layers.isBiodiversityLayerLoaded()) {
+            if (!this.layers.isBiodiversityLayerLoaded()) {
                 return
             }
             self.updateClusterBiologicalCollectionZoomExt();
@@ -503,7 +514,7 @@ define([
             });
         },
         showInfoPopup: function () {
-            if(!hideBimsInfo && bimsInfoContent) {
+            if (!hideBimsInfo && bimsInfoContent) {
                 $('#general-info-modal').fadeIn()
             }
         },

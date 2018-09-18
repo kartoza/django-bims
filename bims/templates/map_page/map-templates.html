@@ -175,7 +175,7 @@
         <div class="options">
             <div class="group">
                 <label>Transparency</label>
-                <div class="layer-transparency"></div>
+                <div class="layer-transparency" data-value="<%= transparency_value %>"></div>
             </div>
         </div>
 </script>
@@ -551,10 +551,15 @@
    </div>
 </script>
 
+<script type="text/template" id="records-list-detail">
+    <div class="result-search records-list-wrapper" data-search-result-id="">
+    </div>
+</script>
+
 <script type="text/template" id="species-template">
     <div class="content">
         <div class="iucn-status"><span class="name"><%= iucn_status_name %></span><span class="full-name"><%= iucn_status_full_name %></span></div>
-        <div class="species-count"><b><%= count %></b><br> records</div>
+        <div class="species-count"><b><%= count %></b><br> <span class="records-link"> <a href="#">records</a></span></div>
         <div class="taxonomy-system">
             <%= kingdom %><br>
             <i class="fa fa-arrow-down"></i><br>
@@ -573,66 +578,35 @@
     </div>
 </script>
 
-<script type="text/template" id="record-detail-template">
-    <div>
-        <h4><%= taxonomy.common_name %></h4>
-        <table style="width: 100%">
-            <tr>
-                <td>Kingdom</td>
-                <td><%= taxonomy.kingdom %></td>
-            </tr>
-            <tr>
-                <td>Phylum</td>
-                <td><%= taxonomy.phylum %></td>
-            </tr>
-            <tr>
-                <td>Class</td>
-                <td><%= taxonomy.class %></td>
-            </tr>
-            <tr>
-                <td>Order</td>
-                <td><%= taxonomy.order %></td>
-            </tr>
-            <tr>
-                <td>Family</td>
-                <td><%= taxonomy.family %></td>
-            </tr>
-            <tr>
-                <td>Genus</td>
-                <td><%= taxonomy.genus %></td>
-            </tr>
-            <tr>
-                <td>Species</td>
-                <td><%= taxonomy.species %></td>
-            </tr>
-            <tr>
-                <td>Common name</td>
-                <td><%= taxonomy.common_name %></td>
-            </tr>
-            <tr>
-                <td>Scientific name</td>
-                <td><%= taxonomy.scientific_name %></td>
-            </tr>
-            <tr>
-                <td>Author</td>
-                <td><%= taxonomy.author %></td>
-            </tr>
-            <tr>
-                <td>Original species name</td>
-                <td><%= original_species_name %></td>
-            </tr>
-            <tr>
-                <td>Collection date</td>
-                <td><%= collection_date %></td>
-            </tr>
-            <tr>
-                <td>Collector or observer</td>
-                <td><%= collector %></td>
-            </tr>
-            <tr>
-                <td>Notes</td>
-                <td><%= notes %></td>
-            </tr>
-        </table>
+{# Biodiversity legend #}
+<script type="text/template" id="biodiversity-legend">
+    <div class="bio-legend-wrapper">
+        <div class="bio-legend-container">
+            <div class="bio-legend-title">
+                Biodiversity Legend
+            </div>
+            <div class="bio-legend-content">
+                <div class="row">
+                    <div class="col-2 bio-legend-color bio-one-site"></div>
+                    <div class="col-8">1 site</div>
+                </div>
+                <div class="row">
+                    <div class="col-2 bio-legend-color bio-cluster-low"></div>
+                    <div class="col-8">1 - 10</div>
+                </div>
+                <div class="row">
+                    <div class="col-2 bio-legend-color bio-cluster-normal"></div>
+                    <div class="col-8">10 - 100</div>
+                </div>
+                <div class="row">
+                    <div class="col-2 bio-legend-color bio-cluster-high"></div>
+                    <div class="col-8">100 - 500</div>
+                </div>
+                <div class="row">
+                    <div class="col-2 bio-legend-color bio-cluster-max"></div>
+                    <div class="col-8">500 up</div>
+                </div>
+            </div>
+        </div>
     </div>
 </script>

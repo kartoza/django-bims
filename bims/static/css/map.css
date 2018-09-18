@@ -273,7 +273,6 @@ html, body, .map, .map-wrapper, #map-container {
     color: black;
     padding: 5px 15px 0;
     border: none;
-    z-index: 10;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
     text-align: center;
     font-weight: normal;
@@ -935,7 +934,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #popup td {
-    border: 1px solid grey;
     font-size: 8pt;
     padding: 3px;
 }
@@ -983,7 +981,7 @@ div:hover::-webkit-scrollbar {
     bottom: 80px;
     background-color: white;
     cursor: pointer;
-    z-index: 99;
+    z-index: 999;
 }
 
 #map-legend-symbol {
@@ -1459,4 +1457,122 @@ div:hover::-webkit-scrollbar {
     padding: 20px;
     text-align: center;
     color: rgb(139, 139, 139);
+}
+
+.bio-legend-wrapper {
+    bottom: 0;
+    right: 0;
+    margin-bottom: 45px;
+    margin-right: 10px;
+    position: absolute;
+    background-color: rgba(100, 100, 100, 0.67);
+    border-radius: 8px;
+    padding: 10px;
+    height: 150px;
+    width: 140px;
+}
+
+.bio-legend-container {
+    height: 100%;
+    width: 100%;
+    color: white;
+    font-weight: normal;
+    font-size: 10pt;
+}
+
+.bio-legend-content {
+    margin-top: 8px;
+}
+
+.bio-legend-color {
+    background-color: red;
+    margin-left: 15px;
+    height: 20px;
+    border: 1px solid white;
+}
+
+.bio-one-site {
+    background-color: #238f1c;
+}
+
+.bio-cluster-low {
+    background-color: #e8e251;
+}
+
+.bio-cluster-normal {
+    background-color: #d0b547;
+}
+
+.bio-cluster-high {
+    background-color: #bd9524;
+}
+
+.bio-cluster-max {
+    background-color: #9a791d;
+}
+
+.records-list-wrapper {
+    padding: 10px;
+}
+
+#menu-dropdown-burger {
+    margin-left: -12px !important;
+    margin-top: -15px !important;
+}
+
+.dropdown-menu-left {
+    margin-left: 0;
+}
+
+.info-popup {
+    width: 330px;
+}
+
+.info-wrapper-tab {
+    display: inline-block;
+    font-size: 12px;
+    text-align: center;
+    color: black;
+    padding: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-wrapper-tab:hover {
+    background-color: #f9f9f9;
+}
+
+.info-wrapper-tab.active {
+    color: #1b900d;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid white;
+    margin-bottom: -1px;
+}
+
+.info-wrapper-tab.active:hover {
+    background-color: white;
+}
+
+.info-wrapper {
+    display: none;
+    margin-top: -1px;
+    border: 1px solid #dee2e6;
+    padding: 10px;
+}
+
+.info-wrapper tr:nth-child(even) {
+    background: #f9f9f9
+}
+
+.info-wrapper table {
+    width: 100%;
+}
+
+.dropdown-menu {
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: .25rem;
 }

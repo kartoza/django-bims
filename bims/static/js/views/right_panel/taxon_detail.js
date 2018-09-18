@@ -2,10 +2,15 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
     return Backbone.View.extend({
         id: 0,
         siteDetail: null,
+        gbifId: null,
+        taxonId: null,
+        taxonName: null,
         initialize: function () {
             Shared.Dispatcher.on('taxonDetail:show', this.show, this);
         },
         show: function (id, taxonName, siteDetail) {
+            this.taxonId = id;
+            this.taxonName = taxonName;
             this.url = '/api/taxon/' + id;
             this.showDetail(taxonName, siteDetail);
         },
@@ -26,13 +31,16 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var template = _.template($('#species-template').html());
             return template(data);
         },
+        showRecords: function (e) {
+            e.preventDefault();
+            Shared.Dispatcher.trigger('recordsDetail:show', e.data.taxonId, e.data.taxonName, e.data.siteDetail);
+        },
         renderThirdPartyData: function (data) {
             var $thirdPartyData = $('<div>');
-            var gbifId = data['gbif_id'];
 
             var template = _.template($('#third-party-template').html());
             $thirdPartyData.append(template({
-                taxon_gbif_id: gbifId
+                taxon_gbif_id: this.gbifId
             }));
 
             var $wrapper = $thirdPartyData.find('.third-party-wrapper');
@@ -40,7 +48,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
 
             $.get({
-                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+gbifId+'&limit=5',
+                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this.gbifId+'&limit=5',
                 dataType: 'json',
                 success: function (data) {
                     var results = data['results'];
@@ -118,6 +126,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
             Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', name);
 
+            self.siteDetail = siteDetail;
             if (siteDetail) {
                 Shared.Dispatcher.trigger('sidePanel:showReturnButton');
                 Shared.Dispatcher.trigger('sidePanel:addEventToReturnButton', function () {
@@ -139,6 +148,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
+                    self.gbifId = data['gbif_id'];
                     // render taxon detail
                     $('#species-detail').append(self.renderDetail(data));
                     $('#species-detail .iucn-status .name').css('background-color', data.iucn_status_colour);
@@ -152,6 +162,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     $('#third-party').append(self.renderThirdPartyData(data));
 
                     Shared.LocationSiteDetailXHRRequest = null;
+                    $($('#species-detail').find('.records-link').get(0)).click({
+                        taxonId: self.taxonId, taxonName: self.taxonName, siteDetail: self.siteDetail}, self.showRecords);
                 },
                 error: function (req, err) {
 

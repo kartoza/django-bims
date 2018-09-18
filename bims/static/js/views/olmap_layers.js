@@ -10,9 +10,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         currentAdministrativeLayer: "",
         administrativeKeyword: "Administrative",
         initialLoadBiodiversityLayersToMap: false,
+        administrativeTransparency: 100,
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
+            Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
+            var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'transparency');
+            if (administrativeVisibility !== null) {
+                this.administrativeTransparency = administrativeVisibility;
+            }
         },
         isBiodiversityLayerLoaded: function () {
             return this.initialLoadBiodiversityLayersToMap
@@ -40,6 +46,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
                 layerType = layerName;
             }
+
+            var savedLayerVisibility = Shared.StorageUtil.getItem(layerType);
+
+            if (savedLayerVisibility !== null) {
+                if (savedLayerVisibility.hasOwnProperty('selected')) {
+                   savedLayerVisibility = savedLayerVisibility['selected'];
+                   visibleInDefault = savedLayerVisibility;
+                }
+            }
+
             this.layers[layerType] = {
                 'layer': layer,
                 'visibleInDefault': visibleInDefault,
@@ -185,7 +201,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;
-            if (!self.isAdministrativeLayerSelected()) {
+            var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
+            if (administrativeVisibility !== null) {
+                if (administrativeVisibility.hasOwnProperty('selected')) {
+                    administrativeVisibility = administrativeVisibility['selected'];
+                }
+            }
+            if (!self.isAdministrativeLayerSelected() || !administrativeVisibility) {
                 return false;
             }
             switch (administrative) {
@@ -205,6 +227,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 }
             });
             this.changeLayerVisibility(this.administrativeKeyword, true);
+            this.changeLayerTransparency(this.administrativeKeyword, this.administrativeTransparency);
         },
         changeLayerVisibility: function (layerName, visible) {
             if (Object.keys(this.layers).length === 0) {
@@ -231,14 +254,23 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
         },
         selectorChanged: function (layerName, selected) {
-            if (layerName === "Biodiversity" && this.isBiodiversityLayerLoaded()) {
-                Shared.Dispatcher.trigger('map:reloadXHR');
-            }
+            Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
             this.changeLayerVisibility(layerName, selected);
-
+            this.toggleLegend(layerName, selected);
+        },
+        toggleLegend: function (layerName, selected) {
             // show/hide legend
             var $legendElement = this.getLegendElement(layerName);
             var $legendWrapper = $('#map-legend-wrapper');
+            if (layerName === 'Biodiversity' && this.isBiodiversityLayerLoaded()) {
+                Shared.Dispatcher.trigger('map:reloadXHR');
+                if (selected) {
+                    Shared.Dispatcher.trigger('biodiversityLegend:show');
+                } else {
+                    Shared.Dispatcher.trigger('biodiversityLegend:hide');
+                }
+            }
+
             if (selected) {
                 $legendElement.show();
             } else {
@@ -308,6 +340,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         initVisible = true;
                         self.currentAdministrativeLayer = layerName;
                     }
+
+                    var administrativeSelected = Shared.StorageUtil.getItem('Administrative');
+                    if (administrativeSelected !== null) {
+                        if (administrativeSelected.hasOwnProperty('selected')) {
+                            administrativeSelected = administrativeSelected['selected'];
+                            initVisible = administrativeSelected;
+                        }
+                    }
+
                     self.initLayer(
                         new ol.layer.Tile({
                             source: new ol.source.TileWMS(options)
@@ -320,10 +361,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             });
 
         },
-        renderLayersSelector: function (key, name, visibleInDefault) {
+
+        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
+            var self = this;
             var mostTop = 'Biodiversity';
             var checked = '';
             if (visibleInDefault) {
@@ -334,66 +377,143 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
 
             var rowTemplate = _.template($('#layer-selector-row').html());
-            $('#layers-selector').append(
+            var layerRow = $('#layers-selector').append(
                 rowTemplate({
                     name: name,
                     key: key,
-                    checked: checked
+                    checked: checked,
+                    transparency_value: transparencyDefault
                 })
-            );
+            ).children().last();
+
+            self.toggleLegend(key, visibleInDefault);
+
+            var layerDiv = $(layerRow.find('.layer-transparency').get(0));
+            if (typeof layerRow === 'undefined') {
+                return;
+            }
+            layerDiv.slider({
+                range: 'max',
+                min: 1,
+                max: 100,
+                value: $(layerDiv).data('value'),
+                slide: function (event, ui) {
+                    var $label = $(event.target).closest('li').find('.layer-selector-input');
+                    var layername = 'Biodiversity';
+                    if ($label.length > 0) {
+                        layername = $label.val();
+                    }
+                    self.changeLayerTransparency(layername, ui.value / 100);
+                },
+                stop: function (event, ui) {
+                    var $label = $(event.target).closest('li').find('.layer-selector-input');
+                    var layername = 'Biodiversity';
+                    if ($label.length > 0) {
+                        layername = $label.val();
+                    }
+                    Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value/100);
+                    if (layername.indexOf(self.administrativeKeyword) >= 0) {
+                        self.administrativeTransparency = ui.value/100;
+                    }
+                }
+            });
         },
         renderLayers: function () {
             var self = this;
             $(document).ready(function () {
                 var keys = Object.keys(self.layers);
                 keys.reverse();
+                var orderedKeys = [];
+                var shouldReverseOrder = false;
+
                 $.each(keys, function (index, key) {
-                    var value = self.layers[key];
-                    if (value['layerName'].indexOf(self.administrativeKeyword) >= 0) {
-                        self.renderLayersSelector('Administrative', 'Administrative', true);
+                    var itemName = key;
+                    if (key.indexOf(self.administrativeKeyword) >= 0) {
+                        itemName = 'Administrative'
+                    }
+
+                    var order = Shared.StorageUtil.getItemDict(itemName, 'order');
+
+                    if (order !== null) {
+                        orderedKeys[order] = itemName;
+                        shouldReverseOrder = true;
                     } else {
-                        self.renderLayersSelector(key, value['layerName'], value['visibleInDefault']);
+                        orderedKeys.push(itemName);
                     }
                 });
-                $('.layer-transparency').slider({
-                    range: 'max',
-                    min: 1,
-                    max: 100,
-                    value: 100,
-                    slide: function (event, ui) {
-                        var $label = $(event.target).closest('li').find('.layer-selector-input');
-                        var layername = 'Biodiversity';
-                        if ($label.length > 0) {
-                            layername = $label.val();
+
+                if (shouldReverseOrder) {
+                    orderedKeys = orderedKeys.reverse();
+                }
+
+                $.each(orderedKeys, function (index, key) {
+                    var value = self.layers[key];
+                    var layerName = '';
+                    var defaultVisibility = false;
+
+                    if (typeof value !== 'undefined') {
+                        layerName = value['layerName'];
+                        defaultVisibility = value['visibleInDefault'];
+                    } else {
+                        layerName = key;
+                    }
+
+                    var currentLayerTransparency = 100;
+
+                    // Get saved transparency data from storage
+                    var itemName = key;
+                    var layerTransparency = Shared.StorageUtil.getItemDict(itemName, 'transparency');
+                    if (layerTransparency !== null) {
+                        currentLayerTransparency = layerTransparency * 100;
+                        self.changeLayerTransparency(itemName, layerTransparency);
+                    } else {
+                        currentLayerTransparency = 100;
+                    }
+
+                    if (layerName.indexOf(self.administrativeKeyword) >= 0) {
+                        var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
+                        if (administrativeVisibility === null) {
+                            administrativeVisibility = true;
+                        } else {
+                            if (administrativeVisibility.hasOwnProperty('selected')) {
+                                administrativeVisibility = administrativeVisibility['selected'];
+                            }
                         }
-                        self.changeLayerTransparency(layername, ui.value / 100);
+                        defaultVisibility = administrativeVisibility;
                     }
+
+                    self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency);
                 });
+
                 $('.layer-selector-input').change(function (e) {
                     self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
                 });
-                $('#layers-selector').sortable({
-                    update: function () {
-                        $($(".layer-selector-input").get().reverse()).each(function (index, value) {
-                            var layerName = $(value).val();
-                            if (layerName !== self.administrativeKeyword) {
-                                self.moveLayerToTop(
-                                    self.layers[layerName]['layer']);
-                                self.moveLegendToTop(layerName);
-                            } else {
-                                $.each(self.administrativeLayersName, function (idx, layerName) {
-                                    if (self.layers[layerName]) {
-                                        self.moveLayerToTop(
-                                            self.layers[layerName]['layer']);
-                                        self.moveLegendToTop(layerName);
-                                    }
-                                });
-                            }
-                        });
-                        self.moveLayerToTop(self.highlightPinnedVector);
-                        self.moveLayerToTop(self.highlightVector);
-                    }
+
+                $('#layers-selector').sortable();
+                $('#layers-selector').on('sortupdate', function () {
+                    $($(".layer-selector-input").get().reverse()).each(function (index, value) {
+                        var layerName = $(value).val();
+                        if (layerName !== self.administrativeKeyword) {
+                            self.moveLayerToTop(
+                                self.layers[layerName]['layer']);
+                            self.moveLegendToTop(layerName);
+                        } else {
+                            $.each(self.administrativeLayersName, function (idx, layerName) {
+                                if (self.layers[layerName]) {
+                                    self.moveLayerToTop(
+                                        self.layers[layerName]['layer']);
+                                    self.moveLegendToTop(layerName);
+                                }
+                            });
+                        }
+
+                        Shared.StorageUtil.setItemDict(layerName, 'order', index);
+                    });
+                    self.moveLayerToTop(self.highlightPinnedVector);
+                    self.moveLayerToTop(self.highlightVector);
                 });
+                $('#layers-selector').trigger('sortupdate');
+
                 $('#map-legend-wrapper').click(function () {
                     if ($(this).hasClass('hide-legend')) {
                         $(this).tooltip('option', 'content', 'Hide Legends');
@@ -405,6 +525,108 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         $(this).removeClass('show-legend');
                     }
                 });
+            });
+
+        },
+        showFeatureInfo: function (coordinate) {
+            var that = this;
+            var lastCoordinate = coordinate;
+            var view = this.map.getView();
+            var featuresInfo = {};
+            $.each(this.layers, function (layer_key, layer) {
+                if (coordinate != lastCoordinate) {
+                    return;
+                }
+                if (layer['layer'].getVisible()) {
+                    try {
+                        var queryLayer = layer['layer'].getSource().getParams()['layers'];
+                        var layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
+                            coordinate,
+                            view.getResolution(),
+                            view.getProjection(),
+                            {'INFO_FORMAT': 'text/plain'}
+                        );
+                        layerSource += '&QUERY_LAYERS=' + queryLayer;
+                        $.ajax({
+                            type: 'GET',
+                            url: layerSource,
+                            success: function (data) {
+                                // process properties
+                                if (coordinate != lastCoordinate || !data) {
+                                    return;
+                                }
+                                var linesData = data.split("\n");
+                                var properties = {};
+
+                                //reformat plain text to be dictionary
+                                // because qgis can't support info format json
+                                $.each(linesData, function (index, string) {
+                                    var couple = string.split(' = ');
+                                    if (couple.length !== 2) {
+                                        return true;
+                                    } else {
+                                        if (couple[0] == 'geom') {
+                                            return true;
+                                        }
+                                        properties[couple[0]] = couple[1];
+                                    }
+                                });
+                                if ($.isEmptyObject(properties)) {
+                                    return;
+                                }
+                                featuresInfo[layer_key] = {
+                                    'layerName': layer['layerName'],
+                                    'properties': properties
+                                };
+
+                                // render popup
+                                var tabs = '<ul class="nav nav-tabs">';
+                                var content = '';
+                                $.each(featuresInfo, function (key_feature, feature) {
+                                    var layerName = feature['layerName'];
+                                    if (layerName.indexOf(that.administrativeKeyword) >= 0) {
+                                        layerName = that.administrativeKeyword;
+                                        key_feature = 'administrative';
+                                    }
+                                    tabs += '<li ' +
+                                        'role="presentation" class="info-wrapper-tab"  ' +
+                                        'title="' + layerName + '" ' +
+                                        'data-tab="info-' + key_feature + '">' +
+                                        layerName + '</li>';
+                                    content += '<div class="info-wrapper" data-tab="info-' + key_feature + '">';
+                                    content += '<table>';
+                                    $.each(feature['properties'], function (key, property) {
+                                        content += '<tr>';
+                                        content += '<td>' + key + '</td>';
+                                        content += '<td>' + property + '</td>';
+                                        content += '</tr>'
+                                    });
+                                    content += '</table>';
+                                    content += '</div>';
+                                });
+                                tabs += '</ul>';
+                                Shared.Dispatcher.trigger('map:hidePopup');
+                                Shared.Dispatcher.trigger('map:showPopup', coordinate,
+                                    '<div class="info-popup">' + tabs + content + '</div>');
+
+                                $('.info-wrapper-tab').click(function () {
+                                    $('.info-wrapper-tab').removeClass('active');
+                                    $(this).addClass('active');
+
+                                    $('.info-wrapper').hide();
+                                    $('.info-wrapper[data-tab="' + $(this).data('tab') + '"]').show();
+                                });
+                                if ($('.nav-tabs').innerHeight() > $($('.info-wrapper-tab')[0]).innerHeight()) {
+                                    var width = $('.info-popup').width() / $('.info-wrapper-tab').length;
+                                    $('.info-wrapper-tab').innerWidth(width);
+                                }
+                                $('.info-wrapper-tab')[0].click();
+                            }
+                        })
+                    } catch (err) {
+
+                    }
+                }
             });
         }
     })

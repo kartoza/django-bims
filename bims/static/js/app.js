@@ -43,8 +43,9 @@ require([
     'router',
     'views/olmap',
     'shared',
-    'app'
-], function (Router, olmap, Shared, App) {
+    'app',
+    'jquery'
+], function (Router, olmap, Shared, App, $) {
     // Display the map
     Shared.Router = new Router();
 
@@ -53,6 +54,14 @@ require([
 
     // A $( document ).ready() block.
     $(document).ready(function () {
+
+        $('#menu-dropdown-burger').click(function () {
+            $('.dropdown-menu-left').toggle();
+        });
+
+        $('#menu-dropdown-account').click(function () {
+            $('.right-nav-dropdown').toggle();
+        });
 
         $('[data-toggle="tooltip"]').tooltip();
 
