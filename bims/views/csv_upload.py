@@ -137,6 +137,17 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                 record[opt_field] = record[opt_field] == '1'
                             elif field_type == 'str':
                                 record[opt_field] = record[opt_field].lower()
+                            elif field_type == 'float':
+                                try:
+                                    record[opt_field] = float(
+                                            record[opt_field])
+                                except ValueError:
+                                    record[opt_field] = 0.0
+                            elif field_type == 'int':
+                                try:
+                                    record[opt_field] = int(record[opt_field])
+                                except ValueError:
+                                    record[opt_field] = 0
                             optional_records[opt_field] = record[opt_field]
 
                     # custodian field
