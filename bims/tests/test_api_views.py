@@ -1,7 +1,11 @@
 from django.test import TestCase
+from django.core.urlresolvers import reverse
 from rest_framework.test import APIRequestFactory
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
+    UserF,
+    ContentTypeF,
+    PermissionF,
 )
 from bims.tests.model_factories import (
     LocationSiteF,
@@ -13,6 +17,9 @@ from bims.api_views.location_site import (
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
+)
+from bims.api_views.non_validated_record import (
+    GetNonValidatedRecords
 )
 from bims.api_views.taxon import TaxonDetail
 
@@ -35,6 +42,10 @@ class TestApiView(TestCase):
             pk=2,
             original_species_name=u'Test fish species name 2',
             site=self.location_site
+        )
+        self.admin_user = UserF.create(
+            is_superuser=True,
+            is_staff=True
         )
 
     def test_get_all_location(self):
@@ -73,3 +84,34 @@ class TestApiView(TestCase):
             '/api/location-type/%s/allowed-geometry/' % pk)
         response = view(request, pk)
         self.assertEqual(response.data, 'POINT')
+
+    def test_get_unvalidated_records_as_public(self):
+        view = GetNonValidatedRecords.as_view()
+        request = self.factory.get(reverse('get-unvalidated-records'))
+        response = view(request)
+        self.assertEqual(response.status_code, 403)
+
+    def test_get_unvalidated_records_as_admin(self):
+        view = GetNonValidatedRecords.as_view()
+        request = self.factory.get(reverse('get-unvalidated-records'))
+        request.user = self.admin_user
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_unvalidated_records_as_validator(self):
+        view = GetNonValidatedRecords.as_view()
+        user = UserF.create()
+        content_type = ContentTypeF.create(
+                app_label='bims',
+                model='bims'
+        )
+        permission = PermissionF.create(
+                name='Can validate data',
+                content_type=content_type,
+                codename='can_validate_data'
+        )
+        user.user_permissions.add(permission)
+        request = self.factory.get(reverse('get-unvalidated-records'))
+        request.user = user
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
