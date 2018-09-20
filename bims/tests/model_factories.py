@@ -60,7 +60,6 @@ class IUCNStatusF(factory.django.DjangoModelFactory):
     sensitive = False
 
 
-@factory.django.mute_signals(signals.pre_save)
 class TaxonF(factory.django.DjangoModelFactory):
     """
     Taxon factory
@@ -96,13 +95,6 @@ class SurveyF(factory.django.DjangoModelFactory):
                 self.sites.add(site)
 
 
-class PermissionF(factory.DjangoModelFactory):
-    class Meta:
-        model = Permission
-
-    name = factory.Sequence(lambda n: 'permission %s' % n)
-
-
 class GroupF(factory.DjangoModelFactory):
     class Meta:
         model = Group
@@ -116,6 +108,14 @@ class ContentTypeF(factory.DjangoModelFactory):
 
     app_label = factory.Sequence(lambda n: 'app %s' % n)
     model = factory.Sequence(lambda n: 'model %s' % n)
+
+
+class PermissionF(factory.DjangoModelFactory):
+    class Meta:
+        model = Permission
+
+    name = factory.Sequence(lambda n: 'permission %s' % n)
+    content_type = factory.SubFactory(ContentTypeF)
 
 
 class UserF(factory.DjangoModelFactory):
