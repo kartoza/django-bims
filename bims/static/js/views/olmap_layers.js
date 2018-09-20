@@ -47,7 +47,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layerType = layerName;
             }
 
-            var savedLayerVisibility = Shared.StorageUtil.getItemDict(layerType, 'seleceted');
+            var savedLayerVisibility = Shared.StorageUtil.getItemDict(layerType, 'selected');
 
             if (savedLayerVisibility !== null) {
                 visibleInDefault = savedLayerVisibility;
@@ -416,6 +416,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 var keys = Object.keys(self.layers);
                 keys.reverse();
                 var orderedKeys = [];
+                var unsavedLayers = [];
                 var shouldReverseOrder = false;
 
                 $.each(keys, function (index, key) {
@@ -427,15 +428,25 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     var order = Shared.StorageUtil.getItemDict(itemName, 'order');
 
                     if (order !== null) {
-                        orderedKeys[order] = itemName;
+                        if (typeof orderedKeys[order] === 'undefined') {
+                            orderedKeys[order] = itemName;
+                        } else {
+                            if(orderedKeys[order] !== itemName) {
+                                unsavedLayers.push(itemName);
+                            }
+                        }
                         shouldReverseOrder = true;
                     } else {
-                        orderedKeys.push(itemName);
+                        unsavedLayers.push(itemName);
                     }
                 });
 
                 if (shouldReverseOrder) {
                     orderedKeys = orderedKeys.reverse();
+                }
+
+                if (unsavedLayers.length > 0) {
+                    orderedKeys.push(unsavedLayers);
                 }
 
                 $.each(orderedKeys, function (index, key) {
