@@ -5,6 +5,8 @@ from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.utils import timezone
 from django.db.models import signals
+from django.contrib.auth.models import Permission, Group
+from django.contrib.contenttypes.models import ContentType
 from bims.models import (
     LocationType,
     LocationSite,
@@ -92,6 +94,28 @@ class SurveyF(factory.django.DjangoModelFactory):
             # A list of groups were passed in, use them
             for site in extracted:
                 self.sites.add(site)
+
+
+class PermissionF(factory.DjangoModelFactory):
+    class Meta:
+        model = Permission
+
+    name = factory.Sequence(lambda n: 'permission %s' % n)
+
+
+class GroupF(factory.DjangoModelFactory):
+    class Meta:
+        model = Group
+
+    name = factory.Sequence(lambda n: 'group %s' % n)
+
+
+class ContentTypeF(factory.DjangoModelFactory):
+    class Meta:
+        model = ContentType
+
+    app_label = factory.Sequence(lambda n: 'app %s' % n)
+    model = factory.Sequence(lambda n: 'model %s' % n)
 
 
 class UserF(factory.DjangoModelFactory):

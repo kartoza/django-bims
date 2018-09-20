@@ -39,6 +39,7 @@ from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords
 )
+from bims.api_views.non_validated_record import GetNonValidatedRecords
 from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
@@ -92,6 +93,8 @@ api_urls = [
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^api/get-bio-records/(?P<taxon_id>[\w-]+)/$',
         GetBioRecords.as_view(), name='get-bio-records'),
+    url(r'^api/get-unvalidated-records/$',
+        GetNonValidatedRecords.as_view(), name='get-unvalidated-records'),
     url(r'^api/send-email-validation/$',
         SendNotificationValidation.as_view(), name='send-email-validation'),
     url(r'^api/filter-farm-id/$',
