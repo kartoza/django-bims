@@ -47,13 +47,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layerType = layerName;
             }
 
-            var savedLayerVisibility = Shared.StorageUtil.getItem(layerType);
+            var savedLayerVisibility = Shared.StorageUtil.getItemDict(layerType, 'seleceted');
 
             if (savedLayerVisibility !== null) {
-                if (savedLayerVisibility.hasOwnProperty('selected')) {
-                   savedLayerVisibility = savedLayerVisibility['selected'];
-                   visibleInDefault = savedLayerVisibility;
-                }
+                visibleInDefault = savedLayerVisibility;
             }
 
             this.layers[layerType] = {
@@ -201,12 +198,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;
-            var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
-            if (administrativeVisibility !== null) {
-                if (administrativeVisibility.hasOwnProperty('selected')) {
-                    administrativeVisibility = administrativeVisibility['selected'];
-                }
-            }
+            var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'selected');
             if (!self.isAdministrativeLayerSelected() || !administrativeVisibility) {
                 return false;
             }
@@ -456,6 +448,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         defaultVisibility = value['visibleInDefault'];
                     } else {
                         layerName = key;
+                    }
+
+                    if (typeof layerName === 'undefined') {
+                        return true;
                     }
 
                     var currentLayerTransparency = 100;
