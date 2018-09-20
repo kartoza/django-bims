@@ -11,6 +11,7 @@ from django.contrib.gis import admin
 from django.contrib import admin as django_admin
 from django.core.mail import send_mail
 
+from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
@@ -189,6 +190,11 @@ class BoundaryAdmin(admin.ModelAdmin):
 class ClusterAdmin(admin.ModelAdmin):
     list_display = ('boundary', 'module')
     list_filter = ('boundary', 'module')
+
+
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'codename')
+    list_filter = ('name', 'codename')
 
 
 class CarouselHeaderAdmin(OrderedModelAdmin):
@@ -377,5 +383,7 @@ admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, FlatPageCustomAdmin)
 
 admin.site.register(Visitor, VisitorAdmin)
+admin.site.register(Permission, PermissionAdmin)
+
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from django.contrib.postgres.fields import ArrayField
 from bims.models.iucn_status import IUCNStatus
 from bims.utils.iucn import get_iucn_status
+from bims.permissions.generate_permission import generate_permission
 
 
 class TaxonomyField(models.CharField):
@@ -125,6 +126,9 @@ class Taxon(models.Model):
 @receiver(models.signals.pre_save, sender=Taxon)
 def taxon_pre_save_handler(sender, instance, **kwargs):
     """Get iucn status before save."""
+    if instance.taxon_class:
+        generate_permission(instance.taxon_class)
+
     if instance.common_name and not instance.iucn_status:
         iucn_status = get_iucn_status(
             species_name=instance.common_name
