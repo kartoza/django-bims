@@ -6,6 +6,7 @@ from bims.tests.model_factories import (
     UserF,
     ContentTypeF,
     PermissionF,
+    GroupF,
 )
 from bims.tests.model_factories import (
     LocationSiteF,
@@ -110,8 +111,35 @@ class TestApiView(TestCase):
                 content_type=content_type,
                 codename='can_validate_data'
         )
-        user.user_permissions.add(permission)
+        group = GroupF.create()
+        group.permissions.add(permission)
+        user.groups.add(group)
+
         request = self.factory.get(reverse('get-unvalidated-records'))
         request.user = user
         response = view(request)
         self.assertEqual(response.status_code, 200)
+
+    def test_only_get_aves_collection(self):
+        from django.contrib.auth.models import Permission
+        view = GetNonValidatedRecords.as_view()
+        taxon = TaxonF.create(
+                taxon_class='Aves',
+        )
+        BiologicalCollectionRecordF.create(
+                pk=3,
+                site=self.location_site,
+                taxon_gbif_id=taxon,
+                validated=False
+        )
+        user = UserF.create()
+        permission = Permission.objects.filter(codename='can_validate_aves')[0]
+        group = GroupF.create()
+        group.permissions.add(permission)
+        user.groups.add(group)
+
+        request = self.factory.get(reverse('get-unvalidated-records'))
+        request.user = user
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.data) > 0)

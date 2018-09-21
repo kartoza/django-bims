@@ -7,7 +7,7 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
 )
-from bims.permissions.api_permission import IsValidator
+from bims.permissions.api_permission import IsValidator, AllowedTaxon
 
 
 class GetNonValidatedRecords(APIView):
@@ -17,8 +17,11 @@ class GetNonValidatedRecords(APIView):
 
     def get(self, request):
         try:
+            allowed_taxon = AllowedTaxon()
+            taxon_list = allowed_taxon.get(request.user)
             records = BiologicalCollectionRecord.objects.filter(
-                    validated=False
+                    validated=False,
+                    taxon_gbif_id__in=taxon_list
             )
 
             paginator = Paginator(records, self.page_limit)
