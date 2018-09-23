@@ -445,7 +445,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     orderedKeys = orderedKeys.reverse();
                 }
 
-                if (unsavedLayers.length > 0) {
+                if (orderedKeys.length === 0) {
+                    orderedKeys = unsavedLayers;
+                } else if (unsavedLayers.length > 0) {
                     orderedKeys.push(unsavedLayers);
                 }
 
