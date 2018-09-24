@@ -21,6 +21,7 @@ class GetNonValidatedRecords(APIView):
             taxon_list = allowed_taxon.get(request.user)
             records = BiologicalCollectionRecord.objects.filter(
                     validated=False,
+                    ready_for_validation=True,
                     taxon_gbif_id__in=taxon_list
             )
 

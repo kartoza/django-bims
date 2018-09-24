@@ -31,6 +31,19 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
         if pk is not None:
             try:
                 bio_record = BiologicalCollectionRecord.objects.get(pk=pk)
+
+                taxon_classname = bio_record.taxon_gbif_id.taxon_class
+                class_permission = Permission.objects.filter(
+                        content_type__app_label='bims',
+                        codename='can_validate_%s' % taxon_classname.lower()
+                )
+                class_validators = Profile.objects.filter(
+                        Q(user_permissions=class_permission) |
+                        Q(groups__permissions=class_permission)
+                )
+                for validator in class_validators:
+                    validator_emails.append(validator.email)
+
                 bio_record.ready_for_validation = True
                 bio_record.save()
                 send_mail(
