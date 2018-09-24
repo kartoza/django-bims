@@ -3,18 +3,25 @@ from django.contrib.auth.models import Permission
 from bims.models.taxon import Taxon
 
 
+def user_has_permission_to_validate(user):
+    """
+    Check if user has permission to validate data
+    """
+    if user.is_active and user.is_superuser:
+        return True
+    if user.is_anonymous:
+        return False
+    return Permission.objects.filter(
+            group__user=user,
+            codename__contains='can_validate').exists()
+
+
 class IsValidator(BasePermission):
     """
     Allows access only to validators.
     """
     def has_permission(self, request, view):
-        if request.user.is_active and request.user.is_superuser:
-            return True
-        if request.user.is_anonymous:
-            return False
-        return Permission.objects.filter(
-                group__user=request.user,
-                codename__contains='can_validate').exists()
+        return user_has_permission_to_validate(request.user)
 
 
 class AllowedTaxon(object):

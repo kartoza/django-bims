@@ -3,6 +3,10 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.permissions.api_permission import (
+    user_has_permission_to_validate,
+    AllowedTaxon,
+)
 
 
 class NonValidatedObjectsView(
@@ -16,7 +20,7 @@ class NonValidatedObjectsView(
     paginate_by = 10
 
     def test_func(self):
-        return self.request.user.has_perm('bims.can_validate_data')
+        return user_has_permission_to_validate(self.request.user)
 
     def handle_no_permission(self):
         messages.error(self.request, 'You don\'t have permission '
@@ -53,8 +57,10 @@ class NonValidatedObjectsView(
         filter_date_from = self.request.GET.get('date_from', None)
         filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
+            allowed_taxon = AllowedTaxon().get(self.request.user)
             queryset = \
                 BiologicalCollectionRecord.objects.filter(
+                    taxon_gbif_id__in=allowed_taxon,
                     validated=False).order_by('original_species_name')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
