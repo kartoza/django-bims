@@ -41,6 +41,7 @@ from bims.models import (
     ShapefileUploadSession,
     Shapefile,
     NonBiodiversityLayer,
+    UserBoundary,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -244,6 +245,13 @@ class ShapefileAdmin(admin.ModelAdmin):
     )
 
 
+class UserBoundaryAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'user'
+    )
+
+
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('name', 'category')
     list_filter = ('category',)
@@ -384,6 +392,8 @@ admin.site.register(FlatPage, FlatPageCustomAdmin)
 
 admin.site.register(Visitor, VisitorAdmin)
 admin.site.register(Permission, PermissionAdmin)
+
+admin.site.register(UserBoundary, UserBoundaryAdmin)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
