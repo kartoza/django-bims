@@ -1,6 +1,6 @@
 define(
-    ['backbone', 'underscore', 'shared', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader'],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
+    ['backbone', 'underscore', 'shared', 'jquery', 'ol', 'views/search', 'views/locate', 'views/upload_data', 'views/data_downloader', 'views/spatial_filter'],
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
@@ -14,11 +14,13 @@ define(
                 'click .locate-control': 'locateClicked',
                 'click .upload-data': 'uploadDataClicked',
                 'click .map-search-close': 'closeSearchPanel',
+                'click .spatial-filter-container-close': 'closeSpatialFilterPanel',
                 'click .layers-selector-container-close': 'closeFilterPanel',
                 'click .locate-options-container-close': 'closeLocatePanel',
                 'click .sub-filter': 'closeSubFilter',
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',
+                'click .spatial-filter': 'spatialFilterClicked'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -27,12 +29,24 @@ define(
                     parent: this
                 });
             },
+            spatialFilterClicked: function (e) {
+                if (!this.spatialFilter.isOpen()) {
+                    this.resetAllControlState();
+                    this.openSpatialFilterPanel();
+                    this.closeSearchPanel();
+                    this.closeFilterPanel();
+                    this.closeLocatePanel();
+                } else {
+                    this.closeSpatialFilterPanel();
+                }
+            },
             searchClicked: function (e) {
                 if (!this.searchView.isOpen()) {
                     this.resetAllControlState();
                     this.openSearchPanel();
                     this.closeFilterPanel();
                     this.closeLocatePanel();
+                    this.closeSpatialFilterPanel();
                 } else {
                     this.closeSearchPanel();
                 }
@@ -43,6 +57,7 @@ define(
                     this.openFilterPanel();
                     this.closeSearchPanel();
                     this.closeLocatePanel();
+                    this.closeSpatialFilterPanel();
                 } else {
                     this.closeFilterPanel();
                 }
@@ -53,6 +68,7 @@ define(
                     this.openLocatePanel();
                     this.closeSearchPanel();
                     this.closeFilterPanel();
+                    this.closeSpatialFilterPanel();
                 } else {
                     this.closeLocatePanel();
                 }
@@ -99,6 +115,12 @@ define(
                 });
                 this.$el.append(this.uploadDataView.render().$el);
 
+                this.spatialFilter = new SpatialFilter({
+                    parent: this,
+                });
+
+                this.$el.append(this.spatialFilter.render().$el);
+
                 return this;
             },
             openSearchPanel: function () {
@@ -108,6 +130,14 @@ define(
             closeSearchPanel: function () {
                 this.$el.find('.search-control').removeClass('control-panel-selected');
                 this.searchView.hide();
+            },
+            openSpatialFilterPanel: function () {
+                this.$el.find('.spatial-filter').addClass('control-panel-selected');
+                this.spatialFilter.show();
+            },
+            closeSpatialFilterPanel: function () {
+                this.$el.find('.spatial-filter').removeClass('control-panel-selected');
+                this.spatialFilter.hide();
             },
             closeSubFilter: function (e) {
                 var target = $(e.target);
