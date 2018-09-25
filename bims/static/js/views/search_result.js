@@ -28,6 +28,7 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquer
                         geometry: JSON.parse(this.model.get('geometry')),
                         properties: {}
                     };
+                    console.log(feature);
                     var features = new ol.format.GeoJSON().readFeatures(feature, {
                         featureProjection: 'EPSG:3857'
                     });

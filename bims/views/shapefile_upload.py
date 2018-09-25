@@ -112,7 +112,10 @@ def process_user_boundary_shapefiles(request):
             dbf_file=needed_files['dbf'].shapefile,
     )
 
-    response_message = ''
+    geometry = None
+    geometries = []
+    name = ''
+
     for geojson in outputs:
         try:
             properties = geojson['properties']
@@ -124,27 +127,34 @@ def process_user_boundary_shapefiles(request):
             geometry = GEOSGeometry(geojson_json)
 
             if isinstance(geometry, Polygon):
-                geometry = MultiPolygon(geometry)
+                geometries.append(geometry)
             elif not isinstance(geometry, MultiPolygon):
                 response_message = 'Only polygon and multipolygon allowed'
-                break
+                upload_session.error = response_message
+                upload_session.save()
+                return JsonResponse({'message': response_message})
 
-            user_boundary, created = UserBoundary.objects.get_or_create(
-                    user=request.user,
-                    name=name,
-                    geometry=geometry
-            )
-            upload_session.processed = True
-            upload_session.save()
-
-            if created:
-                response_message = 'User boundary added'
-            else:
-                response_message = 'User boundary already exists'
         except (ValueError, KeyError, TypeError) as e:
             upload_session.error = str(e)
             upload_session.save()
             response_message = 'Failed : %s' % str(e)
+            return JsonResponse({'message':response_message})
+
+    if len(geometries) > 0:
+        geometry = MultiPolygon(geometries)
+
+    user_boundary, created = UserBoundary.objects.get_or_create(
+            user=request.user,
+            name=name,
+            geometry=geometry
+    )
+    upload_session.processed = True
+    upload_session.save()
+
+    if created:
+        response_message = 'User boundary added'
+    else:
+        response_message = 'User boundary already exists'
 
     data = {
         'message': response_message

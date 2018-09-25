@@ -23,6 +23,9 @@ define([
             self.fileupload = self.$el.find('#fileupload');
             self.uploadButton = self.$el.find('.btn-boundary-upload');
             self.progress = self.$el.find('.process-shapefile');
+            self.boundaryListContainer = self.$el.find('.boundary-list');
+
+            self.getUserBoundary();
 
             self.progress.hide();
 
@@ -61,6 +64,43 @@ define([
             });
 
             return this;
+        },
+        getUserBoundary: function () {
+            var self = this;
+            if(!is_logged_in) {
+                return false;
+            }
+            $.ajax({
+                url: '/api/list-user-boundary/',
+                dataType: 'json',
+                success: function (data) {
+                    Shared.Dispatcher.UserBoundaries = data;
+                    $.each(data['features'], function (index, feature) {
+                        var name = feature['properties']['name'];
+                        var id = feature['id'];
+                        var div = $('<div data-id="'+id+'">'+feature['properties']['name']+'</div>');
+                        self.boundaryListContainer.append(div);
+                        div.on('click', self.boundaryListClicked);
+                    })
+                }
+            })
+        },
+        boundaryListClicked: function (e) {
+            var self = this;
+            var id = $(e.target).data('id');
+            var boundary = {};
+            $.each(Shared.Dispatcher.UserBoundaries['features'], function (index, feature) {
+                if (feature['id'] === id) {
+                    boundary = feature;
+                    return true;
+                }
+            });
+            var feature = new ol.format.GeoJSON().readFeatures(
+                boundary, {
+                    featureProjection: 'EPSG:3857'
+                }
+            );
+            Shared.Dispatcher.trigger('map:switchHighlightPinned', feature, true);
         },
         isOpen: function () {
             return !this.$el.find('.map-control-panel-box').is(':hidden');

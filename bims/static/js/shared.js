@@ -8,6 +8,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         Dispatcher: _.extend({}, Backbone.Events),
         Router: {},
         ClusterSize: 30,
-        StorageUtil: new StorageUtil()
+        StorageUtil: new StorageUtil(),
+        UserBoundaries: {}
     };
 });
