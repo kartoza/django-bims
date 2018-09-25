@@ -16,20 +16,48 @@ define([
             'click .btn-boundary-upload': 'btnUploadClicked'
         },
         render: function () {
-            this.$el.html(this.template());
-            this.$el.find('.map-control-panel-box').hide();
-            this.fileupload = this.$el.find('#fileupload');
+            var self = this;
 
-            this.fileupload.fileupload({
+            self.$el.html(this.template());
+            self.$el.find('.map-control-panel-box').hide();
+            self.fileupload = self.$el.find('#fileupload');
+            self.uploadButton = self.$el.find('.btn-boundary-upload');
+            self.progress = self.$el.find('.process-shapefile');
+
+            self.progress.hide();
+
+            self.fileupload.fileupload({
                 acceptFileTypes: /(\.|\/)(shp|shx|dbf)$/i,
                 dataType: 'json',
                 done: function (e, data) {
                     if (data.result.is_valid) {
-                        $("#file-list tbody").prepend(
-                            "<tr><td><a href='" + data.result.url + "'>" + data.result.name + "</a></td></tr>"
+                        self.$el.find("#file-list tbody").prepend(
+                            "<tr><td><a href='" + data.result.url + "'>" +
+                            data.result.name + "</a></td></tr>"
                         )
                     }
                 }
+            });
+
+            self.fileupload.bind('fileuploadprogress', function (e, data) {
+                self.uploadButton.hide();
+                self.progress.html('Uploading...');
+                self.progress.show();
+            });
+
+            self.fileupload.bind('fileuploadstop', function (e) {
+                self.progress.html('Processing...');
+                self.progress.show();
+                $.ajax({
+                    url: '/process_user_boundary_shapefiles/',
+                    data: {
+                        token: csrfmiddlewaretoken
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        self.progress.html(data.message);
+                    }
+                })
             });
 
             return this;

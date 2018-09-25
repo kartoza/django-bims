@@ -44,7 +44,11 @@ from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
-from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
+from bims.views.shapefile_upload import (
+    ShapefileUploadView,
+    process_shapefiles,
+    process_user_boundary_shapefiles
+)
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
@@ -120,6 +124,9 @@ urlpatterns = [
         name='shapefile-upload'),
     url(r'^process_shapefiles/$', process_shapefiles,
         name='process_shapefiles'),
+    url(r'^process_user_boundary_shapefiles/$',
+        process_user_boundary_shapefiles,
+        name='process_user_boundary_shapefiles'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
