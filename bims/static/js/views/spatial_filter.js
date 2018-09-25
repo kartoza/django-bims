@@ -100,7 +100,10 @@ define([
                     featureProjection: 'EPSG:3857'
                 }
             );
+
             Shared.Dispatcher.trigger('map:switchHighlightPinned', feature, true);
+            Shared.Dispatcher.trigger('map:zoomToHighlightPinnedFeatures');
+            Shared.Dispatcher.trigger('search:addUserBoundaryFilter', id);
         },
         isOpen: function () {
             return !this.$el.find('.map-control-panel-box').is(':hidden');

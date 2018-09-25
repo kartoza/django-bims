@@ -4,13 +4,13 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared'], fu
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>"),
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>"),
         clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
         parameters: {
             taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', yearFrom: '', yearTo: '', months: '', boundary: '',
+            collector: '', category: '', yearFrom: '', yearTo: '', months: '', boundary: '', userBoundary: '',
             clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {

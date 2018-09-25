@@ -6,6 +6,7 @@ define([
         template: _.template($('#map-search-container').html()),
         searchBox: null,
         searchBoxOpen: false,
+        userBoundaries: [],
         searchResults: {},
         events: {
             'keyup #search': 'checkSearch',
@@ -72,12 +73,10 @@ define([
             $('input[name=boundary-value]:checked').each(function () {
                 boundaryValue.push($(this).val())
             });
-            if (boundaryValue.length === 0) {
+            if (boundaryValue.length === 0 && self.userBoundaries.length === 0) {
                 Shared.Dispatcher.trigger('catchmentArea:hide');
-                boundaryValue = '';
                 Shared.Dispatcher.trigger('map:boundaryEnabled', false);
             } else {
-                boundaryValue = JSON.stringify(boundaryValue);
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
                 Shared.Dispatcher.trigger('map:boundaryEnabled', true);
             }
@@ -85,7 +84,8 @@ define([
                 'search': searchValue,
                 'collector': collectorValue,
                 'category': categoryValue,
-                'boundary': boundaryValue,
+                'boundary': boundaryValue.length === 0 ? '' : JSON.stringify(boundaryValue),
+                'userBoundary': self.userBoundaries.length === 0 ? '' : JSON.stringify(self.userBoundaries),
                 'yearFrom': '',
                 'yearTo': '',
                 'months': ''
@@ -158,6 +158,7 @@ define([
             this.searchResultCollection = new SearchResultCollection();
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
+            Shared.Dispatcher.on('search:addUserBoundaryFilter', this.addUserBoundaryFilter, this);
         },
         render: function () {
             this.$el.html(this.template());
@@ -165,6 +166,9 @@ define([
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
             return this;
+        },
+        addUserBoundaryFilter: function (userBoundaryId) {
+            this.userBoundaries.push(userBoundaryId);
         },
         initDateFilter: function () {
             // render slider
