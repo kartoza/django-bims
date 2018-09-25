@@ -49,7 +49,7 @@
                 <div class="close-button search-reset pull-left">
                     Reset
                 </div>
-                    <span class="title">
+                <span class="title">
                         SEARCH
                     </span>
                 <div class="close-button map-search-close pull-right">
@@ -178,10 +178,50 @@
             </div>
         </div>
         <div class="row content">
-            <ul id="layers-selector" style="width:100%">
-            </ul>
+            <button id="spatial-filter-panel-upload">upload</button>
         </div>
     </div>
+
+    <div class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload a boundary</h5>
+                    <button type="button" class="close close-upload-boundary-modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label for="file"><b>Upload shapefile here</b></label>
+                    <button type="button" class="btn btn-primary btn-boundary-upload">
+                        <span class="glyphicon glyphicon-cloud-upload"></span> Upload shapefiles
+                    </button>
+                    <input id="fileupload" type="file" name="shapefile" multiple
+                           style="display: none;"
+                           data-url="{% url 'shapefile-upload' %}"
+                           data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+
+                    <table id="file-list" class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>Files</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for shapefile in shapefiles %}
+                            <tr>
+                                <td><a href="{{ shapefile.fileurl }}">{{ shapefile.filename }}</a></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
 </script>
 
 <script type="text/html" id="layer-selector-row">
@@ -569,8 +609,8 @@
     <div class="third-party-fetching-info">
         Fetching...
     </div>
-   <div class="content row third-party-wrapper">
-   </div>
+    <div class="content row third-party-wrapper">
+    </div>
 </script>
 
 <script type="text/template" id="records-list-detail">
