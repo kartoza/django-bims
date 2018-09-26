@@ -172,7 +172,6 @@ define([
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
-            console.log(feature);
             if (!properties.hasOwnProperty('record_type')) {
                 return [false, ''];
             }
