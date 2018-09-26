@@ -28,6 +28,7 @@ define(
                 this.dataDownloaderControl = new DataDownloader({
                     parent: this
                 });
+                Shared.Dispatcher.on('mapControlPanel:clickSpatialFilter', this.spatialFilterClicked, this);
             },
             spatialFilterClicked: function (e) {
                 if (!this.spatialFilter.isOpen()) {

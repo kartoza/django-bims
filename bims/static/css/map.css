@@ -1584,3 +1584,15 @@ div:hover::-webkit-scrollbar {
     border: 1px solid rgba(0,0,0,.15);
     border-radius: .25rem;
 }
+
+.btn-primary:disabled {
+    background-color: rgb(198, 193, 197);
+}
+
+.btn-primary:hover:disabled {
+    background-color: rgb(198, 193, 197) !important;
+}
+
+.close-upload-boundary-modal span {
+    font-size: 25pt;
+}

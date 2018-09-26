@@ -61,6 +61,7 @@ def process_user_boundary_shapefiles(request):
     from bims.models import UserBoundary
     from django.contrib.gis.geos import Polygon, MultiPolygon
     token = request.GET.get('token', None)
+    boundary_name = request.GET.get('name', None)
 
     if not token:
         return JsonResponse({
@@ -114,15 +115,19 @@ def process_user_boundary_shapefiles(request):
 
     geometry = None
     geometries = []
-    name = ''
 
     for geojson in outputs:
         try:
             properties = geojson['properties']
-            if 'name' in properties:
-                name = properties['name']
-            else:
-                name, extension = os.path.splitext(all_shapefiles[0].filename)
+
+            if not boundary_name:
+                if 'name' in properties:
+                    boundary_name = properties['name']
+                else:
+                    boundary_name, extension = os.path.splitext(
+                            all_shapefiles[0].filename
+                    )
+
             geojson_json = json.dumps(geojson['geometry'])
             geometry = GEOSGeometry(geojson_json)
 
@@ -145,7 +150,7 @@ def process_user_boundary_shapefiles(request):
 
     user_boundary, created = UserBoundary.objects.get_or_create(
             user=request.user,
-            name=name,
+            name=boundary_name,
             geometry=geometry
     )
     upload_session.processed = True

@@ -24,6 +24,7 @@ define([
             self.uploadButton = self.$el.find('.btn-boundary-upload');
             self.progress = self.$el.find('.process-shapefile');
             self.boundaryListContainer = self.$el.find('.boundary-list');
+            self.boundaryInputText = self.$el.find('input#boundary-input-name.form-control');
 
             self.getUserBoundary();
 
@@ -46,21 +47,42 @@ define([
                 self.uploadButton.hide();
                 self.progress.html('Uploading...');
                 self.progress.show();
+                self.$el.find('#file-list tbody').html('');
             });
 
             self.fileupload.bind('fileuploadstop', function (e) {
+                self.uploadButton.show();
                 self.progress.html('Processing...');
                 self.progress.show();
+                var userBoundaryName = self.boundaryInputText.val();
                 $.ajax({
                     url: '/process_user_boundary_shapefiles/',
                     data: {
-                        token: csrfmiddlewaretoken
+                        token: csrfmiddlewaretoken,
+                        name: userBoundaryName
                     },
                     dataType: 'json',
                     success: function (data) {
+                        self.boundaryInputText.val('');
+                        self.uploadButton.prop('disabled', true);
                         self.progress.html(data.message);
+                        if (data.message === 'User boundary added') {
+                            self.getUserBoundary();
+                        }
                     }
                 })
+            });
+
+            self.boundaryInputText.on('input', function (e) {
+                var input = $(this);
+                var val = input.val();
+
+                if(val.length >= 3) {
+                    self.uploadButton.prop('disabled', false);
+                } else {
+                    self.uploadButton.prop('disabled', true);
+                }
+
             });
 
             return this;
@@ -75,6 +97,7 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     Shared.Dispatcher.UserBoundaries = data;
+                    self.boundaryListContainer.html('');
                     $.each(data['features'], function (index, feature) {
                         var name = feature['properties']['name'];
                         var id = feature['id'];
@@ -119,6 +142,9 @@ define([
         },
         panelUploadClicked: function (e) {
             // Show upload modal
+            Shared.Dispatcher.trigger('mapControlPanel:clickSpatialFilter');
+            this.boundaryInputText.val('');
+            this.uploadButton.prop('disabled', true);
             this.$el.find('.modal').show();
         },
         closeModal: function (e) {
