@@ -9,6 +9,8 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         Router: {},
         ClusterSize: 30,
         StorageUtil: new StorageUtil(),
-        UserBoundaries: {}
+        UserBoundaries: {},
+        UserBoundarySelected: [],
+        AdminAreaSelected: []
     };
 });

@@ -6,7 +6,6 @@ define([
         template: _.template($('#map-search-container').html()),
         searchBox: null,
         searchBoxOpen: false,
-        userBoundaries: [],
         searchResults: {},
         events: {
             'keyup #search': 'checkSearch',
@@ -74,7 +73,9 @@ define([
                 boundaryValue.push($(this).val())
             });
 
-            if (self.userBoundaries.length === 0 && boundaryValue.length === 0) {
+            var userBoundarySelected = Shared.UserBoundarySelected;
+
+            if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
                 Shared.Dispatcher.trigger('map:boundaryEnabled', false);
                 Shared.Dispatcher.trigger('map:closeHighlightPinned');
             } else {
@@ -90,7 +91,7 @@ define([
                 'collector': collectorValue,
                 'category': categoryValue,
                 'boundary': boundaryValue.length === 0 ? '' : JSON.stringify(boundaryValue),
-                'userBoundary': self.userBoundaries.length === 0 ? '' : JSON.stringify(self.userBoundaries),
+                'userBoundary': userBoundarySelected.length === 0 ? '' : JSON.stringify(userBoundarySelected),
                 'yearFrom': '',
                 'yearTo': '',
                 'months': ''
@@ -145,10 +146,9 @@ define([
         clearSearch: function () {
             $('#search').val('');
             Shared.Router.clearSearch();
+            Shared.Dispatcher.trigger('spatialFilter:clearSelected');
             $('.clear-filter').click();
             $('.map-search-result').hide();
-            this.userBoundaries = [];
-            Shared.Dispatcher.trigger('spatialFilter:clearSelected');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
@@ -168,7 +168,6 @@ define([
             Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
-            Shared.Dispatcher.on('search:updateUserBoundaryFilter', this.updateUserBoundaryFilter, this);
         },
         render: function () {
             this.$el.html(this.template());
@@ -176,9 +175,6 @@ define([
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
             return this;
-        },
-        updateUserBoundaryFilter: function (userBoundaries) {
-            this.userBoundaries = userBoundaries;
         },
         initDateFilter: function () {
             // render slider
