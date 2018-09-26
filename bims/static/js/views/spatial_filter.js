@@ -9,11 +9,13 @@ define([
     'jquery.fileupload-validate'], function (Backbone, _, $, Shared, ol) {
     return Backbone.View.extend({
         template: _.template($('#spatial-filter-panel').html()),
+        boundarySelected: [],
         events: {
             'click .close-button': 'close',
             'click #spatial-filter-panel-upload': 'panelUploadClicked',
             'click .close-upload-boundary-modal': 'closeModal',
-            'click .btn-boundary-upload': 'btnUploadClicked'
+            'click .btn-boundary-upload': 'btnUploadClicked',
+            'click .boundary-list-item': 'boundaryListClicked'
         },
         render: function () {
             var self = this;
@@ -97,13 +99,14 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     Shared.Dispatcher.UserBoundaries = data;
-                    self.boundaryListContainer.html('');
+                    //self.boundaryListContainer.html('');
                     $.each(data['features'], function (index, feature) {
                         var name = feature['properties']['name'];
                         var id = feature['id'];
-                        var div = $('<div data-id="'+id+'">'+feature['properties']['name']+'</div>');
+                        var div = $('<div class="boundary-list-item" data-id="'+id+'">'+
+                            feature['properties']['name']+'</div>');
                         self.boundaryListContainer.append(div);
-                        div.on('click', self.boundaryListClicked);
+                        // div.on('click', self.boundaryListClicked);
                     })
                 }
             })
@@ -112,21 +115,52 @@ define([
             var self = this;
             var id = $(e.target).data('id');
             var boundary = {};
+
+            var selected = $(e.target).hasClass('spatial-selected');
+            var addFeature = false;
+
+            if (selected) {
+                $(e.target).removeClass('spatial-selected');
+                var index = self.boundarySelected.indexOf(id);
+                if (index !== -1) self.boundarySelected.splice(index, 1);
+            } else {
+                $(e.target).addClass('spatial-selected');
+                addFeature = true;
+                self.boundarySelected.push(id);
+            }
+
             $.each(Shared.Dispatcher.UserBoundaries['features'], function (index, feature) {
                 if (feature['id'] === id) {
                     boundary = feature;
                     return true;
                 }
             });
+
             var feature = new ol.format.GeoJSON().readFeatures(
                 boundary, {
                     featureProjection: 'EPSG:3857'
                 }
             );
 
-            Shared.Dispatcher.trigger('map:switchHighlightPinned', feature, true);
-            Shared.Dispatcher.trigger('map:zoomToHighlightPinnedFeatures');
-            Shared.Dispatcher.trigger('search:addUserBoundaryFilter', id);
+            for (var i=0; i<feature.length;i++) {
+                feature[i].setProperties({'id': id});
+            }
+
+            if (addFeature) {
+                if (self.boundarySelected.length === 1) {
+                    Shared.Dispatcher.trigger('map:switchHighlightPinned', feature, true);
+                } else {
+                    Shared.Dispatcher.trigger('map:addHighlightPinnedFeature', feature[0]);
+                }
+            } else {
+                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', id);
+            }
+
+            Shared.Dispatcher.trigger('search:updateUserBoundaryFilter', self.boundarySelected);
+            if (self.boundarySelected.length > 0) {
+                Shared.Dispatcher.trigger('map:zoomToHighlightPinnedFeatures');
+            }
+
         },
         isOpen: function () {
             return !this.$el.find('.map-control-panel-box').is(':hidden');

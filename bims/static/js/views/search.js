@@ -158,7 +158,7 @@ define([
             this.searchResultCollection = new SearchResultCollection();
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
-            Shared.Dispatcher.on('search:addUserBoundaryFilter', this.addUserBoundaryFilter, this);
+            Shared.Dispatcher.on('search:updateUserBoundaryFilter', this.updateUserBoundaryFilter, this);
         },
         render: function () {
             this.$el.html(this.template());
@@ -167,8 +167,8 @@ define([
             this.$el.append(this.searchPanel.render().$el);
             return this;
         },
-        addUserBoundaryFilter: function (userBoundaryId) {
-            this.userBoundaries.push(userBoundaryId);
+        updateUserBoundaryFilter: function (userBoundaries) {
+            this.userBoundaries = userBoundaries;
         },
         initDateFilter: function () {
             // render slider

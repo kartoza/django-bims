@@ -65,6 +65,7 @@ define([
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
             Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
+            Shared.Dispatcher.on('map:removeHighlightPinnedFeature', this.removeHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
             Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
@@ -487,6 +488,15 @@ define([
         },
         addHighlightPinnedFeature: function (feature) {
             this.layers.highlightPinnedVectorSource.addFeature(feature);
+        },
+        removeHighlightPinnedFeature: function (id) {
+            var self = this;
+            self.layers.highlightPinnedVectorSource.getFeatures().forEach(function (feature) {
+                var feature_id = feature.getProperties()['id'];
+                if (feature_id === id) {
+                    self.layers.highlightPinnedVectorSource.removeFeature(feature);
+                }
+            });
         },
         closeHighlightPinned: function () {
             this.hidePopup();
