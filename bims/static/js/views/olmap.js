@@ -131,23 +131,26 @@ define([
             var poiFound = false;
             var featuresData = '';
             if (features) {
-                var geometry = features[0].getGeometry();
-                var geometryType = geometry.getType();
+                $.each(features, function (index, feature) {
+                    var geometry = feature.getGeometry();
+                    var geometryType = geometry.getType();
 
-                if (geometryType === 'Point') {
-                    featuresClickedResponseData = self.featureClicked(features[0], self.uploadDataState);
-                    poiFound = featuresClickedResponseData[0];
-                    featuresData = featuresClickedResponseData[1];
+                    if (geometryType === 'Point') {
+                        featuresClickedResponseData = self.featureClicked(feature, self.uploadDataState);
+                        poiFound = featuresClickedResponseData[0];
+                        featuresData = featuresClickedResponseData[1];
 
-                    var coordinates = geometry.getCoordinates();
-                    self.zoomToCoordinates(coordinates);
-                    // increase zoom level if it is clusters
-                    if (features[0].getProperties()['count'] &&
-                        features[0].getProperties()['count'] > 1) {
-                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
-                        poiFound = true;
+                        var coordinates = geometry.getCoordinates();
+                        self.zoomToCoordinates(coordinates);
+                        // increase zoom level if it is clusters
+                        if (feature.getProperties()['count'] &&
+                            feature.getProperties()['count'] > 1) {
+                            self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                            poiFound = true;
+                        }
                     }
-                }
+                });
+
             }
 
             // Get lat and long map
@@ -169,6 +172,7 @@ define([
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
+            console.log(feature);
             if (!properties.hasOwnProperty('record_type')) {
                 return [false, ''];
             }
