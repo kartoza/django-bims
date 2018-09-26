@@ -26,6 +26,7 @@ from bims.utils.cluster_point import (
     update_min_bbox,
     geo_serializer
 )
+from bims.models.user_boundary import UserBoundary
 
 
 class GetCollectionAbstract(APIView):
@@ -126,6 +127,19 @@ class GetCollectionAbstract(APIView):
             for query in qs:
                 qs_collector.add(SQ(boundary=query), SQ.OR)
             results = results.filter(qs_collector)
+
+        user_boundary = filters.get('userBoundary')
+        if user_boundary:
+            qs = json.loads(user_boundary)
+            user_boundaries = UserBoundary.objects.filter(
+                    pk__in=qs
+            )
+            for user_boundary in user_boundaries:
+                for geom in user_boundary.geometry:
+                    results = results.polygon(
+                            'location_center',
+                            geom
+                    )
 
         # query by category
         query_category = filters.get('category')

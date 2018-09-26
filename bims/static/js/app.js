@@ -9,7 +9,12 @@ require.config({
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
-        chartJs: 'libs/chart/Chart-2.7.2'
+        chartJs: 'libs/chart/Chart-2.7.2',
+        'jquery-ui/ui/widget': 'libs/jquery-fileupload/vendor/jquery.ui.widget',
+        'jquery.iframe-transport': 'libs/jquery-fileupload/jquery.iframe-transport',
+        'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
+        'jquery.fileupload-process': 'libs/jquery-fileupload/jquery.fileupload-process',
+        'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate'
     },
     shim: {
         ol: {

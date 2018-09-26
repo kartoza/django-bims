@@ -44,7 +44,11 @@ from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
-from bims.views.shapefile_upload import ShapefileUploadView, process_shapefiles
+from bims.views.shapefile_upload import (
+    ShapefileUploadView,
+    process_shapefiles,
+    process_user_boundary_shapefiles
+)
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
@@ -53,6 +57,7 @@ from bims.views.collection_upload import CollectionUploadView
 from bims.api_views.send_notification_to_validator import \
     SendNotificationValidation
 from bims.views.locate import filter_farm_ids_view, get_farm_view
+from bims.api_views.user_boundary import UserBoundaryList
 
 api_urls = [
     url(r'^api/location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -80,6 +85,8 @@ api_urls = [
         BoundaryGeojson.as_view(), name='boundary-geojson'),
     url(r'^api/list-boundary/$',
         BoundaryList.as_view(), name='list-boundary'),
+    url(r'^api/list-user-boundary/$',
+        UserBoundaryList.as_view(), name='list-user-boundary'),
     url(r'^api/list-collector/$',
         CollectorList.as_view(), name='list-collector'),
     url(r'^api/list-category/$',
@@ -120,6 +127,9 @@ urlpatterns = [
         name='shapefile-upload'),
     url(r'^process_shapefiles/$', process_shapefiles,
         name='process_shapefiles'),
+    url(r'^process_user_boundary_shapefiles/$',
+        process_user_boundary_shapefiles,
+        name='process_user_boundary_shapefiles'),
     url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
     url(r'^api/docs/', include_docs_urls(title='BIMS API')),
     url(r'^activate-user/(?P<username>[\w-]+)/$',

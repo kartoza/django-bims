@@ -72,20 +72,26 @@ define([
             $('input[name=boundary-value]:checked').each(function () {
                 boundaryValue.push($(this).val())
             });
-            if (boundaryValue.length === 0) {
-                Shared.Dispatcher.trigger('catchmentArea:hide');
-                boundaryValue = '';
+
+            var userBoundarySelected = Shared.UserBoundarySelected;
+
+            if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
                 Shared.Dispatcher.trigger('map:boundaryEnabled', false);
+                Shared.Dispatcher.trigger('map:closeHighlightPinned');
             } else {
-                boundaryValue = JSON.stringify(boundaryValue);
-                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
                 Shared.Dispatcher.trigger('map:boundaryEnabled', true);
             }
+
+            if (boundaryValue.length > 0)  {
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
+            }
+
             var parameters = {
                 'search': searchValue,
                 'collector': collectorValue,
                 'category': categoryValue,
-                'boundary': boundaryValue,
+                'boundary': boundaryValue.length === 0 ? '' : JSON.stringify(boundaryValue),
+                'userBoundary': userBoundarySelected.length === 0 ? '' : JSON.stringify(userBoundarySelected),
                 'yearFrom': '',
                 'yearTo': '',
                 'months': ''
@@ -111,6 +117,7 @@ define([
                 && !parameters['category']
                 && !parameters['yearFrom']
                 && !parameters['yearTo']
+                && !parameters['userBoundary']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false
@@ -120,7 +127,8 @@ define([
             );
             this.searchResultCollection.fetch({
                 success: function () {
-                    self.searchResultCollection.renderCollection()
+                    self.searchResultCollection.renderCollection();
+                    Shared.SearchMode = true;
                 }
             });
         },
@@ -137,8 +145,10 @@ define([
             }
         },
         clearSearch: function () {
+            Shared.SearchMode = false;
             $('#search').val('');
             Shared.Router.clearSearch();
+            Shared.Dispatcher.trigger('spatialFilter:clearSelected');
             $('.clear-filter').click();
             $('.map-search-result').hide();
             Shared.Dispatcher.trigger('map:refetchRecords');
@@ -157,6 +167,8 @@ define([
             this.searchPanel = new SearchPanelView();
             this.searchResultCollection = new SearchResultCollection();
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
+            Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
+            Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
         },
         render: function () {

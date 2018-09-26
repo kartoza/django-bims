@@ -57,6 +57,116 @@ class ShapefileUploadView(UserPassesTestMixin, LoginRequiredMixin, View):
         return JsonResponse(data)
 
 
+def process_user_boundary_shapefiles(request):
+    from bims.models import UserBoundary
+    from django.contrib.gis.geos import Polygon, MultiPolygon
+    token = request.GET.get('token', None)
+    boundary_name = request.GET.get('name', None)
+
+    if not token:
+        return JsonResponse({
+            'message': 'empty token'
+        })
+
+    shapefiles = Shapefile.objects.filter(
+            token=token
+    )
+
+    for shp in shapefiles:
+        shp.token = ''
+        shp.save()
+
+    upload_session, created = ShapefileUploadSession.objects.get_or_create(
+            uploader=request.user,
+            token=token,
+            processed=False,
+    )
+
+    if created:
+        upload_session.shapefiles = shapefiles
+        upload_session.save()
+
+    all_shapefiles = upload_session.shapefiles.all()
+
+    needed_ext = ['.shx', '.shp', '.dbf']
+    needed_files = {}
+
+    # Check all needed files
+    for shp in all_shapefiles:
+        name, extension = os.path.splitext(shp.filename)
+        if extension in needed_ext:
+            needed_files[extension[1:]] = shp
+            needed_ext.remove(extension)
+
+    if len(needed_ext) > 0:
+        data = {
+            'message': 'missing %s' % ','.join(needed_ext)
+        }
+        upload_session.error = data['message']
+        upload_session.save()
+        return JsonResponse(data)
+
+    # Extract shapefile into dictionary
+    outputs = extract_shape_file(
+            shp_file=needed_files['shp'].shapefile,
+            shx_file=needed_files['shx'].shapefile,
+            dbf_file=needed_files['dbf'].shapefile,
+    )
+
+    geometry = None
+    geometries = []
+
+    for geojson in outputs:
+        try:
+            properties = geojson['properties']
+
+            if not boundary_name:
+                if 'name' in properties:
+                    boundary_name = properties['name']
+                else:
+                    boundary_name, extension = os.path.splitext(
+                            all_shapefiles[0].filename
+                    )
+
+            geojson_json = json.dumps(geojson['geometry'])
+            geometry = GEOSGeometry(geojson_json)
+
+            if isinstance(geometry, Polygon):
+                geometries.append(geometry)
+            elif not isinstance(geometry, MultiPolygon):
+                response_message = 'Only polygon and multipolygon allowed'
+                upload_session.error = response_message
+                upload_session.save()
+                return JsonResponse({'message': response_message})
+
+        except (ValueError, KeyError, TypeError) as e:
+            upload_session.error = str(e)
+            upload_session.save()
+            response_message = 'Failed : %s' % str(e)
+            return JsonResponse({'message':response_message})
+
+    if len(geometries) > 0:
+        geometry = MultiPolygon(geometries)
+
+    user_boundary, created = UserBoundary.objects.get_or_create(
+            user=request.user,
+            name=boundary_name,
+            geometry=geometry
+    )
+    upload_session.processed = True
+    upload_session.save()
+
+    if created:
+        response_message = 'User boundary added'
+    else:
+        response_message = 'User boundary already exists'
+
+    data = {
+        'message': response_message
+    }
+    return JsonResponse(data)
+
+
 def process_shapefiles(request,
                        collection=BiologicalCollectionRecord,
                        additional_fields=None):
@@ -87,7 +197,6 @@ def process_shapefiles(request,
 
     if created:
         upload_session.shapefiles = shapefiles
-        upload_session.token = ''
         upload_session.save()
 
     all_shapefiles = upload_session.shapefiles.all()

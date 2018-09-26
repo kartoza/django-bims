@@ -49,7 +49,7 @@
                 <div class="close-button search-reset pull-left">
                     Reset
                 </div>
-                    <span class="title">
+                <span class="title">
                         SEARCH
                     </span>
                 <div class="close-button map-search-close pull-right">
@@ -165,6 +165,79 @@
     </div>
 </script>
 
+<script type="text/html" id="spatial-filter-panel">
+    <div class="spatial-filter-container map-control-panel-box">
+        <div class="row spatial-filter-panel-title">
+            <div class="col-lg-12" style="padding-right: 0">
+                    <span class="title">
+                        SPATIAL FILTER
+                    </span>
+                <div class="spatial-filter-container-close close-button pull-right">
+                    X
+                </div>
+            </div>
+        </div>
+        <div class="row content">
+            <button id="spatial-filter-panel-upload">Upload New Boundary</button>
+        </div>
+        <div class="row boundary-list">
+        </div>
+        <div class="row boundary-action">
+            <button class="spatial-apply-filter">Apply Filter</button>
+            <button class="spatial-clear-filter">Clear Filter</button>
+        </div>
+    </div>
+
+    <div class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload a boundary</h5>
+                    <button type="button" class="close close-upload-boundary-modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">Boundary Name</label>
+                        <input type="text" class="form-control" id="boundary-input-name" aria-describedby="emailHelp" placeholder="Enter boundary name">
+                    </div>
+                    <label for="file"><b>Upload shapefile here</b></label>
+                    <button type="button" class="btn btn-primary btn-boundary-upload">
+                        <span class="glyphicon glyphicon-cloud-upload"></span> Upload shapefiles
+                    </button>
+                    <input id="fileupload" type="file" name="shapefile" multiple
+                           style="display: none;"
+                           data-url="{% url 'shapefile-upload' %}"
+                           data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+
+                    <table id="file-list" class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>Files</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for shapefile in shapefiles %}
+                            <tr>
+                                <td><a href="{{ shapefile.fileurl }}">{{ shapefile.filename }}</a></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="help-block process-shapefile">
+                        Processing shapefiles...
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</script>
+
 <script type="text/html" id="layer-selector-row">
     <li class="ui-state-default">
         <div class="row-title">
@@ -191,6 +264,9 @@
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
+            <div class="spatial-filter sub-control-panel">
+                <i class="fa fa-crop" aria-hidden="true"></i>
+            </div>
             <div class="upload-data sub-control-panel">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
@@ -547,8 +623,8 @@
     <div class="third-party-fetching-info">
         Fetching...
     </div>
-   <div class="content row third-party-wrapper">
-   </div>
+    <div class="content row third-party-wrapper">
+    </div>
 </script>
 
 <script type="text/template" id="records-list-detail">

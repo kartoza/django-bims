@@ -65,6 +65,7 @@ define([
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
             Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
+            Shared.Dispatcher.on('map:removeHighlightPinnedFeature', this.removeHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
             Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
@@ -130,23 +131,26 @@ define([
             var poiFound = false;
             var featuresData = '';
             if (features) {
-                var geometry = features[0].getGeometry();
-                var geometryType = geometry.getType();
+                $.each(features, function (index, feature) {
+                    var geometry = feature.getGeometry();
+                    var geometryType = geometry.getType();
 
-                if (geometryType === 'Point') {
-                    featuresClickedResponseData = self.featureClicked(features[0], self.uploadDataState);
-                    poiFound = featuresClickedResponseData[0];
-                    featuresData = featuresClickedResponseData[1];
+                    if (geometryType === 'Point') {
+                        featuresClickedResponseData = self.featureClicked(feature, self.uploadDataState);
+                        poiFound = featuresClickedResponseData[0];
+                        featuresData = featuresClickedResponseData[1];
 
-                    var coordinates = geometry.getCoordinates();
-                    self.zoomToCoordinates(coordinates);
-                    // increase zoom level if it is clusters
-                    if (features[0].getProperties()['count'] &&
-                        features[0].getProperties()['count'] > 1) {
-                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
-                        poiFound = true;
+                        var coordinates = geometry.getCoordinates();
+                        self.zoomToCoordinates(coordinates);
+                        // increase zoom level if it is clusters
+                        if (feature.getProperties()['count'] &&
+                            feature.getProperties()['count'] > 1) {
+                            self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                            poiFound = true;
+                        }
                     }
-                }
+                });
+
             }
 
             // Get lat and long map
@@ -487,6 +491,15 @@ define([
         },
         addHighlightPinnedFeature: function (feature) {
             this.layers.highlightPinnedVectorSource.addFeature(feature);
+        },
+        removeHighlightPinnedFeature: function (id) {
+            var self = this;
+            self.layers.highlightPinnedVectorSource.getFeatures().forEach(function (feature) {
+                var feature_id = feature.getProperties()['id'];
+                if (feature_id === id) {
+                    self.layers.highlightPinnedVectorSource.removeFeature(feature);
+                }
+            });
         },
         closeHighlightPinned: function () {
             this.hidePopup();

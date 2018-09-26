@@ -149,7 +149,7 @@ html, body, .map, .map-wrapper, #map-container {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 185px;
+    top: 207px;
     transform: translateY(-50%);
     padding-left: 6px;
     padding-right: 6px;
@@ -168,8 +168,16 @@ html, body, .map, .map-wrapper, #map-container {
     top: 160px;
 }
 
+.layer-switcher.no-upload {
+    top: 230px !important;
+}
+
 .download-control-panel {
-    top: 349px;
+    top: 392px;
+}
+
+.download-control-panel.no-upload {
+    top: 297px !important;
 }
 
 .download-control-panel .download-format-selector-container {
@@ -677,7 +685,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 280px !important;
+    top: 324px !important;
     left: 0;
     right: auto !important;
     text-align: left;
@@ -1575,4 +1583,61 @@ div:hover::-webkit-scrollbar {
 .dropdown-menu {
     border: 1px solid rgba(0,0,0,.15);
     border-radius: .25rem;
+}
+
+.btn-primary:disabled {
+    background-color: rgb(198, 193, 197);
+}
+
+.btn-primary:hover:disabled {
+    background-color: rgb(198, 193, 197) !important;
+}
+
+.close-upload-boundary-modal span {
+    font-size: 25pt;
+}
+
+.spatial-filter-container .content {
+    border-top: 1px solid darkgray;
+    margin-top: 3px;
+    padding: 5px;
+    text-align: center;
+}
+
+#spatial-filter-panel-upload {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.boundary-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.boundary-list div {
+    padding: 5px;
+    padding-left: 20px;
+    width: 100%;
+    text-align: left;
+    background-color: #f9f9f9;
+}
+
+.boundary-list div:hover {
+    cursor: pointer;
+    color: white;
+    background-color: #ACD796;
+}
+
+.spatial-selected {
+    color: white;
+    background-color: #ACD796 !important;
+}
+
+.boundary-action {
+    padding: 5px;
+}
+
+.boundary-action button {
+    margin-left: auto;
+    margin-right: auto;
 }
