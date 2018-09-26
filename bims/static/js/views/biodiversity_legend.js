@@ -47,8 +47,10 @@ define([
            if (!self.moved) {
                return;
            }
+           var panelWrapper = $('.panel-wrapper');
+           var width = panelWrapper.width() + 5;
            this.container.animate({
-               "right": "-=270px"
+               "right": "-=" + width + "px"
            }, 100, function () {
                // Animation complete
                self.moved = false;
