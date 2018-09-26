@@ -230,7 +230,9 @@ define([
         },
         clearFilter: function (e) {
             this.clearSelected();
-            Shared.Dispatcher.trigger('search:doSearch');
+            if (Shared.SearchMode) {
+                Shared.Dispatcher.trigger('search:doSearch');
+            }
         }
     })
 });

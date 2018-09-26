@@ -127,7 +127,8 @@ define([
             );
             this.searchResultCollection.fetch({
                 success: function () {
-                    self.searchResultCollection.renderCollection()
+                    self.searchResultCollection.renderCollection();
+                    Shared.SearchMode = true;
                 }
             });
         },
@@ -144,6 +145,7 @@ define([
             }
         },
         clearSearch: function () {
+            Shared.SearchMode = false;
             $('#search').val('');
             Shared.Router.clearSearch();
             Shared.Dispatcher.trigger('spatialFilter:clearSelected');

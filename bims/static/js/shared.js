@@ -11,6 +11,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         StorageUtil: new StorageUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
-        AdminAreaSelected: []
+        AdminAreaSelected: [],
+        SearchMode: false,
     };
 });
