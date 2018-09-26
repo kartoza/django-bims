@@ -15,7 +15,12 @@ define([
             'click #spatial-filter-panel-upload': 'panelUploadClicked',
             'click .close-upload-boundary-modal': 'closeModal',
             'click .btn-boundary-upload': 'btnUploadClicked',
-            'click .boundary-list-item': 'boundaryListClicked'
+            'click .boundary-list-item': 'boundaryListClicked',
+            'click .spatial-apply-filter': 'applyFilter',
+            'click .spatial-clear-filter': 'clearFilter'
+        },
+        initialize: function () {
+            Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearSelected, this);
         },
         render: function () {
             var self = this;
@@ -27,6 +32,11 @@ define([
             self.progress = self.$el.find('.process-shapefile');
             self.boundaryListContainer = self.$el.find('.boundary-list');
             self.boundaryInputText = self.$el.find('input#boundary-input-name.form-control');
+            self.applyFilterButton = self.$el.find('.apply-filter');
+            self.clearFilterButton = self.$el.find('.clear-filter');
+
+            self.applyFilterButton.prop('disabled', true);
+            self.clearFilterButton.prop('disabled', true);
 
             self.getUserBoundary();
 
@@ -99,14 +109,13 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     Shared.Dispatcher.UserBoundaries = data;
-                    //self.boundaryListContainer.html('');
+                    // self.boundaryListContainer.html('');
                     $.each(data['features'], function (index, feature) {
                         var name = feature['properties']['name'];
                         var id = feature['id'];
                         var div = $('<div class="boundary-list-item" data-id="'+id+'">'+
                             feature['properties']['name']+'</div>');
                         self.boundaryListContainer.append(div);
-                        // div.on('click', self.boundaryListClicked);
                     })
                 }
             })
@@ -127,6 +136,14 @@ define([
                 $(e.target).addClass('spatial-selected');
                 addFeature = true;
                 self.boundarySelected.push(id);
+            }
+
+            if (self.boundarySelected.length > 0) {
+                self.applyFilterButton.prop('disabled', false);
+                self.clearFilterButton.prop('disabled', false);
+            } else {
+                self.applyFilterButton.prop('disabled', true);
+                self.clearFilterButton.prop('disabled', true);
             }
 
             $.each(Shared.Dispatcher.UserBoundaries['features'], function (index, feature) {
@@ -187,8 +204,25 @@ define([
         btnUploadClicked: function (e) {
             this.fileupload.click();
         },
-        fileUpload: function () {
-
+        applyFilter: function (e) {
+            Shared.Dispatcher.trigger('search:doSearch');
+        },
+        clearSelected: function (e) {
+            this.boundarySelected = [];
+            $.each(this.boundaryListContainer.children(), function (index, div) {
+                var select = $(div);
+                if(select.hasClass('spatial-selected')) {
+                   select.removeClass('spatial-selected');
+                }
+            });
+            Shared.Dispatcher.trigger('search:updateUserBoundaryFilter', this.boundarySelected);
+        },
+        clearFilter: function (e) {
+            $.each(this.boundarySelected, function (index, id) {
+                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', id);
+            });
+            this.clearSelected();
+            Shared.Dispatcher.trigger('search:doSearch');
         }
     })
 });

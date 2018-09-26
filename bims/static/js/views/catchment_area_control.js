@@ -17,6 +17,7 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                 dataType: 'json',
                 success: function (data) {
                     var features = data['features'];
+                    console.log(features);
                     if (features) {
                         $.each(features, function (index, feature) {
                             var olfeature = new ol.format.GeoJSON().readFeatures(feature, {
@@ -32,6 +33,7 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                     }
                 },
                 error: function () {
+                    console.log('error');
                 }
             });
         }

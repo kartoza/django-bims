@@ -1610,7 +1610,8 @@ div:hover::-webkit-scrollbar {
 }
 
 .boundary-list {
-
+    max-height: 250px;
+    overflow-y: auto;
 }
 
 .boundary-list div {
@@ -1630,4 +1631,13 @@ div:hover::-webkit-scrollbar {
 .spatial-selected {
     color: white;
     background-color: #ACD796 !important;
+}
+
+.boundary-action {
+    padding: 5px;
+}
+
+.boundary-action button {
+    margin-left: auto;
+    margin-right: auto;
 }

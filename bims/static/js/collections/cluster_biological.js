@@ -34,6 +34,7 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared'], fu
                 && !this.parameters['category']
                 && !this.parameters['yearFrom']
                 && !this.parameters['yearTo']
+                && !this.parameters['userBoundary']
                 && !this.parameters['boundary']) {
                 return false
             } else {

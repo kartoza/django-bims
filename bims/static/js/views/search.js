@@ -73,13 +73,18 @@ define([
             $('input[name=boundary-value]:checked').each(function () {
                 boundaryValue.push($(this).val())
             });
-            if (boundaryValue.length === 0 && self.userBoundaries.length === 0) {
-                Shared.Dispatcher.trigger('catchmentArea:hide');
+
+            if (self.userBoundaries.length === 0 && boundaryValue.length === 0) {
                 Shared.Dispatcher.trigger('map:boundaryEnabled', false);
+                Shared.Dispatcher.trigger('map:closeHighlightPinned');
             } else {
-                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
                 Shared.Dispatcher.trigger('map:boundaryEnabled', true);
             }
+
+            if (boundaryValue.length > 0)  {
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
+            }
+
             var parameters = {
                 'search': searchValue,
                 'collector': collectorValue,
@@ -111,6 +116,7 @@ define([
                 && !parameters['category']
                 && !parameters['yearFrom']
                 && !parameters['yearTo']
+                && !parameters['userBoundary']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false
@@ -141,6 +147,8 @@ define([
             Shared.Router.clearSearch();
             $('.clear-filter').click();
             $('.map-search-result').hide();
+            this.userBoundaries = [];
+            Shared.Dispatcher.trigger('spatialFilter:clearSelected');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
@@ -157,6 +165,8 @@ define([
             this.searchPanel = new SearchPanelView();
             this.searchResultCollection = new SearchResultCollection();
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
+            Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
+            Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
             Shared.Dispatcher.on('search:updateUserBoundaryFilter', this.updateUserBoundaryFilter, this);
         },
