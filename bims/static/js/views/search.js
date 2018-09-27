@@ -145,11 +145,12 @@ define([
             }
         },
         clearSearch: function () {
-            Shared.SearchMode = false;
+            Shared.Dispatcher.trigger('catchmentArea:hide');
             $('#search').val('');
-            Shared.Router.clearSearch();
             Shared.Dispatcher.trigger('spatialFilter:clearSelected');
+            Shared.SearchMode = false;
             $('.clear-filter').click();
+            this.searchClick();
             $('.map-search-result').hide();
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
@@ -220,8 +221,9 @@ define([
                 target.closest('.row').find('#year-from').html(this.startYear);
                 target.closest('.row').find('#year-to').html(this.endYear);
             }
-            this.searchClick();
-
+            if (Shared.SearchMode) {
+                this.searchClick();
+            }
         },
         show: function () {
             this.searchBox.show();
