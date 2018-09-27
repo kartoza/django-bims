@@ -76,8 +76,18 @@
             </div>
         </div>
         <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                MODULE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row module-filters" style="display: none;"  data-toggle="tooltip" data-placement="top" title="Coming Soon">
+            <div class="col-lg-4 not-ready"><img src="/static/img/fish-2.svg"></div>
+            <div class="col-lg-4 not-ready"><img src="/static/img/invertebras-2.svg"></div>
+            <div class="col-lg-4 not-ready"><img src="/static/img/algae-2.svg"></div>
+        </div>
+        <div class="row sub-filter">
             <div class="col-lg-12 subtitle" id="date-filter-subtitle">
-                DATE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                TEMPORAL SCALE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
@@ -97,11 +107,11 @@
         </div>
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                SPATIAL SCALE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
-            <div class="col-lg-12 filter-content" id="filter-collectors">
+            <div class="col-lg-12 filter-content" id="filter-catchment-area">
             </div>
             <div class="button-filter-wrapper">
                 <button class="apply-filter">Apply Filter</button>
@@ -110,7 +120,7 @@
         </div>
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                ORIGINS <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
@@ -123,18 +133,72 @@
         </div>
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                ADMINISTRATIVE AREA <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                ECOLOGICAL CONDITION <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row ecological-condition" style="display: none;"  data-toggle="tooltip" data-placement="top" title="Coming Soon">
+            <div class="row col-lg-12">
+                <div class="col-lg-4 neutral">
+                    Neutral (N)
+                </div>
+                <div class="col-lg-4 good">
+                    Good (G)
+                </div>
+                <div class="col-lg-4 fair">
+                    Fair (F)
+                </div>
+            </div>
+            <div class="row col-lg-12">
+                <div class="col-lg-4 poor">
+                    Poor (P)
+                </div>
+                <div class="col-lg-4 seriously-modified">
+                    Seriously Modified (SM)
+                </div>
+                <div class="col-lg-4 critically-modified">
+                    Critically Modified (CM)
+                </div>
+            </div>
+        </div>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                CONSERVATION STATUS <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row" style="display: none" data-toggle="tooltip" data-placement="top" title="Coming Soon">
+            <div class="col-lg-12 filter-content conservation-status">
+                <select disabled>
+                    <option value="">Conservation Status</option>
+                </select>
+            </div>
+        </div>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                STUDY REFERENCE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row" style="display: none" data-toggle="tooltip" data-placement="top" title="Coming Soon">
+            <div class="col-lg-12 filter-content study-reference">
+                <input type="checkbox" disabled name="category-value" value=""> Database
+                <br/>
+                <input type="checkbox" disabled name="category-value" value=""> Peer Reviewed Publication
+                <br/>
+                <input type="checkbox" disabled name="category-value" value=""> University Thesis
+            </div>
+        </div>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                REFERENCE CATEGORY<i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
-            <div class="col-lg-12 filter-content" id="filter-catchment-area">
+            <div class="col-lg-12 filter-content" id="filter-collectors">
             </div>
             <div class="button-filter-wrapper">
                 <button class="apply-filter">Apply Filter</button>
                 <button class="clear-filter">Clear Filter</button>
             </div>
         </div>
-
     </div>
 </script>
 

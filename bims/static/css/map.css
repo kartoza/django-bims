@@ -1641,3 +1641,87 @@ div:hover::-webkit-scrollbar {
     margin-left: auto;
     margin-right: auto;
 }
+
+.module-filters img {
+    width: 35px;
+}
+
+.module-filters img:hover {
+    cursor: pointer;
+}
+
+.module-filters {
+    padding: 5px;
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+}
+
+.tooltip {
+    z-index: 99999;
+}
+
+.not-ready img:hover {
+    cursor: default;
+}
+
+.ecological-condition {
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+    color: white;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.ecological-condition .row {
+    margin-left: 0;
+}
+
+.ecological-condition .col-lg-4 {
+    padding: 3px;
+    font-size: 9pt;
+    width: 80% !important;
+}
+
+.neutral {
+    background-color: blue;
+}
+
+.good {
+    background-color: green;
+}
+
+.fair {
+    background-color: orange;
+}
+
+.poor {
+    background-color: red;
+}
+
+.seriously-modified {
+    background-color: purple;
+}
+
+.critically-modified {
+    background-color: black;
+}
+
+.conservation-status {
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+    padding: 10px;
+}
+
+.study-reference {
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+    padding: 10px;
+}
