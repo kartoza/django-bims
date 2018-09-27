@@ -197,7 +197,8 @@ class GetCollectionAbstract(APIView):
                 location_site_results = location_site_results.filter(
                         qs_collector)
 
-        if user_boundaries and location_site_search:
+        if user_boundaries and isinstance(location_site_search,
+                                          SearchQuerySet):
             location_site_user_boundary = location_site_search
             for user_boundary in user_boundaries:
                 for geom in user_boundary.geometry:
