@@ -208,7 +208,7 @@ class GetCollectionAbstract(APIView):
                             geom
                     )
 
-        if location_site_user_boundary:
+        if user_boundaries:
             if boundary:
                 site_results = \
                     location_site_results | location_site_user_boundary
@@ -217,7 +217,8 @@ class GetCollectionAbstract(APIView):
         else:
             site_results = location_site_results
 
-        if len(site_results) > 0:
+        if len(site_results) > 0 or isinstance(
+                location_site_user_boundary, SearchQuerySet) :
             # If there are fuzzy results from collection search but we
             # got non fuzzy results from location site, then remove
             # all the fuzzy results from collection
