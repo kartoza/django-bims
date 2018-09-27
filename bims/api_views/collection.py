@@ -56,6 +56,7 @@ class GetCollectionAbstract(APIView):
         """
 
         fuzzy_search = False
+        user_boundaries = None
 
         sqs = SearchQuerySet()
         settings.ELASTIC_MIN_SCORE = 0
@@ -184,16 +185,38 @@ class GetCollectionAbstract(APIView):
                     site_name__contains=query_value
             ).models(LocationSite)
 
+        location_site_results = location_site_search
+        location_site_user_boundary = None
+
         if boundary:
             qs_collector = SQ()
             qs = json.loads(boundary)
             for query in qs:
                 qs_collector.add(SQ(boundary=query), SQ.OR)
-            if isinstance(location_site_search, SearchQuerySet):
-                location_site_search = location_site_search.filter(
+            if isinstance(location_site_results, SearchQuerySet):
+                location_site_results = location_site_results.filter(
                         qs_collector)
 
-        if len(location_site_search) > 0:
+        if user_boundaries:
+            location_site_user_boundary = location_site_search
+            for user_boundary in user_boundaries:
+                for geom in user_boundary.geometry:
+                    location_site_user_boundary = \
+                        location_site_user_boundary.polygon(
+                            'location_site_point',
+                            geom
+                    )
+
+        if location_site_user_boundary:
+            if boundary:
+                site_results = \
+                    location_site_results | location_site_user_boundary
+            else:
+                site_results = location_site_user_boundary
+        else:
+            site_results = location_site_results
+
+        if len(site_results) > 0:
             # If there are fuzzy results from collection search but we
             # got non fuzzy results from location site, then remove
             # all the fuzzy results from collection
@@ -201,7 +224,6 @@ class GetCollectionAbstract(APIView):
                     len(collection_results) > 0:
                 collection_results = []
             fuzzy_search = False
-        site_results = location_site_search
 
         return collection_results, site_results, fuzzy_search
 
