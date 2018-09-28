@@ -86,6 +86,36 @@ class BiologicalCollectionRecord(models.Model):
         verbose_name='Custodian',
     )
 
+    endemism = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
+    sampling_method = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
+    sampling_effort = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
+    reference = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
+    )
+
+    reference_category = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
+    )
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""

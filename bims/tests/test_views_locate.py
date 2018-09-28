@@ -46,8 +46,6 @@ class TestLocateView(SimpleTestCase):
         farm_id = 'C00100000000000100001'
         farm = get_farm(farm_id)
         self.assertEqual(farm['farm_id'], farm_id)
-        expected_envelope_extent = (-32.22, 23.7354, -32.1787, 23.7978)
-        self.assertEqual(farm['envelope_extent'], expected_envelope_extent)
 
     def test_parse_farm(self):
         """Test parse_farm"""
