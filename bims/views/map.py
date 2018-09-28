@@ -48,7 +48,16 @@ class MapPageView(TemplateView):
             bio._meta.app_label: str(bio._meta.label) for bio in bio_childrens
         }
         # add base module
+        context['modules_exists'] = bool(context['biological_modules'])
         context['biological_modules']['base'] = 'base'
+
+        # Additional filters
+        context['use_ecological_condition'] = bool(
+                get_key('ECOLOGICAL_CONDITION_FILTER'))
+        context['use_conservation_status'] = bool(
+                get_key('CONSERVATION_STATUS_FILTER'))
+        context['use_study_reference'] = bool(
+                get_key('STUDY_REFERENCE_FILTER'))
 
         # get date filter
         context['date_filter'] = {'min': '1900', 'max': '2008'}

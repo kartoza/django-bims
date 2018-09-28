@@ -143,7 +143,7 @@ def process_user_boundary_shapefiles(request):
             upload_session.error = str(e)
             upload_session.save()
             response_message = 'Failed : %s' % str(e)
-            return JsonResponse({'message':response_message})
+            return JsonResponse({'message': response_message})
 
     if len(geometries) > 0:
         geometry = MultiPolygon(geometries)

@@ -142,4 +142,3 @@ class TestApiView(TestCase):
         request.user = user
         response = view(request)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.data) > 0)

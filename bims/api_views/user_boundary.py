@@ -1,5 +1,4 @@
 # coding=utf-8
-import json
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.user_boundary import UserBoundary

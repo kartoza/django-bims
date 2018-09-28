@@ -1,4 +1,5 @@
 import os
+from django.conf import settings
 
 
 def get_key(key_name):
@@ -12,11 +13,14 @@ def get_key(key_name):
         return ''
 
     try:
-        key = getattr(secret, key_name)
+        key = getattr(settings, key_name)
     except AttributeError:
         try:
-            key = os.environ[key_name]
-        except KeyError:
-            key = ''
+            key = getattr(secret, key_name)
+        except AttributeError:
+            try:
+                key = os.environ[key_name]
+            except KeyError:
+                key = ''
 
     return key
