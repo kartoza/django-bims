@@ -205,8 +205,7 @@ class GetCollectionAbstract(APIView):
                     location_site_user_boundary = \
                         location_site_user_boundary.polygon(
                             'location_site_point',
-                            geom
-                    )
+                            geom)
 
         if user_boundaries:
             if boundary:
@@ -218,7 +217,7 @@ class GetCollectionAbstract(APIView):
             site_results = location_site_results
 
         if len(site_results) > 0 or isinstance(
-                location_site_user_boundary, SearchQuerySet) :
+                location_site_user_boundary, SearchQuerySet):
             # If there are fuzzy results from collection search but we
             # got non fuzzy results from location site, then remove
             # all the fuzzy results from collection
