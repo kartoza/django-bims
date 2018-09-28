@@ -207,11 +207,13 @@ class GetCollectionAbstract(APIView):
                             'location_site_point',
                             geom)
 
+        site_results = []
+
         if user_boundaries:
             if boundary:
                 site_results = \
                     location_site_results | location_site_user_boundary
-            else:
+            elif location_site_user_boundary:
                 site_results = location_site_user_boundary
         else:
             site_results = location_site_results
