@@ -35,6 +35,11 @@ class LocationSite(models.Model):
         blank=True,
         default=''
     )
+    site_code = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
+    )
     location_type = models.ForeignKey(
         LocationType,
         models.CASCADE,
