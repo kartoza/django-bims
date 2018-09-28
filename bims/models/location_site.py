@@ -30,7 +30,7 @@ class LocationSite(models.Model):
         max_length=100,
         blank=False,
     )
-    description = models.CharField(
+    site_description = models.CharField(
         max_length=200,
         blank=True,
         default=''
