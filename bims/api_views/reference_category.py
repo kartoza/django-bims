@@ -14,4 +14,11 @@ class ReferenceCategoryList(APIView):
             values_list(
                     'reference_category', flat=True).\
             distinct()
-        return Response(list(reference_category))
+        results = []
+        for reference in reference_category:
+            results.append(
+                {
+                    'category': reference
+                }
+            )
+        return Response(results)

@@ -1,6 +1,14 @@
 define([
-    'backbone', 'underscore', 'shared', 'ol', 'noUiSlider', 'collections/search_result', 'views/search_panel', 'jquery'
-], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $) {
+    'backbone',
+    'underscore',
+    'shared',
+    'ol',
+    'noUiSlider',
+    'collections/search_result',
+    'views/search_panel',
+    'jquery',
+    'views/filter_panel/reference_category'
+], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $, ReferenceCategoryView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -14,6 +22,28 @@ define([
             'click .apply-filter': 'searchClick',
             'click .clear-filter': 'clearFilter',
             'click .search-reset': 'clearSearch',
+        },
+        initialize: function (options) {
+            _.bindAll(this, 'render');
+            this.parent = options.parent;
+            this.sidePanel = options.sidePanel;
+            this.searchPanel = new SearchPanelView();
+            this.searchResultCollection = new SearchResultCollection();
+            Shared.Dispatcher.on('search:searchCollection', this.search, this);
+            Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
+            Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
+            Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
+        },
+        render: function () {
+            this.$el.html(this.template());
+            this.searchBox = this.$el.find('.map-search-box');
+            this.searchBox.hide();
+            this.$el.append(this.searchPanel.render().$el);
+            if (useReferenceCategory) {
+                this.referenceCategoryView = new ReferenceCategoryView();
+                this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
+            }
+            return this;
         },
         checkSearch: function (forceSearch) {
             var searchValue = $('#search').val();
@@ -160,24 +190,6 @@ define([
             } else {
                 return '';
             }
-        },
-        initialize: function (options) {
-            _.bindAll(this, 'render');
-            this.parent = options.parent;
-            this.sidePanel = options.sidePanel;
-            this.searchPanel = new SearchPanelView();
-            this.searchResultCollection = new SearchResultCollection();
-            Shared.Dispatcher.on('search:searchCollection', this.search, this);
-            Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
-            Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
-            Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
-        },
-        render: function () {
-            this.$el.html(this.template());
-            this.searchBox = this.$el.find('.map-search-box');
-            this.searchBox.hide();
-            this.$el.append(this.searchPanel.render().$el);
-            return this;
         },
         initDateFilter: function () {
             // render slider
