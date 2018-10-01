@@ -82,7 +82,7 @@ class BiologicalCollectionRecord(models.Model):
         default=settings.INSTITUTION_ID_DEFAULT,
         help_text='An identifier for the institution having custody of the '
                   'object(s) or information referred to in the record.',
-        max_length=50,
+        max_length=100,
         verbose_name='Custodian',
     )
 
@@ -105,7 +105,7 @@ class BiologicalCollectionRecord(models.Model):
     )
 
     reference = models.CharField(
-        max_length=100,
+        max_length=300,
         blank=True,
         default=''
     )
