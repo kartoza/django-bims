@@ -10,7 +10,8 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared'], fu
         viewCollection: [],
         parameters: {
             taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', yearFrom: '', yearTo: '', months: '', boundary: '', userBoundary: '',
+            collector: '', category: '', yearFrom: '', yearTo: '', months: '',
+            boundary: '', userBoundary: '', referenceCategory: '',
             clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {
