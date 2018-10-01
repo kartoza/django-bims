@@ -71,6 +71,14 @@ define([
 
             $('#search-results-wrapper').html('');
 
+            // reference category
+            var referenceCategory = self.referenceCategoryView.getSelected();
+            if (referenceCategory.length > 0) {
+                referenceCategory = JSON.stringify(referenceCategory);
+            } else {
+                referenceCategory = '';
+            }
+
             var collectorValue = [];
             $('input[name=collector-value]:checked').each(function () {
                 collectorValue.push($(this).val())
@@ -124,7 +132,8 @@ define([
                 'userBoundary': userBoundarySelected.length === 0 ? '' : JSON.stringify(userBoundarySelected),
                 'yearFrom': '',
                 'yearTo': '',
-                'months': ''
+                'months': '',
+                'referenceCategory': referenceCategory
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -138,7 +147,6 @@ define([
                 parameters['yearTo'] = yearTo;
                 parameters['months'] = monthSelected.join(',');
             }
-
             Shared.Dispatcher.trigger('map:closeHighlight');
             Shared.Dispatcher.trigger('search:hit', parameters);
             Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
@@ -148,6 +156,7 @@ define([
                 && !parameters['yearFrom']
                 && !parameters['yearTo']
                 && !parameters['userBoundary']
+                && !parameters['referenceCategory']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false

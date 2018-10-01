@@ -45,8 +45,8 @@ class SearchObjects(APIView):
 
         if len(collection_results) > 0:
             bio_ids = collection_results.values_list('model_pk', flat=True)
-            taxon_ids = list(set(collection_results.values_list(
-                    'taxon_gbif', flat=True)))
+            taxon_ids = collection_results.values_list(
+                    'taxon_gbif', flat=True)
             taxons = Taxon.objects.filter(
                     id__in=taxon_ids).annotate(
                     num_occurrences=Count(

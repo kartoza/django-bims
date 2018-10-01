@@ -4,7 +4,7 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared'], fu
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>"),
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>&referenceCategory=<%= referenceCategory %>"),
         clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
@@ -35,6 +35,7 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared'], fu
                 && !this.parameters['yearFrom']
                 && !this.parameters['yearTo']
                 && !this.parameters['userBoundary']
+                && !this.parameters['referenceCategory']
                 && !this.parameters['boundary']) {
                 return false
             } else {

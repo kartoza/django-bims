@@ -28,9 +28,16 @@ define([
             var data = this.collection.models;
             for(var i=0; i<data.length; i++) {
                 this.listWrapper.append('<div>' +
-                    '<input type="checkbox" name="reference-category-value" value="">&nbsp;'+data[i].get('category')+
+                    '<input type="checkbox" name="reference-category-value" value="'+data[i].get('category')+'">&nbsp;'+data[i].get('category')+
                     '</div>');
             }
+        },
+        getSelected: function () {
+            var selected = [];
+            this.$el.find('input:checked').each(function () {
+                selected.push($(this).val())
+            });
+            return selected;
         }
     })
 });
