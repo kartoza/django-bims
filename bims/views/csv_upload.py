@@ -153,12 +153,15 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                     field_type
                             )
                             if not optional_record:
-                                continue
+                               optional_record = ''
+
                             if opt_field[:4] == 'site':
                                 optional_site_records[opt_field] = \
                                     optional_record
                             else:
-                                optional_records[opt_field] = optional_record
+                                if optional_record:
+                                    optional_records[opt_field] = \
+                                        optional_record
 
                     record_point = Point(
                         float(record['longitude']),
