@@ -104,7 +104,8 @@ class GetCollectionAbstract(APIView):
                 settings.ELASTIC_MIN_SCORE = 0
         else:
             if filter_mode:
-                results = SearchQuerySet().all().models(BiologicalCollectionRecord)
+                results = SearchQuerySet().all().models(
+                        BiologicalCollectionRecord)
                 results = results.filter(validated=True)
             else:
                 results = []
