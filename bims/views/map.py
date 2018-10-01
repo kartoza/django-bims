@@ -56,8 +56,8 @@ class MapPageView(TemplateView):
                 get_key('ECOLOGICAL_CONDITION_FILTER'))
         context['use_conservation_status'] = bool(
                 get_key('CONSERVATION_STATUS_FILTER'))
-        context['use_study_reference'] = bool(
-                get_key('STUDY_REFERENCE_FILTER'))
+        context['use_reference_category'] = bool(
+                get_key('REFERENCE_CATEGORY_FILTER'))
 
         # get date filter
         context['date_filter'] = {'min': '1900', 'max': '2008'}

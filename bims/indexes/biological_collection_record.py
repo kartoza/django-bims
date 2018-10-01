@@ -102,6 +102,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    reference_category = indexes.CharField(
+        model_attr='reference_category',
+        indexed=True
+    )
+
     boundary = indexes.IntegerField()
 
     def prepare_taxon_gbif(self, obj):

@@ -183,26 +183,13 @@
         </div>
         {% endif %}
 
-        {% if use_study_reference %}
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                STUDY REFERENCE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row" style="display: none" data-toggle="tooltip" data-placement="top" title="Coming Soon">
-            <div class="col-lg-12 filter-content study-reference">
-                <input type="checkbox" disabled name="category-value" value=""> Database
-                <br/>
-                <input type="checkbox" disabled name="category-value" value=""> Peer Reviewed Publication
-                <br/>
-                <input type="checkbox" disabled name="category-value" value=""> University Thesis
-            </div>
-        </div>
+        {% if use_reference_category %}
+        <div class="reference-category-wrapper"></div>
         {% endif %}
 
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                REFERENCE CATEGORY<i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                STUDY REFERENCE<i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
@@ -212,6 +199,22 @@
                 <button class="apply-filter">Apply Filter</button>
                 <button class="clear-filter">Clear Filter</button>
             </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="reference-category-template">
+    <div class="row sub-filter">
+        <div class="col-lg-12 subtitle">
+            REFERENCE CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+        </div>
+    </div>
+    <div class="row" style="display: none">
+        <div class="col-lg-12 filter-content reference-category">
+        </div>
+        <div class="button-filter-wrapper">
+            <button class="apply-filter">Apply Filter</button>
+            <button class="clear-filter">Clear Filter</button>
         </div>
     </div>
 </script>

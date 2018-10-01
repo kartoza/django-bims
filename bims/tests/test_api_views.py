@@ -23,6 +23,7 @@ from bims.api_views.non_validated_record import (
     GetNonValidatedRecords
 )
 from bims.api_views.taxon import TaxonDetail
+from bims.api_views.reference_category import ReferenceCategoryList
 
 
 class TestApiView(TestCase):
@@ -142,3 +143,16 @@ class TestApiView(TestCase):
         request.user = user
         response = view(request)
         self.assertEqual(response.status_code, 200)
+
+    def test_get_referece_category(self):
+        view = ReferenceCategoryList.as_view()
+        BiologicalCollectionRecordF.create(
+            pk=5,
+            original_species_name=u'Test name',
+            site=self.location_site,
+            reference_category=u'Database'
+        )
+        request = self.factory.get(reverse('list-reference-category'))
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.data) > 0)

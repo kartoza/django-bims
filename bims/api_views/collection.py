@@ -57,9 +57,28 @@ class GetCollectionAbstract(APIView):
 
         fuzzy_search = False
         user_boundaries = None
+        filter_mode = False
 
         sqs = SearchQuerySet()
         settings.ELASTIC_MIN_SCORE = 0
+
+        # All filters
+        taxon = filters.get('taxon', None)
+        bbox = filters.get('bbox', None)
+        query_collector = filters.get('collector', None)
+        boundary = filters.get('boundary', None)
+        user_boundary = filters.get('userBoundary', None)
+        query_category = filters.get('category', None)
+        reference_category = filters.get('referenceCategory', None)
+        year_from = filters.get('yearFrom', None)
+        year_to = filters.get('yearTo', None)
+        months = filters.get('months', None)
+
+        if taxon or query_collector or \
+                boundary or user_boundary or \
+                query_category or reference_category or \
+                year_from or year_to or months:
+            filter_mode = True
 
         if query_value:
             clean_query = sqs.query.clean(query_value)
@@ -84,10 +103,13 @@ class GetCollectionAbstract(APIView):
                 ).models(BiologicalCollectionRecord)
                 settings.ELASTIC_MIN_SCORE = 0
         else:
-            results = SearchQuerySet().all().models(BiologicalCollectionRecord)
-            results = results.filter(validated=True)
+            if filter_mode:
+                results = SearchQuerySet().all().models(
+                        BiologicalCollectionRecord)
+                results = results.filter(validated=True)
+            else:
+                results = []
 
-        taxon = filters.get('taxon', None)
         if taxon:
             results = sqs.filter(
                 taxon_gbif=taxon
@@ -95,7 +117,6 @@ class GetCollectionAbstract(APIView):
 
         # get by bbox
         if not ignore_bbox:
-            bbox = filters.get('bbox', None)
             if bbox:
                 bbox_array = bbox.split(',')
                 downtown_bottom_left = Point(
@@ -113,7 +134,6 @@ class GetCollectionAbstract(APIView):
 
         # additional filters
         # query by collectors
-        query_collector = filters.get('collector')
         if query_collector:
             qs_collector = SQ()
             qs = json.loads(query_collector)
@@ -121,7 +141,6 @@ class GetCollectionAbstract(APIView):
                 qs_collector.add(SQ(collector=query), SQ.OR)
             results = results.filter(qs_collector)
 
-        boundary = filters.get('boundary')
         if boundary:
             qs_collector = SQ()
             qs = json.loads(boundary)
@@ -129,7 +148,6 @@ class GetCollectionAbstract(APIView):
                 qs_collector.add(SQ(boundary=query), SQ.OR)
             results = results.filter(qs_collector)
 
-        user_boundary = filters.get('userBoundary')
         if user_boundary:
             qs = json.loads(user_boundary)
             user_boundaries = UserBoundary.objects.filter(
@@ -143,7 +161,6 @@ class GetCollectionAbstract(APIView):
                     )
 
         # query by category
-        query_category = filters.get('category')
         if query_category:
             qs_category = SQ()
             qs = json.loads(query_category)
@@ -151,22 +168,27 @@ class GetCollectionAbstract(APIView):
                 qs_category.add(SQ(category=query), SQ.OR)
             results = results.filter(qs_category)
 
+        # query by reference category
+        if reference_category:
+            qs_reference_category = SQ()
+            qs = json.loads(reference_category)
+            for query in qs:
+                qs_reference_category.add(SQ(reference_category=query), SQ.OR)
+            results = results.filter(qs_reference_category)
+
         # query by year from
-        year_from = filters.get('yearFrom')
         if year_from:
             clean_query_year_from = sqs.query.clean(year_from)
             results = results.filter(
                 collection_date_year__gte=clean_query_year_from)
 
         # query by year to
-        year_to = filters.get('yearTo')
         if year_to:
             clean_query_year_to = sqs.query.clean(year_to)
             results = results.filter(
                 collection_date_year__lte=clean_query_year_to)
 
         # query by months
-        months = filters.get('months')
         if months:
             qs = months.split(',')
             qs_month = SQ()
