@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Shared, Backbone, _, JqueryUI, $) {
+define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_panel/validate_data_list'], function (Shared, Backbone, _, JqueryUI, $, ValidateDataListView) {
     return Backbone.View.extend({
         template: _.template($('#side-panel-template').html()),
         className: 'panel-wrapper',
@@ -11,6 +11,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
             // Events
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
+            Shared.Dispatcher.on('sidePanel:clearSidePanel', this.clearSidePanel, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelHtml', this.updateSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
@@ -19,6 +20,13 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
             Shared.Dispatcher.on('sidePanel:addEventToReturnButton', this.addEventToReturnButton, this);
             Shared.Dispatcher.on('sidePanel:showReturnButton', this.showReturnButton, this);
             Shared.Dispatcher.on('sidePanel:hideReturnButton', this.hideReturnButton, this);
+
+            Shared.Dispatcher.on('sidePanel:openValidateDataList', this.openValidateDataList, this);
+            Shared.Dispatcher.on('sidePanel:closeValidateDataList', this.closeValidateDataList, this);
+
+            this.validateDataListView = new ValidateDataListView({
+                parent: this
+            });
         },
         render: function () {
             this.$el.html(this.template());
@@ -33,6 +41,15 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
             this.rightPanel.css('display', 'none');
 
             return this;
+        },
+        openValidateDataList: function () {
+            this.clearSidePanel();
+            this.openSidePanel();
+            this.$el.find('#content-panel').append(this.validateDataListView.render().$el);
+            this.validateDataListView.show();
+        },
+        closeValidateDataList: function () {
+            this.closeSidePanel();
         },
         isSidePanelOpen: function () {
             return this.rightPanel.is(":visible");

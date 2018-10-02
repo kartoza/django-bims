@@ -13,7 +13,7 @@ from bims.permissions.api_permission import IsValidator, AllowedTaxon
 class GetNonValidatedRecords(APIView):
 
     permission_classes = [IsValidator, ]
-    page_limit = 20
+    page_limit = 5
 
     def get(self, request):
         try:

@@ -12,6 +12,11 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     """
     Serializer for biological collection record.
     """
+    location = serializers.SerializerMethodField()
+
+    def get_location(self, obj):
+        return obj.site.get_geometry().geojson
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = '__all__'

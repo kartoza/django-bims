@@ -351,6 +351,9 @@
             <div class="upload-data sub-control-panel">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
+            <div class="validate-data sub-control-panel">
+                <i class="fa fa-check" aria-hidden="true"></i>
+            </div>
         {% endif %}
     </div>
     <div class="zoom-control row">
@@ -765,5 +768,20 @@
                 </div>
             </div>
         </div>
+    </div>
+</script>
+
+<script type="text/template" id="validate-data-list-container">
+    <div class="wrapper">
+    </div>
+</script>
+
+<script type="text/template" id="validate-data-detail-container">
+    <div class="validate-data-detail-wrapper" data-id="<%= id %>">
+        <div class="container">
+            <%= name %>
+            <%= description %>
+        </div>
+        <button class="show-map-button">Show in map</button>
     </div>
 </script>
