@@ -8,7 +8,15 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         initialize: function () {
         },
         showOnMap: function () {
-            console.log(this.model);
+            var location = JSON.parse(this.model.get('location'));
+            var longitude = location.coordinates[0];
+            var latitude = location.coordinates[1];
+            var coordinates = [longitude, latitude];
+            coordinates = ol.proj.transform(
+                coordinates, ol.proj.get("EPSG:4326"), ol.proj.get("EPSG:3857"));
+
+            Shared.Dispatcher.trigger('map:clearPoint');
+            Shared.Dispatcher.trigger('map:drawPoint', coordinates, 10);
         },
         render: function () {
             var name = this.model.get('original_species_name');

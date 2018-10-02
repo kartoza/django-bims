@@ -9,9 +9,6 @@ define([
         opened: false,
         currentPage: 1,
         collections: {},
-        events: {
-            'click .show-map-button': 'showMapButtonClicked'
-        },
         template: _.template($('#validate-data-list-container').html()),
         initialize: function (options) {
             // Register events
@@ -31,7 +28,8 @@ define([
         },
         close: function () {
             this.opened = false;
-            this.triggerEvent('closeSidePanel');
+            this.sidePanel.closeSidePanel();
+            Shared.Dispatcher.trigger('map:clearPoint');
         },
         isOpen: function () {
             return this.opened;
@@ -62,15 +60,6 @@ define([
                 detailView.model = model;
                 self.$el.find('.wrapper').append(detailView.render().$el);
             });
-            // listTemplate.find('.show-map-button').click(this.showMapButtonClicked);
-        },
-        showMapButtonClicked: function (e) {
-            var id = $(e.target).parent().data('id');
-            console.log(id);
-            // console.log(this.collections[this.currentPage]);
-        },
-        triggerEvent: function (eventName, parameters) {
-            Shared.Dispatcher.trigger('sidePanel:'+eventName, parameters);
         }
     })
 });

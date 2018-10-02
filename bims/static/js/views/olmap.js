@@ -47,7 +47,7 @@ define([
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
-            this.layers = new Layers();
+            this.layers = new Layers({parent:this});
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
@@ -57,6 +57,8 @@ define([
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
+            Shared.Dispatcher.on('map:drawPoint', this.drawPoint, this);
+            Shared.Dispatcher.on('map:clearPoint', this.clearPoint, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
@@ -76,6 +78,23 @@ define([
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
             this.mapControlPanel.searchView.initDateFilter();
             this.showInfoPopup();
+
+            this.pointVectorSource = new ol.source.Vector({});
+            this.pointLayer = new ol.layer.Vector({
+                source: this.pointVectorSource,
+                style: [
+                    new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: 'blue',
+                            width: 3
+                        }),
+                        fill: new ol.style.Fill({
+                            color: 'rgba(0, 0, 255, 0.1)'
+                        })
+                    })]
+            });
+            this.pointLayer.setZIndex(1000);
+            this.map.addLayer(this.pointLayer);
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -102,6 +121,15 @@ define([
             if (typeof zoomLevel !== 'undefined') {
                 this.map.getView().setZoom(zoomLevel);
             }
+        },
+        drawPoint: function (coordinates, zoomLevel) {
+            this.zoomToCoordinates(coordinates, zoomLevel);
+            var circle = new ol.geom.Circle(coordinates, 1000);
+            var circleFeature = new ol.Feature(circle);
+            this.pointVectorSource.addFeature(circleFeature);
+        },
+        clearPoint: function () {
+            this.pointVectorSource.clear();
         },
         zoomToExtent: function (coordinates) {
             if (this.isBoundaryEnabled) {
