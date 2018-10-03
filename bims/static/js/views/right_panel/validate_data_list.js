@@ -111,6 +111,12 @@ define([
                 detailView.delegateEvents();
                 self.$el.find('.validate-wrapper').append(detailView.render().$el);
             });
+
+            if(self.collections[self.currentPage].models.length === 0) {
+                self.$el.find('.validate-wrapper').append(
+                    '<div class="validate-data-empty">Empty Data</div>'
+                );
+            }
         }
     })
 });

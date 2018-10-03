@@ -4,6 +4,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         className: 'panel-wrapper',
         rightPanel: null,
         returnButton: null,
+        validationMode: false,
         events: {
             'click .close-panel': 'closeSidePanel'
         },
@@ -43,6 +44,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             return this;
         },
         openValidateDataList: function () {
+            this.validationMode = true;
             this.clearSidePanel();
             this.openSidePanel();
             this.switchToSearchResultPanel();
@@ -51,6 +53,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             this.validateDataListView.show();
         },
         closeValidateDataList: function () {
+            this.validationMode = false;
             this.closeSidePanel();
             this.validateDataListView.close();
         },
@@ -104,6 +107,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             Shared.Dispatcher.trigger('biodiversityLegend:moveRight');
             this.closeSidePanelAnimation();
             this.hideReturnButton();
+            if (this.validationMode) {
+                Shared.Dispatcher.trigger('mapControlPanel:validationClosed');
+            }
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {

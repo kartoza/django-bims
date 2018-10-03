@@ -42,6 +42,7 @@ define(
                 });
                 this.validateDataListOpen = false;
                 Shared.Dispatcher.on('mapControlPanel:clickSpatialFilter', this.spatialFilterClicked, this);
+                Shared.Dispatcher.on('mapControlPanel:validationClosed', this.validationDataClosed, this);
             },
             spatialFilterClicked: function (e) {
                 if (!this.spatialFilter.isOpen()) {
@@ -172,6 +173,10 @@ define(
             closeValidateData: function () {
                 this.$el.find('.validate-data').removeClass('control-panel-selected');
                 Shared.Dispatcher.trigger('sidePanel:closeValidateDataList');
+                this.validateDataListOpen = false;
+            },
+            validationDataClosed: function () {
+                this.$el.find('.validate-data').removeClass('control-panel-selected');
                 this.validateDataListOpen = false;
             },
             openValidateData: function () {

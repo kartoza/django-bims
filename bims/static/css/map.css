@@ -149,7 +149,7 @@ html, body, .map, .map-wrapper, #map-container {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 207px;
+    top: 227px;
     transform: translateY(-50%);
     padding-left: 6px;
     padding-right: 6px;
@@ -173,7 +173,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .download-control-panel {
-    top: 392px;
+    top: 435px;
 }
 
 .download-control-panel.no-upload {
@@ -685,7 +685,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 324px !important;
+    top: 367px !important;
     left: 0;
     right: auto !important;
     text-align: left;
@@ -1774,4 +1774,11 @@ div:hover::-webkit-scrollbar {
     padding: 5px;
     background-color: rgba(29, 188, 13, 0.13);
     text-align: center;
+}
+
+.validate-data-empty {
+    height: 300px;
+    padding-top: 100px;
+    text-align: center;
+    color: grey;
 }
