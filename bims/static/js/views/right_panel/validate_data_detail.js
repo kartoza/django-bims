@@ -6,9 +6,34 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         events: {
             'click .show-map-button': 'showOnMap',
             'click .show-detail': 'showDetail',
-            'click .hide-detail': 'hideDetail'
+            'click .hide-detail': 'hideDetail',
+            'click .accept-data': 'acceptData',
+            'click .accept-validate': 'acceptValidate',
+            'click .cancel-validate': 'cancelValidate'
         },
         initialize: function () {
+        },
+        acceptValidate: function () {
+            var self = this;
+            var badges = $('<span class="badge badge-success">Accepted</span>');
+            $.ajax({
+                url: '/api/validate-object/',
+                data: {'pk': self.model.get('id')},
+                success: function () {
+                    badges.insertAfter(self.$el.find('.accept-data'));
+                    self.$el.find('.accept-data').css('display', 'none');
+                    self.$el.find('.validate-data-action').css("display", "none");
+                }
+            });
+        },
+        cancelValidate: function () {
+            this.$el.find('.validate-data-action').css("display", "none");
+            this.$el.find('.accept-data').css("display", "inline-block");
+        },
+        acceptData: function () {
+            // Show validation
+            this.$el.find('.validate-data-action').css("display", "block");
+            this.$el.find('.accept-data').css("display", "none");
         },
         showDetail: function () {
             this.$el.find('.detail-container').css("display", "block");
@@ -38,6 +63,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
             if (this.detailShowed) {
                 this.showDetail();
             }
+            this.$el.find('.validate-data-action').css("display", "none");
             return this;
         }
     })

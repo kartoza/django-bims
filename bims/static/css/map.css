@@ -1726,10 +1726,19 @@ div:hover::-webkit-scrollbar {
     padding: 10px;
 }
 
-.validate-data-detail-wrapper {
+.validate-data-detail-wrapper, .validate-data-pagination {
     padding: 10px;
 }
 
 .detail-container, .hide-detail {
     display: none;
+}
+
+.validate-data-pagination {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.validate-data-detail-wrapper .badge {
+    font-size: 8pt;
 }

@@ -13,7 +13,8 @@ define([
         detailViews: {},
         events: {
             'click .next': 'nextPage',
-            'click .previous': 'prevPage'
+            'click .previous': 'prevPage',
+            'click .refresh-list': 'refreshData'
         },
         initialize: function (options) {
             // Register events
@@ -32,7 +33,16 @@ define([
             this.fetchCollection();
         },
         prevPage: function () {
+            if (this.currentPage === 1) {
+                return false;
+            }
             this.currentPage--;
+            this.$el.find('.wrapper').html('');
+            this.fetchCollection();
+        },
+        refreshData: function () {
+            var self = this;
+            self.collections = {};
             this.$el.find('.wrapper').html('');
             this.fetchCollection();
         },
