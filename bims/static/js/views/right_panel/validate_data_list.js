@@ -58,6 +58,25 @@ define([
         isOpen: function () {
             return this.opened;
         },
+        updatePaginationButtons: function (paginationData) {
+            var maxPage = paginationData['max_page'];
+            var currentPage = paginationData['current_page'];
+
+            if (this.currentPage === 1) {
+                this.$el.find('.previous').parent().addClass('disabled');
+            }
+
+            if (currentPage === maxPage) {
+                // Disabled next button
+                this.$el.find('.next').parent().addClass('disabled');
+                if (maxPage > 1) {
+                    this.$el.find('.previous').parent().removeClass('disabled');
+                }
+            } else {
+                // Disabled previous button
+                this.$el.find('.next').parent().removeClass('disabled');
+            }
+        },
         fetchCollection: function () {
             var self = this;
             if(!self.collections[self.currentPage]) {
@@ -79,6 +98,7 @@ define([
         },
         renderList: function () {
             var self = this;
+            self.updatePaginationButtons(self.collections[self.currentPage].paginationData);
             $.each(self.collections[self.currentPage].models, function (index, model) {
                 var id = model.get('id');
                 if (!self.detailViews[id]) {
