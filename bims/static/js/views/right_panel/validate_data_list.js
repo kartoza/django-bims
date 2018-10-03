@@ -29,7 +29,7 @@ define([
         },
         nextPage: function () {
             this.currentPage++;
-            this.$el.find('.wrapper').html('');
+            this.$el.find('.validate-wrapper').html('');
             this.fetchCollection();
         },
         prevPage: function () {
@@ -37,13 +37,13 @@ define([
                 return false;
             }
             this.currentPage--;
-            this.$el.find('.wrapper').html('');
+            this.$el.find('.validate-wrapper').html('');
             this.fetchCollection();
         },
         refreshData: function () {
             var self = this;
             self.collections = {};
-            this.$el.find('.wrapper').html('');
+            this.$el.find('.validate-wrapper').html('');
             this.fetchCollection();
         },
         show: function () {
@@ -109,7 +109,7 @@ define([
                     detailView = self.detailViews[id];
                 }
                 detailView.delegateEvents();
-                self.$el.find('.wrapper').append(detailView.render().$el);
+                self.$el.find('.validate-wrapper').append(detailView.render().$el);
             });
         }
     })

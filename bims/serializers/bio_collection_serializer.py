@@ -13,6 +13,14 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     Serializer for biological collection record.
     """
     location = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    taxonomy = serializers.SerializerMethodField()
+
+    def get_taxonomy(self, obj):
+        return TaxonSerializer(obj.taxon_gbif_id).data
+
+    def get_owner(self, obj):
+        return obj.owner.username
 
     def get_location(self, obj):
         return obj.site.get_geometry().geojson

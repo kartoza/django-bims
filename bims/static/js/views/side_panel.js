@@ -45,6 +45,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         openValidateDataList: function () {
             this.clearSidePanel();
             this.openSidePanel();
+            this.switchToSearchResultPanel();
             this.validateDataListView.delegateEvents();
             this.$el.find('#content-panel').append(this.validateDataListView.render().$el);
             this.validateDataListView.show();

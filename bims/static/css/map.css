@@ -1727,7 +1727,11 @@ div:hover::-webkit-scrollbar {
 }
 
 .validate-data-detail-wrapper, .validate-data-pagination {
-    padding: 10px;
+    padding: 5px;
+}
+
+.validate-data-detail-wrapper {
+    border-bottom: 1px solid rgba(168, 168, 168, 0.34);
 }
 
 .detail-container, .hide-detail {
@@ -1735,10 +1739,39 @@ div:hover::-webkit-scrollbar {
 }
 
 .validate-data-pagination {
-    margin-left: auto;
-    margin-right: auto;
+    width: 50%;
+    margin: 0 auto;
 }
 
 .validate-data-detail-wrapper .badge {
     font-size: 8pt;
+}
+
+.detail-container-title {
+    font-weight: bold;
+}
+
+.validate-data-header {
+    font-size: 9pt;
+}
+
+.detail-container-buttons {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    text-align: center;
+}
+
+.refresh-list {
+    float: right;
+}
+
+.validate-wrapper {
+    min-height: 300px;
+}
+
+.validate-data-action {
+    padding: 5px;
+    background-color: rgba(29, 188, 13, 0.13);
+    text-align: center;
 }
