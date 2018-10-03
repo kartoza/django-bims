@@ -99,6 +99,7 @@ define([
         renderList: function () {
             var self = this;
             self.updatePaginationButtons(self.collections[self.currentPage].paginationData);
+            Shared.Dispatcher.trigger('map:clearPoint');
             $.each(self.collections[self.currentPage].models, function (index, model) {
                 var id = model.get('id');
                 if (!self.detailViews[id]) {
