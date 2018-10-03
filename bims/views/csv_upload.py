@@ -153,7 +153,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                     field_type
                             )
                             if not optional_record:
-                               optional_record = ''
+                                optional_record = ''
 
                             if opt_field[:4] == 'site':
                                 optional_site_records[opt_field] = \
