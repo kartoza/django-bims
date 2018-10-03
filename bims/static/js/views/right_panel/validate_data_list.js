@@ -10,6 +10,11 @@ define([
         currentPage: 1,
         collections: {},
         template: _.template($('#validate-data-list-container').html()),
+        detailViews: {},
+        events: {
+            'click .next': 'nextPage',
+            'click .previous': 'prevPage'
+        },
         initialize: function (options) {
             // Register events
             this.sidePanel = options.parent;
@@ -21,6 +26,16 @@ define([
             this.$el.html(this.template());
             return this;
         },
+        nextPage: function () {
+            this.currentPage++;
+            this.$el.find('.wrapper').html('');
+            this.fetchCollection();
+        },
+        prevPage: function () {
+            this.currentPage--;
+            this.$el.find('.wrapper').html('');
+            this.fetchCollection();
+        },
         show: function () {
             this.opened = true;
             this.updateTitle();
@@ -28,7 +43,6 @@ define([
         },
         close: function () {
             this.opened = false;
-            this.sidePanel.closeSidePanel();
             Shared.Dispatcher.trigger('map:clearPoint');
         },
         isOpen: function () {
@@ -56,8 +70,15 @@ define([
         renderList: function () {
             var self = this;
             $.each(self.collections[self.currentPage].models, function (index, model) {
-                var detailView = new ValidateDataDetail();
-                detailView.model = model;
+                var id = model.get('id');
+                if (!self.detailViews[id]) {
+                    var detailView = new ValidateDataDetail();
+                    detailView.model = model;
+                    self.detailViews[id] = detailView;
+                } else {
+                    detailView = self.detailViews[id];
+                }
+                detailView.delegateEvents();
                 self.$el.find('.wrapper').append(detailView.render().$el);
             });
         }

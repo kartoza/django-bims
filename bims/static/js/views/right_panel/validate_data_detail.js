@@ -2,10 +2,25 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
     return Backbone.View.extend({
         template: _.template($('#validate-data-detail-container').html()),
         model: null,
+        detailShowed: false,
         events: {
-            'click .show-map-button': 'showOnMap'
+            'click .show-map-button': 'showOnMap',
+            'click .show-detail': 'showDetail',
+            'click .hide-detail': 'hideDetail'
         },
         initialize: function () {
+        },
+        showDetail: function () {
+            this.$el.find('.detail-container').css("display", "block");
+            this.$el.find('.hide-detail').css("display", "inline-block");
+            this.$el.find('.show-detail').css("display", "none");
+            this.detailShowed = true;
+        },
+        hideDetail: function () {
+            this.$el.find('.detail-container').css("display", "none");
+            this.$el.find('.show-detail').css("display", "inline-block");
+            this.$el.find('.hide-detail').css("display", "none");
+            this.detailShowed = false;
         },
         showOnMap: function () {
             var location = JSON.parse(this.model.get('location'));
@@ -19,14 +34,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
             Shared.Dispatcher.trigger('map:drawPoint', coordinates, 10);
         },
         render: function () {
-            var name = this.model.get('original_species_name');
-            var description = this.model.get('category');
-            var data = {
-                id: this.model.get('id'),
-                name: name,
-                description: description
-            };
-            this.$el.html(this.template(data));
+            this.$el.html(this.template(this.model.attributes));
+            if (this.detailShowed) {
+                this.showDetail();
+            }
             return this;
         }
     })

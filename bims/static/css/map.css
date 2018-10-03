@@ -1725,3 +1725,11 @@ div:hover::-webkit-scrollbar {
     background-color: #a0a0a0;
     padding: 10px;
 }
+
+.validate-data-detail-wrapper {
+    padding: 10px;
+}
+
+.detail-container, .hide-detail {
+    display: none;
+}

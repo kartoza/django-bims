@@ -45,11 +45,13 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         openValidateDataList: function () {
             this.clearSidePanel();
             this.openSidePanel();
+            this.validateDataListView.delegateEvents();
             this.$el.find('#content-panel').append(this.validateDataListView.render().$el);
             this.validateDataListView.show();
         },
         closeValidateDataList: function () {
             this.closeSidePanel();
+            this.validateDataListView.close();
         },
         isSidePanelOpen: function () {
             return this.rightPanel.is(":visible");

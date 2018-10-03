@@ -774,14 +774,24 @@
 <script type="text/template" id="validate-data-list-container">
     <div class="wrapper">
     </div>
+    <div class="pagination">
+        <button class="previous">prev</button>
+        <button class="next">next</button>
+    </div>
 </script>
 
 <script type="text/template" id="validate-data-detail-container">
     <div class="validate-data-detail-wrapper" data-id="<%= id %>">
         <div class="container">
-            <%= name %>
-            <%= description %>
+            <%= original_species_name %>
+        </div>
+        <div class="detail-container">
+            <p> notes = <%= notes %> </p>
+            <p> category = <%= category %> </p>
+            <p> custodian = <%= institution_id %> </p>
         </div>
         <button class="show-map-button">Show in map</button>
+        <button class="show-detail">Show detail</button>
+        <button class="hide-detail">Hide detail</button>
     </div>
 </script>
