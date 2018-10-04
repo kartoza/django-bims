@@ -141,16 +141,12 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 60px;
 }
 
-.layer-switcher {
-    z-index: 100;
-}
-
 .map-control-panel, .download-control-panel {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 207px;
-    transform: translateY(-50%);
+    top: 0;
+    margin-top: 90px;
     padding-left: 6px;
     padding-right: 6px;
     font-size: 18pt;
@@ -162,22 +158,6 @@ html, body, .map, .map-wrapper, #map-container {
     border-top: none;
     width: 54px;
     z-index: 100;
-}
-
-.no-upload {
-    top: 160px;
-}
-
-.layer-switcher.no-upload {
-    top: 230px !important;
-}
-
-.download-control-panel {
-    top: 392px;
-}
-
-.download-control-panel.no-upload {
-    top: 297px !important;
 }
 
 .download-control-panel .download-format-selector-container {
@@ -685,13 +665,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 324px !important;
+    /*top: 367px !important;*/
     left: 0;
     right: auto !important;
     text-align: left;
     margin-left: 30px;
     cursor: pointer;
     padding: 0 !important;
+    z-index: 100;
 }
 
 .layer-switcher button {
@@ -1724,4 +1705,61 @@ div:hover::-webkit-scrollbar {
     filter: alpha(opacity=40); /* msie */
     background-color: #a0a0a0;
     padding: 10px;
+}
+
+.validate-data-detail-wrapper, .validate-data-pagination {
+    padding: 5px;
+}
+
+.validate-data-detail-wrapper {
+    border-bottom: 1px solid rgba(168, 168, 168, 0.34);
+}
+
+.detail-container, .hide-detail {
+    display: none;
+}
+
+.validate-data-pagination {
+    width: 50%;
+    margin: 0 auto;
+}
+
+.validate-data-detail-wrapper .badge {
+    font-size: 8pt;
+}
+
+.detail-container-title {
+    font-weight: bold;
+}
+
+.validate-data-header {
+    font-size: 9pt;
+}
+
+.detail-container-buttons {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    text-align: center;
+}
+
+.refresh-list {
+    float: right;
+}
+
+.validate-wrapper {
+    min-height: 300px;
+}
+
+.validate-data-action {
+    padding: 5px;
+    background-color: rgba(29, 188, 13, 0.13);
+    text-align: center;
+}
+
+.validate-data-empty {
+    height: 300px;
+    padding-top: 100px;
+    text-align: center;
+    color: grey;
 }

@@ -41,6 +41,7 @@
         const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
         const ogcServerDefaultLocation = "{{ OGC_SERVER.default.PUBLIC_LOCATION }}";
         const useReferenceCategory = "{% if use_reference_category %} true {% else %} false {% endif %}";
+        const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
     </script>
     {% block extra_head %}
 

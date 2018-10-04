@@ -352,6 +352,11 @@
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
         {% endif %}
+        {% if can_validate %}
+            <div class="validate-data sub-control-panel">
+                <i class="fa fa-check" aria-hidden="true"></i>
+            </div>
+        {% endif %}
     </div>
     <div class="zoom-control row">
         <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
@@ -764,6 +769,60 @@
                     <div class="col-8">500 up</div>
                 </div>
             </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="validate-data-list-container">
+    <div class="refresh-list-wrapper">
+        <button class="refresh-list"><i class="fa fa-refresh" aria-hidden="true"></i> Refresh data</button>
+    </div>
+    <div class="validate-wrapper">
+    </div>
+    <nav aria-label="Page navigation">
+        <ul class="pagination validate-data-pagination">
+            <li class="page-item"><a class="page-link previous" href="#">Previous</a></li>
+            <li class="page-item"><a class="page-link next" href="#">Next</a></li>
+        </ul>
+    </nav>
+</script>
+
+<script type="text/template" id="validate-data-detail-container">
+    <div class="validate-data-detail-wrapper" data-id="<%= id %>">
+        <div class="container">
+            <div class="validate-data-header">
+                <div class="detail-container-title">
+                    Species Name
+                </div>
+                <p> <%= original_species_name %> </p>
+                <div class="detail-container-title"> Collection Date </div>
+                <p> <%= collection_date %> </p>
+                <div class="detail-container-title"> Uploader </div>
+                <p> <%= owner %> </p>
+            </div>
+        </div>
+        <div class="detail-container container">
+            <div class="detail-container-title"> Notes </div>
+            <div> <%= notes %> </div>
+            <div class="detail-container-title"> Category </div>
+            <div> <%= category %> </div>
+            <div class="detail-container-title"> Custodian </div>
+            <div> <%= institution_id %> </div>
+            <div class="detail-container-title"> Taxon Class </div>
+            <div> <%= taxonomy.taxon_class %> </div>
+        </div>
+        <div class="detail-container-buttons">
+            <button class="show-map-button">Show in map</button>
+            <button class="show-detail">Show detail</button>
+            <button class="hide-detail">Hide detail</button>
+            <button class="accept-data">Accept</button>
+        </div>
+        <div class="validate-data-action">
+            <p>
+                Are you sure you want to accept this data?
+            </p>
+            <button class="accept-validate">Yes</button>
+            <button class="cancel-validate">Cancel</button>
         </div>
     </div>
 </script>

@@ -13,7 +13,7 @@ from bims.permissions.api_permission import IsValidator, AllowedTaxon
 class GetNonValidatedRecords(APIView):
 
     permission_classes = [IsValidator, ]
-    page_limit = 20
+    page_limit = 5
 
     def get(self, request):
         try:
@@ -30,16 +30,27 @@ class GetNonValidatedRecords(APIView):
 
             try:
                 records = paginator.page(page)
+                current_page = int(page)
             except PageNotAnInteger:
                 records = paginator.page(1)
+                current_page = 1
             except EmptyPage:
                 records = paginator.page(paginator.num_pages)
+                current_page = paginator.num_pages
 
             serializer = BioCollectionSerializer(
                     records,
                     many=True
             )
-            return Response(serializer.data)
+            response_data = {
+                'data': serializer.data,
+                'pagination': {
+                    'current_page': current_page,
+                    'max_page': paginator.num_pages,
+                    'page_limit': self.page_limit
+                }
+            }
+            return Response(response_data)
         except BiologicalCollectionRecord.DoesNotExist:
             return HttpResponse(
                 'Object Does Not Exist',
