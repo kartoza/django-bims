@@ -141,16 +141,12 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 60px;
 }
 
-.layer-switcher {
-    z-index: 100;
-}
-
 .map-control-panel, .download-control-panel {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 227px;
-    transform: translateY(-50%);
+    top: 0;
+    margin-top: 90px;
     padding-left: 6px;
     padding-right: 6px;
     font-size: 18pt;
@@ -162,22 +158,6 @@ html, body, .map, .map-wrapper, #map-container {
     border-top: none;
     width: 54px;
     z-index: 100;
-}
-
-.no-upload {
-    top: 160px;
-}
-
-.layer-switcher.no-upload {
-    top: 230px !important;
-}
-
-.download-control-panel {
-    top: 435px;
-}
-
-.download-control-panel.no-upload {
-    top: 297px !important;
 }
 
 .download-control-panel .download-format-selector-container {
@@ -685,13 +665,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 367px !important;
+    /*top: 367px !important;*/
     left: 0;
     right: auto !important;
     text-align: left;
     margin-left: 30px;
     cursor: pointer;
     padding: 0 !important;
+    z-index: 100;
 }
 
 .layer-switcher button {

@@ -2,12 +2,13 @@
 import os
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
+from django.contrib.flatpages.models import FlatPage
 from bims.utils.get_key import get_key
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.models.profile import Profile as BimsProfile
-from django.contrib.flatpages.models import FlatPage
+from bims.permissions.api_permission import user_has_permission_to_validate
 
 
 class MapPageView(TemplateView):
@@ -37,6 +38,8 @@ class MapPageView(TemplateView):
         context['geocontext_collection_key'] = get_key(
             'GEOCONTEXT_COLLECTION_KEY')
         context['center_point_map'] = get_key('CENTER_POINT_MAP')
+        context['can_validate'] = user_has_permission_to_validate(
+                self.request.user)
 
         categories = BiologicalCollectionRecord.CATEGORY_CHOICES
         context['collection_category'] = [list(x) for x in categories]
