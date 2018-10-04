@@ -44,23 +44,27 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             return this;
         },
         openValidateDataList: function () {
-            this.validationMode = true;
             this.clearSidePanel();
             this.openSidePanel();
             this.switchToSearchResultPanel();
             this.validateDataListView.delegateEvents();
             this.$el.find('#content-panel').append(this.validateDataListView.render().$el);
             this.validateDataListView.show();
+            this.validationMode = true;
         },
         closeValidateDataList: function () {
-            this.validationMode = false;
             this.closeSidePanel();
             this.validateDataListView.close();
+            this.validationMode = false;
         },
         isSidePanelOpen: function () {
             return this.rightPanel.is(":visible");
         },
         openSidePanel: function (properties) {
+            if (this.validationMode) {
+                Shared.Dispatcher.trigger('mapControlPanel:validationClosed');
+                this.validationMode = false;
+            }
             Shared.Dispatcher.trigger('biodiversityLegend:moveLeft');
             this.hideReturnButton();
             $('#geocontext-information-container').hide();
@@ -109,6 +113,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             this.hideReturnButton();
             if (this.validationMode) {
                 Shared.Dispatcher.trigger('mapControlPanel:validationClosed');
+                this.validationMode = false;
             }
         },
         fillSidePanel: function (contents) {
