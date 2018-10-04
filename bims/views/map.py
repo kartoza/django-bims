@@ -62,6 +62,22 @@ class MapPageView(TemplateView):
         context['use_reference_category'] = bool(
                 get_key('REFERENCE_CATEGORY_FILTER'))
 
+        # Search panel titles
+        date_title = get_key('DATE_TITLE')
+        if not date_title:
+            date_title = 'DATE'
+        context['date_title'] = date_title
+
+        spatial_scale = get_key('SPATIAL_SCALE_TITLE')
+        if not spatial_scale:
+            spatial_scale = 'ADMINISTRATIVE AREA'
+        context['spatial_scale_title'] = spatial_scale
+
+        collector_title = get_key('COLLECTOR_TITLE')
+        if not collector_title:
+            collector_title = 'COLLECTOR'
+        context['collector_title'] = collector_title
+
         # get date filter
         context['date_filter'] = {'min': '1900', 'max': '2008'}
         date_min = BiologicalCollectionRecord.objects.all(
