@@ -47,13 +47,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 layerType = layerName;
             }
 
-            var savedLayerVisibility = Shared.StorageUtil.getItem(layerType);
+            var savedLayerVisibility = Shared.StorageUtil.getItemDict(layerType, 'selected');
 
             if (savedLayerVisibility !== null) {
-                if (savedLayerVisibility.hasOwnProperty('selected')) {
-                   savedLayerVisibility = savedLayerVisibility['selected'];
-                   visibleInDefault = savedLayerVisibility;
-                }
+                visibleInDefault = savedLayerVisibility;
             }
 
             this.layers[layerType] = {
@@ -201,12 +198,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;
-            var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
-            if (administrativeVisibility !== null) {
-                if (administrativeVisibility.hasOwnProperty('selected')) {
-                    administrativeVisibility = administrativeVisibility['selected'];
-                }
-            }
+            var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'selected');
             if (!self.isAdministrativeLayerSelected() || !administrativeVisibility) {
                 return false;
             }
@@ -424,6 +416,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 var keys = Object.keys(self.layers);
                 keys.reverse();
                 var orderedKeys = [];
+                var unsavedLayers = [];
                 var shouldReverseOrder = false;
 
                 $.each(keys, function (index, key) {
@@ -435,15 +428,27 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     var order = Shared.StorageUtil.getItemDict(itemName, 'order');
 
                     if (order !== null) {
-                        orderedKeys[order] = itemName;
+                        if (typeof orderedKeys[order] === 'undefined') {
+                            orderedKeys[order] = itemName;
+                        } else {
+                            if(orderedKeys[order] !== itemName) {
+                                unsavedLayers.push(itemName);
+                            }
+                        }
                         shouldReverseOrder = true;
                     } else {
-                        orderedKeys.push(itemName);
+                        unsavedLayers.push(itemName);
                     }
                 });
 
                 if (shouldReverseOrder) {
                     orderedKeys = orderedKeys.reverse();
+                }
+
+                if (orderedKeys.length === 0) {
+                    orderedKeys = unsavedLayers;
+                } else if (unsavedLayers.length > 0) {
+                    orderedKeys.push(unsavedLayers);
                 }
 
                 $.each(orderedKeys, function (index, key) {
@@ -456,6 +461,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         defaultVisibility = value['visibleInDefault'];
                     } else {
                         layerName = key;
+                    }
+
+                    if (typeof layerName === 'undefined') {
+                        return true;
                     }
 
                     var currentLayerTransparency = 100;

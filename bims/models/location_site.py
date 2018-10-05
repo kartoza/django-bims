@@ -30,6 +30,16 @@ class LocationSite(models.Model):
         max_length=100,
         blank=False,
     )
+    site_description = models.CharField(
+        max_length=500,
+        blank=True,
+        default=''
+    )
+    site_code = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
+    )
     location_type = models.ForeignKey(
         LocationType,
         models.CASCADE,

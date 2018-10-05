@@ -1,9 +1,10 @@
-define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Shared, Backbone, _, JqueryUI, $) {
+define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_panel/validate_data_list'], function (Shared, Backbone, _, JqueryUI, $, ValidateDataListView) {
     return Backbone.View.extend({
         template: _.template($('#side-panel-template').html()),
         className: 'panel-wrapper',
         rightPanel: null,
         returnButton: null,
+        validationMode: false,
         events: {
             'click .close-panel': 'closeSidePanel'
         },
@@ -11,6 +12,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
             // Events
             Shared.Dispatcher.on('sidePanel:openSidePanel', this.openSidePanel, this);
             Shared.Dispatcher.on('sidePanel:closeSidePanel', this.closeSidePanel, this);
+            Shared.Dispatcher.on('sidePanel:clearSidePanel', this.clearSidePanel, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelHtml', this.updateSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
@@ -19,6 +21,13 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
             Shared.Dispatcher.on('sidePanel:addEventToReturnButton', this.addEventToReturnButton, this);
             Shared.Dispatcher.on('sidePanel:showReturnButton', this.showReturnButton, this);
             Shared.Dispatcher.on('sidePanel:hideReturnButton', this.hideReturnButton, this);
+
+            Shared.Dispatcher.on('sidePanel:openValidateDataList', this.openValidateDataList, this);
+            Shared.Dispatcher.on('sidePanel:closeValidateDataList', this.closeValidateDataList, this);
+
+            this.validateDataListView = new ValidateDataListView({
+                parent: this
+            });
         },
         render: function () {
             this.$el.html(this.template());
@@ -34,10 +43,28 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
 
             return this;
         },
+        openValidateDataList: function () {
+            this.clearSidePanel();
+            this.openSidePanel();
+            this.switchToSearchResultPanel();
+            this.validateDataListView.delegateEvents();
+            this.$el.find('#content-panel').append(this.validateDataListView.render().$el);
+            this.validateDataListView.show();
+            this.validationMode = true;
+        },
+        closeValidateDataList: function () {
+            this.closeSidePanel();
+            this.validateDataListView.close();
+            this.validationMode = false;
+        },
         isSidePanelOpen: function () {
             return this.rightPanel.is(":visible");
         },
         openSidePanel: function (properties) {
+            if (this.validationMode) {
+                Shared.Dispatcher.trigger('mapControlPanel:validationClosed');
+                this.validationMode = false;
+            }
             Shared.Dispatcher.trigger('biodiversityLegend:moveLeft');
             this.hideReturnButton();
             $('#geocontext-information-container').hide();
@@ -84,6 +111,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery'], function (Sha
             Shared.Dispatcher.trigger('biodiversityLegend:moveRight');
             this.closeSidePanelAnimation();
             this.hideReturnButton();
+            if (this.validationMode) {
+                Shared.Dispatcher.trigger('mapControlPanel:validationClosed');
+                this.validationMode = false;
+            }
         },
         fillSidePanel: function (contents) {
             for (var key in contents) {

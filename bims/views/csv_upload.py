@@ -46,8 +46,40 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
 
     additional_fields = {
         'present': 'bool',
-        'absent': 'bool'
+        'absent': 'bool',
+        'endemism': 'str',
+        'sampling_method': 'str',
+        'sampling_effort': 'str',
+        'reference': 'str',
+        'reference_category': 'str',
+        'site_description': 'str',
+        'site_code': 'str'
     }
+
+    def add_additional_fields(self, fields):
+        if not isinstance(fields, list):
+            return
+        self.additional_fields = fields + self.additional_fields
+
+    def parse_optional_record(self, record, field_type):
+        optional_record = None
+        if field_type == 'bool':
+            optional_record = record == '1'
+        elif field_type == 'char':
+            optional_record = record.lower()
+        elif field_type == 'str':
+            optional_record = record
+        elif field_type == 'float':
+            try:
+                optional_record = float(record)
+            except ValueError:
+                optional_record = 0.0
+        elif field_type == 'int':
+            try:
+                optional_record = int(record)
+            except ValueError:
+                optional_record = 0
+        return optional_record
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
@@ -100,6 +132,37 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         allowed_geometry='POINT'
                     )
 
+                    # Optional records for location site
+                    optional_site_records = {}
+
+                    # Optional fields and value
+                    optional_records = {}
+
+                    if sys.version_info > (3, 0):
+                        # Python 3 code in this block
+                        optional_fields_iter = self.additional_fields.items()
+                    else:
+                        # Python 2 code in this block
+                        optional_fields_iter = self.additional_fields.\
+                            iteritems()
+
+                    for (opt_field, field_type) in optional_fields_iter:
+                        if opt_field in record:
+                            optional_record = self.parse_optional_record(
+                                    record[opt_field],
+                                    field_type
+                            )
+                            if not optional_record:
+                                optional_record = ''
+
+                            if opt_field[:4] == 'site':
+                                optional_site_records[opt_field] = \
+                                    optional_record
+                            else:
+                                if optional_record:
+                                    optional_records[opt_field] = \
+                                        optional_record
+
                     record_point = Point(
                         float(record['longitude']),
                         float(record['latitude']))
@@ -108,6 +171,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         location_type=location_type,
                         geometry_point=record_point,
                         name=record['location_site'],
+                        **optional_site_records
                     )
                     location_sites.append(location_site)
 
@@ -119,25 +183,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                     taxon_gbif = None
                     if collections:
                         taxon_gbif = collections[0].taxon_gbif_id
-
-                    # Optional fields and value
-                    optional_records = {}
-
-                    if (sys.version_info > (3, 0)):
-                        # Python 3 code in this block
-                        optional_fields_iter = self.additional_fields.items()
-                    else:
-                        # Python 2 code in this block
-                        optional_fields_iter = self.additional_fields.\
-                            iteritems()
-
-                    for (opt_field, field_type) in optional_fields_iter:
-                        if opt_field in record:
-                            if field_type == 'bool':
-                                record[opt_field] = record[opt_field] == '1'
-                            elif field_type == 'str':
-                                record[opt_field] = record[opt_field].lower()
-                            optional_records[opt_field] = record[opt_field]
 
                     # custodian field
                     if 'custodian' in record:

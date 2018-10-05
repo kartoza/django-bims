@@ -11,6 +11,7 @@ from django.contrib.gis import admin
 from django.contrib import admin as django_admin
 from django.core.mail import send_mail
 
+from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
@@ -40,6 +41,7 @@ from bims.models import (
     ShapefileUploadSession,
     Shapefile,
     NonBiodiversityLayer,
+    UserBoundary,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -191,6 +193,11 @@ class ClusterAdmin(admin.ModelAdmin):
     list_filter = ('boundary', 'module')
 
 
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'codename')
+    list_filter = ('name', 'codename')
+
+
 class CarouselHeaderAdmin(OrderedModelAdmin):
     list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
@@ -235,6 +242,13 @@ class ShapefileAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'shapefile',
+    )
+
+
+class UserBoundaryAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'user'
     )
 
 
@@ -377,5 +391,9 @@ admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, FlatPageCustomAdmin)
 
 admin.site.register(Visitor, VisitorAdmin)
+admin.site.register(Permission, PermissionAdmin)
+
+admin.site.register(UserBoundary, UserBoundaryAdmin)
+
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

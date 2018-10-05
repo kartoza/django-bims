@@ -1,4 +1,5 @@
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 
 def get_key(key_name):
@@ -12,11 +13,15 @@ def get_key(key_name):
         return ''
 
     try:
-        key = getattr(secret, key_name)
-    except AttributeError:
+        from django.conf import settings
+        key = getattr(settings, key_name)
+    except (AttributeError, ImproperlyConfigured):
         try:
-            key = os.environ[key_name]
-        except KeyError:
-            key = ''
+            key = getattr(secret, key_name)
+        except AttributeError:
+            try:
+                key = os.environ[key_name]
+            except KeyError:
+                key = ''
 
     return key

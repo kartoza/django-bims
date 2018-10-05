@@ -82,8 +82,38 @@ class BiologicalCollectionRecord(models.Model):
         default=settings.INSTITUTION_ID_DEFAULT,
         help_text='An identifier for the institution having custody of the '
                   'object(s) or information referred to in the record.',
-        max_length=50,
+        max_length=100,
         verbose_name='Custodian',
+    )
+
+    endemism = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
+    sampling_method = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
+    sampling_effort = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
+    reference = models.CharField(
+        max_length=300,
+        blank=True,
+        default=''
+    )
+
+    reference_category = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
     )
 
     # noinspection PyClassicStyleClass

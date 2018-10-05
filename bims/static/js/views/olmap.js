@@ -47,7 +47,7 @@ define([
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
-            this.layers = new Layers();
+            this.layers = new Layers({parent:this});
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
@@ -57,6 +57,8 @@ define([
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
+            Shared.Dispatcher.on('map:drawPoint', this.drawPoint, this);
+            Shared.Dispatcher.on('map:clearPoint', this.clearPoint, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
@@ -65,6 +67,7 @@ define([
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
             Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
             Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
+            Shared.Dispatcher.on('map:removeHighlightPinnedFeature', this.removeHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
             Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
@@ -75,6 +78,23 @@ define([
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
             this.mapControlPanel.searchView.initDateFilter();
             this.showInfoPopup();
+
+            this.pointVectorSource = new ol.source.Vector({});
+            this.pointLayer = new ol.layer.Vector({
+                source: this.pointVectorSource,
+                style: [
+                    new ol.style.Style({
+                        stroke: new ol.style.Stroke({
+                            color: 'blue',
+                            width: 3
+                        }),
+                        fill: new ol.style.Fill({
+                            color: 'rgba(0, 0, 255, 0.1)'
+                        })
+                    })]
+            });
+            this.pointLayer.setZIndex(1000);
+            this.map.addLayer(this.pointLayer);
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -101,6 +121,15 @@ define([
             if (typeof zoomLevel !== 'undefined') {
                 this.map.getView().setZoom(zoomLevel);
             }
+        },
+        drawPoint: function (coordinates, zoomLevel) {
+            this.zoomToCoordinates(coordinates, zoomLevel);
+            var circle = new ol.geom.Circle(coordinates, 1000);
+            var circleFeature = new ol.Feature(circle);
+            this.pointVectorSource.addFeature(circleFeature);
+        },
+        clearPoint: function () {
+            this.pointVectorSource.clear();
         },
         zoomToExtent: function (coordinates) {
             if (this.isBoundaryEnabled) {
@@ -130,23 +159,26 @@ define([
             var poiFound = false;
             var featuresData = '';
             if (features) {
-                var geometry = features[0].getGeometry();
-                var geometryType = geometry.getType();
+                $.each(features, function (index, feature) {
+                    var geometry = feature.getGeometry();
+                    var geometryType = geometry.getType();
 
-                if (geometryType === 'Point') {
-                    featuresClickedResponseData = self.featureClicked(features[0], self.uploadDataState);
-                    poiFound = featuresClickedResponseData[0];
-                    featuresData = featuresClickedResponseData[1];
+                    if (geometryType === 'Point') {
+                        featuresClickedResponseData = self.featureClicked(feature, self.uploadDataState);
+                        poiFound = featuresClickedResponseData[0];
+                        featuresData = featuresClickedResponseData[1];
 
-                    var coordinates = geometry.getCoordinates();
-                    self.zoomToCoordinates(coordinates);
-                    // increase zoom level if it is clusters
-                    if (features[0].getProperties()['count'] &&
-                        features[0].getProperties()['count'] > 1) {
-                        self.map.getView().setZoom(self.getCurrentZoom() + 1);
-                        poiFound = true;
+                        var coordinates = geometry.getCoordinates();
+                        self.zoomToCoordinates(coordinates);
+                        // increase zoom level if it is clusters
+                        if (feature.getProperties()['count'] &&
+                            feature.getProperties()['count'] > 1) {
+                            self.map.getView().setZoom(self.getCurrentZoom() + 1);
+                            poiFound = true;
+                        }
                     }
-                }
+                });
+
             }
 
             // Get lat and long map
@@ -487,6 +519,15 @@ define([
         },
         addHighlightPinnedFeature: function (feature) {
             this.layers.highlightPinnedVectorSource.addFeature(feature);
+        },
+        removeHighlightPinnedFeature: function (id) {
+            var self = this;
+            self.layers.highlightPinnedVectorSource.getFeatures().forEach(function (feature) {
+                var feature_id = feature.getProperties()['id'];
+                if (feature_id === id) {
+                    self.layers.highlightPinnedVectorSource.removeFeature(feature);
+                }
+            });
         },
         closeHighlightPinned: function () {
             this.hidePopup();

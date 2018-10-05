@@ -141,16 +141,12 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 60px;
 }
 
-.layer-switcher {
-    z-index: 100;
-}
-
 .map-control-panel, .download-control-panel {
     background-color: white;
     position: absolute;
     left: 0;
-    top: 185px;
-    transform: translateY(-50%);
+    top: 0;
+    margin-top: 90px;
     padding-left: 6px;
     padding-right: 6px;
     font-size: 18pt;
@@ -162,14 +158,6 @@ html, body, .map, .map-wrapper, #map-container {
     border-top: none;
     width: 54px;
     z-index: 100;
-}
-
-.no-upload {
-    top: 160px;
-}
-
-.download-control-panel {
-    top: 349px;
 }
 
 .download-control-panel .download-format-selector-container {
@@ -677,13 +665,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .layer-switcher {
     position: absolute;
-    top: 280px !important;
+    /*top: 367px !important;*/
     left: 0;
     right: auto !important;
     text-align: left;
     margin-left: 30px;
     cursor: pointer;
     padding: 0 !important;
+    z-index: 100;
 }
 
 .layer-switcher button {
@@ -1575,4 +1564,202 @@ div:hover::-webkit-scrollbar {
 .dropdown-menu {
     border: 1px solid rgba(0,0,0,.15);
     border-radius: .25rem;
+}
+
+.btn-primary:disabled {
+    background-color: rgb(198, 193, 197);
+}
+
+.btn-primary:hover:disabled {
+    background-color: rgb(198, 193, 197) !important;
+}
+
+.close-upload-boundary-modal span {
+    font-size: 25pt;
+}
+
+.spatial-filter-container .content {
+    border-top: 1px solid darkgray;
+    margin-top: 3px;
+    padding: 5px;
+    text-align: center;
+}
+
+#spatial-filter-panel-upload {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.boundary-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.boundary-list div {
+    padding: 5px;
+    padding-left: 20px;
+    width: 100%;
+    text-align: left;
+    background-color: #f9f9f9;
+}
+
+.boundary-list div:hover {
+    cursor: pointer;
+    color: white;
+    background-color: #ACD796;
+}
+
+.spatial-selected {
+    color: white;
+    background-color: #ACD796 !important;
+}
+
+.boundary-action {
+    padding: 5px;
+}
+
+.boundary-action button {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.module-filters img {
+    width: 35px;
+}
+
+.module-filters img:hover {
+    cursor: pointer;
+}
+
+.module-filters {
+    padding: 5px;
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+}
+
+.tooltip {
+    z-index: 99999;
+}
+
+.not-ready img:hover {
+    cursor: default;
+}
+
+.ecological-condition {
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+    color: white;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.ecological-condition .row {
+    margin-left: 0;
+}
+
+.ecological-condition .col-lg-4 {
+    padding: 3px;
+    font-size: 9pt;
+    width: 80% !important;
+}
+
+.neutral {
+    background-color: blue;
+}
+
+.good {
+    background-color: green;
+}
+
+.fair {
+    background-color: orange;
+}
+
+.poor {
+    background-color: red;
+}
+
+.seriously-modified {
+    background-color: purple;
+}
+
+.critically-modified {
+    background-color: black;
+}
+
+.conservation-status {
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+    padding: 10px;
+}
+
+.study-reference {
+    filter: grayscale(50%);
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+    background-color: #a0a0a0;
+    padding: 10px;
+}
+
+.validate-data-detail-wrapper, .validate-data-pagination {
+    padding: 5px;
+}
+
+.validate-data-detail-wrapper {
+    border-bottom: 1px solid rgba(168, 168, 168, 0.34);
+}
+
+.detail-container, .hide-detail {
+    display: none;
+}
+
+.validate-data-pagination {
+    width: 50%;
+    margin: 0 auto;
+}
+
+.validate-data-detail-wrapper .badge {
+    font-size: 8pt;
+}
+
+.detail-container-title {
+    font-weight: bold;
+}
+
+.validate-data-header {
+    font-size: 9pt;
+}
+
+.detail-container-buttons {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    text-align: center;
+}
+
+.refresh-list {
+    float: right;
+}
+
+.validate-wrapper {
+    min-height: 300px;
+}
+
+.validate-data-action {
+    padding: 5px;
+    background-color: rgba(29, 188, 13, 0.13);
+    text-align: center;
+}
+
+.validate-data-empty {
+    height: 300px;
+    padding-top: 100px;
+    text-align: center;
+    color: grey;
 }
