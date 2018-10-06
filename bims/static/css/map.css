@@ -482,9 +482,19 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
-    max-height: 300px;
+    max-height: 250px;
     overflow-y: scroll;
     padding-top: 5px;
+}
+
+.other-filters {
+    border-top: 1px solid rgb(224, 224, 224);
+    text-align: left;
+    font-size: 9pt;
+}
+
+.other-filters .container-fluid {
+    padding: 5px;
 }
 
 .map-control-panel-box .close-button {
@@ -1820,4 +1830,17 @@ div:hover::-webkit-scrollbar {
 .ck-button input:checked + span {
     background-color:#1b900d;
     color:#fff;
+}
+
+.small-subtitle {
+    text-align: left;
+    font-size: 8pt;
+    background-color: rgba(212, 212, 212, 0.48);
+    color: rgb(65, 65, 65);
+    width: 100%;
+    padding: 5px;
+}
+
+#spatial-scale-container {
+    font-size: 10pt;
 }
