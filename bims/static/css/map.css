@@ -1763,3 +1763,45 @@ div:hover::-webkit-scrollbar {
     text-align: center;
     color: grey;
 }
+
+.ck-button {
+    margin:4px;
+    background-color:#EFEFEF;
+    border:1px solid #D0D0D0;
+    float:left;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    height: 25px;
+}
+
+.ck-button:hover {
+    background:rgba(219, 175, 0, 0.7);
+    cursor: pointer;
+}
+
+.ck-button span:hover {
+    cursor: pointer;
+}
+
+.ck-button label {
+    float:left;
+    width:4.0em;
+}
+
+.ck-button label span {
+    text-align:center;
+    padding-top: 3px;
+    padding-bottom: 5px;
+    font-size: 12px;
+    display:block;
+}
+
+.ck-button label input {
+    position:absolute;
+    top:-20px;
+}
+
+.ck-button input:checked + span {
+    background-color:#1b900d;
+    color:#fff;
+}

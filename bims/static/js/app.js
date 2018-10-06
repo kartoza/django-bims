@@ -92,8 +92,23 @@ require([
             url: listCategoryAPIUrl,
             dataType: 'json',
             success: function (data) {
+                var filterCategory = $('#filter-category');
                 for (var i = 0; i < data.length; i++) {
-                    $('#filter-category').append('<input type="checkbox" name="category-value" value="' + data[i][0] + '">&nbsp;' + data[i][1] + '<br>');
+                    var $wrapperDiv = $('<div></div>');
+                    var $labelDiv = $('<label></label>');
+                    var $inputDiv = $('<input type="checkbox"/>');
+
+                    $wrapperDiv.addClass('ck-button');
+                    $wrapperDiv.append($labelDiv);
+                    $labelDiv.append($inputDiv);
+
+                    $wrapperDiv.append($labelDiv);
+                    $inputDiv.prop('id', data[i][0]);
+                    $inputDiv.addClass('origins-filter-selection');
+                    $inputDiv.prop('name', 'category-value');
+                    $inputDiv.val(data[i][0]);
+                    filterCategory.append($wrapperDiv);
+                    $inputDiv.after('<span>'+data[i][1]+'</span>');
                 }
             }
         });
