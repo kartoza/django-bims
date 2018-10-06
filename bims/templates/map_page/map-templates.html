@@ -111,19 +111,6 @@
         </div>
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row" style="display: none">
-            <div class="col-lg-12 filter-content" id="filter-catchment-area">
-            </div>
-            <div class="button-filter-wrapper">
-                <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter">Clear Filter</button>
-            </div>
-        </div>
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
                 ORIGINS <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
@@ -259,14 +246,34 @@
                 </div>
             </div>
         </div>
-        <div class="row content">
-            <button id="spatial-filter-panel-upload">Upload New Boundary</button>
+        <div class="row sub-filter content spatial-scale-menu">
+            <div class="col-lg-12 subtitle">
+                 {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
         </div>
-        <div class="row boundary-list">
+        <div class="row spatial-scale-panel" style="display: none">
+            <div class="col-lg-12 filter-content" id="spatial-scale-container">
+            </div>
+            <div class="spatial-scale-action">
+                <button class="spatial-scale-apply-filter" disabled>Apply Filter</button>
+                <button class="spatial-scale-clear-filter" disabled>Clear Filter</button>
+            </div>
         </div>
-        <div class="row boundary-action">
-            <button class="spatial-apply-filter">Apply Filter</button>
-            <button class="spatial-clear-filter">Clear Filter</button>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                 USER BOUNDARY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="user-boundary-panel" style="display: none">
+            <div class="row spatial-filter-panel-upload-wrapper">
+                <button id="spatial-filter-panel-upload">Upload New Boundary</button>
+            </div>
+            <div class="row boundary-list">
+            </div>
+            <div class="row boundary-action">
+                <button class="spatial-apply-filter">Apply Filter</button>
+                <button class="spatial-clear-filter">Clear Filter</button>
+            </div>
         </div>
     </div>
 

@@ -1581,13 +1581,25 @@ div:hover::-webkit-scrollbar {
 .spatial-filter-container .content {
     border-top: 1px solid darkgray;
     margin-top: 3px;
-    padding: 5px;
     text-align: center;
 }
 
 #spatial-filter-panel-upload {
     margin-left: auto;
     margin-right: auto;
+}
+
+.spatial-filter-panel-upload-wrapper {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.spatial-scale-panel {
+    min-height: 100px;
+}
+
+.user-boundary-panel {
+    padding: 5px;
 }
 
 .boundary-list {
@@ -1614,7 +1626,11 @@ div:hover::-webkit-scrollbar {
     background-color: #ACD796 !important;
 }
 
-.boundary-action {
+.spatial-scale-action {
+    width: 100%;
+}
+
+.boundary-action, .spatial-scale-action {
     padding: 5px;
 }
 
