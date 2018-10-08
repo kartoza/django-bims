@@ -16,7 +16,10 @@ define([
             'click .btn-boundary-upload': 'btnUploadClicked',
             'click .boundary-list-item': 'boundaryListClicked',
             'click .spatial-apply-filter': 'applyFilter',
-            'click .spatial-clear-filter': 'clearFilter'
+            'click .spatial-clear-filter': 'clearFilter',
+            'click .spatial-scale-apply-filter': 'applyFilter',
+            'click .spatial-scale-clear-filter': 'clearSpatialFilter',
+            'click #spatial-scale-container input': 'spatialScaleInputClicked'
         },
         initialize: function () {
             Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearSelected, this);
@@ -33,11 +36,15 @@ define([
             self.boundaryInputText = self.$el.find('input#boundary-input-name.form-control');
             self.applyFilterButton = self.$el.find('.spatial-apply-filter');
             self.clearFilterButton = self.$el.find('.spatial-clear-filter');
+            self.applyScaleFilterButton = self.$el.find('.spatial-scale-apply-filter');
+            self.clearScaleFilterButton = self.$el.find('.spatial-scale-clear-filter');
+            self.spatialScaleContainer = self.$el.find('#spatial-scale-container');
 
             self.applyFilterButton.prop('disabled', true);
             self.clearFilterButton.prop('disabled', true);
 
             self.getUserBoundary();
+            self.getAdministrativeFilter();
 
             self.progress.hide();
 
@@ -124,6 +131,52 @@ define([
                     })
                 }
             })
+        },
+        getAdministrativeFilter: function () {
+            var self = this;
+            var $wrapper = self.spatialScaleContainer;
+            $.ajax({
+                type: 'GET',
+                url: listBoundaryAPIUrl,
+                dataType: 'json',
+                success: function (data) {
+                    self.$el.find('.spatial-scale-menu .subtitle').click();
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i]['top_level_boundary']) {
+                            if ($('#boundary-' + data[i]['top_level_boundary']).length > 0) {
+                                $wrapper = $('#boundary-' + data[i]['top_level_boundary']);
+                            }
+                        }
+                        $wrapper.append(
+                            '<div>' +
+                            '<input type="checkbox" id="'+data[i]['id']+'" name="boundary-value" value="' + data[i]['id'] + '" data-level="' + data[i]['type__level'] + '">' +
+                            '&nbsp;<label for="'+data[i]['id']+'">' + data[i]['name'] + '</label>' +
+                            '<div id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div>' +
+                            '</div> ');
+                    }
+                }
+            });
+        },
+        spatialScaleInputClicked: function (e) {
+            var $target = $(e.target);
+            var child = $('#boundary-' + $target.val());
+            var level = $target.data('level');
+            if ($target.is(':checked')) {
+                $(child).find('input:checkbox:not(:checked)[data-level="' + (level + 1) + '"]').click();
+            } else {
+                $(child).find('input:checkbox:checked[data-level="' + (level + 1) + '"]').click();
+            }
+            this.updateChecked();
+        },
+        updateChecked: function() {
+            var checked = this.$el.find('input:checkbox:checked');
+            if (checked.length > 0) {
+                this.applyScaleFilterButton.prop('disabled', false);
+                this.clearScaleFilterButton.prop('disabled', false);
+            } else {
+                this.applyScaleFilterButton.prop('disabled', true);
+                this.clearScaleFilterButton.prop('disabled', true);
+            }
         },
         boundaryListClicked: function (e) {
             var self = this;
@@ -230,6 +283,13 @@ define([
         },
         clearFilter: function (e) {
             this.clearSelected();
+            if (Shared.SearchMode) {
+                Shared.Dispatcher.trigger('search:doSearch');
+            }
+        },
+        clearSpatialFilter: function (e) {
+            var target = $(e.target);
+            target.closest('.row').find('input:checkbox:checked').prop('checked', false);
             if (Shared.SearchMode) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }

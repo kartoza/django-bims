@@ -482,9 +482,19 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
-    max-height: 300px;
+    max-height: 250px;
     overflow-y: scroll;
     padding-top: 5px;
+}
+
+.other-filters {
+    border-top: 1px solid rgb(224, 224, 224);
+    text-align: left;
+    font-size: 9pt;
+}
+
+.other-filters .container-fluid {
+    padding: 5px;
 }
 
 .map-control-panel-box .close-button {
@@ -1581,13 +1591,25 @@ div:hover::-webkit-scrollbar {
 .spatial-filter-container .content {
     border-top: 1px solid darkgray;
     margin-top: 3px;
-    padding: 5px;
     text-align: center;
 }
 
 #spatial-filter-panel-upload {
     margin-left: auto;
     margin-right: auto;
+}
+
+.spatial-filter-panel-upload-wrapper {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.spatial-scale-panel {
+    min-height: 100px;
+}
+
+.user-boundary-panel {
+    padding: 5px;
 }
 
 .boundary-list {
@@ -1614,7 +1636,11 @@ div:hover::-webkit-scrollbar {
     background-color: #ACD796 !important;
 }
 
-.boundary-action {
+.spatial-scale-action {
+    width: 100%;
+}
+
+.boundary-action, .spatial-scale-action {
     padding: 5px;
 }
 
@@ -1762,4 +1788,59 @@ div:hover::-webkit-scrollbar {
     padding-top: 100px;
     text-align: center;
     color: grey;
+}
+
+.ck-button {
+    margin:4px;
+    background-color:#EFEFEF;
+    border:1px solid #D0D0D0;
+    float:left;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    height: 25px;
+}
+
+.ck-button:hover {
+    background:rgba(219, 175, 0, 0.7);
+    cursor: pointer;
+}
+
+.ck-button span:hover {
+    cursor: pointer;
+}
+
+.ck-button label {
+    float:left;
+    width:4.0em;
+}
+
+.ck-button label span {
+    text-align:center;
+    padding-top: 3px;
+    padding-bottom: 5px;
+    font-size: 12px;
+    display:block;
+}
+
+.ck-button label input {
+    position:absolute;
+    top:-20px;
+}
+
+.ck-button input:checked + span {
+    background-color:#1b900d;
+    color:#fff;
+}
+
+.small-subtitle {
+    text-align: left;
+    font-size: 8pt;
+    background-color: rgba(212, 212, 212, 0.48);
+    color: rgb(65, 65, 65);
+    width: 100%;
+    padding: 5px;
+}
+
+#spatial-scale-container {
+    font-size: 10pt;
 }
