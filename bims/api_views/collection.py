@@ -41,7 +41,7 @@ class GetCollectionAbstract(APIView):
                 yield item.object
 
     @staticmethod
-    def apply_filter(query_value, filters, ignore_bbox=False):
+    def apply_filter(query_value, filters, ignore_bbox=False, only_site=False):
         """
         Apply filter and do the search to biological collection
         record and location site
@@ -387,9 +387,9 @@ class ClusterCollection(GetCollectionAbstract):
     """
     Clustering collection with same taxon
     """
-
+    @staticmethod
     def clustering_process(
-            self, records, zoom, pix_x, pix_y):
+            collection_records, site_records, zoom, pix_x, pix_y):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
@@ -397,8 +397,11 @@ class ClusterCollection(GetCollectionAbstract):
         If a point is within a cluster 'catchment' area increase point
         count for that cluster and recalculate clusters minimum bbox
 
-        :param records: generator of records.
-        :type records: generator
+        :param collection_records: collection records.
+        :type collection_records: search query set
+
+        :param site_records: site records.
+        :type site_records: search query set
 
         :param zoom: zoom level of map
         :type zoom: int
@@ -412,24 +415,15 @@ class ClusterCollection(GetCollectionAbstract):
 
         cluster_points = []
         sites = []
-        for record in records:
+        for collection in GetCollectionAbstract.queryset_gen(
+                collection_records):
             # get x,y of site
-            if isinstance(record, BiologicalCollectionRecord):
-                x = record.site.geometry_point.x
-                y = record.site.geometry_point.y
-                location_site = record.site
-                if record.site.id in sites:
-                    continue
-                sites.append(record.site_id)
-            elif isinstance(record, LocationSite):
-                x = record.geometry_point.x
-                y = record.geometry_point.y
-                location_site = record
-                if record.id in sites:
-                    continue
-                sites.append(record.id)
-            else:
+            x = collection.site.geometry_point.x
+            y = collection.site.geometry_point.y
+            location_site = collection.site
+            if collection.site.id in sites:
                 continue
+            sites.append(collection.site_id)
 
             # check every point in cluster_points
             for pt in cluster_points:
@@ -465,10 +459,15 @@ class ClusterCollection(GetCollectionAbstract):
         return cluster_points
 
     def get(self, request, format=None):
+        import hashlib
+        import json
+        from bims.tasks.cluster import generate_search_cluster
+
         zoom = request.GET.get('zoom', None)
         icon_pixel_x = request.GET.get('icon_pixel_x', None)
         icon_pixel_y = request.GET.get('icon_pixel_y', None)
         query_value = request.GET.get('search')
+        process = request.GET.get('process', None)
         filters = request.GET
 
         if not zoom or not icon_pixel_x or not icon_pixel_y:
@@ -478,16 +477,60 @@ class ClusterCollection(GetCollectionAbstract):
                 'zoom : zoom level of map. '
                 'icon_pixel_x: size x of icon in pixel. '
                 'icon_pixel_y: size y of icon in pixel. ')
-        collection_results, \
-            site_results, \
-            fuzzy_search = self.apply_filter(
-                query_value,
-                filters)
+        if not process:
+            collection_results, \
+                site_results, \
+                fuzzy_search = self.apply_filter(
+                    query_value,
+                    filters)
 
-        results = list(self.queryset_gen(collection_results))
-        results += list(self.queryset_gen(site_results))
+            data_for_filename = dict(filters)
+            data_for_filename['collection_results_length'] = len(
+                    collection_results)
+            data_for_filename['site_results_length'] = len(site_results)
 
-        cluster = self.clustering_process(
-            results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
-        )
-        return Response(geo_serializer(cluster)['features'])
+            # Create filename from md5 of filters and results length
+            filename = hashlib.md5(
+                json.dumps(data_for_filename, sort_keys=True)
+            ).hexdigest()
+        else:
+            filename = process
+
+        # Check if filename exists
+        folder = 'search_cluster'
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        path_file = os.path.join(path_folder, filename)
+
+        if os.path.exists(path_file):
+            raw_data = open(path_file)
+
+            if raw_data:
+                json_data = json.load(raw_data)
+                return Response(json_data)
+            else:
+                return Response({
+                    'status': 'processing',
+                    'process': filename
+                })
+        else:
+            try:
+                os.mkdir(path_folder)
+            except OSError as exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+                pass
+
+            generate_search_cluster.delay(
+                    zoom,
+                    icon_pixel_x,
+                    icon_pixel_y,
+                    query_value,
+                    filters,
+                    filename,
+                    path_file
+            )
+
+            return Response({
+                'status': 'processing',
+                'process': filename
+            })
