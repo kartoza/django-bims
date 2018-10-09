@@ -19,6 +19,7 @@ def generate_search_cluster(zoom,
         ClusterCollection
     from bims.utils.celery import memcache_lock
     from bims.utils.cluster_point import geo_serializer
+    from bims.models.search_process import SearchProcess
 
     lock_id = '{0}-lock-{1}'.format(
             zoom,
@@ -34,12 +35,17 @@ def generate_search_cluster(zoom,
             fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters)
-
+            search_process, created = SearchProcess.objects.get_or_create(
+                    category='cluster_generation',
+                    process_id=filename
+            )
             with open(path_file, 'wb') as status_file:
                 status_file.write(json.dumps({
                     'status': 'processing',
                     'process': filename
                 }))
+                search_process.file_path = path_file
+                search_process.save()
 
             max_result = 100
             paginator = Paginator(collection_results, max_result)
@@ -73,6 +79,8 @@ def generate_search_cluster(zoom,
 
             if cluster_points:
                 response_data['status']['current_status'] = 'finish'
+                search_process.finished = True
+                search_process.save()
                 with open(path_file, 'wb') as cluster_file:
                     cluster_file.write(json.dumps(response_data))
 

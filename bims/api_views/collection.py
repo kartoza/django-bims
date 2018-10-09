@@ -9,7 +9,6 @@ from haystack.query import SearchQuerySet, SQ
 from django.contrib.gis.geos import MultiPoint, Point
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.conf import settings
-from django.core.paginator import Paginator
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
@@ -24,10 +23,10 @@ from bims.serializers.location_site_serializer import \
 from bims.utils.cluster_point import (
     within_bbox,
     overlapping_area,
-    update_min_bbox,
-    geo_serializer
+    update_min_bbox
 )
 from bims.models.user_boundary import UserBoundary
+from bims.models.search_process import SearchProcess
 
 
 class GetCollectionAbstract(APIView):
@@ -474,6 +473,17 @@ class ClusterCollection(GetCollectionAbstract):
         process = request.GET.get('process', None)
         filters = request.GET
 
+        search_uri = request.build_absolute_uri()
+        search_process, created = SearchProcess.objects.get_or_create(
+                category='cluster_generation',
+                query=search_uri
+        )
+
+        if not created and search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                raw_data = open(search_process.file_path)
+                return Response(json.load(raw_data))
+
         if not zoom or not icon_pixel_x or not icon_pixel_y:
             return HttpResponseBadRequest(
                 'zoom, icon_pixel_x, and icon_pixel_y need to be '
@@ -499,6 +509,9 @@ class ClusterCollection(GetCollectionAbstract):
             ).hexdigest()
         else:
             filename = process
+
+        search_process.process_id = filename
+        search_process.save()
 
         # Check if filename exists
         folder = 'search_cluster'

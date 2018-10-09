@@ -94,7 +94,7 @@ services:
       context: docker
     hostname: worker
     working_dir: /home/web/django_project
-    command: celery worker --app=bims.celery:app -B -l debug
+    command: celery worker --app=bims.celery:app -B -l info
     entrypoint: []
     environment:
       - DATABASE_NAME=gis
