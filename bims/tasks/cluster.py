@@ -2,6 +2,8 @@ from celery import shared_task
 import json
 import logging
 
+from django.core.paginator import Paginator
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,18 +41,40 @@ def generate_search_cluster(zoom,
                     'process': filename
                 }))
 
-            cluster = ClusterCollection.clustering_process(
-                    collection_results,
-                    site_results,
-                    int(float(zoom)),
-                    int(icon_pixel_x),
-                    int(icon_pixel_y)
-            )
+            max_result = 100
+            paginator = Paginator(collection_results, max_result)
+            cluster_points = []
+            sites = []
+            response_data = dict()
+            response_data['status'] = {
+                'current_status': 'processing',
+                'process': filename
+            }
 
-            serializer = geo_serializer(cluster)['features']
+            for num_page in range(1, paginator.num_pages):
+                page = paginator.page(num_page)
+                if not page.object_list:
+                    break
+                cluster_points, sites = ClusterCollection.clustering_process(
+                        page.object_list,
+                        site_results,
+                        int(float(zoom)),
+                        int(icon_pixel_x),
+                        int(icon_pixel_y),
+                        cluster_points,
+                        sites
+                )
 
-            with open(path_file, 'wb') as cluster_file:
-                cluster_file.write(json.dumps(serializer))
+                serializer = geo_serializer(cluster_points)['features']
+                response_data['data'] = serializer
+
+                with open(path_file, 'wb') as cluster_file:
+                    cluster_file.write(json.dumps(response_data))
+
+            if cluster_points:
+                response_data['status']['current_status'] = 'finish'
+                with open(path_file, 'wb') as cluster_file:
+                    cluster_file.write(json.dumps(response_data))
 
             return
 

@@ -9,6 +9,7 @@ from haystack.query import SearchQuerySet, SQ
 from django.contrib.gis.geos import MultiPoint, Point
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.conf import settings
+from django.core.paginator import Paginator
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.biological_collection_record import \
@@ -389,7 +390,13 @@ class ClusterCollection(GetCollectionAbstract):
     """
     @staticmethod
     def clustering_process(
-            collection_records, site_records, zoom, pix_x, pix_y):
+            collection_records,
+            site_records,
+            zoom,
+            pix_x,
+            pix_y,
+            cluster_points=[],
+            sites=[]):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
@@ -412,9 +419,6 @@ class ClusterCollection(GetCollectionAbstract):
         :param pix_y: pixel y of icon
         :type pix_y: int
         """
-
-        cluster_points = []
-        sites = []
         for collection in GetCollectionAbstract.queryset_gen(
                 collection_records):
             # get x,y of site
@@ -456,7 +460,7 @@ class ClusterCollection(GetCollectionAbstract):
 
                 cluster_points.append(new_cluster)
 
-        return cluster_points
+        return cluster_points, sites
 
     def get(self, request, format=None):
         import hashlib
