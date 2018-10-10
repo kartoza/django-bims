@@ -54,21 +54,19 @@ def search_collection(query_value, filters, path_file, process):
                     process_id=process
             )
 
+            search_results = dict()
+            search_results['status'] = {
+                'current_status': processing_label,
+                'process': process
+            }
+
             with open(path_file, 'wb') as status_file:
-                status_file.write(json.dumps({
-                    'status': processing_label,
-                    'process': process
-                }))
+                status_file.write(json.dumps(search_results))
                 search_process.file_path = path_file
                 search_process.save()
 
             all_record_results = []
             all_site_results = []
-            search_results = dict()
-            search_results['status'] = {
-                'status': processing_label,
-                'process': process
-            }
             search_results['fuzzy_search'] = fuzzy_search
             search_results['records'] = []
             search_results['sites'] = []
@@ -133,9 +131,7 @@ def search_collection(query_value, filters, path_file, process):
                     )
 
             if search_results:
-                search_results['status'] = {
-                    'status': finished_label
-                }
+                search_results['status']['current_status'] = finished_label
                 search_process.finished = True
                 search_process.save()
                 with open(path_file, 'wb') as result_file:

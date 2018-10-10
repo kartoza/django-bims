@@ -148,7 +148,7 @@ define([
                 parameters['months'] = monthSelected.join(',');
             }
             Shared.Dispatcher.trigger('map:closeHighlight');
-            Shared.Dispatcher.trigger('search:hit', parameters);
+            // Shared.Dispatcher.trigger('search:hit', parameters);
             Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             if (!parameters['search']
                 && !parameters['collector']
@@ -164,12 +164,12 @@ define([
             this.searchResultCollection.search(
                 this.searchPanel, parameters
             );
-            this.searchResultCollection.fetch({
-                success: function () {
-                    self.searchResultCollection.renderCollection();
-                    Shared.SearchMode = true;
-                }
-            });
+            // this.searchResultCollection.fetch({
+            //     success: function () {
+            //         self.searchResultCollection.renderCollection();
+            //         Shared.SearchMode = true;
+            //     }
+            // });
         },
         searchClick: function () {
             var searchValue = $('#search').val();

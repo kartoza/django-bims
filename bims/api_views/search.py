@@ -106,6 +106,9 @@ class SearchObjects(APIView):
         search_result['records'] = []
         search_uri = request.build_absolute_uri()
         folder = 'search_results'
+        status = {
+            'current_status': 'processing'
+        }
 
         search_process, created = SearchProcess.objects.get_or_create(
                 category=folder,
@@ -115,8 +118,7 @@ class SearchObjects(APIView):
         if not created and search_process.file_path:
             if os.path.exists(search_process.file_path):
                 raw_data = open(search_process.file_path)
-                if search_process.finished:
-                    return Response(json.load(raw_data))
+                return Response(json.load(raw_data))
             else:
                 if search_process.finished:
                     search_process.finished = False
@@ -141,6 +143,7 @@ class SearchObjects(APIView):
         path_folder = os.path.join(settings.MEDIA_ROOT, folder)
         path_file = os.path.join(path_folder, process_id)
 
+        status['process'] = process_id
         search_process.process_id = process_id
         search_process.save()
 
@@ -164,6 +167,5 @@ class SearchObjects(APIView):
                 return Response(json_data)
 
         return Response({
-            'status': 'processing',
-            'process': process_id
+            'status': status
         })
