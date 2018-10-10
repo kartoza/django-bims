@@ -62,8 +62,6 @@ def search_collection(query_value, filters, path_file, process):
                 search_process.file_path = path_file
                 search_process.save()
 
-            paginator = Paginator(collection_results, max_result)
-
             all_record_results = []
             all_site_results = []
             search_results = dict()
@@ -71,29 +69,63 @@ def search_collection(query_value, filters, path_file, process):
                 'status': processing_label,
                 'process': process
             }
+            search_results['fuzzy_search'] = fuzzy_search
+            search_results['records'] = []
+            search_results['sites'] = []
 
-            for num_page in range(1, paginator.num_pages):
-                page = paginator.page(num_page)
-                if not page.object_list:
+            all_taxon_ids = []
+            all_location_site_ids = []
+            all_bio_ids = []
+
+            collection_paginator = Paginator(collection_results, max_result)
+            for num_page in range(1, collection_paginator.num_pages+1):
+                collection_page = collection_paginator.page(num_page)
+                if not collection_page.object_list:
                     break
-                collection_result = page.object_list
-                record_results, site_results = \
+                collection_result = collection_page.object_list
+                record_results, _site_results, ids_found = \
                     SearchObjects.process_search(
-                        collection_result, query_value)
+                        collection_result,
+                        query_value,
+                        all_bio_ids,
+                        all_taxon_ids,
+                        all_location_site_ids)
 
-                search_results['fuzzy_search'] = fuzzy_search
+                all_bio_ids = ids_found['bio_ids']
+                all_taxon_ids = ids_found['taxon_ids']
+                all_location_site_ids = ids_found['location_site_ids']
 
                 if not all_record_results and not all_site_results:
                     all_record_results = record_results
-                    all_site_results = site_results
+                    all_site_results = _site_results
                 else:
                     # combine
                     all_record_results = combine_results(
                             new_results=record_results,
                             old_results=all_record_results
                     )
+                    all_site_results = combine_results(
+                            new_results=_site_results,
+                            old_results=all_site_results
+                    )
 
                 search_results['records'] = all_record_results
+                search_results['sites'] = all_site_results
+                with open(path_file, 'wb') as result_file:
+                    result_file.write(
+                            json.dumps(search_results)
+                    )
+
+            sites_paginator = Paginator(site_results, max_result)
+            for num_page in range(1, sites_paginator.num_pages+1):
+                site_page = sites_paginator.page(num_page)
+                if not site_page.object_list:
+                    break
+                all_site_results += SearchObjects.process_sites_search(
+                        site_page.object_list,
+                        all_location_site_ids,
+                        query_value
+                )
                 search_results['sites'] = all_site_results
                 with open(path_file, 'wb') as result_file:
                     result_file.write(

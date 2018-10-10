@@ -31,10 +31,12 @@ class SearchObjects(APIView):
         From records, get location sites list
     """
     @staticmethod
-    def process_search(collection_result, query_value):
-        bio_ids = []
-        taxon_ids = []
-        location_site_ids = []
+    def process_search(
+            collection_result,
+            query_value,
+            bio_ids=[],
+            taxon_ids=[],
+            location_site_ids=[]):
 
         for collection in collection_result:
             if collection.model_pk and \
@@ -78,8 +80,23 @@ class SearchObjects(APIView):
                 'query_value': query_value
             }).data
 
-        return record_results, sites_results
+        ids = {
+            'bio_ids': bio_ids,
+            'taxon_ids': taxon_ids,
+            'location_site_ids': location_site_ids
+        }
+        return record_results, sites_results, ids
 
+    @staticmethod
+    def process_sites_search(site_results, location_site_ids, query):
+        sites = LocationOccurrencesSerializer(
+                GetCollectionAbstract.queryset_gen(
+                        site_results,
+                        exlude_ids=location_site_ids),
+                many=True,
+                context={'query_value': query}
+        ).data
+        return sites
 
     def get(self, request):
         query_value = request.GET.get('search')
@@ -100,6 +117,10 @@ class SearchObjects(APIView):
                 raw_data = open(search_process.file_path)
                 if search_process.finished:
                     return Response(json.load(raw_data))
+            else:
+                if search_process.finished:
+                    search_process.finished = False
+                    search_process.save()
 
         # Search collection
         collection_results, \
