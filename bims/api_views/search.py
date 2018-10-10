@@ -1,5 +1,8 @@
 # coding=utf-8
-import os, json, hashlib, errno
+import os
+import json
+import hashlib
+import errno
 from django.db.models import Count, Case, When
 from django.conf import settings
 from rest_framework.views import APIView
@@ -133,7 +136,8 @@ class SearchObjects(APIView):
                 ignore_bbox=True)
 
         # Check if filename exists
-        data_for_filename = dict(filters)
+        data_for_filename = dict()
+        data_for_filename['search_uri'] = search_uri
         data_for_filename['collection_results_length'] = len(
                 collection_results)
         data_for_filename['site_results_length'] = len(site_results)

@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 from celery import shared_task
@@ -43,8 +42,8 @@ def search_collection(query_value, filters, path_file, process):
         if acquired:
 
             collection_results, \
-            site_results, \
-            fuzzy_search = GetCollectionAbstract.apply_filter(
+                site_results, \
+                fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters,
                     ignore_bbox=True)
@@ -76,7 +75,7 @@ def search_collection(query_value, filters, path_file, process):
             all_bio_ids = []
 
             collection_paginator = Paginator(collection_results, max_result)
-            for num_page in range(1, collection_paginator.num_pages+1):
+            for num_page in range(1, collection_paginator.num_pages + 1):
                 collection_page = collection_paginator.page(num_page)
                 if not collection_page.object_list:
                     break
@@ -115,7 +114,7 @@ def search_collection(query_value, filters, path_file, process):
                     )
 
             sites_paginator = Paginator(site_results, max_result)
-            for num_page in range(1, sites_paginator.num_pages+1):
+            for num_page in range(1, sites_paginator.num_pages + 1):
                 site_page = sites_paginator.page(num_page)
                 if not site_page.object_list:
                     break

@@ -421,12 +421,15 @@ class ClusterCollection(GetCollectionAbstract):
         for collection in GetCollectionAbstract.queryset_gen(
                 collection_records):
             # get x,y of site
-            x = collection.site.geometry_point.x
-            y = collection.site.geometry_point.y
-            location_site = collection.site
-            if collection.site.id in sites:
+            try:
+                x = collection.site.geometry_point.x
+                y = collection.site.geometry_point.y
+                location_site = collection.site
+                if collection.site.id in sites:
+                    continue
+                sites.append(collection.site_id)
+            except (ValueError, AttributeError):
                 continue
-            sites.append(collection.site_id)
 
             # check every point in cluster_points
             for pt in cluster_points:
@@ -496,16 +499,18 @@ class ClusterCollection(GetCollectionAbstract):
                 site_results, \
                 fuzzy_search = self.apply_filter(
                     query_value,
-                    filters)
+                    filters,
+                    ignore_bbox=True)
 
-            data_for_filename = dict(filters)
+            data_for_filename = dict()
+            data_for_filename['search_uri'] = search_uri
             data_for_filename['collection_results_length'] = len(
                     collection_results)
             data_for_filename['site_results_length'] = len(site_results)
 
             # Create filename from md5 of filters and results length
             filename = hashlib.md5(
-                json.dumps(data_for_filename, sort_keys=True)
+                json.dumps(search_uri, sort_keys=True)
             ).hexdigest()
         else:
             filename = process
@@ -517,6 +522,10 @@ class ClusterCollection(GetCollectionAbstract):
         folder = 'search_cluster'
         path_folder = os.path.join(settings.MEDIA_ROOT, folder)
         path_file = os.path.join(path_folder, filename)
+        status = {
+            'current_status': 'processing',
+            'process': filename
+        }
 
         if os.path.exists(path_file):
             raw_data = open(path_file)
@@ -526,8 +535,7 @@ class ClusterCollection(GetCollectionAbstract):
                 return Response(json_data)
             else:
                 return Response({
-                    'status': 'processing',
-                    'process': filename
+                    'status': status
                 })
         else:
             try:
@@ -548,6 +556,5 @@ class ClusterCollection(GetCollectionAbstract):
             )
 
             return Response({
-                'status': 'processing',
-                'process': filename
+                'status': status
             })

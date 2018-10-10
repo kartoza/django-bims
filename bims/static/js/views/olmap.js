@@ -73,6 +73,9 @@ define([
             Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
             Shared.Dispatcher.on('map:zoomToHighlightPinnedFeatures', this.zoomToHighlightPinnedFeatures, this);
             Shared.Dispatcher.on('map:boundaryEnabled', this.boundaryEnabled, this);
+            Shared.Dispatcher.on('map:finishFetching', this.fetchingFinish, this);
+            Shared.Dispatcher.on('map:startFetching', this.fetchingStart, this);
+            Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -334,6 +337,7 @@ define([
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(false);
             });
+            this.layers.biodiversitySource.clear();
         },
         fetchingFinish: function () {
             this.fetchingReset();
@@ -440,16 +444,12 @@ define([
                 if (!this.layers.isBiodiversityLayerShow()) {
                     return;
                 }
+                if (this.clusterBiologicalCollection.fromSearchClick) {
+                    return;
+                }
                 this.fetchingReset();
                 this.fetchingStart();
-                this.fetchXhr = this.clusterBiologicalCollection.fetch({
-                    success: function () {
-                        self.fetchingFinish();
-                        self.clusterBiologicalCollection.renderCollection();
-                    }, error: function (xhr, text_status, error_thrown) {
-                        self.fetchingError(error_thrown);
-                    }
-                });
+                this.fetchXhr = this.clusterBiologicalCollection.fetchCluster();
             }
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
@@ -559,7 +559,7 @@ define([
                 $('#general-info-modal').fadeIn()
             }
         },
-        refetchRecords: function () {
+        zoomToDefault: function () {
             var center = this.initCenter;
             if (centerPointMap) {
                 var centerArray = centerPointMap.split(',');
@@ -569,6 +569,9 @@ define([
                 center = centerArray;
             }
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
+        },
+        refetchRecords: function () {
+            this.zoomToDefault();
             this.fetchingRecords();
         }
     })

@@ -31,18 +31,21 @@ def generate_search_cluster(zoom,
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
             collection_results, \
-            site_results, \
-            fuzzy_search = GetCollectionAbstract.apply_filter(
+                site_results, \
+                fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters)
             search_process, created = SearchProcess.objects.get_or_create(
                     category='cluster_generation',
                     process_id=filename
             )
+            status = {
+                'current_status': 'processing',
+                'process': filename
+            }
             with open(path_file, 'wb') as status_file:
                 status_file.write(json.dumps({
-                    'status': 'processing',
-                    'process': filename
+                    'status': status
                 }))
                 search_process.file_path = path_file
                 search_process.save()
@@ -52,12 +55,9 @@ def generate_search_cluster(zoom,
             cluster_points = []
             sites = []
             response_data = dict()
-            response_data['status'] = {
-                'current_status': 'processing',
-                'process': filename
-            }
+            response_data['status'] = status
 
-            for num_page in range(1, paginator.num_pages):
+            for num_page in range(1, paginator.num_pages + 1):
                 page = paginator.page(num_page)
                 if not page.object_list:
                     break
@@ -77,12 +77,11 @@ def generate_search_cluster(zoom,
                 with open(path_file, 'wb') as cluster_file:
                     cluster_file.write(json.dumps(response_data))
 
-            if cluster_points:
-                response_data['status']['current_status'] = 'finish'
-                search_process.finished = True
-                search_process.save()
-                with open(path_file, 'wb') as cluster_file:
-                    cluster_file.write(json.dumps(response_data))
+            response_data['status']['current_status'] = 'finish'
+            search_process.finished = True
+            search_process.save()
+            with open(path_file, 'wb') as cluster_file:
+                cluster_file.write(json.dumps(response_data))
 
             return
 
