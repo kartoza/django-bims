@@ -46,11 +46,20 @@ def generate_search_cluster(query_value,
                 search_process.file_path = path_file
                 search_process.save()
 
-            collection_sites = list(
+            collection_sites = []
+            if collection_results:
+                collection_sites += list(
                     collection_results.values(
-                            'location_site_id',
-                            'location_coordinates',
-                            'location_site_name'))
+                        'location_site_id',
+                        'location_coordinates',
+                        'location_site_name'))
+            if site_results:
+                collection_sites += list(
+                    site_results.values(
+                        'location_site_id',
+                        'location_coordinates',
+                        'location_site_name'))
+
             collection_distinct = {}
             all_sites = []
 
