@@ -166,6 +166,7 @@ define([
             );
         },
         searchClick: function () {
+            Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
             Shared.Router.clearSearch();
             this.search(searchValue);

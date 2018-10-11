@@ -8,21 +8,16 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(name='bims.tasks.generate_search_cluster', queue='update')
-def generate_search_cluster(zoom,
-                            icon_pixel_x,
-                            icon_pixel_y,
-                            query_value,
+def generate_search_cluster(query_value,
                             filters,
                             filename,
                             path_file):
-    from bims.api_views.collection import GetCollectionAbstract, \
-        ClusterCollection
+    from bims.api_views.collection import GetCollectionAbstract
     from bims.utils.celery import memcache_lock
-    from bims.utils.cluster_point import geo_serializer
     from bims.models.search_process import SearchProcess
 
     lock_id = '{0}-lock-{1}'.format(
-            zoom,
+            path_file,
             filename
     )
 
@@ -34,7 +29,8 @@ def generate_search_cluster(zoom,
                 site_results, \
                 fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
-                    filters)
+                    filters,
+                    ignore_bbox=True)
             search_process, created = SearchProcess.objects.get_or_create(
                     category='cluster_generation',
                     process_id=filename
@@ -50,30 +46,29 @@ def generate_search_cluster(zoom,
                 search_process.file_path = path_file
                 search_process.save()
 
-            max_result = 100
-            paginator = Paginator(collection_results, max_result)
-            cluster_points = []
-            sites = []
+            collection_sites = list(
+                    collection_results.values(
+                            'location_site_id',
+                            'location_coordinates',
+                            'location_site_name'))
+            collection_distinct = {}
+            all_sites = []
+
+            paginator = Paginator(collection_sites, 100)
             response_data = dict()
             response_data['status'] = status
+            response_data['data'] = []
 
+            # Get location site distinct values
             for num_page in range(1, paginator.num_pages + 1):
-                page = paginator.page(num_page)
-                if not page.object_list:
-                    break
-                cluster_points, sites = ClusterCollection.clustering_process(
-                        page.object_list,
-                        site_results,
-                        int(float(zoom)),
-                        int(icon_pixel_x),
-                        int(icon_pixel_y),
-                        cluster_points,
-                        sites
-                )
+                object_list = paginator.page(num_page).object_list
+                for site in object_list:
+                    location_site_id = int(site['location_site_id'])
+                    if location_site_id not in collection_distinct:
+                        collection_distinct[location_site_id] = site
+                        all_sites.append(site)
 
-                serializer = geo_serializer(cluster_points)['features']
-                response_data['data'] = serializer
-
+                response_data['data'] = all_sites
                 with open(path_file, 'wb') as cluster_file:
                     cluster_file.write(json.dumps(response_data))
 

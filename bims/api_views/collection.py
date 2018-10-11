@@ -7,7 +7,7 @@ import os
 import errno
 from haystack.query import SearchQuerySet, SQ
 from django.contrib.gis.geos import MultiPoint, Point
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -469,9 +469,9 @@ class ClusterCollection(GetCollectionAbstract):
         import json
         from bims.tasks.cluster import generate_search_cluster
 
-        zoom = request.GET.get('zoom', None)
-        icon_pixel_x = request.GET.get('icon_pixel_x', None)
-        icon_pixel_y = request.GET.get('icon_pixel_y', None)
+        # zoom = request.GET.get('zoom', None)
+        # icon_pixel_x = request.GET.get('icon_pixel_x', None)
+        # icon_pixel_y = request.GET.get('icon_pixel_y', None)
         query_value = request.GET.get('search')
         process = request.GET.get('process', None)
         filters = request.GET
@@ -484,16 +484,22 @@ class ClusterCollection(GetCollectionAbstract):
 
         if not created and search_process.file_path:
             if os.path.exists(search_process.file_path):
-                raw_data = open(search_process.file_path)
-                return Response(json.load(raw_data))
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
+            else:
+                search_process.finished = False
+                search_process.save()
 
-        if not zoom or not icon_pixel_x or not icon_pixel_y:
-            return HttpResponseBadRequest(
-                'zoom, icon_pixel_x, and icon_pixel_y need to be '
-                'in parameters. '
-                'zoom : zoom level of map. '
-                'icon_pixel_x: size x of icon in pixel. '
-                'icon_pixel_y: size y of icon in pixel. ')
+        # if not zoom or not icon_pixel_x or not icon_pixel_y:
+        #     return HttpResponseBadRequest(
+        #         'zoom, icon_pixel_x, and icon_pixel_y need to be '
+        #         'in parameters. '
+        #         'zoom : zoom level of map. '
+        #         'icon_pixel_x: size x of icon in pixel. '
+        #         'icon_pixel_y: size y of icon in pixel. ')
         if not process:
             collection_results, \
                 site_results, \
@@ -531,12 +537,11 @@ class ClusterCollection(GetCollectionAbstract):
             raw_data = open(path_file)
 
             if raw_data:
-                json_data = json.load(raw_data)
-                return Response(json_data)
-            else:
-                return Response({
-                    'status': status
-                })
+                try:
+                    json_data = json.load(raw_data)
+                    return Response(json_data)
+                except ValueError:
+                    os.remove(path_file)
         else:
             try:
                 os.mkdir(path_folder)
@@ -546,15 +551,12 @@ class ClusterCollection(GetCollectionAbstract):
                 pass
 
             generate_search_cluster.delay(
-                    zoom,
-                    icon_pixel_x,
-                    icon_pixel_y,
                     query_value,
                     filters,
                     filename,
                     path_file
             )
 
-            return Response({
-                'status': status
-            })
+        return Response({
+            'status': status
+        })

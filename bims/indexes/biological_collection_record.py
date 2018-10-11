@@ -73,6 +73,8 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     location_center = indexes.LocationField()
 
+    location_coordinates = indexes.CharField()
+
     taxon_gbif = indexes.IntegerField(indexed=True)
 
     taxon_gbif_not_null = indexes.BooleanField(indexed=True)
@@ -120,6 +122,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         return False
 
     def prepare_location_center(self, obj):
+        if obj.site:
+            return '%s,%s' % obj.site.get_centroid().coords
+        return '0,0'
+
+    def prepare_location_coordinates(self, obj):
         if obj.site:
             return '%s,%s' % obj.site.get_centroid().coords
         return '0,0'

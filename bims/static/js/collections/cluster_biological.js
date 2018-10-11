@@ -1,4 +1,4 @@
-define(['backbone', 'models/location_site', 'views/location_site', 'shared', 'ol'], function (Backbone, ClusterModel, ClusterView, Shared, ol) {
+define(['backbone', 'models/location_site', 'views/cluster_location_site', 'shared', 'ol'], function (Backbone, ClusterModel, ClusterView, Shared, ol) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
@@ -153,7 +153,10 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared', 'ol
                 return false;
             }
             $.each(this.clusterData, function (index, cluster) {
-                coordinates.push(cluster['geometry']['coordinates']);
+                var locationCoordinates = cluster['location_coordinates'].split(',');
+                var lon = parseFloat(locationCoordinates[0]);
+                var lat = parseFloat(locationCoordinates[1]);
+                coordinates.push([lon, lat]);
             });
             if (pastCoordinates) {
                 coordinates.push.apply(coordinates, pastCoordinates);
