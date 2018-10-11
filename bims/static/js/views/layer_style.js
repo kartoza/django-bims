@@ -67,16 +67,20 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 return this.getClusterStyle(feature);
             }
         },
-        isIndividialCluster: function (feature) {
-            var count = feature.getProperties()['count'];
+        isIndividialCluster: function (feature, count) {
+            if (!count) {
+                count = feature.getProperties()['count'];
+            }
             var boundary_type = feature.getProperties()['boundary_type'];
             return (!boundary_type && (!count || count === 1))
         },
-        getClusterStyle: function (feature) {
-            var count = feature.getProperties()['count'];
+        getClusterStyle: function (feature, count) {
+            if (!count) {
+                count = feature.getProperties()['count'];
+            }
             var radius = 10;
             var image = null;
-            if (this.isIndividialCluster(feature)) {
+            if (this.isIndividialCluster(feature, count)) {
                 radius = 8;
                 image = new ol.style.Circle({
                     radius: radius,
