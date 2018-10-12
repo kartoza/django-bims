@@ -43,6 +43,7 @@ define([
             this.parameters['boundary'] = '';
         },
         resetClusters: function () {
+            this.clusterData = [];
             this.fromSearchClick = false;
             if (this.fetchXhr) {
                 this.fetchXhr.abort();
@@ -59,14 +60,10 @@ define([
             this.toggleTaxonIndicator();
         },
         searchHit: function (parameters) {
+            this.resetClusters();
             this.fromSearchClick = true;
             parameters['bbox'] = null;
             parameters['zoom'] = this.defaultZoom;
-            if (this.fetchXhr) {
-                this.fetchXhr.abort();
-                this.initialSearch = true;
-                this.secondSearch = false;
-            }
             this.updateParameters(parameters);
         },
         updateParameters: function (parameters) {
