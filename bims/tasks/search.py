@@ -106,8 +106,8 @@ def search_collection(query_value, filters, path_file, process):
                             old_results=all_site_results
                     )
 
-                search_results['records'] = all_record_results
-                search_results['sites'] = all_site_results
+                search_results['total_records'] = len(all_record_results)
+                search_results['total_sites'] = len(all_site_results)
                 with open(path_file, 'wb') as result_file:
                     result_file.write(
                             json.dumps(search_results)
@@ -123,13 +123,15 @@ def search_collection(query_value, filters, path_file, process):
                         all_location_site_ids,
                         query_value
                 )
-                search_results['sites'] = all_site_results
+                search_results['total_sites'] = len(all_site_results)
                 with open(path_file, 'wb') as result_file:
                     result_file.write(
                             json.dumps(search_results)
                     )
 
             if search_results:
+                search_results['records'] = all_record_results
+                search_results['sites'] = all_site_results
                 search_results['status']['current_status'] = finished_label
                 search_process.finished = True
                 search_process.save()
