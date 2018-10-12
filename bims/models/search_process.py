@@ -23,7 +23,7 @@ class SearchProcess(models.Model):
         blank=False
     )
     query = models.CharField(
-        max_length=500,
+        max_length=2000,
         blank=False
     )
     process_id = models.CharField(

@@ -9,17 +9,14 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
                 'siteDetail:show', this.id, this.name);
         },
         render: function () {
-            var properties = this.model.attributes;
-            this.id = parseInt(properties['location_site_id']);
-            this.name = properties['location_site_name'];
+            var self = this;
+            this.id = this.model.getId();
+            this.name = this.model.get('name');
             this.model.set('id', this.id);
             Shared.Dispatcher.on('locationSite-' + this.id + ':clicked', this.clicked, this);
-            var coordinates = properties['location_coordinates'].split(',');
-            var lon = parseFloat(coordinates[0]);
-            var lat = parseFloat(coordinates[1]);
             this.feature = new ol.Feature({
                 geometry: new ol.geom.Point(
-                    ol.proj.fromLonLat([lon, lat])
+                    ol.proj.fromLonLat(self.model.getCoordinates())
                 ),
                 id: this.id,
                 name: this.name,

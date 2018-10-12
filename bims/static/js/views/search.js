@@ -37,6 +37,7 @@ define([
         render: function () {
             this.$el.html(this.template());
             this.searchBox = this.$el.find('.map-search-box');
+            this.searchInput = this.$el.find('#search');
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
             if (useReferenceCategory) {
@@ -179,13 +180,17 @@ define([
             }
         },
         clearSearch: function () {
+            this.searchInput.val('');
+            $('.clear-filter').click();
+            $('.map-search-result').hide();
+
             Shared.Dispatcher.trigger('catchmentArea:hide');
-            $('#search').val('');
             Shared.Dispatcher.trigger('spatialFilter:clearSelected');
             Shared.SearchMode = false;
-            $('.clear-filter').click();
-            this.searchClick();
-            $('.map-search-result').hide();
+            Shared.Dispatcher.trigger('map:clearAllLayers');
+            Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
+            Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
+            Shared.Dispatcher.trigger('clusterBiological:clearClusters');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {

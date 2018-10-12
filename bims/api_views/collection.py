@@ -230,15 +230,11 @@ class GetCollectionAbstract(APIView):
                             geom)
 
         site_results = []
-
-        if user_boundaries:
-            if boundary:
-                site_results = \
-                    location_site_results | location_site_user_boundary
-            elif location_site_user_boundary:
-                site_results = location_site_user_boundary
-        else:
-            site_results = location_site_results
+        if location_site_user_boundary and location_site_results:
+            site_results = GetCollectionAbstract.combine_search_query_results(
+                location_site_results,
+                location_site_user_boundary
+            )
 
         if len(site_results) > 0 or isinstance(
                 location_site_user_boundary, SearchQuerySet):
@@ -252,6 +248,27 @@ class GetCollectionAbstract(APIView):
 
         return collection_results, site_results, fuzzy_search
 
+    @staticmethod
+    def combine_search_query_results(sqs_result_1, sqs_result_2):
+        """
+        Combine two search query results
+        :param sqs_result_1: SQS
+        :param sqs_result_2: SQS
+        :return: combined search query results
+        """
+        if len(sqs_result_1) == 0 and len(sqs_result_2) == 0:
+            return sqs_result_1
+
+        if len(sqs_result_1) == 0:
+            return sqs_result_2
+
+        if len(sqs_result_2) == 0:
+            return sqs_result_1
+
+        if len(sqs_result_1) > len(sqs_result_2):
+            return sqs_result_1 | sqs_result_2
+        else:
+            return sqs_result_2 | sqs_result_1
 
 class GetCollectionExtent(GetCollectionAbstract):
     """

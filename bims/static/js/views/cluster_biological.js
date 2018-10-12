@@ -20,7 +20,6 @@ define(['backbone', 'models/cluster_biological', 'ol', 'shared'], function (Back
             if (!this.model.attributes['properties']['count']) {
                 Shared.Dispatcher.on('cluster-biology' + this.id + ':clicked', this.clicked, this);
             }
-            console.log(modelJson);
             this.features = new ol.format.GeoJSON().readFeatures(modelJson, {
                 featureProjection: 'EPSG:3857'
             });

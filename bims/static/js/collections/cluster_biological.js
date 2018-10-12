@@ -1,4 +1,9 @@
-define(['backbone', 'models/location_site', 'views/cluster_location_site', 'shared', 'ol'], function (Backbone, ClusterModel, ClusterView, Shared, ol) {
+define([
+    'backbone',
+    'models/cluster_location_site',
+    'views/cluster_location_site',
+    'shared',
+    'ol'], function (Backbone, ClusterModel, ClusterView, Shared, ol) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
@@ -24,6 +29,27 @@ define(['backbone', 'models/location_site', 'views/cluster_location_site', 'shar
         initialize: function (initExtent) {
             this.initExtent = initExtent;
             Shared.Dispatcher.on('search:hit', this.searchHit, this);
+            Shared.Dispatcher.on('clusterBiological:clear', this.clearClusters, this);
+        },
+        clearClusters: function () {
+            this.fromSearchClick = false;
+            if (this.fetchXhr) {
+                this.fetchXhr.abort();
+                this.initialSearch = true;
+                this.secondSearch = false;
+            }
+            this.parameters['taxon'] = '';
+            this.parameters['search'] = '';
+            this.parameters['collector'] = '';
+            this.parameters['category'] = '';
+            this.parameters['yearFrom'] = '';
+            this.parameters['yearTo'] = '';
+            this.parameters['userBoundary'] = '';
+            this.parameters['referenceCategory'] = '';
+            this.parameters['boundary'] = '';
+            $.each(this.viewCollection, function (index, view) {
+                view.destroy();
+            });
         },
         searchHit: function (parameters) {
             this.fromSearchClick = true;
@@ -200,7 +226,11 @@ define(['backbone', 'models/location_site', 'views/cluster_location_site', 'shar
             });
             this.viewCollection = [];
             $.each(this.clusterData, function (index, cluster) {
-                var clusterModel = new ClusterModel(cluster);
+                var clusterModel = new ClusterModel({
+                    id: cluster['location_site_id'],
+                    name: cluster['location_site_name'],
+                    coordinates: cluster['location_coordinates']
+                });
                 self.viewCollection.push(new ClusterView({
                     model: clusterModel
                 }));
