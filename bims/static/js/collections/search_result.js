@@ -1,4 +1,9 @@
-define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'shared'], function ($, Backbone, SearchModel, SearchResultView, Shared) {
+define([
+    'jquery',
+    'backbone',
+    'models/search_result',
+    'views/search_result',
+    'shared'], function ($, Backbone, SearchModel, SearchResultView, Shared) {
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
@@ -6,11 +11,16 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'sh
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
+        status: '',
         isFuzzySearch: false,
+        initialSearch: true,
+        secondSearch: false,
+        searchFinish: false,
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
         search: function (searchPanel, parameters) {
+            var self = this;
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
             this.categoryValue = parameters['category'];
@@ -33,6 +43,7 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'sh
                 '&referenceCategory=' + this.referenceCategory;
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
+            this.getSearchResults();
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {
@@ -46,12 +57,47 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'sh
                 $(e.target).nextAll().show();
                 $(e.target).data('visibility', true)
             }
-
+        },
+        getSearchResults: function() {
+            var self = this;
+            this.fetch({
+                success: function () {
+                    self.renderCollection();
+                    Shared.SearchMode = true;
+                },
+                complete: function () {
+                    var timeout = 2000;
+                    if (self.initialSearch) {
+                        timeout = 500;
+                        self.initialSearch = false;
+                        self.secondSearch = true;
+                    }
+                    if (self.secondSearch) {
+                        timeout = 1000;
+                        self.secondSearch = true;
+                    }
+                    if(self.status === 'processing') {
+                        setTimeout(() => {
+                            self.getSearchResults()
+                        }, timeout);
+                    }
+                }
+            })
         },
         parse: function (response) {
-            var result = response['records'];
-            result = result.concat(response['sites']);
-            this.isFuzzySearch = response['fuzzy_search'];
+            var result = [];
+            if (response.hasOwnProperty('records')) {
+                result = response['records'];
+            }
+            if (response.hasOwnProperty('sites')) {
+                result = result.concat(response['sites']);
+            }
+            if (response.hasOwnProperty('fuzzy_search')) {
+                this.isFuzzySearch = response['fuzzy_search'];
+            }
+            if (response.hasOwnProperty('status')) {
+                this.status = response['status']['current_status'];
+            }
             return result
         },
         renderCollection: function () {
@@ -71,12 +117,16 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'sh
             var $searchResultsWrapper = $('<div></div>');
             $searchResultsWrapper.append(
                 '<div class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> SITES (<span id="site-list-number"></span>) <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
+                '<div class="search-results-total" data-visibility="true"> SITES ' +
+                '(<span id="site-list-number"></span>) ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
                 '<div id="site-list" class="search-results-section"></div>' +
                 '</div>');
             $searchResultsWrapper.append(
                 '<div class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> TAXA (<span id="taxa-list-number"></span>) <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
+                '<div class="search-results-total" data-visibility="true"> TAXA ' +
+                '(<span id="taxa-list-number"></span>) ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
                 '<div id="taxa-list" class="search-results-section"></div>' +
                 '</div>');
 
@@ -97,17 +147,29 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'sh
                 self.viewCollection.push(searchResultView);
 
                 // update count
-                if (searchResultView.getResultType() == 'taxa') {
+                if (searchResultView.getResultType() === 'taxa') {
                     biologicalCount += 1;
                     speciesListName.push(searchResultView.model.get('common_name'));
-                } else if (searchResultView.getResultType() == 'site') {
+                } else if (searchResultView.getResultType() === 'site') {
                     siteCount += 1
                 }
             });
-            $('#taxa-list-number').html(biologicalCount);
-            $('#site-list-number').html(siteCount);
+            var taxaListNumberElm = $('#taxa-list-number');
+            var siteListNumberElm = $('#site-list-number');
+
             $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             $searchResultsWrapper.find('.search-results-total').click();
+            $searchResultsWrapper.find('.search-results-total').unbind();
+
+            if (self.status === 'processing') {
+                biologicalCount = biologicalCount.toString() + ' ...loading';
+                siteCount = siteCount.toString() + ' ...loading';
+            } else if (self.status === 'finish') {
+                $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
+            }
+
+            taxaListNumberElm.html(biologicalCount);
+            siteListNumberElm.html(siteCount);
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
         }
     })

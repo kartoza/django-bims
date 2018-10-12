@@ -56,6 +56,7 @@ define([
             new RecordsDetail();
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
+            Shared.Dispatcher.on('map:addLocationSiteClusterFeatures', this.addLocationSiteClusterFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
             Shared.Dispatcher.on('map:drawPoint', this.drawPoint, this);
             Shared.Dispatcher.on('map:clearPoint', this.clearPoint, this);
@@ -73,6 +74,10 @@ define([
             Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
             Shared.Dispatcher.on('map:zoomToHighlightPinnedFeatures', this.zoomToHighlightPinnedFeatures, this);
             Shared.Dispatcher.on('map:boundaryEnabled', this.boundaryEnabled, this);
+            Shared.Dispatcher.on('map:finishFetching', this.fetchingFinish, this);
+            Shared.Dispatcher.on('map:startFetching', this.fetchingStart, this);
+            Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
+            Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -200,6 +205,20 @@ define([
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
+
+            if (properties.hasOwnProperty('features')) {
+                if (properties['features'].length > 1) {
+
+                    this.zoomToCoordinates(
+                        feature.getGeometry().getCoordinates(),
+                        this.getCurrentZoom()+2
+                        );
+                } else {
+                    var _properties = properties['features'][0].getProperties();
+                    Shared.Dispatcher.trigger('locationSite-' + _properties.id + ':clicked');
+                }
+            }
+
             if (!properties.hasOwnProperty('record_type')) {
                 return [false, ''];
             }
@@ -334,6 +353,8 @@ define([
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(false);
             });
+            this.layers.biodiversitySource.clear();
+            this.layers.locationSiteClusterSource.clear();
         },
         fetchingFinish: function () {
             this.fetchingReset();
@@ -384,16 +405,13 @@ define([
                 var administrative = this.checkAdministrativeLevel();
                 if (administrative !== 'detail') {
                     var zoomLevel = this.getCurrentZoom();
+
                     if (administrative === this.clusterCollection.administrative) {
-                        return
-                    }
-                    if (zoomLevel === this.previousZoom) {
                         return
                     }
                     this.fetchingReset();
                     // generate boundary
                     this.layers.changeLayerAdministrative(administrative);
-
                     // if layer is shows
                     if (!this.layers.isBiodiversityLayerShow()) {
                         return;
@@ -440,16 +458,6 @@ define([
                 if (!this.layers.isBiodiversityLayerShow()) {
                     return;
                 }
-                this.fetchingReset();
-                this.fetchingStart();
-                this.fetchXhr = this.clusterBiologicalCollection.fetch({
-                    success: function () {
-                        self.fetchingFinish();
-                        self.clusterBiologicalCollection.renderCollection();
-                    }, error: function (xhr, text_status, error_thrown) {
-                        self.fetchingError(error_thrown);
-                    }
-                });
             }
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
@@ -463,7 +471,8 @@ define([
                 this.previousZoom = -1;
                 this.fetchingRecords();
             } else {
-                this.clusterBiologicalCollection.getExtentOfRecords();
+                this.clearAllLayers();
+                this.clusterBiologicalCollection.refetchClusters();
             }
         },
         updateClusterBiologicalCollectionZoomExt: function () {
@@ -472,6 +481,9 @@ define([
         },
         addBiodiversityFeatures: function (features) {
             this.layers.biodiversitySource.addFeatures(features);
+        },
+        addLocationSiteClusterFeatures: function (features) {
+            this.layers.locationSiteClusterSource.addFeatures(features);
         },
         switchHighlight: function (features, ignoreZoom) {
             var self = this;
@@ -559,7 +571,7 @@ define([
                 $('#general-info-modal').fadeIn()
             }
         },
-        refetchRecords: function () {
+        zoomToDefault: function () {
             var center = this.initCenter;
             if (centerPointMap) {
                 var centerArray = centerPointMap.split(',');
@@ -569,6 +581,13 @@ define([
                 center = centerArray;
             }
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
+        },
+        clearAllLayers: function () {
+            this.layers.biodiversitySource.clear();
+            this.layers.locationSiteClusterSource.clear();
+        },
+        refetchRecords: function () {
+            this.zoomToDefault();
             this.fetchingRecords();
         }
     })

@@ -4,6 +4,16 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
         initialize: function () {
             Shared.Dispatcher.on('catchmentArea:show-administrative', this.show, this);
             Shared.Dispatcher.on('catchmentArea:hide', this.hide, this);
+            Shared.Dispatcher.on('politicalRegion:clear', this.clear, this);
+        },
+        clear: function () {
+            if (this.catchmentAreaXHR) {
+                this.catchmentAreaXHR.abort();
+            }
+            $.each(Shared.AdminAreaSelected, function (index, id) {
+                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', id);
+            });
+            Shared.AdminAreaSelected = [];
         },
         hide: function () {
             Shared.Dispatcher.trigger('map:closeHighlightPinned');

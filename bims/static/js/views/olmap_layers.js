@@ -2,6 +2,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
     return Backbone.View.extend({
         // source of layers
         biodiversitySource: null,
+        locationSiteCluster: null,
+        locationSiteClusterLayer: null,
+        locationSiteClusterSource: null,
         highlightVectorSource: null,
         highlightVector: null,
         highlightPinnedVectorSource: null,
@@ -91,6 +94,24 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
             }
+
+            // ---------------------------------
+            // CLUSTER LOCATION SITE LAYERS
+            // ---------------------------------
+            self.locationSiteClusterSource = new ol.source.Vector({});
+            self.locationSiteCluster = new ol.source.Cluster({
+                distance: 40,
+                source: self.locationSiteClusterSource
+            });
+            var styleCache = {};
+            self.locationSiteClusterLayer = new ol.layer.Vector({
+                source: self.locationSiteCluster,
+                style: function(feature, resolution) {
+                    var size = feature.get('features').length;
+                    return self.layerStyle.getClusterStyle(feature, size);
+                }
+            });
+            map.addLayer(self.locationSiteClusterLayer);
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
