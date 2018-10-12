@@ -270,6 +270,7 @@ class GetCollectionAbstract(APIView):
         else:
             return sqs_result_2 | sqs_result_1
 
+
 class GetCollectionExtent(GetCollectionAbstract):
     """
     Return extent of collection
@@ -507,13 +508,13 @@ class ClusterCollection(GetCollectionAbstract):
             if zoom_value_index > 0:
                 pre_zoom_value_index = zoom_value_index - 1
             zoom_char = search_uri[
-                        zoom_index+len(zoom_string)+pre_zoom_value_index:
-                        zoom_index+len(zoom_string)+zoom_value_index]
+                        zoom_index + len(zoom_string) + pre_zoom_value_index:
+                        zoom_index + len(zoom_string) + zoom_value_index]
             zoom_value_index += 1
             if zoom_char and zoom_char != '&':
                 zoom_value += zoom_char
 
-        search_uri = search_uri.replace(zoom_string+zoom_value, zoom_string)
+        search_uri = search_uri.replace(zoom_string + zoom_value, zoom_string)
         search_process, created = SearchProcess.objects.get_or_create(
                 category='cluster_generation',
                 query=search_uri
