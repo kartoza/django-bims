@@ -31,16 +31,7 @@ define([
             Shared.Dispatcher.on('search:hit', this.searchHit, this);
             Shared.Dispatcher.on('clusterBiological:clearClusters', this.clearClusters, this);
         },
-        clearClusters: function () {
-            this.fromSearchClick = false;
-            if (this.fetchXhr) {
-                this.fetchXhr.abort();
-                this.initialSearch = true;
-                this.secondSearch = false;
-            }
-            $.each(this.viewCollection, function (index, view) {
-                view.destroy();
-            });
+        clearParameters: function () {
             this.parameters['taxon'] = '';
             this.parameters['search'] = '';
             this.parameters['collector'] = '';
@@ -50,6 +41,22 @@ define([
             this.parameters['userBoundary'] = '';
             this.parameters['referenceCategory'] = '';
             this.parameters['boundary'] = '';
+        },
+        resetClusters: function () {
+            this.fromSearchClick = false;
+            if (this.fetchXhr) {
+                this.fetchXhr.abort();
+                this.initialSearch = true;
+                this.secondSearch = false;
+            }
+            $.each(this.viewCollection, function (index, view) {
+                view.destroy();
+            });
+        },
+        clearClusters: function () {
+            this.clearParameters();
+            this.resetClusters();
+            this.toggleTaxonIndicator();
         },
         searchHit: function (parameters) {
             this.fromSearchClick = true;
@@ -190,6 +197,16 @@ define([
             if (coordinates.length > 0) {
                 var ext = ol.extent.boundingExtent(coordinates);
                 Shared.Dispatcher.trigger('map:zoomToExtent', ext);
+            }
+        },
+        refetchClusters: function () {
+            Shared.Dispatcher.trigger('cluster:updated', this.parameters);
+            var self = this;
+            if (this.isActive()) {
+                this.resetClusters();
+                this.fetchXhr = this.fetchCluster();
+            } else {
+                Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
             }
         },
         getExtentOfRecords: function () {

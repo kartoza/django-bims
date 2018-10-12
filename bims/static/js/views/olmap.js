@@ -471,7 +471,8 @@ define([
                 this.previousZoom = -1;
                 this.fetchingRecords();
             } else {
-                this.clusterBiologicalCollection.getExtentOfRecords();
+                this.clearAllLayers();
+                this.clusterBiologicalCollection.refetchClusters();
             }
         },
         updateClusterBiologicalCollectionZoomExt: function () {
