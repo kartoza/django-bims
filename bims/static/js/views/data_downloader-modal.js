@@ -64,6 +64,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
         },
         downloading: function (url) {
             var self = this;
+            console.log(url);
             self.xhr = $.get({
                 url: url,
                 dataType: 'json',
