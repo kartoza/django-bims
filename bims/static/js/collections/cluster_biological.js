@@ -103,7 +103,7 @@ define([
                     }
                     if(self.status === 'processing') {
                         self.renderCollection();
-                        setTimeout(() => {
+                        setTimeout(function () {
                             self.fetchCluster()
                         }, timeout);
                     } else {
