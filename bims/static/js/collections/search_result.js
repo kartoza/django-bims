@@ -16,6 +16,7 @@ define([
         initialSearch: true,
         secondSearch: false,
         searchFinish: false,
+        searchResultsData: [],
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -60,9 +61,8 @@ define([
         },
         getSearchResults: function() {
             var self = this;
-            this.fetch({
+            return this.fetch({
                 success: function () {
-                    self.renderCollection();
                     Shared.SearchMode = true;
                 },
                 complete: function () {
@@ -98,7 +98,8 @@ define([
             if (response.hasOwnProperty('status')) {
                 this.status = response['status']['current_status'];
             }
-            return result
+            this.searchResultsData = result;
+            this.renderCollection();
         },
         renderCollection: function () {
             var self = this;
@@ -140,17 +141,23 @@ define([
             var biologicalCount = 0;
             var siteCount = 0;
             var speciesListName = [];
-            $.each(this.models, function (index, model) {
-                var searchResultView = new SearchResultView({
-                    model: model
-                });
-                self.viewCollection.push(searchResultView);
+
+            $.each(this.searchResultsData, function (index, data) {
+                var searchModel = new SearchModel(data);
+                if (self.status === 'finish') {
+                    var searchResultView = new SearchResultView({
+                        model: searchModel
+                    });
+                    self.viewCollection.push(searchResultView);
+                }
 
                 // update count
-                if (searchResultView.getResultType() === 'taxa') {
+                if (searchModel.get('record_type') === 'taxa') {
                     biologicalCount += 1;
-                    speciesListName.push(searchResultView.model.get('common_name'));
-                } else if (searchResultView.getResultType() === 'site') {
+                    if (self.status === 'finish') {
+                        speciesListName.push(searchResultView.model.get('common_name'));
+                    }
+                } else if (searchModel.get('record_type') === 'site') {
                     siteCount += 1
                 }
             });
@@ -167,7 +174,6 @@ define([
             } else if (self.status === 'finish') {
                 $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             }
-
             taxaListNumberElm.html(biologicalCount);
             siteListNumberElm.html(siteCount);
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);

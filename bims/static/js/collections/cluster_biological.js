@@ -71,6 +71,7 @@ define([
             $.each(parameters, function (key, value) {
                 self.parameters[key] = value;
             });
+            Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             this.parameters['taxon'] = null;
             this.toggleTaxonIndicator();
             if (this.isActive()) {
