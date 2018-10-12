@@ -77,7 +77,7 @@ define([
                         self.secondSearch = true;
                     }
                     if(self.status === 'processing') {
-                        setTimeout(() => {
+                        setTimeout(function () {
                             self.getSearchResults()
                         }, timeout);
                     }
