@@ -24,6 +24,8 @@ define([
         },
         search: function (searchPanel, parameters) {
             var self = this;
+            this.totalRecords = 0;
+            this.totalSites = 0;
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
             this.categoryValue = parameters['category'];
