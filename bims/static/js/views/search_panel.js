@@ -2,6 +2,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
     'views/political_region', 'jquery'], function (Shared, Backbone, _, jqueryUi, PoliticalRegion, $) {
     return Backbone.View.extend({
         template: _.template($('#map-search-result-template').html()),
+        isEmpty: true,
         events: {
             'click .map-result-close': 'closeSidePanelAnimation'
         },
@@ -18,9 +19,11 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             this.$el.find('.search-box').html(title);
         },
         fillPanelHtml: function (htmlData) {
+            this.isEmpty = false;
             this.$el.find('#search-result-content').html(htmlData);
         },
         showSearchLoading: function () {
+            this.isEmpty = false;
             this.$el.find('#search-result-content').html('' +
                 '<img src="/static/img/small-loading.svg" alt="Loading view">');
         },
@@ -30,17 +33,22 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         hide: function () {
             this.$el.hide()
         },
-        openSidePanel: function () {
-            $('.map-search-result').show();
-            this.$el.show();
+        openSidePanel: function (isEmpty) {
+            if (typeof isEmpty !== 'undefined') {
+                this.isEmpty = isEmpty;
+            }
+            if (!this.isEmpty) {
+                $('.map-search-result').show();
+                this.$el.show();
+            }
         },
         clearSidePanel: function () {
+            this.isEmpty = true;
             this.$el.find('.search-box').html('');
             this.$el.find('#search-result-content').html('');
         },
         closeSidePanelAnimation: function () {
             this.$el.hide();
-            this.clearSidePanel();
         },
         isPanelOpen: function () {
             return this.$el.is(":visible");

@@ -67,8 +67,8 @@ define([
                 return;
             }
             var self = this;
-            this.searchPanel.openSidePanel();
             this.searchPanel.clearSidePanel();
+            this.searchPanel.openSidePanel(false);
 
             $('#search-results-wrapper').html('');
 
@@ -184,6 +184,7 @@ define([
             this.searchInput.val('');
             $('.clear-filter').click();
             $('.map-search-result').hide();
+            this.searchPanel.clearSidePanel();
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
@@ -250,6 +251,7 @@ define([
         },
         show: function () {
             this.searchBox.show();
+            this.searchPanel.openSidePanel();
             this.$el.find('#search').focus();
             this.searchBoxOpen = true;
         },

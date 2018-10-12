@@ -1,4 +1,9 @@
-define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'shared'], function ($, Backbone, SearchModel, SearchResultView, Shared) {
+define([
+    'jquery',
+    'backbone',
+    'models/search_result',
+    'views/search_result',
+    'shared'], function ($, Backbone, SearchModel, SearchResultView, Shared) {
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
@@ -152,14 +157,19 @@ define(['jquery', 'backbone', 'models/search_result', 'views/search_result', 'sh
             var taxaListNumberElm = $('#taxa-list-number');
             var siteListNumberElm = $('#site-list-number');
 
+            $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
+            $searchResultsWrapper.find('.search-results-total').click();
+            $searchResultsWrapper.find('.search-results-total').unbind();
+
             if (self.status === 'processing') {
                 biologicalCount = biologicalCount.toString() + ' ...loading';
                 siteCount = siteCount.toString() + ' ...loading';
+            } else if (self.status === 'finish') {
+                $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             }
+
             taxaListNumberElm.html(biologicalCount);
             siteListNumberElm.html(siteCount);
-            $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
-            $searchResultsWrapper.find('.search-results-total').click();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
         }
     })
