@@ -405,16 +405,13 @@ define([
                 var administrative = this.checkAdministrativeLevel();
                 if (administrative !== 'detail') {
                     var zoomLevel = this.getCurrentZoom();
+
                     if (administrative === this.clusterCollection.administrative) {
-                        return
-                    }
-                    if (zoomLevel === this.previousZoom) {
                         return
                     }
                     this.fetchingReset();
                     // generate boundary
                     this.layers.changeLayerAdministrative(administrative);
-
                     // if layer is shows
                     if (!this.layers.isBiodiversityLayerShow()) {
                         return;

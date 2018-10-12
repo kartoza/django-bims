@@ -180,17 +180,19 @@ define([
             }
         },
         clearSearch: function () {
+            Shared.SearchMode = false;
             this.searchInput.val('');
             $('.clear-filter').click();
             $('.map-search-result').hide();
 
-            Shared.Dispatcher.trigger('catchmentArea:hide');
+            Shared.Dispatcher.trigger('politicalRegion:clear');
+
             Shared.Dispatcher.trigger('spatialFilter:clearSelected');
-            Shared.SearchMode = false;
-            Shared.Dispatcher.trigger('map:clearAllLayers');
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
             Shared.Dispatcher.trigger('clusterBiological:clearClusters');
+
+            Shared.Dispatcher.trigger('map:clearAllLayers');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {

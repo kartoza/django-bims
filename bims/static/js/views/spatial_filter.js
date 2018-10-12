@@ -9,6 +9,7 @@ define([
     'jquery.fileupload-validate'], function (Backbone, _, $, Shared, ol) {
     return Backbone.View.extend({
         template: _.template($('#spatial-filter-panel').html()),
+        selectedPoliticalRegions: [],
         events: {
             'click .close-button': 'close',
             'click #spatial-filter-panel-upload': 'panelUploadClicked',
@@ -22,7 +23,7 @@ define([
             'click #spatial-scale-container input': 'spatialScaleInputClicked'
         },
         initialize: function () {
-            Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearSelected, this);
+            Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearAllSelected, this);
         },
         render: function () {
             var self = this;
@@ -143,13 +144,16 @@ define([
                     self.$el.find('.spatial-scale-menu .subtitle').click();
                     for (var i = 0; i < data.length; i++) {
                         if (data[i]['top_level_boundary']) {
-                            if ($('#boundary-' + data[i]['top_level_boundary']).length > 0) {
-                                $wrapper = $('#boundary-' + data[i]['top_level_boundary']);
+                            var $boundary = self.$el.find('#boundary-' + data[i]['top_level_boundary']);
+                            if ($boundary.length > 0) {
+                                $wrapper = $boundary;
                             }
                         }
                         $wrapper.append(
                             '<div>' +
-                            '<input type="checkbox" id="'+data[i]['id']+'" name="boundary-value" value="' + data[i]['id'] + '" data-level="' + data[i]['type__level'] + '">' +
+                            '<input type="checkbox" id="'+data[i]['id']+'" ' +
+                            'name="boundary-value" value="' + data[i]['id'] + '" ' +
+                            'data-level="' + data[i]['type__level'] + '">' +
                             '&nbsp;<label for="'+data[i]['id']+'">' + data[i]['name'] + '</label>' +
                             '<div id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div>' +
                             '</div> ');
@@ -159,11 +163,15 @@ define([
         },
         spatialScaleInputClicked: function (e) {
             var $target = $(e.target);
-            var child = $('#boundary-' + $target.val());
+            var value = $target.val();
+            var child = $('#boundary-' + value);
             var level = $target.data('level');
             if ($target.is(':checked')) {
+                this.selectedPoliticalRegions.push(value);
                 $(child).find('input:checkbox:not(:checked)[data-level="' + (level + 1) + '"]').click();
             } else {
+                var index = this.selectedPoliticalRegions.indexOf(value);
+                if (index !== -1) this.selectedPoliticalRegions.splice(index, 1);
                 $(child).find('input:checkbox:checked[data-level="' + (level + 1) + '"]').click();
             }
             this.updateChecked();
@@ -266,6 +274,13 @@ define([
         },
         applyFilter: function (e) {
             Shared.Dispatcher.trigger('search:doSearch');
+        },
+        clearAllSelected: function (e) {
+            this.clearSelected(e);
+            var spatialScaleContainer = this.$el.find('#spatial-scale-container');
+            spatialScaleContainer.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            this.applyScaleFilterButton.prop('disabled', true);
+            this.clearScaleFilterButton.prop('disabled', true);
         },
         clearSelected: function (e) {
             this.applyFilterButton.prop('disabled', true);

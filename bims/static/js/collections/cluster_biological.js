@@ -29,7 +29,7 @@ define([
         initialize: function (initExtent) {
             this.initExtent = initExtent;
             Shared.Dispatcher.on('search:hit', this.searchHit, this);
-            Shared.Dispatcher.on('clusterBiological:clear', this.clearClusters, this);
+            Shared.Dispatcher.on('clusterBiological:clearClusters', this.clearClusters, this);
         },
         clearClusters: function () {
             this.fromSearchClick = false;
@@ -38,6 +38,9 @@ define([
                 this.initialSearch = true;
                 this.secondSearch = false;
             }
+            $.each(this.viewCollection, function (index, view) {
+                view.destroy();
+            });
             this.parameters['taxon'] = '';
             this.parameters['search'] = '';
             this.parameters['collector'] = '';
@@ -47,9 +50,6 @@ define([
             this.parameters['userBoundary'] = '';
             this.parameters['referenceCategory'] = '';
             this.parameters['boundary'] = '';
-            $.each(this.viewCollection, function (index, view) {
-                view.destroy();
-            });
         },
         searchHit: function (parameters) {
             this.fromSearchClick = true;

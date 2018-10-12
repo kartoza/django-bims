@@ -1,17 +1,17 @@
 define(['shared', 'backbone', 'underscore', 'jqueryUi',
-    'views/catchment_area_control', 'jquery'], function (Shared, Backbone, _, jqueryUi, CatchmentAreaControl, $) {
+    'views/political_region', 'jquery'], function (Shared, Backbone, _, jqueryUi, PoliticalRegion, $) {
     return Backbone.View.extend({
         template: _.template($('#map-search-result-template').html()),
         events: {
             'click .map-result-close': 'closeSidePanelAnimation'
         },
         initialize: function () {
-            this.catchmentArea = new CatchmentAreaControl();
+            this.politicalRegion = new PoliticalRegion();
         },
         render: function () {
             this.$el.html(this.template());
             this.$el.hide();
-            this.catchmentArea.render(this.$el);
+            this.politicalRegion.render(this.$el);
             return this;
         },
         updatesearchPanelTitle: function (title) {
