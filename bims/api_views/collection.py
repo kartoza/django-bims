@@ -5,7 +5,7 @@ from hashlib import md5
 import datetime
 import os
 import errno
-from haystack.query import SearchQuerySet, SQ
+from haystack.query import SearchQuerySet, SQ, EmptySearchQuerySet
 from django.contrib.gis.geos import MultiPoint, Point
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
@@ -201,14 +201,14 @@ class GetCollectionAbstract(APIView):
         collection_results = results
 
         # Search location site by name
-        location_site_search = []
+        location_site_search = EmptySearchQuerySet()
         if query_value:
             location_site_search = SearchQuerySet().filter(
                     site_name__contains=query_value
             ).models(LocationSite)
 
         location_site_results = location_site_search
-        location_site_user_boundary = None
+        location_site_user_boundary = EmptySearchQuerySet()
 
         if boundary:
             qs_collector = SQ()
@@ -229,12 +229,10 @@ class GetCollectionAbstract(APIView):
                             'location_site_point',
                             geom)
 
-        site_results = []
-        if location_site_user_boundary and location_site_results:
-            site_results = GetCollectionAbstract.combine_search_query_results(
-                location_site_results,
-                location_site_user_boundary
-            )
+        site_results = GetCollectionAbstract.combine_search_query_results(
+            location_site_results,
+            location_site_user_boundary
+        )
 
         if len(site_results) > 0 or isinstance(
                 location_site_user_boundary, SearchQuerySet):
