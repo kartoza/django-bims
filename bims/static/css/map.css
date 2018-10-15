@@ -1844,3 +1844,8 @@ div:hover::-webkit-scrollbar {
 #spatial-scale-container {
     font-size: 10pt;
 }
+
+.locate-farm {
+    padding-top: 10px !important;
+    font-size: 14px;
+}
