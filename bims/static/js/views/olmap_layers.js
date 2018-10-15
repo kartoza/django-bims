@@ -140,6 +140,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 url: listNonBiodiversityLayerAPIUrl,
                 dataType: 'json',
                 success: function (data) {
+                    var listNonBioHash = Shared.StorageUtil.getItem('listNonBiodiversity');
+                    var hashCurrentList = Shared.StorageUtil.hashItem(JSON.stringify(data));
+                    if (!listNonBioHash || listNonBioHash !== hashCurrentList) {
+                        Shared.StorageUtil.clear();
+                        Shared.StorageUtil.setItem(
+                            'listNonBiodiversity',
+                            hashCurrentList);
+                    }
                     $.each(data.reverse(), function (index, value) {
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
                             return;

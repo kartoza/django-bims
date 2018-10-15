@@ -15,6 +15,6 @@ class NonBiodiversityLayerList(APIView):
     def get(self, request, format=None):
         return Response(
             NonBiodiversityLayerSerializer(
-                NonBiodiversityLayer.objects.all().order_by('name'),
+                NonBiodiversityLayer.objects.all().order_by('order'),
                 many=True).data
         )

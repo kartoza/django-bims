@@ -3,9 +3,10 @@
 """
 
 from django.db import models
+from ordered_model.models import OrderedModel
 
 
-class NonBiodiversityLayer(models.Model):
+class NonBiodiversityLayer(OrderedModel):
     """Non biodiversity layer model."""
     name = models.CharField(
         max_length=100,
@@ -26,3 +27,4 @@ class NonBiodiversityLayer(models.Model):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
+        ordering = ('order',)
