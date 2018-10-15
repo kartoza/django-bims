@@ -26,6 +26,10 @@ define([
         },
         renderList: function () {
             var data = this.collection.models;
+            if (data.length === 0) {
+                this.$el.hide();
+                return false;
+            }
             for(var i=0; i<data.length; i++) {
                 this.listWrapper.append('<div>' +
                     '<input type="checkbox" name="reference-category-value" value="'+data[i].get('category')+'">&nbsp;'+data[i].get('category')+

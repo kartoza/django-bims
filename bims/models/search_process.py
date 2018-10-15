@@ -3,6 +3,8 @@
 
 """
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 
 
 class SearchProcess(models.Model):
@@ -33,3 +35,10 @@ class SearchProcess(models.Model):
     finished = models.BooleanField(
         default=False
     )
+
+
+@receiver(pre_delete, sender=SearchProcess)
+def searchprocess_delete(sender, instance, **kwargs):
+    import os
+    if os.path.exists(instance.file_path):
+        os.remove(instance.file_path)

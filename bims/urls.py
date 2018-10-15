@@ -34,6 +34,7 @@ from bims.api_views.collection import (
 from bims.api_views.collector import CollectorList
 from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
+from bims.api_views.reference_list import ReferenceList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import (
@@ -92,6 +93,8 @@ api_urls = [
         CollectorList.as_view(), name='list-collector'),
     url(r'^api/list-category/$',
         CategoryList.as_view(), name='list-date-category'),
+    url(r'^api/list-reference/$',
+        ReferenceList.as_view(), name='list-reference'),
     url(r'^api/list-non-biodiversity/$',
         NonBiodiversityLayerList.as_view(),
         name='list-non-biodiversity-layer'),
