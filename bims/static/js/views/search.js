@@ -40,10 +40,8 @@ define([
             this.searchInput = this.$el.find('#search');
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
-            if (useReferenceCategory) {
-                this.referenceCategoryView = new ReferenceCategoryView();
-                this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
-            }
+            this.referenceCategoryView = new ReferenceCategoryView();
+            this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
             return this;
         },
         checkSearch: function (forceSearch) {
@@ -96,6 +94,23 @@ define([
                 );
             }
 
+            // reference
+            var referenceValue = [];
+            $('input[name=reference-value]:checked').each(function () {
+                referenceValue.push($(this).val())
+            });
+            if (referenceValue.length === 0) {
+                referenceValue = ''
+            } else {
+                var encodedReferenceValue = [];
+                $.each(referenceValue, function (index, value) {
+                    encodedReferenceValue.push(encodeURIComponent(value));
+                });
+                referenceValue = encodeURIComponent(JSON.stringify(
+                    referenceValue)
+                );
+            }
+
             var categoryValue = [];
             $('input[name=category-value]:checked').each(function () {
                 categoryValue.push($(this).val())
@@ -134,6 +149,7 @@ define([
                 'yearFrom': '',
                 'yearTo': '',
                 'months': '',
+                'reference': referenceValue,
                 'referenceCategory': referenceCategory
             };
             var yearFrom = $('#year-from').html();
@@ -158,6 +174,7 @@ define([
                 && !parameters['yearTo']
                 && !parameters['userBoundary']
                 && !parameters['referenceCategory']
+                && !parameters['reference']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false

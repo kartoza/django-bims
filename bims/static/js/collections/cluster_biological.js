@@ -9,7 +9,8 @@ define([
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
             "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>&referenceCategory=<%= referenceCategory %>"),
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
         clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
@@ -23,7 +24,7 @@ define([
         parameters: {
             taxon: '', zoom: 0, bbox: [],
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
-            boundary: '', userBoundary: '', referenceCategory: '',
+            boundary: '', userBoundary: '', referenceCategory: '', reference: '',
             clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {
@@ -41,6 +42,7 @@ define([
             this.parameters['userBoundary'] = '';
             this.parameters['referenceCategory'] = '';
             this.parameters['boundary'] = '';
+            this.parameters['reference'] = '';
         },
         resetClusters: function () {
             this.clusterData = [];
@@ -127,6 +129,7 @@ define([
                 && !this.parameters['yearTo']
                 && !this.parameters['userBoundary']
                 && !this.parameters['referenceCategory']
+                && !this.parameters['reference']
                 && !this.parameters['boundary']) {
                 return false
             } else {

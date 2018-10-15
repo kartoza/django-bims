@@ -35,6 +35,7 @@ define([
             this.boundary = parameters['boundary'];
             this.userBoundary = parameters['userBoundary'];
             this.referenceCategory = parameters['referenceCategory'];
+            this.reference = parameters['reference'];
 
             this.url = this.searchUrl +
                 '?search=' + this.searchValue +
@@ -45,7 +46,8 @@ define([
                 '&months=' + this.months +
                 '&boundary=' + this.boundary +
                 '&userBoundary=' + this.userBoundary +
-                '&referenceCategory=' + this.referenceCategory;
+                '&referenceCategory=' + this.referenceCategory +
+                '&reference=' + this.reference;
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
             this.getSearchResults();

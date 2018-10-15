@@ -70,6 +70,7 @@ class GetCollectionAbstract(APIView):
         user_boundary = filters.get('userBoundary', None)
         query_category = filters.get('category', None)
         reference_category = filters.get('referenceCategory', None)
+        reference = filters.get('reference', None)
         year_from = filters.get('yearFrom', None)
         year_to = filters.get('yearTo', None)
         months = filters.get('months', None)
@@ -77,7 +78,7 @@ class GetCollectionAbstract(APIView):
         if taxon or query_collector or \
                 boundary or user_boundary or \
                 query_category or reference_category or \
-                year_from or year_to or months:
+                year_from or year_to or months or reference:
             filter_mode = True
 
         if query_value:
@@ -175,6 +176,15 @@ class GetCollectionAbstract(APIView):
             for query in qs:
                 qs_reference_category.add(SQ(reference_category=query), SQ.OR)
             results = results.filter(qs_reference_category)
+
+        # query by reference category
+        if reference:
+            qs_reference = SQ()
+            qs = json.loads(reference)
+            for query in qs:
+                qs_reference.add(SQ(reference__exact=query),
+                                          SQ.OR)
+            results = results.filter(qs_reference)
 
         # query by year from
         if year_from:
