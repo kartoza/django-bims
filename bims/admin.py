@@ -323,10 +323,15 @@ class CustomUserAdmin(ProfileAdmin):
             request, obj, post_url_continue)
 
 
-class NonBiodiversityLayerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'wms_url', 'wms_layer_name')
+class NonBiodiversityLayerAdmin(OrderedModelAdmin):
+    list_display = (
+        'order',
+        'name',
+        'wms_url',
+        'wms_layer_name',
+        'move_up_down_links')
     list_filter = ('wms_url',)
-    ordering = ('name',)
+    ordering = ('order',)
 
 
 # flatpage ckeditor integration
