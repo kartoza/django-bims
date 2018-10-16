@@ -42,8 +42,8 @@ def search_collection(query_value, filters, path_file, process):
         if acquired:
 
             collection_results, \
-                site_results, \
-                fuzzy_search = GetCollectionAbstract.apply_filter(
+            site_results, \
+            fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters,
                     ignore_bbox=True)
@@ -64,15 +64,11 @@ def search_collection(query_value, filters, path_file, process):
                 search_process.file_path = path_file
                 search_process.save()
 
-            all_record_results = []
-            all_site_results = []
+            all_record_results = {}
+            all_site_results = {}
             search_results['fuzzy_search'] = fuzzy_search
             search_results['records'] = []
             search_results['sites'] = []
-
-            all_taxon_ids = []
-            all_location_site_ids = []
-            all_bio_ids = []
 
             collection_paginator = Paginator(collection_results, max_result)
             for num_page in range(1, collection_paginator.num_pages + 1):
@@ -80,31 +76,12 @@ def search_collection(query_value, filters, path_file, process):
                 if not collection_page.object_list:
                     break
                 collection_result = collection_page.object_list
-                record_results, _site_results, ids_found = \
+                all_record_results, all_site_results = \
                     SearchObjects.process_search(
-                        collection_result,
-                        query_value,
-                        all_bio_ids,
-                        all_taxon_ids,
-                        all_location_site_ids)
-
-                all_bio_ids = ids_found['bio_ids']
-                all_taxon_ids = ids_found['taxon_ids']
-                all_location_site_ids = ids_found['location_site_ids']
-
-                if not all_record_results and not all_site_results:
-                    all_record_results = record_results
-                    all_site_results = _site_results
-                else:
-                    # combine
-                    all_record_results = combine_results(
-                            new_results=record_results,
-                            old_results=all_record_results
-                    )
-                    all_site_results = combine_results(
-                            new_results=_site_results,
-                            old_results=all_site_results
-                    )
+                            collection_result,
+                            query_value,
+                            all_record_results,
+                            all_site_results)
 
                 search_results['total_records'] = len(all_record_results)
                 search_results['total_sites'] = len(all_site_results)
@@ -118,9 +95,9 @@ def search_collection(query_value, filters, path_file, process):
                 site_page = sites_paginator.page(num_page)
                 if not site_page.object_list:
                     break
-                all_site_results += SearchObjects.process_sites_search(
+                all_site_results = SearchObjects.process_sites_search(
                         site_page.object_list,
-                        all_location_site_ids,
+                        all_site_results,
                         query_value
                 )
                 search_results['total_sites'] = len(all_site_results)

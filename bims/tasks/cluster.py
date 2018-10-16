@@ -23,11 +23,15 @@ def generate_search_cluster(query_value,
 
     oid = '{0}'.format(filename)
 
+    name_label = 'n'
+    coordinates_label = 'o'
+    id_label = 'id'
+
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
             collection_results, \
-                site_results, \
-                fuzzy_search = GetCollectionAbstract.apply_filter(
+            site_results, \
+            fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters,
                     ignore_bbox=True)
@@ -49,16 +53,16 @@ def generate_search_cluster(query_value,
             collection_sites = []
             if collection_results:
                 collection_sites += list(
-                    collection_results.values(
-                        'location_site_id',
-                        'location_coordinates',
-                        'location_site_name'))
+                        collection_results.values(
+                                'location_site_id',
+                                'location_coordinates',
+                                'location_site_name'))
             if site_results:
                 collection_sites += list(
-                    site_results.values(
-                        'location_site_id',
-                        'location_coordinates',
-                        'location_site_name'))
+                        site_results.values(
+                                'location_site_id',
+                                'location_coordinates',
+                                'location_site_name'))
 
             collection_distinct = {}
             all_sites = []
@@ -75,7 +79,11 @@ def generate_search_cluster(query_value,
                     location_site_id = int(site['location_site_id'])
                     if location_site_id not in collection_distinct:
                         collection_distinct[location_site_id] = site
-                        all_sites.append(site)
+                        all_sites.append({
+                            id_label: site['location_site_id'],
+                            coordinates_label: site['location_coordinates'],
+                            name_label: site['location_site_name']
+                        })
 
                 response_data['data'] = all_sites
                 with open(path_file, 'wb') as cluster_file:

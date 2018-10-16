@@ -12,28 +12,16 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquer
             if (this.getResultType() === 'taxa') {
                 Shared.Dispatcher.trigger('searchResult:updateTaxon',
                     this.model.get('id'),
-                    this.model.get('common_name')
+                    this.model.get('name')
                 );
                 Shared.Dispatcher.trigger('taxonDetail:show',
                     this.model.get('id'),
-                    this.model.get('common_name')
+                    this.model.get('name')
                 );
             } else if (this.getResultType() === 'site') {
+                var zoomToObject = true;
                 Shared.Dispatcher.trigger('siteDetail:show',
-                    this.model.get('id'), this.model.get('name'));
-                if (this.model.get('geometry')) {
-                    var feature = {
-                        id: this.model.get('id'),
-                        type: "Feature",
-                        geometry: JSON.parse(this.model.get('geometry')),
-                        properties: {}
-                    };
-                    console.log(feature);
-                    var features = new ol.format.GeoJSON().readFeatures(feature, {
-                        featureProjection: 'EPSG:3857'
-                    });
-                    Shared.Dispatcher.trigger('map:switchHighlight', features);
-                }
+                    this.model.get('id'), this.model.get('name'), zoomToObject);
             }
         },
         getResultType: function () {

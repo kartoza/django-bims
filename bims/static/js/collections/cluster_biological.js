@@ -187,7 +187,7 @@ define([
                 return false;
             }
             $.each(this.clusterData, function (index, cluster) {
-                var locationCoordinates = cluster['location_coordinates'].split(',');
+                var locationCoordinates = cluster['o'].split(',');
                 var lon = parseFloat(locationCoordinates[0]);
                 var lat = parseFloat(locationCoordinates[1]);
                 coordinates.push([lon, lat]);
@@ -245,9 +245,9 @@ define([
             this.viewCollection = [];
             $.each(this.clusterData, function (index, cluster) {
                 var clusterModel = new ClusterModel({
-                    id: cluster['location_site_id'],
-                    name: cluster['location_site_name'],
-                    coordinates: cluster['location_coordinates']
+                    id: cluster['id'],
+                    name: cluster['n'],
+                    coordinates: cluster['o']
                 });
                 self.viewCollection.push(new ClusterView({
                     model: clusterModel
