@@ -3,15 +3,9 @@ import os
 import json
 import hashlib
 import errno
-from django.db.models import Count, Case, When
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from bims.models.taxon import Taxon
-from bims.models.location_site import LocationSite
-from bims.serializers.taxon_serializer import TaxonOccurencesSerializer
-from bims.serializers.location_site_serializer import \
-    LocationOccurrencesSerializer
 from bims.api_views.collection import GetCollectionAbstract
 from bims.tasks.search import search_collection
 from bims.models import SearchProcess

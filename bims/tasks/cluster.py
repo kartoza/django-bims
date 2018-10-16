@@ -30,8 +30,8 @@ def generate_search_cluster(query_value,
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
             collection_results, \
-            site_results, \
-            fuzzy_search = GetCollectionAbstract.apply_filter(
+                site_results, \
+                fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters,
                     ignore_bbox=True)

@@ -41,6 +41,37 @@ class GetCollectionAbstract(APIView):
                 yield item.object
 
     @staticmethod
+    def is_using_filters(filters):
+        taxon = filters.get('taxon', None)
+        query_collector = filters.get('collector', None)
+        boundary = filters.get('boundary', None)
+        user_boundary = filters.get('userBoundary', None)
+        query_category = filters.get('category', None)
+        reference_category = filters.get('referenceCategory', None)
+        reference = filters.get('reference', None)
+        year_from = filters.get('yearFrom', None)
+        year_to = filters.get('yearTo', None)
+        months = filters.get('months', None)
+
+        return bool(taxon or query_collector or
+                    boundary or user_boundary or
+                    query_category or reference_category or
+                    year_from or year_to or months or reference)
+
+    @staticmethod
+    def get_all_validated():
+        """
+        Get all validated collection data
+        :return: list of validated collection
+        """
+        settings.ELASTIC_MIN_SCORE = 0
+        sqs = SearchQuerySet()
+        results = sqs.all().models(
+                BiologicalCollectionRecord)
+        results = results.filter(validated=True)
+        return results
+
+    @staticmethod
     def apply_filter(query_value, filters, ignore_bbox=False, only_site=False):
         """
         Apply filter and do the search to biological collection
@@ -183,7 +214,7 @@ class GetCollectionAbstract(APIView):
             qs = json.loads(reference)
             for query in qs:
                 qs_reference.add(SQ(reference__exact=query),
-                                          SQ.OR)
+                                 SQ.OR)
             results = results.filter(qs_reference)
 
         # query by year from
@@ -388,14 +419,20 @@ class CollectionDownloader(GetCollectionAbstract):
         query_value = request.GET.get('search')
         filters = request.GET
         file_type = request.GET.get('fileType', None)
+        is_using_filters = self.is_using_filters(request.GET)
         if not file_type:
             file_type = 'csv'
-        collection_results, \
-            site_results, \
-            fuzzy_search = self.apply_filter(
-                query_value,
-                filters,
-                ignore_bbox=True)
+
+        if is_using_filters or query_value:
+            collection_results, \
+                site_results, \
+                fuzzy_search = self.apply_filter(
+                    query_value,
+                    filters,
+                    ignore_bbox=True)
+        else:
+            collection_results = self.get_all_validated()
+
         if file_type == 'csv':
             return self.convert_to_cvs(
                 collection_results,
