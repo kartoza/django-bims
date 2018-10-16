@@ -1,6 +1,11 @@
 define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Shared, Backbone, _, $, JqueryUI) {
     return Backbone.View.extend({
         template: _.template($('#download-control-panel-template').html()),
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
+            "&zoom=<%= zoom %>&bbox=<%= bbox %>" +
+            "&collector=<%= collector %>&category=<%= category %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
         url: '/api/collection/download/',
         events: {
             'click .close': 'closeModal',
@@ -8,8 +13,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
             'click .row-format': 'download'
         },
         parameters: {
-            taxon: '', zoom: 0, bbox: [],
-            collector: '', category: '', yearFrom: '', yearTo: '', months: ''
+            taxon: '', zoom: 0, bbox: [], search: '',
+            collector: '', category: '', yearFrom: '', yearTo: '', months: '',
+            boundary: '', userBoundary: '', referenceCategory: '', reference: ''
         },
         initialize: function (options) {
             Shared.Dispatcher.on('cluster:updated', this.updateParameters, this);
@@ -46,19 +52,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
             var format = $(e.target).data("format");
             this.parameters['fileType'] = format;
 
-            if (format == 'csv') {
+            if (format === 'csv') {
                 $(this.notification).html('downloading ' + format);
                 $(this.notification).show();
                 this.$el.find('.row-format').addClass('disabled');
 
                 var parameter = $.param(this.parameters);
-                var url = this.url + '?' + parameter;
+                var url = this.url + this.apiParameters(this.parameters);
                 if (this.xhr) {
                     this.xhr.abort();
                 }
                 this.downloading(url);
             } else {
-                location.replace(this.url + '?' + parameter)
+                location.replace(this.url + this.apiParameters(this.parameters));
             }
 
         },

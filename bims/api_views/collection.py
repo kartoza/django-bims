@@ -27,6 +27,7 @@ from bims.utils.cluster_point import (
 )
 from bims.models.user_boundary import UserBoundary
 from bims.models.search_process import SearchProcess
+from bims.utils.url import remove_params_from_uri
 
 
 class GetCollectionAbstract(APIView):
@@ -363,10 +364,22 @@ class CollectionDownloader(GetCollectionAbstract):
             })
 
         # Filename
+        search_uri = self.request.build_absolute_uri()
+
+        not_needed_params = [
+            'zoom',
+            'bbox'
+        ]
+
+        search_uri = remove_params_from_uri(
+                not_needed_params,
+                search_uri
+        )
+
         today_date = datetime.date.today()
         filename = md5(
             '%s%s%s' % (
-                json.dumps(self.request.GET),
+                search_uri,
                 queryset.count(),
                 today_date)
         ).hexdigest()
@@ -540,26 +553,11 @@ class ClusterCollection(GetCollectionAbstract):
         filters = request.GET
 
         search_uri = request.build_absolute_uri()
+        search_uri = remove_params_from_uri(
+                ['zoom'],
+                search_uri
+        )
 
-        # remove zoom value from uri
-        zoom_string = 'zoom='
-        zoom_char = ''
-        zoom_index = search_uri.find(zoom_string)
-        zoom_value = ''
-        zoom_value_index = 0
-
-        while zoom_char != '&':
-            pre_zoom_value_index = 0
-            if zoom_value_index > 0:
-                pre_zoom_value_index = zoom_value_index - 1
-            zoom_char = search_uri[
-                        zoom_index + len(zoom_string) + pre_zoom_value_index:
-                        zoom_index + len(zoom_string) + zoom_value_index]
-            zoom_value_index += 1
-            if zoom_char and zoom_char != '&':
-                zoom_value += zoom_char
-
-        search_uri = search_uri.replace(zoom_string + zoom_value, zoom_string)
         search_process, created = SearchProcess.objects.get_or_create(
                 category='cluster_generation',
                 query=search_uri
