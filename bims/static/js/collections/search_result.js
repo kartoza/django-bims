@@ -16,7 +16,8 @@ define([
         initialSearch: true,
         secondSearch: false,
         searchFinish: false,
-        searchResultsData: [],
+        sitesData: [],
+        recordsData: [],
         totalRecords: 0,
         totalSites: 0,
         modelId: function (attrs) {
@@ -91,12 +92,11 @@ define([
             })
         },
         parse: function (response) {
-            var result = [];
             if (response.hasOwnProperty('records')) {
-                result = response['records'];
+                this.recordsData = response['records'];
             }
             if (response.hasOwnProperty('sites')) {
-                result = result.concat(response['sites']);
+                this.sitesData = response['sites'];
             }
             if (response.hasOwnProperty('fuzzy_search')) {
                 this.isFuzzySearch = response['fuzzy_search'];
@@ -110,7 +110,6 @@ define([
             if (response.hasOwnProperty('total_sites')) {
                 this.totalSites = response['total_sites'];
             }
-            this.searchResultsData = result;
             this.renderCollection();
         },
         renderCollection: function () {
@@ -155,17 +154,31 @@ define([
             var speciesListName = [];
 
             if (self.status === 'finish') {
-                $.each(this.searchResultsData, function (index, data) {
-                    var searchModel = new SearchModel(data);
+                $.each(this.recordsData, function (key, data) {
+                    var searchModel = new SearchModel({
+                        id: key,
+                        count: data['c'],
+                        name: data['n'],
+                        highlight: data['h'],
+                        record_type: 'taxa'
+                    });
                     var searchResultView = new SearchResultView({
                         model: searchModel
                     });
                     self.viewCollection.push(searchResultView);
-
-                    // update count
-                    if (searchModel.get('record_type') === 'taxa') {
-                        speciesListName.push(searchResultView.model.get('common_name'));
-                    }
+                    speciesListName.push(searchResultView.model.get('common_name'));
+                });
+                $.each(this.sitesData, function (key, data) {
+                    var searchModel = new SearchModel({
+                        id: key,
+                        count: data['c'],
+                        name: data['n'],
+                        record_type: 'site'
+                    });
+                    var searchResultView = new SearchResultView({
+                        model: searchModel
+                    });
+                    self.viewCollection.push(searchResultView);
                 });
             }
 

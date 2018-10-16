@@ -361,6 +361,18 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
+                    if (data['geometry']) {
+                        var feature = {
+                            id: data['id'],
+                            type: "Feature",
+                            geometry: JSON.parse(data['geometry']),
+                            properties: {}
+                        };
+                        var features = new ol.format.GeoJSON().readFeatures(feature, {
+                            featureProjection: 'EPSG:3857'
+                        });
+                        Shared.Dispatcher.trigger('map:switchHighlight', features);
+                    }
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetail(data));
                     $.each(self.siteChartData, function (key, value) {

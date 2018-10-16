@@ -15,6 +15,11 @@ from bims.serializers.location_site_serializer import \
 from bims.api_views.collection import GetCollectionAbstract
 from bims.tasks.search import search_collection
 from bims.models import SearchProcess
+from bims.utils.highlighter import CustomHighlighter
+
+COUNT_LABEL = 'c'
+NAME_LABEL = 'n'
+HIGHLIGHTER_LABEL = 'h'
 
 
 class SearchObjects(APIView):
@@ -37,69 +42,46 @@ class SearchObjects(APIView):
     def process_search(
             collection_result,
             query_value,
-            bio_ids=[],
-            taxon_ids=[],
-            location_site_ids=[]):
+            taxon_results,
+            site_results):
 
+        highlighter = CustomHighlighter(query_value, max_length=100)
+
+        # calculate taxon
         for collection in collection_result:
-            if collection.model_pk and \
-                    collection.model_pk not in bio_ids:
-                bio_ids.append(collection.model_pk)
-            if collection.taxon_gbif and \
-                    collection.taxon_gbif not in taxon_ids:
-                taxon_ids.append(collection.taxon_gbif)
-            if collection.location_site_id and \
-                    collection.location_site_id not in location_site_ids:
-                location_site_ids.append(collection.location_site_id)
+            if collection.taxon_gbif not in taxon_results:
+                taxon_results[collection.taxon_gbif] = {
+                    COUNT_LABEL: 1,
+                    NAME_LABEL: collection.original_species_name,
+                    HIGHLIGHTER_LABEL: highlighter.highlight(
+                            collection.original_species_name)
+                }
+            else:
+                taxon_results[collection.taxon_gbif][COUNT_LABEL] += 1
 
-        taxons = Taxon.objects.filter(
-            id__in=taxon_ids
-        ).annotate(
-            num_occurrences=Count(Case(When(
-                biologicalcollectionrecord__id__in=bio_ids,
-                then=1
-            )))
-        ).order_by('species')
-
-        location_sites = LocationSite.objects.filter(
-            id__in=location_site_ids
-        ).annotate(
-            num_occurrences=Count(Case(When(
-                biological_collection_record__id__in=bio_ids,
-                then=1
-            )))).order_by('name')
-
-        record_results = TaxonOccurencesSerializer(
-            taxons,
-            many=True,
-            context={
-                'query_value': query_value
-            }).data
-
-        sites_results = LocationOccurrencesSerializer(
-            location_sites,
-            many=True,
-            context={
-                'query_value': query_value
-            }).data
-
-        ids = {
-            'bio_ids': bio_ids,
-            'taxon_ids': taxon_ids,
-            'location_site_ids': location_site_ids
-        }
-        return record_results, sites_results, ids
+            if collection.location_site_id not in site_results:
+                site_results[collection.location_site_id] = {
+                    COUNT_LABEL: 1,
+                    NAME_LABEL: collection.location_site_name
+                }
+            else:
+                site_results[collection.location_site_id][COUNT_LABEL] += 1
+        return taxon_results, site_results
 
     @staticmethod
-    def process_sites_search(site_results, location_site_ids, query):
-        sites = LocationOccurrencesSerializer(
-                GetCollectionAbstract.queryset_gen(
-                        site_results,
-                        exlude_ids=location_site_ids),
-                many=True,
-                context={'query_value': query}
-        ).data
-        return sites
+    def process_sites_search(sites, site_results, query):
+        highlighter = CustomHighlighter(query, max_length=100)
+        for site in sites:
+            if site.location_site_id not in site_results:
+                site_results[site.location_site_id] = {
+                    COUNT_LABEL: 0,
+                    NAME_LABEL: highlighter.highlight(
+                            site.location_site_name
+                    )
+                }
+            else:
+                continue
+        return site_results
 
     def get(self, request):
         query_value = request.GET.get('search')
