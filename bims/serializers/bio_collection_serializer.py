@@ -78,10 +78,12 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     longitude = serializers.SerializerMethodField()
     species_name = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
+    origin = serializers.SerializerMethodField()
     date = serializers.SerializerMethodField()
     collector = serializers.SerializerMethodField()
     taxon_class = serializers.SerializerMethodField()
+    reference = serializers.SerializerMethodField()
+    reference_category = serializers.SerializerMethodField()
 
     def get_taxon_class(self, obj):
         if obj.taxon_class:
@@ -110,12 +112,23 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_notes(self, obj):
         return obj.notes.replace(';', '-').encode('utf8')
 
-    def get_category(self, obj):
-        return obj.category.encode('utf8')
+    def get_origin(self, obj):
+        category = obj.category
+        for choice in BiologicalCollectionRecord.CATEGORY_CHOICES:
+            if choice[0] == obj.category:
+                category = choice[1]
+
+        return category.encode('utf8')
 
     def get_date(self, obj):
         if obj.collection_date:
             return obj.collection_date.strftime('%Y-%m-%d')
+
+    def get_reference(self, obj):
+        return obj.reference.encode('utf8')
+
+    def get_reference_category(self, obj):
+        return obj.reference_category.encode('utf8')
 
     def get_collector(self, obj):
         return obj.collector.encode('utf8')
@@ -124,8 +137,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         model = BiologicalCollectionRecord
         fields = [
             'location_site', 'latitude', 'longitude',
-            'species_name', 'notes', 'category',
-            'date', 'collector', 'taxon_class']
+            'species_name', 'notes', 'origin',
+            'date', 'collector', 'taxon_class',
+            'reference', 'reference_category']
 
     def to_representation(self, instance):
         result = super(
