@@ -42,8 +42,8 @@ def search_collection(query_value, filters, path_file, process):
         if acquired:
 
             collection_results, \
-            site_results, \
-            fuzzy_search = GetCollectionAbstract.apply_filter(
+                site_results, \
+                fuzzy_search = GetCollectionAbstract.apply_filter(
                     query_value,
                     filters,
                     ignore_bbox=True)

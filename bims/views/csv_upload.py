@@ -168,11 +168,12 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         float(record['latitude']))
 
                     try:
-                        location_site, status = LocationSite.objects.get_or_create(
-                            location_type=location_type,
-                            geometry_point=record_point,
-                            name=record['location_site']
-                        )
+                        location_site, status = LocationSite.objects.\
+                            get_or_create(
+                                location_type=location_type,
+                                geometry_point=record_point,
+                                name=record['location_site']
+                            )
                     except LocationSite.MultipleObjectsReturned:
                         location_site = LocationSite.objects.filter(
                             location_type=location_type,

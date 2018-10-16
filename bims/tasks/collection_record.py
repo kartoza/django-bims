@@ -53,13 +53,19 @@ def download_data_to_csv(path_file, request):
         if acquired:
             query_value = request.get('search', '')
             filters = request
-            collection_results, \
-                site_results, \
-                fuzzy_search = GetCollectionAbstract.\
-                apply_filter(
-                    query_value,
-                    filters,
-                    ignore_bbox=True)
+            is_using_filters = GetCollectionAbstract.is_using_filters(filters)
+
+            if is_using_filters or query_value:
+                collection_results, \
+                    site_results, \
+                    fuzzy_search = GetCollectionAbstract.\
+                    apply_filter(
+                        query_value,
+                        filters,
+                        ignore_bbox=True)
+            else:
+                collection_results = GetCollectionAbstract.get_all_validated()
+
             serializer = BioCollectionOneRowSerializer(
                     collection_results,
                     many=True
