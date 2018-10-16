@@ -166,7 +166,7 @@ define([
                         model: searchModel
                     });
                     self.viewCollection.push(searchResultView);
-                    speciesListName.push(searchResultView.model.get('common_name'));
+                    speciesListName.push(searchResultView.model.get('name'));
                 });
                 $.each(this.sitesData, function (key, data) {
                     var searchModel = new SearchModel({
