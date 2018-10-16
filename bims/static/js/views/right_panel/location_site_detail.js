@@ -26,11 +26,12 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
         updateCurrentSpeciesSearchResult: function (newList) {
             this.currentSpeciesSearchResult = newList;
         },
-        show: function (id, name) {
+        show: function (id, name, zoomToObject) {
             this.siteId = id;
             this.siteName = name;
+            this.zoomToObject = zoomToObject;
             this.url = '/api/location-site/' + id;
-            this.showDetail(name)
+            this.showDetail(name, zoomToObject)
         },
         hideAll: function (e) {
             var className = $(e.target).attr('class');
@@ -326,7 +327,7 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             $('.species-list-count').html(speciesListCount);
             return $specialListWrapper;
         },
-        showDetail: function (name) {
+        showDetail: function (name, zoomToObject) {
             var self = this;
             // Render basic information
             var $siteDetailWrapper = $('<div></div>');
@@ -371,7 +372,11 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                         var features = new ol.format.GeoJSON().readFeatures(feature, {
                             featureProjection: 'EPSG:3857'
                         });
-                        Shared.Dispatcher.trigger('map:switchHighlight', features);
+                        if (zoomToObject) {
+                            Shared.Dispatcher.trigger('map:switchHighlight', features, !zoomToObject);
+                        } else {
+                            Shared.Dispatcher.trigger('map:switchHighlight', features, true);
+                        }
                     }
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetail(data));

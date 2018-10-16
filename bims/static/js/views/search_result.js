@@ -19,8 +19,9 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquer
                     this.model.get('name')
                 );
             } else if (this.getResultType() === 'site') {
+                var zoomToObject = true;
                 Shared.Dispatcher.trigger('siteDetail:show',
-                    this.model.get('id'), this.model.get('name'));
+                    this.model.get('id'), this.model.get('name'), zoomToObject);
             }
         },
         getResultType: function () {
