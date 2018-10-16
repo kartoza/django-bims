@@ -43,6 +43,7 @@ define([
             this.parameters['referenceCategory'] = '';
             this.parameters['boundary'] = '';
             this.parameters['reference'] = '';
+            Shared.Dispatcher.trigger('cluster:updated', this.parameters);
         },
         resetClusters: function () {
             this.clusterData = [];
