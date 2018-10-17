@@ -106,11 +106,12 @@ class GetCollectionAbstract(APIView):
         year_from = filters.get('yearFrom', None)
         year_to = filters.get('yearTo', None)
         months = filters.get('months', None)
+        site_id = filters.get('siteId', None)
 
         if taxon or query_collector or \
                 boundary or user_boundary or \
                 query_category or reference_category or \
-                year_from or year_to or months or reference:
+                year_from or year_to or months or reference or site_id:
             filter_mode = True
 
         if query_value:
@@ -142,6 +143,11 @@ class GetCollectionAbstract(APIView):
                 results = results.filter(validated=True)
             else:
                 results = []
+
+        if site_id:
+            results = sqs.filter(
+                site_id_indexed=site_id
+            ).models(BiologicalCollectionRecord)
 
         if taxon:
             results = sqs.filter(

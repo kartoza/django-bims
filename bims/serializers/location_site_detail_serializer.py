@@ -35,13 +35,19 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         ]
 
     def to_representation(self, instance):
+        collection_ids = self.context.get("collection_ids")
         result = super(
             LocationSiteDetailSerializer, self).to_representation(
             instance)
-        collections = BiologicalCollectionRecord.objects.filter(
-            site=instance,
-            validated=True
-        )
+        if collection_ids:
+            collections = BiologicalCollectionRecord.objects.filter(
+                id__in=collection_ids
+            )
+        else:
+            collections = BiologicalCollectionRecord.objects.filter(
+                site=instance,
+                validated=True
+            )
         records_occurrence = {}
         module_info = {}
         for model in collections:

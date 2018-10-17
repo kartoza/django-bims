@@ -66,7 +66,7 @@ api_urls = [
         LocationTypeAllowedGeometryDetail.as_view()),
     url(r'^api/location-site/cluster/$', LocationSiteClusterList.as_view()),
     url(r'^api/location-site/$', LocationSiteList.as_view()),
-    url(r'^api/location-site/(?P<pk>[0-9]+)/$',
+    url(r'^api/location-site-detail/$',
         LocationSiteDetail.as_view(),
         name='location-site-detail'),
     url(r'^api/taxon/(?P<pk>[0-9]+)/$',

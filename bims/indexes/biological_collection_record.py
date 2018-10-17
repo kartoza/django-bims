@@ -114,7 +114,16 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    site_id_indexed = indexes.IntegerField(
+        indexed=True
+    )
+
     boundary = indexes.IntegerField()
+
+    def prepare_site_id_indexed(self, obj):
+        if obj.site:
+            return obj.site.id
+        return 0
 
     def prepare_taxon_gbif(self, obj):
         if obj.taxon_gbif_id:
