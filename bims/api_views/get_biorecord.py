@@ -8,6 +8,7 @@ from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
     BioCollectionDetailSerializer,
 )
+from bims.api_views.collection import GetCollectionAbstract
 
 
 class GetBioRecordDetail(LoginRequiredMixin, APIView):
@@ -27,12 +28,22 @@ class GetBioRecordDetail(LoginRequiredMixin, APIView):
 
 class GetBioRecords(APIView):
 
-    def get(self, request, taxon_id):
+    def get(self, request):
+        query_value = request.GET.get('search')
+        filters = request.GET
+
+        # Search collection
+        collection_results, \
+        site_results, \
+        fuzzy_search = GetCollectionAbstract.apply_filter(
+                query_value,
+                filters,
+                ignore_bbox=True)
+
         try:
-            records = BiologicalCollectionRecord.objects.filter(
-                taxon_gbif_id=taxon_id
-            )
-            serializer = BioCollectionSerializer(records, many=True)
+            serializer = BioCollectionSerializer(
+                    [q.object for q in collection_results],
+                    many=True)
             return Response(serializer.data)
         except BiologicalCollectionRecord.DoesNotExist:
             return HttpResponse(

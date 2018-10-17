@@ -3,6 +3,10 @@ define(['backbone', 'ol', 'shared', 'underscore'], function (Backbone, ol, Share
         taxonName: null,
         siteDetail: null,
         taxonId: null,
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
+            "&collector=<%= collector %>&category=<%= category %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
         dataRepresentation: {
             'collection_date': 'Collection Date',
             'collector': 'Collector',
@@ -15,7 +19,11 @@ define(['backbone', 'ol', 'shared', 'underscore'], function (Backbone, ol, Share
             this.taxonName = taxon_name;
             this.taxonId = taxon_id;
             this.siteDetail = site_detail;
-            this.url = '/api/get-bio-records/' + this.taxonId;
+            if (typeof filterParameters !== 'undefined') {
+                this.parameters = filterParameters;
+                this.parameters['taxon'] = this.taxonId;
+            }
+            this.url = '/api/get-bio-records/' + this.apiParameters(this.parameters);
             this.showDetail();
         },
         renderDetail: function (data) {
@@ -45,6 +53,7 @@ define(['backbone', 'ol', 'shared', 'underscore'], function (Backbone, ol, Share
 
             Shared.Dispatcher.trigger('sidePanel:showReturnButton');
             Shared.Dispatcher.trigger('sidePanel:addEventToReturnButton', function () {
+                filterParameters['taxon'] = '';
                 Shared.Dispatcher.trigger('sidePanel:hideReturnButton');
                 Shared.Dispatcher.trigger(
                     'taxonDetail:show', self.taxonId, self.taxonName, self.siteDetail);

@@ -40,6 +40,7 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             if (typeof filterParameters !== 'undefined') {
                 this.parameters = filterParameters;
                 this.parameters['siteId'] = id;
+                filterParameters = this.parameters;
             }
             this.url = '/api/location-site-detail/' + this.apiParameters(this.parameters);
             this.showDetail(name, zoomToObject)
@@ -317,7 +318,8 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                                 {
                                     'id': that.siteId,
                                     'name': that.siteName
-                                }
+                                },
+                                speciesValue.count
                             );
                         });
 

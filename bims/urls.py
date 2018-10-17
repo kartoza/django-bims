@@ -102,7 +102,7 @@ api_urls = [
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
-    url(r'^api/get-bio-records/(?P<taxon_id>[\w-]+)/$',
+    url(r'^api/get-bio-records/$',
         GetBioRecords.as_view(), name='get-bio-records'),
     url(r'^api/get-unvalidated-records/$',
         GetNonValidatedRecords.as_view(), name='get-unvalidated-records'),
