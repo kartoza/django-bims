@@ -15,6 +15,10 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     location = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     taxonomy = serializers.SerializerMethodField()
+    site_name = serializers.SerializerMethodField()
+    
+    def get_site_name(self, obj):
+        return obj.site.name
 
     def get_taxonomy(self, obj):
         return TaxonSerializer(obj.taxon_gbif_id).data
