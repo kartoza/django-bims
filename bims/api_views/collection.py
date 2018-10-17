@@ -116,7 +116,7 @@ class GetCollectionAbstract(APIView):
 
         if query_value:
             clean_query = sqs.query.clean(query_value)
-            results = SearchQuerySet().filter(
+            results = sqs.filter(
                     SQ(original_species_name_exact__contains=clean_query) |
                     SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
@@ -129,29 +129,27 @@ class GetCollectionAbstract(APIView):
                 fuzzy_search = True
                 # Set min score bigger for fuzzy search
                 settings.ELASTIC_MIN_SCORE = 2
-                results = SearchQuerySet().filter(
-                        SQ(original_species_name=clean_query) |
-                        SQ(taxon_common_name=clean_query) |
-                        SQ(taxon_scientific_name=clean_query),
+                results = sqs.filter(
+                        SQ(original_species_name=clean_query),
                         validated=True
                 ).models(BiologicalCollectionRecord)
                 settings.ELASTIC_MIN_SCORE = 0
         else:
             if filter_mode:
-                results = SearchQuerySet().all().models(
+                results = sqs.all().models(
                         BiologicalCollectionRecord)
                 results = results.filter(validated=True)
             else:
                 results = []
 
-        if site_id:
-            results = sqs.filter(
-                site_id_indexed=site_id
-            ).models(BiologicalCollectionRecord)
-
         if taxon:
             results = sqs.filter(
                 taxon_gbif=taxon
+            ).models(BiologicalCollectionRecord)
+
+        if site_id:
+            results = results.filter(
+                site_id_indexed=site_id
             ).models(BiologicalCollectionRecord)
 
         # get by bbox
