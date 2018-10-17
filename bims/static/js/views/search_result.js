@@ -10,16 +10,20 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquer
         },
         clicked: function (e) {
             if (this.getResultType() === 'taxa') {
+                filterParameters['siteId'] = '';
                 Shared.Dispatcher.trigger('searchResult:updateTaxon',
                     this.model.get('id'),
                     this.model.get('name')
                 );
                 Shared.Dispatcher.trigger('taxonDetail:show',
                     this.model.get('id'),
-                    this.model.get('name')
+                    this.model.get('name'),
+                    null,
+                    this.model.get('count')
                 );
             } else if (this.getResultType() === 'site') {
                 var zoomToObject = true;
+                filterParameters['siteId'] = this.model.get('id');
                 Shared.Dispatcher.trigger('siteDetail:show',
                     this.model.get('id'), this.model.get('name'), zoomToObject);
             }

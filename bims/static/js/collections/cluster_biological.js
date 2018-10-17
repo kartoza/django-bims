@@ -6,7 +6,7 @@ define([
     'ol'], function (Backbone, ClusterModel, ClusterView, Shared, ol) {
     return Backbone.Collection.extend({
         model: ClusterModel,
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
             "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
@@ -22,7 +22,7 @@ define([
         clusterData: null,
         defaultZoom: 8,
         parameters: {
-            taxon: '', zoom: 0, bbox: [],
+            taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
             boundary: '', userBoundary: '', referenceCategory: '', reference: '',
             clusterSize: Shared.ClusterSize
@@ -34,6 +34,7 @@ define([
         },
         clearParameters: function () {
             this.parameters['taxon'] = '';
+            this.parameters['siteId'] = '';
             this.parameters['search'] = '';
             this.parameters['collector'] = '';
             this.parameters['category'] = '';
@@ -130,6 +131,7 @@ define([
             // flag if this collection need to be called
             if (!this.parameters['taxon']
                 && !this.parameters['search']
+                && !this.parameters['siteId']
                 && !this.parameters['collector']
                 && !this.parameters['category']
                 && !this.parameters['yearFrom']
