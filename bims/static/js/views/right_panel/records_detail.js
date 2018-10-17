@@ -53,6 +53,7 @@ define(['backbone', 'ol', 'shared', 'underscore'], function (Backbone, ol, Share
 
             Shared.Dispatcher.trigger('sidePanel:showReturnButton');
             Shared.Dispatcher.trigger('sidePanel:addEventToReturnButton', function () {
+                filterParameters['taxon'] = '';
                 Shared.Dispatcher.trigger('sidePanel:hideReturnButton');
                 Shared.Dispatcher.trigger(
                     'taxonDetail:show', self.taxonId, self.taxonName, self.siteDetail);
