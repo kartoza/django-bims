@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf.urls import url
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
+from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
@@ -41,6 +42,7 @@ from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords
 )
+from bims.api_views.get_feature_info import GetFeatureInfo
 from bims.api_views.non_validated_record import GetNonValidatedRecords
 from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
@@ -152,4 +154,7 @@ urlpatterns = [
         BioRecordsUpdateView.as_view(), name='update-records'),
     url(r'^upload_collection/$', CollectionUploadView.as_view(),
         name='upload-collection'),
+    url(r'^get_feature/$',
+        csrf_exempt(GetFeatureInfo.as_view()),
+        name='get-feature')
 ] + api_urls

@@ -572,7 +572,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var view = this.map.getView();
             var featuresInfo = {};
             $.each(this.layers, function (layer_key, layer) {
-                if (coordinate != lastCoordinate) {
+                if (coordinate !== lastCoordinate) {
                     return;
                 }
                 if (layer['layer'].getVisible()) {
@@ -586,8 +586,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         );
                         layerSource += '&QUERY_LAYERS=' + queryLayer;
                         $.ajax({
-                            type: 'GET',
-                            url: layerSource,
+                            type: 'POST',
+                            url: '/get_feature/',
+                            data: {
+                                'layerSource': layerSource
+                            },
                             success: function (data) {
                                 // process properties
                                 if (coordinate != lastCoordinate || !data) {
