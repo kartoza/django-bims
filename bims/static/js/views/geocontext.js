@@ -62,7 +62,7 @@ define(['backbone', 'underscore', 'shared', 'ol', 'jquery'], function (Backbone,
             $('#geocontext-information-container .content').empty();
 
             // URL building
-            var url = locationSiteDetailURL.replace('123456789', locationSiteID);
+            var url = '';
 
             if (this.geocontextXhr) {
                 this.geocontextXhr.abort();

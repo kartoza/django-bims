@@ -5,6 +5,10 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
         siteChartData: {},
         siteId: null,
         siteName: null,
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
+            "&collector=<%= collector %>&category=<%= category %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
         months: {
             'january': 1,
             'february': 2,
@@ -30,7 +34,14 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             this.siteId = id;
             this.siteName = name;
             this.zoomToObject = zoomToObject;
-            this.url = '/api/location-site/' + id;
+            this.parameters = {
+                'siteId': id
+            };
+            if (typeof filterParameters !== 'undefined') {
+                this.parameters = filterParameters;
+                this.parameters['siteId'] = id;
+            }
+            this.url = '/api/location-site-detail/' + this.apiParameters(this.parameters);
             this.showDetail(name, zoomToObject)
         },
         hideAll: function (e) {
