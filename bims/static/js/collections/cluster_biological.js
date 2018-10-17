@@ -44,6 +44,9 @@ define([
             this.parameters['boundary'] = '';
             this.parameters['reference'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
+            if (typeof filterParameters !== 'undefined') {
+                filterParameters = this.parameters;
+            }
         },
         resetClusters: function () {
             this.clusterData = [];
@@ -75,6 +78,9 @@ define([
                 self.parameters[key] = value;
             });
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
+            if (typeof filterParameters !== 'undefined') {
+                filterParameters = this.parameters;
+            }
             this.parameters['taxon'] = null;
             this.toggleTaxonIndicator();
             if (this.isActive()) {
