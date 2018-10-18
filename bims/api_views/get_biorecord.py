@@ -34,8 +34,8 @@ class GetBioRecords(APIView):
 
         # Search collection
         collection_results, \
-        site_results, \
-        fuzzy_search = GetCollectionAbstract.apply_filter(
+            site_results, \
+            fuzzy_search = GetCollectionAbstract.apply_filter(
                 query_value,
                 filters,
                 ignore_bbox=True)
