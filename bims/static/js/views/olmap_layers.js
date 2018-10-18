@@ -41,10 +41,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             return $checkbox.is(':checked');
         },
         initLayer: function (layer, layerName, visibleInDefault) {
-            var layerOptions = layer.getSource()['i'];
             var layerType = layerName;
-            if (layerOptions !== null) {
-                layerType = layer.getSource()['i']['layers'];
+            try {
+                var layerOptions = layer.getSource()['i'];
+                if (layerOptions) {
+                    layerType = layer.getSource()['i']['layers'];
+                }
+            } catch (e) {
+                if (e instanceof TypeError) {
+                }
             }
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
                 layerType = layerName;
@@ -84,34 +89,36 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             // BIODIVERSITY LAYERS
             // ---------------------------------
             self.biodiversitySource = new ol.source.Vector({});
-            self.initLayer(new ol.layer.Vector({
-                source: self.biodiversitySource,
-                style: function (feature) {
-                    return self.layerStyle.getBiodiversityStyle(feature);
-                }
-            }), 'Biodiversity', true);
-
-            if (!self.initialLoadBiodiversityLayersToMap) {
-                self.initialLoadBiodiversityLayersToMap = true;
-            }
-
-            // ---------------------------------
-            // CLUSTER LOCATION SITE LAYERS
-            // ---------------------------------
             self.locationSiteClusterSource = new ol.source.Vector({});
             self.locationSiteCluster = new ol.source.Cluster({
                 distance: 40,
                 source: self.locationSiteClusterSource
             });
-            var styleCache = {};
-            self.locationSiteClusterLayer = new ol.layer.Vector({
-                source: self.locationSiteCluster,
-                style: function(feature, resolution) {
-                    var size = feature.get('features').length;
-                    return self.layerStyle.getClusterStyle(feature, size);
-                }
+
+            self.biodiversityLayerGroups = new ol.layer.Group({
+                layers: [
+                    new ol.layer.Vector({
+                        source: self.biodiversitySource,
+                        style: function (feature) {
+                            return self.layerStyle.getBiodiversityStyle(feature);
+                        }
+                    }),
+                     new ol.layer.Vector({
+                        source: self.locationSiteCluster,
+                        style: function(feature, resolution) {
+                            var size = feature.get('features').length;
+                            return self.layerStyle.getClusterStyle(feature, size);
+                        }
+                    })
+                ]
             });
-            map.addLayer(self.locationSiteClusterLayer);
+
+            self.initLayer(self.biodiversityLayerGroups, 'Biodiversity', true);
+
+            if (!self.initialLoadBiodiversityLayersToMap) {
+                self.initialLoadBiodiversityLayersToMap = true;
+            }
+
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
