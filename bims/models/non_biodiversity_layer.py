@@ -22,6 +22,9 @@ class NonBiodiversityLayer(OrderedModel):
         max_length=64,
         default='image/png'
     )
+    default_visibility = models.BooleanField(
+        default=False
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:
