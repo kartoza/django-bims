@@ -229,10 +229,6 @@ define([
 
             if (properties['record_type'] === 'site') {
                 Shared.Dispatcher.trigger('locationSite-' + properties.id + ':clicked');
-
-                // Load geocontext value for the ID
-                this.geocontext.loadGeocontextByID(properties['id']);
-
             } else {
                 Shared.Dispatcher.trigger('cluster-biology' + properties.id + ':clicked');
             }

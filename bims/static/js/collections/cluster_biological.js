@@ -3,7 +3,7 @@ define([
     'models/cluster_location_site',
     'views/cluster_location_site',
     'shared',
-    'ol'], function (Backbone, ClusterModel, ClusterView, Shared, ol) {
+    'ol', 'jquery'], function (Backbone, ClusterModel, ClusterView, Shared, ol, $) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
@@ -31,6 +31,7 @@ define([
             this.initExtent = initExtent;
             Shared.Dispatcher.on('search:hit', this.searchHit, this);
             Shared.Dispatcher.on('clusterBiological:clearClusters', this.clearClusters, this);
+            Shared.Dispatcher.on('clusterBiological:resetParameters', this.clearParameters, this);
         },
         clearParameters: function () {
             this.parameters['taxon'] = '';
@@ -46,7 +47,7 @@ define([
             this.parameters['reference'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
-                filterParameters = this.parameters;
+                filterParameters = $.extend(true, {}, this.parameters);
             }
         },
         resetClusters: function () {
@@ -80,7 +81,7 @@ define([
             });
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
-                filterParameters = this.parameters;
+                filterParameters = $.extend(true, {}, this.parameters);
             }
             this.parameters['taxon'] = null;
             this.toggleTaxonIndicator();
