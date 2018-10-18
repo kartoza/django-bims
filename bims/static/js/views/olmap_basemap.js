@@ -48,7 +48,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 })
             });
             return new ol.layer.Group({
-                title: 'Klokantech Terrain',
+                title: 'Terrain',
                 layers: [openMapTiles, hillshading, contours]
             });
         },
@@ -70,7 +70,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
 
             // TOPOSHEET MAP
             var toposheet = new ol.layer.Tile({
-                title: 'South Africa 1:50k Toposheets',
+                title: 'Topography',
                 source: new ol.source.XYZ({
                     attributions: ['&copy; National Geo-spatial Information (NGI) contributors', 'Toposheets'],
                     url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
@@ -81,7 +81,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
 
             // NGI MAP
             var ngiMap = new ol.layer.Tile({
-                title: 'NGI OSM aerial photographs',
+                title: 'Aerial photography',
                 source: new ol.source.XYZ({
                     attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
                     url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
@@ -91,7 +91,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             // add bing
             if (bingMapKey) {
                 var bingMap = new ol.layer.Tile({
-                    title: 'Bing',
+                    title: 'Bing Satellite Hybrid',
                     source: new ol.source.BingMaps({
                         key: bingMapKey,
                         imagerySet: 'AerialWithLabels'
