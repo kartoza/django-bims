@@ -14,6 +14,7 @@ from bims.utils.highlighter import CustomHighlighter
 COUNT_LABEL = 'c'
 NAME_LABEL = 'n'
 HIGHLIGHTER_LABEL = 'h'
+COLLECTION_IDS = 'i'
 
 
 class SearchObjects(APIView):
@@ -48,18 +49,34 @@ class SearchObjects(APIView):
                     COUNT_LABEL: 1,
                     NAME_LABEL: collection.original_species_name,
                     HIGHLIGHTER_LABEL: highlighter.highlight(
-                            collection.original_species_name)
+                            collection.original_species_name),
+                    COLLECTION_IDS: [
+                        collection.pk
+                    ]
                 }
             else:
-                taxon_results[collection.taxon_gbif][COUNT_LABEL] += 1
+                if collection.pk not in taxon_results[collection.taxon_gbif][
+                    COLLECTION_IDS]:
+                    taxon_results[collection.taxon_gbif][COUNT_LABEL] += 1
+                    taxon_results[collection.taxon_gbif][
+                        COLLECTION_IDS].append(collection.pk)
 
             if collection.location_site_id not in site_results:
                 site_results[collection.location_site_id] = {
                     COUNT_LABEL: 1,
-                    NAME_LABEL: collection.location_site_name
+                    NAME_LABEL: collection.location_site_name,
+                    COLLECTION_IDS: [
+                        collection.pk
+                    ]
                 }
             else:
-                site_results[collection.location_site_id][COUNT_LABEL] += 1
+                if collection.pk not in site_results[
+                    collection.location_site_id][COLLECTION_IDS]:
+                    site_results[collection.location_site_id][
+                        COUNT_LABEL] += 1
+                    site_results[collection.location_site_id][
+                        COLLECTION_IDS].append(
+                            collection.pk)
         return taxon_results, site_results
 
     @staticmethod
