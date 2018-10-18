@@ -144,7 +144,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         addLayersToMap: function (map) {
             var self = this;
             this.map = map;
-            self.orders[0] = 'Biodiversity';
+
+            var biodiversityOrder = Shared.StorageUtil.getItemDict('Biodiversity', 'order');
+            if (biodiversityOrder === null) {
+                biodiversityOrder = 0;
+            }
+            self.orders[biodiversityOrder] = 'Biodiversity';
+
             $.ajax({
                 type: 'GET',
                 url: listNonBiodiversityLayerAPIUrl,
@@ -169,7 +175,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             }
                             return;
                         }
-                        self.orders[value['order']+1] = value['wms_layer_name'];
+
+                        var layerOrder = Shared.StorageUtil.getItemDict(value['wms_layer_name'], 'order');
+                        if (layerOrder === null) {
+                            layerOrder = value['order']+1;
+                        }
+                        self.orders[layerOrder] = value['wms_layer_name'];
+
                         var defaultVisibility = Shared.StorageUtil.getItemDict(
                             value['wms_layer_name'], 'selected');
 
@@ -199,7 +211,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             false
                         );
                     });
-                    self.orders[self.administrativeOrder+1] = self.administrativeKeyword;
+
+                    var administrativeOrder = Shared.StorageUtil.getItemDict(self.administrativeKeyword, 'order');
+                    if (administrativeOrder === null) {
+                        administrativeOrder = self.administrativeOrder+1;
+                    }
+                    self.orders[administrativeOrder] = self.administrativeKeyword;
+
                     self.addLayersFromGeonode(map, data);
                 },
                 error: function (err) {
@@ -435,35 +453,36 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             ).children().last();
 
             self.toggleLegend(key, visibleInDefault);
-
-            var layerDiv = $(layerRow.find('.layer-transparency').get(0));
-            if (typeof layerRow === 'undefined') {
-                return;
-            }
-            layerDiv.slider({
-                range: 'max',
-                min: 1,
-                max: 100,
-                value: $(layerDiv).data('value'),
-                slide: function (event, ui) {
-                    var $label = $(event.target).closest('li').find('.layer-selector-input');
-                    var layername = 'Biodiversity';
-                    if ($label.length > 0) {
-                        layername = $label.val();
+        },
+        renderTransparencySlider: function () {
+            var self = this;
+            var layerDivs = $('#layers-selector').find('.layer-transparency');
+            $.each(layerDivs, function (key, layerDiv) {
+                $(layerDiv).slider({
+                    range: 'max',
+                    min: 1,
+                    max: 100,
+                    value: $(layerDiv).data('value'),
+                    slide: function (event, ui) {
+                        var $label = $(event.target).closest('li').find('.layer-selector-input');
+                        var layername = 'Biodiversity';
+                        if ($label.length > 0) {
+                            layername = $label.val();
+                        }
+                        self.changeLayerTransparency(layername, ui.value / 100);
+                    },
+                    stop: function (event, ui) {
+                        var $label = $(event.target).closest('li').find('.layer-selector-input');
+                        var layername = 'Biodiversity';
+                        if ($label.length > 0) {
+                            layername = $label.val();
+                        }
+                        Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value / 100);
+                        if (layername.indexOf(self.administrativeKeyword) >= 0) {
+                            self.administrativeTransparency = ui.value / 100;
+                        }
                     }
-                    self.changeLayerTransparency(layername, ui.value / 100);
-                },
-                stop: function (event, ui) {
-                    var $label = $(event.target).closest('li').find('.layer-selector-input');
-                    var layername = 'Biodiversity';
-                    if ($label.length > 0) {
-                        layername = $label.val();
-                    }
-                    Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value/100);
-                    if (layername.indexOf(self.administrativeKeyword) >= 0) {
-                        self.administrativeTransparency = ui.value/100;
-                    }
-                }
+                });
             });
         },
         renderLayers: function () {
@@ -527,6 +546,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
 
                     self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency);
                 });
+
+                self.renderTransparencySlider();
 
                 $('.layer-selector-input').change(function (e) {
                     self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))

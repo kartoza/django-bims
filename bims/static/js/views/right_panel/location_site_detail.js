@@ -1,4 +1,4 @@
-define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, ChartJs) {
+define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol, Shared, ChartJs, $) {
     return Backbone.View.extend({
         id: 0,
         currentSpeciesSearchResult: [],
@@ -34,14 +34,9 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             this.siteId = id;
             this.siteName = name;
             this.zoomToObject = zoomToObject;
-            this.parameters = {
-                'siteId': id
-            };
-            if (typeof filterParameters !== 'undefined') {
-                this.parameters = filterParameters;
-                this.parameters['siteId'] = id;
-                filterParameters = this.parameters;
-            }
+            this.parameters = filterParameters;
+            this.parameters['siteId'] = id;
+            filterParameters = $.extend(true, {}, this.parameters);
             this.url = '/api/location-site-detail/' + this.apiParameters(this.parameters);
             this.showDetail(name, zoomToObject)
         },

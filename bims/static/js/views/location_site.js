@@ -5,6 +5,7 @@ define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone,
             this.render();
         },
         clicked: function () {
+            Shared.Dispatcher.trigger('clusterBiological:resetParameters');
             Shared.Dispatcher.trigger(
                 'siteDetail:show', this.id, this.name);
         },
