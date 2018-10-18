@@ -10,6 +10,7 @@ class GetFeatureInfo(APIView):
     """Request GetFeatureInfo from geoserver"""
     authentication_classes = (CsrfExemptSessionAuthentication,
                               BasicAuthentication)
+
     def post(self, request):
         layer_source = request.POST.get('layerSource', None)
 
