@@ -147,11 +147,6 @@ class GetCollectionAbstract(APIView):
                 taxon_gbif=taxon
             ).models(BiologicalCollectionRecord)
 
-        if site_id:
-            results = results.filter(
-                site_id_indexed=site_id
-            ).models(BiologicalCollectionRecord)
-
         # get by bbox
         if not ignore_bbox:
             if bbox:
@@ -243,6 +238,12 @@ class GetCollectionAbstract(APIView):
                 qs_month.add(
                     SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
+
+        # Search by site id
+        if site_id:
+            results = results.filter(
+                site_id_indexed=site_id
+            ).models(BiologicalCollectionRecord)
 
         collection_results = results
 

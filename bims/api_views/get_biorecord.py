@@ -41,8 +41,14 @@ class GetBioRecords(APIView):
                 ignore_bbox=True)
 
         try:
+            collection_ids = list(collection_results.values_list(
+                'model_pk', flat=True
+            ))
+            records = BiologicalCollectionRecord.objects.filter(
+                pk__in=collection_ids
+            )
             serializer = BioCollectionSerializer(
-                    [q.object for q in collection_results],
+                    records,
                     many=True)
             return Response(serializer.data)
         except BiologicalCollectionRecord.DoesNotExist:
