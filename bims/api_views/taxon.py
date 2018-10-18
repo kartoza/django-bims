@@ -28,5 +28,22 @@ class TaxonDetail(APIView):
         records = BiologicalCollectionRecord.objects.filter(
             taxon_gbif_id=taxon
         )
+
+        # Endemism
+        endemism_value = ''
+        endemism = records.values_list('endemism', flat=True).distinct()
+        if endemism:
+            endemism_value = endemism[0]
+        data['endemism'] = endemism_value
+
+        # Origins
+        origin_value = ''
+        origin = records.values_list('category', flat=True).distinct()
+        if origin:
+            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                if category[0] == origin[0]:
+                    origin_value = category[1]
+        data['origin'] = origin_value
+
         data['count'] = records.count()
         return Response(data)

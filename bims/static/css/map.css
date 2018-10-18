@@ -1849,3 +1849,17 @@ div:hover::-webkit-scrollbar {
     padding-top: 10px !important;
     font-size: 14px;
 }
+
+.origin-info {
+    margin-top: 20px;
+}
+
+.origin-info, .endemism-info {
+    padding: 5px;
+    font-size: 11pt;
+    border-top: 1px solid rgba(198, 202, 202, 0.22);
+}
+
+.endemism-info {
+    background-color: rgba(135, 138, 138, 0.1)
+}
