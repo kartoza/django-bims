@@ -482,7 +482,7 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
-    max-height: 250px;
+    max-height: 300px;
     overflow-y: scroll;
     padding-top: 5px;
 }
@@ -1862,4 +1862,26 @@ div:hover::-webkit-scrollbar {
 
 .endemism-info {
     background-color: rgba(135, 138, 138, 0.1)
+}
+
+.child-level-boundary {
+    display: none;
+}
+
+.boundary-item {
+    padding: 5px;
+    background-color: rgba(242, 240, 244, 0.97);
+    border: 1px solid rgb(242, 247, 255);
+}
+
+.boundary-item label {
+    margin-bottom: 0;
+}
+
+.boundary-item, .boundary-item label {
+    cursor: pointer !important;
+}
+
+.boundary-item:hover {
+    background-color: #e4e4e4;
 }
