@@ -55,13 +55,13 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
         getPositronBasemap: function () {
             var layer = this.getOpenMapTilesTile(
                 '/static/mapbox-style/positron-gl-style.json');
-            layer.set('title', 'Positron Map');
+            layer.set('title', 'Monochrome (light)');
             return layer
         },
         getDarkMatterBasemap: function () {
             var layer = this.getOpenMapTilesTile(
                 '/static/mapbox-style/dark-matter-gl-style.json');
-            layer.set('title', 'Dark Matter');
+            layer.set('title', 'Monochrome (dark)');
             return layer
         },
         getBaseMaps: function () {
