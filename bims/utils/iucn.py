@@ -5,7 +5,7 @@ from bims.models.iucn_status import IUCNStatus
 from bims.utils.get_key import get_key
 
 
-def get_iucn_status(taxon_id=None, species_name=None):
+def get_iucn_status(taxon_id=None, species_name=None, only_returns_json=None):
     """
     Fetch iucn status of the species, and update the iucn record.
 
@@ -32,6 +32,8 @@ def get_iucn_status(taxon_id=None, species_name=None):
     try:
         response = requests.get(api_url)
         json_result = response.json()
+        if only_returns_json:
+            return json_result
         if len(json_result['result']) > 0:
             iucn_status = IUCNStatus.objects.filter(
                 category=json_result['result'][0]['category']
