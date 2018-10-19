@@ -10,6 +10,7 @@ define([
     return Backbone.View.extend({
         template: _.template($('#spatial-filter-panel').html()),
         selectedPoliticalRegions: [],
+        topLevel: 2,
         events: {
             'click .close-button': 'close',
             'click #spatial-filter-panel-upload': 'panelUploadClicked',
@@ -149,14 +150,22 @@ define([
                                 $wrapper = $boundary;
                             }
                         }
+                        var boundaryClass = 'boundary-item';
+
                         $wrapper.append(
-                            '<div>' +
+                            '<div class="'+boundaryClass+'" id="boundary-wrapper-'+ data[i]['id'] +'">' +
                             '<input type="checkbox" id="'+data[i]['id']+'" ' +
                             'name="boundary-value" value="' + data[i]['id'] + '" ' +
                             'data-level="' + data[i]['type__level'] + '">' +
-                            '&nbsp;<label for="'+data[i]['id']+'">' + data[i]['name'] + '</label>' +
+                            '&nbsp;<label>' + data[i]['name'] + '</label>' +
                             '<div id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div>' +
                             '</div> ');
+
+                        if (data[i]['type__level'] > self.topLevel) {
+                            $wrapper.find('#boundary-wrapper-'+data[i]['id']).hide();
+                        } else {
+                            $wrapper.find('#boundary-wrapper-'+data[i]['id']).on('click', self.toggleChildFilters);
+                        }
                     }
                 }
             });
@@ -175,6 +184,17 @@ define([
                 $(child).find('input:checkbox:checked[data-level="' + (level + 1) + '"]').click();
             }
             this.updateChecked();
+        },
+        toggleChildFilters: function (e) {
+            var $target = $(e.target);
+
+            if ($target.is('input')) {
+                return true;
+            }
+            if (!$target.hasClass('boundary-item')) {
+                $target = $target.parent();
+            }
+            $target.children().find('.boundary-item').toggle();
         },
         updateChecked: function() {
             var checked = this.$el.find('input:checkbox:checked');
