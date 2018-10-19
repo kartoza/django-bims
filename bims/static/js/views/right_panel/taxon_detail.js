@@ -152,7 +152,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
-                    console.log(data);
                     self.gbifId = data['gbif_id'];
                     if(self.count > 0) {
                         data['count'] = self.count;

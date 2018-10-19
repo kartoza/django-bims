@@ -181,6 +181,11 @@ define([
                             self.map.getView().setZoom(self.getCurrentZoom() + 1);
                             poiFound = true;
                         }
+                        if (feature.getProperties().hasOwnProperty('features')) {
+                            if (feature.getProperties()['features'].length > 0) {
+                                poiFound = true;
+                            }
+                        }
                     }
                 });
 
