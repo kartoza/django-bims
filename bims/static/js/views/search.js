@@ -165,7 +165,7 @@ define([
                 parameters['months'] = monthSelected.join(',');
             }
             Shared.Dispatcher.trigger('map:closeHighlight');
-            Shared.Dispatcher.trigger('search:hit', parameters);
+            Shared.Dispatcher.trigger(Shared.EVENTS.SEARCH.HIT, parameters);
             Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             if (!parameters['search']
                 && !parameters['collector']

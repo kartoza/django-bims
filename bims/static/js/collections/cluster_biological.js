@@ -21,6 +21,7 @@ define([
         fetchXhr: null,
         clusterData: null,
         defaultZoom: 8,
+        filteredByTaxon: true,
         parameters: {
             taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
@@ -29,9 +30,10 @@ define([
         },
         initialize: function (initExtent) {
             this.initExtent = initExtent;
-            Shared.Dispatcher.on('search:hit', this.searchHit, this);
             Shared.Dispatcher.on('clusterBiological:clearClusters', this.clearClusters, this);
+            Shared.Dispatcher.on(Shared.EVENTS.CLUSTER.GET, this.getClusters, this);
             Shared.Dispatcher.on('clusterBiological:resetParameters', this.clearParameters, this);
+            Shared.Dispatcher.on('clusterBiological:clearFilterByTaxon', this.clearFilterByTaxon, this);
         },
         clearParameters: function () {
             this.parameters['taxon'] = '';
@@ -67,7 +69,7 @@ define([
             this.resetClusters();
             this.toggleTaxonIndicator();
         },
-        searchHit: function (parameters) {
+        getClusters: function (parameters) {
             this.resetClusters();
             this.fromSearchClick = true;
             parameters['bbox'] = null;
@@ -89,8 +91,9 @@ define([
                 this.fetchXhr = this.fetchCluster();
             }
         },
-        fetchCluster: function () {
+        fetchCluster: function (zoomToExtent) {
             var self = this;
+            this.parameters['bbox'] = null;
             this.url = this.clusterAPI + this.apiParameters(this.parameters);
             return this.fetch({
                 success: function () {
@@ -113,12 +116,12 @@ define([
                     if(self.status === 'processing') {
                         self.renderCollection();
                         setTimeout(function () {
-                            self.fetchCluster()
+                            self.fetchCluster(zoomToExtent)
                         }, timeout);
                     } else {
                         self.initialSearch = true;
                         self.secondSearch = false;
-                        if(self.fromSearchClick) {
+                        if(self.fromSearchClick || zoomToExtent) {
                             self.createExtents();
                             self.fromSearchClick = false;
                         }
@@ -163,25 +166,38 @@ define([
         },
         toggleTaxonIndicator: function (taxonName) {
             var self = this;
+            var $taxonFilter = $('#taxon-filter');
             if (this.parameters['taxon']) {
-                $('#taxon-filter').html('Biodiversity filtered by : ' + taxonName +
+                self.filteredByTaxon = true;
+                $taxonFilter.html('Biodiversity filtered by : ' + taxonName +
                     ' <i class="fa fa-times" style="color: red"></i> ');
                 $('#taxon-filter .fa-times').click(function () {
                     Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
                     self.parameters['taxon'] = null;
                     self.toggleTaxonIndicator('');
-                    self.getExtentOfRecords();
+                    self.refetchClusters(true);
+                    self.filteredByTaxon = false;
                 });
-                if ($('#taxon-filter').is(":hidden")) {
-                    $('#taxon-filter').toggle("slide");
+                if ($taxonFilter.is(":hidden")) {
+                    $taxonFilter.toggle("slide");
                 }
             } else {
-                if (!$('#taxon-filter').is(":hidden")) {
-                    $('#taxon-filter').toggle("slide");
+                self.filteredByTaxon = false;
+                if (!$taxonFilter.is(":hidden")) {
+                    $taxonFilter.toggle("slide");
                 }
             }
         },
-        updateTaxon: function (taxon, taxonName) {
+        clearFilterByTaxon: function () {
+            if (!this.filteredByTaxon) {
+                return false;
+            }
+            this.parameters['taxon'] = null;
+            this.toggleTaxonIndicator('');
+            this.refetchClusters();
+            this.filteredByTaxon = false;
+        },
+        filterClustersByTaxon: function (taxon, taxonName) {
             this.parameters['taxon'] = taxon;
             this.toggleTaxonIndicator(taxonName);
             this.refresh();
@@ -210,12 +226,12 @@ define([
                 Shared.Dispatcher.trigger('map:zoomToExtent', ext);
             }
         },
-        refetchClusters: function () {
+        refetchClusters: function (zoomToExtent) {
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             var self = this;
             if (this.isActive()) {
                 this.resetClusters();
-                this.fetchXhr = this.fetchCluster();
+                this.fetchXhr = this.fetchCluster(zoomToExtent);
             } else {
                 Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
             }

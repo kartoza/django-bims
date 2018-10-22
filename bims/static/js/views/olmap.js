@@ -66,7 +66,6 @@ define([
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
             Shared.Dispatcher.on('map:addHighlightFeature', this.addHighlightFeature, this);
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
-            Shared.Dispatcher.on('searchResult:updateTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
             Shared.Dispatcher.on('map:addHighlightPinnedFeature', this.addHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:removeHighlightPinnedFeature', this.removeHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
@@ -78,6 +77,7 @@ define([
             Shared.Dispatcher.on('map:startFetching', this.fetchingStart, this);
             Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
             Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
+            Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -466,14 +466,15 @@ define([
             if (!this.sidePanelView.isSidePanelOpen() && !this.mapControlPanel.searchView.searchPanel.isPanelOpen()) {
                 return
             }
-            this.clusterBiologicalCollection.updateTaxon(taxonID, taxonName);
+            this.clusterBiologicalCollection.filterClustersByTaxon(taxonID, taxonName);
             if (!this.clusterBiologicalCollection.isActive()) {
                 this.clusterCollection.administrative = null;
                 this.previousZoom = -1;
                 this.fetchingRecords();
             } else {
                 this.clearAllLayers();
-                this.clusterBiologicalCollection.refetchClusters();
+                var zoomToExtent = true;
+                this.clusterBiologicalCollection.refetchClusters(zoomToExtent);
             }
         },
         updateClusterBiologicalCollectionZoomExt: function () {

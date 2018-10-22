@@ -1,4 +1,4 @@
-define(['backbone', 'views/olmap', 'shared'], function (Backbone, olmap, Shared) {
+define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function (Backbone, olmap, EventsConnector, Shared) {
 
     return Backbone.Router.extend({
         parameters: {},
@@ -7,6 +7,7 @@ define(['backbone', 'views/olmap', 'shared'], function (Backbone, olmap, Shared)
         },
         initialize: function () {
             this.map = new olmap();
+            this.eventsConnector = new EventsConnector();
         },
         search: function (query) {
             if ($('.search-control').is(":visible")) {
