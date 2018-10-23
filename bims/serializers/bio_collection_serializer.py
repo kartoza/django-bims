@@ -90,25 +90,32 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     reference_category = serializers.SerializerMethodField()
 
     def get_taxon_class(self, obj):
-        if obj.taxon_class:
-            return obj.taxon_class
-        else:
-            return ''
+        try:
+            taxon_class = obj.taxon_class
+        except AttributeError:
+            taxon_class = obj.taxon_gbif_id.taxon_class
+        return taxon_class
 
     def get_location_site(self, obj):
-        if obj.location_site_name:
-            return obj.location_site_name.encode('utf8')
-        return ''
+        try:
+            location_site_name = obj.location_site_name.encode('utf8')
+        except AttributeError:
+            location_site_name = obj.site.name.encode('utf8')
+        return location_site_name
 
     def get_latitude(self, obj):
-        if obj.location_center:
-            return obj.location_center.x
-        return ''
+        try:
+            lat = obj.location_center.x
+        except AttributeError:
+            lat = obj.site.get_centroid().x
+        return lat
 
     def get_longitude(self, obj):
-        if obj.location_center:
-            return obj.location_center.y
-        return ''
+        try:
+            lon = obj.location_center.y
+        except AttributeError:
+            lon = obj.site.get_centroid().y
+        return lon
 
     def get_species_name(self, obj):
         return obj.original_species_name.encode('utf8')
