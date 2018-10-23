@@ -351,7 +351,7 @@ class CollectionDownloader(GetCollectionAbstract):
     Download all collections with format
     """
 
-    def convert_to_cvs(self, queryset, ModelSerializer):
+    def convert_to_cvs(self, queryset, site_queryset, ModelSerializer):
         """
         Converting data to csv.
         :param queryset: queryset that need to be converted
@@ -362,7 +362,7 @@ class CollectionDownloader(GetCollectionAbstract):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="download.csv"'
 
-        if not queryset:
+        if not queryset and not site_queryset:
             return JsonResponse({
                 'status': 'failed',
                 'message': 'Data is empty'
@@ -381,11 +381,16 @@ class CollectionDownloader(GetCollectionAbstract):
                 search_uri
         )
 
+        if queryset:
+            query_count = queryset.count()
+        else:
+            query_count = site_queryset.count()
+
         today_date = datetime.date.today()
         filename = md5(
             '%s%s%s' % (
                 search_uri,
-                queryset.count(),
+                query_count,
                 today_date)
         ).hexdigest()
         filename += '.csv'
@@ -440,6 +445,7 @@ class CollectionDownloader(GetCollectionAbstract):
         is_using_filters = self.is_using_filters(request.GET)
         if not file_type:
             file_type = 'csv'
+        site_results = None
 
         if is_using_filters or query_value:
             collection_results, \
@@ -454,6 +460,7 @@ class CollectionDownloader(GetCollectionAbstract):
         if file_type == 'csv':
             return self.convert_to_cvs(
                 collection_results,
+                site_results,
                 BioCollectionOneRowSerializer)
         elif file_type == 'geojson':
             return self.convert_to_geojson(
