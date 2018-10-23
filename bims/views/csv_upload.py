@@ -167,12 +167,31 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         float(record['longitude']),
                         float(record['latitude']))
 
-                    location_site, status = LocationSite.objects.get_or_create(
-                        location_type=location_type,
-                        geometry_point=record_point,
-                        name=record['location_site'],
-                        **optional_site_records
-                    )
+                    try:
+                        location_site, status = LocationSite.objects.\
+                            get_or_create(
+                                location_type=location_type,
+                                geometry_point=record_point,
+                                name=record['location_site']
+                            )
+                    except LocationSite.MultipleObjectsReturned:
+                        location_site = LocationSite.objects.filter(
+                            location_type=location_type,
+                            geometry_point=record_point,
+                            name=record['location_site']
+                        )[0]
+
+                    if sys.version_info > (3, 0):
+                        optional_site_records_iter = \
+                            optional_site_records.items()
+                    else:
+                        optional_site_records_iter = \
+                            optional_site_records.iteritems()
+
+                    for opt_key, opt_val in optional_site_records_iter:
+                        setattr(location_site, opt_key, opt_val)
+                        location_site.save()
+
                     location_sites.append(location_site)
 
                     # Get existed taxon

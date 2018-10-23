@@ -1,4 +1,6 @@
 # coding: utf-8
+import requests
+import json
 from requests.exceptions import HTTPError
 from pygbif import species
 from bims.models import Taxon, TaxonomyField
@@ -21,6 +23,20 @@ def update_taxa():
             print('Taxon not updated')
             print(e)
 
+def get_species(gbif_id):
+    """
+    Get species by gbif id
+    :param gbif_id: gbif id
+    :return: species dictionary
+    """
+    api_url = 'http://api.gbif.org/v1/species/' + str(gbif_id)
+    try:
+        response = requests.get(api_url)
+        json_result = response.json()
+        return json_result
+    except (HTTPError, KeyError) as e:
+        print(e)
+        return None
 
 def find_species(original_species_name):
     """
@@ -103,7 +119,8 @@ def update_taxonomy_fields(taxon, response):
                                 vernacular_name['vernacularName']
                         )
                 taxon.vernacular_names = vernacular_names
-        except AttributeError:
+        except (AttributeError, KeyError) as e:
+            print(e)
             continue
 
     taxon.save()

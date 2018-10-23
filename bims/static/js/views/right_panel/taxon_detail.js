@@ -5,14 +5,18 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
         gbifId: null,
         taxonId: null,
         taxonName: null,
+        count: 0,
         initialize: function () {
             Shared.Dispatcher.on('taxonDetail:show', this.show, this);
         },
-        show: function (id, taxonName, siteDetail) {
+        show: function (id, taxonName, siteDetail, count) {
             this.taxonId = id;
             this.taxonName = taxonName;
             this.url = '/api/taxon/' + id;
-            this.showDetail(taxonName, siteDetail);
+            if (count) {
+                this.count = count;
+            }
+            this.showDetail(taxonName, siteDetail, count);
         },
         hideAll: function (e) {
             if ($(e.target).data('visibility')) {
@@ -109,7 +113,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
             return $thirdPartyData;
         },
-        showDetail: function (name, siteDetail) {
+        showDetail: function (name, siteDetail, count) {
             var self = this;
             // Render basic information
             var $detailWrapper = $('<div></div>');
@@ -149,6 +153,9 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 dataType: 'json',
                 success: function (data) {
                     self.gbifId = data['gbif_id'];
+                    if(self.count > 0) {
+                        data['count'] = self.count;
+                    }
                     // render taxon detail
                     $('#species-detail').append(self.renderDetail(data));
                     $('#species-detail .iucn-status .name').css('background-color', data.iucn_status_colour);

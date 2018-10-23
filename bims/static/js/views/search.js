@@ -37,12 +37,11 @@ define([
         render: function () {
             this.$el.html(this.template());
             this.searchBox = this.$el.find('.map-search-box');
+            this.searchInput = this.$el.find('#search');
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
-            if (useReferenceCategory) {
-                this.referenceCategoryView = new ReferenceCategoryView();
-                this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
-            }
+            this.referenceCategoryView = new ReferenceCategoryView();
+            this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
             return this;
         },
         checkSearch: function (forceSearch) {
@@ -66,8 +65,8 @@ define([
                 return;
             }
             var self = this;
-            this.searchPanel.openSidePanel();
             this.searchPanel.clearSidePanel();
+            this.searchPanel.openSidePanel(false);
 
             $('#search-results-wrapper').html('');
 
@@ -92,6 +91,23 @@ define([
                 });
                 collectorValue = encodeURIComponent(JSON.stringify(
                     collectorValue)
+                );
+            }
+
+            // reference
+            var referenceValue = [];
+            $('input[name=reference-value]:checked').each(function () {
+                referenceValue.push($(this).val())
+            });
+            if (referenceValue.length === 0) {
+                referenceValue = ''
+            } else {
+                var encodedReferenceValue = [];
+                $.each(referenceValue, function (index, value) {
+                    encodedReferenceValue.push(encodeURIComponent(value));
+                });
+                referenceValue = encodeURIComponent(JSON.stringify(
+                    referenceValue)
                 );
             }
 
@@ -133,6 +149,7 @@ define([
                 'yearFrom': '',
                 'yearTo': '',
                 'months': '',
+                'reference': referenceValue,
                 'referenceCategory': referenceCategory
             };
             var yearFrom = $('#year-from').html();
@@ -148,7 +165,7 @@ define([
                 parameters['months'] = monthSelected.join(',');
             }
             Shared.Dispatcher.trigger('map:closeHighlight');
-            Shared.Dispatcher.trigger('search:hit', parameters);
+            Shared.Dispatcher.trigger(Shared.EVENTS.SEARCH.HIT, parameters);
             Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             if (!parameters['search']
                 && !parameters['collector']
@@ -157,6 +174,7 @@ define([
                 && !parameters['yearTo']
                 && !parameters['userBoundary']
                 && !parameters['referenceCategory']
+                && !parameters['reference']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false
@@ -164,14 +182,9 @@ define([
             this.searchResultCollection.search(
                 this.searchPanel, parameters
             );
-            this.searchResultCollection.fetch({
-                success: function () {
-                    self.searchResultCollection.renderCollection();
-                    Shared.SearchMode = true;
-                }
-            });
         },
         searchClick: function () {
+            Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
             Shared.Router.clearSearch();
             this.search(searchValue);
@@ -184,13 +197,20 @@ define([
             }
         },
         clearSearch: function () {
-            Shared.Dispatcher.trigger('catchmentArea:hide');
-            $('#search').val('');
-            Shared.Dispatcher.trigger('spatialFilter:clearSelected');
             Shared.SearchMode = false;
+            this.searchInput.val('');
             $('.clear-filter').click();
-            this.searchClick();
             $('.map-search-result').hide();
+            this.searchPanel.clearSidePanel();
+
+            Shared.Dispatcher.trigger('politicalRegion:clear');
+
+            Shared.Dispatcher.trigger('spatialFilter:clearSelected');
+            Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
+            Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
+            Shared.Dispatcher.trigger('clusterBiological:clearClusters');
+
+            Shared.Dispatcher.trigger('map:clearAllLayers');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
@@ -248,6 +268,7 @@ define([
         },
         show: function () {
             this.searchBox.show();
+            this.searchPanel.openSidePanel();
             this.$el.find('#search').focus();
             this.searchBoxOpen = true;
         },

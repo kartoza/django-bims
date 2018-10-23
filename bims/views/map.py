@@ -59,8 +59,6 @@ class MapPageView(TemplateView):
                 get_key('ECOLOGICAL_CONDITION_FILTER'))
         context['use_conservation_status'] = bool(
                 get_key('CONSERVATION_STATUS_FILTER'))
-        context['use_reference_category'] = bool(
-                get_key('REFERENCE_CATEGORY_FILTER'))
 
         # Search panel titles
         date_title = get_key('DATE_TITLE')
@@ -72,11 +70,6 @@ class MapPageView(TemplateView):
         if not spatial_scale:
             spatial_scale = 'ADMINISTRATIVE AREA'
         context['spatial_scale_title'] = spatial_scale
-
-        collector_title = get_key('COLLECTOR_TITLE')
-        if not collector_title:
-            collector_title = 'COLLECTOR'
-        context['collector_title'] = collector_title
 
         # get date filter
         context['date_filter'] = {'min': '1900', 'max': '2008'}

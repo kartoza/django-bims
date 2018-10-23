@@ -2,6 +2,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
     return Backbone.View.extend({
         // source of layers
         biodiversitySource: null,
+        locationSiteCluster: null,
+        locationSiteClusterLayer: null,
+        locationSiteClusterSource: null,
         highlightVectorSource: null,
         highlightVector: null,
         highlightPinnedVectorSource: null,
@@ -11,6 +14,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         administrativeKeyword: "Administrative",
         initialLoadBiodiversityLayersToMap: false,
         administrativeTransparency: 100,
+        orders: {},
+        administrativeOrder: 0,
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -38,10 +43,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             return $checkbox.is(':checked');
         },
         initLayer: function (layer, layerName, visibleInDefault) {
-            var layerOptions = layer.getSource()['i'];
             var layerType = layerName;
-            if (layerOptions !== null) {
-                layerType = layer.getSource()['i']['layers'];
+            try {
+                var layerOptions = layer.getSource()['i'];
+                if (layerOptions) {
+                    layerType = layer.getSource()['i']['layers'];
+                }
+            } catch (e) {
+                if (e instanceof TypeError) {
+                }
             }
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
                 layerType = layerName;
@@ -81,16 +91,36 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             // BIODIVERSITY LAYERS
             // ---------------------------------
             self.biodiversitySource = new ol.source.Vector({});
-            self.initLayer(new ol.layer.Vector({
-                source: self.biodiversitySource,
-                style: function (feature) {
-                    return self.layerStyle.getBiodiversityStyle(feature);
-                }
-            }), 'Biodiversity', true);
+            self.locationSiteClusterSource = new ol.source.Vector({});
+            self.locationSiteCluster = new ol.source.Cluster({
+                distance: 40,
+                source: self.locationSiteClusterSource
+            });
+
+            self.biodiversityLayerGroups = new ol.layer.Group({
+                layers: [
+                    new ol.layer.Vector({
+                        source: self.biodiversitySource,
+                        style: function (feature) {
+                            return self.layerStyle.getBiodiversityStyle(feature);
+                        }
+                    }),
+                     new ol.layer.Vector({
+                        source: self.locationSiteCluster,
+                        style: function(feature, resolution) {
+                            var size = feature.get('features').length;
+                            return self.layerStyle.getClusterStyle(feature, size);
+                        }
+                    })
+                ]
+            });
+
+            self.initLayer(self.biodiversityLayerGroups, 'Biodiversity', true);
 
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
             }
+
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
@@ -114,15 +144,52 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         addLayersToMap: function (map) {
             var self = this;
             this.map = map;
+
+            var biodiversityOrder = Shared.StorageUtil.getItemDict('Biodiversity', 'order');
+            if (biodiversityOrder === null) {
+                biodiversityOrder = 0;
+            }
+            self.orders[biodiversityOrder] = 'Biodiversity';
+
             $.ajax({
                 type: 'GET',
                 url: listNonBiodiversityLayerAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    $.each(data.reverse(), function (index, value) {
+                    var listNonBioHash = Shared.StorageUtil.getItem('listNonBiodiversity');
+                    var hashCurrentList = Shared.StorageUtil.hashItem(JSON.stringify(data));
+                    if (!listNonBioHash || listNonBioHash !== hashCurrentList) {
+                        Shared.StorageUtil.clear();
+                        Shared.StorageUtil.setItem(
+                            'listNonBiodiversity',
+                            hashCurrentList);
+                    }
+                    $.each(data, function (index, value) {
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
+                            if (self.administrativeOrder > 0) {
+                                if (parseInt(value['order']) < self.administrativeOrder) {
+                                    self.administrativeOrder = value['order'];
+                                }
+                            } else {
+                                self.administrativeOrder = value['order'];
+                            }
                             return;
                         }
+
+                        var layerOrder = Shared.StorageUtil.getItemDict(value['wms_layer_name'], 'order');
+                        if (layerOrder === null) {
+                            layerOrder = value['order']+1;
+                        }
+                        self.orders[layerOrder] = value['wms_layer_name'];
+
+                        var defaultVisibility = Shared.StorageUtil.getItemDict(
+                            value['wms_layer_name'], 'selected');
+
+                        if (defaultVisibility === null) {
+                            defaultVisibility = value['default_visibility'];
+                            Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
+                        }
+
                         var options = {
                             url: value.wms_url,
                             params: {
@@ -144,6 +211,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             false
                         );
                     });
+
+                    var administrativeOrder = Shared.StorageUtil.getItemDict(self.administrativeKeyword, 'order');
+                    if (administrativeOrder === null) {
+                        administrativeOrder = self.administrativeOrder+1;
+                    }
+                    self.orders[administrativeOrder] = self.administrativeKeyword;
+
                     self.addLayersFromGeonode(map, data);
                 },
                 error: function (err) {
@@ -369,7 +443,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
 
             var rowTemplate = _.template($('#layer-selector-row').html());
-            var layerRow = $('#layers-selector').append(
+            var layerRow = $('#layers-selector').prepend(
                 rowTemplate({
                     name: name,
                     key: key,
@@ -379,79 +453,58 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             ).children().last();
 
             self.toggleLegend(key, visibleInDefault);
-
-            var layerDiv = $(layerRow.find('.layer-transparency').get(0));
-            if (typeof layerRow === 'undefined') {
-                return;
-            }
-            layerDiv.slider({
-                range: 'max',
-                min: 1,
-                max: 100,
-                value: $(layerDiv).data('value'),
-                slide: function (event, ui) {
-                    var $label = $(event.target).closest('li').find('.layer-selector-input');
-                    var layername = 'Biodiversity';
-                    if ($label.length > 0) {
-                        layername = $label.val();
+        },
+        renderTransparencySlider: function () {
+            var self = this;
+            var layerDivs = $('#layers-selector').find('.layer-transparency');
+            $.each(layerDivs, function (key, layerDiv) {
+                $(layerDiv).slider({
+                    range: 'max',
+                    min: 1,
+                    max: 100,
+                    value: $(layerDiv).data('value'),
+                    slide: function (event, ui) {
+                        var $label = $(event.target).closest('li').find('.layer-selector-input');
+                        var layername = 'Biodiversity';
+                        if ($label.length > 0) {
+                            layername = $label.val();
+                        }
+                        self.changeLayerTransparency(layername, ui.value / 100);
+                    },
+                    stop: function (event, ui) {
+                        var $label = $(event.target).closest('li').find('.layer-selector-input');
+                        var layername = 'Biodiversity';
+                        if ($label.length > 0) {
+                            layername = $label.val();
+                        }
+                        Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value / 100);
+                        if (layername.indexOf(self.administrativeKeyword) >= 0) {
+                            self.administrativeTransparency = ui.value / 100;
+                        }
                     }
-                    self.changeLayerTransparency(layername, ui.value / 100);
-                },
-                stop: function (event, ui) {
-                    var $label = $(event.target).closest('li').find('.layer-selector-input');
-                    var layername = 'Biodiversity';
-                    if ($label.length > 0) {
-                        layername = $label.val();
-                    }
-                    Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value/100);
-                    if (layername.indexOf(self.administrativeKeyword) >= 0) {
-                        self.administrativeTransparency = ui.value/100;
-                    }
-                }
+                });
             });
         },
         renderLayers: function () {
             var self = this;
             $(document).ready(function () {
-                var keys = Object.keys(self.layers);
-                keys.reverse();
-                var orderedKeys = [];
-                var unsavedLayers = [];
-                var shouldReverseOrder = false;
+                var savedOrders = {};
 
-                $.each(keys, function (index, key) {
-                    var itemName = key;
-                    if (key.indexOf(self.administrativeKeyword) >= 0) {
-                        itemName = 'Administrative'
-                    }
-
-                    var order = Shared.StorageUtil.getItemDict(itemName, 'order');
-
-                    if (order !== null) {
-                        if (typeof orderedKeys[order] === 'undefined') {
-                            orderedKeys[order] = itemName;
-                        } else {
-                            if(orderedKeys[order] !== itemName) {
-                                unsavedLayers.push(itemName);
-                            }
-                        }
-                        shouldReverseOrder = true;
-                    } else {
-                        unsavedLayers.push(itemName);
+                savedOrders = $.extend({}, self.orders);
+                $.each(self.orders, function (key, layer) {
+                    var savedOrder = Shared.StorageUtil.getItemDict(layer, 'order');
+                    if (savedOrder && savedOrder !== key) {
+                        savedOrders[savedOrder] = layer;
                     }
                 });
 
-                if (shouldReverseOrder) {
-                    orderedKeys = orderedKeys.reverse();
-                }
+                // Reverse orders
+                var reversedOrders = [];
+                $.each(savedOrders, function (key, value) {
+                    reversedOrders.unshift(value);
+                });
 
-                if (orderedKeys.length === 0) {
-                    orderedKeys = unsavedLayers;
-                } else if (unsavedLayers.length > 0) {
-                    orderedKeys.push(unsavedLayers);
-                }
-
-                $.each(orderedKeys, function (index, key) {
+                $.each(reversedOrders, function (index, key) {
                     var value = self.layers[key];
                     var layerName = '';
                     var defaultVisibility = false;
@@ -494,13 +547,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency);
                 });
 
+                self.renderTransparencySlider();
+
                 $('.layer-selector-input').change(function (e) {
                     self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
                 });
 
                 $('#layers-selector').sortable();
                 $('#layers-selector').on('sortupdate', function () {
-                    $($(".layer-selector-input").get().reverse()).each(function (index, value) {
+                    var $layerSelectorInput = $('.layer-selector-input');
+                    $($layerSelectorInput.get().reverse()).each(function (index, value) {
                         var layerName = $(value).val();
                         if (layerName !== self.administrativeKeyword) {
                             self.moveLayerToTop(
@@ -515,11 +571,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                 }
                             });
                         }
-
-                        Shared.StorageUtil.setItemDict(layerName, 'order', index);
                     });
                     self.moveLayerToTop(self.highlightPinnedVector);
                     self.moveLayerToTop(self.highlightVector);
+
+                    // Update saved order
+                    $($layerSelectorInput.get()).each(function (index, value) {
+                        var layerName = $(value).val();
+                        Shared.StorageUtil.setItemDict(layerName, 'order', index);
+                    });
                 });
                 $('#layers-selector').trigger('sortupdate');
 
@@ -543,7 +603,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var view = this.map.getView();
             var featuresInfo = {};
             $.each(this.layers, function (layer_key, layer) {
-                if (coordinate != lastCoordinate) {
+                if (coordinate !== lastCoordinate) {
                     return;
                 }
                 if (layer['layer'].getVisible()) {
@@ -557,8 +617,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         );
                         layerSource += '&QUERY_LAYERS=' + queryLayer;
                         $.ajax({
-                            type: 'GET',
-                            url: layerSource,
+                            type: 'POST',
+                            url: '/get_feature/',
+                            data: {
+                                'layerSource': layerSource
+                            },
                             success: function (data) {
                                 // process properties
                                 if (coordinate != lastCoordinate || !data) {

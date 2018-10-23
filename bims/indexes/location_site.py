@@ -16,11 +16,24 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
 
     location_site_point = indexes.LocationField()
 
+    location_coordinates = indexes.CharField()
+
+    location_site_name = indexes.CharField(
+            model_attr='name'
+    )
+
+    location_site_id = indexes.CharField(
+            model_attr='id'
+    )
+
     def prepare_location_site_point(self, obj):
         return '%s,%s' % obj.get_centroid().coords
 
     location_site_geometry = indexes.CharField()
     id = indexes.CharField()
+
+    def prepare_location_coordinates(self, obj):
+        return '%s,%s' % obj.get_centroid().coords
 
     def prepare_location_site_geometry(self, obj):
         geometry = obj.get_geometry()

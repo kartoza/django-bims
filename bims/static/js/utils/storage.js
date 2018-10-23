@@ -6,6 +6,9 @@ define(['backbone', 'utils/class'], function (Backbone, UtilClass) {
         isDict: function(v) {
             return typeof v==='object' && v!==null && !(v instanceof Array) && !(v instanceof Date);
         },
+        clear: function () {
+            localStorage.clear();
+        },
         isStorageSupported: function () {
             return (typeof(Storage) !== 'undefined');
         },
@@ -52,6 +55,9 @@ define(['backbone', 'utils/class'], function (Backbone, UtilClass) {
                 return JSON.parse(localStorage.getItem(key));
             }
             return null;
+        },
+        hashItem: function (itemString) {
+            return itemString.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
         }
     });
 

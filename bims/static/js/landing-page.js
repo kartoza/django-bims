@@ -53,7 +53,5 @@ document.addEventListener('DOMContentLoaded', function (event) {
         };
         var chartContainer = document.getElementById("chart-"+className);
         generateDoughnutChart(chartContainer, config);
-        console.log(className);
-        console.log(classData);
     });
 });

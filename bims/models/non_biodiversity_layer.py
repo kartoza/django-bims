@@ -3,9 +3,10 @@
 """
 
 from django.db import models
+from ordered_model.models import OrderedModel
 
 
-class NonBiodiversityLayer(models.Model):
+class NonBiodiversityLayer(OrderedModel):
     """Non biodiversity layer model."""
     name = models.CharField(
         max_length=100,
@@ -21,8 +22,12 @@ class NonBiodiversityLayer(models.Model):
         max_length=64,
         default='image/png'
     )
+    default_visibility = models.BooleanField(
+        default=False
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
+        ordering = ('order',)

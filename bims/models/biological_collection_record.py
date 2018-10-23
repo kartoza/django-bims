@@ -169,6 +169,8 @@ def collection_post_save_handler(sender, instance, **kwargs):
     """
     Fetch taxon from original species name.
     """
+    from bims.models import SearchProcess
+
     if not issubclass(sender, BiologicalCollectionRecord):
         return
     models.signals.post_save.disconnect(
@@ -177,6 +179,7 @@ def collection_post_save_handler(sender, instance, **kwargs):
     instance.on_post_save()
     if instance.is_cluster_generation_applied():
         update_cluster_by_collection(instance)
+        SearchProcess.objects.all().delete()
         update_search_index.delay()
     models.signals.post_save.connect(
         collection_post_save_handler,

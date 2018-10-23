@@ -34,8 +34,19 @@ class Taxon(models.Model):
     iucn_status = models.ForeignKey(
         IUCNStatus,
         models.SET_NULL,
+        verbose_name='IUCN status',
         null=True,
         blank=True,
+    )
+    iucn_redlist_id = models.IntegerField(
+        verbose_name='IUCN taxon id',
+        null=True,
+        blank=True
+    )
+    iucn_data = models.TextField(
+        verbose_name='Data from IUCN',
+        null=True,
+        blank=True
     )
 
     # Taxonomy fields

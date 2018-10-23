@@ -22,8 +22,9 @@
         const mapTilerKey = '{{ map_tiler_key }}';
         const geocontextUrl = '{{ geocontext_url }}';
         const geocontextCollectionKey = '{{ geocontext_collection_key }}';
-        const locationSiteDetailURL = '{% url "location-site-detail" 123456789 %}';
         const listCollectorAPIUrl = '{% url "list-collector" %}';
+        const listReferenceAPIUrl = '{% url "list-reference" %}';
+        const isUsingReferenceFilter = "{% if use_reference_filter %} true {% else %} false {% endif %}";
         const centerPointMap = '{{ center_point_map }}';
         const listCategoryAPIUrl = '{% url "list-date-category" %}';
         const listBoundaryAPIUrl = '{% url "list-boundary" %}';
@@ -40,8 +41,8 @@
         const bimsInfoContent = {% if flatpage %} true {% else %} false {% endif %};
         const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
         const ogcServerDefaultLocation = "{{ OGC_SERVER.default.PUBLIC_LOCATION }}";
-        const useReferenceCategory = "{% if use_reference_category %} true {% else %} false {% endif %}";
         const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
+        var filterParameters = {};
     </script>
     {% block extra_head %}
 

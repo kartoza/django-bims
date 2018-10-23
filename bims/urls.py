@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf.urls import url
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
+from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.documentation import include_docs_urls
 from bims.views.map import MapPageView
@@ -34,12 +35,14 @@ from bims.api_views.collection import (
 from bims.api_views.collector import CollectorList
 from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
+from bims.api_views.reference_list import ReferenceList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords
 )
+from bims.api_views.get_feature_info import GetFeatureInfo
 from bims.api_views.non_validated_record import GetNonValidatedRecords
 from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.views.links import LinksCategoryView
@@ -65,7 +68,7 @@ api_urls = [
         LocationTypeAllowedGeometryDetail.as_view()),
     url(r'^api/location-site/cluster/$', LocationSiteClusterList.as_view()),
     url(r'^api/location-site/$', LocationSiteList.as_view()),
-    url(r'^api/location-site/(?P<pk>[0-9]+)/$',
+    url(r'^api/location-site-detail/$',
         LocationSiteDetail.as_view(),
         name='location-site-detail'),
     url(r'^api/taxon/(?P<pk>[0-9]+)/$',
@@ -92,6 +95,8 @@ api_urls = [
         CollectorList.as_view(), name='list-collector'),
     url(r'^api/list-category/$',
         CategoryList.as_view(), name='list-date-category'),
+    url(r'^api/list-reference/$',
+        ReferenceList.as_view(), name='list-reference'),
     url(r'^api/list-non-biodiversity/$',
         NonBiodiversityLayerList.as_view(),
         name='list-non-biodiversity-layer'),
@@ -99,7 +104,7 @@ api_urls = [
         ValidateObject.as_view(), name='validate-object'),
     url(r'^api/get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
-    url(r'^api/get-bio-records/(?P<taxon_id>[\w-]+)/$',
+    url(r'^api/get-bio-records/$',
         GetBioRecords.as_view(), name='get-bio-records'),
     url(r'^api/get-unvalidated-records/$',
         GetNonValidatedRecords.as_view(), name='get-unvalidated-records'),
@@ -149,4 +154,7 @@ urlpatterns = [
         BioRecordsUpdateView.as_view(), name='update-records'),
     url(r'^upload_collection/$', CollectionUploadView.as_view(),
         name='upload-collection'),
+    url(r'^get_feature/$',
+        csrf_exempt(GetFeatureInfo.as_view()),
+        name='get-feature')
 ] + api_urls

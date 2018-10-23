@@ -5,9 +5,9 @@ from hashlib import md5
 import datetime
 import os
 import errno
-from haystack.query import SearchQuerySet, SQ
+from haystack.query import SearchQuerySet, SQ, EmptySearchQuerySet
 from django.contrib.gis.geos import MultiPoint, Point
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,10 +23,11 @@ from bims.serializers.location_site_serializer import \
 from bims.utils.cluster_point import (
     within_bbox,
     overlapping_area,
-    update_min_bbox,
-    geo_serializer
+    update_min_bbox
 )
 from bims.models.user_boundary import UserBoundary
+from bims.models.search_process import SearchProcess
+from bims.utils.url import remove_params_from_uri
 
 
 class GetCollectionAbstract(APIView):
@@ -41,7 +42,38 @@ class GetCollectionAbstract(APIView):
                 yield item.object
 
     @staticmethod
-    def apply_filter(query_value, filters, ignore_bbox=False):
+    def is_using_filters(filters):
+        taxon = filters.get('taxon', None)
+        query_collector = filters.get('collector', None)
+        boundary = filters.get('boundary', None)
+        user_boundary = filters.get('userBoundary', None)
+        query_category = filters.get('category', None)
+        reference_category = filters.get('referenceCategory', None)
+        reference = filters.get('reference', None)
+        year_from = filters.get('yearFrom', None)
+        year_to = filters.get('yearTo', None)
+        months = filters.get('months', None)
+
+        return bool(taxon or query_collector or
+                    boundary or user_boundary or
+                    query_category or reference_category or
+                    year_from or year_to or months or reference)
+
+    @staticmethod
+    def get_all_validated():
+        """
+        Get all validated collection data
+        :return: list of validated collection
+        """
+        settings.ELASTIC_MIN_SCORE = 0
+        sqs = SearchQuerySet()
+        results = sqs.all().models(
+                BiologicalCollectionRecord)
+        results = results.filter(validated=True)
+        return results
+
+    @staticmethod
+    def apply_filter(query_value, filters, ignore_bbox=False, only_site=False):
         """
         Apply filter and do the search to biological collection
         record and location site
@@ -70,19 +102,21 @@ class GetCollectionAbstract(APIView):
         user_boundary = filters.get('userBoundary', None)
         query_category = filters.get('category', None)
         reference_category = filters.get('referenceCategory', None)
+        reference = filters.get('reference', None)
         year_from = filters.get('yearFrom', None)
         year_to = filters.get('yearTo', None)
         months = filters.get('months', None)
+        site_id = filters.get('siteId', None)
 
         if taxon or query_collector or \
                 boundary or user_boundary or \
                 query_category or reference_category or \
-                year_from or year_to or months:
+                year_from or year_to or months or reference or site_id:
             filter_mode = True
 
         if query_value:
             clean_query = sqs.query.clean(query_value)
-            results = SearchQuerySet().filter(
+            results = sqs.filter(
                     SQ(original_species_name_exact__contains=clean_query) |
                     SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
@@ -95,16 +129,14 @@ class GetCollectionAbstract(APIView):
                 fuzzy_search = True
                 # Set min score bigger for fuzzy search
                 settings.ELASTIC_MIN_SCORE = 2
-                results = SearchQuerySet().filter(
-                        SQ(original_species_name=clean_query) |
-                        SQ(taxon_common_name=clean_query) |
-                        SQ(taxon_scientific_name=clean_query),
+                results = sqs.filter(
+                        SQ(original_species_name=clean_query),
                         validated=True
                 ).models(BiologicalCollectionRecord)
                 settings.ELASTIC_MIN_SCORE = 0
         else:
             if filter_mode:
-                results = SearchQuerySet().all().models(
+                results = sqs.all().models(
                         BiologicalCollectionRecord)
                 results = results.filter(validated=True)
             else:
@@ -176,6 +208,15 @@ class GetCollectionAbstract(APIView):
                 qs_reference_category.add(SQ(reference_category=query), SQ.OR)
             results = results.filter(qs_reference_category)
 
+        # query by reference category
+        if reference:
+            qs_reference = SQ()
+            qs = json.loads(reference)
+            for query in qs:
+                qs_reference.add(SQ(reference__exact=query),
+                                 SQ.OR)
+            results = results.filter(qs_reference)
+
         # query by year from
         if year_from:
             clean_query_year_from = sqs.query.clean(year_from)
@@ -198,17 +239,23 @@ class GetCollectionAbstract(APIView):
                     SQ(collection_date_month=clean_query_month), SQ.OR)
             results = results.filter(qs_month)
 
+        # Search by site id
+        if site_id:
+            results = results.filter(
+                site_id_indexed=site_id
+            ).models(BiologicalCollectionRecord)
+
         collection_results = results
 
         # Search location site by name
-        location_site_search = []
+        location_site_search = EmptySearchQuerySet()
         if query_value:
             location_site_search = SearchQuerySet().filter(
                     site_name__contains=query_value
             ).models(LocationSite)
 
         location_site_results = location_site_search
-        location_site_user_boundary = None
+        location_site_user_boundary = EmptySearchQuerySet()
 
         if boundary:
             qs_collector = SQ()
@@ -229,16 +276,10 @@ class GetCollectionAbstract(APIView):
                             'location_site_point',
                             geom)
 
-        site_results = []
-
-        if user_boundaries:
-            if boundary:
-                site_results = \
-                    location_site_results | location_site_user_boundary
-            elif location_site_user_boundary:
-                site_results = location_site_user_boundary
-        else:
-            site_results = location_site_results
+        site_results = GetCollectionAbstract.combine_search_query_results(
+            location_site_results,
+            location_site_user_boundary
+        )
 
         if len(site_results) > 0 or isinstance(
                 location_site_user_boundary, SearchQuerySet):
@@ -251,6 +292,28 @@ class GetCollectionAbstract(APIView):
             fuzzy_search = False
 
         return collection_results, site_results, fuzzy_search
+
+    @staticmethod
+    def combine_search_query_results(sqs_result_1, sqs_result_2):
+        """
+        Combine two search query results
+        :param sqs_result_1: SQS
+        :param sqs_result_2: SQS
+        :return: combined search query results
+        """
+        if len(sqs_result_1) == 0 and len(sqs_result_2) == 0:
+            return sqs_result_1
+
+        if len(sqs_result_1) == 0:
+            return sqs_result_2
+
+        if len(sqs_result_2) == 0:
+            return sqs_result_1
+
+        if len(sqs_result_1) > len(sqs_result_2):
+            return sqs_result_1 | sqs_result_2
+        else:
+            return sqs_result_2 | sqs_result_1
 
 
 class GetCollectionExtent(GetCollectionAbstract):
@@ -288,7 +351,7 @@ class CollectionDownloader(GetCollectionAbstract):
     Download all collections with format
     """
 
-    def convert_to_cvs(self, queryset, ModelSerializer):
+    def convert_to_cvs(self, queryset, site_queryset, ModelSerializer):
         """
         Converting data to csv.
         :param queryset: queryset that need to be converted
@@ -299,18 +362,35 @@ class CollectionDownloader(GetCollectionAbstract):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="download.csv"'
 
-        if not queryset:
+        if not queryset and not site_queryset:
             return JsonResponse({
                 'status': 'failed',
                 'message': 'Data is empty'
             })
 
         # Filename
+        search_uri = self.request.build_absolute_uri()
+
+        not_needed_params = [
+            'zoom',
+            'bbox'
+        ]
+
+        search_uri = remove_params_from_uri(
+                not_needed_params,
+                search_uri
+        )
+
+        if queryset:
+            query_count = queryset.count()
+        else:
+            query_count = site_queryset.count()
+
         today_date = datetime.date.today()
         filename = md5(
             '%s%s%s' % (
-                json.dumps(self.request.GET),
-                queryset.count(),
+                search_uri,
+                query_count,
                 today_date)
         ).hexdigest()
         filename += '.csv'
@@ -362,17 +442,25 @@ class CollectionDownloader(GetCollectionAbstract):
         query_value = request.GET.get('search')
         filters = request.GET
         file_type = request.GET.get('fileType', None)
+        is_using_filters = self.is_using_filters(request.GET)
         if not file_type:
             file_type = 'csv'
-        collection_results, \
-            site_results, \
-            fuzzy_search = self.apply_filter(
-                query_value,
-                filters,
-                ignore_bbox=True)
+        site_results = None
+
+        if is_using_filters or query_value:
+            collection_results, \
+                site_results, \
+                fuzzy_search = self.apply_filter(
+                    query_value,
+                    filters,
+                    ignore_bbox=True)
+        else:
+            collection_results = self.get_all_validated()
+
         if file_type == 'csv':
             return self.convert_to_cvs(
                 collection_results,
+                site_results,
                 BioCollectionOneRowSerializer)
         elif file_type == 'geojson':
             return self.convert_to_geojson(
@@ -387,9 +475,15 @@ class ClusterCollection(GetCollectionAbstract):
     """
     Clustering collection with same taxon
     """
-
+    @staticmethod
     def clustering_process(
-            self, records, zoom, pix_x, pix_y):
+            collection_records,
+            site_records,
+            zoom,
+            pix_x,
+            pix_y,
+            cluster_points=[],
+            sites=[]):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
@@ -397,8 +491,11 @@ class ClusterCollection(GetCollectionAbstract):
         If a point is within a cluster 'catchment' area increase point
         count for that cluster and recalculate clusters minimum bbox
 
-        :param records: generator of records.
-        :type records: generator
+        :param collection_records: collection records.
+        :type collection_records: search query set
+
+        :param site_records: site records.
+        :type site_records: search query set
 
         :param zoom: zoom level of map
         :type zoom: int
@@ -409,26 +506,17 @@ class ClusterCollection(GetCollectionAbstract):
         :param pix_y: pixel y of icon
         :type pix_y: int
         """
-
-        cluster_points = []
-        sites = []
-        for record in records:
+        for collection in GetCollectionAbstract.queryset_gen(
+                collection_records):
             # get x,y of site
-            if isinstance(record, BiologicalCollectionRecord):
-                x = record.site.geometry_point.x
-                y = record.site.geometry_point.y
-                location_site = record.site
-                if record.site.id in sites:
+            try:
+                x = collection.site.geometry_point.x
+                y = collection.site.geometry_point.y
+                location_site = collection.site
+                if collection.site.id in sites:
                     continue
-                sites.append(record.site_id)
-            elif isinstance(record, LocationSite):
-                x = record.geometry_point.x
-                y = record.geometry_point.y
-                location_site = record
-                if record.id in sites:
-                    continue
-                sites.append(record.id)
-            else:
+                sites.append(collection.site_id)
+            except (ValueError, AttributeError):
                 continue
 
             # check every point in cluster_points
@@ -462,32 +550,106 @@ class ClusterCollection(GetCollectionAbstract):
 
                 cluster_points.append(new_cluster)
 
-        return cluster_points
+        return cluster_points, sites
 
     def get(self, request, format=None):
-        zoom = request.GET.get('zoom', None)
-        icon_pixel_x = request.GET.get('icon_pixel_x', None)
-        icon_pixel_y = request.GET.get('icon_pixel_y', None)
+        import hashlib
+        import json
+        from bims.tasks.cluster import generate_search_cluster
+
+        # zoom = request.GET.get('zoom', None)
+        # icon_pixel_x = request.GET.get('icon_pixel_x', None)
+        # icon_pixel_y = request.GET.get('icon_pixel_y', None)
         query_value = request.GET.get('search')
+        process = request.GET.get('process', None)
         filters = request.GET
 
-        if not zoom or not icon_pixel_x or not icon_pixel_y:
-            return HttpResponseBadRequest(
-                'zoom, icon_pixel_x, and icon_pixel_y need to be '
-                'in parameters. '
-                'zoom : zoom level of map. '
-                'icon_pixel_x: size x of icon in pixel. '
-                'icon_pixel_y: size y of icon in pixel. ')
-        collection_results, \
-            site_results, \
-            fuzzy_search = self.apply_filter(
-                query_value,
-                filters)
-
-        results = list(self.queryset_gen(collection_results))
-        results += list(self.queryset_gen(site_results))
-
-        cluster = self.clustering_process(
-            results, int(float(zoom)), int(icon_pixel_x), int(icon_pixel_y)
+        search_uri = request.build_absolute_uri()
+        search_uri = remove_params_from_uri(
+                ['zoom'],
+                search_uri
         )
-        return Response(geo_serializer(cluster)['features'])
+
+        search_process, created = SearchProcess.objects.get_or_create(
+                category='cluster_generation',
+                query=search_uri
+        )
+
+        if not created and search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
+            else:
+                search_process.finished = False
+                search_process.save()
+
+        # if not zoom or not icon_pixel_x or not icon_pixel_y:
+        #     return HttpResponseBadRequest(
+        #         'zoom, icon_pixel_x, and icon_pixel_y need to be '
+        #         'in parameters. '
+        #         'zoom : zoom level of map. '
+        #         'icon_pixel_x: size x of icon in pixel. '
+        #         'icon_pixel_y: size y of icon in pixel. ')
+        if not process:
+            collection_results, \
+                site_results, \
+                fuzzy_search = self.apply_filter(
+                    query_value,
+                    filters,
+                    ignore_bbox=True)
+
+            data_for_filename = dict()
+            data_for_filename['search_uri'] = search_uri
+            data_for_filename['collection_results_length'] = len(
+                    collection_results)
+            data_for_filename['site_results_length'] = len(site_results)
+
+            # Create filename from md5 of filters and results length
+            filename = hashlib.md5(
+                json.dumps(search_uri, sort_keys=True)
+            ).hexdigest()
+        else:
+            filename = process
+
+        search_process.process_id = filename
+        search_process.save()
+
+        # Check if filename exists
+        folder = 'search_cluster'
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        path_file = os.path.join(path_folder, filename)
+        status = {
+            'current_status': 'processing',
+            'process': filename
+        }
+
+        if os.path.exists(path_file):
+            raw_data = open(path_file)
+
+            if raw_data:
+                try:
+                    json_data = json.load(raw_data)
+                    return Response(json_data)
+                except ValueError:
+                    os.remove(path_file)
+        else:
+            try:
+                os.mkdir(path_folder)
+            except OSError as exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+                pass
+
+            generate_search_cluster.delay(
+                    query_value,
+                    filters,
+                    filename,
+                    path_file
+            )
+
+        return Response({
+            'status': status
+        })

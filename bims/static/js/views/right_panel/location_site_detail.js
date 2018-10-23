@@ -1,10 +1,14 @@
-define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, ChartJs) {
+define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol, Shared, ChartJs, $) {
     return Backbone.View.extend({
         id: 0,
         currentSpeciesSearchResult: [],
         siteChartData: {},
         siteId: null,
         siteName: null,
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
+            "&collector=<%= collector %>&category=<%= category %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
         months: {
             'january': 1,
             'february': 2,
@@ -26,11 +30,15 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
         updateCurrentSpeciesSearchResult: function (newList) {
             this.currentSpeciesSearchResult = newList;
         },
-        show: function (id, name) {
+        show: function (id, name, zoomToObject) {
             this.siteId = id;
             this.siteName = name;
-            this.url = '/api/location-site/' + id;
-            this.showDetail(name)
+            this.zoomToObject = zoomToObject;
+            this.parameters = filterParameters;
+            this.parameters['siteId'] = id;
+            filterParameters = $.extend(true, {}, this.parameters);
+            this.url = '/api/location-site-detail/' + this.apiParameters(this.parameters);
+            this.showDetail(name, zoomToObject)
         },
         hideAll: function (e) {
             var className = $(e.target).attr('class');
@@ -305,7 +313,8 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                                 {
                                     'id': that.siteId,
                                     'name': that.siteName
-                                }
+                                },
+                                speciesValue.count
                             );
                         });
 
@@ -326,7 +335,7 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
             $('.species-list-count').html(speciesListCount);
             return $specialListWrapper;
         },
-        showDetail: function (name) {
+        showDetail: function (name, zoomToObject) {
             var self = this;
             // Render basic information
             var $siteDetailWrapper = $('<div></div>');
@@ -361,6 +370,22 @@ define(['backbone', 'ol', 'shared', 'chartJs'], function (Backbone, ol, Shared, 
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
+                    if (data['geometry']) {
+                        var feature = {
+                            id: data['id'],
+                            type: "Feature",
+                            geometry: JSON.parse(data['geometry']),
+                            properties: {}
+                        };
+                        var features = new ol.format.GeoJSON().readFeatures(feature, {
+                            featureProjection: 'EPSG:3857'
+                        });
+                        if (zoomToObject) {
+                            Shared.Dispatcher.trigger('map:switchHighlight', features, !zoomToObject);
+                        } else {
+                            Shared.Dispatcher.trigger('map:switchHighlight', features, true);
+                        }
+                    }
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetail(data));
                     $.each(self.siteChartData, function (key, value) {

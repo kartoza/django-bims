@@ -1,4 +1,4 @@
-define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquery'], function (Backbone, SearchResult, Shared, _, ol, $) {
+define(['backbone', 'models/search_result', 'shared', 'underscore', 'jquery'], function (Backbone, SearchResult, Shared, _, $) {
     return Backbone.View.extend({
         id: 0,
         data: null,
@@ -10,30 +10,9 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'ol', 'jquer
         },
         clicked: function (e) {
             if (this.getResultType() === 'taxa') {
-                Shared.Dispatcher.trigger('searchResult:updateTaxon',
-                    this.model.get('id'),
-                    this.model.get('common_name')
-                );
-                Shared.Dispatcher.trigger('taxonDetail:show',
-                    this.model.get('id'),
-                    this.model.get('common_name')
-                );
+                Shared.Dispatcher.trigger('searchResult:taxonClicked', this.model.attributes);
             } else if (this.getResultType() === 'site') {
-                Shared.Dispatcher.trigger('siteDetail:show',
-                    this.model.get('id'), this.model.get('name'));
-                if (this.model.get('geometry')) {
-                    var feature = {
-                        id: this.model.get('id'),
-                        type: "Feature",
-                        geometry: JSON.parse(this.model.get('geometry')),
-                        properties: {}
-                    };
-                    console.log(feature);
-                    var features = new ol.format.GeoJSON().readFeatures(feature, {
-                        featureProjection: 'EPSG:3857'
-                    });
-                    Shared.Dispatcher.trigger('map:switchHighlight', features);
-                }
+                Shared.Dispatcher.trigger('searchResult:siteClicked', this.model.attributes);
             }
         },
         getResultType: function () {

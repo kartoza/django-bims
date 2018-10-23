@@ -111,20 +111,7 @@
         </div>
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row" style="display: none">
-            <div class="col-lg-12 filter-content" id="filter-catchment-area">
-            </div>
-            <div class="button-filter-wrapper">
-                <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter">Clear Filter</button>
-            </div>
-        </div>
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                ORIGINS <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                ORIGIN <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
@@ -145,7 +132,7 @@
         <div class="row ecological-condition" style="display: none;"  data-toggle="tooltip" data-placement="top" title="Coming Soon">
             <div class="row col-lg-12">
                 <div class="col-lg-4 neutral">
-                    Neutral (N)
+                    Natural (N)
                 </div>
                 <div class="col-lg-4 good">
                     Good (G)
@@ -183,13 +170,9 @@
         </div>
         {% endif %}
 
-        {% if use_reference_category %}
-        <div class="reference-category-wrapper"></div>
-        {% endif %}
-
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                {{ collector_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
@@ -200,6 +183,26 @@
                 <button class="clear-filter">Clear Filter</button>
             </div>
         </div>
+
+        <div class="study-reference-wrapper">
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    STUDY REFERENCE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row" style="display: none">
+                <div class="col-lg-12 filter-content" id="filter-study-reference">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="reference-category-wrapper"></div>
+
+
     </div>
 </script>
 
@@ -258,14 +261,53 @@
                 </div>
             </div>
         </div>
-        <div class="row content">
-            <button id="spatial-filter-panel-upload">Upload New Boundary</button>
+        <div class="row sub-filter content spatial-scale-menu">
+            <div class="col-lg-12 subtitle">
+                 {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
         </div>
-        <div class="row boundary-list">
+        <div class="row spatial-scale-panel" style="display: none">
+            <div class="small-subtitle">Political Region</div>
+            <div class="col-lg-12 filter-content" id="spatial-scale-container">
+            </div>
+            <div class="col-lg-12 other-filters">
+                <div class="container-fluid row">
+                    <div class="col-lg-5">Ecoregion</div>
+                    <div class="col-lg-7">
+                        <select disabled>
+                            <option value="">Ecoregion</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="container-fluid row">
+                    <div class="col-lg-5">Catchment</div>
+                    <div class="col-lg-7">
+                        <select disabled>
+                            <option value="">Catchment</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="spatial-scale-action">
+                <button class="spatial-scale-apply-filter" disabled>Apply Filter</button>
+                <button class="spatial-scale-clear-filter" disabled>Clear Filter</button>
+            </div>
         </div>
-        <div class="row boundary-action">
-            <button class="spatial-apply-filter">Apply Filter</button>
-            <button class="spatial-clear-filter">Clear Filter</button>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                 USER BOUNDARY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="user-boundary-panel" style="display: none">
+            <div class="row spatial-filter-panel-upload-wrapper">
+                <button id="spatial-filter-panel-upload">Upload New Boundary</button>
+            </div>
+            <div class="row boundary-list">
+            </div>
+            <div class="row boundary-action">
+                <button class="spatial-apply-filter">Apply Filter</button>
+                <button class="spatial-clear-filter">Clear Filter</button>
+            </div>
         </div>
     </div>
 
@@ -425,6 +467,7 @@
                         Please enter the decimal latitude (positive
                         degrees North) and longitude (positive degrees
                         East) coordinates of your area of interest below!
+                        <br/> <br/> e.g. for Cape Town being -33.xxx 19.xxx
                     </p>
                     <p class="farm-form">
                         Please enter the Farm/Farm Portion ID below (e.g. T0KT00000000001600005)
@@ -688,7 +731,7 @@
 
 <script type="text/template" id="search-result-taxa-template">
     <div class="result-search" data-search-result-id="" data-taxon-id="<%= id %>">
-        <p class="group-title"><%= highlighted_common_name %></p>
+        <p class="group-title"><%= highlight %></p>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>
@@ -696,7 +739,7 @@
 <script type="text/template" id="search-result-site-template">
     <div class="result-search" data-search-result-id="">
         <p class="group-title"><%= name %></p>
-        <a class="group-description"><%= count %> records found</a>
+        <a class="group-description"><%= count %> occurrences</a>
     </div>
 </script>
 
@@ -736,6 +779,26 @@
             <%= genus %><br>
             <i class="fa fa-arrow-down"></i><br>
             <%= species %>
+        </div>
+        <div class="origin-info">
+             <div class="row">
+                <div class="col-lg-5">
+                   ORIGIN
+                </div>
+                <div class="col-lg-7">
+                    : <%= origin %>
+                </div>
+            </div>
+        </div>
+        <div class="endemism-info">
+            <div class="row">
+                <div class="col-lg-5">
+                    ENDEMISM
+                </div>
+                <div class="col-lg-7">
+                    : <%= endemism %>
+                </div>
+            </div>
         </div>
     </div>
 </script>

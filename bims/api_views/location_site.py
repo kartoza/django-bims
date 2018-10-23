@@ -20,6 +20,7 @@ from bims.utils.cluster_point import (
     update_min_bbox,
     geo_serializer
 )
+from bims.api_views.collection import GetCollectionAbstract
 
 
 class LocationSiteList(APIView):
@@ -55,9 +56,31 @@ class LocationSiteDetail(APIView):
         except LocationSite.DoesNotExist:
             raise Http404
 
-    def get(self, request, pk, format=None):
-        location_site = self.get_object(pk)
-        serializer = LocationSiteDetailSerializer(location_site)
+    def get(self, request):
+        site_id = request.GET.get('siteId')
+        query_value = request.GET.get('search')
+        filters = request.GET
+
+        # Search collection
+        collection_results, \
+            site_results, \
+            fuzzy_search = GetCollectionAbstract.apply_filter(
+                query_value,
+                filters,
+                ignore_bbox=True)
+
+        collection_ids = []
+        if collection_results:
+            collection_ids = list(collection_results.values_list(
+                'model_pk',
+                flat=True))
+        context = {
+            'collection_ids': collection_ids
+        }
+        location_site = self.get_object(site_id)
+        serializer = LocationSiteDetailSerializer(
+                location_site,
+                context=context)
         return Response(serializer.data)
 
 

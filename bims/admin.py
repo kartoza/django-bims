@@ -42,6 +42,7 @@ from bims.models import (
     Shapefile,
     NonBiodiversityLayer,
     UserBoundary,
+    SearchProcess,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -322,10 +323,15 @@ class CustomUserAdmin(ProfileAdmin):
             request, obj, post_url_continue)
 
 
-class NonBiodiversityLayerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'wms_url', 'wms_layer_name')
+class NonBiodiversityLayerAdmin(OrderedModelAdmin):
+    list_display = (
+        'order',
+        'name',
+        'wms_url',
+        'wms_layer_name',
+        'move_up_down_links')
     list_filter = ('wms_url',)
-    ordering = ('name',)
+    ordering = ('order',)
 
 
 # flatpage ckeditor integration
@@ -361,6 +367,14 @@ class VisitorAdmin(admin.ModelAdmin):
     pretty_time_on_site.short_description = 'Time on site'
 
 
+class SearchProcessAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'file_path',
+        'category',
+        'finished')
+
+
 class PageviewAdmin(admin.ModelAdmin):
     date_hierarchy = 'view_time'
 
@@ -394,6 +408,7 @@ admin.site.register(Visitor, VisitorAdmin)
 admin.site.register(Permission, PermissionAdmin)
 
 admin.site.register(UserBoundary, UserBoundaryAdmin)
+admin.site.register(SearchProcess, SearchProcessAdmin)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

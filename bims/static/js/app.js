@@ -87,43 +87,49 @@ require([
                 }
             }
         });
+
+        $.ajax({
+            type: 'GET',
+            url: listReferenceAPIUrl,
+            dataType: 'json',
+            success: function (data) {
+                if (data.length === 0) {
+                    $('.study-reference-wrapper').hide();
+                } else {
+                    for (var i = 0; i < data.length; i++) {
+                        if(data[i]) {
+                            $('#filter-study-reference').append('<input type="checkbox" ' +
+                                'name="reference-value" ' +
+                                'value="' + data[i]['reference'] + '"> ' + data[i]['reference'] + '<br>');
+                        }
+                    }
+                }
+            }
+        });
+
         $.ajax({
             type: 'GET',
             url: listCategoryAPIUrl,
             dataType: 'json',
             success: function (data) {
+                var filterCategory = $('#filter-category');
                 for (var i = 0; i < data.length; i++) {
-                    $('#filter-category').append('<input type="checkbox" name="category-value" value="' + data[i][0] + '">&nbsp;' + data[i][1] + '<br>');
+                    var $wrapperDiv = $('<div></div>');
+                    var $labelDiv = $('<label></label>');
+                    var $inputDiv = $('<input type="checkbox"/>');
+
+                    $wrapperDiv.addClass('ck-button');
+                    $wrapperDiv.append($labelDiv);
+                    $labelDiv.append($inputDiv);
+
+                    $wrapperDiv.append($labelDiv);
+                    $inputDiv.prop('id', data[i][0]);
+                    $inputDiv.addClass('origins-filter-selection');
+                    $inputDiv.prop('name', 'category-value');
+                    $inputDiv.val(data[i][0]);
+                    filterCategory.append($wrapperDiv);
+                    $inputDiv.after('<span>'+data[i][1]+'</span>');
                 }
-            }
-        });
-        $.ajax({
-            type: 'GET',
-            url: listBoundaryAPIUrl,
-            dataType: 'json',
-            success: function (data) {
-                for (var i = 0; i < data.length; i++) {
-                    var $wrapper = $('#filter-catchment-area');
-                    if (data[i]['top_level_boundary']) {
-                        if ($('#boundary-' + data[i]['top_level_boundary']).length > 0) {
-                            $wrapper = $('#boundary-' + data[i]['top_level_boundary']);
-                        }
-                    }
-                    $wrapper.append(
-                        '<div>' +
-                        '<input type="checkbox" name="boundary-value" value="' + data[i]['id'] + '" data-level="' + data[i]['type__level'] + '">&nbsp;' + data[i]['name'] +
-                        '<div id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div>' +
-                        '</div> ');
-                }
-                $('#filter-catchment-area input').click(function () {
-                    var child = $('#boundary-' + $(this).val());
-                    var level = $(this).data('level');
-                    if ($(this).is(':checked')) {
-                        $(child).find('input:checkbox:not(:checked)[data-level="' + (level + 1) + '"]').click();
-                    } else {
-                        $(child).find('input:checkbox:checked[data-level="' + (level + 1) + '"]').click();
-                    }
-                });
             }
         });
 
