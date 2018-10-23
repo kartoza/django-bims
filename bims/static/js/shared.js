@@ -13,5 +13,13 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         UserBoundarySelected: [],
         AdminAreaSelected: [],
         SearchMode: false,
+        EVENTS: {
+            SEARCH: {
+                HIT: 'search:hit'
+            },
+            CLUSTER: {
+                GET: 'clusterBiological:getClusters'
+            }
+        }
     };
 });
