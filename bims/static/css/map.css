@@ -674,30 +674,27 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .layer-switcher {
-    position: absolute;
-    /*top: 367px !important;*/
-    left: 0;
-    right: auto !important;
-    text-align: left;
-    margin-left: 30px;
+    position: initial !important;
+    padding-top: 0 !important;
+    height: 46px;
+}
+
+.layer-switcher:hover {
     cursor: pointer;
-    padding: 0 !important;
-    z-index: 100;
 }
 
 .layer-switcher button {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    width: 54px !important;
-    height: 41px !important;
-    background-position: center !important;
-    background-size: 32px;
-    margin: 0 auto;
-    background-color: white !important;
-    border: none !important;
-    cursor: pointer;
+    width: 100% !important;
+    height: 46px !important;
+    background-position: 10px !important;
+}
+
+.layer-switcher button:hover {
+    cursor: pointer !important;
 }
 
 .layer-switcher .panel {
+    font-size: 11pt;
     border: none !important;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 9px !important;
@@ -706,6 +703,18 @@ html, body, .map, .map-wrapper, #map-container {
     margin-left: 55px !important;
     background-color: white !important;
     border-radius: 0 !important;
+}
+
+.layer-switcher li.layer label {
+    padding-top: 5px;
+}
+
+.layer-switcher li.layer label:hover {
+    cursor: pointer;
+}
+
+.layer-switcher input {
+    height: 20px;
 }
 
 .layer-switcher ul {

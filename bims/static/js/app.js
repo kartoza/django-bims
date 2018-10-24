@@ -61,12 +61,6 @@ require([
 
     // A $( document ).ready() block.
     $(document).ready(function () {
-
-        // Set top margin for layer switcher panel
-        var mapControlPanelHeight = $('.map-control-panel').height();
-        $('.layer-switcher').css('top', (mapControlPanelHeight + 91) + 'px');
-        $('.download-control-panel').css('top', (mapControlPanelHeight + 46) + 'px');
-
         $('#menu-dropdown-burger').click(function () {
             $('.dropdown-menu-left').toggle();
         });

@@ -281,9 +281,16 @@ define([
             $(layerSwitcher.element).attr('data-placement', 'right');
             $(layerSwitcher.element).attr('data-trigger', 'hover');
             $(layerSwitcher.element).attr('data-content', 'Change Basemap');
+            $(layerSwitcher.element).removeClass('ol-control');
             $('.layer-switcher-custom').click(function () {
                 $(this).popover('hide');
             });
+            $('.layer-switcher-custom .panel').mouseenter(function () {
+                $('.layer-switcher-custom').popover('disable');
+            }).mouseleave(function () {
+                $('.layer-switcher-custom').popover('enable');
+            });
+            this.mapControlPanel.addPanel($(layerSwitcher.element));
 
             this.map.on('moveend', function (evt) {
                 self.mapMoved();

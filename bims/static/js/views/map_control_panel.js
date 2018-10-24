@@ -8,7 +8,7 @@ define(
         'views/search',
         'views/locate',
         'views/upload_data',
-        'views/data_downloader',
+        'views/data_downloader-modal',
         'views/spatial_filter'],
     function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
         return Backbone.View.extend({
@@ -25,6 +25,7 @@ define(
                 'click .filter-control': 'filterClicked',
                 'click .locate-control': 'locateClicked',
                 'click .upload-data': 'uploadDataClicked',
+                'click .download-control': 'downloadControlClicked',
                 'click .map-search-close': 'closeSearchPanel',
                 'click .spatial-filter-container-close': 'closeSpatialFilterPanel',
                 'click .layers-selector-container-close': 'closeFilterPanel',
@@ -44,6 +45,11 @@ define(
                 this.validateDataListOpen = false;
                 Shared.Dispatcher.on('mapControlPanel:clickSpatialFilter', this.spatialFilterClicked, this);
                 Shared.Dispatcher.on('mapControlPanel:validationClosed', this.validationDataClosed, this);
+            },
+            addPanel: function (elm) {
+                elm.addClass('sub-control-panel');
+                var mapControlPanel = this.$el.find('.map-control-panel');
+                mapControlPanel.append(elm);
             },
             hidePopOver: function (elm) {
                 if (!elm.hasClass('sub-control-panel')) {
@@ -137,6 +143,20 @@ define(
                 this.uploadDataActive = !this.uploadDataActive;
                 this.parent.uploadDataState = this.uploadDataActive;
             },
+            downloadControlClicked: function (e) {
+                var button = $(e.target);
+                if (!button.hasClass('sub-control-panel')) {
+                    button = button.parent();
+                }
+                if (!button.hasClass('control-panel-selected')) {
+                    this.resetAllControlState();
+                    button.addClass('control-panel-selected');
+                    this.dataDownloaderControl.showModal();
+                } else {
+                    button.removeClass('control-panel-selected');
+                    $('#download-control-modal').hide();
+                }
+            },
             showUploadDataModal: function (lon, lat, siteFeature) {
                 this.uploadDataView.showModal(lon, lat, siteFeature);
             },
@@ -156,8 +176,6 @@ define(
                 this.$el.append(this.locateView.render().$el);
                 this.$el.append(
                     this.dataDownloaderControl.render().$el);
-                this.$el.append(
-                    this.dataDownloaderControl.renderModal());
                 this.uploadDataView = new UploadDataView({
                     parent: this,
                     map: this.parent.map
@@ -242,6 +260,7 @@ define(
                     $('#footer-message').hide();
                     this.parent.uploadDataState = false;
                 }
+                Shared.Dispatcher.trigger('sidePanel:closeValidateDataList');
 
                 $('.layer-switcher.shown button').click();
                 $('.map-control-panel-box:visible').hide();
