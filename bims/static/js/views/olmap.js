@@ -203,10 +203,6 @@ define([
                 // Show feature info
                 Shared.Dispatcher.trigger('layers:showFeatureInfo', e.coordinate)
             }
-
-            // Close opened control panel
-            this.mapControlPanel.closeSearchPanel();
-
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
@@ -280,6 +276,15 @@ define([
             // add layer switcher
             var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
+            $(layerSwitcher.element).addClass('layer-switcher-custom');
+            $(layerSwitcher.element).attr('data-toggle', 'popover');
+            $(layerSwitcher.element).attr('data-placement', 'right');
+            $(layerSwitcher.element).attr('data-trigger', 'hover');
+            $(layerSwitcher.element).attr('data-content', 'Change Basemap');
+            $('.layer-switcher-custom').click(function () {
+                $(this).popover('hide');
+            });
+
             this.map.on('moveend', function (evt) {
                 self.mapMoved();
             });

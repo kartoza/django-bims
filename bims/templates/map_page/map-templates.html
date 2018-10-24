@@ -377,25 +377,25 @@
 </script>
 <script type="text/html" id="map-control-panel">
     <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
-        <div class="search-control sub-control-panel">
+        <div class="search-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Search">
             <i class="fa fa-search" aria-hidden="true"></i>
         </div>
-        <div class="filter-control sub-control-panel">
+        <div class="filter-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Layer Selector">
             <i class="fa fa-map" aria-hidden="true"></i>
         </div>
-        <div class="locate-control sub-control-panel">
+        <div class="locate-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Locate Options">
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
-            <div class="spatial-filter sub-control-panel">
+            <div class="spatial-filter sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Spatial Filter">
                 <i class="fa fa-crop" aria-hidden="true"></i>
             </div>
-            <div class="upload-data sub-control-panel">
+            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Upload Data">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
         {% endif %}
         {% if can_validate %}
-            <div class="validate-data sub-control-panel">
+            <div class="validate-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Validate Data">
                 <i class="fa fa-check" aria-hidden="true"></i>
             </div>
         {% endif %}
@@ -599,7 +599,7 @@
 </script>
 
 <script type="text/html" id="download-control-panel">
-    <div class="download-control sub-control-panel">
+    <div class="download-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Download Data">
         <i class="fa fa-download" aria-hidden="true"></i>
     </div>
 </script>
