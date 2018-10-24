@@ -23,6 +23,16 @@ def add_recaptcha_key(request):
         return {}
 
 
+def application_name(request):
+    """
+    Return application name
+    """
+    name = get_key('APPLICATION_NAME')
+    if not name:
+        name = 'Django BIMS'
+    return {'APPLICATION_NAME': name}
+
+
 def google_analytic_key(request):
     """
     Return google analytic key
