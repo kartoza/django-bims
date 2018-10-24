@@ -11,9 +11,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         filterFarmIDXhr: null,
         farm_ids: [],
         lastFarmIDFilter: '',
+        alertDiv: null,
         render: function () {
             this.$el.html(this.template());
             this.locateCoordinateModal = this.$el.find('.modal');
+            this.alertDiv = this.$el.find('.alert');
             return this;
         },
         showModal: function (activeForm) {
@@ -26,14 +28,18 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
 
             // Activate autocomplete for search by farm ID
             if (this.activeForm === '.farm-form'){
+                this.$el.find('.modal-title').html('Locate by Farm Portion Code');
                 $('#farm-id').autocomplete({
                     source: filterFarmIDUrl,
                     minLength: 3
                 });
                 $("#farm-id").autocomplete( "option", "appendTo", "#locate-form" );
+            } else {
+                this.$el.find('.modal-title').html('Locate by Coordinate');
             }
         },
         closeModal: function () {
+            this.alertDiv.hide();
             this.locateCoordinateModal.hide();
         },
         search: function(e){
@@ -47,6 +53,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         searchCoordinate: function (e) {
             var longitude = parseFloat($('#longitude').val());
             var latitude = parseFloat($('#latitude').val());
+            if(isNaN(longitude) || isNaN(latitude)){
+                this.alertDiv.html('Lat/Long is not a number');
+                this.alertDiv.show();
+                return false;
+            }
             var coordinates = [longitude, latitude];
             coordinates = ol.proj.transform(
                 coordinates, ol.proj.get("EPSG:4326"), ol.proj.get("EPSG:3857"));
@@ -67,6 +78,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 success: function (data) {
                     // We need to rearrange the order since it has different
                     // format
+                    if (Object.keys(data).length === 0 || !data) {
+                        self.alertDiv.show();
+                        self.alertDiv.html('Not able to zoom to farm ID: ' + farmID + ' because of empty data');
+                    }
                     var envelope_extent = [
                         data['envelope_extent'][1],
                         data['envelope_extent'][0],
@@ -78,7 +93,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                     self.closeModal();
                 },
                 error: function (req, err) {
-                    console.log(err);
+                    self.alertDiv.show();
+                    self.alertDiv.html('Not able to zoom to farm ID: ' + farmID + ' because of ' + err);
                     alert('Not able to zoom to farm ID: ' + farmID + ' because of ' + err);
                 }
             });
