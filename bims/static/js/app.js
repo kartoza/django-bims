@@ -50,8 +50,9 @@ require([
     'views/olmap',
     'shared',
     'app',
-    'jquery'
-], function (Router, olmap, Shared, App, $) {
+    'jquery',
+    'bootstrap'
+], function (Router, olmap, Shared, App, $, Bootstrap) {
     // Display the map
     Shared.Router = new Router();
 
