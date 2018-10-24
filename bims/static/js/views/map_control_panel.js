@@ -18,6 +18,7 @@ define(
             catchmentAreaActive: false,
             searchView: null,
             locateView: null,
+            closedPopover: [],
             validateDataListOpen: false,
             events: {
                 'click .search-control': 'searchClicked',
@@ -44,8 +45,20 @@ define(
                 Shared.Dispatcher.on('mapControlPanel:clickSpatialFilter', this.spatialFilterClicked, this);
                 Shared.Dispatcher.on('mapControlPanel:validationClosed', this.validationDataClosed, this);
             },
+            hidePopOver: function (elm) {
+                if (!elm.hasClass('sub-control-panel')) {
+                    elm = elm.parent();
+                }
+                for (var i=0; i<this.closedPopover.length; i++) {
+                    this.closedPopover[i].popover('enable');
+                    this.closedPopover[i].splice(i, 1);
+                }
+                elm.popover('hide');
+                this.closedPopover.push(elm);
+            },
             spatialFilterClicked: function (e) {
                 if (!this.spatialFilter.isOpen()) {
+                    this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     this.openSpatialFilterPanel();
                     this.closeSearchPanel();
@@ -58,6 +71,7 @@ define(
             },
             validateDataClicked: function (e) {
                 if(!this.validateDataListOpen) {
+                    this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     this.closeSpatialFilterPanel();
                     this.closeSearchPanel();
@@ -70,6 +84,7 @@ define(
             },
             searchClicked: function (e) {
                 if (!this.searchView.isOpen()) {
+                    this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     this.openSearchPanel();
                     this.closeFilterPanel();
@@ -82,6 +97,7 @@ define(
             },
             filterClicked: function (e) {
                 if ($('.layers-selector-container').is(":hidden")) {
+                    this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     this.openFilterPanel();
                     this.closeSearchPanel();
@@ -94,6 +110,7 @@ define(
             },
             locateClicked: function (e) {
                 if ($('.locate-options-container').is(":hidden")) {
+                    this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     this.openLocatePanel();
                     this.closeSearchPanel();
@@ -111,6 +128,7 @@ define(
                     $('#footer-message span').html('-');
                     $('#footer-message').hide();
                 } else {
+                    this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     button.addClass('control-panel-selected');
                     $('#footer-message span').html('CLICK LOCATION ON THE MAP');
