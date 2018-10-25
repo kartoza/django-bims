@@ -166,6 +166,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     }
                     $.each(data, function (index, value) {
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
+                            var administrativeOrder = Shared.StorageUtil.getItemDict('Administrative', 'order');
+                            if (!administrativeOrder) {
+                                self.administrativeOrder = administrativeOrder;
+                                return;
+                            }
                             if (self.administrativeOrder > 0) {
                                 if (parseInt(value['order']) < self.administrativeOrder) {
                                     self.administrativeOrder = value['order'];
@@ -247,6 +252,23 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                                 format: default_wms_format
                             }
                         };
+
+                        var layerName = value.typename;
+                        var layerOrder = Shared.StorageUtil.getItemDict(layerName, 'order');
+                        if (!layerName) {
+                            return true;
+                        }
+
+                        if (layerName.indexOf(self.administrativeKeyword) >= 0 ||
+                            layerName === 'null' ||
+                            layerName === 'Biodiversity') {
+                            return true;
+                        }
+
+                        if (!layerOrder) {
+                            layerOrder = (parseInt(Object.keys(self.orders)[Object.keys(self.orders).length - 1]) + 1);
+                        }
+                        self.orders[layerOrder] = layerName;
 
                         self.initLayer(
                             new ol.layer.Tile({
@@ -427,7 +449,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             });
 
         },
-
         renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
@@ -489,7 +510,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             var self = this;
             $(document).ready(function () {
                 var savedOrders = {};
-
                 savedOrders = $.extend({}, self.orders);
                 $.each(self.orders, function (key, layer) {
                     var savedOrder = Shared.StorageUtil.getItemDict(layer, 'order');
@@ -578,7 +598,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     // Update saved order
                     $($layerSelectorInput.get()).each(function (index, value) {
                         var layerName = $(value).val();
-                        Shared.StorageUtil.setItemDict(layerName, 'order', index);
+                        Shared.StorageUtil.setItemDict(layerName, 'order', parseInt(index));
                     });
                 });
                 $('#layers-selector').trigger('sortupdate');
