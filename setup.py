@@ -33,7 +33,7 @@ setup(
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         ],
         install_requires=[
-            'Django==1.11',
+            'Django==1.11.15',
             'django-allauth==0.35.0',
             'django-role-permissions==2.2.0',
             'markdown==2.6.11',

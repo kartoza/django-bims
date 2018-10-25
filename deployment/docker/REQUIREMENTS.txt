@@ -1,5 +1,5 @@
 psycopg2-binary
-# Django is provided by GeoNode
+django==1.11.15
 django-braces==1.9.0
 django-model-utils==1.4.0
 django-pipeline==1.6.14
