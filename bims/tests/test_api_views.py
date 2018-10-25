@@ -38,12 +38,14 @@ class TestApiView(TestCase):
         self.fish_collection_1 = BiologicalCollectionRecordF.create(
             pk=1,
             original_species_name=u'Test fish species name 1',
-            site=self.location_site
+            site=self.location_site,
+            validated=True
         )
         self.fish_collection_2 = BiologicalCollectionRecordF.create(
             pk=2,
             original_species_name=u'Test fish species name 2',
-            site=self.location_site
+            site=self.location_site,
+            validated=True
         )
         self.admin_user = UserF.create(
             is_superuser=True,
@@ -59,8 +61,8 @@ class TestApiView(TestCase):
     def test_get_location_by_id(self):
         view = LocationSiteDetail.as_view()
         pk = '1'
-        request = self.factory.get('/api/location-site/' + pk)
-        response = view(request, pk)
+        request = self.factory.get('/api/location-site/?siteId=' + pk)
+        response = view(request)
         self.assertTrue(
             'id' in response.data
         )
