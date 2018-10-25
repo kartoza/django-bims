@@ -1,6 +1,5 @@
 # coding: utf-8
 import requests
-import json
 from requests.exceptions import HTTPError
 from pygbif import species
 from bims.models import Taxon, TaxonomyField
@@ -23,6 +22,7 @@ def update_taxa():
             print('Taxon not updated')
             print(e)
 
+
 def get_species(gbif_id):
     """
     Get species by gbif id
@@ -37,6 +37,7 @@ def get_species(gbif_id):
     except (HTTPError, KeyError) as e:
         print(e)
         return None
+
 
 def find_species(original_species_name):
     """
