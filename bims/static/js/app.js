@@ -4,8 +4,8 @@ require.config({
         ol: 'libs/openlayers-4.6.4/ol',
         underscore: 'libs/underscore-1.8.3/underscore-min',
         backbone: 'libs/backbone-1.3.3/backbone-min',
-        jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         bootstrap: 'libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
+        jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
@@ -26,8 +26,9 @@ require.config({
         backbone: {
             deps: [
                 'underscore',
-                'jquery',
-                'bootstrap'
+                'bootstrap',
+                'jqueryUi',
+                'jquery'
             ],
             exports: 'Backbone'
         },
@@ -50,9 +51,10 @@ require([
     'views/olmap',
     'shared',
     'app',
-    'jquery',
-    'bootstrap'
-], function (Router, olmap, Shared, App, $, Bootstrap) {
+    'bootstrap',
+    'jqueryUi',
+    'jquery'
+], function (Router, olmap, Shared, App, Bootstrap, jqueryUi, $) {
     // Display the map
     Shared.Router = new Router();
 
