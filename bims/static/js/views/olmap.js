@@ -36,7 +36,8 @@ define([
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
-            'click .layer-control': 'layerControlClicked'
+            'click .layer-control': 'layerControlClicked',
+            'click #map-legend-wrapper': 'mapLegendClicked'
         },
         clusterLevel: {
             5: 'country',
@@ -78,6 +79,8 @@ define([
             Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
             Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
             Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
+
+            Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -247,6 +250,54 @@ define([
             this.popup.setPosition(coordinates);
         },
         layerControlClicked: function (e) {
+        },
+        mapLegendClicked: function (e) {
+            var $mapLegendWrapper = $('#map-legend-wrapper');
+            var $mapLegend = $mapLegendWrapper.find('#map-legend');
+
+            if ($mapLegend.is(':visible')) {
+                this.hideMapLegends(true);
+            } else {
+                this.showMapLegends(true);
+            }
+        },
+        showMapLegends: function (showTooltip) {
+            if (Shared.LegendsDisplayed === true) {
+                return true;
+            }
+            Shared.LegendsDisplayed = true;
+            var $mapLegendWrapper = $('#map-legend-wrapper');
+            var $mapLegend = $mapLegendWrapper.find('#map-legend');
+            var $mapLegendSymbol = $mapLegendWrapper.find('#map-legend-symbol');
+
+            $mapLegendWrapper.removeClass('hide-legend');
+            $mapLegendWrapper.addClass('show-legend');
+            $mapLegendSymbol.hide();
+            $mapLegend.show();
+            $mapLegendWrapper.attr('data-original-title', 'Click to hide legends').tooltip('hide');
+
+            if(showTooltip) {
+                $mapLegendWrapper.tooltip('show');
+            }
+        },
+        hideMapLegends: function (showTooltip) {
+            if (Shared.LegendsDisplayed === false) {
+                return true;
+            }
+            Shared.LegendsDisplayed = false;
+            var $mapLegendWrapper = $('#map-legend-wrapper');
+            var $mapLegend = $mapLegendWrapper.find('#map-legend');
+            var $mapLegendSymbol = $mapLegendWrapper.find('#map-legend-symbol');
+
+            $mapLegendWrapper.addClass('hide-legend');
+            $mapLegendWrapper.removeClass('show-legend');
+            $mapLegendSymbol.show();
+            $mapLegend.hide();
+            $mapLegendWrapper.attr('data-original-title', 'Show legends').tooltip('hide');
+
+            if(showTooltip) {
+                $mapLegendWrapper.tooltip('show');
+            }
         },
         getCurrentZoom: function () {
             return this.map.getView().getZoom();

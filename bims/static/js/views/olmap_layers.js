@@ -349,7 +349,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         toggleLegend: function (layerName, selected) {
             // show/hide legend
             var $legendElement = this.getLegendElement(layerName);
-            var $legendWrapper = $('#map-legend-wrapper');
             if (layerName === 'Biodiversity' && this.isBiodiversityLayerLoaded()) {
                 Shared.Dispatcher.trigger('map:reloadXHR');
                 if (selected) {
@@ -360,7 +359,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             }
 
             if (selected) {
-                $legendElement.show();
+                if ($legendElement.length > 0) {
+                    $legendElement.show();
+                    Shared.Dispatcher.trigger('map:showMapLegends');
+                }
             } else {
                 $legendElement.hide();
             }
@@ -602,18 +604,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                     });
                 });
                 $('#layers-selector').trigger('sortupdate');
-
-                $('#map-legend-wrapper').click(function () {
-                    if ($(this).hasClass('hide-legend')) {
-                        $(this).tooltip('option', 'content', 'Hide Legends');
-                        $(this).removeClass('hide-legend');
-                        $(this).addClass('show-legend');
-                    } else {
-                        $(this).tooltip('option', 'content', 'Show Legends');
-                        $(this).addClass('hide-legend');
-                        $(this).removeClass('show-legend');
-                    }
-                });
             });
 
         },
