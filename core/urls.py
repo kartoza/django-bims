@@ -16,6 +16,7 @@ from django.conf.urls import url, include
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
 
 from geonode.urls import urlpatterns as geonode_urlpatterns
 
@@ -42,7 +43,18 @@ urlpatterns = [
         name='home'),
 ]
 
+for geonode_pattern in geonode_urlpatterns:
+    try:
+        if 'admin' in geonode_pattern.app_dict:
+            geonode_urlpatterns.remove(geonode_pattern)
+    except AttributeError:
+        continue
+
 urlpatterns += geonode_urlpatterns
+
+urlpatterns += [
+    url('^admin/', include(admin.site.urls)),
+]
 
 if settings.DEBUG:
     urlpatterns += static(
