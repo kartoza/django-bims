@@ -1,14 +1,12 @@
 {% extends "geonode_base.html" %}
 {% load static from staticfiles %}
-{% load i18n %}
-
-{% block title %} {{ block.super }} {% endblock %}
 {% block header %}
     <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
     <link href="{% static "css/base.css" %}" rel="stylesheet">
     <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <style>
         body {
+            font-size: 13pt;
             background-color: rgba(239, 239, 239, 0.27);
             padding-top: 80px;
         }
@@ -29,21 +27,14 @@
         .page-title {
             font-size: 20pt;
         }
-        .form-controls {
-            font-size: 13pt;
+        .form-group {
+            width: 100% !important;
         }
-        .form-control {
+        .form-group .btn, .form-control {
             font-size: 13pt;
         }
     </style>
     {% include 'navigation_bar.html' %}
 {% endblock %}
 
-{% block body_class %}people{% endblock %}
-
-{% block body_outer %}
-{% block body %}{% endblock body %}
-{% block sidebar %}{% endblock sidebar %}
 {% block footer  %}{% endblock footer %}
-
-{% endblock body_outer %}
