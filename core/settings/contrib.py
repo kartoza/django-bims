@@ -46,6 +46,7 @@ GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
 INSTALLED_APPS += (
     # AppConfig Hook to fix issue from geonode
     'core.config_hook',
+    'bims.signals',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
