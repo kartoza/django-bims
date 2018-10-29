@@ -162,7 +162,7 @@
                 <li role="separator" class="divider"></li>
                 <li><a href="{% url "help" %}">{% trans "Help" %}</a></li>
                 <li role="separator" class="divider"></li>
-                <li><a href="{% url "account_logout" %}?next={{ request.path }}">Logout</a></li>
+                <li><a href="{% url "account_logout" %}?next=/">Logout</a></li>
                 </ul>
               </li>
 		      {% else %}
