@@ -370,8 +370,12 @@
         </div>
         <div class="options">
             <div class="group">
-                <label>Transparency</label>
-                <div class="layer-transparency" data-value="<%= transparency_value %>"></div>
+                <div class="row">
+                    <div class="col-md-2 transparency-icon">
+                        <img src="/static/img/transparency-icon.png"/>
+                    </div>
+                    <div class="col-md-10 transparency-slider"><div class="layer-transparency" data-value="<%= transparency_value %>"></div></div>
+                </div>
             </div>
         </div>
 </script>

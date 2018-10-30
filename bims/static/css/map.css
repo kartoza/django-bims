@@ -355,6 +355,10 @@ html, body, .map, .map-wrapper, #map-container {
     display: block;
 }
 
+#layers-selector li:hover {
+    background-color: rgba(195, 195, 195, 0.17);
+}
+
 #layers-selector li .row-title {
     padding: 5px;
     text-overflow: ellipsis;
@@ -367,12 +371,23 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 #layers-selector .options {
-    display: none;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(206, 206, 206, 0.55);
+}
+
+.transparency-slider {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 6px;
+}
+
+.transparency-icon {
+    padding-right: 0 !important;
     padding-left: 25px;
-    padding-bottom: 20px;
-    padding-top: 5px;
-    background: #ededed;
-    box-shadow: inset 0 0 4px #888;
+}
+
+.transparency-icon img {
+    width: 20px;
 }
 
 #layers-selector .options label {
