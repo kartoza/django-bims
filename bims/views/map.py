@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+from distutils import util as distutil
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from django.contrib.flatpages.models import FlatPage
@@ -13,6 +14,7 @@ from bims.permissions.api_permission import user_has_permission_to_validate
 
 class MapPageView(TemplateView):
     """Template view for map page"""
+    COLLECTOR_FILTER = 'COLLECTOR_FILTER'
 
     # change template based on map
     try:
@@ -81,6 +83,14 @@ class MapPageView(TemplateView):
             context['date_filter']['min'] = date_min.year
         if date_max:
             context['date_filter']['max'] = date_max.year
+
+        # Is it necessary to use collector filter, default true
+        collector_filter = get_key(self.COLLECTOR_FILTER)
+        if not collector_filter:
+            context[self.COLLECTOR_FILTER] = True
+        else:
+            context[self.COLLECTOR_FILTER] = distutil.strtobool(
+                    collector_filter)
 
         if self.request.user:
             try:
