@@ -1133,6 +1133,21 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
+@media only screen and (max-width: 600px) {
+    #download-control-modal .modal-body table {
+        width: 50%;
+    }
+
+    #download-control-modal .modal-body table .row-format {
+        width: 100%;
+    }
+
+    #download-control-modal {
+        margin-left: 50px;
+        margin-right: 50px;
+    }
+}
+
 #download-control-modal .modal-body .notification {
     color: red;
     opacity: 0.8;
@@ -1533,6 +1548,13 @@ div:hover::-webkit-scrollbar {
 #menu-dropdown-burger {
     margin-left: -12px !important;
     margin-top: -15px !important;
+}
+
+@media only screen and (max-width: 600px) {
+    #menu-dropdown-burger {
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+    }
 }
 
 .dropdown-menu-left {
