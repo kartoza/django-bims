@@ -397,7 +397,7 @@
             <div class="spatial-filter sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Spatial Filter">
                 <i class="fa fa-crop" aria-hidden="true"></i>
             </div>
-            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Upload Data">
+            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Upload Single Occurrence">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
         {% endif %}
@@ -530,7 +530,7 @@
         <div class="modal-dialog modal-upload-data" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Upload Data</h5>
+                    <h5 class="modal-title">Upload Single Occurrence</h5>
                     <button type="button" class="close small-close"
                             aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -538,71 +538,74 @@
                 </div>
                 <div class="modal-body">
                     <form class="form">
-                        <div class="alert alert-danger upload-alert" role="alert">
-                        </div>
-                        <div class="alert alert-success upload-alert" role="alert">
-                        </div>
-                        {% if biological_modules|length > 1 %}
-                            <label for="ud_module" class="upload-input-label">
-                                Module *
+                        <div class="upload-body-form">
+                            <div class="alert alert-danger upload-alert" role="alert">
+                            </div>
+                            <div class="alert alert-success upload-alert" role="alert">
+                            </div>
+                            {% if biological_modules|length > 1 %}
+                                <label for="ud_module" class="upload-input-label">
+                                    Module *
+                                </label>
+                                <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                    <option value="">-</option>
+                                    {% for key, value in biological_modules.items %}
+                                        <option value="{{ value }}">{{ key }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
+                            {% endif %}
+                            <label for="ud_species_name" class="upload-input-label">
+                                Species Name *
                             </label>
-                            <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_species_name" placeholder="" name="Species Name">
+                            <label for="ud_location_site" class="upload-input-label">
+                                Location Site Name *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_location_site" name="Location Site" placeholder="">
+                            <label for="ud_collection_date" class="upload-input-label">
+                                Collection Date *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_collection_date" name="Collection Date" placeholder="">
+                            <label for="ud_category" class="upload-input-label">
+                                Category *
+                            </label>
+                            <select id="ud_category" name="Category" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
                                 <option value="">-</option>
-                                {% for key, value in biological_modules.items %}
-                                    <option value="{{ value }}">{{ key }}</option>
+                                {% for category in collection_category %}
+                                    <option value="{{ category.0 }}">{{ category.1 }}</option>
                                 {% endfor %}
                             </select>
-                        {% else %}
-                            <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
-                        {% endif %}
-                        <label for="ud_species_name" class="upload-input-label">
-                            Species Name *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                               id="ud_species_name" placeholder="" name="Species Name">
-                        <label for="ud_location_site" class="upload-input-label">
-                            Location Site Name *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                               id="ud_location_site" name="Location Site" placeholder="">
-                        <label for="ud_collection_date" class="upload-input-label">
-                            Collection Date *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                               id="ud_collection_date" name="Collection Date" placeholder="">
-                        <label for="ud_category" class="upload-input-label">
-                            Category *
-                        </label>
-                        <select id="ud_category" name="Category" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
-                            <option value="">-</option>
-                            {% for category in collection_category %}
-                                <option value="{{ category.0 }}">{{ category.1 }}</option>
-                            {% endfor %}
-                        </select>
-                        <label for="ud_collector" class="upload-input-label">
-                            Collector *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item-required ud-item"
-                               id="ud_collector" placeholder="" name="Collector">
-                        <label for="ud_notes" class="upload-input-label">
-                            Notes
-                        </label>
-                        <textarea class="form-control ud-item"
-                                  id="ud_notes" placeholder=""></textarea>
-                        <label for="ud_custodian" class="upload-input-label" style="margin-top: 5px;">
-                            Custodian
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item"
-                               id="ud_custodian" name="Custodian" placeholder="">
+                            <label for="ud_collector" class="upload-input-label">
+                                Collector *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item-required ud-item"
+                                   id="ud_collector" placeholder="" name="Collector">
+                            <label for="ud_notes" class="upload-input-label">
+                                Notes
+                            </label>
+                            <textarea class="form-control ud-item"
+                                      id="ud_notes" placeholder=""></textarea>
+                            <label for="ud_custodian" class="upload-input-label" style="margin-top: 5px;">
+                                Custodian
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item"
+                                   id="ud_custodian" name="Custodian" placeholder="">
 
-                        <p class="required-text ">* = Required </p>
-
-                        <button type="button" class="btn btn-info upload-data-button">Upload</button>
+                            <p class="required-text ">* = Required </p>
+                        </div>
+                        <div class="upload-body-button">
+                            <button type="button" class="btn btn-info upload-data-button">Upload</button>
+                        </div>
                     </form>
                 </div>
             </div>
