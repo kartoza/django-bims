@@ -59,9 +59,10 @@ ol.control.Control.call(this, {
 ol.inherits(app.RotateNorthControl, ol.control.Control);
 
 
+var basemap_layers = basemaps();
 var baselayers = new ol.layer.Group({
         'title': 'Base maps',
-        layers: basemaps()
+        layers: basemap_layers
     });
 
 var map = new ol.Map({
@@ -167,12 +168,6 @@ function basemaps() {
         })
     });
 
-    // OPENMAPTILES
-    if (mapTilerKey) {
-        baseSourceLayers.push(this.getPositronBasemap());
-        baseSourceLayers.push(this.getDarkMatterBasemap());
-    }
-
     // add bing
     if (bingMapKey) {
         var bingMap = new ol.layer.Tile({
@@ -188,10 +183,6 @@ function basemaps() {
     baseSourceLayers.push(ngiMap);
     baseSourceLayers.push(mapSurfer);
     baseSourceLayers.push(toposheet);
-
-    if(bingMapKey) {
-        baseSourceLayers.push(this.getKlokantechTerrainBasemap());
-    }
 
     $.each(baseSourceLayers, function (index, layer) {
         layer.set('type', 'base');
