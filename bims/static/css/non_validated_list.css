@@ -108,7 +108,32 @@ select {
     line-height: 50px;
 }
 
-
 #map {
     min-height: 500px;
+}
+
+.ol-zoom {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.layer-switcher {
+    top: 5px !important;
+}
+
+.enable-edit-map {
+    position: absolute;
+    top: 5px !important;
+    left: 60px !important;
+}
+
+.selected > button {
+    background-color: #16C020 !important;
+}
+
+.form-control-custom {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    padding: 3px 5px;
 }
