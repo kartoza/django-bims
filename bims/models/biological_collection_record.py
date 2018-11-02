@@ -56,12 +56,6 @@ class BiologicalCollectionRecord(AbstractValidation):
         default='',
         verbose_name='collector or observer',
     )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        models.SET_NULL,
-        blank=True,
-        null=True,
-    )
     notes = models.TextField(
         blank=True,
         default='',
@@ -111,6 +105,10 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True,
         default=''
     )
+
+    @property
+    def data_name(self):
+        return self.original_species_name
 
     # noinspection PyClassicStyleClass
     class Meta:

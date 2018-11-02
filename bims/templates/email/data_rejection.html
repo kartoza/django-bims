@@ -1,0 +1,14 @@
+<html>
+<head>
+</head>
+<body>
+    <p>You have received the following notice from {{ site_name }}:</p>
+    <br/><br/><br/>
+    <p>The following data was rejected: </p>
+    <p>{{ data_name }}</p>
+    <p>And the reasons for rejection:</p>
+    <p>{{ reason | safe }}</p>
+    <br/><br/>
+    <p><a href="{{ data-url }}">You can update your data here: {{ data_url }}</a></p>
+</body>
+</html>
