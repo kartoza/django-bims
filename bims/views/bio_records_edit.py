@@ -31,8 +31,9 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
             self.object = self.get_object()
             allowed_taxon = AllowedTaxon()
             taxon_list = allowed_taxon.get(request.user)
-            return self.object.owner == request.user or \
-                   self.object.taxon_gbif_id in taxon_list
+            return \
+                self.object.owner == request.user or \
+                self.object.taxon_gbif_id in taxon_list
         return False
 
     def dispatch(self, request, *args, **kwargs):

@@ -45,7 +45,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
                     'pk': self.model.get('id'),
                     'rejection_message': self.$el.find('.rejection-message').val()
                 },
-                success: function () {
+                success: function (data) {
+                    console.log(data);
+                    if (!data.hasOwnProperty('status')) {
+                        return false;
+                    }
                     badges.insertAfter(self.$el.find('.reject-data'));
                     self.$el.find('.accept-data').css('display', 'none');
                     self.$el.find('.reject-data').css("display", "none");
