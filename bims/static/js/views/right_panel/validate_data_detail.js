@@ -11,6 +11,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
             'click .accept-validate': 'acceptValidate',
             'click .cancel-validate': 'cancelValidate',
             'click .reject-data': 'rejectData',
+            'click .edit-data': 'editData',
             'click .accept-reject': 'acceptReject',
             'click .cancel-reject': 'cancelReject'
         },
@@ -67,6 +68,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
             this.$el.find('.reject-data-action').css("display", "block");
             this.$el.find('.reject-data').css("display", "none");
             this.$el.find('.accept-data').css("display", "none");
+        },
+        editData: function () {
+            window.open("/update/" + this.model.get('id'),"_self");
         },
         showDetail: function () {
             this.$el.find('.detail-container').css("display", "block");
