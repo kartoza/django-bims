@@ -16,9 +16,10 @@ from bims.utils.cluster import (
 )
 from bims.utils.gbif import update_collection_record
 from bims.tasks.collection_record import update_search_index
+from bims.models.validation import AbstractValidation
 
 
-class BiologicalCollectionRecord(models.Model):
+class BiologicalCollectionRecord(AbstractValidation):
     """Biological collection model."""
     CATEGORY_CHOICES = (
         ('alien', 'Non-native'),
@@ -72,12 +73,7 @@ class BiologicalCollectionRecord(models.Model):
         blank=True,
         verbose_name='Taxon GBIF ',
     )
-    validated = models.BooleanField(
-        default=False,
-    )
-    ready_for_validation = models.BooleanField(
-        default=False,
-    )
+
     institution_id = models.CharField(
         default=settings.INSTITUTION_ID_DEFAULT,
         help_text='An identifier for the institution having custody of the '

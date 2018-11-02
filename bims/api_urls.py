@@ -28,6 +28,7 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList
 from bims.api_views.search import SearchObjects
 from bims.api_views.validate_object import ValidateObject
+from bims.api_views.reject_collection_data import RejectCollectionData
 from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords
@@ -76,6 +77,8 @@ urlpatterns = [
         name='list-non-biodiversity-layer'),
     url(r'^validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
+    url(r'^reject-collection-data/$',
+        RejectCollectionData.as_view(), name='reject-collection-data'),
     url(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-bio-records/$',

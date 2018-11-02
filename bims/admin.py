@@ -209,7 +209,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'original_species_name',
         'category',
         'collection_date',
-        'validated',
+        'is_validated',
+        'is_rejected',
         'collector',
         'owner',
     )

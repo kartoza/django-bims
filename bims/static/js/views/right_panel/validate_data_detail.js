@@ -9,7 +9,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
             'click .hide-detail': 'hideDetail',
             'click .accept-data': 'acceptData',
             'click .accept-validate': 'acceptValidate',
-            'click .cancel-validate': 'cancelValidate'
+            'click .cancel-validate': 'cancelValidate',
+            'click .reject-data': 'rejectData',
+            'click .accept-reject': 'acceptReject',
+            'click .cancel-reject': 'cancelReject'
         },
         initialize: function () {
         },
@@ -22,6 +25,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
                 success: function () {
                     badges.insertAfter(self.$el.find('.accept-data'));
                     self.$el.find('.accept-data').css('display', 'none');
+                    self.$el.find('.reject-data').css("display", "none");
                     self.$el.find('.validate-data-action').css("display", "none");
                 }
             });
@@ -29,10 +33,39 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         cancelValidate: function () {
             this.$el.find('.validate-data-action').css("display", "none");
             this.$el.find('.accept-data').css("display", "inline-block");
+            this.$el.find('.reject-data').css("display", "inline-block");
+        },
+        acceptReject: function () {
+            var self = this;
+            var badges = $('<span class="badge badge-danger">Rejected</span>');
+            $.ajax({
+                url: '/api/reject-collection-data/',
+                data: {
+                    'pk': self.model.get('id'),
+                    'rejection_message': self.$el.find('.rejection-message').val()
+                },
+                success: function () {
+                    badges.insertAfter(self.$el.find('.reject-data'));
+                    self.$el.find('.accept-data').css('display', 'none');
+                    self.$el.find('.reject-data').css("display", "none");
+                    self.$el.find('.reject-data-action').css("display", "none");
+                }
+            });
+        },
+        cancelReject: function () {
+            this.$el.find('.reject-data-action').css("display", "none");
+            this.$el.find('.accept-data').css("display", "inline-block");
+            this.$el.find('.reject-data').css("display", "inline-block");
         },
         acceptData: function () {
             // Show validation
             this.$el.find('.validate-data-action').css("display", "block");
+            this.$el.find('.accept-data').css("display", "none");
+            this.$el.find('.reject-data').css("display", "none");
+        },
+        rejectData: function () {
+            this.$el.find('.reject-data-action').css("display", "block");
+            this.$el.find('.reject-data').css("display", "none");
             this.$el.find('.accept-data').css("display", "none");
         },
         showDetail: function () {
@@ -64,6 +97,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
                 this.showDetail();
             }
             this.$el.find('.validate-data-action').css("display", "none");
+            this.$el.find('.reject-data-action').css("display", "none");
             return this;
         }
     })
