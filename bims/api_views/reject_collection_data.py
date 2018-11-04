@@ -8,7 +8,7 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.permissions.api_permission import AllowedTaxon
 
 
-class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
+class RejectCollectionData(UserPassesTestMixin, LoginRequiredMixin, APIView):
 
     def test_func(self):
         allowed_taxon = AllowedTaxon()
@@ -22,14 +22,16 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
     def handle_no_permission(self):
         messages.error(self.request, 'You don\'t have permission '
                                      'to validate collection data')
-        return super(ValidateObject, self).handle_no_permission()
+        return super(RejectCollectionData, self).handle_no_permission()
 
     def get(self, request):
         object_pk = request.GET.get('pk', None)
+        rejection_message = request.GET.get('rejection_message', None)
         try:
-            object = BiologicalCollectionRecord.objects.get(pk=object_pk)
-            object.validated = True
-            object.save()
+            collection = BiologicalCollectionRecord.objects.get(pk=object_pk)
+            collection.reject(
+                rejection_message=rejection_message
+            )
             return JsonResponse({'status': 'success'})
         except BiologicalCollectionRecord.DoesNotExist:
             return HttpResponse(

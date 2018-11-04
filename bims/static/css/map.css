@@ -1832,6 +1832,16 @@ div:hover::-webkit-scrollbar {
     text-align: center;
 }
 
+.reject-data-action {
+    padding: 5px;
+    text-align: center;
+}
+
+.reject-data-action textarea {
+    width: 100%;
+    height: 80px;
+}
+
 .validate-data-empty {
     height: 300px;
     padding-top: 100px;

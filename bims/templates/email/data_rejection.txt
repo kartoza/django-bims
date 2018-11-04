@@ -1,0 +1,11 @@
+You have received the following notice from {{ site_name }}:
+
+
+
+The following data was rejected:
+{{ data_name }}
+And the reasons for rejection:
+{{ reason | safe }}
+
+
+You can update your data here: {{ data_url }}
