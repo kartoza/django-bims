@@ -10,16 +10,32 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         siteFeature: null,
         events: {
             'click .close': 'closeModal',
-            'click .upload-data-button': 'uploadData'
+            'click .upload-data-button': 'uploadData',
+            'click #update_coordinate': 'updateCoordinate',
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
             this.map = options.map;
         },
+        updateCoordinate: function (e) {
+            e.preventDefault();
+            var currentLat = parseFloat(this.latInput.val());
+            var currentLon = parseFloat(this.lonInput.val());
+
+            var coordinatesChanged = currentLat !== this.lat.toFixed(3) || currentLon !== this.lon.toFixed(3);
+
+            if (coordinatesChanged) {
+                this.closeModal();
+                this.showModal(currentLon, currentLat, this.siteFeature);
+            }
+        },
         render: function () {
             this.$el.html(this.template());
             this.uploadDataModal = this.$el.find('.modal');
+
+            this.latInput = this.$el.find('#current_lat');
+            this.lonInput = this.$el.find('#current_lon');
 
             this.$alertElement = $(this.$el.find('.alert-danger')[0]);
             this.$alertElement.hide();
@@ -47,6 +63,9 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             this.lon = lon;
             this.lat = lat;
             this.siteFeature = siteFeature;
+
+            this.latInput.val(lat.toFixed(3));
+            this.lonInput.val(lon.toFixed(3));
 
             var coordinates = ol.proj.fromLonLat([lon, lat]);
             this.markerPoint = new ol.Feature({

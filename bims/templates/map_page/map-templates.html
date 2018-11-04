@@ -600,8 +600,15 @@
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item"
                                    id="ud_custodian" name="Custodian" placeholder="">
-
-                            <p class="required-text ">* = Required </p>
+                            <div class="row">
+                                <div class="col-lg-4">
+                            Lat : <input type="text" id="current_lat"/></div>
+                                <div class="col-lg-4">
+                            Long : <input type="text" id="current_lon"/></div>
+                                <div class="col-lg-4">
+                            <button style="margin-top: 20px;" id="update_coordinate">Update coordinate</button></div>
+                            </div>
+                            <br/>
                         </div>
                         <div class="upload-body-button">
                             <button type="button" class="btn btn-info upload-data-button">Upload</button>
