@@ -397,9 +397,11 @@
             <div class="spatial-filter sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Spatial Filter">
                 <i class="fa fa-crop" aria-hidden="true"></i>
             </div>
+            {% if perms.bims.can_upload_csv %}
             <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Upload Single Occurrence">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
+            {% endif %}
         {% endif %}
         {% if can_validate %}
             <div class="validate-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Validate Data">
