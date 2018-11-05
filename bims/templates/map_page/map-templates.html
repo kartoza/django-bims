@@ -532,7 +532,7 @@
         <div class="modal-dialog modal-upload-data" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Upload Single Occurrence</h5>
+                    <h5 class="modal-title">Upload Single Occurrence <span class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span> </h5>
                     <button type="button" class="close small-close"
                             aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -565,7 +565,7 @@
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
                                    id="ud_species_name" placeholder="" name="Species Name">
                             <label for="ud_location_site" class="upload-input-label">
-                                Location Site Name *
+                                Location Site Name * <button type="button" class="btn-ud-new-site btn btn-light"> Add new site for next record </button>
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
@@ -602,8 +602,15 @@
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item"
                                    id="ud_custodian" name="Custodian" placeholder="">
-
-                            <p class="required-text ">* = Required </p>
+                            <div class="row">
+                                <div class="col-lg-4">
+                            Lat : <input type="text" id="current_lat"/></div>
+                                <div class="col-lg-4">
+                            Long : <input type="text" id="current_lon"/></div>
+                                <div class="col-lg-4">
+                            <button style="margin-top: 20px;" id="update_coordinate">Update coordinate</button></div>
+                            </div>
+                            <br/>
                         </div>
                         <div class="upload-body-button">
                             <button type="button" class="btn btn-info upload-data-button">Upload</button>
