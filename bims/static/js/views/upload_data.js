@@ -12,11 +12,19 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             'click .close': 'closeModal',
             'click .upload-data-button': 'uploadData',
             'click #update_coordinate': 'updateCoordinate',
+            'click .btn-ud-new-site': 'addNewSite'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
             this.map = options.map;
+        },
+        addNewSite: function (e) {
+            var locationSiteInput = $('#ud_location_site');
+            locationSiteInput.val('');
+            locationSiteInput.focus();
+            this.addNewSiteButton.hide();
+            this.sameSiteInfo.hide();
         },
         updateCoordinate: function (e) {
             e.preventDefault();
@@ -26,7 +34,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             var coordinatesChanged = currentLat !== this.lat.toFixed(3) || currentLon !== this.lon.toFixed(3);
 
             if (coordinatesChanged) {
-                this.closeModal();
+                this.lon = null;
+                this.lat = null;
+                this.map.removeLayer(this.vectorLayer);
+                this.$alertElement.hide();
+                this.$successAlertElement.hide();
                 this.showModal(currentLon, currentLat, this.siteFeature);
             }
         },
@@ -36,6 +48,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
 
             this.latInput = this.$el.find('#current_lat');
             this.lonInput = this.$el.find('#current_lon');
+            this.addNewSiteButton = this.$el.find('.btn-ud-new-site');
+            this.addNewSiteButton.hide();
+
+            this.sameSiteInfo = this.$el.find('.ud-badge-same-site');
+            this.sameSiteInfo.hide();
 
             this.$alertElement = $(this.$el.find('.alert-danger')[0]);
             this.$alertElement.hide();
@@ -91,8 +108,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 this.lon = site_coordinates[0];
                 this.lat = site_coordinates[1];
                 var properties = this.siteFeature.getProperties();
-                if(properties.hasOwnProperty('name'))
+                if(properties.hasOwnProperty('name')) {
                     $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
+                    this.addNewSiteButton.show();
+                }
             }
             this.uploadDataModal.show();
         },
@@ -102,15 +121,23 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             this.map.removeLayer(this.vectorLayer);
             this.$alertElement.hide();
             this.$successAlertElement.hide();
-            this.clearAllFields();
+            this.clearAllFields([]);
             this.uploadDataModal.hide();
+            this.sameSiteInfo.hide();
+            this.addNewSiteButton.hide();
         },
-        clearAllFields: function () {
+        clearAllFields: function (exceptions) {
             var fields = this.$el.find(".ud-item");
             $.each(fields, function (i, field) {
+                var id = field.getAttribute('id');
+                if (exceptions) {
+                    if (exceptions.indexOf(id) > -1) {
+                        return;
+                    }
+                }
                 field.value = '';
             });
-            if(this.siteFeature) {
+            if(this.siteFeature && exceptions.indexOf('ud_location_site') === -1) {
                 var properties = this.siteFeature.getProperties();
                 if(properties.hasOwnProperty('name'))
                     $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
@@ -158,15 +185,18 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 success: function (response) {
                     if(response['status'] === 'success') {
                         self.showSuccessMessage(response['message']);
+                        self.addNewSiteButton.show();
+                        self.sameSiteInfo.show();
+                        self.clearAllFields(['ud_location_site']);
                     } else {
-                        self.showErrorMessage(response['message'])
+                        self.showErrorMessage(response['message']);
+                        self.clearAllFields([]);
                     }
                 },
                 error: function (response) {
                     self.showErrorMessage(response)
                 },
                 complete: function () {
-                    self.clearAllFields();
                     uploadButton.html('Upload');
                     uploadButton.prop('disabled', false);
                 }

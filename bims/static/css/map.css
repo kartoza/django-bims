@@ -1944,3 +1944,11 @@ div:hover::-webkit-scrollbar {
 .boundary-item:hover {
     background-color: #e4e4e4;
 }
+
+.btn-ud-new-site {
+    text-transform: none;
+    font-size: 8pt;
+    padding: 5px;
+    font-weight: normal;
+    margin-bottom: 5px;
+}

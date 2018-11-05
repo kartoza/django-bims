@@ -40,7 +40,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
             lon = request.POST['lon']
             custodian = request.POST['ud_custodian']
 
-            if module != 'base':
+            if module != 'base' and module:
                 # Find model
                 app_label, model_name = module.split('.')
                 collection_model = apps.get_model(
