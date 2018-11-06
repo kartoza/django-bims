@@ -18,6 +18,7 @@ from bims.models.location_site import (
 )
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
+from bims.permissions.api_permission import AllowedTaxon
 
 
 class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
@@ -29,7 +30,11 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
     def user_passes_test(self, request):
         if request.user.is_authenticated():
             self.object = self.get_object()
-            return self.object.owner == request.user
+            allowed_taxon = AllowedTaxon()
+            taxon_list = allowed_taxon.get(request.user)
+            return \
+                self.object.owner == request.user or \
+                self.object.taxon_gbif_id in taxon_list
         return False
 
     def dispatch(self, request, *args, **kwargs):

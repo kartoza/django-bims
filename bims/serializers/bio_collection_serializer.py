@@ -14,6 +14,7 @@ class BioCollectionSerializer(serializers.ModelSerializer):
     """
     location = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    owner_email = serializers.SerializerMethodField()
     taxonomy = serializers.SerializerMethodField()
     site_name = serializers.SerializerMethodField()
 
@@ -25,6 +26,9 @@ class BioCollectionSerializer(serializers.ModelSerializer):
 
     def get_owner(self, obj):
         return obj.owner.username
+
+    def get_owner_email(self, obj):
+        return obj.owner.email
 
     def get_location(self, obj):
         return obj.site.get_geometry().geojson

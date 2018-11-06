@@ -397,9 +397,11 @@
             <div class="spatial-filter sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Spatial Filter">
                 <i class="fa fa-crop" aria-hidden="true"></i>
             </div>
+            {% if perms.bims.can_upload_csv %}
             <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Upload Single Occurrence">
                 <i class="fa fa-upload" aria-hidden="true"></i>
             </div>
+            {% endif %}
         {% endif %}
         {% if can_validate %}
             <div class="validate-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Validate Data">
@@ -530,7 +532,7 @@
         <div class="modal-dialog modal-upload-data" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Upload Single Occurrence</h5>
+                    <h5 class="modal-title">Upload Single Occurrence <span class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span> </h5>
                     <button type="button" class="close small-close"
                             aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -563,7 +565,7 @@
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
                                    id="ud_species_name" placeholder="" name="Species Name">
                             <label for="ud_location_site" class="upload-input-label">
-                                Location Site Name *
+                                Location Site Name * <button type="button" class="btn-ud-new-site btn btn-light"> Add new site for next record </button>
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
@@ -600,8 +602,15 @@
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item"
                                    id="ud_custodian" name="Custodian" placeholder="">
-
-                            <p class="required-text ">* = Required </p>
+                            <div class="row">
+                                <div class="col-lg-4">
+                            Lat : <input type="text" id="current_lat"/></div>
+                                <div class="col-lg-4">
+                            Long : <input type="text" id="current_lon"/></div>
+                                <div class="col-lg-4">
+                            <button style="margin-top: 20px;" id="update_coordinate">Update coordinate</button></div>
+                            </div>
+                            <br/>
                         </div>
                         <div class="upload-body-button">
                             <button type="button" class="btn btn-info upload-data-button">Upload</button>
@@ -874,7 +883,7 @@
                 <div class="detail-container-title"> Collection Date </div>
                 <p> <%= collection_date %> </p>
                 <div class="detail-container-title"> Uploader </div>
-                <p> <%= owner %> </p>
+                <p> <%= owner %> ( <a href="mailto:<%= owner_email %>?Subject=Question%20for%20contributor" target="_top"><%= owner_email %></a> ) </p>
             </div>
         </div>
         <div class="detail-container container">
@@ -892,6 +901,8 @@
             <button class="show-detail">Show detail</button>
             <button class="hide-detail">Hide detail</button>
             <button class="accept-data">Accept</button>
+            <button class="reject-data">Reject</button>
+            <button class="edit-data">Edit Data</button>
         </div>
         <div class="validate-data-action">
             <p>
@@ -899,6 +910,14 @@
             </p>
             <button class="accept-validate">Yes</button>
             <button class="cancel-validate">Cancel</button>
+        </div>
+        <div class="reject-data-action">
+            <p>
+                Reasons for rejection (optional)
+            </p>
+            <textarea class="rejection-message"></textarea>
+            <button class="accept-reject">Submit</button>
+            <button class="cancel-reject">Cancel</button>
         </div>
     </div>
 </script>

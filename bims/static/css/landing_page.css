@@ -152,6 +152,15 @@ header.masthead p {
     border-radius: 4px;
 }
 
+@media only screen and (max-width: 600px) {
+    .title-header-buttons div {
+        margin-top: 200px
+    }
+    .carousel-title {
+        display: none !important;
+    }
+}
+
 #search-on-map {
     border: none;
     height: 30px;
