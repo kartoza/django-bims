@@ -169,7 +169,7 @@ services:
     - -m 64
 
   gbif_ipt:
-    image: gbif/ipt:latest
+    image: kartoza/gbif_ipt:latest
     links:
       - db:db
     volumes:
