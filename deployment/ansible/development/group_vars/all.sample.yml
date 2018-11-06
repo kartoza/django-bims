@@ -73,3 +73,4 @@ docker_port_forward:
     ssh: 63303
     karma_tests: 63304
     geoserver: 63305
+    gbif_ipt: 8080
