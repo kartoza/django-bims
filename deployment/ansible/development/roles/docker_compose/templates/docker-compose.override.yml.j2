@@ -83,3 +83,10 @@ services:
       - ./static:/home/web/static:ro
       - ./media:/home/web/media:ro
       - ./logs:/var/log/nginx
+
+  gbif_ipt:
+
+  {% if 'gbif_ipt' in docker_port_forward.django %}
+    ports:
+      - "{{ docker_port_forward.django.gbif_ipt }}:8080"
+  {% endif %}

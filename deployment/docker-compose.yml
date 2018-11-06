@@ -118,6 +118,7 @@ services:
       - geoserver:geoserver
       - rabbitmq:rabbitmq
       - cache:cache
+      - gbif_ipt:gbif_ipt
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
@@ -166,3 +167,11 @@ services:
    entrypoint:
     - memcached
     - -m 64
+
+  gbif_ipt:
+    image: gbif/ipt:latest
+    links:
+      - db:db
+    volumes:
+      - ./ipt:/usr/local/ip
+    restart: unless-stopped
