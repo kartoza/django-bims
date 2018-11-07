@@ -14,7 +14,9 @@ require.config({
         'jquery.iframe-transport': 'libs/jquery-fileupload/jquery.iframe-transport',
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
         'jquery.fileupload-process': 'libs/jquery-fileupload/jquery.fileupload-process',
-        'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate'
+        'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate',
+        html2canvas: 'libs/html2canvas',
+        fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min'
     },
     shim: {
         ol: {

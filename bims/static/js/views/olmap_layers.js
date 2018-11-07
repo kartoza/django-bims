@@ -77,7 +77,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             // ---------------------------------
             // HIGHLIGHT PINNED LAYER
             // ---------------------------------
-            self.highlightPinnedVectorSource = new ol.source.Vector({});
+            self.highlightPinnedVectorSource = new ol.source.Vector({
+                crossOrigin: 'anonymous'
+            });
             self.highlightPinnedVector = new ol.layer.Vector({
                 source: self.highlightPinnedVectorSource,
                 style: function (feature) {
@@ -90,11 +92,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
-            self.biodiversitySource = new ol.source.Vector({});
-            self.locationSiteClusterSource = new ol.source.Vector({});
+            self.biodiversitySource = new ol.source.Vector({crossOrigin: 'anonymous'});
+            self.locationSiteClusterSource = new ol.source.Vector({crossOrigin: 'anonymous'});
             self.locationSiteCluster = new ol.source.Cluster({
                 distance: 40,
-                source: self.locationSiteClusterSource
+                source: self.locationSiteClusterSource,
+                crossOrigin: 'anonymous'
             });
 
             self.biodiversityLayerGroups = new ol.layer.Group({
@@ -130,7 +133,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
             // ---------------------------------
             // HIGHLIGHT LAYER
             // ---------------------------------
-            self.highlightVectorSource = new ol.source.Vector({});
+            self.highlightVectorSource = new ol.source.Vector({crossOrigin: 'anonymous'});
             self.highlightVector = new ol.layer.Vector({
                 source: self.highlightVectorSource,
                 style: function (feature) {
@@ -200,7 +203,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             params: {
                                 layers: value.wms_layer_name,
                                 format: value.wms_format
-                            }
+                            },
+                            crossOrigin: 'anonymous'
                         };
                         self.initLayer(
                             new ol.layer.Tile({
@@ -250,7 +254,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                             params: {
                                 layers: value.typename,
                                 format: default_wms_format
-                            }
+                            },
+                            crossOrigin: 'anonymous'
                         };
 
                         var layerName = value.typename;
@@ -423,7 +428,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                         params: {
                             layers: value.wms_layer_name,
                             format: value.wms_format
-                        }
+                        },
+                        crossOrigin: 'anonymous'
                     };
                     var initVisible = false;
                     if (currentIndex === 0) {

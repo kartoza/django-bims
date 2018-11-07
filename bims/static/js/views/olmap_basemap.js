@@ -44,7 +44,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var hillshading = new ol.layer.Tile({
                 opacity: 0.1,
                 source: new ol.source.XYZ({
-                    url: 'https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
+                    url: 'https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey,
+                    crossOrigin: 'anonymous'
                 })
             });
             return new ol.layer.Group({
@@ -73,7 +74,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 title: 'Topography',
                 source: new ol.source.XYZ({
                     attributions: ['&copy; National Geo-spatial Information (NGI) contributors', 'Toposheets'],
-                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png',
+                    crossOrigin: 'anonymous'
                 })
             });
 
@@ -82,7 +84,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 title: 'Aerial photography',
                 source: new ol.source.XYZ({
                     attributions: ['<a href="http://www.ngi.gov.za/">CD:NGI Aerial</a>'],
-                    url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
+                    url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg',
+                    crossOrigin: 'anonymous'
                 })
             });
 
@@ -91,7 +94,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 title: 'OpenStreetMap',
                 source: new ol.source.XYZ({
                     attributions: ['&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
-                    url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
+                    url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}',
+                    crossOrigin: 'anonymous'
                 })
             });
 

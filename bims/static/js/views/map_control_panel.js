@@ -5,12 +5,14 @@ define(
         'shared',
         'jquery',
         'ol',
+        'html2canvas',
+        'fileSaver',
         'views/search',
         'views/locate',
         'views/upload_data',
         'views/data_downloader-modal',
         'views/spatial_filter'],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
+    function (Backbone, _, Shared, $, ol, html2canvaslib, fileSaver, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
@@ -34,7 +36,8 @@ define(
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',
                 'click .spatial-filter': 'spatialFilterClicked',
-                'click .validate-data': 'validateDataClicked'
+                'click .validate-data': 'validateDataClicked',
+                'click .print-map-control': 'clickPrintMap'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -265,6 +268,29 @@ define(
                 $('.layer-switcher.shown button').click();
                 $('.map-control-panel-box:visible').hide();
                 $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
+            },
+            clickPrintMap: function () {
+                $('#ripple-loading').show();
+                $('.map-control-panel').hide();
+                $('.zoom-control').hide();
+                var that = this;
+                this.$el.find('.print-map-control').addClass('control-panel-selected');
+                var canvas = document.getElementsByClassName('map-wrapper');
+                html2canvas(canvas, {
+                    useCORS: true,
+                  onrendered: function(canvas) {
+                     var link = document.createElement('a');
+                     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                     link.download = 'map.png';
+                     document.body.appendChild(link);
+                     link.click();
+                     document.body.removeChild(link);
+                     $('.zoom-control').show();
+                     $('.map-control-panel').show();
+                     $('#ripple-loading').hide();
+                     that.$el.find('.print-map-control').removeClass('control-panel-selected');
+                  }
+               })
             }
         })
     });
