@@ -515,7 +515,6 @@ html, body, .map, .map-wrapper, #map-container {
 .map-control-panel-box .close-button {
     cursor: pointer;
     padding: 0 5px;
-    border: 2px solid black;
     font-size: 12pt;
     font-weight: bolder;
     line-height: 20px;
