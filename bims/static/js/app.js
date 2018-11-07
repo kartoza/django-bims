@@ -156,6 +156,17 @@ require([
                 })
             }
             $('#general-info-modal').fadeOut();
-        })
+        });
+        $('#map-legend-wrapper').draggable({
+            containment: '#map',
+            start: function (event, ui) {
+                $('#map-legend-wrapper').css('bottom', 'auto');
+            },
+            stop: function (event, ui) {
+                var legend_position = $('#map-legend-wrapper').position();
+                var bottom = $('#map').height() - legend_position.top - $('#map-legend-wrapper').outerHeight();
+                $('#map-legend-wrapper').css('bottom', bottom + 'px').css('top', 'auto');
+            }
+        });
     });
 });
