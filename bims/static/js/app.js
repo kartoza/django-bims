@@ -161,6 +161,7 @@ require([
             containment: '#map',
             start: function (event, ui) {
                 $('#map-legend-wrapper').css('bottom', 'auto');
+                $("[data-toggle=tooltip]").tooltip('hide');
             },
             stop: function (event, ui) {
                 var legend_position = $('#map-legend-wrapper').position();

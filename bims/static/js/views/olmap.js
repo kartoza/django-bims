@@ -274,7 +274,7 @@ define([
             $mapLegendWrapper.addClass('show-legend');
             $mapLegendSymbol.hide();
             $mapLegend.show();
-            $mapLegendWrapper.attr('data-original-title', 'Click to hide legends').tooltip('hide');
+            $mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
 
             if(showTooltip) {
                 $mapLegendWrapper.tooltip('show');
