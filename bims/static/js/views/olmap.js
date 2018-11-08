@@ -350,6 +350,19 @@ define([
             this.bioLegendView = new BioLegendView();
             this.$el.append(this.bioLegendView.render().$el);
 
+            $('#map-legend-wrapper').draggable({
+                containment: '#map',
+                start: function (event, ui) {
+                    $('#map-legend-wrapper').css('bottom', 'auto');
+                    $("[data-toggle=tooltip]").tooltip('hide');
+                },
+                stop: function (event, ui) {
+                    var legend_position = $('#map-legend-wrapper').position();
+                    var bottom = $('#map').height() - legend_position.top - $('#map-legend-wrapper').outerHeight();
+                    $('#map-legend-wrapper').css('bottom', bottom + 'px').css('top', 'auto');
+                }
+            });
+
             return this;
         },
         mapMoved: function () {
