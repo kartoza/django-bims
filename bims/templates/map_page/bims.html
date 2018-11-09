@@ -10,6 +10,7 @@
     <!-- Custom styles for this template -->
     <link href="{% static "css/map.css" %}" rel="stylesheet">
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
+    <link href="{% static "css/detailed_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
@@ -77,6 +78,7 @@
     {% endblock %}
 
     {% include 'map_page/map-templates.html' %}
+    {% include 'map_page/dashboard-templates.html' %}
 {% endblock %}
 
 {% block foot %}
