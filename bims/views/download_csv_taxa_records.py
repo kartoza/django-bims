@@ -14,8 +14,8 @@ def download_csv_site_taxa_records(request):
 
     # Search collection
     collection_results, \
-    site_results, \
-    fuzzy_search = GetCollectionAbstract.apply_filter(
+        site_results, \
+        fuzzy_search = GetCollectionAbstract.apply_filter(
             query_value,
             filters,
             ignore_bbox=True)
@@ -42,7 +42,7 @@ def download_csv_site_taxa_records(request):
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
-        'attachment; filename="'+ taxon.common_name +'.csv"'
+        'attachment; filename="' + taxon.common_name + '.csv"'
 
     writer = csv.writer(response)
     writer.writerow(['Taxon', taxon.common_name])
