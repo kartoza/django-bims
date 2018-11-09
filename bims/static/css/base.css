@@ -72,7 +72,7 @@ h6 {
   -moz-transition: all 0.2s;
   transition: all 0.2s;
   padding-top: 15px;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .modal {
