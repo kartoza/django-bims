@@ -59,6 +59,8 @@ define([
             new RecordsDetail();
             this.taxonDetailDashboard = new TaxonDetailDashboard();
 
+            Shared.CurrentState.FETCH_CLUSTERS = true;
+
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:addLocationSiteClusterFeatures', this.addLocationSiteClusterFeatures, this);
             Shared.Dispatcher.on('map:zoomToCoordinates', this.zoomToCoordinates, this);
@@ -413,6 +415,7 @@ define([
             $('#fetching-error .call-administrator').show();
         },
         fetchingStart: function () {
+            Shared.CurrentState.FETCH_CLUSTERS = true;
             $('#fetching-error').hide();
             $('#loading-warning').show();
             if (this.fetchXhr) {
@@ -422,16 +425,23 @@ define([
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(false);
             });
-            this.layers.biodiversitySource.clear();
-            this.layers.locationSiteClusterSource.clear();
+            if (this.layers.biodiversitySource) {
+                this.layers.biodiversitySource.clear();
+            }
+            if (this.layers.locationSiteClusterSource) {
+                this.layers.locationSiteClusterSource.clear();
+            }
         },
         fetchingFinish: function () {
+            Shared.CurrentState.FETCH_CLUSTERS = false;
             this.fetchingReset();
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
             });
-            this.layers.biodiversitySource.clear();
+            if (this.layers.biodiversitySource) {
+                this.layers.biodiversitySource.clear();
+            }
         },
         fetchingError: function (err) {
             if (err['textStatus'] !== "abort") {

@@ -12,8 +12,11 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         UserBoundaries: {},
         UserBoundarySelected: [],
         AdminAreaSelected: [],
-        SearchMode: false,
         LegendsDisplayed: false,
+        CurrentState: {
+            FETCH_CLUSTERS: false,
+            SEARCH: false,
+        },
         EVENTS: {
             SEARCH: {
                 HIT: 'search:hit'

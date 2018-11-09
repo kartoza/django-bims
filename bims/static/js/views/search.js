@@ -184,6 +184,9 @@ define([
             );
         },
         searchClick: function () {
+            if (Shared.CurrentState.FETCH_CLUSTERS) {
+                return true;
+            }
             Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
             Shared.Router.clearSearch();
@@ -191,13 +194,16 @@ define([
         },
         searchEnter: function (e) {
             if (e.which === 13) {
+                if (Shared.CurrentState.FETCH_CLUSTERS) {
+                    return true;
+                }
                 var searchValue = $('#search').val();
                 Shared.Router.clearSearch();
                 this.search(searchValue);
             }
         },
         clearSearch: function () {
-            Shared.SearchMode = false;
+            Shared.CurrentState.SEARCH = false;
             this.searchInput.val('');
             $('.clear-filter').click();
             $('.map-search-result').hide();
@@ -262,7 +268,7 @@ define([
                 target.closest('.row').find('#year-from').html(this.startYear);
                 target.closest('.row').find('#year-to').html(this.endYear);
             }
-            if (Shared.SearchMode) {
+            if (Shared.CurrentState.SEARCH) {
                 this.searchClick();
             }
         },
