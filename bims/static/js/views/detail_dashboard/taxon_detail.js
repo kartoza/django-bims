@@ -1,10 +1,12 @@
-define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs'], function (
+define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'htmlToCanvas'], function (
     Backbone,
     ol,
     Shared,
     _,
     $,
-    ChartJs
+    ChartJs,
+    FileSaver,
+    Html2Canvas
 ) {
     return Backbone.View.extend({
         id: 'detailed-taxa-dashboard',
@@ -12,7 +14,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs'], function
         objectDataByYear: 'object_data_by_year',
         yearsArray: 'years_array',
         events: {
-            'click .close-taxon-dashboard': 'closeDashboard'
+            'click .close-taxon-dashboard': 'closeDashboard',
+            'click #export-taxasite-map': 'exportTaxasiteMap',
+            'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline'
         },
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
@@ -307,6 +311,32 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs'], function
             });
             this.mapTaxaSite.addLayer(this.taxaVectorLayer);
             this.mapTaxaSite.getView().fit(this.taxaVectorLayer.getSource().getExtent(), this.mapTaxaSite.getSize());
+        },
+        exportTaxasiteMap: function () {
+            this.mapTaxaSite.once('postcompose', function (event) {
+                var canvas = event.context.canvas;
+                if (navigator.msSaveBlob) {
+                    navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
+                } else {
+                    canvas.toBlob(function (blob) {
+                        saveAs(blob, 'map.png')
+                    })
+                }
+            });
+            this.mapTaxaSite.renderSync();
+        },
+        downloadTaxaRecordsTimeline: function () {
+            var title = 'taxa-record-timeline';
+            var canvas = this.taxaRecordsTimelineGraph;
+
+            html2canvas(canvas, {
+                onrendered: function (canvas) {
+                    var link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                    link.download = title + '.png';
+                    link.click();
+                }
+            })
         }
     })
 });
