@@ -70,7 +70,7 @@ define([
             var self = this;
             return this.fetch({
                 success: function () {
-                    Shared.SearchMode = true;
+                    Shared.CurrentState.SEARCH = true;
                 },
                 complete: function () {
                     var timeout = 2000;

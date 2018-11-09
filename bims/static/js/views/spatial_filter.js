@@ -318,14 +318,14 @@ define([
         },
         clearFilter: function (e) {
             this.clearSelected();
-            if (Shared.SearchMode) {
+            if (Shared.CurrentState.SEARCH) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }
         },
         clearSpatialFilter: function (e) {
             var target = $(e.target);
             target.closest('.row').find('input:checkbox:checked').prop('checked', false);
-            if (Shared.SearchMode) {
+            if (Shared.CurrentState.SEARCH) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }
         }
