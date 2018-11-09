@@ -156,8 +156,9 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     if(self.count > 0) {
                         data['count'] = self.count;
                     }
+                    var speciesDetailContainer = $('#species-detail');
                     // render taxon detail
-                    $('#species-detail').append(self.renderDetail(data));
+                    speciesDetailContainer.append(self.renderDetail(data));
                     $('#species-detail .iucn-status .name').css('background-color', data.iucn_status_colour);
                     $('#species-detail .iucn-status .full-name').css('color', data.iucn_status_colour);
                     $('#species-detail .iucn-status .full-name').css('border-color', data.iucn_status_colour);
@@ -168,8 +169,16 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     $('#third-party').click();
                     $('#third-party').append(self.renderThirdPartyData(data));
 
+                    speciesDetailContainer.find('.open-detailed-view').click(function () {
+                        Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {
+                            taxonId: self.taxonId,
+                            taxonName: self.taxonName,
+                            siteDetail: self.siteDetail
+                        });
+                    });
+
                     Shared.LocationSiteDetailXHRRequest = null;
-                    $($('#species-detail').find('.records-link').get(0)).click({
+                    $(speciesDetailContainer.find('.records-link').get(0)).click({
                         taxonId: self.taxonId, taxonName: self.taxonName, siteDetail: self.siteDetail}, self.showRecords);
                 },
                 error: function (req, err) {

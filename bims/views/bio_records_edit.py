@@ -17,6 +17,7 @@ from bims.models.location_site import (
     location_site_post_save_handler
 )
 from bims.models.location_type import LocationType
+from bims.utils.get_key import get_key
 from bims.permissions.api_permission import AllowedTaxon
 
 
@@ -57,6 +58,8 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
         else:
             context['geometry'] = \
                 self.object.site.geometry_point.geojson
+
+        context['bing_map_key'] = get_key('BING_MAP_KEY')
 
         return context
 
