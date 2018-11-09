@@ -344,13 +344,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
         selectorChanged: function (layerName, selected) {
             Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
             this.changeLayerVisibility(layerName, selected);
-            this.toggleLegend(layerName, selected);
+            var needToReloadXHR = true;
+            this.toggleLegend(layerName, selected, needToReloadXHR);
         },
-        toggleLegend: function (layerName, selected) {
+        toggleLegend: function (layerName, selected, reloadXHR) {
             // show/hide legend
             var $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Biodiversity' && this.isBiodiversityLayerLoaded()) {
-                Shared.Dispatcher.trigger('map:reloadXHR');
+                if (reloadXHR) {
+                    Shared.Dispatcher.trigger('map:reloadXHR');
+                }
                 if (selected) {
                     Shared.Dispatcher.trigger('biodiversityLegend:show');
                 } else {
@@ -475,7 +478,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'ol', 'views/layer_style']
                 })
             ).children().last();
 
-            self.toggleLegend(key, visibleInDefault);
+            var needToReloadXHR = false;
+            self.toggleLegend(key, visibleInDefault, needToReloadXHR);
         },
         renderTransparencySlider: function () {
             var self = this;
