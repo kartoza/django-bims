@@ -14,7 +14,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         objectDataByYear: 'object_data_by_year',
         yearsArray: 'years_array',
         events: {
-            'click .close-taxon-dashboard': 'closeDashboard',
+            'click .close-dashboard': 'closeDashboard',
             'click #export-taxasite-map': 'exportTaxasiteMap',
             'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline'
         },

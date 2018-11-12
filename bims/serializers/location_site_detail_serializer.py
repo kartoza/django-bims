@@ -53,6 +53,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         for model in collections:
             taxon_gbif_id = model.taxon_gbif_id
             category = model.category
+            year_collected = model.collection_date.year
             if taxon_gbif_id:
                 taxon_id = taxon_gbif_id.gbif_id
                 taxon_class = taxon_gbif_id.taxon_class
@@ -69,9 +70,19 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                         'taxon_id': taxon_gbif_id.id,
                         'taxon_gbif_id': taxon_id,
                         'category': category,
-                        'count': 0
+                        'count': 0,
+                        'data_by_year': {}
                     }
                 species_list[taxon_gbif_id.common_name]['count'] += 1
+
+                if year_collected not in \
+                        species_list[taxon_gbif_id.common_name][
+                            'data_by_year']:
+                    species_list[taxon_gbif_id.common_name]['data_by_year'][
+                        year_collected] = 1
+                else:
+                    species_list[taxon_gbif_id.common_name]['data_by_year'][
+                        year_collected] += 1
 
             # get per module info
             module = model.get_children()
