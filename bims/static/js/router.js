@@ -3,6 +3,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
     return Backbone.Router.extend({
         parameters: {},
         routes: {
+            "": "toMap",
             "search/:query": "search",
             "site-detail/:query": "showSiteDetailedDashboard"
         },
@@ -23,6 +24,9 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         },
         clearSearch: function () {
             this.navigate('', true);
+        },
+        toMap: function () {
+            Shared.Dispatcher.trigger('map:closeDetailedDashboard');
         }
     })
 });

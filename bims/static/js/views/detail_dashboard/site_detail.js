@@ -19,6 +19,11 @@ define([
         yearsArray: 'years_array',
         dummyPieColors: ['#2d2d2d', '#565656', '#6d6d6d', '#939393', '#adadad', '#bfbfbf', '#d3d3d3'],
         fetchBaseUrl: '/api/location-site-detail/?',
+        csvDownloadUrl: '/api/collection/download/',
+        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
+            "&collector=<%= collector %>&category=<%= category %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
@@ -37,18 +42,37 @@ define([
             'translocated': 'Translocated'
         },
         events: {
-            'click .close-dashboard': 'closeDashboard'
+            'click .close-dashboard': 'closeDashboard',
+            'click #export-locationsite-map': 'exportLocationsiteMap',
+            'click .download-origin-chart': 'downloadOriginChart',
+            'click .download-record-timeline': 'downloadRecordTimeline',
+            'click .download-collection-timeline': 'downloadCollectionTimeline',
+            'click .download-as-csv': 'downloadAsCSV'
         },
         initialize: function () {
             this.$el.hide();
+            this.mapLocationSite = null;
         },
         render: function () {
             this.$el.html(this.template());
 
             this.loadingDashboard = this.$el.find('.loading-dashboard');
-            this.originTimelineGraph = this.$el.find('#fish-timeline-graph')[0];
-            this.originCategoryGraph = this.$el.find('#fish-category-graph')[0];
+            this.originTimelineGraph = this.$el.find('#collection-timeline-graph')[0];
+            this.originCategoryGraph = this.$el.find('#collection-category-graph')[0];
             this.recordsTimelineGraph = this.$el.find('#records-timeline-graph')[0];
+
+            this.siteName = this.$el.find('#site-name');
+            this.totalRecords = this.$el.find('#total-records');
+
+            this.iconStyle = new ol.style.Style({
+                image: new ol.style.Icon(({
+                    anchor: [0.5, 46],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'pixels',
+                    opacity: 0.75,
+                    src: '/static/img/map-marker.png'
+                }))
+            });
 
             return this;
         },
@@ -58,8 +82,11 @@ define([
                 direction: 'right'
             }, 300, function () {
                 if (typeof data === 'string') {
+                    self.csvDownloadUrl += '?' + data;
                     self.fetchData(data);
                 } else {
+                    self.csvDownloadUrl += self.apiParameters(filterParameters);
+                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1));
                     self.generateDashboard(data);
                     self.loadingDashboard.hide();
                 }
@@ -82,6 +109,206 @@ define([
                     self.loadingDashboard.hide();
                 }
             });
+        },
+        generateDashboard: function (data) {
+            var self = this;
+
+            self.siteName.html(data['name']);
+
+            // Total records
+            var totalRecords = 0;
+            $.each(data['modules_info'], function (moduleKey, moduleValue) {
+                totalRecords += parseInt(moduleValue['count']);
+            });
+            self.totalRecords.html(totalRecords);
+
+            if(!this.mapLocationSite) {
+                this.mapLocationSite = new ol.Map({
+                    layers: [
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        })
+                    ],
+                    target: 'locationsite-map',
+                    view: new ol.View({
+                        center: [0, 0],
+                        zoom: 2
+                    })
+                });
+            }
+            if(this.siteVectorLayer){
+                this.mapLocationSite.removeLayer(this.siteVectorLayer);
+                this.siteVectorLayer = null;
+            }
+            var geometry = JSON.parse(data['geometry']);
+            var siteCoordinate = ol.proj.transform([geometry['coordinates'][0], geometry['coordinates'][1]], 'EPSG:4326', 'EPSG:3857');
+            var siteFeature = new ol.Feature({
+                geometry: new ol.geom.Point(siteCoordinate)
+            });
+            siteFeature.setStyle(self.iconStyle);
+            this.siteVectorSource = new ol.source.Vector({
+                features: [siteFeature]
+            });
+            this.siteVectorLayer = new ol.layer.Vector({
+                source: this.siteVectorSource
+            });
+
+            this.mapLocationSite.addLayer(this.siteVectorLayer);
+            this.mapLocationSite.setView(new ol.View({
+                center: siteCoordinate,
+                zoom: 12
+            }));
+
+            self.createCharts(data);
+            self.createOccurrenceTable(data);
+        },
+        clearDashboard: function () {
+            this.siteName.html('');
+            this.totalRecords.html('');
+
+            // Clear canvas
+            if (this.originCategoryGraphCanvas) {
+                this.originCategoryGraphCanvas.destroy();
+                this.originCategoryGraphCanvas = null;
+            }
+
+            if (this.recordsTimelineGraphCanvas) {
+                this.recordsTimelineGraphCanvas.destroy();
+                this.recordsTimelineGraphCanvas = null;
+            }
+
+            if (this.originTimelineGraphCanvas) {
+                this.originTimelineGraphCanvas.destroy();
+                this.originTimelineGraphCanvas = null;
+            }
+        },
+        createPieChart: function(container, data, labels, options, colorOptions) {
+            return new Chart(container, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colorOptions,
+                        borderWidth: 1
+                    }]
+                },
+                options: options
+            });
+        },
+        closeDashboard: function () {
+            var self = this;
+            this.$el.hide('slide', {
+                direction: 'right'
+            }, 300, function () {
+                self.clearDashboard();
+                self.loadingDashboard.show();
+                Shared.Router.clearSearch();
+            });
+        },
+        createOccurrenceTable: function (data) {
+            var self = this;
+            var occurenceTable = $('<table></table>');
+            occurenceTable.append('' +
+                '<tr>' +
+                '<th>Taxon</th><th>Category</th><th>Records</th>' +
+                '</tr>');
+            var recordOccurences = data['records_occurrence'];
+            $.each(recordOccurences, function (key, value) {
+                for (record_key in value) {
+                    if (!value.hasOwnProperty(record_key)) {
+                        return true;
+                    }
+                    var recordTable = $('<tr></tr>');
+                    recordTable.append('<td>' + record_key +
+                        '</td><td>' + self.categories[value[record_key]['category']] + '</td> ' +
+                        '<td>' + value[record_key]['count'] + '</td>');
+                     occurenceTable.append(recordTable);
+                }
+            });
+            $('#occurence-table').html(occurenceTable);
+        },
+        exportLocationsiteMap: function () {
+            this.mapLocationSite.once('postcompose', function (event) {
+                var canvas = event.context.canvas;
+                if (navigator.msSaveBlob) {
+                    navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
+                } else {
+                    canvas.toBlob(function (blob) {
+                        saveAs(blob, 'map.png')
+                    })
+                }
+            });
+            this.mapLocationSite.renderSync();
+        },
+        downloadOriginChart: function () {
+            var title = 'site-origin-charts';
+            var canvas = this.originCategoryGraph;
+            this.downloadChart(title, canvas);
+        },
+        downloadRecordTimeline: function () {
+            var title = 'record-timeline';
+            var canvas = this.recordsTimelineGraph;
+            this.downloadChart(title, canvas);
+        },
+        downloadCollectionTimeline: function () {
+            var title = 'collection-timeline';
+            var canvas = this.originTimelineGraph;
+            this.downloadChart(title, canvas);
+        },
+        downloadChart: function (title, canvas) {
+            html2canvas(canvas, {
+                onrendered: function (canvas) {
+                    var link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                    link.download = title + '.png';
+                    link.click();
+                }
+            })
+        },
+        downloadingCSV: function (url, downloadButton) {
+            var self = this;
+            self.downloadCSVXhr = $.get({
+                url: self.csvDownloadUrl,
+                dataType: 'json',
+                success: function (data) {
+                    if (data['status'] !== "success") {
+                        if (data['status'] === "failed") {
+                            if (self.downloadCSVXhr) {
+                                self.downloadCSVXhr.abort();
+                            }
+                            downloadButton.html('Download as CSV');
+                            downloadButton.prop("disabled", false);
+                        } else {
+                            setTimeout(
+                                function () {
+                                    self.downloadingCSV(url, downloadButton);
+                                }, 5000);
+                        }
+                    } else {
+                        var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                        if(is_safari) {
+                            var a = window.document.createElement('a');
+                            a.href = '/uploaded/csv_processed/' + data['filename'];
+                            a.download = data['filename'];
+                            a.click();
+                        } else {
+                            location.replace('/uploaded/csv_processed/' + data['filename']);
+                        }
+
+                        downloadButton.html('Download as CSV');
+                        downloadButton.prop("disabled", false);
+                    }
+                },
+                error: function (req, err) {
+                }
+            });
+        },
+        downloadAsCSV: function (e) {
+            var button = $(e.target);
+            button.html('Processing...');
+            button.prop("disabled", true);
+            this.downloadingCSV(this.csvDownloadUrl, button);
         },
         createCharts: function (data) {
             var self = this;
@@ -136,7 +363,7 @@ define([
                 }
             });
 
-            self.createPieChart(
+            this.originCategoryGraphCanvas = self.createPieChart(
                 self.originCategoryGraph.getContext('2d'),
                 Object.values(originData),
                 originLabel,
@@ -168,7 +395,7 @@ define([
                 }
             };
 
-            new Chart(self.recordsTimelineGraph.getContext('2d'), {
+            this.recordsTimelineGraphCanvas = new Chart(self.recordsTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: recordsByYearLabel,
@@ -213,7 +440,7 @@ define([
                 });
             });
 
-            new Chart(self.originTimelineGraph.getContext('2d'), {
+            this.originTimelineGraphCanvas = new Chart(self.originTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: recordsByYearLabel,
@@ -221,65 +448,6 @@ define([
                 },
                 options: originTimelineGraphOptions
             })
-        },
-        generateDashboard: function (data) {
-            var self = this;
-            self.createCharts(data);
-        },
-        clearDashboard: function () {
-        },
-        createPieChart: function(container, data, labels, options, colorOptions) {
-            return new Chart(container, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colorOptions,
-                        borderWidth: 1
-                    }]
-                },
-                options: options
-            });
-        },
-        countObjectPerDateCollection: function(data, categoryOrigin, categories) {
-            var originDataDate = [];
-            var dataByDate = {};
-
-            $.each(data, function (key, value) {
-                var collection_year = new Date(value['collection_date']).getFullYear();
-                if($.inArray(collection_year, originDataDate) === -1){
-                    originDataDate.push(collection_year)
-                }
-            });
-
-            $.each(originDataDate, function (idx, year) {
-                dataByDate[year] = {};
-                $.each(categoryOrigin, function (index, origin) {
-                    dataByDate[year][origin] = 0;
-                    $.each(data, function (key, value) {
-                        var valueYear = new Date(value['collection_date']).getFullYear();
-                        if(categories[value['category']] === origin && valueYear === year){
-                            dataByDate[year][origin] += 1;
-                        }
-                    })
-                });
-            });
-
-            var results = {};
-            results[this.objectDataByYear] = dataByDate;
-
-            console.log(results);
-            return results;
-        },
-        closeDashboard: function () {
-            var self = this;
-            this.$el.hide('slide', {
-                direction: 'right'
-            }, 300, function () {
-                self.clearDashboard();
-                self.loadingDashboard.show();
-            });
         },
     })
 });

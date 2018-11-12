@@ -88,6 +88,7 @@ define([
             Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
             Shared.Dispatcher.on('map:showTaxonDetailedDashboard', this.showTaxonDetailedDashboard, this);
             Shared.Dispatcher.on('map:showSiteDetailedDashboard', this.showSiteDetailedDashboard, this);
+            Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -669,6 +670,10 @@ define([
         },
         showSiteDetailedDashboard: function (data) {
             this.siteDetailedDashboard.show(data);
+        },
+        closeDetailedDashboard: function () {
+            this.taxonDetailDashboard.closeDashboard();
+            this.siteDetailedDashboard.closeDashboard();
         }
     })
 });

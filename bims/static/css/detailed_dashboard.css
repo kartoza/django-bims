@@ -119,3 +119,9 @@
     margin-top: 10px;
     margin-bottom: 2px;
 }
+
+.download-as-csv {
+    text-transform: none;
+    font-size: 10pt;
+    margin-bottom: 5px;
+}
