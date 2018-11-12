@@ -28,7 +28,8 @@ from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
 from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
-
+from bims.views.download_csv_taxa_records import \
+    download_csv_site_taxa_records
 
 
 urlpatterns = [
@@ -68,6 +69,9 @@ urlpatterns = [
         name='get-feature'),
     url(r'^collection/check_process/$',
         CollectionDownloader.as_view()),
+    url(r'^download-csv-taxa-records/$',
+        download_csv_site_taxa_records,
+        name='taxa-site-download'),
 ]
 
 # Api urls

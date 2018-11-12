@@ -16,11 +16,13 @@ define([
     'views/right_panel/location_site_detail',
     'views/right_panel/taxon_detail',
     'views/right_panel/records_detail',
-    'views/biodiversity_legend'
+    'views/biodiversity_legend',
+    'views/detail_dashboard/taxon_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
-             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView) {
+             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
+             TaxonDetailDashboard) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -55,6 +57,9 @@ define([
             new LocationSiteDetail();
             new TaxonDetail();
             new RecordsDetail();
+            this.taxonDetailDashboard = new TaxonDetailDashboard();
+
+            Shared.CurrentState.FETCH_CLUSTERS = true;
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:addLocationSiteClusterFeatures', this.addLocationSiteClusterFeatures, this);
@@ -81,6 +86,7 @@ define([
             Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
+            Shared.Dispatcher.on('map:showTaxonDetailedDashboard', this.showTaxonDetailedDashboard, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -349,6 +355,7 @@ define([
 
             this.bioLegendView = new BioLegendView();
             this.$el.append(this.bioLegendView.render().$el);
+            this.$el.append(this.taxonDetailDashboard.render().$el);
 
             return this;
         },
@@ -408,6 +415,7 @@ define([
             $('#fetching-error .call-administrator').show();
         },
         fetchingStart: function () {
+            Shared.CurrentState.FETCH_CLUSTERS = true;
             $('#fetching-error').hide();
             $('#loading-warning').show();
             if (this.fetchXhr) {
@@ -417,16 +425,23 @@ define([
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(false);
             });
-            this.layers.biodiversitySource.clear();
-            this.layers.locationSiteClusterSource.clear();
+            if (this.layers.biodiversitySource) {
+                this.layers.biodiversitySource.clear();
+            }
+            if (this.layers.locationSiteClusterSource) {
+                this.layers.locationSiteClusterSource.clear();
+            }
         },
         fetchingFinish: function () {
+            Shared.CurrentState.FETCH_CLUSTERS = false;
             this.fetchingReset();
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
             });
-            this.layers.biodiversitySource.clear();
+            if (this.layers.biodiversitySource) {
+                this.layers.biodiversitySource.clear();
+            }
         },
         fetchingError: function (err) {
             if (err['textStatus'] !== "abort") {
@@ -654,6 +669,9 @@ define([
         refetchRecords: function () {
             this.zoomToDefault();
             this.fetchingRecords();
+        },
+        showTaxonDetailedDashboard: function (data) {
+            this.taxonDetailDashboard.show(data);
         }
     })
 });

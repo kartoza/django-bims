@@ -28,7 +28,7 @@
         </div>
         <div class="right-panel-header">
             <div class="pull-right">
-                <i class="fa fa-window-close-o close-panel header-panel-button"></i>
+                <img class="close-icon close-panel header-panel-button" src="/static/img/close_icon.svg">
             </div>
             <div class="pull-left">
                 <i class="fa fa-caret-square-o-left return-panel header-panel-button"></i>
@@ -46,14 +46,14 @@
     <div class="map-search-box map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
-                <div class="close-button search-reset pull-left">
-                    Reset
+                <div class="close-button search-reset pull-left" data-toggle="tooltip" data-placement="top" data-original-title="Reset">
+                    <img class="close-icon" src="/static/img/reset.svg">
                 </div>
                 <span class="title">
                         SEARCH
                     </span>
                 <div class="close-button map-search-close pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -233,7 +233,7 @@
                         SEARCH RESULT
                     </span>
                 <div class="close-button map-result-close pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -260,7 +260,7 @@
                         SPATIAL FILTER
                     </span>
                 <div class="spatial-filter-container-close close-button pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -321,7 +321,7 @@
                     <h5 class="modal-title">Upload a boundary</h5>
                     <button type="button" class="close close-upload-boundary-modal"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -398,8 +398,8 @@
                 <i class="fa fa-crop" aria-hidden="true"></i>
             </div>
             {% if perms.bims.can_upload_csv %}
-            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Upload Single Occurrence">
-                <i class="fa fa-upload" aria-hidden="true"></i>
+            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Capture Single Occurrence">
+                <i class="fa fa-crosshairs" aria-hidden="true"></i>
             </div>
             {% endif %}
         {% endif %}
@@ -428,7 +428,7 @@
                         LAYER SELECTOR
                     </span>
                 <div class="layers-selector-container-close close-button pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -445,7 +445,7 @@
                         LOCATE OPTIONS
                     </span>
                 <div class="locate-options-container-close close-button pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -472,7 +472,7 @@
                     <h5 class="modal-title">Locate by Coordinate</h5>
                     <button type="button" class="close"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -535,10 +535,10 @@
         <div class="modal-dialog modal-upload-data" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Upload Single Occurrence <span class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span> </h5>
+                    <h5 class="modal-title">Capture Single Occurrence <span class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span> </h5>
                     <button type="button" class="close small-close"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -637,7 +637,7 @@
                     <h5 class="modal-title">Download data</h5>
                     <button type="button" class="close"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -824,6 +824,9 @@
                     : <%= endemism %>
                 </div>
             </div>
+        </div>
+        <div class="open-detailed-button-container">
+            <button class="btn btn-inf open-detailed-view">Open detailed dashboard</button>
         </div>
     </div>
 </script>

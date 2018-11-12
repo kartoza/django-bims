@@ -515,7 +515,6 @@ html, body, .map, .map-wrapper, #map-container {
 .map-control-panel-box .close-button {
     cursor: pointer;
     padding: 0 5px;
-    border: 2px solid black;
     font-size: 12pt;
     font-weight: bolder;
     line-height: 20px;
@@ -1334,7 +1333,7 @@ div:hover::-webkit-scrollbar {
 #general-info-modal {
     pointer-events: none;
     background: rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+    z-index: 1050;
 }
 
 #general-info-modal .modal-content {
@@ -1987,4 +1986,16 @@ div:hover::-webkit-scrollbar {
 
 #ripple-loading img {
     margin: 20% 42%;
+}
+
+.modal-header .close {
+    padding: 5px !important;
+}
+
+.close-button > img, .close-icon {
+    height: 20px;
+}
+
+.close-button:hover > img, .close-icon:hover {
+    filter: invert(100%);
 }

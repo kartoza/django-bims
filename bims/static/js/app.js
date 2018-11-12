@@ -10,6 +10,8 @@ require.config({
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
         chartJs: 'libs/chart/Chart-2.7.2',
+        fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min',
+        htmlToCanvas: 'libs/htmlToCanvas/html2canvas.min',
         'jquery-ui/ui/widget': 'libs/jquery-fileupload/vendor/jquery.ui.widget',
         'jquery.iframe-transport': 'libs/jquery-fileupload/jquery.iframe-transport',
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
