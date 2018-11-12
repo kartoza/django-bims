@@ -355,16 +355,17 @@ define([
             this.$el.append(this.bioLegendView.render().$el);
             this.$el.append(this.taxonDetailDashboard.render().$el);
 
-            $('#map-legend-wrapper').draggable({
+            var $mapLegendWrapper = $('#map-legend-wrapper');
+            $mapLegendWrapper.draggable({
                 containment: '#map',
                 start: function (event, ui) {
-                    $('#map-legend-wrapper').css('bottom', 'auto');
+                    $mapLegendWrapper.css('bottom', 'auto');
                     $("[data-toggle=tooltip]").tooltip('hide');
                 },
                 stop: function (event, ui) {
                     var legend_position = $('#map-legend-wrapper').position();
                     var bottom = $('#map').height() - legend_position.top - $('#map-legend-wrapper').outerHeight();
-                    $('#map-legend-wrapper').css('bottom', bottom + 'px').css('top', 'auto');
+                    $mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
                 }
             });
 
