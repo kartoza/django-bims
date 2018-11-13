@@ -17,12 +17,13 @@ define([
     'views/right_panel/taxon_detail',
     'views/right_panel/records_detail',
     'views/biodiversity_legend',
-    'views/detail_dashboard/taxon_detail'
+    'views/detail_dashboard/taxon_detail',
+    'views/detail_dashboard/site_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
-             TaxonDetailDashboard) {
+             TaxonDetailDashboard, SiteDetailedDashboard) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -58,6 +59,7 @@ define([
             new TaxonDetail();
             new RecordsDetail();
             this.taxonDetailDashboard = new TaxonDetailDashboard();
+            this.siteDetailedDashboard = new SiteDetailedDashboard();
 
             Shared.CurrentState.FETCH_CLUSTERS = true;
 
@@ -87,6 +89,8 @@ define([
 
             Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
             Shared.Dispatcher.on('map:showTaxonDetailedDashboard', this.showTaxonDetailedDashboard, this);
+            Shared.Dispatcher.on('map:showSiteDetailedDashboard', this.showSiteDetailedDashboard, this);
+            Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -356,6 +360,7 @@ define([
             this.bioLegendView = new BioLegendView();
             this.$el.append(this.bioLegendView.render().$el);
             this.$el.append(this.taxonDetailDashboard.render().$el);
+            this.$el.append(this.siteDetailedDashboard.render().$el);
 
             return this;
         },
@@ -672,6 +677,13 @@ define([
         },
         showTaxonDetailedDashboard: function (data) {
             this.taxonDetailDashboard.show(data);
+        },
+        showSiteDetailedDashboard: function (data) {
+            this.siteDetailedDashboard.show(data);
+        },
+        closeDetailedDashboard: function () {
+            this.taxonDetailDashboard.closeDashboard();
+            this.siteDetailedDashboard.closeDashboard();
         }
     })
 });

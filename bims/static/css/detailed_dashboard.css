@@ -1,5 +1,5 @@
 
-#detailed-taxa-dashboard, #detailed-dashboard, .loading-dashboard {
+#detailed-taxa-dashboard, #detailed-site-dashboard, .loading-dashboard {
     position: fixed;
     top: 0;
     left: 0;
@@ -118,4 +118,10 @@
     text-transform: none;
     margin-top: 10px;
     margin-bottom: 2px;
+}
+
+.download-as-csv {
+    text-transform: none;
+    font-size: 10pt;
+    margin-bottom: 5px;
 }
