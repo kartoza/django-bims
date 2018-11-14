@@ -13,6 +13,7 @@ define([
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
+        isOpen: false,
         template: _.template($('#detailed-site-dashboard').html()),
         dummyPieData: [25, 2, 7, 10, 12, 25, 60],
         objectDataByYear: 'object_data_by_year',
@@ -77,7 +78,11 @@ define([
             return this;
         },
         show: function (data) {
+            if (this.isOpen) {
+                return false;
+            }
             var self = this;
+            this.isOpen = true;
             this.$el.show('slide', {
                 direction: 'right'
             }, 300, function () {
@@ -197,10 +202,14 @@ define([
             });
         },
         closeDashboard: function () {
+            if (!this.isOpen) {
+                return false;
+            }
             var self = this;
             this.$el.hide('slide', {
                 direction: 'right'
             }, 300, function () {
+                self.isOpen = false;
                 self.clearDashboard();
                 self.loadingDashboard.show();
                 Shared.Router.clearSearch();

@@ -262,8 +262,7 @@ define([
         layerControlClicked: function (e) {
         },
         mapLegendClicked: function (e) {
-            var $mapLegendWrapper = $('#map-legend-wrapper');
-            var $mapLegend = $mapLegendWrapper.find('#map-legend');
+            var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
 
             if ($mapLegend.is(':visible')) {
                 this.hideMapLegends(true);
@@ -276,18 +275,17 @@ define([
                 return true;
             }
             Shared.LegendsDisplayed = true;
-            var $mapLegendWrapper = $('#map-legend-wrapper');
-            var $mapLegend = $mapLegendWrapper.find('#map-legend');
-            var $mapLegendSymbol = $mapLegendWrapper.find('#map-legend-symbol');
+            var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
+            var $mapLegendSymbol = this.$mapLegendWrapper.find('#map-legend-symbol');
 
-            $mapLegendWrapper.removeClass('hide-legend');
-            $mapLegendWrapper.addClass('show-legend');
+            this.$mapLegendWrapper.removeClass('hide-legend');
+            this.$mapLegendWrapper.addClass('show-legend');
             $mapLegendSymbol.hide();
             $mapLegend.show();
-            $mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
+            this.$mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
 
             if(showTooltip) {
-                $mapLegendWrapper.tooltip('show');
+                this.$mapLegendWrapper.tooltip('show');
             }
         },
         hideMapLegends: function (showTooltip) {
@@ -295,18 +293,17 @@ define([
                 return true;
             }
             Shared.LegendsDisplayed = false;
-            var $mapLegendWrapper = $('#map-legend-wrapper');
-            var $mapLegend = $mapLegendWrapper.find('#map-legend');
-            var $mapLegendSymbol = $mapLegendWrapper.find('#map-legend-symbol');
+            var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
+            var $mapLegendSymbol = this.$mapLegendWrapper.find('#map-legend-symbol');
 
-            $mapLegendWrapper.addClass('hide-legend');
-            $mapLegendWrapper.removeClass('show-legend');
+            this.$mapLegendWrapper.addClass('hide-legend');
+            this.$mapLegendWrapper.removeClass('show-legend');
             $mapLegendSymbol.show();
             $mapLegend.hide();
-            $mapLegendWrapper.attr('data-original-title', 'Show legends').tooltip('hide');
+            this.$mapLegendWrapper.attr('data-original-title', 'Show legends').tooltip('hide');
 
             if(showTooltip) {
-                $mapLegendWrapper.tooltip('show');
+                this.$mapLegendWrapper.tooltip('show');
             }
         },
         getCurrentZoom: function () {
@@ -362,17 +359,17 @@ define([
             this.$el.append(this.taxonDetailDashboard.render().$el);
             this.$el.append(this.siteDetailedDashboard.render().$el);
 
-            var $mapLegendWrapper = $('#map-legend-wrapper');
-            $mapLegendWrapper.draggable({
+            this.$mapLegendWrapper = $('#map-legend-wrapper');
+            this.$mapLegendWrapper.draggable({
                 containment: '#map',
                 start: function (event, ui) {
-                    $mapLegendWrapper.css('bottom', 'auto');
+                    self.$mapLegendWrapper.css('bottom', 'auto');
                     $("[data-toggle=tooltip]").tooltip('hide');
                 },
                 stop: function (event, ui) {
-                    var legend_position = $('#map-legend-wrapper').position();
-                    var bottom = $('#map').height() - legend_position.top - $('#map-legend-wrapper').outerHeight();
-                    $mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
+                    var legend_position = self.$mapLegendWrapper.position();
+                    var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
+                    self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
                 }
             });
 
