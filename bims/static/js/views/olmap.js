@@ -284,7 +284,7 @@ define([
             $mapLegendWrapper.addClass('show-legend');
             $mapLegendSymbol.hide();
             $mapLegend.show();
-            $mapLegendWrapper.attr('data-original-title', 'Click to hide legends').tooltip('hide');
+            $mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
 
             if(showTooltip) {
                 $mapLegendWrapper.tooltip('show');
@@ -361,6 +361,20 @@ define([
             this.$el.append(this.bioLegendView.render().$el);
             this.$el.append(this.taxonDetailDashboard.render().$el);
             this.$el.append(this.siteDetailedDashboard.render().$el);
+
+            var $mapLegendWrapper = $('#map-legend-wrapper');
+            $mapLegendWrapper.draggable({
+                containment: '#map',
+                start: function (event, ui) {
+                    $mapLegendWrapper.css('bottom', 'auto');
+                    $("[data-toggle=tooltip]").tooltip('hide');
+                },
+                stop: function (event, ui) {
+                    var legend_position = $('#map-legend-wrapper').position();
+                    var bottom = $('#map').height() - legend_position.top - $('#map-legend-wrapper').outerHeight();
+                    $mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
+                }
+            });
 
             return this;
         },
