@@ -13,6 +13,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         template: _.template($('#taxon-detail-dashboard-template').html()),
         objectDataByYear: 'object_data_by_year',
         yearsArray: 'years_array',
+        isOpen: false,
         events: {
             'click .close-dashboard': 'closeDashboard',
             'click #export-taxasite-map': 'exportTaxasiteMap',
@@ -46,6 +47,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             return this;
         },
         show: function (data) {
+            if(this.isOpen) {
+                return false;
+            }
+            this.isOpen = true;
             this.loadingDashboard.show();
             this.taxonName = data.taxonName;
             this.taxonId = data.taxonId;
@@ -256,9 +261,13 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         closeDashboard: function () {
             var self = this;
+            if (!this.isOpen) {
+                return false;
+            }
             this.$el.hide('slide', {
                 direction: 'right'
             }, 300, function () {
+                self.isOpen = false;
                 self.clearDashboard();
                 self.loadingDashboard.hide();
                 self.dashboardTitleContainer.html('&nbsp;');
