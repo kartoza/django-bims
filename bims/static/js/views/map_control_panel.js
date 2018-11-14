@@ -5,14 +5,14 @@ define(
         'shared',
         'jquery',
         'ol',
-        'html2canvas',
+        'htmlToCanvas',
         'fileSaver',
         'views/search',
         'views/locate',
         'views/upload_data',
         'views/data_downloader-modal',
         'views/spatial_filter'],
-    function (Backbone, _, Shared, $, ol, html2canvaslib, fileSaver, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
+    function (Backbone, _, Shared, $, ol, htmlToCanvas, fileSaver, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,

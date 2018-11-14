@@ -74,8 +74,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 title: 'Topography',
                 source: new ol.source.XYZ({
                     attributions: ['&copy; National Geo-spatial Information (NGI) contributors', 'Toposheets'],
-                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png',
-                    crossOrigin: 'anonymous'
+                    url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
                 })
             });
 
@@ -85,7 +84,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 source: new ol.source.XYZ({
                     attributions: ['<a href="http://www.ngi.gov.za/">CD:NGI Aerial</a>'],
                     url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg',
-                    crossOrigin: 'anonymous'
                 })
             });
 
