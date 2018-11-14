@@ -182,6 +182,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/referen
                 if(properties.hasOwnProperty('name'))
                     $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
             }
+
+            this.referencesSelectDiv.val('').trigger('chosen:updated');
         },
         uploadData: function (e) {
             var self = this;
@@ -213,10 +215,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/referen
             dataToSend['csrfmiddlewaretoken'] = csrfmiddlewaretoken;
             dataToSend['lat'] = self.lat;
             dataToSend['lon'] = self.lon;
+            dataToSend['ud_references'] = self.referencesSelectDiv.chosen().val().join();
 
             uploadButton.html('Uploading...');
             uploadButton.prop('disabled', true);
-
             $.ajax({
                 url: uploadDataUrl,
                 method: "POST",
