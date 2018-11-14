@@ -605,9 +605,11 @@
                             <label for="ud_references" class="upload-input-label">
                                 References
                             </label>
-                            <input type="text"
-                                   class="form-control mb-2 mr-sm-2 ud-item"
-                                   id="ud_references" name="References" placeholder="">
+                            <div class="form-group">
+                                <select multiple id="ud_references" name="References" class="">
+                                    <option value="">-</option>
+                                </select>
+                            </div>
                             <div class="row">
                                 <div class="col-lg-4">
                             Lat : <input type="text" id="current_lat"/></div>

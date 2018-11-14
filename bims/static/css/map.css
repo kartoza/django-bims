@@ -1985,3 +1985,7 @@ div:hover::-webkit-scrollbar {
 .close-button:hover > img, .close-icon:hover {
     filter: invert(100%);
 }
+
+.chosen-select, .chosen-container {
+    width: 100% !important;
+}
