@@ -51,6 +51,7 @@ geonode:
     ALLOWED_HOSTS: ['django-bims.test']
     ADMIN_EMAILS: dimas@kartoza.com
     GEOSERVER_ADMIN_PASSWORD: admingeoserver
+    ASYNC_SIGNALS_GEONODE: True
 
 geoserver:
   environment:
