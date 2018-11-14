@@ -5,6 +5,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         siteChartData: {},
         siteId: null,
         siteName: null,
+        siteDetailData: null,
         apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
@@ -156,6 +157,11 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             } else {
                 $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
             }
+
+            // Add detail dashboard button
+            var button = '<button class="btn btn-info open-detailed-site-button"> Open detailed dashboard </button>';
+            $detailWrapper.append(button);
+
             return $detailWrapper;
         },
         renderDashboardDetail: function (data) {
@@ -370,6 +376,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
+                    self.siteDetailData = data;
+                     Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
                     if (data['geometry']) {
                         var feature = {
                             id: data['id'],
