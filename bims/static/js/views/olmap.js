@@ -10,6 +10,8 @@ define([
     'ol',
     'jquery',
     'layerSwitcher',
+    'htmlToCanvas',
+    'fileSaver',
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
@@ -21,7 +23,7 @@ define([
     'views/detail_dashboard/site_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
+             ol, $, LayerSwitcher, htmlToCanvas, fileSaver, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
              TaxonDetailDashboard, SiteDetailedDashboard) {
     return Backbone.View.extend({
@@ -40,7 +42,8 @@ define([
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
             'click .layer-control': 'layerControlClicked',
-            'click #map-legend-wrapper': 'mapLegendClicked'
+            'click #map-legend-wrapper': 'mapLegendClicked',
+            'click .print-map-control': 'downloadMap'
         },
         clusterLevel: {
             5: 'country',
@@ -91,6 +94,7 @@ define([
             Shared.Dispatcher.on('map:showTaxonDetailedDashboard', this.showTaxonDetailedDashboard, this);
             Shared.Dispatcher.on('map:showSiteDetailedDashboard', this.showSiteDetailedDashboard, this);
             Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
+            Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -695,6 +699,46 @@ define([
         closeDetailedDashboard: function () {
             this.taxonDetailDashboard.closeDashboard();
             this.siteDetailedDashboard.closeDashboard();
+        },
+        downloadMap: function () {
+            var that = this;
+            var downloadMap = true;
+
+            that.map.once('postcompose', function (event) {
+                var canvas = event.context.canvas;
+                try{
+                   canvas.toBlob(function (blob) {
+                    })
+                }
+                catch(error) {
+                    $('#error-modal').modal('show');
+                    downloadMap = false
+                }
+            });
+            that.map.renderSync();
+
+            if(downloadMap) {
+                $('#ripple-loading').show();
+                $('.map-control-panel').hide();
+                $('.zoom-control').hide();
+                $('.print-map-control').addClass('control-panel-selected');
+                var canvas = document.getElementsByClassName('map-wrapper');
+                html2canvas(canvas, {
+                    useCORS: true,
+                    allowTaint:	false,
+                    onrendered: function (canvas) {
+                        canvas.toBlob(function (blob) {
+                            saveAs(blob, 'map.png');
+                        });
+
+                        $('.zoom-control').show();
+                        $('.map-control-panel').show();
+                        $('#ripple-loading').hide();
+                        $('.print-map-control').removeClass('control-panel-selected');
+                    }
+                })
+            }
+
         }
     })
 });

@@ -75,6 +75,22 @@
     <div id="ripple-loading" style="display: none">
         <img src="{% static 'img/loading-spinner.gif' %}">
     </div>
+    <div id="error-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Print Error</h5>
+                    <button type="button" class="close close-info-popup" data-dismiss="modal">
+                        <img src="{% static 'img/close_icon.svg' %}">
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Sorry we are unable to print your map because the map canvas is tainted due to CORS.
+                    Please reload the page and try another basemap or another layer.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {# HERE ARE THE TEMPLATES AREA #}
     {% block additional_template %}
