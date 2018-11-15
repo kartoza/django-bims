@@ -43,6 +43,7 @@ from bims.models import (
     NonBiodiversityLayer,
     UserBoundary,
     SearchProcess,
+    ReferenceLink,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -385,6 +386,14 @@ class PageviewAdmin(admin.ModelAdmin):
     list_display = ('url', 'view_time')
 
 
+class ReferenceLinkAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'collection_record',
+        'reference'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -413,6 +422,8 @@ admin.site.register(Permission, PermissionAdmin)
 
 admin.site.register(UserBoundary, UserBoundaryAdmin)
 admin.site.register(SearchProcess, SearchProcessAdmin)
+
+admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

@@ -139,7 +139,7 @@ class BiologicalCollectionRecord(AbstractValidation):
     def get_children_model():
         rel_objs = [f for f in BiologicalCollectionRecord._meta.get_fields(
             include_parents=False)
-                    if (f.one_to_many or f.one_to_one) and
+                    if f.one_to_one and
                     f.auto_created and not f.concrete]
         related_models = []
         for rel_obj in rel_objs:
@@ -156,6 +156,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         if self.validated:
             return True
         return False
+
+    def __unicode__(self):
+        label = '{species} - {collector} - {date}'.format(
+            species=self.original_species_name,
+            collector=self.collector,
+            date=self.collection_date
+        )
+        return label
 
 
 @receiver(models.signals.post_save)

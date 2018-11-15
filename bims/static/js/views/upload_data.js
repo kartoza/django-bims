@@ -1,4 +1,10 @@
-define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone, _, $, Shared, ol) {
+define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/reference_entry', 'chosen'], function (
+    Backbone,
+    _,
+    $,
+    Shared,
+    ol,
+    ReferenceEntry, Chosen) {
     return Backbone.View.extend({
         template: _.template($('#upload-data-modal').html()),
         uploadDataModal: null,
@@ -8,6 +14,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         lon: null,
         lat: null,
         siteFeature: null,
+        referenceEntryFetched: false,
+        referenceEntries: [],
         events: {
             'click .close': 'closeModal',
             'click .upload-data-button': 'uploadData',
@@ -18,6 +26,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             _.bindAll(this, 'render');
             this.parent = options.parent;
             this.map = options.map;
+            this.referenceEntryList = new ReferenceEntry();
+            this.fetchReferenceList(1);
         },
         addNewSite: function (e) {
             var locationSiteInput = $('#ud_location_site');
@@ -25,6 +35,34 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             locationSiteInput.focus();
             this.addNewSiteButton.hide();
             this.sameSiteInfo.hide();
+        },
+        fetchReferenceList: function (page) {
+            var self = this;
+            var url = '';
+            if (page) {
+                url = self.referenceEntryList.url + '?page=' + page;
+            } else {
+                url = self.referenceEntryList.url;
+            }
+            self.referenceEntryList.fetch({
+                url: url,
+                success: function (data) {
+                    if (data.model.length > 0) {
+                        for (var i=0; i < data.model.length; i++) {
+                            self.referencesSelectDiv.append($('<option></option>')
+                                .attr('value', data.model[i].id).text(data.model[i].title + ' [' + data.model[i].journal + ']'));
+                            self.referencesSelectDiv.trigger("chosen:updated");
+                        }
+                        self.referenceEntries.push.apply(self.referenceEntries, data.model);
+                    }
+                    if (data.next) {
+                        self.referenceEntryList.url = data.next;
+                        self.fetchReferenceList();
+                    } else {
+                        self.referenceEntryFetched = true;
+                    }
+                }
+            });
         },
         updateCoordinate: function (e) {
             e.preventDefault();
@@ -74,6 +112,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                     })),
                 });
 
+            this.referencesSelectDiv = this.$el.find('#ud_references');
+            this.referencesSelectDiv.chosen();
             return this;
         },
         showModal: function (lon, lat, siteFeature) {
@@ -142,6 +182,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 if(properties.hasOwnProperty('name'))
                     $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
             }
+
+            this.referencesSelectDiv.val('').trigger('chosen:updated');
         },
         uploadData: function (e) {
             var self = this;
@@ -173,10 +215,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             dataToSend['csrfmiddlewaretoken'] = csrfmiddlewaretoken;
             dataToSend['lat'] = self.lat;
             dataToSend['lon'] = self.lon;
+            dataToSend['ud_references'] = self.referencesSelectDiv.chosen().val().join();
 
             uploadButton.html('Uploading...');
             uploadButton.prop('disabled', true);
-
             $.ajax({
                 url: uploadDataUrl,
                 method: "POST",
