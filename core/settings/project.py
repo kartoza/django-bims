@@ -69,7 +69,7 @@ USE_GEOMETRY_BOUNDARY = False
 
 # TODO(IS) Update unit test to be independent with this setting.
 # Farm ID GeoServer Layer
-FARM_GEOSERVER_URL = 'http://maps.kartoza.com/geoserver/wfs'
+FARM_GEOSERVER_URL = 'http://maps.kartoza.com/geoserver/kartoza/ows'
 FARM_WORKSPACE = 'kartoza'
 FARM_LAYER_NAME = 'farm_portion'
 FARM_ID_COLUMN = 'id'
