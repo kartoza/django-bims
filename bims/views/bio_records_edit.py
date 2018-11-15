@@ -16,9 +16,12 @@ from bims.models.location_site import (
     LocationSite,
     location_site_post_save_handler
 )
+from bims.models.reference_link import ReferenceLink
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.permissions.api_permission import AllowedTaxon
+from bims.serializers.reference_serializer import ReferenceSerializer
+from td_biblio.models import Entry
 
 
 class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
@@ -61,6 +64,18 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
 
         context['bing_map_key'] = get_key('BING_MAP_KEY')
 
+        context['all_references'] = ReferenceSerializer(
+                Entry.objects.all(),
+                many=True).data
+
+        reference_links = ReferenceLink.objects.filter(
+                collection_record=self.object
+        )
+        context['references_link'] = []
+        for reference in reference_links:
+            context['references_link'].append(reference.reference.id)
+
+
         return context
 
 
@@ -68,6 +83,7 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
         super(BioRecordsUpdateView, self).form_valid(form)
         geometry_type = self.request.POST.get('geometry_type', None)
         geojson = self.request.POST.get('geometry', None)
+        references = self.request.POST.get('references', None)
         features = json.loads(geojson)
         location_site_name = self.object.site.name
         if len(features['features']) > 0:
@@ -124,6 +140,27 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
 
             self.object.site = location_site
             self.object.save()
+
+            new_reference_link = []
+            old_reference_link = ReferenceLink.objects.filter(
+                    collection_record=self.object)
+
+            if references:
+                references = references.split(',')
+                for reference in references:
+                    try:
+                        entry = Entry.objects.get(id=reference)
+                        reference_link, created = ReferenceLink.objects.\
+                            get_or_create(
+                                collection_record=self.object,
+                                reference=entry)
+                        new_reference_link.append(reference_link)
+                    except Entry.DoesNotExist:
+                        pass
+
+            for reference_link in old_reference_link:
+                if reference_link not in new_reference_link:
+                    reference_link.delete()
 
             # reconnect signals
             signals.post_save.connect(
