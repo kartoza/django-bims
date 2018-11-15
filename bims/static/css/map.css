@@ -221,6 +221,9 @@ html, body, .map, .map-wrapper, #map-container {
     .panel-wrapper {
         width: 100%;
     }
+    .ui-slider-horizontal {
+        margin-left: 50px !important;
+    }
 }
 
 .green {
