@@ -12,6 +12,7 @@ define([
     'layerSwitcher',
     'htmlToCanvas',
     'fileSaver',
+    'jsPDF',
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
@@ -23,7 +24,7 @@ define([
     'views/detail_dashboard/site_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, htmlToCanvas, fileSaver, Basemap, Layers, Geocontext,
+             ol, $, LayerSwitcher, htmlToCanvas, fileSaver, jsPDF, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
              TaxonDetailDashboard, SiteDetailedDashboard) {
     return Backbone.View.extend({
@@ -723,13 +724,23 @@ define([
                 $('.zoom-control').hide();
                 $('.print-map-control').addClass('control-panel-selected');
                 var canvas = document.getElementsByClassName('map-wrapper');
+                var $mapWrapper = $('.map-wrapper');
+                var divHeight = $mapWrapper.height();
+                var divWidth = $mapWrapper.width();
+                var ratio = divHeight / divWidth;
                 html2canvas(canvas, {
                     useCORS: true,
                     allowTaint:	false,
                     onrendered: function (canvas) {
-                        canvas.toBlob(function (blob) {
-                            saveAs(blob, 'map.png');
+                        var img = canvas.toDataURL("image/png");
+                        var pdf = new jsPDF({
+                            orientation: 'landscape',
+                            format: 'a4'
                         });
+                        var width = pdf.internal.pageSize.width;
+                        var height = ratio * width;
+                        pdf.addImage(img, 'PNG', 0, 0, width, height);
+                        pdf.save('map.pdf');
 
                         $('.zoom-control').show();
                         $('.map-control-panel').show();
