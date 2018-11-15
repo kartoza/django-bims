@@ -221,6 +221,9 @@ html, body, .map, .map-wrapper, #map-container {
     .panel-wrapper {
         width: 100%;
     }
+    .ui-slider-horizontal {
+        margin-left: 50px !important;
+    }
 }
 
 .green {
@@ -1998,4 +2001,8 @@ div:hover::-webkit-scrollbar {
 
 .close-button:hover > img, .close-icon:hover {
     filter: invert(100%);
+}
+
+.chosen-select, .chosen-container {
+    width: 100% !important;
 }
