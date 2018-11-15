@@ -132,6 +132,7 @@ INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 MIDDLEWARE_CLASSES += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'bims.middleware.VisitorTrackingMiddleware',
 )
 
 # for middleware in MIDDLEWARE_CLASSES:
@@ -192,6 +193,8 @@ TRACK_IGNORE_STATUS_CODES = [403, 405, 410]
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
     'people.Profile',
+    'bims.Pageview',
+    'bims.Visitor'
 ]
 
 if MONITORING_ENABLED:

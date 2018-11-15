@@ -4,13 +4,12 @@ from datetime import timedelta
 
 from django import forms
 from django.shortcuts import render
-from django.contrib.auth.decorators import permission_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.timezone import now
 
 from bims.models import Visitor, Pageview
 from bims.conf import TRACK_PAGEVIEWS
-
-from bims.models import Taxon
+from bims.models import Taxon, BiologicalCollectionRecord
 
 log = logging.getLogger(__file__)
 
@@ -29,7 +28,7 @@ class DashboardForm(forms.Form):
     end = forms.DateTimeField(required=False, input_formats=input_formats)
 
 
-@permission_required('tracking.view_visitor')
+@staff_member_required()
 def dashboard(request):
     "Counts, aggregations and more!"
     end_time = now()
@@ -60,6 +59,8 @@ def dashboard(request):
         pageview_stats = None
 
     taxon_count = Taxon.objects.count()
+    collections_count = \
+        BiologicalCollectionRecord.objects.filter(validated=True).count()
 
     context = {
         'form': form,
@@ -69,5 +70,6 @@ def dashboard(request):
         'visitor_stats': visitor_stats,
         'pageview_stats': pageview_stats,
         'taxon_count': taxon_count,
+        'collections_count': collections_count,
     }
     return render(request, 'tracking/dashboard.html', context)
