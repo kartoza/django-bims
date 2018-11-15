@@ -21,19 +21,25 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             return this;
         },
         showModal: function (activeForm) {
+            var self = this;
             this.locateCoordinateModal.show();
             $.each(this.formList, function (key, formClass) {
                 $(formClass).hide();
             });
             $(activeForm).show();
             this.activeForm = activeForm;
+            this.farmInput.val('');
 
             // Activate autocomplete for search by farm ID
             if (this.activeForm === '.farm-form'){
                 this.$el.find('.modal-title').html('Locate by Farm Portion Code');
                 this.farmInput.autocomplete({
                     source: filterFarmIDUrl,
-                    minLength: 3
+                    minLength: 3,
+                    select: function (event, ui) {
+                        var farm = ui.item.value;
+                        self.searchFarmID(farm);
+                    }
                 });
                 this.farmInput.autocomplete( "option", "appendTo", "#locate-form" );
             } else {
@@ -87,6 +93,11 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                     if (Object.keys(data).length === 0 || !data) {
                         self.alertDiv.show();
                         self.alertDiv.html('Not able to zoom to farm ID: ' + farmID + ' because of empty data');
+                    }
+                    if (data.constructor === Array) {
+                        self.farmInput.autocomplete("option", "source", data);
+                        self.farmInput.autocomplete("search");
+                        return false;
                     }
                     var envelope_extent = [
                         data['envelope_extent'][0],

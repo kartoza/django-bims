@@ -193,4 +193,9 @@ def get_farm_view(request, farm_id):
 
     farm = get_farm(farm_id)
 
+    if not farm:
+        # Farm not found try find the list of farms instead
+        farm_ids = filter_farm_ids(farm_id)
+        return JsonResponse(sorted(farm_ids), safe=False)
+
     return JsonResponse(farm)
