@@ -24,10 +24,9 @@ def get_farm(farm_id):
 
     parameters = {
         'SERVICE': 'WFS',
-        'VERSION': '2.0.0',
+        'VERSION': '1.0.0',
         'REQUEST': 'GETFEATURE',
         'TYPENAME': settings.FARM_WORKSPACE + ':' + settings.FARM_LAYER_NAME,
-        'PROPERTYNAME': settings.FARM_ID_COLUMN,
         'CQL_FILTER': "%s = '%s'" % (
             settings.FARM_ID_COLUMN, farm_id),
         'COUNT': 1
@@ -127,15 +126,16 @@ def parse_farm(xml_document):
     feature = {}
 
     try:
-        wfs_xml_feature = xmldoc.getElementsByTagName('wfs:member')[0]
+        wfs_xml_feature = xmldoc.getElementsByTagName('gml:featureMember')[0]
 
         id_tag = settings.FARM_WORKSPACE + ':' + settings.FARM_ID_COLUMN
         farm_id_xml = wfs_xml_feature.getElementsByTagName(id_tag)[0]
         feature['farm_id'] = farm_id_xml.childNodes[0].nodeValue
 
-        bounded_gml = wfs_xml_feature.getElementsByTagName('gml:boundedBy')[0]
-        bounded_gml_dom = bounded_gml.childNodes[0]
-        envelope = GEOSGeometry.from_gml(bounded_gml_dom.toxml())
+        geom_gml = wfs_xml_feature.getElementsByTagName(
+                'kartoza:wkb_geometry')[0]
+        geom_gml_dom = geom_gml.childNodes[0]
+        envelope = GEOSGeometry.from_gml(geom_gml_dom.toxml())
         feature['envelope_extent'] = envelope.extent
         feature['envelope_centroid'] = envelope.centroid.coords
 
