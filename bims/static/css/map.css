@@ -1989,3 +1989,6 @@ div:hover::-webkit-scrollbar {
     filter: invert(100%);
 }
 
+.chosen-select, .chosen-container {
+    width: 100% !important;
+}

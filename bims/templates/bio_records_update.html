@@ -11,6 +11,7 @@
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{% static "js/libs/chosen/chosen.min.css" %}">
 
     <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
@@ -20,6 +21,7 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
 
     <script src="{% static "js/libs/ol-layerswitcher/ol-layerswitcher.js" %}"></script>
+    <script src="{% static "js/libs/chosen/chosen.jquery.min.js" %}"></script>
     <script>
         const bingMapKey = '{{ bing_map_key }}';
         const mapTilerKey = '{{ map_tiler_key }}';
@@ -37,7 +39,16 @@
             {% crispy form %}
             <input name="geometry_type" type="hidden">
             <input name="geometry" type="hidden">
+            <input name="references" type="hidden">
         </form>
+        <div class="form-group">
+            <label>References</label>
+            <select multiple id="references" class="form-control">
+                {% for reference in all_references %}
+                    <option {% if reference.id in references_link %} selected {% endif %} value="{{ reference.id }}">{{ reference.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="form-group">
             <label>Geometry type</label>
             <select id="type" class="form-control">
@@ -48,7 +59,7 @@
         </div>
         <label class="control-label">Location</label>
         <p id="coordinates-input-wrapper"><span>Lat: </span><input class="form-control-custom" id="custom-lat" type="text" onchange="updateLocationPoint()"> <span style="margin-left: 20px">Long: </span><input class="form-control-custom" id="custom-long" type="text" onchange="updateLocationPoint()"></p>
-        <div id="map" class="map" style="height: 400px; width: 600px; margin-bottom: 50px"></div>
+        <div id="map" class="map" style="height: 400px; width: 100%; margin-bottom: 50px"></div>
         <input class="form-control btn btn-primary" form="form" type="submit" value="Update" />
     </div>
     </div>
@@ -61,8 +72,14 @@
             'POLYGON': 'Polygon'
         };
         var geojson  = new ol.format.GeoJSON;
+        var $references = $('#references');
 
         $(document).ready(function () {
+            $('#id_taxon_gbif_id').chosen();
+            $('#id_site').chosen();
+
+            $references.chosen();
+
             $('input[name=collection_date]').datepicker(
                 {
                     dateFormat: 'yyyy-mm-dd',
@@ -139,6 +156,7 @@
             });
             $('input[name=geometry_type]').val(typeSelect.value);
             $('input[name=geometry]').val(json);
+            $('input[name=references]').val($references.chosen().val().join());
         });
 
         function updateLocationPoint() {
