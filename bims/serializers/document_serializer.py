@@ -16,4 +16,5 @@ class DocumentSerializer(serializers.ModelSerializer):
             'owner',
             'group',
             'thumbnail_url',
-            'detail_url']
+            'detail_url',
+            'doc_file']

@@ -35,6 +35,18 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var template = _.template($('#species-template').html());
             return template(data);
         },
+        renderResources: function (data) {
+            if(!data.hasOwnProperty('documents')) {
+                return '';
+            }
+            var container = $('<div class="document-container"></div>');
+            $.each(data['documents'], function (key, value) {
+                var div = $('<div class="document-row"></div>');
+                div.append('<img src="'+value['thumbnail_url']+'" height="25px">&nbsp;<a href="'+value['doc_file']+'" download>'+value['title']+'</a>');
+                container.append(div);
+            });
+            return container;
+        },
         showRecords: function (e) {
             e.preventDefault();
             Shared.Dispatcher.trigger('recordsDetail:show', e.data.taxonId, e.data.taxonName, e.data.siteDetail);
@@ -122,6 +134,10 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 '<div class="search-results-total" data-visibility="false"> Species details ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $detailWrapper.append(
+                '<div id="taxon-resources" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> Resources ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            $detailWrapper.append(
                 '<div id="third-party" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> 3rd Party Data ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
@@ -180,6 +196,9 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     Shared.LocationSiteDetailXHRRequest = null;
                     $(speciesDetailContainer.find('.records-link').get(0)).click({
                         taxonId: self.taxonId, taxonName: self.taxonName, siteDetail: self.siteDetail}, self.showRecords);
+
+                    var resourcesContainer = $('#taxon-resources');
+                    resourcesContainer.append(self.renderResources(data));
                 },
                 error: function (req, err) {
 

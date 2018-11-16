@@ -111,8 +111,8 @@
         function get_chosen_taxon(div, docid) {
             $.get('/api/list-taxon-for-document/'+docid+'/',
                 function (data) {
+                    var selected = [];
                     if (data.length > 0) {
-                        var selected = [];
                         $.each(data, function (key, value) {
                             var option = new Option(value.scientific_name, value.id);
                             option.selected = true;
@@ -120,8 +120,8 @@
                             selected.push(value.id);
                         });
                         div.trigger('change');
-                        get_taxon(div, '/api/list-taxon/', selected);
                     }
+                    get_taxon(div, '/api/list-taxon/', selected);
                 })
         }
 
