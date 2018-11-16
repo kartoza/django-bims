@@ -107,3 +107,9 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
             'taxon_class', 'record_type',
             'count'
         ]
+
+
+class TaxonSimpleSerialializer(serializers.ModelSerializer):
+    class Meta:
+        model = Taxon
+        fields = ['id', 'common_name', 'scientific_name']

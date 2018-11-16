@@ -84,11 +84,70 @@
 
             var $completenessHints = $('#completeness-hints');
             $completenessHints.hide();
+
+            // Add forms
+            var $mandatoryForm = $('#mandatory').find('#basicDescriptiveInfo');
+            var $taxonLinkLabel = $('<span><label for="id_taxon-links">Link to Taxon</label></span>');
+            var $taxonLinkSelect = $('<select multiple="multiple" id="id_taxon-links">\n' +
+                '</select>');
+            $mandatoryForm.find('.col-lg-7').append($taxonLinkLabel);
+            $mandatoryForm.find('.col-lg-7').append($taxonLinkSelect);
+            $mandatoryForm.find('.col-lg-7').append('<input name="taxon-links" type="hidden">');
+            $taxonLinkSelect.select2({
+                placeholder: "Select an option",
+                allowClear: true
+            }).on('change', function (e) {
+                if(e.val) {
+                    $('input[name=taxon-links]').val(e.val.join());
+                }
+            });
+
+            var url = document.URL.split('/');
+            var docid = url[url.length-2];
+
+            get_chosen_taxon($taxonLinkSelect, docid);
         });
+
+        function get_chosen_taxon(div, docid) {
+            $.get('/api/list-taxon-for-document/'+docid+'/',
+                function (data) {
+                    if (data.length > 0) {
+                        var selected = [];
+                        $.each(data, function (key, value) {
+                            var option = new Option(value.scientific_name, value.id);
+                            option.selected = true;
+                            div.append(option);
+                            selected.push(value.id);
+                        });
+                        div.trigger('change');
+                        get_taxon(div, '/api/list-taxon/', selected);
+                    }
+                })
+        }
+
+        function get_taxon(div, url, selected) {
+            $.get(url,
+                function (data) {
+                    if (!data.hasOwnProperty('results')) {
+                        return true;
+                    }
+                    $.each(data.results, function (key, value) {
+                        if ($.inArray(selected, value.id) === -1) {
+                            div.append("<option value='"+value.id+"'>"+value.scientific_name+"</option>");
+                        }
+                    });
+                    if (data.hasOwnProperty('next')) {
+                        if (data['next']) {
+                            get_taxon(div, data['next'], selected);
+                        }
+                    }
+                }
+            );
+        }
 
     </script>
     <style>
-        #s2id_id_resource-links {
+        #s2id_id_resource-links, #s2id_id_taxon-links {
             width: 600px;
             height: 100%;
         }
