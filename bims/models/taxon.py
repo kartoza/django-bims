@@ -9,6 +9,7 @@ from django.contrib.postgres.fields import ArrayField
 from bims.models.iucn_status import IUCNStatus
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 
 class TaxonomyField(models.CharField):
@@ -23,7 +24,7 @@ class TaxonomyField(models.CharField):
         super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
-class Taxon(models.Model):
+class Taxon(DocumentLinksMixin):
     """Taxon model."""
 
     gbif_id = models.IntegerField(

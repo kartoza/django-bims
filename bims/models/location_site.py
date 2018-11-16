@@ -14,11 +14,12 @@ from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.cluster import update_cluster_by_site
 from bims.utils.get_key import get_key
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 LOGGER = logging.getLogger(__name__)
 
 
-class LocationSite(models.Model):
+class LocationSite(DocumentLinksMixin):
     """Location Site model."""
 
     __original_centroid = None
