@@ -77,12 +77,14 @@
 {% block extra_script %}
     {{ block.super }}
     <script type="text/javascript">
-        var $idResourceLinks = $('#id_resource-links');
-        $idResourceLinks.hide();
-        $idResourceLinks.prev().hide();
+        $(document).ready(function () {
+            var $idResourceLinks = $('#id_resource-links');
+            $idResourceLinks.hide();
+            $idResourceLinks.prev().hide();
 
-        var $completenessHints = $('#completeness-hints');
-        $completenessHints.hide();
+            var $completenessHints = $('#completeness-hints');
+            $completenessHints.hide();
+        });
 
     </script>
     <style>
