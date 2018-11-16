@@ -19,6 +19,7 @@ from geonode.base.models import TopicCategory
 from geonode.documents.models import Document
 from geonode.documents.forms import DocumentForm
 from geonode.groups.models import GroupProfile
+from geonode.documents.views import DocumentUploadView
 
 from bims.models.taxon import Taxon
 
@@ -40,6 +41,43 @@ def _resolve_document(request, docid, permission='base.change_resourcebase',
     '''
     return resolve_object(request, Document, {'pk': docid},
                           permission=permission, permission_msg=msg, **kwargs)
+
+
+class BimsDocumentUploadView(DocumentUploadView):
+    def form_valid(self, form):
+        """
+        If the form is valid, save the associated model.
+        """
+        self.object = form.save(commit=False)
+        self.object.owner = self.request.user
+        # by default, if RESOURCE_PUBLISHING=True then document.is_published
+        # must be set to False
+        # RESOURCE_PUBLISHING works in similar way as ADMIN_MODERATE_UPLOADS,
+        # but is applied to documents only. ADMIN_MODERATE_UPLOADS has wider
+        # usage
+        is_published = not (
+            settings.RESOURCE_PUBLISHING or settings.ADMIN_MODERATE_UPLOADS)
+        self.object.is_published = is_published
+        self.object.save()
+        if self.request.method == 'POST' and self.object:
+            taxon_links = self.request.POST.get('taxon-links', None)
+            if taxon_links:
+                taxon_links = taxon_links.split(',')
+                for taxon_link in taxon_links:
+                    try:
+                        taxon = Taxon.objects.get(
+                            id=taxon_link
+                        )
+                        taxon.documents.add(
+                            self.object
+                        )
+                        taxon.save()
+                    except Taxon.DoesNotExist as e:
+                        pass
+
+        return super(BimsDocumentUploadView, self).form_valid(
+            form
+        )
 
 
 @login_required

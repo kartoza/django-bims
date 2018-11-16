@@ -72,9 +72,6 @@ urlpatterns = [
     url(r'^download-csv-taxa-records/$',
         download_csv_site_taxa_records,
         name='taxa-site-download'),
-    url(r'^document_metadata/$',
-        download_csv_site_taxa_records,
-        name='document_metadata')
 ]
 
 # Api urls
