@@ -99,6 +99,8 @@
             }).on('change', function (e) {
                 if(e.val) {
                     $('input[name=taxon-links]').val(e.val.join());
+                } else if ($(e.target).val()) {
+                    $('input[name=taxon-links]').val($(e.target).val().join());
                 }
             });
 
