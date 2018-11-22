@@ -76,6 +76,12 @@ You have to install ansible. Run following command in this folder:
 ```
 pip install -r requirements.txt
 ```
+If the above fails ensure pip and setuptools are up to date: 
+```
+sudo pip3 install --upgrade pip
+sudo pip3 install --upgrade setuptools
+```
+
 
 Then, run check script
 
