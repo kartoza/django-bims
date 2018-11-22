@@ -39,6 +39,7 @@ class TaxonForDocument(APIView):
         )
         return Response(serializer.data)
 
+
 class TaxonDetail(APIView):
     """
     Retrieve a taxon instance.

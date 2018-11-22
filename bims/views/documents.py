@@ -23,21 +23,21 @@ from geonode.documents.views import DocumentUploadView
 
 from bims.models.taxon import Taxon
 
-
 logger = logging.getLogger("geonode.documents.views")
 
 _PERMISSION_MSG_DELETE = _("You are not permitted to delete this document")
 _PERMISSION_MSG_GENERIC = _("You do not have permissions for this document.")
 _PERMISSION_MSG_MODIFY = _("You are not permitted to modify this document")
 _PERMISSION_MSG_METADATA = _(
-    "You are not permitted to modify this document's metadata")
+        "You are not permitted to modify this document's metadata")
 _PERMISSION_MSG_VIEW = _("You are not permitted to view this document")
 
 
 def _resolve_document(request, docid, permission='base.change_resourcebase',
                       msg=_PERMISSION_MSG_GENERIC, **kwargs):
     '''
-    Resolve the document by the provided primary key and check the optional permission.
+    Resolve the document by the provided primary key
+    and check the optional permission.
     '''
     return resolve_object(request, Document, {'pk': docid},
                           permission=permission, permission_msg=msg, **kwargs)
@@ -56,7 +56,8 @@ class BimsDocumentUploadView(DocumentUploadView):
         # but is applied to documents only. ADMIN_MODERATE_UPLOADS has wider
         # usage
         is_published = not (
-            settings.RESOURCE_PUBLISHING or settings.ADMIN_MODERATE_UPLOADS)
+                settings.RESOURCE_PUBLISHING or
+                settings.ADMIN_MODERATE_UPLOADS)
         self.object.is_published = is_published
         self.object.save()
         if self.request.method == 'POST' and self.object:
@@ -66,17 +67,17 @@ class BimsDocumentUploadView(DocumentUploadView):
                 for taxon_link in taxon_links:
                     try:
                         taxon = Taxon.objects.get(
-                            id=taxon_link
+                                id=taxon_link
                         )
                         taxon.documents.add(
-                            self.object
+                                self.object
                         )
                         taxon.save()
-                    except Taxon.DoesNotExist as e:
+                    except Taxon.DoesNotExist as e:  # noqa
                         pass
 
         return super(BimsDocumentUploadView, self).form_valid(
-            form
+                form
         )
 
 
@@ -86,32 +87,33 @@ def document_metadata(
         docid,
         template='documents/document_metadata.html',
         ajax=True):
-
     document = None
     try:
         document = _resolve_document(
-            request,
-            docid,
-            'base.change_resourcebase_metadata',
-            _PERMISSION_MSG_METADATA)
+                request,
+                docid,
+                'base.change_resourcebase_metadata',
+                _PERMISSION_MSG_METADATA)
 
     except Http404:
         return HttpResponse(
-            loader.render_to_string(
-                '404.html', context={
-                }, request=request), status=404)
+                loader.render_to_string(
+                        '404.html', context={
+                        }, request=request), status=404)
 
     except PermissionDenied:
         return HttpResponse(
-            loader.render_to_string(
-                '401.html', context={
-                    'error_message': _("You are not allowed to edit this document.")}, request=request), status=403)
+                loader.render_to_string(
+                        '401.html', context={
+                            'error_message': _(
+                                "You are not allowed to edit this document.")
+                        }, request=request), status=403)
 
     if document is None:
         return HttpResponse(
-            'An unknown error has occured.',
-            content_type="text/plain",
-            status=401
+                'An unknown error has occured.',
+                content_type="text/plain",
+                status=401
         )
 
     else:
@@ -121,16 +123,21 @@ def document_metadata(
 
         if request.method == "POST":
             document_form = DocumentForm(
-                request.POST,
-                instance=document,
-                prefix="resource")
-            category_form = CategoryForm(request.POST, prefix="category_choice_field", initial=int(
-                request.POST["category_choice_field"]) if "category_choice_field" in request.POST else None)
+                    request.POST,
+                    instance=document,
+                    prefix="resource")
+            category_form = CategoryForm(request.POST,
+                                         prefix="category_choice_field",
+                                         initial=int(
+                                                 request.POST[
+                                                     "category_choice_field"])
+                                         if "category_choice_field" in
+                                            request.POST else None)
         else:
             document_form = DocumentForm(instance=document, prefix="resource")
             category_form = CategoryForm(
-                prefix="category_choice_field",
-                initial=topic_category.id if topic_category else None)
+                    prefix="category_choice_field",
+                    initial=topic_category.id if topic_category else None)
 
         if request.method == "POST" and document_form.is_valid(
         ) and category_form.is_valid():
@@ -139,23 +146,25 @@ def document_metadata(
             new_keywords = document_form.cleaned_data['keywords']
             new_regions = document_form.cleaned_data['regions']
             new_category = TopicCategory.objects.get(
-                id=category_form.cleaned_data['category_choice_field'])
+                    id=category_form.cleaned_data['category_choice_field'])
 
             if new_poc is None:
                 if poc is None:
                     poc_form = ProfileForm(
-                        request.POST,
-                        prefix="poc",
-                        instance=poc)
+                            request.POST,
+                            prefix="poc",
+                            instance=poc)
                 else:
                     poc_form = ProfileForm(request.POST, prefix="poc")
                 if poc_form.is_valid():
                     if len(poc_form.cleaned_data['profile']) == 0:
                         # FIXME use form.add_error in django > 1.7
                         errors = poc_form._errors.setdefault(
-                            'profile', ErrorList())
+                                'profile', ErrorList())
                         errors.append(
-                            _('You must set a point of contact for this resource'))
+                                _(
+                                    'You must set a point of '
+                                    'contact for this resource'))
                         poc = None
                 if poc_form.has_changed and poc_form.is_valid():
                     new_poc = poc_form.save()
@@ -170,9 +179,9 @@ def document_metadata(
                     if len(author_form.cleaned_data['profile']) == 0:
                         # FIXME use form.add_error in django > 1.7
                         errors = author_form._errors.setdefault(
-                            'profile', ErrorList())
+                                'profile', ErrorList())
                         errors.append(
-                            _('You must set an author for this resource'))
+                                _('You must set an author for this resource'))
                         metadata_author = None
                 if author_form.has_changed and author_form.is_valid():
                     new_author = author_form.save()
@@ -190,51 +199,52 @@ def document_metadata(
             the_document.save()
             document_form.save_many2many()
             Document.objects.filter(
-                id=the_document.id).update(
-                category=new_category)
+                    id=the_document.id).update(
+                    category=new_category)
 
             # Update taxon links
             doc = Document.objects.get(
-                id=the_document.id
+                    id=the_document.id
             )
             taxon_links = request.POST.get('taxon-links', None)
             old_taxon_links = Taxon.objects.filter(
-                documents__id=the_document.id
+                    documents__id=the_document.id
             )
             for taxon_link in old_taxon_links:
                 taxon_link.documents.remove(
-                    doc
+                        doc
                 )
             if taxon_links:
                 taxon_links = taxon_links.split(',')
                 for taxon_link in taxon_links:
                     try:
                         taxon = Taxon.objects.get(
-                            id=taxon_link
+                                id=taxon_link
                         )
                         taxon.documents.add(
-                            doc
+                                doc
                         )
                         taxon.save()
-                    except Taxon.DoesNotExist as e:
+                    except Taxon.DoesNotExist as e:  # noqa
                         pass
 
             if getattr(settings, 'SLACK_ENABLED', False):
                 try:
-                    from geonode.contrib.slack.utils import build_slack_message_document, send_slack_messages
+                    from geonode.contrib.slack.utils import \
+                        build_slack_message_document, send_slack_messages
                     send_slack_messages(
-                        build_slack_message_document(
-                            "document_edit", the_document))
+                            build_slack_message_document(
+                                    "document_edit", the_document))
                 except BaseException:
                     print "Could not send slack message for modified document."
 
             if not ajax:
                 return HttpResponseRedirect(
-                    reverse(
-                        'document_detail',
-                        args=(
-                            document.id,
-                        )))
+                        reverse(
+                                'document_detail',
+                                args=(
+                                    document.id,
+                                )))
 
             message = document.id
 
@@ -249,7 +259,8 @@ def document_metadata(
             poc_form.hidden = True
 
         if metadata_author is not None:
-            document_form.fields['metadata_author'].initial = metadata_author.id
+            document_form.fields[
+                'metadata_author'].initial = metadata_author.id
             author_form = ProfileForm(prefix="author")
             author_form.hidden = True
 
@@ -259,30 +270,32 @@ def document_metadata(
         else:
             try:
                 all_metadata_author_groups = chain(
-                    request.user.group_list_all(),
-                    GroupProfile.objects.exclude(access="private").exclude(access="public-invite"))
+                        request.user.group_list_all(),
+                        GroupProfile.objects.exclude(access="private").exclude(
+                            access="public-invite"))
             except BaseException:
                 all_metadata_author_groups = GroupProfile.objects.exclude(
-                    access="private").exclude(access="public-invite")
-            [metadata_author_groups.append(item) for item in all_metadata_author_groups
-                if item not in metadata_author_groups]
+                        access="private").exclude(access="public-invite")
+            [metadata_author_groups.append(item) for item in
+             all_metadata_author_groups
+             if item not in metadata_author_groups]
 
         if settings.ADMIN_MODERATE_UPLOADS:
             if not request.user.is_superuser:
                 document_form.fields['is_published'].widget.attrs.update(
-                    {'disabled': 'true'})
+                        {'disabled': 'true'})
 
                 can_change_metadata = request.user.has_perm(
-                    'change_resourcebase_metadata',
-                    document.get_self_resource())
+                        'change_resourcebase_metadata',
+                        document.get_self_resource())
                 try:
-                    is_manager = request.user.groupmember_set.all().filter(role='manager').exists()
+                    is_manager = request.user.groupmember_set.all().filter(
+                        role='manager').exists()
                 except BaseException:
                     is_manager = False
                 if not is_manager or not can_change_metadata:
                     document_form.fields['is_approved'].widget.attrs.update(
-                        {'disabled': 'true'})
-
+                            {'disabled': 'true'})
 
         return render(request, template, context={
             "resource": document,
@@ -292,5 +305,7 @@ def document_metadata(
             "author_form": author_form,
             "category_form": category_form,
             "metadata_author_groups": metadata_author_groups,
-            "GROUP_MANDATORY_RESOURCES": getattr(settings, 'GROUP_MANDATORY_RESOURCES', False),
+            "GROUP_MANDATORY_RESOURCES": getattr(settings,
+                                                 'GROUP_MANDATORY_RESOURCES',
+                                                 False),
         })
