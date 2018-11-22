@@ -236,7 +236,8 @@ def document_metadata(
                             build_slack_message_document(
                                     "document_edit", the_document))
                 except BaseException:
-                    print "Could not send slack message for modified document."
+                    print("Could not send slack "
+                          "message for modified document.")
 
             if not ajax:
                 return HttpResponseRedirect(
