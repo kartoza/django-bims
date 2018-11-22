@@ -1,4 +1,5 @@
 {% extends "geonode_base.html" %}
+{% load static from staticfiles %}
 {% load i18n %}
 {% load base_tags %}
 {% load guardian_tags %}
@@ -8,13 +9,9 @@
 
 {% block body_class %}documents{% endblock %}
 {% block header %}
-    <style>
-        body {
-            background-color: rgba(239, 239, 239, 0.27);
-            padding-top: 80px;
-            font-size: 11pt;
-        }
-    </style>
+    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
+    <link href="{% static "css/navbar_geonode.css" %}" rel="stylesheet">
+    {% include 'navigation_bar.html' %}
 {% endblock %}
 
 {% block body_outer %}
