@@ -26,7 +26,9 @@ class PaginationAPIView(APIView):
         if self.paginator is None:
             return None
         return self.paginator.paginate_queryset(
-            queryset, self.request, view=self)
+                queryset,
+                self.request,
+                view=self)
 
     def get_paginated_response(self, data):
         """

@@ -6,7 +6,6 @@ class DocumentLinksMixin(models.Model):
 
     documents = models.ManyToManyField(
         Document,
-        null=True,
         blank=True)
 
     class Meta:

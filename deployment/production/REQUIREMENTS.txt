@@ -11,7 +11,7 @@ celery==4.1.0
 # https://github.com/getsentry/raven-python/issues/337
 raven==5.8.1
 django-sentry==1.13.5
-requests==2.18.4
+requests>=2.20.0
 pytz
 # support special characters
 
