@@ -2,6 +2,10 @@ body {
     font-family: "Roboto Condensed";
 }
 
+#mainNav {
+    pointer-events: none;
+}
+
 .container {
     margin-right: 0 !important;
     margin-left: 0 !important;
@@ -525,7 +529,6 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-control-panel-box .close-button:hover {
-    background-color: rgba(0, 0, 0, 0.7) !important;
     color: white !important;
 }
 
