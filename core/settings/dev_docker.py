@@ -5,7 +5,9 @@ from .dev import *  # noqa
 ALLOWED_HOSTS = ['*',
                  u'0.0.0.0']
 
-ADMINS = ()
+ADMINS = (
+    ('Anita Hapsari', 'anita@kartoza.com'),
+)
 
 # Set debug to True for development
 DEBUG = True
