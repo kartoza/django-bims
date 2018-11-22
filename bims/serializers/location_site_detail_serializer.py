@@ -86,10 +86,10 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
             # get per module info
             module = model.get_children()
-            if not module:
-                module = 'base'
-            else:
+            try:
                 module = module._meta.verbose_name
+            except AttributeError:
+                module = 'base'
 
             try:
                 module_info[module]
