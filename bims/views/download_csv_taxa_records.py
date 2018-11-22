@@ -28,7 +28,7 @@ def download_csv_site_taxa_records(request):
         children_model = records[0].get_children()
         if children_model:
             current_model = children_model
-    except:
+    except:  # noqa
         pass
 
     fields = [f.name for f in current_model._meta.get_fields()]
@@ -56,7 +56,7 @@ def download_csv_site_taxa_records(request):
             children_record = record.get_children()
             if children_record:
                 record = children_record
-        except:
+        except:  # noqa
             pass
         row_object = []
         for field in fields:

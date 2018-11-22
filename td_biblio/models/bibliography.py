@@ -343,6 +343,10 @@ class Entry(models.Model):
         verbose_name = _("Entry")
         verbose_name_plural = _("Entries")
         ordering = ('-publication_date',)
+        permissions = (
+            ('can_add_bibliograpy_entry',
+             'Can Add Bibliography Entry'),
+        )
 
     def __unicode__(self):
         """Format entry with a default bibliography style"""

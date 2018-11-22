@@ -287,7 +287,7 @@ OGC_SERVER['default']['DATASTORE'] = os.environ.get(
         'DEFAULT_BACKEND_DATASTORE', '')
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.'
-                                'pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
