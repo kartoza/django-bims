@@ -15,7 +15,11 @@ from bims.api_views.location_type import (
 from bims.api_views.non_biodiversity_layer import (
     NonBiodiversityLayerList
 )
-from bims.api_views.taxon import TaxonDetail
+from bims.api_views.taxon import (
+    TaxonDetail,
+    TaxonSimpleList,
+    TaxonForDocument,
+)
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
     GetCollectionExtent,
@@ -39,6 +43,7 @@ from bims.api_views.send_notification_to_validator import \
     SendNotificationValidation
 from bims.views.locate import filter_farm_ids_view, get_farm_view
 from bims.api_views.user_boundary import UserBoundaryList
+from bims.api_views.documents import DocumentList
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -50,6 +55,10 @@ urlpatterns = [
         name='location-site-detail'),
     url(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
+    url(r'^list-taxon/$',
+        TaxonSimpleList.as_view()),
+    url(r'^list-taxon-for-document/(?P<docid>[0-9]+)/$',
+        TaxonForDocument.as_view()),
     url(r'^cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
     url(r'^collection/extent/$',
@@ -74,6 +83,8 @@ urlpatterns = [
         ReferenceList.as_view(), name='list-reference'),
     url(r'^list-entry-reference/$',
         ReferenceEntryList.as_view(), name='list-entry-reference'),
+    url(r'^list-documents/$',
+        DocumentList.as_view(), name='list-documents'),
     url(r'^list-non-biodiversity/$',
         NonBiodiversityLayerList.as_view(),
         name='list-non-biodiversity-layer'),

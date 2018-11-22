@@ -1992,3 +1992,13 @@ div:hover::-webkit-scrollbar {
 .chosen-select, .chosen-container {
     width: 100% !important;
 }
+
+.document-container {
+    padding: 10px;
+}
+
+.document-row {
+    font-size: 11pt;
+    padding: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}

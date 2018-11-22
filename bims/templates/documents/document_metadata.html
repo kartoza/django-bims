@@ -1,0 +1,160 @@
+{% extends "metadata_base.html" %}
+{% load i18n %}
+{% load bootstrap_tags %}
+{% load base_tags %}
+{% load guardian_tags %}
+{% load floppyforms %}
+
+{% block title %}{{ document.title }} — {{ block.super }}{% endblock %}
+
+{% block body_class %}data{% endblock body_class %}
+
+{% block body_outer %}
+
+    {{ block.super }}
+
+    <div class="container-fluid page-header" style="position: relative;">
+        <h2 class="page-title">{% trans "Metadata" %}&nbsp;{% blocktrans with document.title as document_title %}for {{ document_title }}{% endblocktrans %}</h2>
+
+        </h2>
+    </div>
+
+    <form id="metadata_update" class="form-horizontal" action="{% url "document_metadata" document.id %}" method="POST">
+        {% if document_form.errors or category_form.errors or author_form.errors or poc.errors %}
+            <p class="bg-danger">{% blocktrans %}Error updating metadata.  Please check the following fields: {% endblocktrans %}</p>
+            <ul class="bg-danger">
+                {% if author_form.errors %}
+                    <li>{% trans "Metadata Author" %}</li>
+                    {{ author_form.errors }}
+                {% endif %}
+                {% if poc_form.errors %}
+                    <li>{% trans "Point of Contact" %}</li>
+                    {{ poc_form.errors }}
+                {% endif %}
+                {% for field in document_form %}
+                    {% if field.errors %}
+                        <li>{{ field.label }}</li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if category_form.errors %}
+                    <li>{{ category_form.errors.as_ul }}</li>
+                {% endif %}
+            </ul>
+        {% endif %}
+
+        {% csrf_token %}
+        <div id="mdeditor_form" class="col-md-12 form-controls">
+            {% form document_form using "layouts/doc_panels.html" %}
+            {# document_form|as_bootstrap #}
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 grid-spacer">
+                <fieldset class="form-controls modal-forms modal hide fade" id="poc_form" >
+                    <h2>{% trans "Point of Contact" %}</h2>
+                    {{ poc_form|as_bootstrap }}
+                    <button type='button' class="modal-cloose-btn btn btn-primary">Done</button>
+                </fieldset>
+                <fieldset class="form-controls modal-forms modal hide fade" id="metadata_form">
+                    <h2>{% trans "Metadata Provider" %}</h2>
+                    {{ author_form|as_bootstrap }}
+                    <button type='button' class="modal-cloose-btn btn btn-primary">Done</button>
+                </fieldset>
+
+                <div class="form-actions">
+                    <input type="button" id="btn_back_dwn" class="btn btn-primary" style="display: none" value="{% trans "<< Back" %}"/>
+                    <input type="submit" id="btn_upd_md_dwn" class="btn btn-primary" value="{% trans "Update" %}"/>
+                    <input type="button" id="btn_next_dwn" class="btn btn-primary" value="{% trans "Next >>" %}"/>
+                </div>
+            </div>
+        </div>
+    </form>
+    </div>
+    </div>
+{% endblock body_outer %}
+
+{% block extra_script %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var $idResourceLinks = $('#id_resource-links');
+            $idResourceLinks.hide();
+            $idResourceLinks.prev().hide();
+
+            var $completenessHints = $('#completeness-hints');
+            $completenessHints.hide();
+
+            // Add forms
+            var $mandatoryForm = $('#mandatory').find('#basicDescriptiveInfo');
+            var $taxonLinkLabel = $('<span><label for="id_taxon-links">Link to Taxon</label></span>');
+            var $taxonLinkSelect = $('<select multiple="multiple" id="id_taxon-links">\n' +
+                '</select>');
+            $mandatoryForm.find('.col-lg-7').append($taxonLinkLabel);
+            $mandatoryForm.find('.col-lg-7').append($taxonLinkSelect);
+            $mandatoryForm.find('.col-lg-7').append('<input name="taxon-links" type="hidden">');
+            $taxonLinkSelect.select2({
+                placeholder: "Select an option",
+                allowClear: true
+            }).on('change', function (e) {
+                if(e.val) {
+                    $('input[name=taxon-links]').val(e.val.join());
+                } else if ($(e.target).val()) {
+                    $('input[name=taxon-links]').val($(e.target).val().join());
+                }
+            });
+
+            var url = document.URL.split('/');
+            var docid = url[url.length-2];
+
+            get_chosen_taxon($taxonLinkSelect, docid);
+        });
+
+        function get_chosen_taxon(div, docid) {
+            $.get('/api/list-taxon-for-document/'+docid+'/',
+                function (data) {
+                    var selected = [];
+                    if (data.length > 0) {
+                        $.each(data, function (key, value) {
+                            var option = new Option(value.scientific_name, value.id);
+                            option.selected = true;
+                            div.append(option);
+                            selected.push(value.id);
+                        });
+                        div.trigger('change');
+                    }
+                    get_taxon(div, '/api/list-taxon/', selected);
+                })
+        }
+
+        function get_taxon(div, url, selected) {
+            $.get(url,
+                function (data) {
+                    if (!data.hasOwnProperty('results')) {
+                        return true;
+                    }
+                    $.each(data.results, function (key, value) {
+                        if ($.inArray(selected, value.id) === -1) {
+                            div.append("<option value='"+value.id+"'>"+value.scientific_name+"</option>");
+                        }
+                    });
+                    if (data.hasOwnProperty('next')) {
+                        if (data['next']) {
+                            get_taxon(div, data['next'], selected);
+                        }
+                    }
+                }
+            );
+        }
+
+    </script>
+    <style>
+        #s2id_id_resource-links, #s2id_id_taxon-links {
+            width: 600px;
+            height: 100%;
+        }
+        .wizard--progress {
+            padding-top: 20px;
+        }
+    </style>
+{% endblock extra_script %}

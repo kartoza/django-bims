@@ -1,0 +1,106 @@
+{% extends "documents/document_upload_base.html" %}
+{% load bootstrap_tags %}
+{% load i18n %}
+
+{% block title %} {% trans "Upload Document" %} - {{ block.super }} {% endblock %}
+
+{% block body_class %}documents upload{% endblock body_class %}
+
+{% block head %}
+    {% include "geoext/ext_header.html" %}
+    {% include "geoext/app_header.html" %}
+    {{ block.super }}
+{% endblock %}
+
+{% block body %}
+
+<div class="col-md-8">
+  <form id="upload_form"  method="post" enctype="multipart/form-data" action="{% url "document_upload" %}">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+    {{ form.as_p }}
+    <button type="submit" id="upload-button" class="btn btn-danger">{% trans "Upload" %}</button>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block sidebar %}
+
+<div class="col-md-4">
+  <h3>{% trans "Permissions"  %}</h3>
+  <form id="permission_form">
+    {% include "_permissions.html" %}
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_script %}
+{{ block.super }}
+{% include "_permissions_form_js.html" %}
+
+<script type="text/javascript">
+    $('#id_doc_file').on('change', function(){
+        if($('#id_title').val() == ''){
+            $('#id_title').val($('#id_doc_file').val().replace("C:\\fakepath\\", ""));
+        }
+    });
+    var $idLinks = $('#id_links');
+
+    $(document).ready(function () {
+        $idLinks.hide();
+        $idLinks.prev().hide();
+              // Add forms
+            var $mandatoryForm = $('#upload_form').find('button').prev();
+            var $taxonLinkLabel = $('<span><label for="id_taxon-links">Link to Taxon</label></span>');
+            var $taxonLinkSelect = $('<select multiple="multiple" id="id_taxon-links">\n' +
+                '</select>');
+            $mandatoryForm.append($taxonLinkLabel);
+            $mandatoryForm.append('<br/>');
+            $mandatoryForm.append($taxonLinkSelect);
+            $mandatoryForm.append('<input name="taxon-links" type="hidden">');
+            $taxonLinkSelect.select2({
+                placeholder: "Select an option",
+                allowClear: true
+            }).on('change', function (e) {
+                if(e.val) {
+                    $('input[name=taxon-links]').val(e.val.join());
+                }
+            });
+            get_taxon($taxonLinkSelect, '/api/list-taxon/', []);
+    });
+
+    function get_taxon(div, url, selected) {
+        $.get(url,
+            function (data) {
+                if (!data.hasOwnProperty('results')) {
+                    return true;
+                }
+                $.each(data.results, function (key, value) {
+                    if ($.inArray(selected, value.id) === -1) {
+                        div.append("<option value='"+value.id+"'>"+value.scientific_name+"</option>");
+                    }
+                });
+                if (data.hasOwnProperty('next')) {
+                    if (data['next']) {
+                        get_taxon(div, data['next'], selected);
+                    }
+                }
+            }
+        );
+    }
+
+    $('#upload_form').submit(function(){
+      $('#permissions').val(JSON.stringify(permissionsString($('#permission_form'),'base')));
+    });
+    $('#upload-button').click(function(){
+      $('#_resource_uploading').modal('toggle');
+    });
+</script>
+<style>
+    #s2id_id_taxon-links {
+         width: 480px;
+         height: 100%;
+    }
+</style>
+{% endblock extra_script %}
