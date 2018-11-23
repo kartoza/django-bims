@@ -425,5 +425,10 @@ admin.site.register(SearchProcess, SearchProcessAdmin)
 
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 
+# Hide upload files from geonode in admin
+from geonode.upload.models import Upload, UploadFile
+admin.site.unregister(Upload)
+admin.site.unregister(UploadFile)
+
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
