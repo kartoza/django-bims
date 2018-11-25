@@ -8,9 +8,9 @@ define(
         'views/search',
         'views/locate',
         'views/upload_data',
-        'views/data_downloader-modal',
-        'views/spatial_filter'],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
+        'views/data_downloader-modal'
+    ],
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
@@ -27,7 +27,6 @@ define(
                 'click .upload-data': 'uploadDataClicked',
                 'click .download-control': 'downloadControlClicked',
                 'click .map-search-close': 'closeSearchPanel',
-                'click .spatial-filter-container-close': 'closeSpatialFilterPanel',
                 'click .layers-selector-container-close': 'closeFilterPanel',
                 'click .locate-options-container-close': 'closeLocatePanel',
                 'click .sub-filter': 'closeSubFilter',
@@ -62,24 +61,10 @@ define(
                 elm.popover('hide');
                 this.closedPopover.push(elm);
             },
-            spatialFilterClicked: function (e) {
-                if (!this.spatialFilter.isOpen()) {
-                    this.hidePopOver($(e.target));
-                    this.resetAllControlState();
-                    this.openSpatialFilterPanel();
-                    this.closeSearchPanel();
-                    this.closeFilterPanel();
-                    this.closeLocatePanel();
-                    this.closeValidateData();
-                } else {
-                    this.closeSpatialFilterPanel();
-                }
-            },
             validateDataClicked: function (e) {
                 if(!this.validateDataListOpen) {
                     this.hidePopOver($(e.target));
                     this.resetAllControlState();
-                    this.closeSpatialFilterPanel();
                     this.closeSearchPanel();
                     this.closeFilterPanel();
                     this.closeLocatePanel();
@@ -95,7 +80,6 @@ define(
                     this.openSearchPanel();
                     this.closeFilterPanel();
                     this.closeLocatePanel();
-                    this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeSearchPanel();
@@ -108,7 +92,6 @@ define(
                     this.openFilterPanel();
                     this.closeSearchPanel();
                     this.closeLocatePanel();
-                    this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeFilterPanel();
@@ -121,7 +104,6 @@ define(
                     this.openLocatePanel();
                     this.closeSearchPanel();
                     this.closeFilterPanel();
-                    this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeLocatePanel();
@@ -182,11 +164,7 @@ define(
                 });
                 this.$el.append(this.uploadDataView.render().$el);
 
-                this.spatialFilter = new SpatialFilter({
-                    parent: this,
-                });
-
-                this.$el.append(this.spatialFilter.render().$el);
+                this.spatialFilter = null;
 
                 return this;
             },
@@ -197,14 +175,6 @@ define(
             closeSearchPanel: function () {
                 this.$el.find('.search-control').removeClass('control-panel-selected');
                 this.searchView.hide();
-            },
-            openSpatialFilterPanel: function () {
-                this.$el.find('.spatial-filter').addClass('control-panel-selected');
-                this.spatialFilter.show();
-            },
-            closeSpatialFilterPanel: function () {
-                this.$el.find('.spatial-filter').removeClass('control-panel-selected');
-                this.spatialFilter.hide();
             },
             closeValidateData: function () {
                 this.$el.find('.validate-data').removeClass('control-panel-selected');

@@ -19,6 +19,7 @@ from django.db import models
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
+from geonode.upload.models import Upload, UploadFile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
@@ -426,7 +427,6 @@ admin.site.register(SearchProcess, SearchProcessAdmin)
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 
 # Hide upload files from geonode in admin
-from geonode.upload.models import Upload, UploadFile
 admin.site.unregister(Upload)
 admin.site.unregister(UploadFile)
 
