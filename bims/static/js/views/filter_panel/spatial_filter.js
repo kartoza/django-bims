@@ -105,7 +105,6 @@ define([
 
             });
 
-            console.log(this);
             return this;
         },
         getUserBoundary: function () {
