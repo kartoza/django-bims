@@ -123,6 +123,8 @@
             </div>
         </div>
 
+        <div class="spatial-filter-wrapper"></div>
+
         {% if use_ecological_condition %}
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
@@ -253,17 +255,6 @@
 </script>
 
 <script type="text/html" id="spatial-filter-panel">
-    <div class="spatial-filter-container map-control-panel-box">
-        <div class="row spatial-filter-panel-title">
-            <div class="col-lg-12" style="padding-right: 0">
-                    <span class="title">
-                        SPATIAL FILTER
-                    </span>
-                <div class="spatial-filter-container-close close-button pull-right">
-                    <img class="close-icon" src="/static/img/close_icon.svg">
-                </div>
-            </div>
-        </div>
         <div class="row sub-filter content spatial-scale-menu">
             <div class="col-lg-12 subtitle">
                  {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
@@ -296,9 +287,12 @@
                 <button class="spatial-scale-clear-filter" disabled>Clear Filter</button>
             </div>
         </div>
+        {% if user.is_authenticated %}
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                 USER BOUNDARY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                 USER BOUNDARY
+                <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                <i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="user-boundary-panel" style="display: none">
@@ -312,7 +306,7 @@
                 <button class="spatial-clear-filter">Clear Filter</button>
             </div>
         </div>
-    </div>
+        {% endif %}
 
     <div class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
@@ -394,9 +388,6 @@
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
-            <div class="spatial-filter sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Spatial Filter">
-                <i class="fa fa-crop" aria-hidden="true"></i>
-            </div>
             {% if perms.bims.can_upload_csv %}
             <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Capture Single Occurrence">
                 <i class="fa fa-crosshairs" aria-hidden="true"></i>
