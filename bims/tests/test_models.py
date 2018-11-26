@@ -1,11 +1,7 @@
 # coding=utf-8
 """Tests for models."""
-import json
-import unittest
-import mock
-
 from django.test import TestCase
-from django.contrib.gis.geos import LineString, Point
+from django.contrib.gis.geos import LineString
 from django.core.exceptions import ValidationError
 from django.db.models import signals
 from bims.tests.model_factories import (
@@ -212,35 +208,6 @@ class TestLocationSiteCRUD(TestCase):
 
         # check if validation error raised
         self.assertRaises(ValidationError, location_site.save)
-
-    @unittest.skipIf(skip_geocontext, 'Url or collection key is not found')
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def test_LocationSite_update_location_context_document(self, mock_get):
-        """Test updating location context document"""
-        location_site = LocationSiteF.create(geometry_point=Point(0, 0))
-        self.assertIsNone(location_site.location_context_document)
-        old_point = {
-            'geometry_point': Point(27, -31),
-        }
-        location_site.__dict__.update(old_point)
-        # update_location_context_document is called here
-        location_site.save()
-        old_context = location_site.location_context_document
-        self.assertIsNotNone(old_context)
-        self.assertEqual(old_context, json.dumps(first_json_data))
-        self.assertEqual(json.loads(old_context), first_json_data)
-        new_point = {
-            'geometry_point': Point(26, -30),
-        }
-        location_site.__dict__.update(new_point)
-        # update_location_context_document is called here
-        location_site.save()
-        self.assertIsNotNone(location_site.location_context_document)
-        self.assertNotEqual(
-            location_site.location_context_document, old_context)
-        self.assertEqual(
-            location_site.location_context_document, json.dumps(
-                second_json_data))
 
 
 class TestIUCNStatusCRUD(TestCase):

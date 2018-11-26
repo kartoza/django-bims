@@ -11,42 +11,63 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         filterFarmIDXhr: null,
         farm_ids: [],
         lastFarmIDFilter: '',
+        alertDiv: null,
         render: function () {
             this.$el.html(this.template());
             this.locateCoordinateModal = this.$el.find('.modal');
+            this.alertDiv = this.$el.find('.alert');
+            this.farmInput = this.$el.find('#farm-id');
+            this.goButton = this.$el.find('#go-button');
             return this;
         },
         showModal: function (activeForm) {
+            var self = this;
             this.locateCoordinateModal.show();
-             $.each(this.formList, function (key, formClass) {
-                 $(formClass).hide();
-             });
+            $.each(this.formList, function (key, formClass) {
+                $(formClass).hide();
+            });
             $(activeForm).show();
             this.activeForm = activeForm;
+            this.farmInput.val('');
 
             // Activate autocomplete for search by farm ID
             if (this.activeForm === '.farm-form'){
-                $('#farm-id').autocomplete({
+                this.$el.find('.modal-title').html('Locate by Farm Portion Code');
+                this.farmInput.autocomplete({
                     source: filterFarmIDUrl,
-                    minLength: 3
+                    minLength: 3,
+                    select: function (event, ui) {
+                        var farm = ui.item.value;
+                        self.searchFarmID(farm);
+                    }
                 });
-                $("#farm-id").autocomplete( "option", "appendTo", "#locate-form" );
+                this.farmInput.autocomplete( "option", "appendTo", "#locate-form" );
+            } else {
+                this.$el.find('.modal-title').html('Locate by Coordinate');
             }
         },
         closeModal: function () {
+            this.alertDiv.hide();
             this.locateCoordinateModal.hide();
         },
         search: function(e){
-          if(this.activeForm === '.coordinate-form'){
-              this.searchCoordinate(e)
-          }else {
-              var farmID = $('#farm-id').val();
-              this.searchFarmID(farmID);
-          }
+            this.goButton.html('Fetching...');
+            this.goButton.prop('disabled', true);
+            if(this.activeForm === '.coordinate-form'){
+                this.searchCoordinate(e)
+            }else {
+                var farmID = this.farmInput.val();
+                this.searchFarmID(farmID);
+            }
         },
         searchCoordinate: function (e) {
             var longitude = parseFloat($('#longitude').val());
             var latitude = parseFloat($('#latitude').val());
+            if(isNaN(longitude) || isNaN(latitude)){
+                this.alertDiv.html('Lat/Long is not a number');
+                this.alertDiv.show();
+                return false;
+            }
             var coordinates = [longitude, latitude];
             coordinates = ol.proj.transform(
                 coordinates, ol.proj.get("EPSG:4326"), ol.proj.get("EPSG:3857"));
@@ -65,20 +86,34 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 url: url,
                 dataType: 'json',
                 success: function (data) {
+                    self.goButton.html('GO');
+                    self.goButton.prop('disabled', false);
                     // We need to rearrange the order since it has different
                     // format
+                    if (Object.keys(data).length === 0 || !data) {
+                        self.alertDiv.show();
+                        self.alertDiv.html('Not able to zoom to farm ID: ' + farmID + ' because of empty data');
+                    }
+                    if (data.constructor === Array) {
+                        self.farmInput.autocomplete("option", "source", data);
+                        self.farmInput.autocomplete("search");
+                        return false;
+                    }
                     var envelope_extent = [
-                        data['envelope_extent'][1],
                         data['envelope_extent'][0],
-                        data['envelope_extent'][3],
+                        data['envelope_extent'][1],
                         data['envelope_extent'][2],
+                        data['envelope_extent'][3],
                     ];
                     Shared.Dispatcher.trigger(
                         'map:zoomToExtent', envelope_extent);
                     self.closeModal();
                 },
                 error: function (req, err) {
-                    console.log(err);
+                    self.goButton.html('GO');
+                    self.goButton.prop('disabled', false);
+                    self.alertDiv.show();
+                    self.alertDiv.html('Not able to zoom to farm ID: ' + farmID + ' because of ' + err);
                     alert('Not able to zoom to farm ID: ' + farmID + ' because of ' + err);
                 }
             });

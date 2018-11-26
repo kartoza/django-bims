@@ -243,6 +243,17 @@ a.anchor-entry {
     text-align: center !important;
 }
 
+@media only screen and (max-width: 600px) {
+    /* For mobile phones: */
+    .socialaccount_ballot li {
+        float: none;
+        margin: 0 auto !important;
+    }
+    .btn-social-login {
+        margin: 20px 0 0 0 !important;
+    }
+}
+
 .btn-social-login {
     background-color: white !important;
     border-radius: 0;

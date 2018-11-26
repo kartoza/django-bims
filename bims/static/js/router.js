@@ -3,22 +3,30 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
     return Backbone.Router.extend({
         parameters: {},
         routes: {
-            "search/:query": "search"
+            "": "toMap",
+            "search/:query": "search",
+            "site-detail/:query": "showSiteDetailedDashboard"
         },
         initialize: function () {
             this.map = new olmap();
             this.eventsConnector = new EventsConnector();
         },
         search: function (query) {
-            if ($('.search-control').is(":visible")) {
-                $('.search-control').click();
+            var searchControl = $('.search-control');
+            if (searchControl.is(":visible")) {
+                searchControl.click();
             }
             $('#search').val(query);
             Shared.Dispatcher.trigger('search:checkSearchCollection', true);
         },
+        showSiteDetailedDashboard: function (query) {
+            Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', query);
+        },
         clearSearch: function () {
             this.navigate('', true);
+        },
+        toMap: function () {
+            Shared.Dispatcher.trigger('map:closeDetailedDashboard');
         }
     })
-
 });

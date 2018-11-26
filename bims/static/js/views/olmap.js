@@ -16,11 +16,14 @@ define([
     'views/right_panel/location_site_detail',
     'views/right_panel/taxon_detail',
     'views/right_panel/records_detail',
-    'views/biodiversity_legend'
+    'views/biodiversity_legend',
+    'views/detail_dashboard/taxon_detail',
+    'views/detail_dashboard/site_detail'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
-             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView) {
+             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
+             TaxonDetailDashboard, SiteDetailedDashboard) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -36,7 +39,8 @@ define([
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
-            'click .layer-control': 'layerControlClicked'
+            'click .layer-control': 'layerControlClicked',
+            'click #map-legend-wrapper': 'mapLegendClicked'
         },
         clusterLevel: {
             5: 'country',
@@ -54,6 +58,10 @@ define([
             new LocationSiteDetail();
             new TaxonDetail();
             new RecordsDetail();
+            this.taxonDetailDashboard = new TaxonDetailDashboard();
+            this.siteDetailedDashboard = new SiteDetailedDashboard();
+
+            Shared.CurrentState.FETCH_CLUSTERS = true;
 
             Shared.Dispatcher.on('map:addBiodiversityFeatures', this.addBiodiversityFeatures, this);
             Shared.Dispatcher.on('map:addLocationSiteClusterFeatures', this.addLocationSiteClusterFeatures, this);
@@ -78,6 +86,11 @@ define([
             Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
             Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
             Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
+
+            Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
+            Shared.Dispatcher.on('map:showTaxonDetailedDashboard', this.showTaxonDetailedDashboard, this);
+            Shared.Dispatcher.on('map:showSiteDetailedDashboard', this.showSiteDetailedDashboard, this);
+            Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -203,10 +216,6 @@ define([
                 // Show feature info
                 Shared.Dispatcher.trigger('layers:showFeatureInfo', e.coordinate)
             }
-
-            // Close opened control panel
-            this.mapControlPanel.closeSearchPanel();
-
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
@@ -252,6 +261,51 @@ define([
         },
         layerControlClicked: function (e) {
         },
+        mapLegendClicked: function (e) {
+            var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
+
+            if ($mapLegend.is(':visible')) {
+                this.hideMapLegends(true);
+            } else {
+                this.showMapLegends(true);
+            }
+        },
+        showMapLegends: function (showTooltip) {
+            if (Shared.LegendsDisplayed === true) {
+                return true;
+            }
+            Shared.LegendsDisplayed = true;
+            var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
+            var $mapLegendSymbol = this.$mapLegendWrapper.find('#map-legend-symbol');
+
+            this.$mapLegendWrapper.removeClass('hide-legend');
+            this.$mapLegendWrapper.addClass('show-legend');
+            $mapLegendSymbol.hide();
+            $mapLegend.show();
+            this.$mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
+
+            if(showTooltip) {
+                this.$mapLegendWrapper.tooltip('show');
+            }
+        },
+        hideMapLegends: function (showTooltip) {
+            if (Shared.LegendsDisplayed === false) {
+                return true;
+            }
+            Shared.LegendsDisplayed = false;
+            var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
+            var $mapLegendSymbol = this.$mapLegendWrapper.find('#map-legend-symbol');
+
+            this.$mapLegendWrapper.addClass('hide-legend');
+            this.$mapLegendWrapper.removeClass('show-legend');
+            $mapLegendSymbol.show();
+            $mapLegend.hide();
+            this.$mapLegendWrapper.attr('data-original-title', 'Show legends').tooltip('hide');
+
+            if(showTooltip) {
+                this.$mapLegendWrapper.tooltip('show');
+            }
+        },
         getCurrentZoom: function () {
             return this.map.getView().getZoom();
         },
@@ -280,12 +334,44 @@ define([
             // add layer switcher
             var layerSwitcher = new LayerSwitcher();
             this.map.addControl(layerSwitcher);
+            $(layerSwitcher.element).addClass('layer-switcher-custom');
+            $(layerSwitcher.element).attr('data-toggle', 'popover');
+            $(layerSwitcher.element).attr('data-placement', 'right');
+            $(layerSwitcher.element).attr('data-trigger', 'hover');
+            $(layerSwitcher.element).attr('data-content', 'Change Basemap');
+            $(layerSwitcher.element).removeClass('ol-control');
+            $('.layer-switcher-custom').click(function () {
+                $(this).popover('hide');
+            });
+            $('.layer-switcher-custom .panel').mouseenter(function () {
+                $('.layer-switcher-custom').popover('disable');
+            }).mouseleave(function () {
+                $('.layer-switcher-custom').popover('enable');
+            });
+            this.mapControlPanel.addPanel($(layerSwitcher.element));
+
             this.map.on('moveend', function (evt) {
                 self.mapMoved();
             });
 
             this.bioLegendView = new BioLegendView();
             this.$el.append(this.bioLegendView.render().$el);
+            this.$el.append(this.taxonDetailDashboard.render().$el);
+            this.$el.append(this.siteDetailedDashboard.render().$el);
+
+            this.$mapLegendWrapper = $('#map-legend-wrapper');
+            this.$mapLegendWrapper.draggable({
+                containment: '#map',
+                start: function (event, ui) {
+                    self.$mapLegendWrapper.css('bottom', 'auto');
+                    $("[data-toggle=tooltip]").tooltip('hide');
+                },
+                stop: function (event, ui) {
+                    var legend_position = self.$mapLegendWrapper.position();
+                    var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
+                    self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
+                }
+            });
 
             return this;
         },
@@ -345,6 +431,7 @@ define([
             $('#fetching-error .call-administrator').show();
         },
         fetchingStart: function () {
+            Shared.CurrentState.FETCH_CLUSTERS = true;
             $('#fetching-error').hide();
             $('#loading-warning').show();
             if (this.fetchXhr) {
@@ -354,16 +441,23 @@ define([
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(false);
             });
-            this.layers.biodiversitySource.clear();
-            this.layers.locationSiteClusterSource.clear();
+            if (this.layers.biodiversitySource) {
+                this.layers.biodiversitySource.clear();
+            }
+            if (this.layers.locationSiteClusterSource) {
+                this.layers.locationSiteClusterSource.clear();
+            }
         },
         fetchingFinish: function () {
+            Shared.CurrentState.FETCH_CLUSTERS = false;
             this.fetchingReset();
             this.mapInteractionEnabled = true;
             this.map.getInteractions().forEach(function (interaction) {
                 interaction.setActive(true);
             });
-            this.layers.biodiversitySource.clear();
+            if (this.layers.biodiversitySource) {
+                this.layers.biodiversitySource.clear();
+            }
         },
         fetchingError: function (err) {
             if (err['textStatus'] !== "abort") {
@@ -591,6 +685,16 @@ define([
         refetchRecords: function () {
             this.zoomToDefault();
             this.fetchingRecords();
+        },
+        showTaxonDetailedDashboard: function (data) {
+            this.taxonDetailDashboard.show(data);
+        },
+        showSiteDetailedDashboard: function (data) {
+            this.siteDetailedDashboard.show(data);
+        },
+        closeDetailedDashboard: function () {
+            this.taxonDetailDashboard.closeDashboard();
+            this.siteDetailedDashboard.closeDashboard();
         }
     })
 });

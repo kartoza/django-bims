@@ -25,6 +25,6 @@ USE_X_FORWARDED_HOST = True
 # Set debug to false for production
 DEBUG = TEMPLATE_DEBUG = False
 
-SERVER_EMAIL = 'dimas@kartoza.com'
+SERVER_EMAIL = os.environ.get('ADMIN_EMAILS', 'admin@kartoza.com')
 EMAIL_HOST = 'kartoza.com'
-DEFAULT_FROM_EMAIL = 'dimas@kartoza.com'
+DEFAULT_FROM_EMAIL = os.environ.get('ADMIN_EMAILS', 'admin@kartoza.com')

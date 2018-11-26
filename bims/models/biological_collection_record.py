@@ -16,9 +16,12 @@ from bims.utils.cluster import (
 )
 from bims.utils.gbif import update_collection_record
 from bims.tasks.collection_record import update_search_index
+from bims.models.validation import AbstractValidation
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 
-class BiologicalCollectionRecord(models.Model):
+class BiologicalCollectionRecord(
+    AbstractValidation, DocumentLinksMixin):
     """Biological collection model."""
     CATEGORY_CHOICES = (
         ('alien', 'Non-native'),
@@ -55,12 +58,6 @@ class BiologicalCollectionRecord(models.Model):
         default='',
         verbose_name='collector or observer',
     )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        models.SET_NULL,
-        blank=True,
-        null=True,
-    )
     notes = models.TextField(
         blank=True,
         default='',
@@ -72,12 +69,7 @@ class BiologicalCollectionRecord(models.Model):
         blank=True,
         verbose_name='Taxon GBIF ',
     )
-    validated = models.BooleanField(
-        default=False,
-    )
-    ready_for_validation = models.BooleanField(
-        default=False,
-    )
+
     institution_id = models.CharField(
         default=settings.INSTITUTION_ID_DEFAULT,
         help_text='An identifier for the institution having custody of the '
@@ -116,6 +108,10 @@ class BiologicalCollectionRecord(models.Model):
         default=''
     )
 
+    @property
+    def data_name(self):
+        return self.original_species_name
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
@@ -145,7 +141,7 @@ class BiologicalCollectionRecord(models.Model):
     def get_children_model():
         rel_objs = [f for f in BiologicalCollectionRecord._meta.get_fields(
             include_parents=False)
-                    if (f.one_to_many or f.one_to_one) and
+                    if f.one_to_one and
                     f.auto_created and not f.concrete]
         related_models = []
         for rel_obj in rel_objs:
@@ -162,6 +158,14 @@ class BiologicalCollectionRecord(models.Model):
         if self.validated:
             return True
         return False
+
+    def __unicode__(self):
+        label = '{species} - {collector} - {date}'.format(
+            species=self.original_species_name,
+            collector=self.collector,
+            date=self.collection_date
+        )
+        return label
 
 
 @receiver(models.signals.post_save)

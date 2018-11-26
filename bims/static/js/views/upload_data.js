@@ -1,4 +1,10 @@
-define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone, _, $, Shared, ol) {
+define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/reference_entry', 'chosen'], function (
+    Backbone,
+    _,
+    $,
+    Shared,
+    ol,
+    ReferenceEntry, Chosen) {
     return Backbone.View.extend({
         template: _.template($('#upload-data-modal').html()),
         uploadDataModal: null,
@@ -8,18 +14,83 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
         lon: null,
         lat: null,
         siteFeature: null,
+        referenceEntryFetched: false,
+        referenceEntries: [],
         events: {
             'click .close': 'closeModal',
-            'click .upload-data-button': 'uploadData'
+            'click .upload-data-button': 'uploadData',
+            'click #update_coordinate': 'updateCoordinate',
+            'click .btn-ud-new-site': 'addNewSite'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
             this.map = options.map;
+            this.referenceEntryList = new ReferenceEntry();
+            this.fetchReferenceList(1);
+        },
+        addNewSite: function (e) {
+            var locationSiteInput = $('#ud_location_site');
+            locationSiteInput.val('');
+            locationSiteInput.focus();
+            this.addNewSiteButton.hide();
+            this.sameSiteInfo.hide();
+        },
+        fetchReferenceList: function (page) {
+            var self = this;
+            var url = '';
+            if (page) {
+                url = self.referenceEntryList.url + '?page=' + page;
+            } else {
+                url = self.referenceEntryList.url;
+            }
+            self.referenceEntryList.fetch({
+                url: url,
+                success: function (data) {
+                    if (data.model.length > 0) {
+                        for (var i=0; i < data.model.length; i++) {
+                            self.referencesSelectDiv.append($('<option></option>')
+                                .attr('value', data.model[i].id).text(data.model[i].title + ' [' + data.model[i].journal + ']'));
+                            self.referencesSelectDiv.trigger("chosen:updated");
+                        }
+                        self.referenceEntries.push.apply(self.referenceEntries, data.model);
+                    }
+                    if (data.next) {
+                        self.referenceEntryList.url = data.next;
+                        self.fetchReferenceList();
+                    } else {
+                        self.referenceEntryFetched = true;
+                    }
+                }
+            });
+        },
+        updateCoordinate: function (e) {
+            e.preventDefault();
+            var currentLat = parseFloat(this.latInput.val());
+            var currentLon = parseFloat(this.lonInput.val());
+
+            var coordinatesChanged = currentLat !== this.lat.toFixed(3) || currentLon !== this.lon.toFixed(3);
+
+            if (coordinatesChanged) {
+                this.lon = null;
+                this.lat = null;
+                this.map.removeLayer(this.vectorLayer);
+                this.$alertElement.hide();
+                this.$successAlertElement.hide();
+                this.showModal(currentLon, currentLat, this.siteFeature);
+            }
         },
         render: function () {
             this.$el.html(this.template());
             this.uploadDataModal = this.$el.find('.modal');
+
+            this.latInput = this.$el.find('#current_lat');
+            this.lonInput = this.$el.find('#current_lon');
+            this.addNewSiteButton = this.$el.find('.btn-ud-new-site');
+            this.addNewSiteButton.hide();
+
+            this.sameSiteInfo = this.$el.find('.ud-badge-same-site');
+            this.sameSiteInfo.hide();
 
             this.$alertElement = $(this.$el.find('.alert-danger')[0]);
             this.$alertElement.hide();
@@ -41,12 +112,17 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                     })),
                 });
 
+            this.referencesSelectDiv = this.$el.find('#ud_references');
+            this.referencesSelectDiv.chosen();
             return this;
         },
         showModal: function (lon, lat, siteFeature) {
             this.lon = lon;
             this.lat = lat;
             this.siteFeature = siteFeature;
+
+            this.latInput.val(lat.toFixed(3));
+            this.lonInput.val(lon.toFixed(3));
 
             var coordinates = ol.proj.fromLonLat([lon, lat]);
             this.markerPoint = new ol.Feature({
@@ -72,8 +148,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 this.lon = site_coordinates[0];
                 this.lat = site_coordinates[1];
                 var properties = this.siteFeature.getProperties();
-                if(properties.hasOwnProperty('name'))
+                if(properties.hasOwnProperty('name')) {
                     $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
+                    this.addNewSiteButton.show();
+                }
             }
             this.uploadDataModal.show();
         },
@@ -83,19 +161,29 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             this.map.removeLayer(this.vectorLayer);
             this.$alertElement.hide();
             this.$successAlertElement.hide();
-            this.clearAllFields();
+            this.clearAllFields([]);
             this.uploadDataModal.hide();
+            this.sameSiteInfo.hide();
+            this.addNewSiteButton.hide();
         },
-        clearAllFields: function () {
+        clearAllFields: function (exceptions) {
             var fields = this.$el.find(".ud-item");
             $.each(fields, function (i, field) {
+                var id = field.getAttribute('id');
+                if (exceptions) {
+                    if (exceptions.indexOf(id) > -1) {
+                        return;
+                    }
+                }
                 field.value = '';
             });
-            if(this.siteFeature) {
+            if(this.siteFeature && exceptions.indexOf('ud_location_site') === -1) {
                 var properties = this.siteFeature.getProperties();
                 if(properties.hasOwnProperty('name'))
                     $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
             }
+
+            this.referencesSelectDiv.val('').trigger('chosen:updated');
         },
         uploadData: function (e) {
             var self = this;
@@ -127,10 +215,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
             dataToSend['csrfmiddlewaretoken'] = csrfmiddlewaretoken;
             dataToSend['lat'] = self.lat;
             dataToSend['lon'] = self.lon;
+            dataToSend['ud_references'] = self.referencesSelectDiv.chosen().val().join();
 
             uploadButton.html('Uploading...');
             uploadButton.prop('disabled', true);
-
             $.ajax({
                 url: uploadDataUrl,
                 method: "POST",
@@ -139,15 +227,18 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone,
                 success: function (response) {
                     if(response['status'] === 'success') {
                         self.showSuccessMessage(response['message']);
+                        self.addNewSiteButton.show();
+                        self.sameSiteInfo.show();
+                        self.clearAllFields(['ud_location_site']);
                     } else {
-                        self.showErrorMessage(response['message'])
+                        self.showErrorMessage(response['message']);
+                        self.clearAllFields([]);
                     }
                 },
                 error: function (response) {
                     self.showErrorMessage(response)
                 },
                 complete: function () {
-                    self.clearAllFields();
                     uploadButton.html('Upload');
                     uploadButton.prop('disabled', false);
                 }

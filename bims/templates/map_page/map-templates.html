@@ -15,9 +15,9 @@
     <div class="ol-control" id="taxon-filter">
     </div>
     <div id="popup"></div>
-    <div id="map-legend-wrapper" class="control-drop-shadow show-legend" data-toggle="tooltip" data-placement="bottom" title="Show legends">
+    <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" data-original-title="Show legends" data-html="true">
         <div id="map-legend-symbol">L</div>
-        <div id="map-legend"></div>
+        <div id="map-legend" style="display: none"></div>
     </div>
 </script>
 <script type='text/html' id='side-panel-template'>
@@ -28,7 +28,7 @@
         </div>
         <div class="right-panel-header">
             <div class="pull-right">
-                <i class="fa fa-window-close-o close-panel header-panel-button"></i>
+                <img class="close-icon close-panel header-panel-button" src="/static/img/close_icon.svg">
             </div>
             <div class="pull-left">
                 <i class="fa fa-caret-square-o-left return-panel header-panel-button"></i>
@@ -46,14 +46,14 @@
     <div class="map-search-box map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
-                <div class="close-button search-reset pull-left">
-                    Reset
+                <div class="close-button search-reset pull-left" data-toggle="tooltip" data-placement="top" data-original-title="Reset">
+                    <img class="close-icon" src="/static/img/reset.svg">
                 </div>
                 <span class="title">
                         SEARCH
                     </span>
                 <div class="close-button map-search-close pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -123,6 +123,8 @@
             </div>
         </div>
 
+        <div class="spatial-filter-wrapper"></div>
+
         {% if use_ecological_condition %}
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
@@ -170,6 +172,8 @@
         </div>
         {% endif %}
 
+
+        {% if COLLECTOR_FILTER %}
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
                 COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
@@ -183,6 +187,7 @@
                 <button class="clear-filter">Clear Filter</button>
             </div>
         </div>
+        {% endif %}
 
         <div class="study-reference-wrapper">
             <div class="row sub-filter">
@@ -230,7 +235,7 @@
                         SEARCH RESULT
                     </span>
                 <div class="close-button map-result-close pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -250,17 +255,6 @@
 </script>
 
 <script type="text/html" id="spatial-filter-panel">
-    <div class="spatial-filter-container map-control-panel-box">
-        <div class="row spatial-filter-panel-title">
-            <div class="col-lg-12" style="padding-right: 0">
-                    <span class="title">
-                        SPATIAL FILTER
-                    </span>
-                <div class="spatial-filter-container-close close-button pull-right">
-                    X
-                </div>
-            </div>
-        </div>
         <div class="row sub-filter content spatial-scale-menu">
             <div class="col-lg-12 subtitle">
                  {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
@@ -293,9 +287,12 @@
                 <button class="spatial-scale-clear-filter" disabled>Clear Filter</button>
             </div>
         </div>
+        {% if user.is_authenticated %}
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                 USER BOUNDARY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                 USER BOUNDARY
+                <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
+                <i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="user-boundary-panel" style="display: none">
@@ -309,7 +306,7 @@
                 <button class="spatial-clear-filter">Clear Filter</button>
             </div>
         </div>
-    </div>
+        {% endif %}
 
     <div class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
@@ -318,7 +315,7 @@
                     <h5 class="modal-title">Upload a boundary</h5>
                     <button type="button" class="close close-upload-boundary-modal"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -370,35 +367,41 @@
         </div>
         <div class="options">
             <div class="group">
-                <label>Transparency</label>
-                <div class="layer-transparency" data-value="<%= transparency_value %>"></div>
+                <div class="row">
+                    <div class="col-md-2 transparency-icon">
+                        <img src="/static/img/transparency-icon.png"/>
+                    </div>
+                    <div class="col-md-10 transparency-slider"><div class="layer-transparency" data-value="<%= transparency_value %>"></div></div>
+                </div>
             </div>
         </div>
 </script>
 <script type="text/html" id="map-control-panel">
     <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
-        <div class="search-control sub-control-panel">
+        <div class="search-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Search">
             <i class="fa fa-search" aria-hidden="true"></i>
         </div>
-        <div class="filter-control sub-control-panel">
+        <div class="filter-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Layer Selector">
             <i class="fa fa-map" aria-hidden="true"></i>
         </div>
-        <div class="locate-control sub-control-panel">
+        <div class="locate-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Locate Options">
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
-            <div class="spatial-filter sub-control-panel">
-                <i class="fa fa-crop" aria-hidden="true"></i>
+            {% if perms.bims.can_upload_csv %}
+            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Capture Single Occurrence">
+                <i class="fa fa-crosshairs" aria-hidden="true"></i>
             </div>
-            <div class="upload-data sub-control-panel">
-                <i class="fa fa-upload" aria-hidden="true"></i>
-            </div>
+            {% endif %}
         {% endif %}
         {% if can_validate %}
-            <div class="validate-data sub-control-panel">
+            <div class="validate-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Validate Data">
                 <i class="fa fa-check" aria-hidden="true"></i>
             </div>
         {% endif %}
+        <div class="download-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Download Data">
+            <i class="fa fa-download" aria-hidden="true"></i>
+        </div>
     </div>
     <div class="zoom-control row">
         <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
@@ -413,7 +416,7 @@
                         LAYER SELECTOR
                     </span>
                 <div class="layers-selector-container-close close-button pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
@@ -430,20 +433,18 @@
                         LOCATE OPTIONS
                     </span>
                 <div class="locate-options-container-close close-button pull-right">
-                    X
+                    <img class="close-icon" src="/static/img/close_icon.svg">
                 </div>
             </div>
         </div>
         <div class="row content">
             <ul id="locate-options" style="width:100%">
                 <li class="locate-coordinates">
-                    Locate by coordinate
+                    Locate by Coordinate
                 </li>
                 <li class="locate-farm">
-                    Locate by Farm/Farm Portion Code Page
+                    Locate by Farm Portion Code
                 </li>
-                {#                                        Will be implemented in another PR #}
-                {#                    <li id="map-navigation">Map navigation page</li>#}
             </ul>
         </div>
     </div>
@@ -459,7 +460,7 @@
                     <h5 class="modal-title">Locate by Coordinate</h5>
                     <button type="button" class="close"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -470,7 +471,7 @@
                         <br/> <br/> e.g. for Cape Town being -33.xxx 19.xxx
                     </p>
                     <p class="farm-form">
-                        Please enter the Farm/Farm Portion ID below (e.g. T0KT00000000001600005)
+                        Please enter the Farm/Farm Portion ID below (e.g. T0KT00000000001600001)
                     </p>
 
                     <form id="locate-form">
@@ -507,6 +508,10 @@
                             </div>
                         </div>
                     </form>
+
+                    <div class="alert alert-danger" role="alert" style="display: none;">
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -518,79 +523,96 @@
         <div class="modal-dialog modal-upload-data" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Upload Data</h5>
+                    <h5 class="modal-title">Capture Single Occurrence <span class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span> </h5>
                     <button type="button" class="close small-close"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
                     <form class="form">
-                        <div class="alert alert-danger upload-alert" role="alert">
-                        </div>
-                        <div class="alert alert-success upload-alert" role="alert">
-                        </div>
-                        {% if biological_modules|length > 1 %}
-                            <label for="ud_module" class="upload-input-label">
-                                Module *
+                        <div class="upload-body-form">
+                            <div class="alert alert-danger upload-alert" role="alert">
+                            </div>
+                            <div class="alert alert-success upload-alert" role="alert">
+                            </div>
+                            {% if biological_modules|length > 1 %}
+                                <label for="ud_module" class="upload-input-label">
+                                    Module *
+                                </label>
+                                <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                    <option value="">-</option>
+                                    {% for key, value in biological_modules.items %}
+                                        <option value="{{ value }}">{{ key }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
+                            {% endif %}
+                            <label for="ud_species_name" class="upload-input-label">
+                                Species Name *
                             </label>
-                            <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_species_name" placeholder="" name="Species Name">
+                            <label for="ud_location_site" class="upload-input-label">
+                                Location Site Name * <button type="button" class="btn-ud-new-site btn btn-light"> Add new site for next record </button>
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_location_site" name="Location Site" placeholder="">
+                            <label for="ud_collection_date" class="upload-input-label">
+                                Collection Date *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
+                                   id="ud_collection_date" name="Collection Date" placeholder="">
+                            <label for="ud_category" class="upload-input-label">
+                                Category *
+                            </label>
+                            <select id="ud_category" name="Category" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
                                 <option value="">-</option>
-                                {% for key, value in biological_modules.items %}
-                                    <option value="{{ value }}">{{ key }}</option>
+                                {% for category in collection_category %}
+                                    <option value="{{ category.0 }}">{{ category.1 }}</option>
                                 {% endfor %}
                             </select>
-                        {% else %}
-                            <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
-                        {% endif %}
-                        <label for="ud_species_name" class="upload-input-label">
-                            Species Name *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                               id="ud_species_name" placeholder="" name="Species Name">
-                        <label for="ud_location_site" class="upload-input-label">
-                            Location Site Name *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                               id="ud_location_site" name="Location Site" placeholder="">
-                        <label for="ud_collection_date" class="upload-input-label">
-                            Collection Date *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                               id="ud_collection_date" name="Collection Date" placeholder="">
-                        <label for="ud_category" class="upload-input-label">
-                            Category *
-                        </label>
-                        <select id="ud_category" name="Category" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
-                            <option value="">-</option>
-                            {% for category in collection_category %}
-                                <option value="{{ category.0 }}">{{ category.1 }}</option>
-                            {% endfor %}
-                        </select>
-                        <label for="ud_collector" class="upload-input-label">
-                            Collector *
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item-required ud-item"
-                               id="ud_collector" placeholder="" name="Collector">
-                        <label for="ud_notes" class="upload-input-label">
-                            Notes
-                        </label>
-                        <textarea class="form-control ud-item"
-                                  id="ud_notes" placeholder=""></textarea>
-                        <label for="ud_custodian" class="upload-input-label" style="margin-top: 5px;">
-                            Custodian
-                        </label>
-                        <input type="text"
-                               class="form-control mb-2 mr-sm-2 ud-item"
-                               id="ud_custodian" name="Custodian" placeholder="">
-
-                        <p class="required-text ">* = Required </p>
-
-                        <button type="button" class="btn btn-info upload-data-button">Upload</button>
+                            <label for="ud_collector" class="upload-input-label">
+                                Collector *
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item-required ud-item"
+                                   id="ud_collector" placeholder="" name="Collector">
+                            <label for="ud_notes" class="upload-input-label">
+                                Notes
+                            </label>
+                            <textarea class="form-control ud-item"
+                                      id="ud_notes" placeholder=""></textarea>
+                            <label for="ud_custodian" class="upload-input-label" style="margin-top: 5px;">
+                                Custodian
+                            </label>
+                            <input type="text"
+                                   class="form-control mb-2 mr-sm-2 ud-item"
+                                   id="ud_custodian" name="Custodian" placeholder="">
+                            <label for="ud_references" class="upload-input-label">
+                                References
+                            </label>
+                            <div class="form-group">
+                                <select multiple id="ud_references" name="References" class="ud-item">
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-4">
+                            Lat : <input type="text" id="current_lat"/></div>
+                                <div class="col-lg-4">
+                            Long : <input type="text" id="current_lon"/></div>
+                                <div class="col-lg-4">
+                            <button style="margin-top: 20px;" id="update_coordinate">Update coordinate</button></div>
+                            </div>
+                            <br/>
+                        </div>
+                        <div class="upload-body-button">
+                            <button type="button" class="btn btn-info upload-data-button">Upload</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -599,9 +621,7 @@
 </script>
 
 <script type="text/html" id="download-control-panel">
-    <div class="download-control sub-control-panel">
-        <i class="fa fa-download" aria-hidden="true"></i>
-    </div>
+
 </script>
 
 <script type="text/html" id="download-control-panel-template">
@@ -612,7 +632,7 @@
                     <h5 class="modal-title">Download data</h5>
                     <button type="button" class="close"
                             aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        <img class="close-icon" src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -800,6 +820,9 @@
                 </div>
             </div>
         </div>
+        <div class="open-detailed-button-container">
+            <button class="btn btn-inf open-detailed-view">Open detailed dashboard</button>
+        </div>
     </div>
 </script>
 
@@ -861,7 +884,7 @@
                 <div class="detail-container-title"> Collection Date </div>
                 <p> <%= collection_date %> </p>
                 <div class="detail-container-title"> Uploader </div>
-                <p> <%= owner %> </p>
+                <p> <%= owner %> ( <a href="mailto:<%= owner_email %>?Subject=Question%20for%20contributor" target="_top"><%= owner_email %></a> ) </p>
             </div>
         </div>
         <div class="detail-container container">
@@ -879,6 +902,8 @@
             <button class="show-detail">Show detail</button>
             <button class="hide-detail">Hide detail</button>
             <button class="accept-data">Accept</button>
+            <button class="reject-data">Reject</button>
+            <button class="edit-data">Edit Data</button>
         </div>
         <div class="validate-data-action">
             <p>
@@ -886,6 +911,14 @@
             </p>
             <button class="accept-validate">Yes</button>
             <button class="cancel-validate">Cancel</button>
+        </div>
+        <div class="reject-data-action">
+            <p>
+                Reasons for rejection (optional)
+            </p>
+            <textarea class="rejection-message"></textarea>
+            <button class="accept-reject">Submit</button>
+            <button class="cancel-reject">Cancel</button>
         </div>
     </div>
 </script>

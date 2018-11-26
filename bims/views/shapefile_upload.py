@@ -349,8 +349,7 @@ def process_shapefiles(request,
     response_message = 'Added %s records <br/>' % collection_added
     if collection_added > 0:
         response_message += 'Verify your records ' \
-                            '<a target="_blank" ' \
-                            'href="/nonvalidated-user-list/">' \
+                            '<a href="/nonvalidated-user-list/">' \
                             'here</a> <br/>'
     data = {
         'message': response_message

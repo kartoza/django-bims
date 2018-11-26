@@ -2,6 +2,10 @@ body {
     font-family: "Roboto Condensed";
 }
 
+#mainNav {
+    pointer-events: none;
+}
+
 .container {
     margin-right: 0 !important;
     margin-left: 0 !important;
@@ -221,6 +225,9 @@ html, body, .map, .map-wrapper, #map-container {
     .panel-wrapper {
         width: 100%;
     }
+    .ui-slider-horizontal {
+        margin-left: 50px !important;
+    }
 }
 
 .green {
@@ -355,6 +362,10 @@ html, body, .map, .map-wrapper, #map-container {
     display: block;
 }
 
+#layers-selector li:hover {
+    background-color: rgba(195, 195, 195, 0.17);
+}
+
 #layers-selector li .row-title {
     padding: 5px;
     text-overflow: ellipsis;
@@ -367,12 +378,23 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 #layers-selector .options {
-    display: none;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(206, 206, 206, 0.55);
+}
+
+.transparency-slider {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 6px;
+}
+
+.transparency-icon {
+    padding-right: 0 !important;
     padding-left: 25px;
-    padding-bottom: 20px;
-    padding-top: 5px;
-    background: #ededed;
-    box-shadow: inset 0 0 4px #888;
+}
+
+.transparency-icon img {
+    width: 20px;
 }
 
 #layers-selector .options label {
@@ -500,7 +522,6 @@ html, body, .map, .map-wrapper, #map-container {
 .map-control-panel-box .close-button {
     cursor: pointer;
     padding: 0 5px;
-    border: 2px solid black;
     font-size: 12pt;
     font-weight: bolder;
     line-height: 20px;
@@ -508,7 +529,6 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-control-panel-box .close-button:hover {
-    background-color: rgba(0, 0, 0, 0.7) !important;
     color: white !important;
 }
 
@@ -674,30 +694,27 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .layer-switcher {
-    position: absolute;
-    /*top: 367px !important;*/
-    left: 0;
-    right: auto !important;
-    text-align: left;
-    margin-left: 30px;
+    position: initial !important;
+    padding-top: 0 !important;
+    height: 46px;
+}
+
+.layer-switcher:hover {
     cursor: pointer;
-    padding: 0 !important;
-    z-index: 100;
 }
 
 .layer-switcher button {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    width: 54px !important;
-    height: 41px !important;
-    background-position: center !important;
-    background-size: 32px;
-    margin: 0 auto;
-    background-color: white !important;
-    border: none !important;
-    cursor: pointer;
+    width: 100% !important;
+    height: 46px !important;
+    background-position: 10px !important;
+}
+
+.layer-switcher button:hover {
+    cursor: pointer !important;
 }
 
 .layer-switcher .panel {
+    font-size: 11pt;
     border: none !important;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     padding: 9px !important;
@@ -706,6 +723,18 @@ html, body, .map, .map-wrapper, #map-container {
     margin-left: 55px !important;
     background-color: white !important;
     border-radius: 0 !important;
+}
+
+.layer-switcher li.layer label {
+    padding-top: 5px;
+}
+
+.layer-switcher li.layer label:hover {
+    cursor: pointer;
+}
+
+.layer-switcher input {
+    height: 20px;
 }
 
 .layer-switcher ul {
@@ -991,14 +1020,6 @@ div:hover::-webkit-scrollbar {
     font-weight: 700;
 }
 
-#map-legend-wrapper.show-legend #map-legend-symbol {
-    display: none;
-}
-
-#map-legend-wrapper.hide-legend #map-legend {
-    display: none;
-}
-
 #map-legend-wrapper.hide-legend {
     max-width: 31px;
     max-height: 31px;
@@ -1077,6 +1098,7 @@ div:hover::-webkit-scrollbar {
 .upload-data-button {
     border-radius: 8px !important;
     width: 100%;
+    font-size: 9pt;
 }
 
 .required-text {
@@ -1117,6 +1139,21 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
+@media only screen and (max-width: 600px) {
+    #download-control-modal .modal-body table {
+        width: 50%;
+    }
+
+    #download-control-modal .modal-body table .row-format {
+        width: 100%;
+    }
+
+    #download-control-modal {
+        margin-left: 50px;
+        margin-right: 50px;
+    }
+}
+
 #download-control-modal .modal-body .notification {
     color: red;
     opacity: 0.8;
@@ -1145,6 +1182,38 @@ div:hover::-webkit-scrollbar {
 
 .modal-upload-data {
     z-index: 9999;
+    font-size: 10pt;
+}
+
+.modal-upload-data label, .modal-upload-data input {
+    font-size: 10pt !important;
+}
+
+.modal-upload-data h5 {
+    padding-top: 4px;
+    font-size: 12pt;
+}
+
+.modal-upload-data .modal-header {
+    padding-bottom: 5px !important;
+    padding-top: 5px !important;
+}
+
+.modal-upload-data .modal-body {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.upload-body-form {
+    padding-left: 15px;
+    padding-right: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.upload-body-button {
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 #search-error-text {
@@ -1270,7 +1339,7 @@ div:hover::-webkit-scrollbar {
 #general-info-modal {
     pointer-events: none;
     background: rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+    z-index: 1050;
 }
 
 #general-info-modal .modal-content {
@@ -1298,7 +1367,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .small-close span {
-    font-size: 25pt;
+    font-size: 20pt;
 }
 
 .close-info-popup {
@@ -1517,6 +1586,13 @@ div:hover::-webkit-scrollbar {
 #menu-dropdown-burger {
     margin-left: -12px !important;
     margin-top: -15px !important;
+}
+
+@media only screen and (max-width: 600px) {
+    #menu-dropdown-burger {
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+    }
 }
 
 .dropdown-menu-left {
@@ -1783,6 +1859,16 @@ div:hover::-webkit-scrollbar {
     text-align: center;
 }
 
+.reject-data-action {
+    padding: 5px;
+    text-align: center;
+}
+
+.reject-data-action textarea {
+    width: 100%;
+    height: 80px;
+}
+
 .validate-data-empty {
     height: 300px;
     padding-top: 100px;
@@ -1884,4 +1970,38 @@ div:hover::-webkit-scrollbar {
 
 .boundary-item:hover {
     background-color: #e4e4e4;
+}
+
+.btn-ud-new-site {
+    text-transform: none;
+    font-size: 8pt;
+    padding: 5px;
+    font-weight: normal;
+    margin-bottom: 5px;
+}
+
+.modal-header .close {
+    padding: 5px !important;
+}
+
+.close-button > img, .close-icon {
+    height: 20px;
+}
+
+.close-button:hover > img, .close-icon:hover {
+    filter: invert(100%);
+}
+
+.chosen-select, .chosen-container {
+    width: 100% !important;
+}
+
+.document-container {
+    padding: 10px;
+}
+
+.document-row {
+    font-size: 11pt;
+    padding: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }

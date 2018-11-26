@@ -1,0 +1,127 @@
+
+#detailed-taxa-dashboard, #detailed-site-dashboard, .loading-dashboard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    z-index: 10000;
+    background: white;
+    border: 3px solid black;
+}
+
+.detailed-dashboard-title {
+    padding: 15px;
+    font-size: 15pt;
+    font-weight: bold;
+    text-align: center;
+}
+
+.loading-dashboard {
+    margin-top: 60px;
+    text-align: center;
+    border: 0;
+}
+
+.loading-dashboard img {
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    position: absolute;
+}
+
+.loading-dashboard-subtitle {
+    font-size: 12pt;
+    color: grey;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    position: absolute;
+}
+
+.dashboard-wrapper {
+    margin-top: 25px;
+    margin-bottom: 50px;
+}
+
+.dashboard-table table {
+    width: 100%;
+}
+
+.dashboard-table table,
+.dashboard-table tr, .dashboard-table td,
+.dashboard-table th {
+    border: 1px solid black;
+}
+
+.dashboard-table td, .dashboard-table th {
+    padding: 2px 5px;
+}
+
+.btn-dashboard {
+    border-radius: 0;
+    border: 2px solid black !important;
+    position: fixed;
+    top: 3px;
+    right: 3px;
+}
+
+.btn-element-download {
+    border-radius: 0;
+    border: 2px solid black !important;
+}
+
+.btn-element-download:hover, .btn-dashboard:hover {
+    color: #526B43 !important;
+    background-color: white !important;
+}
+
+.chart-wrapper, #taxa-records-timeline-graph {
+    background: white !important;
+}
+
+.occurence-table, .records-table, .records-area-table {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dd-title {
+    font-size: 13pt;
+    padding-top: 5px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.dd-sub-title {
+    margin-top: 20px;
+    padding-left: 15px;
+    font-weight: bold;
+}
+
+.dd-status-item {
+    padding: 5px;
+    border: 1px solid black;
+}
+
+.dd-status-list {
+    padding-left: 15px;
+}
+
+.open-detailed-button-container {
+    width: 100%;
+    text-align: center;
+}
+
+.open-detailed-view {
+    font-size: 10pt;
+    text-transform: none;
+    margin-top: 10px;
+    margin-bottom: 2px;
+}
+
+.download-as-csv {
+    text-transform: none;
+    font-size: 10pt;
+    margin-bottom: 5px;
+}

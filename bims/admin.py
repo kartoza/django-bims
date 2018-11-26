@@ -19,6 +19,7 @@ from django.db import models
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
+from geonode.upload.models import Upload, UploadFile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
@@ -43,6 +44,7 @@ from bims.models import (
     NonBiodiversityLayer,
     UserBoundary,
     SearchProcess,
+    ReferenceLink,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -95,6 +97,9 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     list_filter = (HasLocationContextDocument,)
 
     actions = ['update_location_context', 'delete_location_context']
+
+    def get_readonly_fields(self, request, obj=None):
+        return ['longitude', 'latitude']
 
     def has_location_context(self, obj):
         return bool(obj.location_context_document)
@@ -209,7 +214,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'original_species_name',
         'category',
         'collection_date',
-        'validated',
+        'is_validated',
+        'is_rejected',
         'collector',
         'owner',
     )
@@ -286,7 +292,7 @@ class CustomUserAdmin(ProfileAdmin):
             'classes': ('wide',),
             'fields': ('username', 'password1', 'password2', 'first_name',
                        'last_name', 'email', 'is_staff', 'is_superuser',
-                       'user_permissions'),
+                       'groups',),
         }),
     )
 
@@ -381,6 +387,14 @@ class PageviewAdmin(admin.ModelAdmin):
     list_display = ('url', 'view_time')
 
 
+class ReferenceLinkAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'collection_record',
+        'reference'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -409,6 +423,12 @@ admin.site.register(Permission, PermissionAdmin)
 
 admin.site.register(UserBoundary, UserBoundaryAdmin)
 admin.site.register(SearchProcess, SearchProcessAdmin)
+
+admin.site.register(ReferenceLink, ReferenceLinkAdmin)
+
+# Hide upload files from geonode in admin
+admin.site.unregister(Upload)
+admin.site.unregister(UploadFile)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

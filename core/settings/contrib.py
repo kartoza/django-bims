@@ -46,6 +46,7 @@ GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
 INSTALLED_APPS += (
     # AppConfig Hook to fix issue from geonode
     'core.config_hook',
+    'bims.signals',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -79,7 +80,8 @@ try:
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
         'bims.context_processor.add_recaptcha_key',
         'bims.context_processor.custom_navbar_url',
-        'bims.context_processor.google_analytic_key'
+        'bims.context_processor.google_analytic_key',
+        'bims.context_processor.application_name'
     ]
 except KeyError:
     TEMPLATES = [
@@ -102,7 +104,9 @@ except KeyError:
                     # `allauth` needs this from django
                     'django.template.context_processors.request',
                     'bims.context_processor.add_recaptcha_key',
-                    'bims.context_processor.custom_navbar_url'
+                    'bims.context_processor.custom_navbar_url',
+                    'bims.context_processor.google_analytic_key',
+                    'bims.context_processor.application_name'
                 ],
             },
         },
@@ -128,6 +132,7 @@ INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 MIDDLEWARE_CLASSES += (
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'bims.middleware.VisitorTrackingMiddleware',
 )
 
 # for middleware in MIDDLEWARE_CLASSES:
@@ -188,6 +193,8 @@ TRACK_IGNORE_STATUS_CODES = [403, 405, 410]
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
     'people.Profile',
+    'bims.Pageview',
+    'bims.Visitor'
 ]
 
 if MONITORING_ENABLED:
@@ -278,3 +285,9 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 
 OGC_SERVER['default']['DATASTORE'] = os.environ.get(
         'DEFAULT_BACKEND_DATASTORE', '')
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100
+}

@@ -249,8 +249,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
 
         if collection_processed['added']['count'] > 0:
             csv_upload_message += 'Verify your records ' \
-                                  '<a target="_blank" ' \
-                                  'href="/nonvalidated-user-list/">' \
+                                  '<a href="/nonvalidated-user-list/">' \
                                   'here</a> <br/>'
 
         self.context_data['uploaded'] = csv_upload_message

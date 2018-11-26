@@ -14,11 +14,12 @@ from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.cluster import update_cluster_by_site
 from bims.utils.get_key import get_key
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 LOGGER = logging.getLogger(__name__)
 
 
-class LocationSite(models.Model):
+class LocationSite(DocumentLinksMixin):
     """Location Site model."""
 
     __original_centroid = None
@@ -75,6 +76,18 @@ class LocationSite(models.Model):
         help_text='This is lowest boundary where location is placed.',
         blank=True,
         null=True,
+    )
+
+    latitude = models.FloatField(
+        blank=True,
+        help_text='This is intended only for IPT',
+        null=True
+    )
+
+    longitude = models.FloatField(
+        blank=True,
+        help_text='This is intended only for IPT',
+        null=True
     )
 
     def get_centroid(self):
@@ -171,9 +184,8 @@ class LocationSite(models.Model):
             # Check if geometry is allowed
             if isinstance(self.get_geometry(),
                           self.location_type.get_allowed_geometry_class()):
-                # If the centroid is changed, update the context document
-                if self.get_centroid() != self.__original_centroid:
-                    self.update_location_context_document()
+                self.longitude = self.get_centroid().x
+                self.latitude = self.get_centroid().y
                 super(LocationSite, self).save(*args, **kwargs)
                 self.__original_centroid = self.get_centroid()
             else:

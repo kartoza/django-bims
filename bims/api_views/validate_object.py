@@ -5,12 +5,19 @@ from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.permissions.api_permission import AllowedTaxon
 
 
 class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
 
     def test_func(self):
-        return self.request.user.has_perm('bims.can_validate_data')
+        allowed_taxon = AllowedTaxon()
+        taxon_list = allowed_taxon.get(self.request.user)
+        collection_pk = self.request.GET.get('pk', None)
+        if not collection_pk:
+            return False
+        collection = BiologicalCollectionRecord.objects.get(pk=collection_pk)
+        return collection.taxon_gbif_id in taxon_list
 
     def handle_no_permission(self):
         messages.error(self.request, 'You don\'t have permission '

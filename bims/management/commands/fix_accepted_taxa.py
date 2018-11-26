@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from django.contrib.gis.db import models
-from bims.utils.iucn import get_iucn_status
 from bims.utils.gbif import update_taxonomy_fields, get_species
 from bims.models.taxon import Taxon
 from bims.models.biological_collection_record import (

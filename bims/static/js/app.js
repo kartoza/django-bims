@@ -1,20 +1,24 @@
 require.config({
     paths: {
         jquery: 'libs/jquery/jquery-3.3.1.min',
-        bootstrap: 'libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
         ol: 'libs/openlayers-4.6.4/ol',
         underscore: 'libs/underscore-1.8.3/underscore-min',
         backbone: 'libs/backbone-1.3.3/backbone-min',
+        bootstrap: 'libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
         chartJs: 'libs/chart/Chart-2.7.2',
+        fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min',
+        htmlToCanvas: 'libs/htmlToCanvas/html2canvas.min',
+        chosen: 'libs/chosen/chosen.jquery.min',
         'jquery-ui/ui/widget': 'libs/jquery-fileupload/vendor/jquery.ui.widget',
         'jquery.iframe-transport': 'libs/jquery-fileupload/jquery.iframe-transport',
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
         'jquery.fileupload-process': 'libs/jquery-fileupload/jquery.fileupload-process',
-        'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate'
+        'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate',
+        jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min'
     },
     shim: {
         ol: {
@@ -26,6 +30,8 @@ require.config({
         backbone: {
             deps: [
                 'underscore',
+                'bootstrap',
+                'jqueryUi',
                 'jquery'
             ],
             exports: 'Backbone'
@@ -49,8 +55,10 @@ require([
     'views/olmap',
     'shared',
     'app',
+    'bootstrap',
+    'jqueryUi',
     'jquery'
-], function (Router, olmap, Shared, App, $) {
+], function (Router, olmap, Shared, App, Bootstrap, jqueryUi, $) {
     // Display the map
     Shared.Router = new Router();
 
@@ -59,12 +67,6 @@ require([
 
     // A $( document ).ready() block.
     $(document).ready(function () {
-
-        // Set top margin for layer switcher panel
-        var mapControlPanelHeight = $('.map-control-panel').height();
-        $('.layer-switcher').css('top', (mapControlPanelHeight + 91) + 'px');
-        $('.download-control-panel').css('top', (mapControlPanelHeight + 46) + 'px');
-
         $('#menu-dropdown-burger').click(function () {
             $('.dropdown-menu-left').toggle();
         });
@@ -74,6 +76,7 @@ require([
         });
 
         $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="popover"]').popover();
 
         $.ajax({
             type: 'GET',
@@ -157,6 +160,6 @@ require([
                 })
             }
             $('#general-info-modal').fadeOut();
-        })
+        });
     });
 });

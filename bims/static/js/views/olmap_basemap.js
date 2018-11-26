@@ -19,10 +19,12 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             });
             return layer
         },
-        getOpenMapTilesTile: function (styleUrl) {
-            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
-                '© <a href="http://www.openstreetmap.org/copyright">' +
-                'OpenStreetMap contributors</a>';
+        getOpenMapTilesTile: function (styleUrl, attributions) {
+            if (!attributions) {
+                attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
+                    '© <a href="http://www.openstreetmap.org/copyright">' +
+                    'OpenStreetMap contributors</a>';
+            }
             return this.getVectorTileMapBoxStyle(
                 'https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
                 styleUrl,
@@ -31,9 +33,9 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             );
         },
         getKlokantechTerrainBasemap: function () {
-            var attributions = '© <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
-                '© <a href="http://www.openstreetmap.org/copyright">' +
-                'OpenStreetMap contributors</a>';
+            var attributions = 'Data from <a href="http://www.openstreetmap.org/copyright">' +
+                'OpenStreetMap</a> contributors; Tiles &copy; ' +
+                '<a href="http://KlokanTech.com">KlokanTech</a>\n';
             var openMapTiles = this.getOpenMapTilesTile('/static/mapbox-style/klokantech-terrain-gl-style.json');
             var contours = this.getVectorTileMapBoxStyle(
                 'https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
@@ -54,14 +56,20 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
         },
         getPositronBasemap: function () {
             var layer = this.getOpenMapTilesTile(
-                '/static/mapbox-style/positron-gl-style.json');
-            layer.set('title', 'Monochrome (light)');
+                '/static/mapbox-style/positron-gl-style.json',
+                'Data from <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+                'contributors; Tiles &copy; <a href="http://carto.com/attributions#basemaps">Carto</a>\n'
+                );
+            layer.set('title', 'Plain greyscale');
             return layer
         },
         getDarkMatterBasemap: function () {
             var layer = this.getOpenMapTilesTile(
-                '/static/mapbox-style/dark-matter-gl-style.json');
-            layer.set('title', 'Monochrome (dark)');
+                '/static/mapbox-style/dark-matter-gl-style.json',
+                'Data from <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+                'contributors; Tiles &copy; <a href="http://carto.com/attributions#basemaps">Carto</a>\n'
+                );
+            layer.set('title', 'Plain B&W');
             return layer
         },
         getBaseMaps: function () {
@@ -72,22 +80,37 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var toposheet = new ol.layer.Tile({
                 title: 'Topography',
                 source: new ol.source.XYZ({
-                    attributions: ['&copy; National Geo-spatial Information (NGI) contributors', 'Toposheets'],
+                    attributions: ['Data &copy; <a href="http://www.ngi.gov.za/">' +
+                    'National Geospatial Information (NGI)</a>; Tiles from ' +
+                    '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
                     url: 'https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
                 })
             });
-            baseSourceLayers.push(toposheet);
-
 
             // NGI MAP
             var ngiMap = new ol.layer.Tile({
                 title: 'Aerial photography',
                 source: new ol.source.XYZ({
-                    attributions: ['&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors', 'NGI'],
+                    attributions: ['<a href="http://www.ngi.gov.za/">CD:NGI Aerial</a>'],
                     url: 'http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
                 })
             });
-            baseSourceLayers.push(ngiMap);
+
+            // OSM MAPSURFER ROADS - Make default
+            var mapSurfer = new ol.layer.Tile({
+                title: 'OpenStreetMap',
+                source: new ol.source.XYZ({
+                    attributions: ['Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @University of Heidelberg</a>; Map data from <a href="http://openstreetmap.org">OpenStreetMap</a> contributors; <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'],
+                    url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
+                })
+            });
+
+            // OPENMAPTILES
+            if (mapTilerKey) {
+                baseSourceLayers.push(this.getPositronBasemap());
+                baseSourceLayers.push(this.getDarkMatterBasemap());
+            }
+
             // add bing
             if (bingMapKey) {
                 var bingMap = new ol.layer.Tile({
@@ -100,22 +123,14 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 baseSourceLayers.push(bingMap);
             }
 
-            // OSM MAPSURFER ROADS - Make default
-            var mapSurfer = new ol.layer.Tile({
-                title: 'OSM Mapsurfer roads',
-                source: new ol.source.XYZ({
-                    attributions: ['&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
-                    url: 'https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
-                })
-            });
+            baseSourceLayers.push(ngiMap);
             baseSourceLayers.push(mapSurfer);
+            baseSourceLayers.push(toposheet);
 
-            // OPENMAPTILES
-            if (mapTilerKey) {
-                baseSourceLayers.push(this.getPositronBasemap());
-                baseSourceLayers.push(this.getDarkMatterBasemap());
+            if(bingMapKey) {
                 baseSourceLayers.push(this.getKlokantechTerrainBasemap());
             }
+
             $.each(baseSourceLayers, function (index, layer) {
                 layer.set('type', 'base');
                 layer.set('visible', true);

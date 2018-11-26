@@ -1,5 +1,6 @@
 {% load static from staticfiles %}
 <html>
+    <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
     <style>
          #dashboard {
             margin-top: 8%;
@@ -54,12 +55,51 @@
                 <div class="card-header"><h2 style="color: darkgreen;">Database Statistics</h2></div>
                 <nav aria-label="breadcrumb">
                   <div class="breadcrumb">
-                   <h3>Taxon records:
-                       <span style="padding-right: 2px;"><b>{{ taxon_count }}</b></span></h3></div>
+                      <h3>Taxon records: <span style="padding-right: 2px;"><b>{{ taxon_count }}</b></span></h3>
+                      <h3>Total validated collections: <span style="padding-right: 2px;"><b>{{ collections_count }}</b></span></h3>
+                  </div>
                 </nav>
             </div>
         </div>
         </div>
     </body>
 
+    <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
+    <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
+    <script>
+    $(function() {
+        var start_date = $("#id_start").val();
+        var end_date = $("#id_end").val();
+
+        $("#id_start").attr('data-language', 'en');
+        $("#id_end").attr('data-language', 'en');
+
+        $("#id_start").datepicker({
+            dateFormat: 'yyyy-mm-dd',
+            autoClose: true,
+            position: 'bottom left',
+            timepicker: true,
+            timeFormat: "hh:ii",
+            onSelect: function (date) {
+                $("#id_end").val(date);
+                $("#id_end").datepicker({minDate: new Date(date)})
+            }
+        });
+
+        $("#id_end").datepicker({
+            dateFormat: 'yyyy-mm-dd',
+            autoClose: true,
+            position: 'bottom left',
+            timepicker: true,
+            timeFormat: "hh:ii",
+            onSelect: function (date) {
+                $("#id_start").val(date);
+                $("#id_start").datepicker({maxDate: new Date(date)})
+            }
+        });
+
+        $('#id_start').datepicker().data('datepicker').selectDate(new Date(start_date.toString()));
+        $('#id_end').datepicker().data('datepicker').selectDate(new Date(end_date.toString()));
+    });
+    </script>
 </html>

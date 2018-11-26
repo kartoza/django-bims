@@ -10,10 +10,12 @@
     <!-- Custom styles for this template -->
     <link href="{% static "css/map.css" %}" rel="stylesheet">
     <link href="{% static "css/loading.css" %}" rel="stylesheet">
+    <link href="{% static "css/detailed_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/ol-layerswitcher/ol3-layerswitcher.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/noUiSlider.11.1.0/nouislider.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/chosen/chosen.min.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
         const max_year_filter = '{{ date_filter.max }}';
@@ -57,7 +59,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title">Biodiversity Information Management System (BIMS)</h5>
                     <button type="button" class="close close-info-popup">
-                        <span>&times;</span>
+                        <img src="{% static 'img/close_icon.svg' %}">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -77,6 +79,7 @@
     {% endblock %}
 
     {% include 'map_page/map-templates.html' %}
+    {% include 'map_page/dashboard-templates.html' %}
 {% endblock %}
 
 {% block foot %}
