@@ -1981,15 +1981,23 @@ div:hover::-webkit-scrollbar {
 }
 
 .modal-header .close {
-    padding: 5px !important;
+    padding: 15px !important;
+}
+
+.close:focus {
+    outline: none;
 }
 
 .close-button > img, .close-icon {
     height: 20px;
 }
 
-.close-button:hover > img, .close-icon:hover {
+.right-panel .close-button:hover > img, .right-panel .close-icon:hover {
     filter: invert(100%);
+}
+
+.close-button:hover > img, .close-icon:hover {
+    filter: invert(60%);
 }
 
 .chosen-select, .chosen-container {
