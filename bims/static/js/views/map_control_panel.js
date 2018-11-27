@@ -33,7 +33,8 @@ define(
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',
                 'click .spatial-filter': 'spatialFilterClicked',
-                'click .validate-data': 'validateDataClicked'
+                'click .validate-data': 'validateDataClicked',
+                'input #layer-selector-search': 'searchInLayerSelector'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -235,6 +236,19 @@ define(
                 $('.layer-switcher.shown button').click();
                 $('.map-control-panel-box:visible').hide();
                 $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
+            },
+            searchInLayerSelector: function (e) {
+                var searchValue = $(e.target).val();
+                var layerSelectors = $(e.target).parent().next().children();
+
+                if (searchValue.length < 3) {
+                    layerSelectors.css('display', 'block');
+                    return false;
+                }
+
+                layerSelectors.css('display', 'block').filter(function (index) {
+                    return $(this).data("name").toLowerCase().indexOf(searchValue.toLowerCase()) === -1;
+                }).css('display', 'none');
             }
         })
     });
