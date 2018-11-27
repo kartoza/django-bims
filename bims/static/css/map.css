@@ -343,7 +343,7 @@ html, body, .map, .map-wrapper, #map-container {
 .layers-selector-container .content {
     border-top: 1px solid darkgray;
     margin-top: 3px;
-    max-height: 500px;
+    max-height: 470px;
     overflow-y: auto;
 }
 
@@ -505,7 +505,7 @@ html, body, .map, .map-wrapper, #map-container {
 .filter-content {
     text-align: left;
     max-height: 300px;
-    overflow-y: scroll;
+    overflow-y: auto;
     padding-top: 5px;
 }
 
@@ -2004,4 +2004,15 @@ div:hover::-webkit-scrollbar {
     font-size: 11pt;
     padding: 5px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.layer-selector-search-input .form-control{
+	border-right:0;
+	box-shadow:0 0 0;
+	border-color:#ccc;
+}
+
+.layer-selector-tags {
+    padding-top: 5px;
+    padding-left: 10px;
 }

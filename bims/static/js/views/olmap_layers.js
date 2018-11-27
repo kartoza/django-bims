@@ -42,8 +42,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             return $checkbox.is(':checked');
         },
-        initLayer: function (layer, layerName, visibleInDefault) {
+        initLayer: function (layer, layerName, visibleInDefault, category, source) {
             var layerType = layerName;
+            var layerSource = '';
+            var layerCategory = '';
             try {
                 var layerOptions = layer.getSource()['i'];
                 if (layerOptions) {
@@ -63,10 +65,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 visibleInDefault = savedLayerVisibility;
             }
 
+            if (category) {
+                layerCategory = category;
+            }
+            if (source) {
+                layerSource = source;
+            }
+
             this.layers[layerType] = {
                 'layer': layer,
                 'visibleInDefault': visibleInDefault,
-                'layerName': layerName
+                'layerName': layerName,
+                'category': layerCategory,
+                'source': layerSource
             };
             if (!visibleInDefault) {
                 layer.setVisible(false);
@@ -115,7 +126,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 ]
             });
 
-            self.initLayer(self.biodiversityLayerGroups, 'Biodiversity', true);
+            self.initLayer(self.biodiversityLayerGroups, 'Biodiversity', true, '', 'Base');
 
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
@@ -202,11 +213,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 format: value.wms_format
                             }
                         };
+
+                        var wmsUrl = value.wms_url;
+
+                        wmsUrl = wmsUrl.replace(/(^\w+:|^)\/\//, '').split('/');
+                        if (wmsUrl.length > 0) {
+                            wmsUrl = wmsUrl[0];
+                        }
+
                         self.initLayer(
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, false
+                            value.name, false, '', wmsUrl
                         );
                         self.renderLegend(
                             value.wms_layer_name,
@@ -270,11 +289,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
                         self.orders[layerOrder] = layerName;
 
+                        var category = '';
+
+                        if (value.hasOwnProperty('category__gn_description')) {
+                            category = value['category__gn_description'];
+                        }
+
                         self.initLayer(
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.title, false
+                            value.title, false, category, 'GeoNode'
                         );
 
                         self.renderLegend(
@@ -454,7 +479,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
 
         },
-        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault) {
+        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
@@ -468,15 +493,34 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 name = '<b>' + name + '</b>';
             }
 
+            var layerSelectorSearch = Shared.StorageUtil.getItem('layerSelectorSearch');
+            var layerDisplayed = 'block';
+            if (layerSelectorSearch) {
+                if (name.toLowerCase().indexOf(layerSelectorSearch.toLowerCase()) === -1) {
+                    layerDisplayed = 'none';
+                }
+            }
+
+            var tags = '';
+            var layerId = name;
+            if (source) {
+                tags += '<span class="badge badge-primary">' + source + '</span> ';
+                layerId += ' ' + source;
+            }
+            if (category) {
+                tags += ' <span class="badge badge-success">' + category + '</span>';
+                layerId += ' ' + category;
+            }
+
             var rowTemplate = _.template($('#layer-selector-row').html());
-            var layerRow = $('#layers-selector').prepend(
-                rowTemplate({
+            $(rowTemplate({
+                    id: layerId,
                     name: name,
                     key: key,
                     checked: checked,
-                    transparency_value: transparencyDefault
-                })
-            ).children().last();
+                    transparency_value: transparencyDefault,
+                    display: layerDisplayed
+            })).prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
 
             var needToReloadXHR = false;
             self.toggleLegend(key, visibleInDefault, needToReloadXHR);
@@ -534,10 +578,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     var value = self.layers[key];
                     var layerName = '';
                     var defaultVisibility = false;
+                    var category = '';
+                    var source = '';
 
                     if (typeof value !== 'undefined') {
                         layerName = value['layerName'];
                         defaultVisibility = value['visibleInDefault'];
+                        if (value.hasOwnProperty('category')) {
+                            category = value['category'];
+                        }
+                        if (value.hasOwnProperty('source')) {
+                            source = value['source'];
+                        }
                     } else {
                         layerName = key;
                     }
@@ -568,9 +620,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             }
                         }
                         defaultVisibility = administrativeVisibility;
+                        source = 'Base';
                     }
 
-                    self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency);
+                    self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source);
                 });
 
                 self.renderTransparencySlider();

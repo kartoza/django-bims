@@ -52,7 +52,11 @@ define(['backbone', 'utils/class'], function (Backbone, UtilClass) {
         },
         getItem: function (key) {
             if (this.isStorageSupported()) {
-                return JSON.parse(localStorage.getItem(key));
+                try {
+                    return JSON.parse(localStorage.getItem(key));
+                } catch (e) {
+                    return localStorage.getItem(key);
+                }
             }
             return null;
         },
