@@ -2011,3 +2011,8 @@ div:hover::-webkit-scrollbar {
 	box-shadow:0 0 0;
 	border-color:#ccc;
 }
+
+.layer-selector-tags {
+    padding-top: 5px;
+    padding-left: 10px;
+}
