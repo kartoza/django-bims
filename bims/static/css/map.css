@@ -343,7 +343,7 @@ html, body, .map, .map-wrapper, #map-container {
 .layers-selector-container .content {
     border-top: 1px solid darkgray;
     margin-top: 3px;
-    max-height: 500px;
+    max-height: 470px;
     overflow-y: auto;
 }
 

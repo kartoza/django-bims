@@ -468,13 +468,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 name = '<b>' + name + '</b>';
             }
 
+            var layerSelectorSearch = Shared.StorageUtil.getItem('layerSelectorSearch');
+            var layerDisplayed = 'block';
+            if (layerSelectorSearch) {
+                if (name.toLowerCase().indexOf(layerSelectorSearch.toLowerCase()) === -1) {
+                    layerDisplayed = 'none';
+                }
+            }
+
             var rowTemplate = _.template($('#layer-selector-row').html());
             var layerRow = $('#layers-selector').prepend(
                 rowTemplate({
                     name: name,
                     key: key,
                     checked: checked,
-                    transparency_value: transparencyDefault
+                    transparency_value: transparencyDefault,
+                    display: layerDisplayed
                 })
             ).children().last();
 
