@@ -20,6 +20,7 @@ define(
             locateView: null,
             closedPopover: [],
             validateDataListOpen: false,
+            layerSelectorSearchKey: 'layerSelectorSearch',
             events: {
                 'click .search-control': 'searchClicked',
                 'click .filter-control': 'filterClicked',
@@ -33,7 +34,8 @@ define(
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',
                 'click .spatial-filter': 'spatialFilterClicked',
-                'click .validate-data': 'validateDataClicked'
+                'click .validate-data': 'validateDataClicked',
+                'input #layer-selector-search': 'handleSearchInLayerSelector'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -166,6 +168,11 @@ define(
 
                 this.spatialFilter = null;
 
+                var layerSelectorSearchValue = Shared.StorageUtil.getItem(this.layerSelectorSearchKey);
+                if (layerSelectorSearchValue) {
+                    var $layerSelectorSearch = this.$el.find('#layer-selector-search');
+                    $layerSelectorSearch.val(layerSelectorSearchValue);
+                }
                 return this;
             },
             openSearchPanel: function () {
@@ -235,6 +242,24 @@ define(
                 $('.layer-switcher.shown button').click();
                 $('.map-control-panel-box:visible').hide();
                 $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
+            },
+            handleSearchInLayerSelector: function (e) {
+                var searchValue = $(e.target).val();
+                this.searchInLayerSelector(searchValue, $(e.target));
+            },
+            searchInLayerSelector: function (searchValue, searchDiv) {
+                var layerSelectors = $(searchDiv).parent().next().children();
+
+                if (searchValue.length < 3) {
+                    layerSelectors.css('display', 'block');
+                    Shared.StorageUtil.setItem(this.layerSelectorSearchKey, '');
+                    return false;
+                }
+
+                Shared.StorageUtil.setItem(this.layerSelectorSearchKey, searchValue);
+                layerSelectors.css('display', 'block').filter(function (index) {
+                    return $(this).data("name").toLowerCase().indexOf(searchValue.toLowerCase()) === -1;
+                }).css('display', 'none');
             }
         })
     });

@@ -359,7 +359,9 @@
 </script>
 
 <script type="text/html" id="layer-selector-row">
-    <li class="ui-state-default">
+    <li class="ui-state-default" style="display: <%= display %>" data-name="<%= id %>">
+        <div class="layer-selector-tags">
+        </div>
         <div class="row-title">
             <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
             <input type="checkbox" value="<%= key %>" class="layer-selector-input" <%= checked %>>
@@ -421,6 +423,9 @@
             </div>
         </div>
         <div class="row content">
+            <div class="input-group layer-selector-search-input">
+                <input type="text" class="form-control" placeholder="Search" id="layer-selector-search">
+            </div>
             <ul id="layers-selector" style="width:100%">
             </ul>
         </div>
