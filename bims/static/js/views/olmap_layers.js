@@ -207,7 +207,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
 
                         var options = {
-                            url: value.wms_url,
+                            url: '/proxy/' + value.wms_url,
                             params: {
                                 layers: value.wms_layer_name,
                                 format: value.wms_format
@@ -447,7 +447,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         return
                     }
                     var options = {
-                        url: value.wms_url,
+                        url: '/proxy/' + value.wms_url,
                         params: {
                             layers: value.wms_layer_name,
                             format: value.wms_format

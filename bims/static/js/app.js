@@ -18,7 +18,8 @@ require.config({
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
         'jquery.fileupload-process': 'libs/jquery-fileupload/jquery.fileupload-process',
         'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate',
-        jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min'
+        jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min',
+        jspdf: 'libs/jspdf/1.4.1/jspdf.min'
     },
     shim: {
         ol: {
@@ -46,6 +47,9 @@ require.config({
         olMapboxStyle: {
             deps: ['ol'],
             exports: 'OlMapboxStyle'
+        },
+        jspdf: {
+            exports: 'jsPDF'
         }
     }
 });
