@@ -18,8 +18,7 @@ require.config({
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
         'jquery.fileupload-process': 'libs/jquery-fileupload/jquery.fileupload-process',
         'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate',
-        jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min',
-        jsPDF: 'libs/jspdf/1.3.5/jspdf.debug'
+        jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min'
     },
     shim: {
         ol: {

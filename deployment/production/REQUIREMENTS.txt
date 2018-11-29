@@ -11,7 +11,7 @@ celery==4.1.0
 # https://github.com/getsentry/raven-python/issues/337
 raven==5.8.1
 django-sentry==1.13.5
-requests==2.18.4
+requests>=2.20.0
 pytz
 # support special characters
 
@@ -46,7 +46,7 @@ Pillow==5.1.0
 django-ordered-model==1.4.3
 
 # Django haystack support
-git+https://github.com/dimasciput/django-haystack.git
+git+https://github.com/dimasciput/django-haystack.gitdjango-proxy==1.1.0
 elasticsearch==5.0.1
 
 # prometheus monitoring support
@@ -59,3 +59,4 @@ pyshp==1.2.12
 django-ckeditor==5.6.1
 django-crispy-forms==1.7.2
 djangorestframework-gis==0.13
+django-proxy==1.1.0

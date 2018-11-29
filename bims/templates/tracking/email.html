@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <p style="font-size: 16pt">Report statistics from {{ date_from }} to {{ date_to }}</p>
+    <h2>Database Statistics</h2>
+    <span style="font-size: 14pt;">Taxon records: <span style="padding-right: 2px;"><b>{{ taxon_count }}</b></span></span><br/>
+    <span style="font-size: 14pt;">Total validated collections: <span style="padding-right: 2px;"><b>{{ collections_count }}</b></span></span>
+    <br/>
+    <h2>Visitors</h2>
+    {% if visitor_stats.total %}
+    <table style="text-align: center; border: 1px solid black; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid black; padding: 5px 10px"></th>
+                <th style="border: 1px solid black; padding: 5px 10px">Total</th>
+                <th style="border: 1px solid black; padding: 5px 10px">Unique</th>
+                <th style="border: 1px solid black; padding: 5px 10px">% Returning Visitor</th>
+                <th style="border: 1px solid black; padding: 5px 10px">Avg. Time on Site</th>
+                {% if pageview_stats %}
+                    <th style="border: 1px solid black; padding: 5px">Avg. Pages/Visit</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th style="border: 1px solid black; padding: 5px 10px">Registered</th>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.registered.total }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.registered.unique }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.registered.return_ratio|floatformat }}%</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.registered.time_on_site|default_if_none:"n/a" }}</td>
+                {% if pageview_stats %}
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.registered.pages_per_visit|floatformat|default:"n/a" }}</td>
+                {% endif %}
+            </tr>
+
+            {% if visitor_stats.guests %}
+            <tr>
+                <th style="border: 1px solid black; padding: 5px 10px">Guests</th>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.guests.total }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.guests.unique }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.guests.return_ratio|floatformat }}%</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.guests.time_on_site|default_if_none:"n/a" }}</td>
+                {% if pageview_stats %}
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.guests.pages_per_visit|floatformat|default:"n/a" }}</td>
+                {% endif %}
+            </tr>
+            <tr>
+                <th style="border: 1px solid black; padding: 5px 10px">Total</th>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.total }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.unique }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.return_ratio|floatformat }}%</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.time_on_site|default_if_none:"n/a" }}</td>
+                {% if pageview_stats %}
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ visitor_stats.pages_per_visit|floatformat|default:"n/a" }}</td>
+                {% endif %}
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No visitor stats available</p>
+    {% endif %}
+
+    <h2>Registered Users</h2>
+    {% if user_stats %}
+    <table style="text-align: center; border: 1px solid black; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid black; padding: 5px 10px"></th>
+                <th style="border: 1px solid black; padding: 5px 10px"># Visits</th>
+                <th style="border: 1px solid black; padding: 5px 10px">Avg. Time on Site</th>
+                <th style="border: 1px solid black; padding: 5px 10px">Avg. Pages/Visit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in user_stats %}
+            <tr>
+                <th style="border: 1px solid black; padding: 5px 10px">{% firstof user.get_full_name user %}</th>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ user.visit_count }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ user.time_on_site|default_if_none:"n/a" }}</td>
+                <td style="border: 1px solid black; padding: 5px 10px">{{ user.pages_per_visit|floatformat|default:"n/a" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No registered user stats available</p>
+    {% endif %}
+
+    {% if pageview_stats %}
+    <h2>Pageviews</h2>
+        {% if pageview_stats.total %}
+        <table style="text-align: center; border: 1px solid black; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid black; padding: 5px 10px"></th>
+                    <th style="border: 1px solid black; padding: 5px 10px">Total</th>
+                    <th style="border: 1px solid black; padding: 5px 10px">Unique</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th style="border: 1px solid black; padding: 5px 10px">Registered</th>
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ pageview_stats.registered.total }}</td>
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ pageview_stats.registered.unique }}</td>
+                </tr>
+                {% if pageview_stats.guests %}
+                <tr>
+                    <th style="border: 1px solid black; padding: 5px 10px">Guests</th>
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ pageview_stats.guests.total }}</td>
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ pageview_stats.guests.unique }}</td>
+                </tr>
+                <tr>
+                    <th style="border: 1px solid black; padding: 5px 10px">Total</th>
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ pageview_stats.total }}</td>
+                    <td style="border: 1px solid black; padding: 5px 10px">{{ pageview_stats.unique }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No pageview stats available</p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>

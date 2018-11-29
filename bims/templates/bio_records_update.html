@@ -40,6 +40,7 @@
             <input name="geometry_type" type="hidden">
             <input name="geometry" type="hidden">
             <input name="references" type="hidden">
+            <input name="documents" type="hidden">
         </form>
         <div class="form-group">
             <label>References</label>
@@ -47,6 +48,12 @@
                 {% for reference in all_references %}
                     <option {% if reference.id in references_link %} selected {% endif %} value="{{ reference.id }}">{{ reference.title }}</option>
                 {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Documents</label>
+            <select multiple id="documents" class="form-control">
+
             </select>
         </div>
         <div class="form-group">
@@ -73,12 +80,23 @@
         };
         var geojson  = new ol.format.GeoJSON;
         var $references = $('#references');
+        var $documents = $('#documents');
+        var allDocuments = [];
+
 
         $(document).ready(function () {
             $('#id_taxon_gbif_id').chosen();
             $('#id_site').chosen();
 
             $references.chosen();
+            $documents.chosen();
+
+            {% for documents in documents_selected %}
+                allDocuments.push('{{ documents.uuid }}');
+                $documents.append($('<option selected></option>')
+                        .attr('value', '{{ documents.id }}').text('{{ documents.title }}'));
+                $documents.trigger("chosen:updated");
+            {% endfor %}
 
             $('input[name=collection_date]').datepicker(
                 {
@@ -147,7 +165,41 @@
             }else {
                 $('#coordinates-input-wrapper').show();
             }
+
+            getDocuments();
         });
+
+        function getDocuments(url) {
+            var documentsApiUrl = '/api/list-documents/';
+            if(url) {
+                documentsApiUrl = url;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: documentsApiUrl,
+                success: function (data) {
+                    if(!data.hasOwnProperty('results')) {
+                        return true;
+                    }
+                    $.each(data['results'], function (key, value) {
+                        if (allDocuments.indexOf(value.uuid) === -1) {
+                            allDocuments.push(value.uuid);
+                            $documents.append($('<option></option>')
+                                .attr('value', value.id).text(value.title));
+                            $documents.trigger("chosen:updated");
+                        }
+                    });
+
+                    if(data.hasOwnProperty('next')) {
+                        if(data['next']) {
+                            getDocuments(data['next']);
+                        }
+                    }
+                }
+            });
+
+        }
 
         $('#form').on('submit', function () {
             var features = source.getFeatures();
@@ -157,6 +209,7 @@
             $('input[name=geometry_type]').val(typeSelect.value);
             $('input[name=geometry]').val(json);
             $('input[name=references]').val($references.chosen().val().join());
+            $('input[name=documents]').val($documents.chosen().val().join());
         });
 
         function updateLocationPoint() {

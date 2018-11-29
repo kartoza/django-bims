@@ -17,8 +17,9 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-
+from django.contrib.auth.decorators import login_required
 from geonode.urls import urlpatterns as geonode_urlpatterns
+from bims.views.documents import document_metadata, BimsDocumentUploadView
 
 
 # GeoNode has to be in root url conf.
@@ -36,7 +37,12 @@ urlpatterns = [
 
     # prometheus monitoring
     url(r'', include('django_prometheus.urls')),
-
+    url(r'^documents/(?P<docid>\d+)/metadata$',
+        document_metadata,
+        name='document_metadata'),
+    url(r'^documents/upload/?$', login_required(
+        BimsDocumentUploadView.as_view()),
+        name='document_upload'),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^geonode/?$',
         TemplateView.as_view(template_name='site_index.html'),

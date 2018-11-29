@@ -30,7 +30,6 @@ define([
             var self = this;
 
             self.$el.html(this.template());
-            self.$el.find('.map-control-panel-box').hide();
             self.fileupload = self.$el.find('#fileupload');
             self.uploadButton = self.$el.find('.btn-boundary-upload');
             self.progress = self.$el.find('.process-shapefile');
@@ -142,7 +141,6 @@ define([
                 url: listBoundaryAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    self.$el.find('.spatial-scale-menu .subtitle').click();
                     for (var i = 0; i < data.length; i++) {
                         if (data[i]['top_level_boundary']) {
                             var $boundary = self.$el.find('#boundary-' + data[i]['top_level_boundary']);

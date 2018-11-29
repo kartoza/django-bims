@@ -17,9 +17,11 @@ from bims.utils.cluster import (
 from bims.utils.gbif import update_collection_record
 from bims.tasks.collection_record import update_search_index
 from bims.models.validation import AbstractValidation
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 
-class BiologicalCollectionRecord(AbstractValidation):
+class BiologicalCollectionRecord(
+    AbstractValidation, DocumentLinksMixin):
     """Biological collection model."""
     CATEGORY_CHOICES = (
         ('alien', 'Non-native'),

@@ -58,5 +58,5 @@ class TestLocateView(SimpleTestCase):
 
         farm = parse_farm(wfs_string)
         self.assertEqual(farm['farm_id'], farm_id)
-        expected_envelope_extent = (-32.22, 23.7354, -32.1787, 23.7978)
+        expected_envelope_extent = (23.7354, -32.22, 23.7978, -32.1787)
         self.assertEqual(farm['envelope_extent'], expected_envelope_extent)

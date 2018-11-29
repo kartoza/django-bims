@@ -7,8 +7,10 @@ define([
     'collections/search_result',
     'views/search_panel',
     'jquery',
-    'views/filter_panel/reference_category'
-], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $, ReferenceCategoryView) {
+    'views/filter_panel/reference_category',
+    'views/filter_panel/spatial_filter'
+], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $,
+             ReferenceCategoryView, SpatialFilterView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -42,6 +44,10 @@ define([
             this.$el.append(this.searchPanel.render().$el);
             this.referenceCategoryView = new ReferenceCategoryView();
             this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
+
+            this.spatialFilterView = new SpatialFilterView();
+            this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
+
             return this;
         },
         checkSearch: function (forceSearch) {

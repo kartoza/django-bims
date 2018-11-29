@@ -67,22 +67,6 @@ make superuser
 ```
 
 
-Install as a Django Package
----------------------------
-
-1. Add "bims" to your INSTALLED_APPS setting like this:
-
-    INSTALLED_APPS = [
-        'bims',
-    ]
-
-2. Include the bims URLconf in your project urls.py like this:
-
-    path('bims/', include('bims.urls'))
-
-3. Run `python manage.py migrate` to create the bims models.
-
-
 Optional keys on project
 ---------------------------
 To use some feature, there are keys that needs to be included on the project.
@@ -96,14 +80,16 @@ The keys are:
 
 Generating boundaries
 ---------------------------
-Bims using boundaries for clustering. To generate it, do `make generate-boundaries`
+Bims using boundaries for clustering. To generate it, do
+
+    make generate-boundaries
+
 
 Thank you
 _________
 
 Thank you to the individual contributors who have helped to build HealthyRivers:
 
-* Christian Christelis (Lead developer): christian@kartoza.com
 * Tim Sutton (Lead developer): tim@kartoza.com
 * Dimas Ciptura: dimas@kartoza.com
 * Irwan Fathurrahman: irwan@kartoza.com

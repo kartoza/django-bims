@@ -2,6 +2,10 @@ body {
     font-family: "Roboto Condensed";
 }
 
+#mainNav {
+    pointer-events: none;
+}
+
 .container {
     margin-right: 0 !important;
     margin-left: 0 !important;
@@ -339,7 +343,7 @@ html, body, .map, .map-wrapper, #map-container {
 .layers-selector-container .content {
     border-top: 1px solid darkgray;
     margin-top: 3px;
-    max-height: 500px;
+    max-height: 470px;
     overflow-y: auto;
 }
 
@@ -501,7 +505,7 @@ html, body, .map, .map-wrapper, #map-container {
 .filter-content {
     text-align: left;
     max-height: 300px;
-    overflow-y: scroll;
+    overflow-y: auto;
     padding-top: 5px;
 }
 
@@ -525,7 +529,6 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-control-panel-box .close-button:hover {
-    background-color: rgba(0, 0, 0, 0.7) !important;
     color: white !important;
 }
 
@@ -1992,17 +1995,46 @@ div:hover::-webkit-scrollbar {
 }
 
 .modal-header .close {
-    padding: 5px !important;
+    padding: 15px !important;
+}
+
+.close:focus {
+    outline: none;
 }
 
 .close-button > img, .close-icon {
     height: 20px;
 }
 
-.close-button:hover > img, .close-icon:hover {
+.right-panel .close-button:hover > img, .right-panel .close-icon:hover {
     filter: invert(100%);
+}
+
+.close-button:hover > img, .close-icon:hover {
+    filter: invert(60%);
 }
 
 .chosen-select, .chosen-container {
     width: 100% !important;
+}
+
+.document-container {
+    padding: 10px;
+}
+
+.document-row {
+    font-size: 11pt;
+    padding: 5px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.layer-selector-search-input .form-control{
+	border-right:0;
+	box-shadow:0 0 0;
+	border-color:#ccc;
+}
+
+.layer-selector-tags {
+    padding-top: 5px;
+    padding-left: 10px;
 }

@@ -10,9 +10,6 @@ define([
     'ol',
     'jquery',
     'layerSwitcher',
-    'htmlToCanvas',
-    'fileSaver',
-    'jsPDF',
     'views/olmap_basemap',
     'views/olmap_layers',
     'views/geocontext',
@@ -21,12 +18,13 @@ define([
     'views/right_panel/records_detail',
     'views/biodiversity_legend',
     'views/detail_dashboard/taxon_detail',
-    'views/detail_dashboard/site_detail'
+    'views/detail_dashboard/site_detail',
+    'htmlToCanvas'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, htmlToCanvas, fileSaver, jsPDF, Basemap, Layers, Geocontext,
+             ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
-             TaxonDetailDashboard, SiteDetailedDashboard) {
+             TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -730,18 +728,13 @@ define([
                 var ratio = divHeight / divWidth;
                 html2canvas(canvas, {
                     useCORS: true,
+                    background :'#FFFFFF',
                     allowTaint:	false,
                     onrendered: function (canvas) {
-                        var img = canvas.toDataURL("image/png");
-                        var pdf = new jsPDF({
-                            orientation: 'landscape',
-                            format: 'a4'
-                        });
-                        var width = pdf.internal.pageSize.width;
-                        var height = ratio * width;
-                        pdf.addImage(img, 'PNG', 0, 0, width, height);
-                        pdf.save('map.pdf');
-
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = 'map.png';
+                        link.click();
                         $('.zoom-control').show();
                         $('.map-control-panel').show();
                         $('#ripple-loading').hide();
@@ -749,7 +742,6 @@ define([
                     }
                 })
             }
-
         }
     })
 });

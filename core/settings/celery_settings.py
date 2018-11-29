@@ -8,6 +8,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'bims.tasks.update_cluster',
         'schedule': 18000.0,  # update every 5 hours
     },
+    'email_admins': {
+        'task': 'bims.tasks.email_admins',
+        'schedule': 604800.0,  # send email to admins every 7 days
+    }
 }
 
 CELERY_TIMEZONE = 'UTC'
