@@ -45,6 +45,7 @@ from bims.models import (
     UserBoundary,
     SearchProcess,
     ReferenceLink,
+    Endemism,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -395,6 +396,14 @@ class ReferenceLinkAdmin(admin.ModelAdmin):
     )
 
 
+class EndemismAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'name',
+        'description'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -403,6 +412,7 @@ admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
+admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 
