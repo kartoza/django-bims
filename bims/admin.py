@@ -186,7 +186,13 @@ class IUCNStatusAdmin(admin.ModelAdmin):
 
 
 class TaxonAdmin(admin.ModelAdmin):
-    list_display = ('common_name', 'author', 'iucn_status', 'taxon_class')
+    list_display = (
+        'common_name',
+        'author',
+        'iucn_status',
+        'taxon_class',
+        'endemism'
+    )
 
 
 class BoundaryAdmin(admin.ModelAdmin):

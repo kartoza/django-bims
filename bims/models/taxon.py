@@ -10,6 +10,7 @@ from bims.models.iucn_status import IUCNStatus
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
 from bims.models.document_links_mixin import DocumentLinksMixin
+from bims.models.endemism import Endemism
 
 
 class TaxonomyField(models.CharField):
@@ -38,6 +39,13 @@ class Taxon(DocumentLinksMixin):
         verbose_name='IUCN status',
         null=True,
         blank=True,
+    )
+    endemism = models.ForeignKey(
+        Endemism,
+        models.SET_NULL,
+        verbose_name='Endemism',
+        null=True,
+        blank=True
     )
     iucn_redlist_id = models.IntegerField(
         verbose_name='IUCN taxon id',
