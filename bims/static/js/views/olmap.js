@@ -19,13 +19,12 @@ define([
     'views/biodiversity_legend',
     'views/detail_dashboard/taxon_detail',
     'views/detail_dashboard/site_detail',
-    'htmlToCanvas',
-    'jspdf'
+    'htmlToCanvas'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
-             TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas, jsPDF) {
+             TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -729,17 +728,13 @@ define([
                 var ratio = divHeight / divWidth;
                 html2canvas(canvas, {
                     useCORS: true,
+                    background :'#FFFFFF',
                     allowTaint:	false,
                     onrendered: function (canvas) {
-                        var img = canvas.toDataURL("image/png");
-                        var pdf = new jsPDF({
-                            orientation: 'landscape',
-                            format: 'a4'
-                        });
-                        var width = pdf.internal.pageSize.getWidth();
-                        var height = ratio * width;
-                        pdf.addImage(img, 'PNG', 0, 0, width, height);
-                        pdf.save('map.pdf');
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = 'map.png';
+                        link.click();
 
                         $('.zoom-control').show();
                         $('.map-control-panel').show();
