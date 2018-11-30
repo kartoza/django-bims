@@ -21,4 +21,9 @@ def proxy_request(request, path):
     if parameters:
         path += '?' + '&'.join(parameters)
 
+    # If somehow we get malformed url
+    if len(path.split('://')) == 1:
+        new_path = path.split(':/')
+        path = '://'.join(new_path)
+
     return proxy(request, url=path)
