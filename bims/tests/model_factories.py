@@ -17,7 +17,8 @@ from bims.models import (
     BiologicalCollectionRecord,
     Boundary,
     BoundaryType,
-    Cluster
+    Cluster,
+    Endemism,
 )
 
 
@@ -93,6 +94,20 @@ class SurveyF(factory.django.DjangoModelFactory):
             # A list of groups were passed in, use them
             for site in extracted:
                 self.sites.add(site)
+
+
+class EndemismF(factory.django.DjangoModelFactory):
+    """
+    Endemism factory
+    """
+    class Meta:
+        model = Endemism
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: 'name %s' % n)
+    description = factory.Sequence(
+        lambda n: 'description %s' % n
+    )
 
 
 class GroupF(factory.DjangoModelFactory):

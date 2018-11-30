@@ -61,11 +61,8 @@ class TaxonDetail(APIView):
         )
 
         # Endemism
-        endemism_value = ''
-        endemism = records.values_list('endemism', flat=True).distinct()
-        if endemism:
-            endemism_value = endemism[0]
-        data['endemism'] = endemism_value
+        if taxon.endemism:
+            data['endemism'] = taxon.endemism.name
 
         # Origins
         origin_value = ''

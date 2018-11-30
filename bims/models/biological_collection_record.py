@@ -78,12 +78,6 @@ class BiologicalCollectionRecord(
         verbose_name='Custodian',
     )
 
-    endemism = models.CharField(
-        max_length=50,
-        blank=True,
-        default=''
-    )
-
     sampling_method = models.CharField(
         max_length=50,
         blank=True,
