@@ -26,7 +26,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                     'OpenStreetMap contributors</a>';
             }
             return this.getVectorTileMapBoxStyle(
-                '/proxy/https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                '/bims_proxy/https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
                 styleUrl,
                 'openmaptiles',
                 attributions
@@ -38,7 +38,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 '<a href="http://KlokanTech.com">KlokanTech</a>\n';
             var openMapTiles = this.getOpenMapTilesTile('/static/mapbox-style/klokantech-terrain-gl-style.json');
             var contours = this.getVectorTileMapBoxStyle(
-                '/proxy/https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                '/bims_proxy/https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
                 '/static/mapbox-style/klokantech-terrain-gl-style.json',
                 'contours',
                 attributions
@@ -46,7 +46,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var hillshading = new ol.layer.Tile({
                 opacity: 0.1,
                 source: new ol.source.XYZ({
-                    url: '/proxy/https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
+                    url: '/bims_proxy/https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
                 })
             });
             return new ol.layer.Group({
@@ -83,7 +83,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                     attributions: ['Data &copy; <a href="http://www.ngi.gov.za/">' +
                     'National Geospatial Information (NGI)</a>; Tiles from ' +
                     '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
-                    url: '/proxy/https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+                    url: '/bims_proxy/https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
                 })
             });
 
@@ -92,7 +92,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 title: 'Aerial photography',
                 source: new ol.source.XYZ({
                     attributions: ['<a href="http://www.ngi.gov.za/">CD:NGI Aerial</a>'],
-                    url: '/proxy/http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
+                    url: '/bims_proxy/http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
                 })
             });
 
@@ -101,7 +101,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 title: 'OpenStreetMap',
                 source: new ol.source.XYZ({
                     attributions: ['Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @University of Heidelberg</a>; Map data from <a href="http://openstreetmap.org">OpenStreetMap</a> contributors; <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'],
-                    url: '/proxy/https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
+                    url: '/bims_proxy/https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
                 })
             });
 
