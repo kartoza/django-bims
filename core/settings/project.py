@@ -73,3 +73,18 @@ FARM_GEOSERVER_URL = 'http://maps.kartoza.com/geoserver/kartoza/ows'
 FARM_WORKSPACE = 'kartoza'
 FARM_LAYER_NAME = 'farm_portion'
 FARM_ID_COLUMN = 'id'
+
+PROXY_ALLOWED_HOSTS = (
+    '.kartoza.com',
+    '.openstreetmap.org.za',
+    '.uni-heidelberg.de',
+    '.openstreetmap.org',
+    '.tilehosting.com'
+)
+
+PROXY_ALLOWED_HOSTS_ENV = os.environ.get('PROXY_ALLOWED_HOSTS', None)
+
+if PROXY_ALLOWED_HOSTS_ENV:
+    proxy_list = PROXY_ALLOWED_HOSTS_ENV.split(',')
+    for proxy in proxy_list:
+        PROXY_ALLOWED_HOSTS += (proxy,)

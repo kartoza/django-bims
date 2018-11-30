@@ -208,7 +208,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
 
                         var options = {
-                            url: '/proxy/' + value.wms_url,
+                            url: '/bims_proxy/' + encodeURI(value.wms_url),
                             params: {
                                 layers: value.wms_layer_name,
                                 format: value.wms_format
@@ -448,7 +448,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         return
                     }
                     var options = {
-                        url: '/proxy/' + value.wms_url,
+                        url: '/bims_proxy/' + encodeURI(value.wms_url),
                         params: {
                             layers: value.wms_layer_name,
                             format: value.wms_format
