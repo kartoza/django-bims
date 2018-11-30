@@ -88,7 +88,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // HIGHLIGHT PINNED LAYER
             // ---------------------------------
-            self.highlightPinnedVectorSource = new ol.source.Vector({});
+            self.highlightPinnedVectorSource = new ol.source.Vector({
+            });
             self.highlightPinnedVector = new ol.layer.Vector({
                 source: self.highlightPinnedVectorSource,
                 style: function (feature) {
@@ -101,8 +102,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
-            self.biodiversitySource = new ol.source.Vector({});
-            self.locationSiteClusterSource = new ol.source.Vector({});
+            self.biodiversitySource = new ol.source.Vector();
+            self.locationSiteClusterSource = new ol.source.Vector();
             self.locationSiteCluster = new ol.source.Cluster({
                 distance: 40,
                 source: self.locationSiteClusterSource
@@ -141,7 +142,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // HIGHLIGHT LAYER
             // ---------------------------------
-            self.highlightVectorSource = new ol.source.Vector({});
+            self.highlightVectorSource = new ol.source.Vector();
             self.highlightVector = new ol.layer.Vector({
                 source: self.highlightVectorSource,
                 style: function (feature) {
@@ -207,7 +208,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
 
                         var options = {
-                            url: value.wms_url,
+                            url: '/proxy/' + value.wms_url,
                             params: {
                                 layers: value.wms_layer_name,
                                 format: value.wms_format
@@ -447,7 +448,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         return
                     }
                     var options = {
-                        url: value.wms_url,
+                        url: '/proxy/' + value.wms_url,
                         params: {
                             layers: value.wms_layer_name,
                             format: value.wms_format
