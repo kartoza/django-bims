@@ -17,8 +17,9 @@ def move_endemism_value(apps, schema_editor):
             name=collection.endemism
         )
         taxon_gbif = collection.taxon_gbif_id
-        taxon_gbif.endemism = endemism
-        taxon_gbif.save()
+        if taxon_gbif:
+            taxon_gbif.endemism = endemism
+            taxon_gbif.save()
 
 
 class Migration(migrations.Migration):
