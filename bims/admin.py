@@ -46,7 +46,7 @@ from bims.models import (
     SearchProcess,
     ReferenceLink,
     Endemism,
-    TaxonIdentifier,
+    Taxonomy,
     TaxonGroup,
 )
 
@@ -437,7 +437,7 @@ admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
-admin.site.register(TaxonIdentifier, TaxonIdentifierAdmin)
+admin.site.register(Taxonomy, TaxonIdentifierAdmin)
 admin.site.register(TaxonGroup)
 
 admin.site.register(Boundary, BoundaryAdmin)

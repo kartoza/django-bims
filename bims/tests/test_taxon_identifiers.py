@@ -5,7 +5,7 @@ import mock
 import json
 from django.test import TestCase
 from bims.utils.gbif import process_taxon_identifier, search_taxon_identifier
-from bims.models import TaxonIdentifier
+from bims.models import Taxonomy
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -80,7 +80,7 @@ class TestTaxonIdentifier(TestCase):
     def test_search_taxon_identifier(self):
         species_name = 'Enteromius anoplus (Weber, 1897)'
         species = search_taxon_identifier(species_name, False)
-        self.assertTrue(isinstance(species, TaxonIdentifier))
+        self.assertTrue(isinstance(species, Taxonomy))
         self.assertEqual(species_name, species.scientific_name)
 
     @mock.patch('requests.get', mock.Mock(

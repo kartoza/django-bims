@@ -3,7 +3,7 @@
 
 """
 from django.contrib.gis.db import models
-from bims.models import TaxonIdentifier
+from bims.models import Taxonomy
 
 
 class TaxonGroup(models.Model):
@@ -14,7 +14,7 @@ class TaxonGroup(models.Model):
         blank=False
     )
 
-    taxon_identifiers = models.ManyToManyField(TaxonIdentifier)
+    taxon_identifiers = models.ManyToManyField(Taxonomy)
 
     def __unicode__(self):
         return self.name

@@ -19,7 +19,7 @@ from bims.models import (
     BoundaryType,
     Cluster,
     Endemism,
-    TaxonIdentifier,
+    Taxonomy,
 )
 
 
@@ -236,7 +236,7 @@ class TaxonIdentifierF(factory.django.DjangoModelFactory):
     Taxon identifier factory
     """
     class Meta:
-        model = TaxonIdentifier
+        model = Taxonomy
 
     id = factory.Sequence(lambda n: n)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)

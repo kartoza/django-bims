@@ -6,7 +6,7 @@ from bims.models import (
     Taxon,
     TaxonomyField
 )
-from bims.models.taxon_identifier import TaxonIdentifier
+from bims.models.taxonomy import Taxonomy
 from bims.enums import TaxonomicRank, TaxonomicStatus
 
 
@@ -146,7 +146,7 @@ def process_taxon_identifier(key, fetch_parent=True):
 
     try:
         print('Found detail for %s' % detail['scientificName'])
-        taxon_identifier, status = TaxonIdentifier.objects.get_or_create(
+        taxon_identifier, status = Taxonomy.objects.get_or_create(
             gbif_key=detail['key'],
             scientific_name=detail['scientificName'],
             canonical_name=detail['canonicalName'],

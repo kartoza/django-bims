@@ -5,7 +5,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
 
 
-class TaxonIdentifier(models.Model):
+class Taxonomy(models.Model):
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
@@ -79,6 +79,13 @@ class TaxonIdentifier(models.Model):
         blank=True
     )
 
+    # noinspection PyClassicStyleClass
+    class Meta:
+        """Meta class for project."""
+        app_label = 'bims'
+        verbose_name_plural = 'Taxonomies'
+        verbose_name = 'Taxonomy'
+
     def __unicode__(self):
         return '%s - %s' % (
             self.scientific_name,
@@ -86,7 +93,7 @@ class TaxonIdentifier(models.Model):
         )
 
     def get_direct_children(self):
-        children = TaxonIdentifier.objects.filter(
+        children = Taxonomy.objects.filter(
             parent=self
         )
         return children
