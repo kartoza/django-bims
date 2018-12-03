@@ -126,7 +126,7 @@ class Taxon(DocumentLinksMixin):
                 max_length=100,
                 blank=True,
                 default=''),
-        verbose_name = 'Vernacular Names',
+        verbose_name='Vernacular Names',
         default=[],
         null=True,
         blank=True

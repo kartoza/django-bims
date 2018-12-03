@@ -2,7 +2,12 @@
 import requests
 from requests.exceptions import HTTPError
 from pygbif import species
-from bims.models import Taxon, TaxonomyField
+from bims.models import (
+    Taxon,
+    TaxonomyField
+)
+from bims.models.taxon_identifier import TaxonIdentifier
+from bims.enums import TaxonomicRank, TaxonomicStatus
 
 
 def update_taxa():
@@ -125,3 +130,42 @@ def update_taxonomy_fields(taxon, response):
             continue
 
     taxon.save()
+
+
+def process_taxon_identifier(key):
+    """
+    Get taxon detail
+    :param key: gbif key
+    :return:
+    """
+    # Get taxon
+    print('Get taxon identifier for key : %s' % key)
+    detail = get_species(key)
+    taxon_identifier = None
+
+    try:
+        print('Found detail for %s' % detail['scientificName'])
+        taxon_identifier, status = TaxonIdentifier.objects.get_or_create(
+            gbif_key=detail['key'],
+            scientific_name=detail['scientificName'],
+            canonical_name=detail['canonicalName'],
+            taxonomic_status=TaxonomicStatus[
+                detail['taxonomicStatus']].name,
+            rank=TaxonomicRank[
+                detail['rank']].name,
+        )
+        if 'vernacularName' in detail:
+            vernacular_names = detail['vernacularName'].split(',')
+            taxon_identifier.vernacular_names = vernacular_names
+            taxon_identifier.save()
+
+        if 'parentKey' in detail:
+            print('Found parent')
+            taxon_identifier.parent = process_taxon_identifier(
+                detail['parentKey']
+            )
+            taxon_identifier.save()
+    except KeyError:
+        pass
+
+    return taxon_identifier
