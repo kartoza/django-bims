@@ -54,7 +54,7 @@ def find_species(original_species_name):
     try:
         response = species.name_lookup(
             q=original_species_name,
-            limit=3
+            limit=5
         )
         if 'results' in response:
             results = response['results']
@@ -170,3 +170,25 @@ def process_taxon_identifier(key, fetch_parent=True):
         pass
 
     return taxon_identifier
+
+
+def search_taxon_identifier(search_query, fetch_parent=True):
+    """
+    Search from gbif api, then create taxon identifier
+    :param search_query: string query
+    :param fetch_parent: whether need to fetch parent, default to True
+    :return:
+    """
+    print('Search for %s' % search_query)
+    species_detail = find_species(search_query)
+
+    key = None
+    if 'nubKey' in species_detail:
+        key = species_detail['nubKey']
+    elif 'speciesKey' in species_detail:
+        key = species_detail['speciesKey']
+
+    if key:
+        species_detail = process_taxon_identifier(key, fetch_parent)
+
+    return species_detail

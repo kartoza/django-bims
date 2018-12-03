@@ -2,4 +2,3 @@
 """Taxon model definition.
 
 """
-

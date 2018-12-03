@@ -1,0 +1,171 @@
+{
+  "offset": 0,
+  "limit": 2,
+  "endOfRecords": true,
+  "count": 2,
+  "results": [
+    {
+      "key": 9577564,
+      "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+      "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+      "parentKey": 2363128,
+      "parent": "Enteromius",
+      "basionymKey": 5205677,
+      "basionym": "Barbus anoplus Weber, 1897",
+      "kingdom": "Animalia",
+      "phylum": "Chordata",
+      "order": "Cypriniformes",
+      "family": "Cyprinidae",
+      "genus": "Enteromius",
+      "species": "Enteromius anoplus",
+      "kingdomKey": 1,
+      "phylumKey": 44,
+      "classKey": 204,
+      "orderKey": 1153,
+      "familyKey": 7336,
+      "genusKey": 2363128,
+      "speciesKey": 9577564,
+      "scientificName": "Enteromius anoplus (Weber, 1897)",
+      "canonicalName": "Enteromius anoplus",
+      "authorship": " (Weber, 1897)",
+      "nameType": "SCIENTIFIC",
+      "taxonomicStatus": "ACCEPTED",
+      "rank": "SPECIES",
+      "origin": "SOURCE",
+      "numDescendants": 0,
+      "numOccurrences": 0,
+      "habitats": [
+        "FRESHWATER",
+        "FRESHWATER"
+      ],
+      "nomenclaturalStatus": [],
+      "threatStatuses": [],
+      "descriptions": [
+        {
+          "description": "Africa: Widely distributed from Limpopo to upland Natal, Transkei and the middle and upper Orange basin, including the Karoo. Absent from the lower Orange. Present in the coastal rivers of the Cape (Olifants, Gourits, Gamtoos, Sundays and Great Fish) but absent from Cape Fold Mt. streams."
+        }
+      ],
+      "vernacularNames": [
+        {
+          "vernacularName": "Chubbyhead barb",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "Chubbyhead barb",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "Dikkop-ghieliemientjie",
+          "language": "afr"
+        },
+        {
+          "vernacularName": "Pakspõsk-pardkala",
+          "language": "est"
+        },
+        {
+          "vernacularName": "Parmička limpopská",
+          "language": "ces"
+        },
+        {
+          "vernacularName": "圆头魮",
+          "language": ""
+        },
+        {
+          "vernacularName": "圓頭魮",
+          "language": ""
+        }
+      ],
+      "higherClassificationMap": {
+        "1": "Animalia",
+        "44": "Chordata",
+        "204": "Actinopterygii",
+        "1153": "Cypriniformes",
+        "7336": "Cyprinidae",
+        "2363128": "Enteromius"
+      },
+      "synonym": false,
+      "class": "Actinopterygii"
+    },
+    {
+      "key": 142914634,
+      "datasetKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+      "constituentKey": "f34f907a-46d2-4df5-8f29-36c0e1b0055e",
+      "nubKey": 9577564,
+      "parentKey": 149108928,
+      "parent": "Enteromius",
+      "kingdom": "Animalia",
+      "phylum": "Chordata",
+      "order": "Cypriniformes",
+      "family": "Cyprinidae",
+      "genus": "Enteromius",
+      "species": "Enteromius anoplus",
+      "kingdomKey": 149101740,
+      "phylumKey": 149101741,
+      "classKey": 149107434,
+      "orderKey": 149108539,
+      "familyKey": 149108698,
+      "genusKey": 149108928,
+      "speciesKey": 142914634,
+      "scientificName": "Enteromius anoplus (Weber, 1897)",
+      "canonicalName": "Enteromius anoplus",
+      "authorship": "(Weber, 1897)",
+      "nameType": "SCIENTIFIC",
+      "taxonomicStatus": "ACCEPTED",
+      "rank": "SPECIES",
+      "origin": "SOURCE",
+      "numDescendants": 0,
+      "numOccurrences": 0,
+      "taxonID": "42913801",
+      "habitats": [
+        "FRESHWATER",
+        "FRESHWATER"
+      ],
+      "nomenclaturalStatus": [],
+      "threatStatuses": [],
+      "descriptions": [
+        {
+          "description": "Africa: Widely distributed from Limpopo to upland Natal, Transkei and the middle and upper Orange basin, including the Karoo. Absent from the lower Orange. Present in the coastal rivers of the Cape (Olifants, Gourits, Gamtoos, Sundays and Great Fish) but absent from Cape Fold Mt. streams."
+        }
+      ],
+      "vernacularNames": [
+        {
+          "vernacularName": "Chubbyhead barb",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "Chubbyhead barb",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "Dikkop-ghieliemientjie",
+          "language": "afr"
+        },
+        {
+          "vernacularName": "Pakspõsk-pardkala",
+          "language": "est"
+        },
+        {
+          "vernacularName": "Parmička limpopská",
+          "language": "ces"
+        },
+        {
+          "vernacularName": "圆头魮"
+        },
+        {
+          "vernacularName": "圓頭魮"
+        }
+      ],
+      "higherClassificationMap": {
+        "149101740": "Animalia",
+        "149101741": "Chordata",
+        "149107434": "Actinopterygii",
+        "149108539": "Cypriniformes",
+        "149108698": "Cyprinidae",
+        "149108928": "Enteromius"
+      },
+      "synonym": false,
+      "class": "Actinopterygii"
+    }
+  ],
+  "facets": []
+}

@@ -4,7 +4,8 @@ import os
 import mock
 import json
 from django.test import TestCase
-from bims.utils.gbif import process_taxon_identifier
+from bims.utils.gbif import process_taxon_identifier, search_taxon_identifier
+from bims.models import TaxonIdentifier
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -16,12 +17,25 @@ def mocked_gbif_request(*args, **kwargs):
             self.json_data = json_data
             self.status_code = status_code
 
+        @property
+        def headers(self):
+            return {
+                'content-type': 'application/json'
+            }
+
         def json(self):
             return self.json_data
 
-    url = args[0]
-    url_splitted = url.split('/')
-    key = url_splitted[len(url_splitted)-1]
+        def raise_for_status(self):
+            return self.status_code
+
+    if 'params' in kwargs:
+        key = kwargs['params']['q']
+    else:
+        url = args[0]
+        url_splitted = url.split('/')
+        key = url_splitted[len(url_splitted) - 1]
+
     response_file = 'gbif_species_%s.json' % key
     response_path = os.path.join(
             test_data_directory, response_file)
@@ -60,3 +74,11 @@ class TestTaxonIdentifier(TestCase):
             parent += 1
             taxon_identifier = taxon_identifier.parent
         self.assertTrue(parent == 2)
+
+    @mock.patch('requests.get', mock.Mock(
+        side_effect=mocked_gbif_request))
+    def test_search_taxon_identifier(self):
+        species_name = 'Enteromius anoplus (Weber, 1897)'
+        species = search_taxon_identifier(species_name, False)
+        self.assertTrue(isinstance(species, TaxonIdentifier))
+        self.assertEqual(species_name, species.scientific_name)
