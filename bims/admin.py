@@ -47,6 +47,7 @@ from bims.models import (
     ReferenceLink,
     Endemism,
     TaxonIdentifier,
+    TaxonGroup,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -433,6 +434,7 @@ admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(TaxonIdentifier, TaxonIdentifierAdmin)
+admin.site.register(TaxonGroup)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
