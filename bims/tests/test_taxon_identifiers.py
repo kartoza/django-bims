@@ -82,3 +82,10 @@ class TestTaxonIdentifier(TestCase):
         species = search_taxon_identifier(species_name, False)
         self.assertTrue(isinstance(species, TaxonIdentifier))
         self.assertEqual(species_name, species.scientific_name)
+
+    @mock.patch('requests.get', mock.Mock(
+        side_effect=mocked_gbif_request))
+    def test_get_children(self):
+        taxon_identifier = process_taxon_identifier(self.gbif_key)
+        parent = taxon_identifier.parent
+        self.assertTrue(len(parent.get_direct_children()) > 0)

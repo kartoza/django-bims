@@ -63,3 +63,9 @@ class TaxonIdentifier(models.Model):
             self.scientific_name,
             self.rank
         )
+
+    def get_direct_children(self):
+        children = TaxonIdentifier.objects.filter(
+            parent=self
+        )
+        return children
