@@ -421,6 +421,10 @@ class TaxonIdentifierAdmin(admin.ModelAdmin):
         'parent'
     )
 
+    list_filter = (
+        'rank',
+    )
+
 
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)

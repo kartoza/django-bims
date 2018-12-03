@@ -2,6 +2,7 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
+from bims.models.iucn_status import IUCNStatus
 
 
 class TaxonIdentifier(models.Model):
@@ -56,6 +57,26 @@ class TaxonIdentifier(models.Model):
         to='self',
         on_delete=models.SET_NULL,
         null=True
+    )
+
+    iucn_status = models.ForeignKey(
+        IUCNStatus,
+        models.SET_NULL,
+        verbose_name='IUCN status',
+        null=True,
+        blank=True,
+    )
+
+    iucn_redlist_id = models.IntegerField(
+        verbose_name='IUCN taxon id',
+        null=True,
+        blank=True
+    )
+
+    iucn_data = models.TextField(
+        verbose_name='Data from IUCN',
+        null=True,
+        blank=True
     )
 
     def __unicode__(self):
