@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
-from bims.models import (
-    Taxon,
-    TaxonIdentifier,
-)
+from bims.models import Taxon
 from bims.utils.gbif import process_taxon_identifier
 
 
