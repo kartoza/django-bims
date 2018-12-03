@@ -46,6 +46,8 @@ from bims.models import (
     SearchProcess,
     ReferenceLink,
     Endemism,
+    Taxonomy,
+    TaxonGroup,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -410,6 +412,20 @@ class EndemismAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonIdentifierAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'gbif_key',
+        'scientific_name',
+        'rank',
+        'parent'
+    )
+
+    list_filter = (
+        'rank',
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -421,6 +437,8 @@ admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
+admin.site.register(Taxonomy, TaxonIdentifierAdmin)
+admin.site.register(TaxonGroup)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
