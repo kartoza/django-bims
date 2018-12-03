@@ -132,10 +132,11 @@ def update_taxonomy_fields(taxon, response):
     taxon.save()
 
 
-def process_taxon_identifier(key):
+def process_taxon_identifier(key, fetch_parent=True):
     """
     Get taxon detail
     :param key: gbif key
+    :param fetch_parent: whether need to fetch parent, default to True
     :return:
     """
     # Get taxon
@@ -159,13 +160,13 @@ def process_taxon_identifier(key):
             taxon_identifier.vernacular_names = vernacular_names
             taxon_identifier.save()
 
-        if 'parentKey' in detail:
+        if 'parentKey' in detail and fetch_parent:
             print('Found parent')
             taxon_identifier.parent = process_taxon_identifier(
                 detail['parentKey']
             )
             taxon_identifier.save()
-    except KeyError:
+    except (KeyError, TypeError):
         pass
 
     return taxon_identifier
