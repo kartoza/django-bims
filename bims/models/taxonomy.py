@@ -1,8 +1,11 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.dispatch import receiver
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
+from bims.utils.iucn import get_iucn_status
+from bims.permissions.generate_permission import generate_permission
 
 
 class Taxonomy(models.Model):
@@ -56,7 +59,8 @@ class Taxonomy(models.Model):
         verbose_name='Parent',
         to='self',
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True
     )
 
     iucn_status = models.ForeignKey(
@@ -97,3 +101,24 @@ class Taxonomy(models.Model):
             parent=self
         )
         return children
+
+    @property
+    def is_species(self):
+        return (
+            self.rank == TaxonomicRank.SPECIES.name or
+            self.rank == TaxonomicRank.SUBSPECIES.name
+        )
+
+
+@receiver(models.signals.pre_save, sender=Taxonomy)
+def taxon_pre_save_handler(sender, instance, **kwargs):
+    """Get iucn status before save."""
+    if instance.rank == TaxonomicRank.CLASS.name:
+        generate_permission(instance.scientific_name)
+
+    if instance.is_species and not instance.iucn_status:
+        iucn_status = get_iucn_status(
+            species_name=instance.scientific_name
+        )
+        if iucn_status:
+            instance.iucn_status = iucn_status

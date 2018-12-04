@@ -3,6 +3,7 @@ from enum import Enum
 
 class TaxonomicRank(Enum):
 
+    SUBSPECIES = 'Sub Species'
     SPECIES = 'Species'
     GENUS = 'Genus'
     FAMILY = 'Family'

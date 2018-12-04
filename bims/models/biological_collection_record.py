@@ -18,6 +18,7 @@ from bims.utils.gbif import update_collection_record
 from bims.tasks.collection_record import update_search_index
 from bims.models.validation import AbstractValidation
 from bims.models.document_links_mixin import DocumentLinksMixin
+from bims.models.taxonomy import Taxonomy
 
 
 class BiologicalCollectionRecord(
@@ -62,12 +63,13 @@ class BiologicalCollectionRecord(
         blank=True,
         default='',
     )
-    taxon_gbif_id = models.ForeignKey(
-        Taxon,
+
+    taxonomy = models.ForeignKey(
+        Taxonomy,
         models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Taxon GBIF ',
+        verbose_name='Taxonomy'
     )
 
     institution_id = models.CharField(
@@ -117,7 +119,7 @@ class BiologicalCollectionRecord(
         )
 
     def on_post_save(self):
-        if not self.taxon_gbif_id:
+        if not self.taxonomy:
             update_collection_record(self)
 
     def get_children(self):
