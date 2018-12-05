@@ -60,7 +60,7 @@ class NonValidatedObjectsView(
             allowed_taxon = AllowedTaxon().get(self.request.user)
             queryset = \
                 BiologicalCollectionRecord.objects.filter(
-                    taxon_gbif_id__in=allowed_taxon,
+                    taxonomy__in=allowed_taxon,
                     ready_for_validation=True,
                     validated=False).order_by('original_species_name')
             if filter_pk is not None:

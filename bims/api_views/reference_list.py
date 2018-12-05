@@ -2,7 +2,6 @@
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.http import HttpResponse
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.reference_serializer import ReferenceSerializer
 from td_biblio.models import Entry

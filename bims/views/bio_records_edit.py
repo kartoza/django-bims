@@ -21,7 +21,9 @@ from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.permissions.api_permission import AllowedTaxon
 from bims.serializers.reference_serializer import ReferenceSerializer
+from bims.serializers.document_serializer import DocumentSerializer
 from td_biblio.models import Entry
+from geonode.documents.models import Document
 
 
 class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
@@ -35,9 +37,10 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
             self.object = self.get_object()
             allowed_taxon = AllowedTaxon()
             taxon_list = allowed_taxon.get(request.user)
-            return \
-                self.object.owner == request.user or \
-                self.object.taxon_gbif_id in taxon_list
+            return (
+                self.object.owner == request.user or
+                self.object.taxonomy in taxon_list
+            )
         return False
 
     def dispatch(self, request, *args, **kwargs):
@@ -75,6 +78,10 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
         for reference in reference_links:
             context['references_link'].append(reference.reference.id)
 
+        documents = self.object.documents.all()
+        if documents:
+            context['documents_selected'] = DocumentSerializer(
+                documents, many=True).data
 
         return context
 
@@ -84,6 +91,7 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
         geometry_type = self.request.POST.get('geometry_type', None)
         geojson = self.request.POST.get('geometry', None)
         references = self.request.POST.get('references', None)
+        documents = self.request.POST.get('documents', None)
         features = json.loads(geojson)
         location_site_name = self.object.site.name
         if len(features['features']) > 0:
@@ -161,6 +169,19 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
             for reference_link in old_reference_link:
                 if reference_link not in new_reference_link:
                     reference_link.delete()
+
+            self.object.documents.clear()
+            if documents:
+                documents = documents.split(',')
+                for id_document in documents:
+                    try:
+                        document = Document.objects.get(
+                            id=id_document
+                        )
+                        self.object.documents.add(document)
+                        self.object.save()
+                    except Document.DoesNotExist:
+                        pass
 
             # reconnect signals
             signals.post_save.connect(

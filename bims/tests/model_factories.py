@@ -17,7 +17,9 @@ from bims.models import (
     BiologicalCollectionRecord,
     Boundary,
     BoundaryType,
-    Cluster
+    Cluster,
+    Endemism,
+    Taxonomy,
 )
 
 
@@ -95,6 +97,20 @@ class SurveyF(factory.django.DjangoModelFactory):
                 self.sites.add(site)
 
 
+class EndemismF(factory.django.DjangoModelFactory):
+    """
+    Endemism factory
+    """
+    class Meta:
+        model = Endemism
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: 'name %s' % n)
+    description = factory.Sequence(
+        lambda n: 'description %s' % n
+    )
+
+
 class GroupF(factory.DjangoModelFactory):
     class Meta:
         model = Group
@@ -158,6 +174,17 @@ class ProfileF(factory.django.DjangoModelFactory):
     other = factory.Sequence(lambda n: "other%s" % n)
 
 
+class TaxonomyF(factory.django.DjangoModelFactory):
+    """
+    Taxon identifier factory
+    """
+    class Meta:
+        model = Taxonomy
+
+    id = factory.Sequence(lambda n: n)
+    scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
+
+
 @factory.django.mute_signals(signals.post_save)
 class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     """
@@ -166,6 +193,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     class Meta:
         model = BiologicalCollectionRecord
 
+    id = factory.Sequence(lambda n: n)
     site = factory.SubFactory(LocationSiteF)
     original_species_name = factory.Sequence(
             lambda n: u'Test original species name %s' % n)
@@ -177,7 +205,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     owner = factory.SubFactory(UserF)
     notes = factory.Sequence(
             lambda n: u'Test notes %s' % n)
-    taxon_gbif_id = factory.SubFactory(TaxonF)
+    taxonomy = factory.SubFactory(TaxonomyF)
     validated = True
 
 

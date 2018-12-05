@@ -96,9 +96,9 @@ class CollectionUploadView(View, LoginRequiredMixin):
                     original_species_name=species_name
             )
 
-            taxon_gbif = None
+            taxonomy = None
             if existed_collections:
-                taxon_gbif = existed_collections[0].taxon_gbif_id
+                taxonomy = existed_collections[0].taxonomy
 
             # Optional fields and value
             optional_records = {}
@@ -115,7 +115,7 @@ class CollectionUploadView(View, LoginRequiredMixin):
                             collection_date, '%m/%d/%Y'),
                     collector=collector,
                     notes=notes,
-                    taxon_gbif_id=taxon_gbif,
+                    taxonomy=taxonomy,
                     owner=self.request.user,
                     **optional_records
                 )

@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from bims.models import Taxon
+from bims.models import Taxon, Taxonomy
 from bims.models.iucn_status import IUCNStatus
 from bims.utils.highlighter import CustomHighlighter
+from bims.serializers.document_serializer import DocumentSerializer
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -13,6 +14,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_full_name = serializers.SerializerMethodField()
     iucn_status_colour = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
+    documents = DocumentSerializer(many=True)
 
     def get_record_type(self, obj):
         return 'bio'
@@ -45,7 +47,7 @@ class TaxonSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = '__all__'
 
 
@@ -69,10 +71,9 @@ class TaxonExportSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = [
-            'scientific_name', 'kingdom', 'phylum',
-            'taxon_class', 'order', 'family', 'genus', 'species',
+            'scientific_name', 'class_name',
             'iucn_status_sensitive', 'iucn_status_name'
         ]
 
@@ -107,3 +108,9 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
             'taxon_class', 'record_type',
             'count'
         ]
+
+
+class TaxonSimpleSerialializer(serializers.ModelSerializer):
+    class Meta:
+        model = Taxon
+        fields = ['id', 'common_name', 'scientific_name']

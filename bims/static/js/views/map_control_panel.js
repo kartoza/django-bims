@@ -8,9 +8,9 @@ define(
         'views/search',
         'views/locate',
         'views/upload_data',
-        'views/data_downloader-modal',
-        'views/spatial_filter'],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
+        'views/data_downloader-modal'
+    ],
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
@@ -20,6 +20,7 @@ define(
             locateView: null,
             closedPopover: [],
             validateDataListOpen: false,
+            layerSelectorSearchKey: 'layerSelectorSearch',
             events: {
                 'click .search-control': 'searchClicked',
                 'click .filter-control': 'filterClicked',
@@ -27,14 +28,14 @@ define(
                 'click .upload-data': 'uploadDataClicked',
                 'click .download-control': 'downloadControlClicked',
                 'click .map-search-close': 'closeSearchPanel',
-                'click .spatial-filter-container-close': 'closeSpatialFilterPanel',
                 'click .layers-selector-container-close': 'closeFilterPanel',
                 'click .locate-options-container-close': 'closeLocatePanel',
                 'click .sub-filter': 'closeSubFilter',
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',
                 'click .spatial-filter': 'spatialFilterClicked',
-                'click .validate-data': 'validateDataClicked'
+                'click .validate-data': 'validateDataClicked',
+                'input #layer-selector-search': 'handleSearchInLayerSelector'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -62,24 +63,10 @@ define(
                 elm.popover('hide');
                 this.closedPopover.push(elm);
             },
-            spatialFilterClicked: function (e) {
-                if (!this.spatialFilter.isOpen()) {
-                    this.hidePopOver($(e.target));
-                    this.resetAllControlState();
-                    this.openSpatialFilterPanel();
-                    this.closeSearchPanel();
-                    this.closeFilterPanel();
-                    this.closeLocatePanel();
-                    this.closeValidateData();
-                } else {
-                    this.closeSpatialFilterPanel();
-                }
-            },
             validateDataClicked: function (e) {
                 if(!this.validateDataListOpen) {
                     this.hidePopOver($(e.target));
                     this.resetAllControlState();
-                    this.closeSpatialFilterPanel();
                     this.closeSearchPanel();
                     this.closeFilterPanel();
                     this.closeLocatePanel();
@@ -95,7 +82,6 @@ define(
                     this.openSearchPanel();
                     this.closeFilterPanel();
                     this.closeLocatePanel();
-                    this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeSearchPanel();
@@ -108,7 +94,6 @@ define(
                     this.openFilterPanel();
                     this.closeSearchPanel();
                     this.closeLocatePanel();
-                    this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeFilterPanel();
@@ -121,7 +106,6 @@ define(
                     this.openLocatePanel();
                     this.closeSearchPanel();
                     this.closeFilterPanel();
-                    this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeLocatePanel();
@@ -182,12 +166,13 @@ define(
                 });
                 this.$el.append(this.uploadDataView.render().$el);
 
-                this.spatialFilter = new SpatialFilter({
-                    parent: this,
-                });
+                this.spatialFilter = null;
 
-                this.$el.append(this.spatialFilter.render().$el);
-
+                var layerSelectorSearchValue = Shared.StorageUtil.getItem(this.layerSelectorSearchKey);
+                if (layerSelectorSearchValue) {
+                    var $layerSelectorSearch = this.$el.find('#layer-selector-search');
+                    $layerSelectorSearch.val(layerSelectorSearchValue);
+                }
                 return this;
             },
             openSearchPanel: function () {
@@ -197,14 +182,6 @@ define(
             closeSearchPanel: function () {
                 this.$el.find('.search-control').removeClass('control-panel-selected');
                 this.searchView.hide();
-            },
-            openSpatialFilterPanel: function () {
-                this.$el.find('.spatial-filter').addClass('control-panel-selected');
-                this.spatialFilter.show();
-            },
-            closeSpatialFilterPanel: function () {
-                this.$el.find('.spatial-filter').removeClass('control-panel-selected');
-                this.spatialFilter.hide();
             },
             closeValidateData: function () {
                 this.$el.find('.validate-data').removeClass('control-panel-selected');
@@ -265,6 +242,24 @@ define(
                 $('.layer-switcher.shown button').click();
                 $('.map-control-panel-box:visible').hide();
                 $('.sub-control-panel.control-panel-selected').removeClass('control-panel-selected');
+            },
+            handleSearchInLayerSelector: function (e) {
+                var searchValue = $(e.target).val();
+                this.searchInLayerSelector(searchValue, $(e.target));
+            },
+            searchInLayerSelector: function (searchValue, searchDiv) {
+                var layerSelectors = $(searchDiv).parent().next().children();
+
+                if (searchValue.length < 3) {
+                    layerSelectors.css('display', 'block');
+                    Shared.StorageUtil.setItem(this.layerSelectorSearchKey, '');
+                    return false;
+                }
+
+                Shared.StorageUtil.setItem(this.layerSelectorSearchKey, searchValue);
+                layerSelectors.css('display', 'block').filter(function (index) {
+                    return $(this).data("name").toLowerCase().indexOf(searchValue.toLowerCase()) === -1;
+                }).css('display', 'none');
             }
         })
     });

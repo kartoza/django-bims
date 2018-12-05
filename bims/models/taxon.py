@@ -9,6 +9,8 @@ from django.contrib.postgres.fields import ArrayField
 from bims.models.iucn_status import IUCNStatus
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
+from bims.models.document_links_mixin import DocumentLinksMixin
+from bims.models.endemism import Endemism
 
 
 class TaxonomyField(models.CharField):
@@ -23,7 +25,7 @@ class TaxonomyField(models.CharField):
         super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
-class Taxon(models.Model):
+class Taxon(DocumentLinksMixin):
     """Taxon model."""
 
     gbif_id = models.IntegerField(
@@ -37,6 +39,13 @@ class Taxon(models.Model):
         verbose_name='IUCN status',
         null=True,
         blank=True,
+    )
+    endemism = models.ForeignKey(
+        Endemism,
+        models.SET_NULL,
+        verbose_name='Endemism',
+        null=True,
+        blank=True
     )
     iucn_redlist_id = models.IntegerField(
         verbose_name='IUCN taxon id',
@@ -117,7 +126,7 @@ class Taxon(models.Model):
                 max_length=100,
                 blank=True,
                 default=''),
-        verbose_name = 'Vernacular Names',
+        verbose_name='Vernacular Names',
         default=[],
         null=True,
         blank=True

@@ -73,6 +73,47 @@
             </div>
         </div>
     </div>
+    <div id="ripple-loading" style="display: none">
+        <img src="{% static 'img/loading-spinner.gif' %}">
+    </div>
+    <div id="error-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Print Error</h5>
+                    <button type="button" class="close close-info-popup" data-dismiss="modal">
+                        <img src="{% static 'img/close_icon.svg' %}">
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <center>Sorry we are unable to print your map.
+                        <br/>There was a problem adding some third party layer(s) to the map.<br/>
+                    Please try another basemap or another layer and reload the page.</center>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ripple-loading" style="display: none">
+        <img src="{% static 'img/loading-spinner.gif' %}">
+    </div>
+    <div id="error-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Print Error</h5>
+                    <button type="button" class="close close-info-popup" data-dismiss="modal">
+                        <img src="{% static 'img/close_icon.svg' %}">
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <center>Sorry we are unable to print your map.
+                        <br/>There was a problem adding some third party layer(s) to the map.<br/>
+                    Please try another basemap or another layer and reload the page.</center>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {# HERE ARE THE TEMPLATES AREA #}
     {% block additional_template %}

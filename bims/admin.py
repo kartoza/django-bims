@@ -19,6 +19,7 @@ from django.db import models
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
+from geonode.upload.models import Upload, UploadFile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
@@ -44,6 +45,9 @@ from bims.models import (
     UserBoundary,
     SearchProcess,
     ReferenceLink,
+    Endemism,
+    Taxonomy,
+    TaxonGroup,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -184,7 +188,13 @@ class IUCNStatusAdmin(admin.ModelAdmin):
 
 
 class TaxonAdmin(admin.ModelAdmin):
-    list_display = ('common_name', 'author', 'iucn_status', 'taxon_class')
+    list_display = (
+        'common_name',
+        'author',
+        'iucn_status',
+        'taxon_class',
+        'endemism'
+    )
 
 
 class BoundaryAdmin(admin.ModelAdmin):
@@ -208,7 +218,7 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
-    list_filter = ('taxon_gbif_id', 'collection_date', 'category')
+    list_filter = ('taxonomy', 'collection_date', 'category')
     list_display = (
         'original_species_name',
         'category',
@@ -394,6 +404,28 @@ class ReferenceLinkAdmin(admin.ModelAdmin):
     )
 
 
+class EndemismAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'name',
+        'description'
+    )
+
+
+class TaxonIdentifierAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'gbif_key',
+        'scientific_name',
+        'rank',
+        'parent'
+    )
+
+    list_filter = (
+        'rank',
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -402,8 +434,11 @@ admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
+admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
+admin.site.register(Taxonomy, TaxonIdentifierAdmin)
+admin.site.register(TaxonGroup)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
@@ -424,6 +459,10 @@ admin.site.register(UserBoundary, UserBoundaryAdmin)
 admin.site.register(SearchProcess, SearchProcessAdmin)
 
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
+
+# Hide upload files from geonode in admin
+admin.site.unregister(Upload)
+admin.site.unregister(UploadFile)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

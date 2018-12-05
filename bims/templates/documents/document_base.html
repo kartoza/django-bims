@@ -1,0 +1,19 @@
+{% extends "geonode_base.html" %}
+{% load static from staticfiles %}
+{% load i18n %}
+
+{% block title %} {{ block.super }} {% endblock %}
+{% block header %}
+    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
+    <link href="{% static "css/navbar_geonode.css" %}" rel="stylesheet">
+    {% include 'navigation_bar.html' %}
+{% endblock %}
+
+{% block body_class %}documents{% endblock %}
+
+{% block body_outer %}
+  {% block body %}{% endblock body %}
+  {% block sidebar %}{% endblock sidebar %}
+
+{% block footer  %}{% endblock footer %}
+{% endblock body_outer %}
