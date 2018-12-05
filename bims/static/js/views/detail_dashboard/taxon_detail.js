@@ -112,7 +112,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.overviewTaxaTable.html(overViewTable({
                 id: self.apiParameters(self.parameters),
                 count: data.length,
-                taxon_class: data[0]['taxonomy']['taxon_class'],
+                taxon_class: data[0]['taxonomy']['class'],
                 gbif_id: data[0]['taxon_gbif_id']
             }));
 

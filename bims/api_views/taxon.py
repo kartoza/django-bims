@@ -9,6 +9,7 @@ from bims.serializers.taxon_serializer import \
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.api_views.pagination_api_view import PaginationAPIView
+from bims.enums.taxonomic_rank import TaxonomicRank
 
 
 class TaxonSimpleList(PaginationAPIView):
@@ -52,6 +53,19 @@ class TaxonDetail(APIView):
         except Taxonomy.DoesNotExist:
             raise Http404
 
+    def get_taxonomic_rank_values(self, taxonomy):
+        taxonomic_rank_values = []
+        taxonomic_data = {
+            TaxonomicRank[taxonomy.rank].value.lower():
+                taxonomy.scientific_name
+        }
+        taxonomic_rank_values.append(taxonomic_data)
+        if taxonomy.parent:
+            taxonomic_rank_values += self.get_taxonomic_rank_values(
+                taxonomy.parent
+            )
+        return taxonomic_rank_values
+
     def get(self, request, pk, format=None):
         taxon = self.get_object(pk)
         serializer = TaxonSerializer(taxon)
@@ -75,4 +89,10 @@ class TaxonDetail(APIView):
         data['origin'] = origin_value
 
         data['count'] = records.count()
+
+        # Taxonomic rank tree
+        taxonomic_rank = self.get_taxonomic_rank_values(taxon)
+        for rank in taxonomic_rank:
+            data.update(rank)
+
         return Response(data)
