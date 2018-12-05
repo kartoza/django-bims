@@ -169,7 +169,7 @@ define([
             var $taxonFilter = $('#taxon-filter');
             if (this.parameters['taxon']) {
                 self.filteredByTaxon = true;
-                $taxonFilter.html('Biodiversity filtered by : ' + taxonName +
+                $taxonFilter.html('Sites filtered by : ' + taxonName +
                     ' <i class="fa fa-times" style="color: red"></i> ');
                 $('#taxon-filter .fa-times').click(function () {
                     Shared.Dispatcher.trigger('sidePanel:closeSidePanel');

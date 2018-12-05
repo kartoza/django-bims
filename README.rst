@@ -12,7 +12,7 @@ The latest source code is available at http://github.com/kartoza/django-bims.
 
 
 Project Activity
---------------
+----------------
 
 |ready| |inprogress|
 
@@ -93,6 +93,8 @@ The keys are:
 1. To show bing map, use your key of bing (https://www.bingmapsportal.com/) and put it in `core/settings/secret.py` with key BING_MAP_KEY
 
 2. To show openmaptile map (terrain and other style), use your key of maptile (https://www.maptiler.com/cloud/) and put it in `core/settings/secret.py` with key MAP_TILER_KEY
+
+
 
 Generating boundaries
 ---------------------------
