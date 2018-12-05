@@ -10,7 +10,7 @@ from bims.tests.model_factories import (
 )
 from bims.tests.model_factories import (
     LocationSiteF,
-    TaxonF,
+    TaxonomyF
 )
 from bims.api_views.location_site import (
     LocationSiteList,
@@ -24,6 +24,7 @@ from bims.api_views.non_validated_record import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.reference_category import ReferenceCategoryList
+from bims.enums.taxonomic_rank import TaxonomicRank
 
 
 class TestApiView(TestCase):
@@ -35,14 +36,42 @@ class TestApiView(TestCase):
             pk=1,
             location_context_document='""'
         )
+
+        self.taxonomy_class_1 = TaxonomyF.create(
+            scientific_name='Aves',
+            rank=TaxonomicRank.CLASS.name
+        )
+        self.taxonomy_1 = TaxonomyF.create(
+            scientific_name='Some aves name 1',
+            rank=TaxonomicRank.SPECIES.name,
+            parent=self.taxonomy_class_1
+        )
+        self.taxonomy_2 = TaxonomyF.create(
+            scientific_name='Some aves name 2',
+            rank=TaxonomicRank.SPECIES.name,
+            parent=self.taxonomy_class_1
+        )
+        self.aves_collection_1 = BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 1',
+            site=self.location_site,
+            validated=False,
+            ready_for_validation=True,
+            taxonomy=self.taxonomy_1
+        )
+        self.aves_collection_2 = BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 2',
+            site=self.location_site,
+            validated=False,
+            ready_for_validation=True,
+            taxonomy=self.taxonomy_2
+        )
+
         self.fish_collection_1 = BiologicalCollectionRecordF.create(
-            pk=1,
             original_species_name=u'Test fish species name 1',
             site=self.location_site,
             validated=True
         )
         self.fish_collection_2 = BiologicalCollectionRecordF.create(
-            pk=2,
             original_species_name=u'Test fish species name 2',
             site=self.location_site,
             validated=True
@@ -69,16 +98,16 @@ class TestApiView(TestCase):
 
     def test_get_taxon_by_id(self):
         pk = 1
-        taxon = TaxonF.create(
+        taxon = TaxonomyF.create(
             pk=1,
-            common_name=u'Golden fish',
+            scientific_name=u'Golden fish',
         )
         view = TaxonDetail.as_view()
         request = self.factory.get('/api/taxon/' + str(pk))
         response = view(request, str(pk))
         self.assertEqual(
-            taxon.common_name,
-            response.data['common_name']
+            taxon.scientific_name,
+            response.data['scientific_name']
         )
 
         # def test_get_allowed_geometry_location_type_by_id(self):
@@ -110,9 +139,9 @@ class TestApiView(TestCase):
                 model='bims'
         )
         permission = PermissionF.create(
-                name='Can validate data',
+                name='Can validate Aves',
                 content_type=content_type,
-                codename='can_validate_data'
+                codename='can_validate_aves'
         )
         group = GroupF.create()
         group.permissions.add(permission)
@@ -122,18 +151,15 @@ class TestApiView(TestCase):
         request.user = user
         response = view(request)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['data']), 2)
 
     def test_only_get_aves_collection(self):
         from django.contrib.auth.models import Permission
         view = GetNonValidatedRecords.as_view()
-        taxon = TaxonF.create(
-                taxon_class='Aves',
-        )
         BiologicalCollectionRecordF.create(
-                pk=3,
-                site=self.location_site,
-                taxon_gbif_id=taxon,
-                validated=False
+            site=self.location_site,
+            taxonomy=self.taxonomy_class_1,
+            validated=False
         )
         user = UserF.create()
         permission = Permission.objects.filter(codename='can_validate_aves')[0]
@@ -149,7 +175,6 @@ class TestApiView(TestCase):
     def test_get_referece_category(self):
         view = ReferenceCategoryList.as_view()
         BiologicalCollectionRecordF.create(
-            pk=5,
             original_species_name=u'Test name',
             site=self.location_site,
             reference_category=u'Database'

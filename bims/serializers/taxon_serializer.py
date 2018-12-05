@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from bims.models import Taxon
+from bims.models import Taxon, Taxonomy
 from bims.models.iucn_status import IUCNStatus
 from bims.utils.highlighter import CustomHighlighter
 from bims.serializers.document_serializer import DocumentSerializer
@@ -47,7 +47,7 @@ class TaxonSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = '__all__'
 
 
@@ -71,10 +71,9 @@ class TaxonExportSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = [
-            'scientific_name', 'kingdom', 'phylum',
-            'taxon_class', 'order', 'family', 'genus', 'species',
+            'scientific_name', 'class_name',
             'iucn_status_sensitive', 'iucn_status_name'
         ]
 

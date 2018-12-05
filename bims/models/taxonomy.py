@@ -1,11 +1,17 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.dispatch import receiver
+
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
+from bims.models.endemism import Endemism
+from bims.utils.iucn import get_iucn_status
+from bims.permissions.generate_permission import generate_permission
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 
-class Taxonomy(models.Model):
+class Taxonomy(DocumentLinksMixin):
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
@@ -56,7 +62,8 @@ class Taxonomy(models.Model):
         verbose_name='Parent',
         to='self',
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True
     )
 
     iucn_status = models.ForeignKey(
@@ -79,6 +86,21 @@ class Taxonomy(models.Model):
         blank=True
     )
 
+    endemism = models.ForeignKey(
+        Endemism,
+        models.SET_NULL,
+        verbose_name='Endemism',
+        null=True,
+        blank=True
+    )
+
+    author = models.CharField(
+        verbose_name='Author',
+        max_length=200,
+        null=True,
+        blank=True
+    )
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
@@ -97,3 +119,32 @@ class Taxonomy(models.Model):
             parent=self
         )
         return children
+
+    @property
+    def class_name(self):
+        if self.rank != TaxonomicRank.CLASS.name and self.parent:
+            return self.parent.class_name
+        elif self.rank == TaxonomicRank.CLASS.name:
+            return self.scientific_name
+        return ''
+
+    @property
+    def is_species(self):
+        return (
+            self.rank == TaxonomicRank.SPECIES.name or
+            self.rank == TaxonomicRank.SUBSPECIES.name
+        )
+
+
+@receiver(models.signals.pre_save, sender=Taxonomy)
+def taxon_pre_save_handler(sender, instance, **kwargs):
+    """Get iucn status before save."""
+    if instance.rank == TaxonomicRank.CLASS.name:
+        generate_permission(instance.scientific_name)
+
+    if instance.is_species and not instance.iucn_status:
+        iucn_status = get_iucn_status(
+            species_name=instance.scientific_name
+        )
+        if iucn_status:
+            instance.iucn_status = iucn_status

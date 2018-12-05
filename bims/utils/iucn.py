@@ -34,16 +34,19 @@ def get_iucn_status(taxon_id=None, species_name=None, only_returns_json=None):
         json_result = response.json()
         if only_returns_json:
             return json_result
-        if len(json_result['result']) > 0:
-            iucn_status = IUCNStatus.objects.filter(
-                category=json_result['result'][0]['category']
-            )
-            if not iucn_status:
-                iucn_status = IUCNStatus.objects.create(
+        try:
+            if len(json_result['result']) > 0:
+                iucn_status = IUCNStatus.objects.filter(
                     category=json_result['result'][0]['category']
                 )
-                return iucn_status
-            return iucn_status[0]
+                if not iucn_status:
+                    iucn_status = IUCNStatus.objects.create(
+                        category=json_result['result'][0]['category']
+                    )
+                    return iucn_status
+                return iucn_status[0]
+        except TypeError:
+            pass
         return None
     except (HTTPError, KeyError) as e:
         print(e)

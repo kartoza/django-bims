@@ -18,8 +18,8 @@ class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
         return object.site.get_geometry().geojson
 
     def get_taxon_gbif_id(self, object):
-        if object.taxon_gbif_id:
-            return object.taxon_gbif_id.id
+        if object.taxonomy:
+            return object.taxonomy.id
         else:
             return None
 

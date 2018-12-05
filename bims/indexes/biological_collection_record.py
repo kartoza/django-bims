@@ -79,28 +79,27 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     taxon_gbif_not_null = indexes.BooleanField(indexed=True)
 
-    taxon_common_name = indexes.NgramField(
-        model_attr='taxon_gbif_id__common_name',
+    taxon_canonical_name = indexes.NgramField(
+        model_attr='taxonomy__canonical_name',
         indexed=True
     )
 
     taxon_scientific_name = indexes.NgramField(
-        model_attr='taxon_gbif_id__scientific_name',
+        model_attr='taxonomy__scientific_name',
         indexed=True
     )
 
-    taxon_common_name_exact = indexes.CharField(
-        model_attr='taxon_gbif_id__common_name',
+    taxon_canonical_name_exact = indexes.CharField(
+        model_attr='taxonomy__canonical_name',
         indexed=True
     )
 
     taxon_scientific_name_exact = indexes.CharField(
-        model_attr='taxon_gbif_id__scientific_name',
+        model_attr='taxonomy__scientific_name',
         indexed=True
     )
 
-    taxon_class = indexes.NgramField(
-        model_attr='taxon_gbif_id__taxon_class',
+    taxon_class = indexes.CharField(
         indexed=True
     )
 
@@ -120,18 +119,23 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     boundary = indexes.IntegerField()
 
+    def prepare_taxon_class(self, obj):
+        if obj.taxonomy:
+            return obj.taxonomy.class_name
+        return ''
+
     def prepare_site_id_indexed(self, obj):
         if obj.site:
             return obj.site.id
         return 0
 
     def prepare_taxon_gbif(self, obj):
-        if obj.taxon_gbif_id:
-            return obj.taxon_gbif_id.id
+        if obj.taxonomy:
+            return obj.taxonomy.id
         return 0
 
     def prepare_taxon_gbif_not_null(self, obj):
-        if obj.taxon_gbif_id:
+        if obj.taxonomy:
             return True
         return False
 

@@ -199,9 +199,9 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                             original_species_name=record['species_name']
                     )
 
-                    taxon_gbif = None
+                    taxonomy = None
                     if collections:
-                        taxon_gbif = collections[0].taxon_gbif_id
+                        taxonomy = collections[0].taxonomy
 
                     # custodian field
                     if 'custodian' in record:
@@ -218,7 +218,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                     record['date'], '%Y-%m-%d'),
                             collector=record['collector'],
                             notes=record['notes'],
-                            taxon_gbif_id=taxon_gbif,
+                            taxonomy=taxonomy,
                             owner=self.request.user,
                             **optional_records
                         )
@@ -228,7 +228,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         collection_processed['added']['count'] += 1
                     else:
                         collection_processed['duplicated']['count'] += 1
-                        if not taxon_gbif:
+                        if not taxonomy:
                             print('Update taxon gbif')
                             update_collection_record(collection_records)
 

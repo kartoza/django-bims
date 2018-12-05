@@ -87,10 +87,8 @@ def update_collection_record(collection):
     else:
         return
 
-    taxon, created = Taxon.objects.get_or_create(
-            gbif_id=taxon_key)
-    update_taxonomy_fields(taxon, result)
-    collection.taxon_gbif_id = taxon
+    taxonomy = process_taxon_identifier(taxon_key)
+    collection.taxonomy = taxonomy
     collection.save()
 
 
@@ -166,7 +164,8 @@ def process_taxon_identifier(key, fetch_parent=True):
                 detail['parentKey']
             )
             taxon_identifier.save()
-    except (KeyError, TypeError):
+    except (KeyError, TypeError) as e:
+        print(e)
         pass
 
     return taxon_identifier
