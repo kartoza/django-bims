@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('documents', '0033_auto_20180414_2120'),
-        ('bims', '0084_auto_20181204_1111'),
+        ('bims', '0080_biologicalcollectionrecord_taxonomy'),
     ]
 
     operations = [
@@ -23,5 +23,11 @@ class Migration(migrations.Migration):
             model_name='taxonomy',
             name='endemism',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='bims.Endemism', verbose_name=b'Endemism'),
+        ),
+        migrations.AddField(
+            model_name='taxonomy',
+            name='author',
+            field=models.CharField(blank=True, max_length=200, null=True,
+                                   verbose_name=b'Author'),
         ),
     ]
