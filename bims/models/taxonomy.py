@@ -114,6 +114,14 @@ class Taxonomy(DocumentLinksMixin):
         return children
 
     @property
+    def class_name(self):
+        if self.rank != TaxonomicRank.CLASS.name and self.parent:
+            return self.parent.class_name
+        elif self.rank == TaxonomicRank.CLASS.name:
+            return self.scientific_name
+        return None
+
+    @property
     def is_species(self):
         return (
             self.rank == TaxonomicRank.SPECIES.name or
