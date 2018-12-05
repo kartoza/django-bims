@@ -55,11 +55,14 @@ class TaxonDetail(APIView):
 
     def get_taxonomic_rank_values(self, taxonomy):
         taxonomic_rank_values = []
-        taxonomic_data = {
-            TaxonomicRank[taxonomy.rank].value.lower():
-                taxonomy.scientific_name
-        }
-        taxonomic_rank_values.append(taxonomic_data)
+        try:
+            taxonomic_data = {
+                TaxonomicRank[taxonomy.rank].value.lower():
+                    taxonomy.scientific_name
+            }
+            taxonomic_rank_values.append(taxonomic_data)
+        except KeyError:
+            pass
         if taxonomy.parent:
             taxonomic_rank_values += self.get_taxonomic_rank_values(
                 taxonomy.parent
