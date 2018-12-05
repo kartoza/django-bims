@@ -21,14 +21,14 @@ class Taxonomy(DocumentLinksMixin):
 
     scientific_name = models.CharField(
         verbose_name='Scientific Name',
-        max_length=100,
+        max_length=200,
         null=False,
         blank=False
     )
 
     canonical_name = models.CharField(
         verbose_name='Canonical Name',
-        max_length=100,
+        max_length=200,
         null=True,
         blank=True
     )
@@ -42,7 +42,7 @@ class Taxonomy(DocumentLinksMixin):
 
     vernacular_names = ArrayField(
         models.CharField(
-                max_length=100,
+                max_length=200,
                 blank=True,
                 default=list),
         verbose_name='Vernacular Names',

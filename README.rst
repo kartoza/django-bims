@@ -59,12 +59,17 @@ some knowledge of running a django site.
     make migrate
     
     make collectstatic
+
+    # Finally we can rebuild our search indexes if needed
+
+    make rebuildindex
     
 
 So as to create your admin account:
 ```
 make superuser
 ```
+
 
 
 Optional keys on project

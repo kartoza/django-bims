@@ -47,7 +47,7 @@ class Command(BaseCommand):
         )
         for collection in collections:
             print('Move taxonomy value for %s - %s' % (
-            collection.original_species_name, collection.pk))
+                collection.original_species_name, collection.pk))
             if not collection.taxon_gbif_id:
                 continue
 
