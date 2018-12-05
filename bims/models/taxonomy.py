@@ -1,4 +1,4 @@
-from django.contrib.gis.db import models
+from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.dispatch import receiver
 
@@ -137,7 +137,7 @@ class Taxonomy(DocumentLinksMixin):
 
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
-def taxon_pre_save_handler(sender, instance, **kwargs):
+def taxonomy_pre_save_handler(sender, instance, **kwargs):
     """Get iucn status before save."""
     if instance.rank == TaxonomicRank.CLASS.name:
         generate_permission(instance.scientific_name)
