@@ -94,6 +94,13 @@ class Taxonomy(DocumentLinksMixin):
         blank=True
     )
 
+    author = models.CharField(
+        verbose_name='Author',
+        max_length=200,
+        null=True,
+        blank=True
+    )
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
@@ -119,7 +126,7 @@ class Taxonomy(DocumentLinksMixin):
             return self.parent.class_name
         elif self.rank == TaxonomicRank.CLASS.name:
             return self.scientific_name
-        return None
+        return ''
 
     @property
     def is_species(self):

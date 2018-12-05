@@ -71,10 +71,9 @@ class TaxonExportSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = [
-            'scientific_name', 'kingdom', 'phylum',
-            'taxon_class', 'order', 'family', 'genus', 'species',
+            'scientific_name', 'class_name',
             'iucn_status_sensitive', 'iucn_status_name'
         ]
 

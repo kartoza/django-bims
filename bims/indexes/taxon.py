@@ -1,5 +1,5 @@
 # coding=utf-8
-from bims.models import Taxon, BiologicalCollectionRecord
+from bims.models import Taxonomy, BiologicalCollectionRecord
 from haystack import indexes
 
 
@@ -7,9 +7,9 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
     model_pk = indexes.IntegerField(model_attr='pk')
     text = indexes.EdgeNgramField(document=True, use_template=True)
 
-    common_name = indexes.NgramField(
+    canonical_name = indexes.NgramField(
             indexed=True,
-            model_attr='common_name'
+            model_attr='canonical_name'
     )
 
     scientific_name = indexes.NgramField(
@@ -19,7 +19,8 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
 
     author = indexes.CharField(
             indexed=True,
-            model_attr='author'
+            model_attr='author',
+            null=True
     )
 
     iucn_status_category = indexes.CharField(
@@ -32,7 +33,7 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_validated_collections(self, obj):
         bios = BiologicalCollectionRecord.objects.filter(
-                taxon_gbif_id=obj.pk,
+                taxonomy=obj.pk,
                 validated=True
         ).values_list('pk', flat=True).distinct()
         return ','.join(str(bio) for bio in bios)
@@ -56,4 +57,4 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.all()
 
     def get_model(self):
-        return Taxon
+        return Taxonomy

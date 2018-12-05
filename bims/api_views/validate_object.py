@@ -17,7 +17,7 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
         if not collection_pk:
             return False
         collection = BiologicalCollectionRecord.objects.get(pk=collection_pk)
-        return collection.taxon_gbif_id in taxon_list
+        return collection.taxonomy in taxon_list
 
     def handle_no_permission(self):
         messages.error(self.request, 'You don\'t have permission '

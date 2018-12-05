@@ -52,7 +52,7 @@ class BioCollectionDetailSerializer(serializers.ModelSerializer):
         return 'bio'
 
     def get_taxonomy(self, obj):
-        return TaxonSerializer(obj.taxon_gbif_id).data
+        return TaxonSerializer(obj.taxonomy).data
 
     def get_owner(self, obj):
         if obj.owner:
@@ -97,7 +97,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         try:
             taxon_class = obj.taxon_class
         except AttributeError:
-            taxon_class = obj.taxon_gbif_id.taxon_class
+            taxon_class = obj.taxonomy.class_name
         return taxon_class
 
     def get_location_site(self, obj):
@@ -210,7 +210,7 @@ class BioCollectionGeojsonSerializer(GeoFeatureModelSerializer):
             BioCollectionGeojsonSerializer, self).to_representation(
             instance)
         try:
-            taxonomy = TaxonExportSerializer(instance.taxon_gbif_id).data
+            taxonomy = TaxonExportSerializer(instance.taxonomy).data
             result['properties'].update(taxonomy)
         except KeyError:
             pass

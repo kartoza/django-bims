@@ -80,7 +80,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 except KeyError:
                     species_list[taxonomy.scientific_name] = {
                         'taxon_id': taxonomy.id,
-                        'taxon_gbif_id': taxon_id,
+                        'taxonomy': taxon_id,
                         'category': category,
                         'count': 0,
                         'data_by_year': {}
