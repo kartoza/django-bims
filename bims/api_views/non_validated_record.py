@@ -22,7 +22,7 @@ class GetNonValidatedRecords(APIView):
             records = BiologicalCollectionRecord.objects.filter(
                     validated=False,
                     ready_for_validation=True,
-                    taxon_gbif_id__in=taxon_list
+                    taxonomy__in=taxon_list
             )
 
             paginator = Paginator(records, self.page_limit)

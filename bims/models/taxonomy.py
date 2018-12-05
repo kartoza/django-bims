@@ -1,14 +1,17 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.dispatch import receiver
+
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
+from bims.models.endemism import Endemism
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
+from bims.models.document_links_mixin import DocumentLinksMixin
 
 
-class Taxonomy(models.Model):
+class Taxonomy(DocumentLinksMixin):
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
@@ -79,6 +82,14 @@ class Taxonomy(models.Model):
 
     iucn_data = models.TextField(
         verbose_name='Data from IUCN',
+        null=True,
+        blank=True
+    )
+
+    endemism = models.ForeignKey(
+        Endemism,
+        models.SET_NULL,
+        verbose_name='Endemism',
         null=True,
         blank=True
     )

@@ -3,6 +3,7 @@ from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.taxon import Taxon
+from bims.models.taxonomy import Taxonomy
 from bims.serializers.taxon_serializer import \
     TaxonSerializer, TaxonSimpleSerialializer
 from bims.models.biological_collection_record import \
@@ -47,8 +48,8 @@ class TaxonDetail(APIView):
 
     def get_object(self, pk):
         try:
-            return Taxon.objects.get(pk=pk)
-        except Taxon.DoesNotExist:
+            return Taxonomy.objects.get(pk=pk)
+        except Taxonomy.DoesNotExist:
             raise Http404
 
     def get(self, request, pk, format=None):
@@ -57,7 +58,7 @@ class TaxonDetail(APIView):
         data = serializer.data
 
         records = BiologicalCollectionRecord.objects.filter(
-            taxon_gbif_id=taxon
+            taxonomy=taxon
         )
 
         # Endemism

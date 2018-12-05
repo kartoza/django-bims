@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 from django.contrib.auth.models import Permission
-from bims.models.taxon import Taxon
+from bims.models.taxonomy import Taxonomy
 
 
 def user_has_permission_to_validate(user):
@@ -28,12 +28,20 @@ class AllowedTaxon(object):
     """
     Get allowed taxon.
     """
+    def get_all_children_taxonomy(self, taxonomy):
+        taxonomies = []
+        children = taxonomy.get_direct_children()
+        if children:
+            taxonomies = list(children)
+            for taxon in taxonomies:
+                taxonomies += self.get_all_children_taxonomy(taxon)
+        return taxonomies
 
     def get(self, user):
         """Return taxon that user has permission to validate."""
 
         if user.is_active and user.is_superuser:
-            return Taxon.objects.all()
+            return Taxonomy.objects.all()
 
         all_data_flag = 'data'
 
@@ -46,10 +54,17 @@ class AllowedTaxon(object):
             try:
                 class_name = permission['name'].split(' ')[2]
                 if class_name.lower() == all_data_flag:
-                    return Taxon.objects.all()
+                    return Taxonomy.objects.all()
             except (ValueError, KeyError):
                 continue
             allowed_classes.append(class_name)
 
-        taxa = Taxon.objects.filter(taxon_class__in=allowed_classes)
+        taxonomy_classes = Taxonomy.objects.filter(
+            scientific_name__in=allowed_classes)
+
+        # Get children taxonomy
+        taxa = []
+        for taxonomy_class in taxonomy_classes:
+            taxa += self.get_all_children_taxonomy(taxonomy_class)
+
         return taxa

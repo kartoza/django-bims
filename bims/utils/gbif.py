@@ -166,7 +166,8 @@ def process_taxon_identifier(key, fetch_parent=True):
                 detail['parentKey']
             )
             taxon_identifier.save()
-    except (KeyError, TypeError):
+    except (KeyError, TypeError) as e:
+        print(e)
         pass
 
     return taxon_identifier

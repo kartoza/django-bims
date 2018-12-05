@@ -9,7 +9,6 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from bims.models.location_site import LocationSite
-from bims.models.taxon import Taxon
 from bims.utils.cluster import (
     update_cluster_by_collection,
     update_cluster_by_site

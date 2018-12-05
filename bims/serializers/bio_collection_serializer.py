@@ -22,7 +22,7 @@ class BioCollectionSerializer(serializers.ModelSerializer):
         return obj.site.name
 
     def get_taxonomy(self, obj):
-        return TaxonSerializer(obj.taxon_gbif_id).data
+        return TaxonSerializer(obj.taxonomy).data
 
     def get_owner(self, obj):
         return obj.owner.username
