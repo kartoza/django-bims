@@ -20,6 +20,7 @@ from bims.models import (
     Cluster,
     Endemism,
     Taxonomy,
+    TaxonGroup
 )
 
 
@@ -183,6 +184,28 @@ class TaxonomyF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
+
+
+class TaxonGroupF(factory.django.DjangoModelFactory):
+    """
+    Taxon group factory
+    """
+    class Meta:
+        model = TaxonGroup
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: u'Name %s' % n)
+
+    @factory.post_generation
+    def taxonomies(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for taxonomy in extracted:
+                self.taxonomies.add(taxonomy)
 
 
 @factory.django.mute_signals(signals.post_save)
