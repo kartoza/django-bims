@@ -7,10 +7,9 @@ from bims.tests.model_factories import (
     ContentTypeF,
     PermissionF,
     GroupF,
-)
-from bims.tests.model_factories import (
     LocationSiteF,
-    TaxonomyF
+    TaxonomyF,
+    TaxonGroupF
 )
 from bims.api_views.location_site import (
     LocationSiteList,
@@ -24,7 +23,9 @@ from bims.api_views.non_validated_record import (
 )
 from bims.api_views.taxon import TaxonDetail
 from bims.api_views.reference_category import ReferenceCategoryList
+from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_rank import TaxonomicRank
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 class TestApiView(TestCase):
@@ -183,3 +184,25 @@ class TestApiView(TestCase):
         response = view(request)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.data) > 0)
+
+    def test_get_module_summary(self):
+        view = ModuleSummary.as_view()
+        taxon_class_1 = TaxonomyF.create(
+            scientific_name='Aves',
+            rank=TaxonomicRank.CLASS.name
+        )
+        taxon_species_1 = TaxonomyF.create(
+            scientific_name='Bird1',
+            rank=TaxonomicRank.SPECIES.name
+        )
+        collection_1 = BiologicalCollectionRecordF.create(
+            taxonomy=taxon_species_1,
+            validated=True
+        )
+        taxon_group_1 = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(taxon_class_1,)
+        )
+        request = self.factory.get(reverse('module-summary'))
+        response = view(request)
+        self.assertIsNotNone(response.data['Aves'])
