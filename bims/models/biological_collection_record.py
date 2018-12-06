@@ -28,6 +28,12 @@ class BiologicalCollectionRecord(
         ('indigenous', 'Native'),
         ('translocated', 'Translocated')
     )
+
+    HABITAT_CHOICES = (
+        ('euryhaline', 'Euryhaline'),
+        ('freshwater', 'Freshwater'),
+    )
+
     site = models.ForeignKey(
         LocationSite,
         models.CASCADE,
@@ -69,6 +75,13 @@ class BiologicalCollectionRecord(
         null=True,
         blank=True,
         verbose_name='Taxonomy'
+    )
+
+    collection_habitat = models.CharField(
+        max_length=100,
+        choices=HABITAT_CHOICES,
+        blank=True,
+        default=''
     )
 
     institution_id = models.CharField(
