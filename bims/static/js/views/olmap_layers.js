@@ -281,7 +281,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         if (layerName.indexOf(self.administrativeKeyword) >= 0 ||
                             layerName === 'null' ||
-                            layerName === 'SitesZ') {
+                            layerName === 'Sites') {
                             return true;
                         }
 
