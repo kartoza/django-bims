@@ -75,6 +75,16 @@ def update_collection_record(collection):
     Update taxon for a collection.
     :param collection: Biological collection record model
     """
+
+    taxonomy = Taxonomy.objects.filter(
+        scientific_name__contains=collection.original_species_name
+    )
+    if taxonomy:
+        print('%s exists in Taxonomy' % collection.original_species_name)
+        collection.taxonomy = taxonomy[0]
+        collection.save()
+        return
+
     result = find_species(collection.original_species_name)
 
     if not result:
@@ -139,6 +149,16 @@ def process_taxon_identifier(key, fetch_parent=True):
     """
     # Get taxon
     print('Get taxon identifier for key : %s' % key)
+
+    try:
+        taxon_identifier = Taxonomy.objects.get(
+            gbif_key=key,
+            scientific_name__isnull=False
+        )
+        return taxon_identifier
+    except Taxonomy.DoesNotExist:
+        pass
+
     detail = get_species(key)
     taxon_identifier = None
 

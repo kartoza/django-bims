@@ -11,7 +11,7 @@ from bims.models.taxonomy import taxonomy_pre_save_handler
 from bims.models.biological_collection_record import (
     collection_post_save_handler,
 )
-from bims.utils.gbif import process_taxon_identifier
+from bims.utils.gbif import process_taxon_identifier, update_collection_record
 
 
 class Command(BaseCommand):
@@ -25,7 +25,13 @@ class Command(BaseCommand):
             collection_post_save_handler,
         )
 
-        taxa = Taxon.objects.all()
+        taxonomy_gbif_keys = Taxonomy.objects.values_list(
+            'gbif_key',
+            flat=True
+        )
+        taxa = Taxon.objects.all().exclude(
+            gbif_id__in=taxonomy_gbif_keys
+        )
         for taxon in taxa:
             print('Migrate %s' % taxon.scientific_name)
             taxon_identifier = process_taxon_identifier(taxon.gbif_id)
@@ -43,23 +49,10 @@ class Command(BaseCommand):
 
         collections = BiologicalCollectionRecord.objects.filter(
             taxonomy__isnull=True,
-            taxon_gbif_id__isnull=False
         )
         for collection in collections:
-            print('Move taxonomy value for %s - %s' % (
-                collection.original_species_name, collection.pk))
-            if not collection.taxon_gbif_id:
-                continue
+            update_collection_record(collection)
 
-            if not collection.taxon_gbif_id.gbif_id:
-                continue
-
-            if collection.pk == 20244:
-                print('something')
-
-            taxonomy = Taxonomy.objects.get(
-                gbif_key=collection.taxon_gbif_id.gbif_id
-            )
-            collection.taxonomy = taxonomy
-            collection.taxon_gbif_id = None
-            collection.save()
+        models.signals.post_save.connect(
+            collection_post_save_handler,
+        )
