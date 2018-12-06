@@ -67,14 +67,23 @@ The explanation of the script can be seen below.
 
 ## Setup Scripts
 
-There are basically several steps.
+There are several steps.
+
+Before you begin ensure your pip and setuptools are up to date:
+```
+sudo pip install --upgrade pip
+sudo pip install --upgrade setuptools
+```
+Also note that this installation currently fails for python 3 and Ansible 
+should be run in a python 2.7 environment.
 
 1. Check ansible is working.
 
-You have to install ansible. Run following command in this folder:
+You have to install ansible. Run following command in this folder (Note: 
+Ensure Ansible is installed with the sudo command):
 
 ```
-pip install -r requirements.txt
+sudo pip install -r requirements.txt
 ```
 
 Then, run check script
@@ -85,7 +94,7 @@ ansible-playbook -i development/hosts development/site.yml --list-tasks --list-h
 ```
 
 It should print that your local machine is responding ansible and lists
-all the task that will run
+all the task that will run.
 
 2. Run setup
 
@@ -149,5 +158,7 @@ that you made.
 You have to actually build the docker container and run it, before it
 is actually being used by Project Interpreter. Typically you want to do
 something like `make build up web` to build and start the ssh container.
+
+5. Django-bims Django test can be viewed on 0.0.0.0:63302
 
 
