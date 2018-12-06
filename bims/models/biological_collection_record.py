@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 
 from bims.models.location_site import LocationSite
 from bims.utils.cluster import (
@@ -116,6 +117,11 @@ class BiologicalCollectionRecord(
         default=''
     )
 
+    additional_data = JSONField(
+        blank=True,
+        null=True
+    )
+
     @property
     def data_name(self):
         return self.original_species_name
@@ -182,7 +188,6 @@ def collection_post_save_handler(sender, instance, **kwargs):
     Fetch taxon from original species name.
     """
     from bims.models import SearchProcess
-    print('collection_post_save_handler')
 
     if not issubclass(sender, BiologicalCollectionRecord):
         return
