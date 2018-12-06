@@ -193,11 +193,11 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
     class Meta:
         model = TaxonGroup
 
-    id = factory.Sequence(lambda n:n)
+    id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: u'Name %s' % n)
 
     @factory.post_generation
-    def groups(self, create, extracted, **kwargs):
+    def taxonomies(self, create, extracted, **kwargs):
         if not create:
             # Simple build, do nothing.
             return

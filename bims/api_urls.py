@@ -112,6 +112,5 @@ urlpatterns = [
     url(r'^docs/', include_docs_urls(title='BIMS API')),
     url(r'^module-summary/$',
         ModuleSummary.as_view(),
-        name='module-summary'
-    )
+        name='module-summary')
 ]

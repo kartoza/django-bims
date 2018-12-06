@@ -193,16 +193,19 @@ class TestApiView(TestCase):
         )
         taxon_species_1 = TaxonomyF.create(
             scientific_name='Bird1',
-            rank=TaxonomicRank.SPECIES.name
+            rank=TaxonomicRank.SPECIES.name,
+            parent=taxon_class_1
         )
-        collection_1 = BiologicalCollectionRecordF.create(
+        BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
-            validated=True
+            validated=True,
+            site=self.location_site
         )
-        taxon_group_1 = TaxonGroupF.create(
+        TaxonGroupF.create(
+            name='Bird',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             taxonomies=(taxon_class_1,)
         )
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
-        self.assertIsNotNone(response.data['Aves'])
+        self.assertTrue(len(response.data['Bird']) > 0)
