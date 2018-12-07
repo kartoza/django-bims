@@ -40,7 +40,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             if taxonomy.parent:
                 return self.get_class_from_taxonomy(taxonomy.parent)
         else:
-            return taxonomy.scientific_name
+            return taxonomy.canonical_name
         return None
 
     def to_representation(self, instance):
@@ -76,24 +76,24 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
                 species_list = records_occurrence[taxon_class]
                 try:
-                    species_list[taxonomy.scientific_name]
+                    species_list[taxonomy.canonical_name]
                 except KeyError:
-                    species_list[taxonomy.scientific_name] = {
+                    species_list[taxonomy.canonical_name] = {
                         'taxon_id': taxonomy.id,
                         'taxonomy': taxon_id,
                         'category': category,
                         'count': 0,
                         'data_by_year': {}
                     }
-                species_list[taxonomy.scientific_name]['count'] += 1
+                species_list[taxonomy.canonical_name]['count'] += 1
 
                 if year_collected not in \
-                        species_list[taxonomy.scientific_name][
+                        species_list[taxonomy.canonical_name][
                             'data_by_year']:
-                    species_list[taxonomy.scientific_name]['data_by_year'][
+                    species_list[taxonomy.canonical_name]['data_by_year'][
                         year_collected] = 1
                 else:
-                    species_list[taxonomy.scientific_name]['data_by_year'][
+                    species_list[taxonomy.canonical_name]['data_by_year'][
                         year_collected] += 1
 
             # get per module info

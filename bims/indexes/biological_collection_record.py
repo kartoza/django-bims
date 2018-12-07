@@ -75,9 +75,9 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     location_coordinates = indexes.CharField()
 
-    taxon_gbif = indexes.IntegerField(indexed=True)
+    taxonomy = indexes.IntegerField(indexed=True)
 
-    taxon_gbif_not_null = indexes.BooleanField(indexed=True)
+    taxonomy_not_null = indexes.BooleanField(indexed=True)
 
     taxon_canonical_name = indexes.NgramField(
         model_attr='taxonomy__canonical_name',
@@ -129,12 +129,12 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.site.id
         return 0
 
-    def prepare_taxon_gbif(self, obj):
+    def prepare_taxonomy(self, obj):
         if obj.taxonomy:
             return obj.taxonomy.id
         return 0
 
-    def prepare_taxon_gbif_not_null(self, obj):
+    def prepare_taxonomy_not_null(self, obj):
         if obj.taxonomy:
             return True
         return False
