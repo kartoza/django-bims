@@ -297,6 +297,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     $.each(species, function (index, speciesName) {
                         if (that.currentSpeciesSearchResult.length > 0) {
                             // check if species name is on search mode
+                            console.log('species', that.currentSpeciesSearchResult);
+                            console.log('speciesName', speciesName);
                             if ($.inArray(speciesName, that.currentSpeciesSearchResult) < 0) {
                                 return true;
                             }
