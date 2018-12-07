@@ -5,6 +5,16 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 
+def rename_reference_category_consulting_report(apps, schema_editor):
+
+    my_model = apps.get_model('bims', 'biologicalcollectionrecord')
+
+    for mm in my_model.objects.all():
+        if mm.reference_category == 'Consulting report':
+            mm.reference_category = 'Report'
+        mm.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,4 +22,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(rename_reference_category_consulting_report)
     ]
