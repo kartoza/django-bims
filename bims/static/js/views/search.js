@@ -37,9 +37,37 @@ define([
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
         },
         render: function () {
+            var self = this;
             this.$el.html(this.template());
             this.searchBox = this.$el.find('.map-search-box');
             this.searchInput = this.$el.find('#search');
+            this.searchInput.autocomplete({
+                autoFocus: true,
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/autocomplete/",
+                        data: {q: request.term},
+                        dataType: "json",
+                        success: function (requestResponse) {
+                            var responseData = [];
+                            if (requestResponse.hasOwnProperty('results')){
+                                $.each(requestResponse['results'], function (index, value) {
+                                    responseData.push({
+                                        'value': value['name'],
+                                        'label': value['name'],
+                                        'id': value['id']
+                                    })
+                                })
+                            }
+                            response(responseData);
+                        }
+                    })
+                },
+                select: function (event, ui) {
+                    var itemValue = ui['item']['value'];
+                    self.search(itemValue);
+                }
+            });
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
             this.referenceCategoryView = new ReferenceCategoryView();
