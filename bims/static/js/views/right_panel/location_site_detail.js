@@ -297,8 +297,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     $.each(species, function (index, speciesName) {
                         if (that.currentSpeciesSearchResult.length > 0) {
                             // check if species name is on search mode
-                            console.log('species', that.currentSpeciesSearchResult);
-                            console.log('speciesName', speciesName);
                             if ($.inArray(speciesName, that.currentSpeciesSearchResult) < 0) {
                                 return true;
                             }
@@ -308,12 +306,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                             template({
                                 common_name: speciesName,
                                 count: speciesValue.count,
-                                taxon_gbif_id: speciesValue.taxon_gbif_id
+                                taxon_gbif_id: speciesValue.taxon_id
                             })
                         );
 
                         // Species clicked
-                        $classWrapper.find('#'+speciesValue.taxon_gbif_id).click(function (e) {
+                        $classWrapper.find('#'+speciesValue.taxon_id).click(function (e) {
                             e.preventDefault();
                             Shared.Dispatcher.trigger('taxonDetail:show',
                                 speciesValue.taxon_id,
