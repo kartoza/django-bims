@@ -10,11 +10,14 @@ import json
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
+from django.conf import settings
+
 from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.cluster import update_cluster_by_site
 from bims.utils.get_key import get_key
 from bims.models.document_links_mixin import DocumentLinksMixin
+from bims.utils.location_site import allocate_site_codes_from_river
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +40,11 @@ class LocationSite(DocumentLinksMixin):
         default=''
     )
     site_code = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
+    )
+    legacy_site_code = models.CharField(
         max_length=100,
         blank=True,
         default=''
@@ -206,3 +214,6 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     if not issubclass(sender, LocationSite):
         return
     update_cluster_by_site(instance)
+
+    if settings.SITE_CODE_GROUP == 'river':
+        allocate_site_codes_from_river(location_id=instance.id)

@@ -292,3 +292,8 @@ REST_FRAMEWORK = {
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
+
+# Setting value to generate the site code
+SITE_CODE_GROUP = os.environ.get(
+    'SITE_CODE_GROUP', ''
+)

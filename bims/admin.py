@@ -95,7 +95,11 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     readonly_fields = ('location_context_prettified', 'boundary')
 
     list_display = (
-        'name', 'location_type', 'get_centroid', 'has_location_context')
+        'name',
+        'site_code',
+        'location_type',
+        'get_centroid',
+        'has_location_context')
     search_fields = ('name',)
     list_filter = (HasLocationContextDocument,)
 
