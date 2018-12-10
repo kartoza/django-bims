@@ -9,7 +9,7 @@ def rename_reference_category_consulting_report(apps, schema_editor):
 
     my_model = apps.get_model('bims', 'biologicalcollectionrecord')
 
-    for mm in my_model.objects.all():
+    for mm in my_model.objects.filter(reference_category='Consulting report'):
         if mm.reference_category == 'Consulting report':
             mm.reference_category = 'Report'
         mm.save()
