@@ -47,8 +47,8 @@ class LocationSiteF(factory.django.DjangoModelFactory):
 
     location_type = factory.SubFactory(LocationTypeF)
     geometry_point = Point(
-        random.uniform(-180.0, 180.0),
-        random.uniform(-90.0, 90.0)
+        random.uniform(-30.0, 30.0),
+        random.uniform(-30.0, 30.0)
     )
 
 
@@ -184,6 +184,7 @@ class TaxonomyF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
+    canonical_name = factory.Sequence(lambda n: u'Canonical name %s' % n)
 
 
 class TaxonGroupF(factory.django.DjangoModelFactory):

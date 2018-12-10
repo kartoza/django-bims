@@ -1,4 +1,4 @@
-from django.test import TestCase
+import json
 from django.core.urlresolvers import reverse
 from rest_framework.test import APIRequestFactory
 from bims.tests.model_factories import (
@@ -26,9 +26,11 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.views.autocomplete_search import autocomplete
+from bims.tests.integration_test_case import IntegrationTestCase
 
 
-class TestApiView(TestCase):
+class TestApiView(IntegrationTestCase):
     """Test Location site API """
 
     def setUp(self):
@@ -44,11 +46,13 @@ class TestApiView(TestCase):
         )
         self.taxonomy_1 = TaxonomyF.create(
             scientific_name='Some aves name 1',
+            canonical_name='aves name 1',
             rank=TaxonomicRank.SPECIES.name,
             parent=self.taxonomy_class_1
         )
         self.taxonomy_2 = TaxonomyF.create(
             scientific_name='Some aves name 2',
+            canonical_name='aves name 2',
             rank=TaxonomicRank.SPECIES.name,
             parent=self.taxonomy_class_1
         )
@@ -81,6 +85,7 @@ class TestApiView(TestCase):
             is_superuser=True,
             is_staff=True
         )
+        self.rebuild_index()
 
     def test_get_all_location(self):
         view = LocationSiteList.as_view()
@@ -209,3 +214,13 @@ class TestApiView(TestCase):
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
         self.assertTrue(len(response.data['Bird']) > 0)
+
+    def test_get_autocomplete(self):
+        view = autocomplete
+        request = self.factory.get(
+            '%s/?q=aves' % reverse('autocomplete-search'))
+        response = view(request)
+        self.assertTrue(response.status_code == 200)
+
+        content = json.loads(response.content)
+        self.assertTrue(len(content['results']) > 0)
