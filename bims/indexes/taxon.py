@@ -17,6 +17,14 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
             model_attr='scientific_name'
     )
 
+    scientific_name_auto = indexes.EdgeNgramField(
+            model_attr='scientific_name'
+    )
+
+    canonical_name_auto = indexes.EdgeNgramField(
+            model_attr='canonical_name'
+    )
+
     author = indexes.CharField(
             indexed=True,
             model_attr='author',

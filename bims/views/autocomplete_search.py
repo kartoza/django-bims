@@ -6,14 +6,14 @@ from haystack.query import SearchQuerySet
 def autocomplete(request):
     try:
         sqs = SearchQuerySet().autocomplete(
-           scientific_name_auto=request.GET.get('q', '')
+           canonical_name_auto=request.GET.get('q', '')
         )[:5]
     except TypeError:
         return HttpResponseBadRequest()
     suggestions = [
         {
            'id': result.id,
-           'name': result.scientific_name
+           'name': result.canonical_name
         } for result in sqs
     ]
     the_data = json.dumps({
