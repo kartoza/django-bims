@@ -4,11 +4,8 @@
 """
 
 from django.db import models
-from django.dispatch import receiver
 from django.contrib.postgres.fields import ArrayField
 from bims.models.iucn_status import IUCNStatus
-from bims.utils.iucn import get_iucn_status
-from bims.permissions.generate_permission import generate_permission
 from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.endemism import Endemism
 
@@ -141,17 +138,3 @@ class Taxon(DocumentLinksMixin):
 
     def __str__(self):
         return "%s (%s)" % (self.common_name, self.iucn_status)
-
-
-@receiver(models.signals.pre_save, sender=Taxon)
-def taxon_pre_save_handler(sender, instance, **kwargs):
-    """Get iucn status before save."""
-    if instance.taxon_class:
-        generate_permission(instance.taxon_class)
-
-    if instance.common_name and not instance.iucn_status:
-        iucn_status = get_iucn_status(
-            species_name=instance.common_name
-        )
-        if iucn_status:
-            instance.iucn_status = iucn_status

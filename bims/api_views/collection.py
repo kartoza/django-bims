@@ -107,11 +107,16 @@ class GetCollectionAbstract(APIView):
         year_to = filters.get('yearTo', None)
         months = filters.get('months', None)
         site_id = filters.get('siteId', None)
+        endemism = filters.get('endemism', None)
 
-        if taxon or query_collector or \
-                boundary or user_boundary or \
-                query_category or reference_category or \
-                year_from or year_to or months or reference or site_id:
+        if (
+                taxon or
+                query_collector or
+                boundary or user_boundary or
+                query_category or reference_category or
+                year_from or year_to or
+                months or reference or
+                site_id or endemism):
             filter_mode = True
 
         if query_value:
@@ -198,6 +203,14 @@ class GetCollectionAbstract(APIView):
             for query in qs:
                 qs_category.add(SQ(category=query), SQ.OR)
             results = results.filter(qs_category)
+
+        # query by endemism
+        if endemism:
+            qs_endemism = SQ()
+            qs = json.loads(endemism)
+            for query in qs:
+                qs_endemism.add(SQ(endemism=query), SQ.OR)
+            results = results.filter(qs_endemism)
 
         # query by reference category
         if reference_category:

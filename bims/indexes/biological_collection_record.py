@@ -117,6 +117,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    endemism = indexes.CharField(
+        indexed=True
+    )
+
     boundary = indexes.IntegerField()
 
     def prepare_taxon_class(self, obj):
@@ -153,6 +157,13 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.site.boundary:
             return obj.site.boundary.id
         return 0
+
+    def prepare_endemism(self, obj):
+        if not obj.taxonomy:
+            return ''
+        if not obj.taxonomy.endemism:
+            return ''
+        return obj.taxonomy.endemism.name
 
     class Meta:
         app_label = 'bims'
