@@ -36,6 +36,7 @@ define([
             this.boundary = parameters['boundary'];
             this.userBoundary = parameters['userBoundary'];
             this.referenceCategory = parameters['referenceCategory'];
+            this.endemic = parameters['endemic'];
             this.reference = parameters['reference'];
 
             this.url = this.searchUrl +
@@ -48,6 +49,7 @@ define([
                 '&boundary=' + this.boundary +
                 '&userBoundary=' + this.userBoundary +
                 '&referenceCategory=' + this.referenceCategory +
+                '&endemic=' + this.endemic +
                 '&reference=' + this.reference;
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();

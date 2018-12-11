@@ -24,6 +24,9 @@ define([
             'click .apply-filter': 'searchClick',
             'click .clear-filter': 'clearFilter',
             'click .search-reset': 'clearSearch',
+            'click .origin-btn': 'handleOriginBtnClick',
+            'click .endemic-dropdown-item': 'handleEndemicDropdown',
+            'click .clear-origin-filter': 'handleClearOriginClicked'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -50,7 +53,7 @@ define([
                         dataType: "json",
                         success: function (requestResponse) {
                             var responseData = [];
-                            if (requestResponse.hasOwnProperty('results')){
+                            if (requestResponse.hasOwnProperty('results')) {
                                 $.each(requestResponse['results'], function (index, value) {
                                     responseData.push({
                                         'value': value['name'],
@@ -75,6 +78,21 @@ define([
 
             this.spatialFilterView = new SpatialFilterView();
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
+
+            var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
+            $.ajax({
+                type: 'GET',
+                url: '/api/endemism-list/',
+                dataType: 'json',
+                success: function (data) {
+                    for (var i = 0; i < data.length; i++) {
+                        nativeOriginDropdown.append(
+                            '<div class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '"> ' + data[i] + '</div>'
+                        )
+                    }
+                }
+            });
 
             return this;
         },
@@ -155,6 +173,16 @@ define([
                 categoryValue = JSON.stringify(categoryValue)
             }
 
+            var endemicValue = [];
+            $('input[name=endemic-value]:checked').each(function () {
+                endemicValue.push($(this).val())
+            });
+            if (endemicValue.length === 0) {
+                endemicValue = ''
+            } else {
+                endemicValue = JSON.stringify(endemicValue)
+            }
+
             var boundaryValue = [];
             // just get the top one.
             $('input[name=boundary-value]:checked').each(function () {
@@ -170,7 +198,7 @@ define([
                 Shared.Dispatcher.trigger('map:boundaryEnabled', true);
             }
 
-            if (boundaryValue.length > 0)  {
+            if (boundaryValue.length > 0) {
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
             }
 
@@ -184,7 +212,8 @@ define([
                 'yearTo': '',
                 'months': '',
                 'reference': referenceValue,
-                'referenceCategory': referenceCategory
+                'referenceCategory': referenceCategory,
+                'endemic': endemicValue
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -209,6 +238,7 @@ define([
                 && !parameters['userBoundary']
                 && !parameters['referenceCategory']
                 && !parameters['reference']
+                && !parameters['endemic']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 return false
@@ -242,6 +272,7 @@ define([
             $('.clear-filter').click();
             $('.map-search-result').hide();
             this.searchPanel.clearSidePanel();
+            this.clearClickedOriginButton();
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
@@ -319,6 +350,56 @@ define([
         },
         isOpen: function () {
             return this.searchBoxOpen;
+        },
+        handleOriginBtnClick: function (e) {
+            var target = $(e.target);
+            if (target.hasClass('dropdown-toggle')) {
+                return;
+            }
+            var origin = target.data('origin');
+            if (target.hasClass('selected')) {
+                $('#' + origin).prop('checked', false);
+                target.removeClass('selected');
+            } else {
+                $('#' + origin).prop('checked', true);
+                target.addClass('selected');
+            }
+        },
+        handleEndemicDropdown: function (e) {
+            e.stopPropagation();
+            var endemicValue = $(e.target).data('endemic-value');
+            var inputCheckbox = $(e.target).find('input');
+
+            if (endemicValue === 'all-endemic') {
+                if (inputCheckbox.is(":checked")) {
+                    $('#indigenous').prop('checked', false);
+                    inputCheckbox.prop('checked', false);
+                } else {
+                    $(e.target).parent().find('.endemic-checkbox').prop('checked', true);
+                    $('#indigenous').prop('checked', true);
+                    inputCheckbox.prop('checked', true);
+                }
+            } else {
+                $('#all-endemic-checkbox').prop('checked', false);
+                if (inputCheckbox.is(":checked")) {
+                    inputCheckbox.prop('checked', false);
+                } else {
+                    inputCheckbox.prop('checked', true);
+                }
+            }
+
+            var atLeastOneIsChecked = $('.native-origin-dropdown').find('.endemic-checkbox:checked').length > 0;
+            if (atLeastOneIsChecked) {
+                $('#native-origin-btn').addClass('selected');
+            } else {
+                $('#native-origin-btn').removeClass('selected');
+            }
+        },
+        clearClickedOriginButton: function () {
+            this.$el.find('.origin-btn').removeClass('selected');
+        },
+        handleClearOriginClicked: function (e) {
+            this.clearClickedOriginButton();
         }
     })
 

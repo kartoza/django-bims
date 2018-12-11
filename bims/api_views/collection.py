@@ -107,7 +107,7 @@ class GetCollectionAbstract(APIView):
         year_to = filters.get('yearTo', None)
         months = filters.get('months', None)
         site_id = filters.get('siteId', None)
-        endemism = filters.get('endemism', None)
+        endemic = filters.get('endemic', None)
 
         if (
                 taxon or
@@ -116,7 +116,7 @@ class GetCollectionAbstract(APIView):
                 query_category or reference_category or
                 year_from or year_to or
                 months or reference or
-                site_id or endemism):
+                site_id or endemic):
             filter_mode = True
 
         if query_value:
@@ -204,10 +204,10 @@ class GetCollectionAbstract(APIView):
                 qs_category.add(SQ(category=query), SQ.OR)
             results = results.filter(qs_category)
 
-        # query by endemism
-        if endemism:
+        # query by endemic
+        if endemic:
             qs_endemism = SQ()
-            qs = json.loads(endemism)
+            qs = json.loads(endemic)
             for query in qs:
                 qs_endemism.add(SQ(endemism=query), SQ.OR)
             results = results.filter(qs_endemism)

@@ -10,7 +10,7 @@ define([
             "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>&endemic=<%= endemic %>"),
         clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
@@ -25,7 +25,7 @@ define([
         parameters: {
             taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
-            boundary: '', userBoundary: '', referenceCategory: '', reference: '',
+            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',
             clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {
@@ -47,6 +47,7 @@ define([
             this.parameters['referenceCategory'] = '';
             this.parameters['boundary'] = '';
             this.parameters['reference'] = '';
+            this.parameters['endemic'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
@@ -143,6 +144,7 @@ define([
                 && !this.parameters['userBoundary']
                 && !this.parameters['referenceCategory']
                 && !this.parameters['reference']
+                && !this.parameters['endemic']
                 && !this.parameters['boundary']) {
                 return false
             } else {

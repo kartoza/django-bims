@@ -5,7 +5,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
             "&zoom=<%= zoom %>&bbox=<%= bbox %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
+            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>&endemic=<%= endemic %>"),
         url: '/api/collection/download/',
         events: {
             'click .close': 'closeModal',
@@ -15,7 +15,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
         parameters: {
             taxon: '', zoom: 0, bbox: [], search: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
-            boundary: '', userBoundary: '', referenceCategory: '', reference: ''
+            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: ''
         },
         initialize: function (options) {
             Shared.Dispatcher.on('cluster:updated', this.updateParameters, this);
