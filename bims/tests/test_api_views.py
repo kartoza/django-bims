@@ -139,14 +139,14 @@ class TestApiView(IntegrationTestCase):
 
     def test_get_unvalidated_records_as_validator(self):
         view = GetNonValidatedRecords.as_view()
-        aves_collection_3 = BiologicalCollectionRecordF.create(
+        BiologicalCollectionRecordF.create(
             original_species_name=u'Aves collection 1',
             site=self.location_site,
             validated=False,
             ready_for_validation=True,
             taxonomy=self.taxonomy_1
         )
-        aves_collection_4 = BiologicalCollectionRecordF.create(
+        BiologicalCollectionRecordF.create(
             original_species_name=u'Aves collection 2',
             site=self.location_site,
             validated=False,
