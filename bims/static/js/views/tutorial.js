@@ -1,3 +1,4 @@
+
 function startIntro() {
         var intro = introJs();
           intro.setOptions({
@@ -13,6 +14,11 @@ function startIntro() {
                 element: document.querySelector('#search-control'),
                 intro: "This is a tooltip.",
 
+              },
+              {
+                element: "#filter-control",
+                intro: "The filter control",
+                position: 'right'
               },
               {
                 element: "#filter-control",
@@ -35,5 +41,11 @@ function startIntro() {
               // }
             ]
           });
+
+
           intro.start();
 }
+
+// document.getElementsByClassName('introNextHint').getAttribute('onclick')
+
+// }
