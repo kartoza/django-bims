@@ -472,18 +472,20 @@
                 <i class="fa fa-check" aria-hidden="true"></i>
             </div>
         {% endif %}
-        <div class="download-control sub-control-panel" data-toggle="popover"
+        <div id="download-control" class="download-control sub-control-panel"
+        data-toggle="popover"
              data-placement="right" data-trigger="hover"
              data-content="Download Data">
             <i class="fa fa-download" aria-hidden="true"></i>
         </div>
-        <div class="print-map-control sub-control-panel" data-toggle="popover"
+        <div id="print-control" class="print-map-control sub-control-panel"
+             data-toggle="popover"
              data-placement="right" data-trigger="hover"
              data-content="Print Map">
             <i class="fa fa-print" aria-hidden="true"></i>
         </div>
     </div>
-    <div class="zoom-control row">
+    <div id="zoom-control" class="zoom-control row">
         <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus"
                                                            aria-hidden="true"></i>
         </div>
@@ -493,7 +495,8 @@
     </div>
 
     {# layers selector container #}
-    <div class="layers-selector-container map-control-panel-box">
+    <div class="layers-selector-container
+         map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
                     <span class="title">
@@ -514,7 +517,8 @@
         </div>
     </div>
     {# locate option container #}
-    <div class="locate-options-container map-control-panel-box">
+    <div id="locate-control" class="locate-options-container
+         map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
                     <span class="title">
