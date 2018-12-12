@@ -2038,3 +2038,41 @@ div:hover::-webkit-scrollbar {
     padding-top: 5px;
     padding-left: 10px;
 }
+
+.btn-group-wrapper {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.smaller-font .btn {
+    text-transform: none;
+    font-size: 9pt;
+}
+
+.smaller-font.dropdown-menu {
+    z-index: 10000000;
+}
+
+.origin-btn.selected {
+    background-color: #1b900d;
+}
+
+.origin-btn.selected:hover {
+    background-color: #1b900d;
+}
+
+.origin-btn:hover {
+    background-color: #e0d441;
+}
+
+.native-origin-dropdown {
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    z-index: 999;
+}
+
+#native-origin-btn {
+    color: white;
+}

@@ -39,6 +39,7 @@ class Command(BaseCommand):
                 taxon_identifier.iucn_data = taxon.iucn_data
                 taxon_identifier.iucn_redlist_id = taxon.iucn_redlist_id
                 taxon_identifier.author = taxon.author
+                taxon_identifier.endemism = taxon.endemism
                 taxon_identifier.save()
                 if taxon.iucn_status:
                     iucn_status = IUCNStatus.objects.get(

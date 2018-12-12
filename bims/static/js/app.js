@@ -110,32 +110,6 @@ require([
             }
         });
 
-        $.ajax({
-            type: 'GET',
-            url: listCategoryAPIUrl,
-            dataType: 'json',
-            success: function (data) {
-                var filterCategory = $('#filter-category');
-                for (var i = 0; i < data.length; i++) {
-                    var $wrapperDiv = $('<div></div>');
-                    var $labelDiv = $('<label></label>');
-                    var $inputDiv = $('<input type="checkbox"/>');
-
-                    $wrapperDiv.addClass('ck-button');
-                    $wrapperDiv.append($labelDiv);
-                    $labelDiv.append($inputDiv);
-
-                    $wrapperDiv.append($labelDiv);
-                    $inputDiv.prop('id', data[i][0]);
-                    $inputDiv.addClass('origins-filter-selection');
-                    $inputDiv.prop('name', 'category-value');
-                    $inputDiv.val(data[i][0]);
-                    filterCategory.append($wrapperDiv);
-                    $inputDiv.after('<span>'+data[i][1]+'</span>');
-                }
-            }
-        });
-
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)
         });

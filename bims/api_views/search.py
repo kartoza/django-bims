@@ -150,7 +150,7 @@ class SearchObjects(APIView):
             if exc.errno != errno.EEXIST:
                 raise
             pass
-        search_collection(
+        search_collection.delay(
                 query_value,
                 filters,
                 path_file,
