@@ -1,11 +1,7 @@
 define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Shared, Backbone, _, $, JqueryUI) {
     return Backbone.View.extend({
         template: _.template($('#download-control-panel-template').html()),
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>" +
-            "&zoom=<%= zoom %>&bbox=<%= bbox %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>&endemic=<%= endemic %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         url: '/api/collection/download/',
         events: {
             'click .close': 'closeModal',

@@ -21,10 +21,7 @@ define([
         dummyPieColors: ['#2d2d2d', '#565656', '#6d6d6d', '#939393', '#adadad', '#bfbfbf', '#d3d3d3'],
         fetchBaseUrl: '/api/location-site-detail/?',
         csvDownloadUrl: '/api/collection/download/',
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>&endemic=<%= endemic %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',

@@ -3,10 +3,7 @@ define(['backbone', 'ol', 'shared', 'underscore'], function (Backbone, ol, Share
         taxonName: null,
         siteDetail: null,
         taxonId: null,
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>&endemic=<%= endemic %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         dataRepresentation: {
             'collection_date': 'Collection Date',
             'collector': 'Collector',
