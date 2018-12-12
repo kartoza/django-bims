@@ -59,14 +59,14 @@ class TestApiView(IntegrationTestCase):
         self.aves_collection_1 = BiologicalCollectionRecordF.create(
             original_species_name=u'Aves collection 1',
             site=self.location_site,
-            validated=False,
+            validated=True,
             ready_for_validation=True,
             taxonomy=self.taxonomy_1
         )
         self.aves_collection_2 = BiologicalCollectionRecordF.create(
             original_species_name=u'Aves collection 2',
             site=self.location_site,
-            validated=False,
+            validated=True,
             ready_for_validation=True,
             taxonomy=self.taxonomy_2
         )
@@ -139,6 +139,20 @@ class TestApiView(IntegrationTestCase):
 
     def test_get_unvalidated_records_as_validator(self):
         view = GetNonValidatedRecords.as_view()
+        BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 1',
+            site=self.location_site,
+            validated=False,
+            ready_for_validation=True,
+            taxonomy=self.taxonomy_1
+        )
+        BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 2',
+            site=self.location_site,
+            validated=False,
+            ready_for_validation=True,
+            taxonomy=self.taxonomy_2
+        )
         user = UserF.create()
         content_type = ContentTypeF.create(
                 app_label='bims',
