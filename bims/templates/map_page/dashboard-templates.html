@@ -103,23 +103,31 @@
         </div>
         <div class="container row">
             <div class="col-lg-4">
+                <div id="site-markers"></div>
                 <div id="locationsite-map" class="map" style="height: 300px; width: 100%; border: 1px solid black"></div>
                 <button id="export-locationsite-map" class="btn btn-default btn-element-download"><i class="fa fa-download"></i></button>
                 <div id="overview-dashboard-table" class="dashboard-table" style="margin-top: 10px; margin-bottom: 10px">
                     <table>
                         <tr>
-                            <td>Name</td>
+                            <td id="site-name-label">Name</td>
                             <td id="site-name"></td>
                         </tr>
                         <tr>
-                            <td>Records</td>
-                            <td id="total-records"></td>
+                            <td>Total Records</td>
+                            <td id="total-records">0</td>
                         </tr>
                     </table>
                 </div>
                 <span><b>Occurence data</b></span>
                 <div class="csv-data-download"><button class="btn btn-info download-as-csv"> Download as CSV </button></div>
-                <div id="occurence-table" class="dashboard-table">
+                <div class="dashboard-table">
+                    <table id="occurence-table">
+                        <tr>
+                            <th>Taxon</th>
+                            <th>Category</th>
+                            <th>Records</th>
+                        </tr>
+                    </table>
                 </div>
             </div>
             <div class="col-lg-8" id="dashboard-graph-wrapper">

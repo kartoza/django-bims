@@ -11,7 +11,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     Serializer for location site detail.
     """
     geometry = serializers.SerializerMethodField()
-    location_context_document_json = serializers.SerializerMethodField()
 
     def get_geometry(self, obj):
         geometry = obj.get_geometry()
@@ -19,20 +18,13 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return obj.get_geometry().json
         return ''
 
-    def get_location_context_document_json(self, obj):
-        if obj.location_context_document:
-            return json.loads(obj.location_context_document)
-        else:
-            return ''
-
     class Meta:
         model = LocationSite
         fields = [
             'id',
             'name',
             'geometry',
-            'location_type',
-            'location_context_document_json',
+            'location_type'
         ]
 
     def get_class_from_taxonomy(self, taxonomy):
