@@ -381,6 +381,7 @@ define([
                 }
             } else {
                 $('#all-endemic-checkbox').prop('checked', false);
+                $('#indigenous').prop('checked', false);
                 if (inputCheckbox.is(":checked")) {
                     inputCheckbox.prop('checked', false);
                 } else {
