@@ -1056,6 +1056,8 @@ div:hover::-webkit-scrollbar {
         left: 0.5em;
         border-radius: 5px;
         z-index: 2;
+        opacity: 0.7;
+        background-color: #fff;
     }
 
 #map-legend-wrapper.hide-legend {
