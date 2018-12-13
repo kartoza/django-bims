@@ -1045,6 +1045,19 @@ div:hover::-webkit-scrollbar {
     font-weight: 700;
 }
 
+#start-tutorial {
+        position: fixed;
+        bottom: 2.5em;
+        width: 31px;
+        height: 31px;
+        text-align: center;
+        padding-top: 4px;
+        font-weight: 700;
+        left: 0.5em;
+        border-radius: 5px;
+        z-index: 2;
+    }
+
 #map-legend-wrapper.hide-legend {
     max-width: 31px;
     max-height: 31px;
