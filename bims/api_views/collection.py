@@ -253,8 +253,14 @@ class GetCollectionAbstract(APIView):
 
         # Search by site id
         if site_id:
+            site_ids = site_id.split(',')
+            qs_site_id = SQ()
+            for site in site_ids:
+                qs_site_id.add(
+                    SQ(site_id_indexed=site), SQ.OR
+                )
             results = results.filter(
-                site_id_indexed=site_id
+                qs_site_id
             ).models(BiologicalCollectionRecord)
 
         collection_results = results
@@ -389,8 +395,8 @@ class CollectionDownloader(GetCollectionAbstract):
         ]
 
         search_uri = remove_params_from_uri(
-                not_needed_params,
-                search_uri
+            not_needed_params,
+            search_uri
         )
 
         if queryset:
@@ -425,7 +431,7 @@ class CollectionDownloader(GetCollectionAbstract):
                 'filename': filename
             })
 
-        download_data_to_csv.delay(
+        download_data_to_csv(
             path_file,
             self.request.GET,
         )

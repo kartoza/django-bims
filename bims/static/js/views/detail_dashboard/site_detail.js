@@ -34,7 +34,7 @@ define([
                 display: true
             },
             cutoutPercentage: 0,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
         },
         categories: {
             'indigenous': 'Native',
