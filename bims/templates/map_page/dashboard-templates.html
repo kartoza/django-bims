@@ -85,7 +85,7 @@
 </script>
 
 <script type="text/template" id="taxon-overview-table">
-    <table>
+    <table class="table">
         <tr>
             <td>Taxon</td>
             <td><%= taxon_class %></td>
@@ -104,7 +104,7 @@
 </script>
 
 <script type="text/template" id="taxon-detail-table">
-    <table class="taxon-dashboard-detail">
+    <table class="taxon-dashboard-detail table">
     </table>
 </script>
 
@@ -120,51 +120,72 @@
             style="float: right"><i class="fa fa-times pull-right"></i>
     </button>
     <div class="container dashboard-wrapper">
-        <div>
-            <h3>Overview</h3>
+        <div style="height: 32px">
+        <div style="height: 32px">
         </div>
         <div class="container row">
             <div class="col-lg-4">
                 <div id="site-markers"></div>
-                <div id="locationsite-map" class="map"
-                     style="height: 300px; width: 100%; border: 1px solid black"></div>
-                <button id="export-locationsite-map"
-                        class="btn btn-default btn-element-download"><i
-                        class="fa fa-download"></i></button>
-                <div id="overview-dashboard-table" class="dashboard-table"
-                     style="margin-top: 10px; margin-bottom: 10px">
-                    <table>
-                        <tr>
-                            <td id="site-name-label">Name</td>
-                            <td id="site-name"></td>
-                        </tr>
-                        <tr>
-                            <td>Total Records</td>
-                            <td id="total-records">0</td>
-                        </tr>
-                    </table>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Overview
+                        </div>
+                        <button id="export-locationsite-map"
+                                class="btn btn-default pull-right"><i
+                                class="fa fa-download"></i></button>
+                    </div>
+                    <div class="card-body">
+                        <div id="locationsite-map" class="map"
+                             style="height: 300px; width: 100%;"></div>
+                        <div id="overview-dashboard-table"
+                             class="dashboard-table"
+                             style="margin-top: 10px; margin-bottom: 10px">
+                            <table class="table">
+                                <tr>
+                                    <td id="site-name-label">Name</td>
+                                    <td id="site-name"></td>
+                                </tr>
+                                <tr>
+                                    <td>Total Records</td>
+                                    <td id="total-records">0</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <span><b>Occurence data</b></span>
-                <div class="csv-data-download">
-                    <button class="btn btn-info download-as-csv"> Download as
-                        CSV
-                    </button>
-                </div>
-                <div class="dashboard-table">
-                    <table id="occurence-table">
-                        <tr>
-                            <th>Taxon</th>
-                            <th>Category</th>
-                            <th>Records</th>
-                        </tr>
-                    </table>
+
+                <div class="card" style="margin-top: 20px">
+                    <div class="card-header">
+                        <div class="pull-left d-inline">
+                            Occurence data
+                        </div>
+                        <button class="btn btn-info download-as-csv pull-right">
+                            Download as
+                            CSV
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="dashboard-table">
+                            <table id="occurence-table" class="table">
+                                <tr>
+                                    <th>Taxon</th>
+                                    <th>Category</th>
+                                    <th>Records</th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-8" id="dashboard-graph-wrapper">
                 <div class="card">
                     <div class="card-header">
-                        <div class="d-inline card-header-title pull-left">Collections Chart</div>
-                        <button class="btn btn-default pull-right download-origin-chart"><i class="fa fa-download"></i></button>
+                        <div class="d-inline card-header-title pull-left">
+                            Collections Chart
+                        </div>
+                        <button class="btn btn-default pull-right download-origin-chart">
+                            <i class="fa fa-download"></i></button>
                     </div>
                     <div class="card-body">
                         <div class="container-fluid no-padding">
@@ -179,7 +200,8 @@
                                 </div>
                                 <div class="col-md-4 no-padding">
                                     <canvas id="sampling-method-graph"></canvas>
-                                    <div class="chart-label">Sampling method</div>
+                                    <div class="chart-label">Sampling method
+                                    </div>
                                 </div>
                                 {#                        <div style="width: 10%;">#}
                                 {#                            <button class="btn btn-default btn-element-download pull-right download-origin-chart">#}
@@ -194,8 +216,11 @@
                      style="margin: 0 !important; margin-top: 15px !important;">
                     <div class="card full-width">
                         <div class="card-header">
-                            <div class="d-inline card-header-title pull-left">Records Timeline Graph</div>
-                            <button class="btn btn-default pull-right download-record-timeline"><i class="fa fa-download"></i></button>
+                            <div class="d-inline card-header-title pull-left">
+                                Records Timeline Graph
+                            </div>
+                            <button class="btn btn-default pull-right download-record-timeline">
+                                <i class="fa fa-download"></i></button>
                         </div>
                         <div class="card-body">
                             <div id="record-timeline-wrapper"
@@ -207,11 +232,14 @@
                     </div>
                 </div>
                 <div class="row"
-                     style="margin: 0 !important; margin-top: 15px !important;">
+                     style="margin: 0 !important; margin-top: 15px !important; margin-bottom: 20px !important;">
                     <div class="card full-width">
                         <div class="card-header">
-                            <div class="d-inline card-header-title pull-left">Records Timeline Graph</div>
-                            <button class="btn btn-default pull-right download-collection-timeline"><i class="fa fa-download"></i></button>
+                            <div class="d-inline card-header-title pull-left">
+                                Collection Timeline Graph
+                            </div>
+                            <button class="btn btn-default pull-right download-collection-timeline">
+                                <i class="fa fa-download"></i></button>
                         </div>
                         <div class="card-body">
                             <div id="collection-timeline-wrapper"

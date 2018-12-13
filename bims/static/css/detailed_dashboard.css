@@ -49,11 +49,11 @@
     width: 100%;
 }
 
-.dashboard-table table,
-.dashboard-table tr, .dashboard-table td,
-.dashboard-table th {
-    border: 1px solid black;
-}
+/*.dashboard-table table,*/
+/*.dashboard-table tr, .dashboard-table td,*/
+/*.dashboard-table th {*/
+    /*border: 1px solid black;*/
+/*}*/
 
 .dashboard-table td, .dashboard-table th {
     padding: 2px 5px;
@@ -123,7 +123,6 @@
 .download-as-csv {
     text-transform: none;
     font-size: 10pt;
-    margin-bottom: 5px;
 }
 
 .card-header-title {
