@@ -431,7 +431,7 @@ class CollectionDownloader(GetCollectionAbstract):
                 'filename': filename
             })
 
-        download_data_to_csv(
+        download_data_to_csv.delay(
             path_file,
             self.request.GET,
         )

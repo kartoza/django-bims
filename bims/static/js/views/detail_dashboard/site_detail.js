@@ -97,7 +97,7 @@ define([
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
                     Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1))
                     self.siteName.append(data['name']);
-                    ;
+
                     self.generateDashboardData(data);
                     self.renderDashboard();
                     self.loadingDashboard.hide();
@@ -195,12 +195,20 @@ define([
                             'label': speciesName,
                             'count': speciesOccurrence['count'],
                             'category': self.categories[speciesOccurrence['category']],
-                            'data_by_year': speciesOccurrence['data_by_year']
+                            'data_by_year': {}
                         }
                     } else {
                         self.occurrenceData[speciesOccurrence['taxon_id']]['count'] +=
                             speciesOccurrence['count'];
                     }
+
+                    $.each(speciesOccurrence['data_by_year'], function (year, count) {
+                        if (!self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'].hasOwnProperty(year)) {
+                            self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'][year] = count;
+                        } else {
+                            self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'][year] += count;
+                        }
+                    });
 
                 }
             });
@@ -332,7 +340,7 @@ define([
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
             this.mapLocationSite.once('postcompose', function (event) {
-                var canvas =  document.getElementsByClassName('locationsite-map-wrapper');
+                var canvas = document.getElementsByClassName('locationsite-map-wrapper');
                 html2canvas(canvas, {
                     useCORS: true,
                     background: '#FFFFFF',
@@ -430,21 +438,15 @@ define([
             var recordsByYearData = {};
 
             var originByYearData = {};
+            var dataByYear = {};
 
             $.each(data, function (key, value) {
 
                 var objectProperties = value;
                 var category = objectProperties['category'];
 
-                if (!originData.hasOwnProperty(category)) {
-                    originData[category] = objectProperties['count'];
-                    originColor.push(self.categoryColor[category]);
-                    originLabel.push(category);
-                } else {
-                    originData[category] += objectProperties['count'];
-                }
+                dataByYear = objectProperties['data_by_year'];
 
-                var dataByYear = objectProperties['data_by_year'];
                 $.each(dataByYear, function (dataByYearKey, dataByYearValue) {
                     var intDataByYear = parseInt(dataByYearValue);
 
@@ -466,6 +468,17 @@ define([
                         originByYearData[category][dataByYearKey] = intDataByYear;
                     }
                 });
+
+                recordsByYearLabel = recordsByYearLabel.sort();
+
+                if (!originData.hasOwnProperty(category)) {
+                    originData[category] = objectProperties['count'];
+                    originColor.push(self.categoryColor[category]);
+                    originLabel.push(category);
+                } else {
+                    originData[category] += objectProperties['count'];
+                }
+
             });
 
             this.originCategoryGraphCanvas = self.createPieChart(
@@ -474,7 +487,6 @@ define([
                 originLabel,
                 self.pieOptions,
                 originColor);
-
             var recordsByYearDatasets = [{
                 backgroundColor: '#48862b',
                 borderWidth: 1,
@@ -562,6 +574,7 @@ define([
                 },
                 options: originTimelineGraphOptions
             })
-        },
+        }
+        ,
     })
 });
