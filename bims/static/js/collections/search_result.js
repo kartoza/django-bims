@@ -68,7 +68,7 @@ define([
                 $(e.target).data('visibility', true)
             }
         },
-        getSearchResults: function() {
+        getSearchResults: function () {
             var self = this;
             return this.fetch({
                 success: function () {
@@ -85,7 +85,7 @@ define([
                         timeout = 1000;
                         self.secondSearch = true;
                     }
-                    if(self.status === 'processing') {
+                    if (self.status === 'processing') {
                         setTimeout(function () {
                             self.getSearchResults()
                         }, timeout);
@@ -133,7 +133,7 @@ define([
                 '<div class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> SITES ' +
                 '(<span id="site-list-number"></span>) ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="site-detail-dashboard-button-wrapper"></span></div>' +
                 '<div id="site-list" class="search-results-section"></div>' +
                 '</div>');
             $searchResultsWrapper.append(
@@ -154,6 +154,7 @@ define([
             var recordsCount = this.totalRecords.toString();
             var siteCount = this.totalSites.toString();
             var speciesListName = [];
+            var siteIds = [];
 
             if (self.status === 'finish') {
                 $.each(this.recordsData, function (key, data) {
@@ -180,8 +181,20 @@ define([
                     var searchResultView = new SearchResultView({
                         model: searchModel
                     });
+                    siteIds.push(key);
                     self.viewCollection.push(searchResultView);
                 });
+
+                if (siteIds.length > 0) {
+                    // Set multiple site dashboard url
+                    var currentParameters = $.extend({}, filterParameters);
+                    currentParameters['siteId'] = siteIds.join(',');
+                    var templateParameter = _.template(Shared.SearchURLParametersTemplate);
+                    var apiUrl = templateParameter(currentParameters);
+                    apiUrl = apiUrl.substr(1);
+                    var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
+                    $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append('<a href="' + multipleSiteDashboardUrl + '" class="badge badge-primary">Show in dashboard</a>');
+                }
             }
 
             var taxaListNumberElm = $('#taxa-list-number');

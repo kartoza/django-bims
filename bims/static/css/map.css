@@ -225,6 +225,7 @@ html, body, .map, .map-wrapper, #map-container {
     .panel-wrapper {
         width: 100%;
     }
+
     .ui-slider-horizontal {
         margin-left: 50px !important;
     }
@@ -1648,7 +1649,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .dropdown-menu {
-    border: 1px solid rgba(0,0,0,.15);
+    border: 1px solid rgba(0, 0, 0, .15);
     border-radius: .25rem;
 }
 
@@ -1877,17 +1878,17 @@ div:hover::-webkit-scrollbar {
 }
 
 .ck-button {
-    margin:4px;
-    background-color:#EFEFEF;
-    border:1px solid #D0D0D0;
-    float:left;
+    margin: 4px;
+    background-color: #EFEFEF;
+    border: 1px solid #D0D0D0;
+    float: left;
     overflow-x: hidden;
     overflow-y: hidden;
     height: 25px;
 }
 
 .ck-button:hover {
-    background:rgba(219, 175, 0, 0.7);
+    background: rgba(219, 175, 0, 0.7);
     cursor: pointer;
 }
 
@@ -1896,26 +1897,26 @@ div:hover::-webkit-scrollbar {
 }
 
 .ck-button label {
-    float:left;
-    width:4.0em;
+    float: left;
+    width: 4.0em;
 }
 
 .ck-button label span {
-    text-align:center;
+    text-align: center;
     padding-top: 3px;
     padding-bottom: 5px;
     font-size: 12px;
-    display:block;
+    display: block;
 }
 
 .ck-button label input {
-    position:absolute;
-    top:-20px;
+    position: absolute;
+    top: -20px;
 }
 
 .ck-button input:checked + span {
-    background-color:#1b900d;
-    color:#fff;
+    background-color: #1b900d;
+    color: #fff;
 }
 
 .small-subtitle {
@@ -2028,10 +2029,10 @@ div:hover::-webkit-scrollbar {
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.layer-selector-search-input .form-control{
-	border-right:0;
-	box-shadow:0 0 0;
-	border-color:#ccc;
+.layer-selector-search-input .form-control {
+    border-right: 0;
+    box-shadow: 0 0 0;
+    border-color: #ccc;
 }
 
 .layer-selector-tags {
@@ -2075,4 +2076,21 @@ div:hover::-webkit-scrollbar {
 
 #native-origin-btn {
     color: white;
+}
+
+.site-marker {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #088;
+    border-radius: 10px;
+    background-color: #0FF;
+    opacity: 0.5;
+}
+
+.site-marker-name {
+    text-decoration: none;
+    color: white;
+    font-size: 10pt;
+    font-weight: bold;
+    text-shadow: black 0.1em 0.1em 0.2em;
 }

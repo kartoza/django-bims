@@ -219,13 +219,13 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 objectDatasets,
                 recordsOptions);
 
-            var $table = $('<table></table>');
+            var $table = $('<table class="table"></table>');
             for(var key in objectPerDate[self.objectDataByYear]){
                 $table.append('<tr><td>' + key + '</td><td>' + objectPerDate[self.objectDataByYear][key] + '</td></tr>')
             }
             self.recordsTable.html($table);
 
-            var $tableArea = $('<table></table>');
+            var $tableArea = $('<table class="table"></table>');
             $tableArea.append('<tr><th>ID</th><th>Site name</th><th>Records</th></tr>')
             for(var site in dataBySite){
                 if(dataBySite[site]['site_name'] !== undefined) {
