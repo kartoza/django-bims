@@ -1,4 +1,3 @@
-
 function startIntro() {
         var intro = introJs();
           intro.setOptions({
@@ -12,17 +11,31 @@ function startIntro() {
               },
               {
                 element: document.querySelector('#search-control'),
-                intro: "This is a tooltip.",
-
+                intro: "In order to find the data you need use the" +
+                    " SEARCH,",
               },
               {
                 element: "#filter-control",
-                intro: "The filter control",
+                intro: "and the versatile FILTER.",
                 position: 'right'
               },
-              {
-                element: "#filter-control",
-                intro: "Ok, wasn't that fun?",
+                {
+                    element: '.layer-switcher',
+                    intro: 'Visualize your data clearly with our' +
+                        ' LAYER-SELECTOR,'
+                },
+                          {
+                    element: '#locate-control',
+                    intro: 'or get straight to the point with the LOCATE tool.'
+                },
+                 {
+                element: "#download-control",
+                intro: "We are not stingy with our data either. DOWNLOAD...",
+                position: 'right'
+              },
+                 {
+                element: "#print-control",
+                intro: "...or PRINT, exactly what you need, quickly.",
                 position: 'right'
               },
               // {
@@ -41,11 +54,5 @@ function startIntro() {
               // }
             ]
           });
-
-
           intro.start();
 }
-
-// document.getElementsByClassName('introNextHint').getAttribute('onclick')
-
-// }
