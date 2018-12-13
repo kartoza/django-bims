@@ -18,12 +18,13 @@ define([
     'views/right_panel/records_detail',
     'views/biodiversity_legend',
     'views/detail_dashboard/taxon_detail',
-    'views/detail_dashboard/site_detail'
+    'views/detail_dashboard/site_detail',
+    'htmlToCanvas'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
-             TaxonDetailDashboard, SiteDetailedDashboard) {
+             TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -35,12 +36,15 @@ define([
         previousZoom: 0,
         sidePanelView: null,
         initZoom: 7,
+        numInFlightTiles: 0,
+        mapIsReady: false,
         initCenter: [22.937506, -30.559482],
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
             'click .layer-control': 'layerControlClicked',
-            'click #map-legend-wrapper': 'mapLegendClicked'
+            'click #map-legend-wrapper': 'mapLegendClicked',
+            'click .print-map-control': 'downloadMap'
         },
         clusterLevel: {
             5: 'country',
@@ -51,7 +55,7 @@ define([
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
-            this.layers = new Layers({parent:this});
+            this.layers = new Layers({parent: this});
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
@@ -91,6 +95,7 @@ define([
             Shared.Dispatcher.on('map:showTaxonDetailedDashboard', this.showTaxonDetailedDashboard, this);
             Shared.Dispatcher.on('map:showSiteDetailedDashboard', this.showSiteDetailedDashboard, this);
             Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
+            Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
@@ -225,8 +230,8 @@ define([
 
                     this.zoomToCoordinates(
                         feature.getGeometry().getCoordinates(),
-                        this.getCurrentZoom()+2
-                        );
+                        this.getCurrentZoom() + 2
+                    );
                 } else {
                     var _properties = properties['features'][0].getProperties();
                     Shared.Dispatcher.trigger('locationSite-' + _properties.id + ':clicked');
@@ -284,7 +289,7 @@ define([
             $mapLegend.show();
             this.$mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
 
-            if(showTooltip) {
+            if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
         },
@@ -302,7 +307,7 @@ define([
             $mapLegend.hide();
             this.$mapLegendWrapper.attr('data-original-title', 'Show legends').tooltip('hide');
 
-            if(showTooltip) {
+            if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
         },
@@ -371,6 +376,36 @@ define([
                     var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
                     self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
                 }
+            });
+
+            this.map.getLayers().forEach(function (layer) {
+                try {
+                    var source = layer.getSource();
+                    if (source instanceof ol.source.TileImage) {
+                        source.on('tileloadstart', function () {
+                            ++self.numInFlightTiles
+                        });
+                        source.on('tileloadend', function () {
+                            --self.numInFlightTiles
+                        });
+                    }
+                } catch (err) {
+                }
+            });
+
+            this.map.on('postrender', function (evt) {
+                if (!evt.frameState)
+                    return;
+
+                var numHeldTiles = 0;
+                var wanted = evt.frameState.wantedTiles;
+                for (var layer in wanted)
+                    if (wanted.hasOwnProperty(layer))
+                        numHeldTiles += Object.keys(wanted[layer]).length;
+
+                var ready = self.numInFlightTiles === 0 && numHeldTiles === 0;
+                if (self.mapIsReady !== ready)
+                   self.mapIsReady = ready;
             });
 
             return this;
@@ -523,7 +558,8 @@ define([
                             success: function () {
                                 self.fetchingFinish();
                                 self.clusterCollection.renderCollection()
-                            }, error: function (xhr, text_status, error_thrown) {
+                            },
+                            error: function (xhr, text_status, error_thrown) {
                                 self.fetchingError(error_thrown);
                             }
                         });
@@ -695,6 +731,66 @@ define([
         closeDetailedDashboard: function () {
             this.taxonDetailDashboard.closeDashboard();
             this.siteDetailedDashboard.closeDashboard();
+        },
+        whenMapIsReady: function (callback) {
+            var self = this;
+            if (this.mapIsReady)
+                callback();
+            else {
+                setTimeout(function () {
+                    self.map.once('change:ready', self.whenMapIsReady.bind(null, callback));
+                    self.whenMapIsReady(callback);
+                }, 100)
+            }
+        },
+        downloadMap: function () {
+            var that = this;
+            var downloadMap = true;
+
+            that.map.once('postcompose', function (event) {
+                var canvas = event.context.canvas;
+                try {
+                    canvas.toBlob(function (blob) {
+                    })
+                }
+                catch (error) {
+                    $('#error-modal').modal('show');
+                    downloadMap = false
+                }
+            });
+            that.map.renderSync();
+
+            if (downloadMap) {
+                $('#ripple-loading').show();
+                $('.map-control-panel').hide();
+                $('.zoom-control').hide();
+                $('.print-map-control').addClass('control-panel-selected');
+                that.whenMapIsReady(function () {
+                    var canvas = document.getElementsByClassName('map-wrapper');
+                    var $mapWrapper = $('.map-wrapper');
+                    var divHeight = $mapWrapper.height();
+                    var divWidth = $mapWrapper.width();
+                    var ratio = divHeight / divWidth;
+                    html2canvas(canvas, {
+                        useCORS: true,
+                        background: '#FFFFFF',
+                        allowTaint: false,
+                        onrendered: function (canvas) {
+                            var link = document.createElement('a');
+                            link.setAttribute("type", "hidden");
+                            link.href = canvas.toDataURL("image/png");
+                            link.download = 'map.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                            $('.zoom-control').show();
+                            $('.map-control-panel').show();
+                            $('#ripple-loading').hide();
+                            $('.print-map-control').removeClass('control-panel-selected');
+                        }
+                    })
+                });
+            }
         }
     })
 });

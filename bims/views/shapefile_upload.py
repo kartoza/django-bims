@@ -311,9 +311,9 @@ def process_shapefiles(request,
                     original_species_name=properties['species']
             )
 
-            taxon_gbif = None
+            taxonomy = None
             if collections:
-                taxon_gbif = collections[0].taxon_gbif_id
+                taxonomy = collections[0].taxonomy
 
             collection_records, created = collection. \
                 objects. \
@@ -324,7 +324,7 @@ def process_shapefiles(request,
                     collection_date=properties['date'],
                     collector=properties['collector'],
                     notes=properties['notes'],
-                    taxon_gbif_id=taxon_gbif,
+                    taxonomy=taxonomy,
                     owner=request.user,
                     **optional_records)
 

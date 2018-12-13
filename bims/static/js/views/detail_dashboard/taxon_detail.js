@@ -19,10 +19,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             'click #export-taxasite-map': 'exportTaxasiteMap',
             'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline'
         },
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         initialize: function () {
             this.$el.hide();
         },
@@ -77,9 +74,78 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 }
             })
         },
+        generateTaxonDetailDashboard: function (taxonomy_id) {
+            var self = this;
+            $.get({
+                url: '/api/taxon/' + taxonomy_id,
+                dataType: 'json',
+                success: function (data) {
+                    var taxonomySystem = self.$el.find('.taxon-dashboard-detail');
+                    if (data.hasOwnProperty('kingdom')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>Kingdom</td>' +
+                            '<td>' + data['kingdom'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+                    if (data.hasOwnProperty('phylum')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>Phylum</td>' +
+                            '<td>' + data['phylum'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+                    if (data.hasOwnProperty('class')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>Class</td>' +
+                            '<td>' + data['class'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+                    if (data.hasOwnProperty('order')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>Order</td>' +
+                            '<td>' + data['order'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+                    if (data.hasOwnProperty('family')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>Family</td>' +
+                            '<td>' + data['family'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+                    if (data.hasOwnProperty('genus')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>genus</td>' +
+                            '<td>' + data['genus'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+                    if (data.hasOwnProperty('species')) {
+                        taxonomySystem.append(
+                            '<tr>' +
+                            '<td>Species</td>' +
+                            '<td>' + data['species'] + '</td>' +
+                            '</tr>'
+                        )
+                    }
+
+                }
+            })
+        },
         generateDashboard: function (data) {
             var self = this;
             this.dashboardTitleContainer.html(this.taxonName);
+            var gbif_key = data[0]['taxonomy']['gbif_key'];
+            var taxonomy_id = data[0]['taxonomy']['id'];
 
             // Set origin
             var category = data[0]['category'];
@@ -94,6 +160,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var endemic = data[0]['endemism'];
             $.each(this.endemicInfoList.children(), function (key, data) {
                 var $endemicInfoItem = $(data);
+                if (!endemic) {
+                    return true;
+                }
                 if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
                     $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
                 }
@@ -112,11 +181,12 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.overviewTaxaTable.html(overViewTable({
                 id: self.apiParameters(self.parameters),
                 count: data.length,
-                taxon_class: data[0]['taxonomy']['taxon_class'],
-                gbif_id: data[0]['taxon_gbif_id']
+                taxon_class: data[0]['taxonomy']['scientific_name'],
+                gbif_id: gbif_key
             }));
 
             var taxonDetailTable = _.template($('#taxon-detail-table').html());
+
             this.overviewNameTaxonTable.html(taxonDetailTable(data[0]['taxonomy']));
 
             var objectPerDate = self.countObjectPerDateCollection(data);
@@ -149,13 +219,13 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 objectDatasets,
                 recordsOptions);
 
-            var $table = $('<table></table>');
+            var $table = $('<table class="table"></table>');
             for(var key in objectPerDate[self.objectDataByYear]){
                 $table.append('<tr><td>' + key + '</td><td>' + objectPerDate[self.objectDataByYear][key] + '</td></tr>')
             }
             self.recordsTable.html($table);
 
-            var $tableArea = $('<table></table>');
+            var $tableArea = $('<table class="table"></table>');
             $tableArea.append('<tr><th>ID</th><th>Site name</th><th>Records</th></tr>')
             for(var site in dataBySite){
                 if(dataBySite[site]['site_name'] !== undefined) {
@@ -188,6 +258,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     self.addFeatures(self.siteGeoPoints);
                 }
             });
+
+            this.generateTaxonDetailDashboard(taxonomy_id);
         },
         countObjectPerDateCollection: function(data) {
             var yearArray = [];

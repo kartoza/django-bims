@@ -29,7 +29,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             return this.initialLoadBiodiversityLayersToMap
         },
         isBiodiversityLayerShow: function () {
-            var $checkbox = $('.layer-selector-input[value="Biodiversity"]');
+            var $checkbox = $('.layer-selector-input[value="Sites"]');
             if ($checkbox.length === 0) {
                 return true
             }
@@ -88,7 +88,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // HIGHLIGHT PINNED LAYER
             // ---------------------------------
-            self.highlightPinnedVectorSource = new ol.source.Vector({});
+            self.highlightPinnedVectorSource = new ol.source.Vector({
+            });
             self.highlightPinnedVector = new ol.layer.Vector({
                 source: self.highlightPinnedVectorSource,
                 style: function (feature) {
@@ -101,8 +102,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
-            self.biodiversitySource = new ol.source.Vector({});
-            self.locationSiteClusterSource = new ol.source.Vector({});
+            self.biodiversitySource = new ol.source.Vector();
+            self.locationSiteClusterSource = new ol.source.Vector();
             self.locationSiteCluster = new ol.source.Cluster({
                 distance: 40,
                 source: self.locationSiteClusterSource
@@ -126,7 +127,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 ]
             });
 
-            self.initLayer(self.biodiversityLayerGroups, 'Biodiversity', true, '', 'Base');
+            self.initLayer(self.biodiversityLayerGroups, 'Sites', true);
 
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
@@ -141,7 +142,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // HIGHLIGHT LAYER
             // ---------------------------------
-            self.highlightVectorSource = new ol.source.Vector({});
+            self.highlightVectorSource = new ol.source.Vector();
             self.highlightVector = new ol.layer.Vector({
                 source: self.highlightVectorSource,
                 style: function (feature) {
@@ -156,11 +157,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             var self = this;
             this.map = map;
 
-            var biodiversityOrder = Shared.StorageUtil.getItemDict('Biodiversity', 'order');
+            var biodiversityOrder = Shared.StorageUtil.getItemDict('Sites', 'order');
             if (biodiversityOrder === null) {
                 biodiversityOrder = 0;
             }
-            self.orders[biodiversityOrder] = 'Biodiversity';
+            self.orders[biodiversityOrder] = 'Sites';
 
             $.ajax({
                 type: 'GET',
@@ -207,7 +208,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
 
                         var options = {
-                            url: value.wms_url,
+                            url: '/bims_proxy/' + encodeURI(value.wms_url),
                             params: {
                                 layers: value.wms_layer_name,
                                 format: value.wms_format
@@ -280,7 +281,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         if (layerName.indexOf(self.administrativeKeyword) >= 0 ||
                             layerName === 'null' ||
-                            layerName === 'Biodiversity') {
+                            layerName === 'Sites') {
                             return true;
                         }
 
@@ -375,7 +376,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         toggleLegend: function (layerName, selected, reloadXHR) {
             // show/hide legend
             var $legendElement = this.getLegendElement(layerName);
-            if (layerName === 'Biodiversity' && this.isBiodiversityLayerLoaded()) {
+            if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
                 if (reloadXHR) {
                     Shared.Dispatcher.trigger('map:reloadXHR');
                 }
@@ -447,7 +448,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         return
                     }
                     var options = {
-                        url: value.wms_url,
+                        url: '/bims_proxy/' + encodeURI(value.wms_url),
                         params: {
                             layers: value.wms_layer_name,
                             format: value.wms_format
@@ -484,7 +485,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 return
             }
             var self = this;
-            var mostTop = 'Biodiversity';
+            var mostTop = 'Sites';
             var checked = '';
             if (visibleInDefault) {
                 checked += 'checked';
@@ -536,7 +537,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     value: $(layerDiv).data('value'),
                     slide: function (event, ui) {
                         var $label = $(event.target).closest('li').find('.layer-selector-input');
-                        var layername = 'Biodiversity';
+                        var layername = 'Sites';
                         if ($label.length > 0) {
                             layername = $label.val();
                         }
@@ -544,7 +545,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     },
                     stop: function (event, ui) {
                         var $label = $(event.target).closest('li').find('.layer-selector-input');
-                        var layername = 'Biodiversity';
+                        var layername = 'Sites';
                         if ($label.length > 0) {
                             layername = $label.val();
                         }

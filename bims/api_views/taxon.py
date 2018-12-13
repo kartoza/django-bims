@@ -3,11 +3,13 @@ from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.taxon import Taxon
+from bims.models.taxonomy import Taxonomy
 from bims.serializers.taxon_serializer import \
     TaxonSerializer, TaxonSimpleSerialializer
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.api_views.pagination_api_view import PaginationAPIView
+from bims.enums.taxonomic_rank import TaxonomicRank
 
 
 class TaxonSimpleList(PaginationAPIView):
@@ -47,9 +49,25 @@ class TaxonDetail(APIView):
 
     def get_object(self, pk):
         try:
-            return Taxon.objects.get(pk=pk)
-        except Taxon.DoesNotExist:
+            return Taxonomy.objects.get(pk=pk)
+        except Taxonomy.DoesNotExist:
             raise Http404
+
+    def get_taxonomic_rank_values(self, taxonomy):
+        taxonomic_rank_values = []
+        try:
+            taxonomic_data = {
+                TaxonomicRank[taxonomy.rank].value.lower():
+                    taxonomy.scientific_name
+            }
+            taxonomic_rank_values.append(taxonomic_data)
+        except KeyError:
+            pass
+        if taxonomy.parent:
+            taxonomic_rank_values += self.get_taxonomic_rank_values(
+                taxonomy.parent
+            )
+        return taxonomic_rank_values
 
     def get(self, request, pk, format=None):
         taxon = self.get_object(pk)
@@ -57,15 +75,12 @@ class TaxonDetail(APIView):
         data = serializer.data
 
         records = BiologicalCollectionRecord.objects.filter(
-            taxon_gbif_id=taxon
+            taxonomy=taxon
         )
 
         # Endemism
-        endemism_value = ''
-        endemism = records.values_list('endemism', flat=True).distinct()
-        if endemism:
-            endemism_value = endemism[0]
-        data['endemism'] = endemism_value
+        if taxon.endemism:
+            data['endemism'] = taxon.endemism.name
 
         # Origins
         origin_value = ''
@@ -77,4 +92,10 @@ class TaxonDetail(APIView):
         data['origin'] = origin_value
 
         data['count'] = records.count()
+
+        # Taxonomic rank tree
+        taxonomic_rank = self.get_taxonomic_rank_values(taxon)
+        for rank in taxonomic_rank:
+            data.update(rank)
+
         return Response(data)

@@ -6,10 +6,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         siteId: null,
         siteName: null,
         siteDetailData: null,
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         months: {
             'january': 1,
             'february': 2,
@@ -83,7 +80,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                          return true;
                      }
 
-                     var isChart = value['name'].toLowerCase().includes('monthly');
+                     if (value['service_registry_values'].length === 0) {
+                         return true;
+                     }
+
+                     // TODO : Change this to check graphable value
+                     var isChart = value['name'].toLowerCase().includes('monthly') | value['service_registry_values'][0]['key'].includes('monthly');
                      var chartData = [];
 
                      $.each(value['service_registry_values'], function (service_index, service_value) {
@@ -306,12 +308,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                             template({
                                 common_name: speciesName,
                                 count: speciesValue.count,
-                                taxon_gbif_id: speciesValue.taxon_gbif_id
+                                taxon_gbif_id: speciesValue.taxon_id
                             })
                         );
 
                         // Species clicked
-                        $classWrapper.find('#'+speciesValue.taxon_gbif_id).click(function (e) {
+                        $classWrapper.find('#'+speciesValue.taxon_id).click(function (e) {
                             e.preventDefault();
                             Shared.Dispatcher.trigger('taxonDetail:show',
                                 speciesValue.taxon_id,

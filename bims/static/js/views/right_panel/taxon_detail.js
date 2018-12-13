@@ -168,7 +168,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
-                    self.gbifId = data['gbif_id'];
+                    self.gbifId = data['gbif_key'];
                     if(self.count > 0) {
                         data['count'] = self.count;
                     }
@@ -184,6 +184,50 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
                     $('#third-party').click();
                     $('#third-party').append(self.renderThirdPartyData(data));
+
+                    var taxonomySystem = speciesDetailContainer.find('.taxonomy-system');
+
+                    if(data.hasOwnProperty('kingdom')) {
+                        taxonomySystem.append(
+                            '' + data['kingdom'] + '<br>' +
+                            '<i class="fa fa-arrow-down"></i><br>'
+                        )
+                    }
+                    if(data.hasOwnProperty('phylum')) {
+                        taxonomySystem.append(
+                            '' + data['phylum'] + '<br>' +
+                            '<i class="fa fa-arrow-down"></i><br>'
+                        )
+                    }
+                    if(data.hasOwnProperty('class')) {
+                        taxonomySystem.append(
+                            '' + data['class'] + '<br>' +
+                            '<i class="fa fa-arrow-down"></i><br>'
+                        )
+                    }
+                    if(data.hasOwnProperty('order')) {
+                        taxonomySystem.append(
+                            '' + data['order'] + '<br>' +
+                            '<i class="fa fa-arrow-down"></i><br>'
+                        )
+                    }
+                    if(data.hasOwnProperty('family')) {
+                        taxonomySystem.append(
+                            '' + data['family'] + '<br>' +
+                            '<i class="fa fa-arrow-down"></i><br>'
+                        )
+                    }
+                    if(data.hasOwnProperty('genus')) {
+                        taxonomySystem.append(
+                            '' + data['genus'] + '<br>' +
+                            '<i class="fa fa-arrow-down"></i><br>'
+                        )
+                    }
+                    if(data.hasOwnProperty('species')) {
+                        taxonomySystem.append(
+                            '' + data['species'] + '<br>'
+                        )
+                    }
 
                     speciesDetailContainer.find('.open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {

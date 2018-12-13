@@ -115,11 +115,24 @@
             </div>
         </div>
         <div class="row" style="display: none">
+                <div class="btn-group-wrapper text-center">
+                <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
+                <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
+                <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
+                <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
+                    <button type="button" class="btn origin-btn btn-secondary" data-origin="alien">Non-native</button>
+                    <button type="button" class="btn origin-btn btn-secondary" data-origin="translocated">Translocated</button>
+                    <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
+                    <div class="native-origin-dropdown dropdown-menu" aria-labelledby="native-origin-btn">
+                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All endemic </div>
+                    </div>
+                </div>
+                </div>
             <div class="col-lg-12 filter-content" id="filter-category">
             </div>
             <div class="button-filter-wrapper">
                 <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter">Clear Filter</button>
+                <button class="clear-filter clear-origin-filter">Clear Filter</button>
             </div>
         </div>
 
@@ -403,6 +416,9 @@
         {% endif %}
         <div class="download-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Download Data">
             <i class="fa fa-download" aria-hidden="true"></i>
+        </div>
+        <div class="print-map-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Print Map">
+            <i class="fa fa-print" aria-hidden="true"></i>
         </div>
     </div>
     <div class="zoom-control row">
@@ -791,19 +807,7 @@
         <div class="iucn-status"><span class="name"><%= iucn_status_name %></span><span class="full-name"><%= iucn_status_full_name %></span></div>
         <div class="species-count"><b><%= count %></b><br> <span class="records-link"> <a href="#">records</a></span></div>
         <div class="taxonomy-system">
-            <%= kingdom %><br>
-            <i class="fa fa-arrow-down"></i><br>
-            <%= phylum %><br>
-            <i class="fa fa-arrow-down"></i><br>
-            <%= taxon_class %><br>
-            <i class="fa fa-arrow-down"></i><br>
-            <%= order %><br>
-            <i class="fa fa-arrow-down"></i><br>
-            <%= family %><br>
-            <i class="fa fa-arrow-down"></i><br>
-            <%= genus %><br>
-            <i class="fa fa-arrow-down"></i><br>
-            <%= species %>
+
         </div>
         <div class="origin-info">
              <div class="row">
@@ -836,7 +840,7 @@
     <div class="bio-legend-wrapper">
         <div class="bio-legend-container">
             <div class="bio-legend-title">
-                Biodiversity Legend
+                Sites Legend
             </div>
             <div class="bio-legend-content">
                 <div class="row">

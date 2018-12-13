@@ -7,9 +7,9 @@ from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 
 from bims.models.location_site import LocationSite
-from bims.models.taxon import Taxon
 from bims.utils.cluster import (
     update_cluster_by_collection,
     update_cluster_by_site
@@ -18,6 +18,7 @@ from bims.utils.gbif import update_collection_record
 from bims.tasks.collection_record import update_search_index
 from bims.models.validation import AbstractValidation
 from bims.models.document_links_mixin import DocumentLinksMixin
+from bims.models.taxonomy import Taxonomy
 
 
 class BiologicalCollectionRecord(
@@ -28,6 +29,12 @@ class BiologicalCollectionRecord(
         ('indigenous', 'Native'),
         ('translocated', 'Translocated')
     )
+
+    HABITAT_CHOICES = (
+        ('euryhaline', 'Euryhaline'),
+        ('freshwater', 'Freshwater'),
+    )
+
     site = models.ForeignKey(
         LocationSite,
         models.CASCADE,
@@ -62,12 +69,20 @@ class BiologicalCollectionRecord(
         blank=True,
         default='',
     )
-    taxon_gbif_id = models.ForeignKey(
-        Taxon,
+
+    taxonomy = models.ForeignKey(
+        Taxonomy,
         models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Taxon GBIF ',
+        verbose_name='Taxonomy'
+    )
+
+    collection_habitat = models.CharField(
+        max_length=100,
+        choices=HABITAT_CHOICES,
+        blank=True,
+        default=''
     )
 
     institution_id = models.CharField(
@@ -76,12 +91,6 @@ class BiologicalCollectionRecord(
                   'object(s) or information referred to in the record.',
         max_length=100,
         verbose_name='Custodian',
-    )
-
-    endemism = models.CharField(
-        max_length=50,
-        blank=True,
-        default=''
     )
 
     sampling_method = models.CharField(
@@ -108,6 +117,11 @@ class BiologicalCollectionRecord(
         default=''
     )
 
+    additional_data = JSONField(
+        blank=True,
+        null=True
+    )
+
     @property
     def data_name(self):
         return self.original_species_name
@@ -123,7 +137,7 @@ class BiologicalCollectionRecord(
         )
 
     def on_post_save(self):
-        if not self.taxon_gbif_id:
+        if not self.taxonomy:
             update_collection_record(self)
 
     def get_children(self):

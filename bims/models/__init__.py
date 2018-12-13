@@ -18,3 +18,6 @@ from bims.models.user_boundary import *  # noqa
 from bims.models.search_process import *  # noqa
 from bims.models.validation import *  # noqa
 from bims.models.reference_link import *  # noqa
+from bims.models.endemism import *  # noqa
+from bims.models.taxonomy import *  # noqa
+from bims.models.taxon_group import *  # noqa

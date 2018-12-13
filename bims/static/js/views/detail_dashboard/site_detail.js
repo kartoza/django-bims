@@ -3,17 +3,20 @@ define([
     'underscore',
     'ol',
     'jquery',
-    'shared'
+    'shared',
+    'htmlToCanvas'
 ], function (
     Backbone,
     _,
     ol,
     $,
-    Shared
+    Shared,
+    HtmlToCanvas
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
         isOpen: false,
+        coordinates: [],
         template: _.template($('#detailed-site-dashboard').html()),
         dummyPieData: [25, 2, 7, 10, 12, 25, 60],
         objectDataByYear: 'object_data_by_year',
@@ -21,10 +24,8 @@ define([
         dummyPieColors: ['#2d2d2d', '#565656', '#6d6d6d', '#939393', '#adadad', '#bfbfbf', '#d3d3d3'],
         fetchBaseUrl: '/api/location-site-detail/?',
         csvDownloadUrl: '/api/collection/download/',
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
+        occurrenceData: {},
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
@@ -35,7 +36,7 @@ define([
                 display: true
             },
             cutoutPercentage: 0,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
         },
         categories: {
             'indigenous': 'Native',
@@ -58,6 +59,9 @@ define([
             this.$el.html(this.template());
 
             this.loadingDashboard = this.$el.find('.loading-dashboard');
+            this.occurrenceTable = this.$el.find('#occurence-table');
+            this.siteMarkers = this.$el.find('#site-markers');
+
             this.originTimelineGraph = this.$el.find('#collection-timeline-graph')[0];
             this.originCategoryGraph = this.$el.find('#collection-category-graph')[0];
             this.recordsTimelineGraph = this.$el.find('#records-timeline-graph')[0];
@@ -91,43 +95,139 @@ define([
                     self.fetchData(data);
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
-                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1));
-                    self.generateDashboard(data);
+                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1))
+                    self.siteName.append(data['name']);
+
+                    self.generateDashboardData(data);
+                    self.renderDashboard();
                     self.loadingDashboard.hide();
                 }
             });
         },
-        fetchData: function (parameters) {
-            var self = this;
+        checkMultipleSites: function (parameters) {
+            // Get the site id
+            var parameterList = parameters.split('&');
+            var siteIds = [];
+            var urls = [];
 
-            // call detail
+            $.each(parameterList, function (index, parameter) {
+                if (typeof parameter === 'undefined') {
+                    return true;
+                }
+                // siteId=4155 -> ['siteId', '4155']
+                var parameterValueKey = parameter.split('=');
+
+                var parameterKey = parameterValueKey[0];
+                var parameterValue = parameterValueKey[1];
+
+                if (parameterKey === 'siteId') {
+                    siteIds = parameterValue.split(',');
+                    parameterList.splice(index, 1);
+                }
+            });
+
+            // Generate the urls
+            $.each(siteIds, function (index, siteId) {
+                var url = parameterList.join('&');
+                url += '&siteId=' + siteId;
+
+                urls.push(url);
+            });
+
+            return urls;
+        },
+        fetchLocationDetail: function (urls, index) {
+            var self = this;
+            if (!index) {
+                index = 0;
+            }
             if (Shared.LocationSiteDetailXHRRequest) {
                 Shared.LocationSiteDetailXHRRequest.abort();
                 Shared.LocationSiteDetailXHRRequest = null;
             }
 
             Shared.LocationSiteDetailXHRRequest = $.get({
-                url: self.fetchBaseUrl + parameters,
+                url: self.fetchBaseUrl + urls[index],
                 dataType: 'json',
                 success: function (data) {
-                    self.generateDashboard(data);
-                    self.loadingDashboard.hide();
+                    self.generateDashboardData(data, urls[index]);
+                    self.siteName.append(data['name']);
+                    if (typeof urls[index + 1] !== 'undefined') {
+                        self.fetchLocationDetail(urls, index + 1);
+                        self.siteName.append(', ');
+                    } else {
+                        self.loadingDashboard.hide();
+                        self.renderDashboard();
+                    }
                 }
             });
         },
-        generateDashboard: function (data) {
+        fetchData: function (parameters) {
             var self = this;
+            // Check if multiple sites
+            var urls = self.checkMultipleSites(parameters);
 
-            self.siteName.html(data['name']);
+            if (urls.length > 1) {
+                $('#site-name-label').html('Site names');
+            }
+            self.fetchLocationDetail(urls);
+        },
+        generateDashboardData: function (data, url) {
+            var self = this;
+            // Try draw points in map
+            self.drawMarkers(data, url);
 
-            // Total records
-            var totalRecords = 0;
+            // Set total records
             $.each(data['modules_info'], function (moduleKey, moduleValue) {
-                totalRecords += parseInt(moduleValue['count']);
+                var totalNumberRecords = parseInt(self.totalRecords.html());
+                self.totalRecords.html(totalNumberRecords + parseInt(moduleValue['count']));
             });
-            self.totalRecords.html(totalRecords);
 
-            if(!this.mapLocationSite) {
+            // Count occurrence data
+            $.each(data['records_occurrence'], function (key, classOccurrence) {
+                for (var speciesName in classOccurrence) {
+                    if (!classOccurrence.hasOwnProperty(speciesName)) {
+                        return true;
+                    }
+                    var speciesOccurrence = classOccurrence[speciesName];
+                    if (!self.occurrenceData.hasOwnProperty(speciesOccurrence['taxon_id'])) {
+                        self.occurrenceData[speciesOccurrence['taxon_id']] = {
+                            'label': speciesName,
+                            'count': speciesOccurrence['count'],
+                            'category': self.categories[speciesOccurrence['category']],
+                            'data_by_year': {}
+                        }
+                    } else {
+                        self.occurrenceData[speciesOccurrence['taxon_id']]['count'] +=
+                            speciesOccurrence['count'];
+                    }
+
+                    $.each(speciesOccurrence['data_by_year'], function (year, count) {
+                        if (!self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'].hasOwnProperty(year)) {
+                            self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'][year] = count;
+                        } else {
+                            self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'][year] += count;
+                        }
+                    });
+
+                }
+            });
+
+        },
+        renderDashboard: function () {
+            this.createOccurrenceTable(this.occurrenceData);
+            this.createCharts(this.occurrenceData);
+
+            var bbox = ol.extent.boundingExtent(this.coordinates);
+            this.mapLocationSite.getView().fit(bbox, this.mapLocationSite.getSize());
+            var currentZoom = this.mapLocationSite.getView().getZoom();
+            if (currentZoom > 10) {
+                this.mapLocationSite.getView().setZoom(10);
+            }
+        },
+        drawMarkers: function (data, url) {
+            var self = this;
+            if (!this.mapLocationSite) {
                 this.mapLocationSite = new ol.Map({
                     layers: [
                         new ol.layer.Tile({
@@ -141,35 +241,41 @@ define([
                     })
                 });
             }
-            if(this.siteVectorLayer){
-                this.mapLocationSite.removeLayer(this.siteVectorLayer);
-                this.siteVectorLayer = null;
-            }
+
+            // Create marker
             var geometry = JSON.parse(data['geometry']);
-            var siteCoordinate = ol.proj.transform([geometry['coordinates'][0], geometry['coordinates'][1]], 'EPSG:4326', 'EPSG:3857');
-            var siteFeature = new ol.Feature({
-                geometry: new ol.geom.Point(siteCoordinate)
-            });
-            siteFeature.setStyle(self.iconStyle);
-            this.siteVectorSource = new ol.source.Vector({
-                features: [siteFeature]
-            });
-            this.siteVectorLayer = new ol.layer.Vector({
-                source: this.siteVectorSource
-            });
+            var pos = ol.proj.fromLonLat(geometry['coordinates']);
 
-            this.mapLocationSite.addLayer(this.siteVectorLayer);
-            this.mapLocationSite.setView(new ol.View({
-                center: siteCoordinate,
-                zoom: 12
-            }));
+            this.coordinates.push(ol.proj.transform(geometry['coordinates'], 'EPSG:4326', 'EPSG:3857'));
 
-            self.createCharts(data);
-            self.createOccurrenceTable(data);
+            self.siteMarkers.append('<a class="overlay site-marker-name" id="marker-name-' + data['id'] + '" ' +
+                'target="_blank" href="/map/#site-detail/' + url + '">' + data['name'] + '</a>');
+            self.siteMarkers.append('<div id="marker-point-' + data['id'] + '" title="Marker" class="site-marker"></div>');
+            var marker = new ol.Overlay({
+                position: pos,
+                positioning: 'center-center',
+                element: self.$el.find('#marker-point-' + data['id'])[0],
+                stopEvent: false
+            });
+            this.mapLocationSite.addOverlay(marker);
+            var markerName = new ol.Overlay({
+                position: pos,
+                element: self.$el.find('#marker-name-' + data['id'])[0]
+            });
+            this.mapLocationSite.addOverlay(markerName);
         },
         clearDashboard: function () {
             this.siteName.html('');
-            this.totalRecords.html('');
+            this.coordinates = [];
+            $('#site-name-label').html('Name');
+            this.totalRecords.html('0');
+            this.siteMarkers.html('');
+            this.occurrenceData = {};
+            this.occurrenceTable.html('<tr>\n' +
+                '                            <th>Taxon</th>\n' +
+                '                            <th>Category</th>\n' +
+                '                            <th>Records</th>\n' +
+                '                        </tr>');
 
             // Clear canvas
             if (this.originCategoryGraphCanvas) {
@@ -186,8 +292,14 @@ define([
                 this.originTimelineGraphCanvas.destroy();
                 this.originTimelineGraphCanvas = null;
             }
+
+            if (this.mapLocationSite) {
+                this.mapLocationSite.getOverlays().getArray().slice(0).forEach(function (overlay) {
+                    this.mapLocationSite.removeOverlay(overlay);
+                }, this);
+            }
         },
-        createPieChart: function(container, data, labels, options, colorOptions) {
+        createPieChart: function (container, data, labels, options, colorOptions) {
             return new Chart(container, {
                 type: 'pie',
                 data: {
@@ -215,38 +327,35 @@ define([
                 Shared.Router.clearSearch();
             });
         },
-        createOccurrenceTable: function (data) {
+        createOccurrenceTable: function (occurrenceData) {
             var self = this;
-            var occurenceTable = $('<table></table>');
-            occurenceTable.append('' +
-                '<tr>' +
-                '<th>Taxon</th><th>Category</th><th>Records</th>' +
-                '</tr>');
-            var recordOccurences = data['records_occurrence'];
-            $.each(recordOccurences, function (key, value) {
-                for (record_key in value) {
-                    if (!value.hasOwnProperty(record_key)) {
-                        return true;
-                    }
-                    var recordTable = $('<tr></tr>');
-                    recordTable.append('<td>' + record_key +
-                        '</td><td>' + self.categories[value[record_key]['category']] + '</td> ' +
-                        '<td>' + value[record_key]['count'] + '</td>');
-                     occurenceTable.append(recordTable);
-                }
+            $.each(occurrenceData, function (key, value) {
+                var recordTable = $('<tr></tr>');
+                recordTable.append('<td>' + value['label'] +
+                    '</td><td>' + value['category'] + '</td> ' +
+                    '<td>' + value['count'] + '</td>');
+                self.occurrenceTable.append(recordTable);
             });
-            $('#occurence-table').html(occurenceTable);
         },
         exportLocationsiteMap: function () {
+            $('.ol-control').hide();
             this.mapLocationSite.once('postcompose', function (event) {
-                var canvas = event.context.canvas;
-                if (navigator.msSaveBlob) {
-                    navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
-                } else {
-                    canvas.toBlob(function (blob) {
-                        saveAs(blob, 'map.png')
-                    })
-                }
+                var canvas = document.getElementsByClassName('locationsite-map-wrapper');
+                html2canvas(canvas, {
+                    useCORS: true,
+                    background: '#FFFFFF',
+                    allowTaint: false,
+                    onrendered: function (canvas) {
+                        $('.ol-control').show();
+                        var link = document.createElement('a');
+                        link.setAttribute("type", "hidden");
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = 'map.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    }
+                });
             });
             this.mapLocationSite.renderSync();
         },
@@ -296,7 +405,7 @@ define([
                         }
                     } else {
                         var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                        if(is_safari) {
+                        if (is_safari) {
                             var a = window.document.createElement('a');
                             a.href = '/uploaded/csv_processed/' + data['filename'];
                             a.download = data['filename'];
@@ -329,47 +438,47 @@ define([
             var recordsByYearData = {};
 
             var originByYearData = {};
+            var dataByYear = {};
 
-            $.each(data['records_occurrence'], function (key, value) {
-                for (record_key in value) {
-                    if (!value.hasOwnProperty(record_key)) {
-                        return true;
-                    }
+            $.each(data, function (key, value) {
 
-                    var objectProperties = value[record_key];
-                    var category = self.categories[objectProperties['category']];
+                var objectProperties = value;
+                var category = objectProperties['category'];
 
-                    if (!originData.hasOwnProperty(category)) {
-                        originData[category] = objectProperties['count'];
-                        originColor.push(self.categoryColor[category]);
-                        originLabel.push(category);
+                dataByYear = objectProperties['data_by_year'];
+
+                $.each(dataByYear, function (dataByYearKey, dataByYearValue) {
+                    var intDataByYear = parseInt(dataByYearValue);
+
+                    if (recordsByYearData.hasOwnProperty(dataByYearKey)) {
+                        recordsByYearData[dataByYearKey] += intDataByYear;
                     } else {
-                        originData[category] += objectProperties['count'];
+                        recordsByYearData[dataByYearKey] = intDataByYear;
+                        recordsByYearLabel.push(dataByYearKey);
                     }
 
-                    var dataByYear = objectProperties['data_by_year'];
-                    $.each(dataByYear, function (dataByYearKey, dataByYearValue) {
-                        var intDataByYear = parseInt(dataByYearValue);
-
-                        if (recordsByYearData.hasOwnProperty(dataByYearKey)) {
-                            recordsByYearData[dataByYearKey] += intDataByYear;
+                    if (originByYearData.hasOwnProperty(category)) {
+                        if (originByYearData[category].hasOwnProperty(dataByYearKey)) {
+                            originByYearData[category][dataByYearKey] += intDataByYear;
                         } else {
-                            recordsByYearData[dataByYearKey] = intDataByYear;
-                            recordsByYearLabel.push(dataByYearKey);
-                        }
-
-                        if (originByYearData.hasOwnProperty(category)) {
-                            if(originByYearData[category].hasOwnProperty(dataByYearKey)) {
-                                originByYearData[category][dataByYearKey] += intDataByYear;
-                            } else {
-                                originByYearData[category][dataByYearKey] = intDataByYear;
-                            }
-                        } else {
-                            originByYearData[category] = {};
                             originByYearData[category][dataByYearKey] = intDataByYear;
                         }
-                    });
+                    } else {
+                        originByYearData[category] = {};
+                        originByYearData[category][dataByYearKey] = intDataByYear;
+                    }
+                });
+
+                recordsByYearLabel = recordsByYearLabel.sort();
+
+                if (!originData.hasOwnProperty(category)) {
+                    originData[category] = objectProperties['count'];
+                    originColor.push(self.categoryColor[category]);
+                    originLabel.push(category);
+                } else {
+                    originData[category] += objectProperties['count'];
                 }
+
             });
 
             this.originCategoryGraphCanvas = self.createPieChart(
@@ -378,7 +487,6 @@ define([
                 originLabel,
                 self.pieOptions,
                 originColor);
-
             var recordsByYearDatasets = [{
                 backgroundColor: '#48862b',
                 borderWidth: 1,
@@ -387,16 +495,22 @@ define([
 
             var recordsByYearGraphOptions = {
                 maintainAspectRatio: false,
-                title: { display: true, text: 'Records' },
-                legend: { display: false },
+                title: {display: true, text: 'Records'},
+                legend: {display: false},
                 scales: {
                     xAxes: [{
                         barPercentage: 0.2,
-                        scaleLabel: { display: true, labelString: 'Collection date' }
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Collection date'
+                        }
                     }],
                     yAxes: [{
                         stacked: false,
-                        scaleLabel: { display: true, labelString: 'Number of records' },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Number of records'
+                        },
                         ticks: {
                             beginAtZero: true
                         }
@@ -415,17 +529,20 @@ define([
 
             var originTimelineGraphOptions = {
                 maintainAspectRatio: false,
-                title: { display: true, text: 'Origin' },
-                legend: { display: true },
+                title: {display: true, text: 'Origin'},
+                legend: {display: true},
                 scales: {
                     xAxes: [{
                         stacked: true,
                         barPercentage: 0.2,
-                        scaleLabel: { display: true, labelString: 'Collection date' }
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Collection date'
+                        }
                     }],
                     yAxes: [{
                         stacked: true,
-                        scaleLabel: { display: true, labelString: 'Records' }
+                        scaleLabel: {display: true, labelString: 'Records'}
                     }]
                 }
             };
@@ -457,6 +574,7 @@ define([
                 },
                 options: originTimelineGraphOptions
             })
-        },
+        }
+        ,
     })
 });

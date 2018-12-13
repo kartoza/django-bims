@@ -194,7 +194,8 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
     'people.Profile',
     'bims.Pageview',
-    'bims.Visitor'
+    'bims.Visitor',
+    'bims.Taxonomy'
 ]
 
 if MONITORING_ENABLED:

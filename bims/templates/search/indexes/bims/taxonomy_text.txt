@@ -1,0 +1,5 @@
+{{ object.title }}
+{{ object.id }}
+{{ object.canonical_name }}
+{{ object.scientific_name }}
+{{ object.body }}

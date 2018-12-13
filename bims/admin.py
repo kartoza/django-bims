@@ -45,6 +45,9 @@ from bims.models import (
     UserBoundary,
     SearchProcess,
     ReferenceLink,
+    Endemism,
+    Taxonomy,
+    TaxonGroup,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -185,7 +188,13 @@ class IUCNStatusAdmin(admin.ModelAdmin):
 
 
 class TaxonAdmin(admin.ModelAdmin):
-    list_display = ('common_name', 'author', 'iucn_status', 'taxon_class')
+    list_display = (
+        'common_name',
+        'author',
+        'iucn_status',
+        'taxon_class',
+        'endemism'
+    )
 
 
 class BoundaryAdmin(admin.ModelAdmin):
@@ -209,7 +218,7 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
-    list_filter = ('taxon_gbif_id', 'collection_date', 'category')
+    list_filter = ('taxonomy', 'collection_date', 'category')
     list_display = (
         'original_species_name',
         'category',
@@ -395,6 +404,28 @@ class ReferenceLinkAdmin(admin.ModelAdmin):
     )
 
 
+class EndemismAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'name',
+        'description'
+    )
+
+
+class TaxonIdentifierAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'gbif_key',
+        'scientific_name',
+        'rank',
+        'parent'
+    )
+
+    list_filter = (
+        'rank',
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -403,8 +434,11 @@ admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Taxon, TaxonAdmin)
+admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
+admin.site.register(Taxonomy, TaxonIdentifierAdmin)
+admin.site.register(TaxonGroup)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)

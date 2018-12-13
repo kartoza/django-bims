@@ -44,6 +44,8 @@ from bims.api_views.send_notification_to_validator import \
 from bims.views.locate import filter_farm_ids_view, get_farm_view
 from bims.api_views.user_boundary import UserBoundaryList
 from bims.api_views.documents import DocumentList
+from bims.api_views.module_summary import ModuleSummary
+from bims.api_views.endemism import EndemismList
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -109,4 +111,10 @@ urlpatterns = [
     url(r'^list-reference-category/$',
         ReferenceCategoryList.as_view(), name='list-reference-category'),
     url(r'^docs/', include_docs_urls(title='BIMS API')),
+    url(r'^module-summary/$',
+        ModuleSummary.as_view(),
+        name='module-summary'),
+    url(r'^endemism-list/$',
+        EndemismList.as_view(),
+        name='endemism-list'),
 ]

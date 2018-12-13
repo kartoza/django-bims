@@ -107,18 +107,22 @@ class GetCollectionAbstract(APIView):
         year_to = filters.get('yearTo', None)
         months = filters.get('months', None)
         site_id = filters.get('siteId', None)
+        endemic = filters.get('endemic', None)
 
-        if taxon or query_collector or \
-                boundary or user_boundary or \
-                query_category or reference_category or \
-                year_from or year_to or months or reference or site_id:
+        if (
+                taxon or
+                query_collector or
+                boundary or user_boundary or
+                query_category or reference_category or
+                year_from or year_to or
+                months or reference or
+                site_id or endemic):
             filter_mode = True
 
         if query_value:
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
                     SQ(original_species_name_exact__contains=clean_query) |
-                    SQ(taxon_common_name_exact__contains=clean_query) |
                     SQ(taxon_scientific_name_exact__contains=clean_query),
                     validated=True
             ).models(BiologicalCollectionRecord)
@@ -144,7 +148,7 @@ class GetCollectionAbstract(APIView):
 
         if taxon:
             results = sqs.filter(
-                taxon_gbif=taxon
+                taxonomy=taxon
             ).models(BiologicalCollectionRecord)
 
         # get by bbox
@@ -200,6 +204,14 @@ class GetCollectionAbstract(APIView):
                 qs_category.add(SQ(category=query), SQ.OR)
             results = results.filter(qs_category)
 
+        # query by endemic
+        if endemic:
+            qs_endemism = SQ()
+            qs = json.loads(endemic)
+            for query in qs:
+                qs_endemism.add(SQ(endemism=query), SQ.OR)
+            results = results.filter(qs_endemism)
+
         # query by reference category
         if reference_category:
             qs_reference_category = SQ()
@@ -241,8 +253,14 @@ class GetCollectionAbstract(APIView):
 
         # Search by site id
         if site_id:
+            site_ids = site_id.split(',')
+            qs_site_id = SQ()
+            for site in site_ids:
+                qs_site_id.add(
+                    SQ(site_id_indexed=site), SQ.OR
+                )
             results = results.filter(
-                site_id_indexed=site_id
+                qs_site_id
             ).models(BiologicalCollectionRecord)
 
         collection_results = results
@@ -377,8 +395,8 @@ class CollectionDownloader(GetCollectionAbstract):
         ]
 
         search_uri = remove_params_from_uri(
-                not_needed_params,
-                search_uri
+            not_needed_params,
+            search_uri
         )
 
         if queryset:

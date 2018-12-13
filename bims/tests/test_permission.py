@@ -4,8 +4,9 @@
 from django.test import TestCase
 from bims.tests.model_factories import (
     PermissionF,
-    TaxonF,
+    TaxonomyF,
 )
+from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.permissions.generate_permission import generate_permission
 
 
@@ -17,12 +18,13 @@ class TestValidatorPermission(TestCase):
         """
         Sets up before each test
         """
-        self.taxon = TaxonF.create(
-                taxon_class='Aves'
+        self.taxon = TaxonomyF.create(
+            scientific_name='Aves',
+            rank=TaxonomicRank.CLASS.name
         )
         self.permission = PermissionF.create(
-                name='Can validate data',
-                codename='can_validate_data'
+            name='Can validate data',
+            codename='can_validate_data'
         )
 
     def test_permission_generated(self):

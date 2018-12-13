@@ -33,7 +33,7 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                 bio_record = BiologicalCollectionRecord.objects.get(pk=pk)
 
                 try:
-                    taxon_classname = bio_record.taxon_gbif_id.taxon_class
+                    taxon_classname = bio_record.taxonomy.class_name
                     class_permission = Permission.objects.filter(
                         content_type__app_label='bims',
                         codename='can_validate_%s' % taxon_classname.lower()

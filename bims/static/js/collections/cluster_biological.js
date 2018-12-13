@@ -6,11 +6,7 @@ define([
     'ol', 'jquery'], function (Backbone, ClusterModel, ClusterView, Shared, ol, $) {
     return Backbone.Collection.extend({
         model: ClusterModel,
-        apiParameters: _.template("?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
-            "&icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>" +
-            "&collector=<%= collector %>&category=<%= category %>" +
-            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
-            "&referenceCategory=<%= referenceCategory %>&reference=<%= reference %>"),
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         clusterAPI: "/api/collection/cluster/",
         url: "",
         viewCollection: [],
@@ -25,7 +21,7 @@ define([
         parameters: {
             taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
-            boundary: '', userBoundary: '', referenceCategory: '', reference: '',
+            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',
             clusterSize: Shared.ClusterSize
         },
         initialize: function (initExtent) {
@@ -47,6 +43,7 @@ define([
             this.parameters['referenceCategory'] = '';
             this.parameters['boundary'] = '';
             this.parameters['reference'] = '';
+            this.parameters['endemic'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
@@ -143,6 +140,7 @@ define([
                 && !this.parameters['userBoundary']
                 && !this.parameters['referenceCategory']
                 && !this.parameters['reference']
+                && !this.parameters['endemic']
                 && !this.parameters['boundary']) {
                 return false
             } else {
@@ -169,7 +167,7 @@ define([
             var $taxonFilter = $('#taxon-filter');
             if (this.parameters['taxon']) {
                 self.filteredByTaxon = true;
-                $taxonFilter.html('Biodiversity filtered by : ' + taxonName +
+                $taxonFilter.html('Sites filtered by : ' + taxonName +
                     ' <i class="fa fa-times" style="color: red"></i> ');
                 $('#taxon-filter .fa-times').click(function () {
                     Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
