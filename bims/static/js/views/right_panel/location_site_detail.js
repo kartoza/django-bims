@@ -80,7 +80,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                          return true;
                      }
 
-                     var isChart = value['name'].toLowerCase().includes('monthly');
+                     if (value['service_registry_values'].length === 0) {
+                         return true;
+                     }
+
+                     // TODO : Change this to check graphable value
+                     var isChart = value['name'].toLowerCase().includes('monthly') | value['service_registry_values'][0]['key'].includes('monthly');
                      var chartData = [];
 
                      $.each(value['service_registry_values'], function (service_index, service_value) {
