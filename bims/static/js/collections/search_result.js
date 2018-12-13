@@ -193,7 +193,7 @@ define([
                     var apiUrl = templateParameter(currentParameters);
                     apiUrl = apiUrl.substr(1);
                     var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
-                    $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append('<a href="' + multipleSiteDashboardUrl + '" class="badge badge-primary">Show in dashboard</a>');
+                    $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
                 }
             }
 
