@@ -1084,15 +1084,6 @@ div:hover::-webkit-scrollbar {
     padding: 10px;
 }
 
-#start-tutorial {
-    position: relative;
-    bottom: 4rem;
-    left: 1rem;
-    width: 31px;
-    height: 31px;
-    text-align: center;
-}
-
 .map-legend-wrapper .legend-row:last-child {
     border-bottom: none;
 }
