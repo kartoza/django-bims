@@ -3,13 +3,15 @@ define([
     'underscore',
     'ol',
     'jquery',
-    'shared'
+    'shared',
+    'htmlToCanvas'
 ], function (
     Backbone,
     _,
     ol,
     $,
-    Shared
+    Shared,
+    HtmlToCanvas
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
@@ -94,7 +96,8 @@ define([
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
                     Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1))
-                    self.siteName.append(data['name']);;
+                    self.siteName.append(data['name']);
+                    ;
                     self.generateDashboardData(data);
                     self.renderDashboard();
                     self.loadingDashboard.hide();
@@ -327,15 +330,24 @@ define([
             });
         },
         exportLocationsiteMap: function () {
+            $('.ol-control').hide();
             this.mapLocationSite.once('postcompose', function (event) {
-                var canvas = event.context.canvas;
-                if (navigator.msSaveBlob) {
-                    navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
-                } else {
-                    canvas.toBlob(function (blob) {
-                        saveAs(blob, 'map.png')
-                    })
-                }
+                var canvas =  document.getElementsByClassName('locationsite-map-wrapper');
+                html2canvas(canvas, {
+                    useCORS: true,
+                    background: '#FFFFFF',
+                    allowTaint: false,
+                    onrendered: function (canvas) {
+                        $('.ol-control').show();
+                        var link = document.createElement('a');
+                        link.setAttribute("type", "hidden");
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = 'map.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    }
+                });
             });
             this.mapLocationSite.renderSync();
         },
