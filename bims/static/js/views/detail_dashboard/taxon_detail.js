@@ -41,26 +41,39 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.mapTaxaSite = null;
             this.taxaVectorLayer = null;
             this.taxaVectorSource = null;
+            this.csvDownloadsUrl = '/download-csv-taxa-records/';
             return this;
         },
         show: function (data) {
+            var self = this;
             if(this.isOpen) {
                 return false;
             }
             this.isOpen = true;
             this.loadingDashboard.show();
-            this.taxonName = data.taxonName;
-            this.taxonId = data.taxonId;
-            this.siteDetail = data.siteDetail;
-            if (typeof filterParameters !== 'undefined') {
-                this.parameters = filterParameters;
-                this.parameters['taxon'] = this.taxonId;
-            }
-            this.url = '/api/get-bio-records/' + this.apiParameters(this.parameters);
-            this.fetchRecords();
+
             this.$el.show('slide', {
                 direction: 'right'
-            }, 300, function () {
+            }, 300, function(){
+                self.url = '/api/get-bio-records/';
+                if (typeof data === 'string') {
+                    self.url += '?' + data;
+                    self.csvDownloadsUrl += '?' + data;
+                } else {
+                    self.taxonName = data.taxonName;
+                    self.taxonId = data.taxonId;
+                    self.siteDetail = data.siteDetail;
+                    if (typeof filterParameters !== 'undefined') {
+                        self.parameters = filterParameters;
+                        self.parameters['taxon'] = self.taxonId;
+                    }
+                    Shared.Router.navigate('species-detail/' + self.apiParameters(filterParameters).substr(1))
+                    var params = self.apiParameters(self.parameters);
+                    self.csvDownloadsUrl += params;
+                    self.url += params;
+                }
+
+                self.fetchRecords();
             });
         },
         fetchRecords: function () {
@@ -146,6 +159,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.dashboardTitleContainer.html(this.taxonName);
             var gbif_key = data[0]['taxonomy']['gbif_key'];
             var taxonomy_id = data[0]['taxonomy']['id'];
+            var canonicalName = data[0]['taxonomy']['canonical_name'];
+
+            self.taxonName = canonicalName;
 
             // Set origin
             var category = data[0]['category'];
@@ -179,7 +195,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
-                id: self.apiParameters(self.parameters),
+                csv_downloads_url: self.csvDownloadsUrl,
                 count: data.length,
                 taxon_class: data[0]['taxonomy']['scientific_name'],
                 gbif_id: gbif_key
@@ -343,6 +359,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 self.clearDashboard();
                 self.loadingDashboard.hide();
                 self.dashboardTitleContainer.html('&nbsp;');
+                Shared.Router.clearSearch();
             });
         },
         createTimelineGraph: function(canvas, labels, dataset, options) {
