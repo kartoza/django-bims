@@ -78,25 +78,6 @@ require([
         $('[data-toggle="tooltip"]').tooltip();
         $('[data-toggle="popover"]').popover();
 
-        $.ajax({
-            type: 'GET',
-            url: listReferenceAPIUrl,
-            dataType: 'json',
-            success: function (data) {
-                if (data.length === 0) {
-                    $('.study-reference-wrapper').hide();
-                } else {
-                    for (var i = 0; i < data.length; i++) {
-                        if(data[i]) {
-                            $('#filter-study-reference').append('<input type="checkbox" ' +
-                                'name="reference-value" ' +
-                                'value="' + data[i]['reference'] + '"> ' + data[i]['reference'] + '<br>');
-                        }
-                    }
-                }
-            }
-        });
-
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)
         });

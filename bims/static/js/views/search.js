@@ -8,7 +8,7 @@ define([
     'views/search_panel',
     'jquery',
     'views/filter_panel/reference_category',
-    'views/filter_panel/spatial_filter'
+    'views/filter_panel/spatial_filter',
 ], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $,
              ReferenceCategoryView, SpatialFilterView) {
 
@@ -20,8 +20,11 @@ define([
         searchResults: {},
         filtersReady: {
             'endemism': false,
-            'collector': false
+            'collector': false,
+            'study-reference': false
         },
+        initialSelectedStudyReference: [],
+        initialSelectedCollectors: [],
         events: {
             'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
@@ -119,6 +122,30 @@ define([
                 }
             });
 
+            $.ajax({
+                type: 'GET',
+                url: listReferenceAPIUrl,
+                dataType: 'json',
+                success: function (data) {
+                    if (data.length === 0) {
+                        $('.study-reference-wrapper').hide();
+                    } else {
+                        for (var i = 0; i < data.length; i++) {
+                            var checked = '';
+                            if ($.inArray(data[i]['reference'], self.initialSelectedStudyReference) > -1) {
+                                checked = 'checked';
+                            }
+                            if (data[i]) {
+                                $('#filter-study-reference').append('<input type="checkbox" ' +
+                                    'name="reference-value" ' +
+                                    'value="' + data[i]['reference'] + '" ' + checked + '> ' + data[i]['reference'] + '<br>');
+                            }
+                        }
+                        self.filtersReady['study-reference'] = true;
+                    }
+                }
+            });
+
             return this;
         },
         isAllFiltersReady: function () {
@@ -143,7 +170,6 @@ define([
                 $('.search-arrow').removeClass('disabled');
             }
             if (forceSearch === true) {
-                console.log(this.isAllFiltersReady());
                 if (!this.isAllFiltersReady()) {
                     var that = this;
                     setTimeout(function () {
@@ -454,18 +480,14 @@ define([
         },
         filtersUpdated: function (filters) {
             var self = this;
-            var filterList = filters.split('&');
             var allFilters = {};
-            $.each(filterList, function (index, filter) {
-                var parsedFilter = filter.split('=');
-                if (parsedFilter.length < 2) {
-                    return true;
+
+            var urlParams = new URLSearchParams(filters);
+            for (var filter of urlParams.entries()) {
+                if (filter[1]) {
+                    allFilters[filter[0]] = filter[1];
                 }
-                if (!parsedFilter[1]) {
-                    return true;
-                }
-                allFilters[parsedFilter[0]] = parsedFilter[1];
-            });
+            }
 
             // Category
             if (allFilters.hasOwnProperty('category')) {
@@ -487,6 +509,12 @@ define([
             self.initialSelectedCollectors = [];
             if (allFilters.hasOwnProperty('collector')) {
                 self.initialSelectedCollectors = JSON.parse(allFilters['collector']);
+            }
+
+            // Study referebce
+            self.initialSelectedStudyReference = [];
+            if (allFilters.hasOwnProperty('reference')) {
+                self.initialSelectedStudyReference = JSON.parse(allFilters['reference']);
             }
         },
     })

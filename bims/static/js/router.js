@@ -24,7 +24,10 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         },
         searchWithFilters: function (query, filters) {
             // Get all filters
-            Shared.Dispatcher.trigger('filters:updateFilters', filters);
+            var windowHash = window.location.hash;
+            var firstFilterWord = filters.slice(0, 5);
+            var newFilter = windowHash.slice(windowHash.indexOf(firstFilterWord));
+            Shared.Dispatcher.trigger('filters:updateFilters', newFilter);
             this.search(query);
         },
         onlyFilters: function (filters) {
