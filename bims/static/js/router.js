@@ -5,6 +5,8 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         routes: {
             "": "toMap",
             "search/:query": "search",
+            "search/:query/:filters": "searchWithFilters",
+            "search//:filters": "onlyFilters",
             "site-detail/:query": "showSiteDetailedDashboard",
             "species-detail/:query": "showSpeciesDetailedDashboard"
         },
@@ -20,6 +22,15 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             $('#search').val(query);
             Shared.Dispatcher.trigger('search:checkSearchCollection', true);
         },
+        searchWithFilters: function (query, filters) {
+            // Get all filters
+            Shared.Dispatcher.trigger('filters:updateFilters', filters);
+            this.search(query);
+        },
+        onlyFilters: function (filters) {
+            // Get all filters
+            Shared.Dispatcher.trigger('filters:updateFilters', filters);
+        },
         showSiteDetailedDashboard: function (query) {
             Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', query);
         },
@@ -27,7 +38,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', query);
         },
         clearSearch: function () {
-            this.navigate('', true);
+            this.navigate('', false);
         },
         toMap: function () {
             Shared.Dispatcher.trigger('map:closeDetailedDashboard');

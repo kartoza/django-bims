@@ -16,7 +16,12 @@ define([
         template: _.template($('#map-search-container').html()),
         searchBox: null,
         searchBoxOpen: false,
+        shouldUpdateUrl: true,
         searchResults: {},
+        filtersReady: {
+            'endemism': false,
+            'collector': false
+        },
         events: {
             'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
@@ -38,6 +43,7 @@ define([
             Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
+            Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
         },
         render: function () {
             var self = this;
@@ -91,10 +97,39 @@ define([
                             ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '"> ' + data[i] + '</div>'
                         )
                     }
+                    self.filtersReady['endemism'] = true;
+                }
+            });
+
+            $.ajax({
+                type: 'GET',
+                url: listCollectorAPIUrl,
+                dataType: 'json',
+                success: function (data) {
+                    for (var i = 0; i < data.length; i++) {
+                        var checked = '';
+                        if ($.inArray(data[i], self.initialSelectedCollectors) > -1) {
+                            checked = 'checked';
+                        }
+                        if (data[i]) {
+                            $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '" ' + checked + '> ' + data[i] + '<br>');
+                        }
+                        self.filtersReady['collector'] = true;
+                    }
                 }
             });
 
             return this;
+        },
+        isAllFiltersReady: function () {
+            var isReady = true;
+            $.each(this.filtersReady, function (key, ready) {
+                if (!ready) {
+                    isReady = false;
+                    return false;
+                }
+            });
+            return isReady;
         },
         checkSearch: function (forceSearch) {
             var searchValue = $('#search').val();
@@ -108,6 +143,15 @@ define([
                 $('.search-arrow').removeClass('disabled');
             }
             if (forceSearch === true) {
+                console.log(this.isAllFiltersReady());
+                if (!this.isAllFiltersReady()) {
+                    var that = this;
+                    setTimeout(function () {
+                        that.checkSearch(forceSearch);
+                    }, 500);
+                    return false;
+                }
+                this.shouldUpdateUrl = false;
                 this.search(searchValue);
             }
         },
@@ -241,11 +285,18 @@ define([
                 && !parameters['endemic']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
+                Shared.Router.clearSearch();
                 return false
             }
             this.searchResultCollection.search(
-                this.searchPanel, parameters
+                this.searchPanel,
+                parameters,
+                this.shouldUpdateUrl
             );
+
+            if (!this.shouldUpdateUrl) {
+                this.shouldUpdateUrl = true;
+            }
         },
         searchClick: function () {
             if (Shared.CurrentState.FETCH_CLUSTERS) {
@@ -266,6 +317,7 @@ define([
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
+            Shared.Router.clearSearch();
             this.searchInput.val('');
             $('.clear-filter').click();
             $('.map-search-result').hide();
@@ -399,7 +451,44 @@ define([
         },
         handleClearOriginClicked: function (e) {
             this.clearClickedOriginButton();
-        }
+        },
+        filtersUpdated: function (filters) {
+            var self = this;
+            var filterList = filters.split('&');
+            var allFilters = {};
+            $.each(filterList, function (index, filter) {
+                var parsedFilter = filter.split('=');
+                if (parsedFilter.length < 2) {
+                    return true;
+                }
+                if (!parsedFilter[1]) {
+                    return true;
+                }
+                allFilters[parsedFilter[0]] = parsedFilter[1];
+            });
+
+            // Category
+            if (allFilters.hasOwnProperty('category')) {
+                var categories = JSON.parse(allFilters['category']);
+                var originFilterWrapper = this.$el.find('#origin-filter-wrapper');
+                $.each(categories, function (index, category) {
+                    $('#' + category).prop('checked', true);
+                });
+                var buttons = originFilterWrapper.find('.origin-btn');
+                $.each(buttons, function (index, button) {
+                    var $button = $(button);
+                    if ($.inArray($button.data('origin'), categories) > -1) {
+                        $button.addClass('selected');
+                    }
+                })
+            }
+
+            // Collectors
+            self.initialSelectedCollectors = [];
+            if (allFilters.hasOwnProperty('collector')) {
+                self.initialSelectedCollectors = JSON.parse(allFilters['collector']);
+            }
+        },
     })
 
 });

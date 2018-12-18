@@ -23,7 +23,7 @@ define([
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
-        search: function (searchPanel, parameters) {
+        search: function (searchPanel, parameters, shouldUpdateUrl) {
             var self = this;
             this.totalRecords = 0;
             this.totalSites = 0;
@@ -39,9 +39,7 @@ define([
             this.endemic = parameters['endemic'];
             this.reference = parameters['reference'];
 
-            this.url = this.searchUrl +
-                '?search=' + this.searchValue +
-                '&collector=' + this.collectorValue +
+            this.filters = 'collector=' + this.collectorValue +
                 '&category=' + this.categoryValue +
                 '&yearFrom=' + this.yearFrom +
                 '&yearTo=' + this.yearTo +
@@ -51,6 +49,17 @@ define([
                 '&referenceCategory=' + this.referenceCategory +
                 '&endemic=' + this.endemic +
                 '&reference=' + this.reference;
+
+            this.url = this.searchUrl + '?' + 'search=' + this.searchValue + '&' + this.filters;
+
+            // Update permalink
+            if (shouldUpdateUrl) {
+                var linkUrl = 'search/';
+                linkUrl += this.searchValue;
+                linkUrl += '/' + this.filters;
+                Shared.Router.navigate(linkUrl, {replace: true});
+            }
+
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
             this.getSearchResults();

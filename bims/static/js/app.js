@@ -80,19 +80,6 @@ require([
 
         $.ajax({
             type: 'GET',
-            url: listCollectorAPIUrl,
-            dataType: 'json',
-            success: function (data) {
-                for (var i = 0; i < data.length; i++) {
-                    if(data[i]) {
-                        $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '"> ' + data[i] + '<br>');
-                    }
-                }
-            }
-        });
-
-        $.ajax({
-            type: 'GET',
             url: listReferenceAPIUrl,
             dataType: 'json',
             success: function (data) {
