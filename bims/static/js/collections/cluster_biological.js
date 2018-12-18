@@ -24,8 +24,9 @@ define([
             boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',
             clusterSize: Shared.ClusterSize
         },
-        initialize: function (initExtent) {
-            this.initExtent = initExtent;
+        initialize: function (parent) {
+            this.parent = parent;
+            this.initExtent = parent.initExtent;
             Shared.Dispatcher.on('clusterBiological:clearClusters', this.clearClusters, this);
             Shared.Dispatcher.on(Shared.EVENTS.CLUSTER.GET, this.getClusters, this);
             Shared.Dispatcher.on('clusterBiological:resetParameters', this.clearParameters, this);
@@ -263,6 +264,13 @@ define([
         },
         renderCollection: function () {
             var self = this;
+            if (!this.parent.isAllLayersReady()) {
+                setTimeout(function () {
+                    self.renderCollection();
+                    return false;
+                }, 500);
+            }
+            this.parent.resetAdministrativeLayers();
             $.each(this.viewCollection, function (index, view) {
                 view.destroy();
             });

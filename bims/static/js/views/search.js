@@ -253,7 +253,6 @@ define([
             }
             Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
-            // Shared.Router.clearSearch();
             this.search(searchValue);
         },
         searchEnter: function (e) {
@@ -262,7 +261,6 @@ define([
                     return true;
                 }
                 var searchValue = $('#search').val();
-                //Shared.Router.clearSearch();
                 this.search(searchValue);
             }
         },
