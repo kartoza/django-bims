@@ -267,8 +267,8 @@ define([
             if (!this.parent.isAllLayersReady()) {
                 setTimeout(function () {
                     self.renderCollection();
-                    return false;
                 }, 500);
+                return false;
             }
             this.parent.resetAdministrativeLayers();
             $.each(this.viewCollection, function (index, view) {
