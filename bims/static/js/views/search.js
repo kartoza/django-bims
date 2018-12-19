@@ -8,7 +8,7 @@ define([
     'views/search_panel',
     'jquery',
     'views/filter_panel/reference_category',
-    'views/filter_panel/spatial_filter',
+    'views/filter_panel/spatial_filter'
 ], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $,
              ReferenceCategoryView, SpatialFilterView) {
 
