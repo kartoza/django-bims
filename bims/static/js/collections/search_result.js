@@ -53,12 +53,10 @@ define([
             this.url = this.searchUrl + '?' + 'search=' + this.searchValue + '&' + this.filters;
 
             // Update permalink
-            if (shouldUpdateUrl) {
-                var linkUrl = 'search/';
-                linkUrl += this.searchValue;
-                linkUrl += '/' + this.filters;
-                Shared.Router.navigate(linkUrl, {replace: true});
-            }
+            var linkUrl = 'search/';
+            linkUrl += this.searchValue;
+            linkUrl += '/' + this.filters;
+            Shared.Router.updateUrl(linkUrl);
 
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();

@@ -588,12 +588,24 @@ class ClusterCollection(GetCollectionAbstract):
                 search_uri
         )
 
-        search_process, created = SearchProcess.objects.get_or_create(
-                category='cluster_generation',
-                query=search_uri
+        search_processes = SearchProcess.objects.filter(
+            category='cluster_generation',
+            query=search_uri
         )
 
-        if not created and search_process.file_path:
+        if search_processes.exists():
+            # There should not be more than 1 data
+            if len(search_processes) > 1:
+                for search_object in search_processes[1:len(search_processes)]:
+                    search_object.delete()
+            search_process = search_processes[0]
+        else:
+            search_process = SearchProcess.objects.create(
+                category='cluster_generation',
+                query=search_uri
+            )
+
+        if search_process.file_path:
             if os.path.exists(search_process.file_path):
                 try:
                     raw_data = open(search_process.file_path)

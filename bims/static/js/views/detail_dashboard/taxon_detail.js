@@ -67,7 +67,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         self.parameters = filterParameters;
                         self.parameters['taxon'] = self.taxonId;
                     }
-                    Shared.Router.navigate('species-detail/' + self.apiParameters(filterParameters).substr(1))
+                    Shared.Router.updateUrl('species-detail/' + self.apiParameters(filterParameters).substr(1), true);
                     var params = self.apiParameters(self.parameters);
                     self.csvDownloadsUrl += params;
                     self.url += params;

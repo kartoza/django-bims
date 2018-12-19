@@ -63,7 +63,7 @@ require([
     Shared.Router = new Router();
 
     // Start Backbone history a necessary step for bookmarkable URL's
-    Backbone.history.start();
+    Backbone.history.start({hashChange: true, root: "/map/"});
 
     // A $( document ).ready() block.
     $(document).ready(function () {

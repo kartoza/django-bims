@@ -32,7 +32,11 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         },
         onlyFilters: function (filters) {
             // Get all filters
-            Shared.Dispatcher.trigger('filters:updateFilters', filters);
+            var windowHash = window.location.hash;
+            var firstFilterWord = filters.slice(0, 5);
+            var newFilter = windowHash.slice(windowHash.indexOf(firstFilterWord));
+            Shared.Dispatcher.trigger('filters:updateFilters', newFilter);
+            this.search('');
         },
         showSiteDetailedDashboard: function (query) {
             Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', query);
@@ -45,6 +49,13 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         },
         toMap: function () {
             Shared.Dispatcher.trigger('map:closeDetailedDashboard');
+        },
+        updateUrl: function (url, trigger) {
+            if (!trigger) {
+               window.location.hash = url;
+            } else {
+                this.navigate(url, {trigger: true});
+            }
         }
     })
 });
