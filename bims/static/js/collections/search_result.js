@@ -51,12 +51,13 @@ define([
                 '&reference=' + this.reference;
 
             this.url = this.searchUrl + '?' + 'search=' + this.searchValue + '&' + this.filters;
-
             // Update permalink
-            var linkUrl = 'search/';
-            linkUrl += this.searchValue;
-            linkUrl += '/' + this.filters;
-            Shared.Router.updateUrl(linkUrl);
+            if (shouldUpdateUrl) {
+                var linkUrl = 'search/';
+                linkUrl += this.searchValue;
+                linkUrl += '/' + this.filters;
+                Shared.Router.updateUrl(linkUrl);
+            }
 
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();

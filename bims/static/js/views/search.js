@@ -27,6 +27,8 @@ define([
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
         initialSelectedReferenceCategory: [],
+        initialYearFrom: null,
+        initialYearTo: null,
         events: {
             'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
@@ -179,7 +181,6 @@ define([
                     }, 500);
                     return false;
                 }
-                this.shouldUpdateUrl = false;
                 this.search(searchValue);
             }
         },
@@ -319,11 +320,11 @@ define([
             this.searchResultCollection.search(
                 this.searchPanel,
                 parameters,
-                this.shouldUpdateUrl
+                self.shouldUpdateUrl
             );
 
-            if (!this.shouldUpdateUrl) {
-                this.shouldUpdateUrl = true;
+            if (!self.shouldUpdateUrl) {
+                self.shouldUpdateUrl = true;
             }
         },
         searchClick: function () {
@@ -523,6 +524,30 @@ define([
             self.initialSelectedReferenceCategory = [];
             if (allFilters.hasOwnProperty('referenceCategory')) {
                 self.initialSelectedReferenceCategory = JSON.parse(allFilters['referenceCategory']);
+            }
+
+            // Date
+            if (allFilters.hasOwnProperty('yearFrom')) {
+                self.initialYearFrom = allFilters['yearFrom'];
+            }
+            if (allFilters.hasOwnProperty('yearTo')) {
+                self.initialYearTo = allFilters['yearTo'];
+            }
+
+            if (this.initialYearFrom && this.initialYearTo) {
+                $('#year-from').html(Math.floor(this.initialYearFrom));
+                $('#year-to').html(Math.floor(this.initialYearTo));
+                this.yearSlider.set([this.initialYearFrom, this.initialYearTo]);
+            }
+
+            // Months
+            if (allFilters.hasOwnProperty('months')) {
+                var months = allFilters['months'].split(',');
+                $('#month-selector').find('input:checkbox').each(function () {
+                    if($.inArray($(this).val(), months) > -1) {
+                        $(this).prop('checked', true);
+                    }
+                });
             }
         },
     })
