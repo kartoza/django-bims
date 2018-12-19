@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.location_type_serializer import LocationTypeSerializer
 from bims.utils.highlighter import CustomHighlighter
 
@@ -39,6 +40,28 @@ class LocationSiteClusterSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocationSite
         fields = ['id', 'name', 'location_type', 'record_type']
+
+
+class LocationSitesCoordinateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for location site model for site detail.
+    """
+    id = serializers.SerializerMethodField()
+    coord = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+
+    def get_id(self, obj):
+        return obj.location_site_id
+
+    def get_name(self, obj):
+        return obj.location_site_name
+
+    def get_coord(self, obj):
+        return obj.location_coordinates
+
+    class Meta:
+        model = BiologicalCollectionRecord
+        fields = ['id', 'coord', 'name']
 
 
 class LocationOccurrencesSerializer(serializers.ModelSerializer):

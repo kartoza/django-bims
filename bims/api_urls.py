@@ -7,7 +7,9 @@ from bims.api_views.boundary import (
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSiteDetail,
-    LocationSiteClusterList
+    LocationSiteClusterList,
+    LocationSitesSummary,
+    LocationSitesCoordinate
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
@@ -55,6 +57,12 @@ urlpatterns = [
     url(r'^location-site-detail/$',
         LocationSiteDetail.as_view(),
         name='location-site-detail'),
+    url(r'^location-sites-summary/$',
+        LocationSitesSummary.as_view(),
+        name='location-sites-summary'),
+    url(r'^location-sites-coordinate/$',
+        LocationSitesCoordinate.as_view(),
+        name='location-sites-coordinate'),
     url(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
     url(r'^list-taxon/$',

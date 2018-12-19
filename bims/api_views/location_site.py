@@ -1,16 +1,22 @@
 # coding=utf8
+import os, json
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest
+from django.db.models.functions import Concat
+from django.db.models import CharField, Value as V
+from django.core.paginator import Paginator
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.serializers.location_site_serializer import (
     LocationSiteSerializer,
-    LocationSiteClusterSerializer
+    LocationSiteClusterSerializer,
+    LocationSitesCoordinateSerializer
 )
 from bims.serializers.location_site_detail_serializer import \
     LocationSiteDetailSerializer
@@ -21,6 +27,11 @@ from bims.utils.cluster_point import (
     geo_serializer
 )
 from bims.api_views.collection import GetCollectionAbstract
+from bims.utils.search_process import (
+    get_or_create_search_process,
+    create_search_process_file
+)
+from bims.models.search_process import SITES_SUMMARY
 
 
 class LocationSiteList(APIView):
@@ -63,11 +74,11 @@ class LocationSiteDetail(APIView):
 
         # Search collection
         collection_results, \
-            site_results, \
-            fuzzy_search = GetCollectionAbstract.apply_filter(
-                query_value,
-                filters,
-                ignore_bbox=True)
+        site_results, \
+        fuzzy_search = GetCollectionAbstract.apply_filter(
+            query_value,
+            filters,
+            ignore_bbox=True)
 
         collection_ids = []
         if collection_results:
@@ -79,8 +90,8 @@ class LocationSiteDetail(APIView):
         }
         location_site = self.get_object(site_id)
         serializer = LocationSiteDetailSerializer(
-                location_site,
-                context=context)
+            location_site,
+            context=context)
         return Response(serializer.data)
 
 
@@ -189,3 +200,102 @@ class LocationSiteClusterList(APIView):
             int(icon_pixel_y)
         )
         return Response(geo_serializer(cluster)['features'])
+
+
+class LocationSitesSummary(APIView):
+    """
+        List cached location site summary based on collection record search.
+    """
+    COUNT = 'count'
+    ORIGIN = 'origin'
+    TOTAL_RECORDS = 'total_records'
+    RECORDS_GRAPH_DATA = 'records_graph_data'
+    RECORDS_OCCURRENCE = 'records_occurrence'
+
+    def get(self, request):
+        query_value = request.GET.get('search')
+        filters = request.GET
+
+        # Search collection
+        (
+            collection_results,
+            site_results,
+            fuzzy_search
+        ) = GetCollectionAbstract.apply_filter(
+            query_value,
+            filters,
+            ignore_bbox=True)
+
+        search_process, created = get_or_create_search_process(
+            SITES_SUMMARY,
+            query=json.dumps(filters)
+        )
+
+        if search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
+
+        records_graph_data = {}
+        records_occurrence = {}
+
+        for collection in collection_results:
+            collection_year = collection.collection_date_year
+            if collection_year not in records_graph_data:
+                records_graph_data[collection_year] = {}
+                if collection.category not in records_graph_data[
+                        collection_year]:
+                    records_graph_data[collection_year][
+                        collection.category] = 0
+            records_graph_data[collection_year][collection.category] += 1
+
+            if collection.taxon_canonical_name not in records_occurrence:
+                records_occurrence[collection.taxon_canonical_name] = {
+                    self.COUNT: 0,
+                    self.ORIGIN: collection.category
+                }
+
+            records_occurrence[collection.taxon_canonical_name]['count'] += 1
+
+        response_data = {
+            self.TOTAL_RECORDS: len(collection_results),
+            self.RECORDS_GRAPH_DATA: records_graph_data,
+            self.RECORDS_OCCURRENCE: records_occurrence
+        }
+
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
+
+
+class LocationSitesCoordinate(ListAPIView):
+    """
+        List paginated location site based on collection record search,
+        there may be duplication.
+    """
+    serializer_class = LocationSitesCoordinateSerializer
+
+    def get_queryset(self):
+        query_value = self.request.GET.get('search')
+        filters = self.request.GET
+        (
+            collection_results,
+            site_results,
+            fuzzy_search
+        ) = GetCollectionAbstract.apply_filter(
+            query_value,
+            filters,
+            ignore_bbox=True,
+            only_site=True)
+        return collection_results
