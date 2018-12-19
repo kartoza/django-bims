@@ -27,6 +27,7 @@ define([
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
         initialSelectedReferenceCategory: [],
+        initialSelectedEndemic: [],
         initialYearFrom: null,
         initialYearTo: null,
         events: {
@@ -99,9 +100,13 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     for (var i = 0; i < data.length; i++) {
+                        var checked = '';
+                        if ($.inArray(data[i], self.initialSelectedEndemic) > -1) {
+                            checked = 'checked';
+                        }
                         nativeOriginDropdown.append(
                             '<div class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
-                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '"> ' + data[i] + '</div>'
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</div>'
                         )
                     }
                     self.filtersReady['endemism'] = true;
@@ -520,6 +525,15 @@ define([
                 self.initialSelectedStudyReference = JSON.parse(allFilters['reference']);
             }
 
+            // Endemic
+            self.initialSelectedEndemic = [];
+            if (allFilters.hasOwnProperty('endemic')) {
+                self.initialSelectedEndemic = JSON.parse(allFilters['endemic']);
+                if (self.initialSelectedEndemic.length > 0) {
+                    $('#native-origin-btn').addClass('selected');
+                }
+            }
+
             // Reference category
             self.initialSelectedReferenceCategory = [];
             if (allFilters.hasOwnProperty('referenceCategory')) {
@@ -544,7 +558,7 @@ define([
             if (allFilters.hasOwnProperty('months')) {
                 var months = allFilters['months'].split(',');
                 $('#month-selector').find('input:checkbox').each(function () {
-                    if($.inArray($(this).val(), months) > -1) {
+                    if ($.inArray($(this).val(), months) > -1) {
                         $(this).prop('checked', true);
                     }
                 });

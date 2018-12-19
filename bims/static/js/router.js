@@ -2,6 +2,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
 
     return Backbone.Router.extend({
         parameters: {},
+        searchHistory: [],
         routes: {
             "": "toMap",
             "search/:query": "search",
@@ -21,6 +22,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             }
             $('#search').val(query);
             Shared.Dispatcher.trigger('search:checkSearchCollection', true);
+            this.searchHistory.push(query);
         },
         searchWithFilters: function (query, filters) {
             // Get all filters
@@ -28,7 +30,9 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             var firstFilterWord = filters.slice(0, 5);
             var newFilter = windowHash.slice(windowHash.indexOf(firstFilterWord));
             Shared.Dispatcher.trigger('filters:updateFilters', newFilter);
-            this.search(query);
+            if (this.searchHistory.length < 1) {
+                this.search(query);
+            }
         },
         onlyFilters: function (filters) {
             // Get all filters
@@ -52,7 +56,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         },
         updateUrl: function (url, trigger) {
             if (!trigger) {
-               window.location.hash = url;
+                this.navigate(url, {trigger: false});
             } else {
                 this.navigate(url, {trigger: true});
             }
