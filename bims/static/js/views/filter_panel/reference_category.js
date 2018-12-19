@@ -1,19 +1,21 @@
 define([
-    'backbone', 
+    'backbone',
     'ol',
-    'shared', 
-    'underscore', 
+    'shared',
+    'underscore',
     'collections/reference_category'], function (Backbone, ol, Shared, _, ReferenceCategoryCollection) {
     return Backbone.View.extend({
         template: _.template($('#reference-category-template').html()),
         listWrapper: '',
-        initialize: function () {
+        initialize: function (options) {
             _.bindAll(this, 'render');
+            this.parent = options.parent;
             this.collection = new ReferenceCategoryCollection();
             var self = this;
             this.fetchXhr = this.collection.fetch({
                 success: function () {
                     self.renderList();
+                    self.parent.filtersReady['referenceCategory'] = true;
                 }
                 , error: function (xhr, text_status, error_thrown) {
                 }
@@ -30,9 +32,13 @@ define([
                 this.$el.hide();
                 return false;
             }
-            for(var i=0; i<data.length; i++) {
+            for (var i = 0; i < data.length; i++) {
+                var checked = '';
+                if ($.inArray(data[i].get('category'), this.parent.initialSelectedReferenceCategory) > -1) {
+                    checked = 'checked';
+                }
                 this.listWrapper.append('<div>' +
-                    '<input type="checkbox" name="reference-category-value" value="'+data[i].get('category')+'">&nbsp;'+data[i].get('category')+
+                    '<input type="checkbox" name="reference-category-value" value="' + data[i].get('category') + '"  ' + checked + ' >&nbsp;' + data[i].get('category') +
                     '</div>');
             }
         },

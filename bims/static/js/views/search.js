@@ -21,10 +21,12 @@ define([
         filtersReady: {
             'endemism': false,
             'collector': false,
-            'study-reference': false
+            'study-reference': false,
+            'referenceCategory': false
         },
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
+        initialSelectedReferenceCategory: [],
         events: {
             'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
@@ -82,7 +84,7 @@ define([
             });
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
-            this.referenceCategoryView = new ReferenceCategoryView();
+            this.referenceCategoryView = new ReferenceCategoryView({parent: this});
             this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
 
             this.spatialFilterView = new SpatialFilterView();
@@ -515,6 +517,12 @@ define([
             self.initialSelectedStudyReference = [];
             if (allFilters.hasOwnProperty('reference')) {
                 self.initialSelectedStudyReference = JSON.parse(allFilters['reference']);
+            }
+
+            // Reference category
+            self.initialSelectedReferenceCategory = [];
+            if (allFilters.hasOwnProperty('referenceCategory')) {
+                self.initialSelectedReferenceCategory = JSON.parse(allFilters['referenceCategory']);
             }
         },
     })
