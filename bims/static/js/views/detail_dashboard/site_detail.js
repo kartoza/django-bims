@@ -16,7 +16,6 @@ define([
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
         isOpen: false,
-        coordinates: [],
         template: _.template($('#detailed-site-dashboard').html()),
         dummyPieData: [25, 2, 7, 10, 12, 25, 60],
         objectDataByYear: 'object_data_by_year',
@@ -29,6 +28,9 @@ define([
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
         uniqueSites: [],
         occurrenceData: {},
+        vectorLayerFromMainMap: null,
+        siteLayerSource: null,
+        siteLayerVector: null,
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
@@ -54,11 +56,14 @@ define([
             'click .download-collection-timeline': 'downloadCollectionTimeline',
             'click .download-as-csv': 'downloadAsCSV'
         },
-        initialize: function () {
+        initialize: function (options) {
+            _.bindAll(this, 'render');
+            this.parent = options.parent;
             this.$el.hide();
             this.mapLocationSite = null;
         },
         render: function () {
+            var self = this;
             this.$el.html(this.template());
 
             this.loadingDashboard = this.$el.find('.loading-dashboard');
@@ -84,6 +89,14 @@ define([
                 }))
             });
 
+            this.siteLayerSource = new ol.source.Vector();
+            this.siteLayerVector = new ol.layer.Vector({
+                source: this.siteLayerSource,
+                style: function (feature) {
+                    return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
+                }
+            });
+
             return this;
         },
         show: function (data) {
@@ -95,17 +108,31 @@ define([
             this.$el.show('slide', {
                 direction: 'right'
             }, 300, function () {
+                if (!self.mapLocationSite) {
+                    self.mapLocationSite = new ol.Map({
+                        layers: [
+                            new ol.layer.Tile({
+                                source: new ol.source.OSM()
+                            })
+                        ],
+                        target: 'locationsite-map',
+                        view: new ol.View({
+                            center: [0, 0],
+                            zoom: 2
+                        })
+                    });
+                }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
-                    self.fetchData(data);
+                    self.fetchData(data, true);
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
-                    self.fetchData(self.apiParameters(filterParameters).substr(1));
+                    self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1));
                 }
             });
         },
-        fetchData: function (parameters) {
+        fetchData: function (parameters, multipleSites) {
             var self = this;
 
             if (Shared.LocationSiteDetailXHRRequest) {
@@ -119,10 +146,36 @@ define([
                 success: function (data) {
                     self.createOccurrenceTable(data);
                     self.createCharts(data);
-                    self.fetchLocationSiteCoordinate(self.fetchLocationSiteCoordinateUrl + parameters);
+                    var locationSiteClusterSourceExist = false;
+                    if (self.parent.layers.locationSiteClusterSource) {
+                        if (self.parent.layers.locationSiteClusterSource.getFeatures().length > 0) {
+                            locationSiteClusterSourceExist = true;
+                        }
+                    }
+                    if (locationSiteClusterSourceExist && multipleSites) {
+                        // Copy from main map
+                        self.copyClusterLayer();
+                    } else {
+                        self.mapLocationSite.addLayer(self.siteLayerVector);
+                        self.fetchLocationSiteCoordinate(self.fetchLocationSiteCoordinateUrl + parameters);
+                    }
                     self.loadingDashboard.hide();
                 }
             });
+        },
+        copyClusterLayer: function () {
+            var layer = this.parent.layers.locationSiteClusterSource;
+            var self = this;
+            if (layer) {
+                this.siteLayerVector = new ol.layer.Vector({
+                    source: this.parent.layers.locationSiteClusterSource,
+                    style: function (feature) {
+                        return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
+                    }
+                });
+                this.mapLocationSite.addLayer(this.siteLayerVector);
+                this.fitSitesToMap();
+            }
         },
         fetchLocationSiteCoordinate: function (url) {
             var self = this;
@@ -130,21 +183,6 @@ define([
             if (this.locationSiteCoordinateRequestXHR) {
                 this.locationSiteCoordinateRequestXHR.abort();
                 this.locationSiteCoordinateRequestXHR = null;
-            }
-
-            if (!this.mapLocationSite) {
-                this.mapLocationSite = new ol.Map({
-                    layers: [
-                        new ol.layer.Tile({
-                            source: new ol.source.OSM()
-                        })
-                    ],
-                    target: 'locationsite-map',
-                    view: new ol.View({
-                        center: [0, 0],
-                        zoom: 2
-                    })
-                });
             }
 
             this.locationSiteCoordinateRequestXHR = $.get({
@@ -163,24 +201,27 @@ define([
                         self.siteName.html(results[0].name);
                     }
                     self.locationSiteCoordinateRequestXHR = null;
+                    self.fitSitesToMap();
                     if (data['next']) {
                         self.fetchLocationSiteCoordinate(data['next']);
-                    } else {
-                        self.fitSitesToMap();
                     }
                 }
             });
         },
         fitSitesToMap: function () {
-            var bbox = ol.extent.boundingExtent(this.coordinates);
-            this.mapLocationSite.getView().fit(bbox, this.mapLocationSite.getSize());
-            var currentZoom = this.mapLocationSite.getView().getZoom();
-            if (currentZoom > 10) {
-                this.mapLocationSite.getView().setZoom(10);
-            }
+            var source = this.siteLayerVector.getSource();
+            var extent = source.getExtent();
+            this.mapLocationSite.getView().fit(extent, {
+                size: this.mapLocationSite.getSize()
+            });
         },
         drawMarkers: function (data) {
             var self = this;
+
+            if (this.uniqueSites.includes(data['id'])) {
+                return false;
+            }
+            this.uniqueSites.push(data['id']);
 
             // Create marker
             var coordinatesArray = data['coord'].split(',');
@@ -189,32 +230,28 @@ define([
             coords = [lon, lat];
             var pos = ol.proj.fromLonLat(coords);
 
-            if (this.uniqueSites.includes(data['id'])) {
-                return false;
-            }
-
-            this.uniqueSites.push(data['id']);
-
-            this.coordinates.push(pos);
-
-            self.siteMarkers.append('<div id="marker-point-' + data['id'] + '" title="' + data['name'] + '" class="site-marker"></div>');
-            var marker = new ol.Overlay({
-                position: pos,
-                positioning: 'center-center',
-                element: self.$el.find('#marker-point-' + data['id'])[0],
-                stopEvent: false
+            var feature = new ol.Feature({
+                geometry: new ol.geom.Point(
+                    pos
+                ),
+                id: data['id'],
+                name: data['name'],
             });
-            this.mapLocationSite.addOverlay(marker);
-            var markerName = new ol.Overlay({
-                position: pos,
-                element: self.$el.find('#marker-name-' + data['id'])[0]
-            });
-            this.mapLocationSite.addOverlay(markerName);
+
+            this.siteLayerSource.addFeature(feature);
         },
         clearDashboard: function () {
+            var self = this;
+            this.mapLocationSite.removeLayer(this.siteLayerVector);
+            this.siteLayerSource = new ol.source.Vector({});
+            this.siteLayerVector = new ol.layer.Vector({
+                source: this.siteLayerSource,
+                style: function (feature) {
+                    return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
+                }
+            });
             this.siteName.html('');
             this.siteNameWrapper.hide();
-            this.coordinates = [];
             this.uniqueSites = [];
             this.totalRecords.html('0');
             this.siteMarkers.html('');

@@ -63,7 +63,7 @@ define([
             new TaxonDetail();
             new RecordsDetail();
             this.taxonDetailDashboard = new TaxonDetailDashboard();
-            this.siteDetailedDashboard = new SiteDetailedDashboard();
+            this.siteDetailedDashboard = new SiteDetailedDashboard({parent: this});
 
             Shared.CurrentState.FETCH_CLUSTERS = true;
 
@@ -405,7 +405,7 @@ define([
 
                 var ready = self.numInFlightTiles === 0 && numHeldTiles === 0;
                 if (self.mapIsReady !== ready)
-                   self.mapIsReady = ready;
+                    self.mapIsReady = ready;
             });
 
             return this;
