@@ -128,7 +128,7 @@ define([
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
-                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1));
+                    Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
                 }
             });
         },
