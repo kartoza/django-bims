@@ -1013,6 +1013,22 @@ div:hover::-webkit-scrollbar {
     z-index: 999;
 }
 
+.map-legend-wrapper {
+    border-radius: 5px;
+    min-height: 31px;
+    min-width: 31px;
+    max-width: 250px;
+    max-height: 450px;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    position: absolute;
+    left: 0.5em;
+    bottom: 80px;
+    background-color: white;
+    cursor: pointer;
+    z-index: 999;
+}
+
 #map-legend-symbol {
     height: 31px;
     width: 31px;
@@ -1020,6 +1036,29 @@ div:hover::-webkit-scrollbar {
     padding-top: 4px;
     font-weight: 700;
 }
+
+.map-legend-symbol {
+    height: 31px;
+    width: 31px;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: 700;
+}
+
+#start-tutorial {
+        position: fixed;
+        bottom: 2.5em;
+        width: 31px;
+        height: 31px;
+        text-align: center;
+        padding-top: 4px;
+        font-weight: 700;
+        left: 0.5em;
+        border-radius: 5px;
+        z-index: 2;
+        opacity: 0.7;
+        background-color: #fff;
+    }
 
 #map-legend-wrapper.hide-legend {
     max-width: 31px;
@@ -1033,6 +1072,21 @@ div:hover::-webkit-scrollbar {
 }
 
 #map-legend-wrapper .legend-row:last-child {
+    border-bottom: none;
+}
+
+.map-legend-wrapper.hide-legend {
+    max-width: 31px;
+    max-height: 31px;
+    opacity: 0.7;
+    overflow: hidden;
+}
+
+.map-legend-wrapper .legend-row {
+    padding: 10px;
+}
+
+.map-legend-wrapper .legend-row:last-child {
     border-bottom: none;
 }
 
