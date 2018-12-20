@@ -19,6 +19,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    vernacular_names = indexes.CharField(
+        indexed=True
+    )
+
     collector = indexes.NgramField(
         model_attr='collector',
         indexed=True
@@ -164,6 +168,13 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         if not obj.taxonomy.endemism:
             return ''
         return obj.taxonomy.endemism.name
+
+    def prepare_vernacular_names(self, obj):
+        if not obj.taxonomy:
+            return ''
+        return ','.join(obj.taxonomy.vernacular_names.filter(
+            language='eng'
+        ).values_list('name', flat=True))
 
     class Meta:
         app_label = 'bims'

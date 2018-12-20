@@ -48,6 +48,7 @@ from bims.models import (
     Endemism,
     Taxonomy,
     TaxonGroup,
+    VernacularName
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -426,6 +427,15 @@ class TaxonIdentifierAdmin(admin.ModelAdmin):
     )
 
 
+class VernacularNameAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'name',
+        'language',
+        'source'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -459,6 +469,7 @@ admin.site.register(UserBoundary, UserBoundaryAdmin)
 admin.site.register(SearchProcess, SearchProcessAdmin)
 
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
+admin.site.register(VernacularName, VernacularNameAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

@@ -1,0 +1,3 @@
+{{ object.pk }}
+{{ object.name }}
+{{ object.lang }}
