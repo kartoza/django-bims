@@ -48,20 +48,6 @@ function startIntro() {
                 intro: "...or PRINT, exactly what you need, quickly!",
                 position: 'right'
             },
-            // {
-            //   element: '#step3',
-            //   intro: 'More features, more fun.',
-            //   position: 'right'
-            // },
-            // {
-            //   element: '#step4',
-            //   intro: "Another step.",
-            //   position: 'right'
-            // },
-            // {
-            //   element: '#step5',
-            //   intro: 'Get it, use it.'
-            // }
         ]
     });
     intro.start().onbeforechange(function () {
@@ -78,34 +64,5 @@ function startIntro() {
     });
 
 }
-
-
-function nextButtonClicked() {
-    console.log('test');
-}
-
-// function createStepEvents(guideObject, eventList) {
-//
-//     //underscore loop used here, foreach would work just as well
-//     _.each(eventList, function (event) {
-//
-//         //for the guid object's <event> attribute...
-//         guideObject[event](function () {
-//
-//             //get its steps and current step value
-//             var steps = this._options.steps,
-//                 currentStep = this._currentStep;
-//
-//             //if it's a function, execute the specified <event> type
-//             if (_.isFunction(steps[currentStep][event])) {
-//                 steps[currentStep][event]();
-//             }
-//         });
-//
-//     }, this);
-// }
-
-//setup the events per step you care about for this guide
-// createStepEvents(guide, ['onchange', 'onbeforechange']);
 
 
