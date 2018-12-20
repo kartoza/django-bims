@@ -22,9 +22,12 @@ define([
         objectDataByYear: 'object_data_by_year',
         yearsArray: 'years_array',
         dummyPieColors: ['#2d2d2d', '#565656', '#6d6d6d', '#939393', '#adadad', '#bfbfbf', '#d3d3d3'],
-        fetchBaseUrl: '/api/location-site-detail/?',
+        fetchBaseUrl: '/api/location-sites-summary/?',
+        fetchLocationSiteCoordinateUrl: '/api/location-sites-coordinate/?',
         csvDownloadUrl: '/api/collection/download/',
+        locationSiteCoordinateRequestXHR: null,
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
+        uniqueSites: [],
         occurrenceData: {},
         categoryColor: {
             'Native': '#a13447',
@@ -67,6 +70,8 @@ define([
             this.recordsTimelineGraph = this.$el.find('#records-timeline-graph')[0];
 
             this.siteName = this.$el.find('#site-name');
+            this.siteNameWrapper = this.siteName.parent();
+            this.siteNameWrapper.hide();
             this.totalRecords = this.$el.find('#total-records');
 
             this.iconStyle = new ol.style.Style({
@@ -95,138 +100,38 @@ define([
                     self.fetchData(data);
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
-                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1))
-                    self.siteName.append(data['name']);
-
-                    self.generateDashboardData(data);
-                    self.renderDashboard();
-                    self.loadingDashboard.hide();
+                    self.fetchData(self.apiParameters(filterParameters).substr(1));
+                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1));
                 }
             });
         },
-        checkMultipleSites: function (parameters) {
-            // Get the site id
-            var parameterList = parameters.split('&');
-            var siteIds = [];
-            var urls = [];
-
-            $.each(parameterList, function (index, parameter) {
-                if (typeof parameter === 'undefined') {
-                    return true;
-                }
-                // siteId=4155 -> ['siteId', '4155']
-                var parameterValueKey = parameter.split('=');
-
-                var parameterKey = parameterValueKey[0];
-                var parameterValue = parameterValueKey[1];
-
-                if (parameterKey === 'siteId') {
-                    siteIds = parameterValue.split(',');
-                    parameterList.splice(index, 1);
-                }
-            });
-
-            // Generate the urls
-            $.each(siteIds, function (index, siteId) {
-                var url = parameterList.join('&');
-                url += '&siteId=' + siteId;
-
-                urls.push(url);
-            });
-
-            return urls;
-        },
-        fetchLocationDetail: function (urls, index) {
+        fetchData: function (parameters) {
             var self = this;
-            if (!index) {
-                index = 0;
-            }
+
             if (Shared.LocationSiteDetailXHRRequest) {
                 Shared.LocationSiteDetailXHRRequest.abort();
                 Shared.LocationSiteDetailXHRRequest = null;
             }
 
             Shared.LocationSiteDetailXHRRequest = $.get({
-                url: self.fetchBaseUrl + urls[index],
+                url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.generateDashboardData(data, urls[index]);
-                    self.siteName.append(data['name']);
-                    if (typeof urls[index + 1] !== 'undefined') {
-                        self.fetchLocationDetail(urls, index + 1);
-                        self.siteName.append(', ');
-                    } else {
-                        self.loadingDashboard.hide();
-                        self.renderDashboard();
-                    }
+                    self.createOccurrenceTable(data);
+                    self.createCharts(data);
+                    self.fetchLocationSiteCoordinate(self.fetchLocationSiteCoordinateUrl + parameters);
+                    self.loadingDashboard.hide();
                 }
             });
         },
-        fetchData: function (parameters) {
+        fetchLocationSiteCoordinate: function (url) {
             var self = this;
-            // Check if multiple sites
-            var urls = self.checkMultipleSites(parameters);
 
-            if (urls.length > 1) {
-                $('#site-name-label').html('Site names');
+            if (this.locationSiteCoordinateRequestXHR) {
+                this.locationSiteCoordinateRequestXHR.abort();
+                this.locationSiteCoordinateRequestXHR = null;
             }
-            self.fetchLocationDetail(urls);
-        },
-        generateDashboardData: function (data, url) {
-            var self = this;
-            // Try draw points in map
-            self.drawMarkers(data, url);
 
-            // Set total records
-            $.each(data['modules_info'], function (moduleKey, moduleValue) {
-                var totalNumberRecords = parseInt(self.totalRecords.html());
-                self.totalRecords.html(totalNumberRecords + parseInt(moduleValue['count']));
-            });
-
-            // Count occurrence data
-            $.each(data['records_occurrence'], function (key, classOccurrence) {
-                for (var speciesName in classOccurrence) {
-                    if (!classOccurrence.hasOwnProperty(speciesName)) {
-                        return true;
-                    }
-                    var speciesOccurrence = classOccurrence[speciesName];
-                    if (!self.occurrenceData.hasOwnProperty(speciesOccurrence['taxon_id'])) {
-                        self.occurrenceData[speciesOccurrence['taxon_id']] = {
-                            'label': speciesName,
-                            'count': speciesOccurrence['count'],
-                            'category': self.categories[speciesOccurrence['category']],
-                            'data_by_year': {}
-                        }
-                    } else {
-                        self.occurrenceData[speciesOccurrence['taxon_id']]['count'] +=
-                            speciesOccurrence['count'];
-                    }
-
-                    $.each(speciesOccurrence['data_by_year'], function (year, count) {
-                        if (!self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'].hasOwnProperty(year)) {
-                            self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'][year] = count;
-                        } else {
-                            self.occurrenceData[speciesOccurrence['taxon_id']]['data_by_year'][year] += count;
-                        }
-                    });
-
-                }
-            });
-
-        },
-        renderDashboard: function () {
-            this.createOccurrenceTable(this.occurrenceData);
-            this.createCharts(this.occurrenceData);
-
-            var bbox = ol.extent.boundingExtent(this.coordinates);
-            this.mapLocationSite.getView().fit(bbox, this.mapLocationSite.getSize());
-            var currentZoom = this.mapLocationSite.getView().getZoom();
-            if (currentZoom > 10) {
-                this.mapLocationSite.getView().setZoom(10);
-            }
-        },
-        drawMarkers: function (data, url) {
-            var self = this;
             if (!this.mapLocationSite) {
                 this.mapLocationSite = new ol.Map({
                     layers: [
@@ -242,15 +147,57 @@ define([
                 });
             }
 
+            this.locationSiteCoordinateRequestXHR = $.get({
+                url: url,
+                dataType: 'json',
+                success: function (data) {
+                    var results = [];
+                    if (data.hasOwnProperty('results')) {
+                        results = data['results'];
+                    }
+                    $.each(results, function (index, siteData) {
+                        self.drawMarkers(siteData);
+                    });
+                    if (self.uniqueSites.length === 1 && !data['next'] && !data['previous']) {
+                        self.siteNameWrapper.show();
+                        self.siteName.html(results[0].name);
+                    }
+                    self.locationSiteCoordinateRequestXHR = null;
+                    if (data['next']) {
+                        self.fetchLocationSiteCoordinate(data['next']);
+                    } else {
+                        self.fitSitesToMap();
+                    }
+                }
+            });
+        },
+        fitSitesToMap: function () {
+            var bbox = ol.extent.boundingExtent(this.coordinates);
+            this.mapLocationSite.getView().fit(bbox, this.mapLocationSite.getSize());
+            var currentZoom = this.mapLocationSite.getView().getZoom();
+            if (currentZoom > 10) {
+                this.mapLocationSite.getView().setZoom(10);
+            }
+        },
+        drawMarkers: function (data) {
+            var self = this;
+
             // Create marker
-            var geometry = JSON.parse(data['geometry']);
-            var pos = ol.proj.fromLonLat(geometry['coordinates']);
+            var coordinatesArray = data['coord'].split(',');
+            var lon = parseFloat(coordinatesArray[0]);
+            var lat = parseFloat(coordinatesArray[1]);
+            coords = [lon, lat];
+            var pos = ol.proj.fromLonLat(coords);
 
-            this.coordinates.push(ol.proj.transform(geometry['coordinates'], 'EPSG:4326', 'EPSG:3857'));
+            if (this.uniqueSites.includes(data['id'])) {
+                return false;
+            }
 
-            self.siteMarkers.append('<a class="overlay site-marker-name" id="marker-name-' + data['id'] + '" ' +
-                'target="_blank" href="/map/#site-detail/' + url + '">' + data['name'] + '</a>');
-            self.siteMarkers.append('<div id="marker-point-' + data['id'] + '" title="Marker" class="site-marker"></div>');
+            this.uniqueSites.push(data['id']);
+
+            this.coordinates.push(pos);
+
+            self.siteMarkers.append('<div id="marker-point-' + data['id'] + '" title="' + data['name'] + '" class="site-marker"></div>');
             var marker = new ol.Overlay({
                 position: pos,
                 positioning: 'center-center',
@@ -266,8 +213,9 @@ define([
         },
         clearDashboard: function () {
             this.siteName.html('');
+            this.siteNameWrapper.hide();
             this.coordinates = [];
-            $('#site-name-label').html('Name');
+            this.uniqueSites = [];
             this.totalRecords.html('0');
             this.siteMarkers.html('');
             this.occurrenceData = {};
@@ -278,9 +226,9 @@ define([
                 '                        </tr>');
 
             // Clear canvas
-            if (this.originCategoryGraphCanvas) {
-                this.originCategoryGraphCanvas.destroy();
-                this.originCategoryGraphCanvas = null;
+            if (this.originCategoryChart) {
+                this.originCategoryChart.destroy();
+                this.originCategoryChart = null;
             }
 
             if (this.recordsTimelineGraphCanvas) {
@@ -297,6 +245,16 @@ define([
                 this.mapLocationSite.getOverlays().getArray().slice(0).forEach(function (overlay) {
                     this.mapLocationSite.removeOverlay(overlay);
                 }, this);
+            }
+
+            if (Shared.LocationSiteDetailXHRRequest) {
+                Shared.LocationSiteDetailXHRRequest.abort();
+                Shared.LocationSiteDetailXHRRequest = null;
+            }
+
+            if (this.locationSiteCoordinateRequestXHR) {
+                this.locationSiteCoordinateRequestXHR.abort();
+                this.locationSiteCoordinateRequestXHR = null;
             }
         },
         createPieChart: function (container, data, labels, options, colorOptions) {
@@ -327,15 +285,22 @@ define([
                 Shared.Router.clearSearch();
             });
         },
-        createOccurrenceTable: function (occurrenceData) {
+        createOccurrenceTable: function (data) {
             var self = this;
+            var occurrenceData = {};
+            var totalRecords = 0;
+            if (data.hasOwnProperty('records_occurrence')) {
+                occurrenceData = data['records_occurrence']
+            }
             $.each(occurrenceData, function (key, value) {
                 var recordTable = $('<tr></tr>');
-                recordTable.append('<td>' + value['label'] +
-                    '</td><td>' + value['category'] + '</td> ' +
+                recordTable.append('<td>' + value['name'] +
+                    '</td><td>' + self.categories[value['origin']] + '</td> ' +
                     '<td>' + value['count'] + '</td>');
+                totalRecords += value['count'];
                 self.occurrenceTable.append(recordTable);
             });
+            this.totalRecords.html(totalRecords);
         },
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
@@ -435,58 +400,50 @@ define([
             var originLabel = [];
 
             var recordsByYearLabel = [];
-            var recordsByYearData = {};
+            var recordsByYearData = [];
 
-            var originByYearData = {};
-            var dataByYear = {};
+            var recordsGraphData = {};
+            var dataByOrigin = {};
 
-            $.each(data, function (key, value) {
+            if (data.hasOwnProperty('records_graph_data')) {
+                recordsGraphData = data['records_graph_data'];
+            }
 
-                var objectProperties = value;
-                var category = objectProperties['category'];
-
-                dataByYear = objectProperties['data_by_year'];
-
-                $.each(dataByYear, function (dataByYearKey, dataByYearValue) {
-                    var intDataByYear = parseInt(dataByYearValue);
-
-                    if (recordsByYearData.hasOwnProperty(dataByYearKey)) {
-                        recordsByYearData[dataByYearKey] += intDataByYear;
-                    } else {
-                        recordsByYearData[dataByYearKey] = intDataByYear;
-                        recordsByYearLabel.push(dataByYearKey);
-                    }
-
-                    if (originByYearData.hasOwnProperty(category)) {
-                        if (originByYearData[category].hasOwnProperty(dataByYearKey)) {
-                            originByYearData[category][dataByYearKey] += intDataByYear;
+            $.each(recordsGraphData, function (key, value) {
+                recordsByYearLabel.push(key);
+                var totalData = 0;
+                $.each(value, function (objectKey, objectValue) {
+                    totalData = 0;
+                    if (self.categories[objectKey]) {
+                        totalData += objectValue;
+                        var category = self.categories[objectKey];
+                        if (!originData.hasOwnProperty(category)) {
+                            originData[category] = objectValue;
+                            originColor.push(self.categoryColor[category]);
+                            originLabel.push(category);
                         } else {
-                            originByYearData[category][dataByYearKey] = intDataByYear;
+                            originData[category] += objectValue;
                         }
-                    } else {
-                        originByYearData[category] = {};
-                        originByYearData[category][dataByYearKey] = intDataByYear;
+
+                        if (!dataByOrigin[self.categories[objectKey]]) {
+                            dataByOrigin[self.categories[objectKey]] = [
+                                objectValue
+                            ];
+                        } else {
+                            dataByOrigin[self.categories[objectKey]].push(objectValue);
+                        }
                     }
                 });
-
-                recordsByYearLabel = recordsByYearLabel.sort();
-
-                if (!originData.hasOwnProperty(category)) {
-                    originData[category] = objectProperties['count'];
-                    originColor.push(self.categoryColor[category]);
-                    originLabel.push(category);
-                } else {
-                    originData[category] += objectProperties['count'];
-                }
-
+                recordsByYearData.push(totalData);
             });
 
-            this.originCategoryGraphCanvas = self.createPieChart(
+            this.originCategoryChart = self.createPieChart(
                 self.originCategoryGraph.getContext('2d'),
                 Object.values(originData),
                 originLabel,
                 self.pieOptions,
                 originColor);
+
             var recordsByYearDatasets = [{
                 backgroundColor: '#48862b',
                 borderWidth: 1,
@@ -548,21 +505,12 @@ define([
             };
 
             var originTimelineDatasets = [];
-
-            $.each(originByYearData, function (_originKey, _originData) {
-                var _datasetsData = [];
-                $.each(recordsByYearLabel, function (index, value) {
-                    if (!_originData.hasOwnProperty(value)) {
-                        _datasetsData.push(0);
-                    } else {
-                        _datasetsData.push(_originData[value]);
-                    }
-                });
+            $.each(dataByOrigin, function (key, value) {
                 originTimelineDatasets.push({
-                    label: _originKey,
-                    backgroundColor: self.categoryColor[_originKey],
+                    label: key,
+                    backgroundColor: self.categoryColor[key],
                     borderWidth: 1,
-                    data: _datasetsData
+                    data: value
                 });
             });
 

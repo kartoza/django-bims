@@ -211,6 +211,7 @@ class LocationSitesSummary(APIView):
     TOTAL_RECORDS = 'total_records'
     RECORDS_GRAPH_DATA = 'records_graph_data'
     RECORDS_OCCURRENCE = 'records_occurrence'
+    TAXONOMY_NAME = 'name'
 
     def get(self, request):
         query_value = request.GET.get('search')
@@ -246,19 +247,29 @@ class LocationSitesSummary(APIView):
             collection_year = collection.collection_date_year
             if collection_year not in records_graph_data:
                 records_graph_data[collection_year] = {}
-                if collection.category not in records_graph_data[
-                        collection_year]:
-                    records_graph_data[collection_year][
-                        collection.category] = 0
-            records_graph_data[collection_year][collection.category] += 1
+            if collection.category not in records_graph_data[
+                collection_year]:
+                records_graph_data[collection_year][
+                    collection.category] = 1
+            else:
+                records_graph_data[collection_year][
+                    collection.category] += 1
+            if collection.taxonomy not in records_graph_data[
+                collection_year]:
+                records_graph_data[collection_year][
+                    collection.taxonomy] = 1
+            else:
+                records_graph_data[collection_year][
+                    collection.taxonomy] += 1
 
-            if collection.taxon_canonical_name not in records_occurrence:
-                records_occurrence[collection.taxon_canonical_name] = {
+            if collection.taxonomy not in records_occurrence:
+                records_occurrence[collection.taxonomy] = {
                     self.COUNT: 0,
-                    self.ORIGIN: collection.category
+                    self.ORIGIN: collection.category,
+                    self.TAXONOMY_NAME: collection.taxon_canonical_name
                 }
 
-            records_occurrence[collection.taxon_canonical_name]['count'] += 1
+            records_occurrence[collection.taxonomy]['count'] += 1
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
