@@ -95,7 +95,7 @@ define([
                     self.fetchData(data);
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
-                    Shared.Router.navigate('site-detail/' + self.apiParameters(filterParameters).substr(1))
+                    Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
                     self.siteName.append(data['name']);
 
                     self.generateDashboardData(data);

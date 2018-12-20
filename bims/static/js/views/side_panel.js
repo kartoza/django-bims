@@ -110,7 +110,6 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         },
         closeSidePanel: function (e) {
             Shared.Dispatcher.trigger('searchResult:clicked', null);
-            Shared.Router.clearSearch();
             Shared.Dispatcher.trigger('biodiversityLegend:moveRight');
             this.closeSidePanelAnimation();
             this.hideReturnButton();
