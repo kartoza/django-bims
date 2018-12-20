@@ -162,7 +162,6 @@ define([
             var recordsCount = this.totalRecords.toString();
             var siteCount = this.totalSites.toString();
             var speciesListName = [];
-            var siteIds = [];
 
             if (self.status === 'finish') {
                 $.each(this.recordsData, function (key, data) {
@@ -189,20 +188,16 @@ define([
                     var searchResultView = new SearchResultView({
                         model: searchModel
                     });
-                    siteIds.push(key);
                     self.viewCollection.push(searchResultView);
                 });
 
-                if (siteIds.length > 0) {
-                    // Set multiple site dashboard url
-                    var currentParameters = $.extend({}, filterParameters);
-                    currentParameters['siteId'] = siteIds.join(',');
-                    var templateParameter = _.template(Shared.SearchURLParametersTemplate);
-                    var apiUrl = templateParameter(currentParameters);
-                    apiUrl = apiUrl.substr(1);
-                    var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
-                    $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
-                }
+                // Set multiple site dashboard url
+                var currentParameters = $.extend({}, filterParameters);
+                var templateParameter = _.template(Shared.SearchURLParametersTemplate);
+                var apiUrl = templateParameter(currentParameters);
+                apiUrl = apiUrl.substr(1);
+                var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
+                $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
             }
 
             var taxaListNumberElm = $('#taxa-list-number');
