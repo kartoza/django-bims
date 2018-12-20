@@ -1,11 +1,9 @@
 # coding=utf8
-import os, json
+import os
+import json
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest
-from django.db.models.functions import Concat
-from django.db.models import CharField, Value as V
-from django.core.paginator import Paginator
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
@@ -73,9 +71,11 @@ class LocationSiteDetail(APIView):
         filters = request.GET
 
         # Search collection
-        collection_results, \
-        site_results, \
-        fuzzy_search = GetCollectionAbstract.apply_filter(
+        (
+            collection_results,
+            site_results,
+            fuzzy_search
+        ) = GetCollectionAbstract.apply_filter(
             query_value,
             filters,
             ignore_bbox=True)
