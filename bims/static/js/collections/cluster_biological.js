@@ -22,7 +22,7 @@ define([
             taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
             boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',
-            clusterSize: Shared.ClusterSize
+            clusterSize: Shared.ClusterSize, conservationStatus: ''
         },
         initialize: function (parent) {
             this.parent = parent;
@@ -45,6 +45,7 @@ define([
             this.parameters['boundary'] = '';
             this.parameters['reference'] = '';
             this.parameters['endemic'] = '';
+            this.parameters['conservationStatus'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
@@ -256,6 +257,7 @@ define([
             }
         },
         refresh: function () {
+            console.log('parameters', this.parameters);
             if (this.parameters['zoom'] &&
                 this.parameters['bbox'] &&
                 !this.fromSearchClick) {

@@ -39,7 +39,8 @@ define([
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
-            'click .clear-origin-filter': 'handleClearOriginClicked'
+            'click .clear-origin-filter': 'handleClearOriginClicked',
+            'click .clear-conservation-filter': 'handleClearConservationClicked'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -189,6 +190,16 @@ define([
                 this.search(searchValue);
             }
         },
+        getSelectedConservationStatus: function () {
+            var status = this.$el.find("#conservation-status").chosen().val();
+            if (status.length > 0) {
+                return JSON.stringify(status)
+            }
+            return '';
+        },
+        clearSelectedConservationStatus: function () {
+            return this.$el.find("#conservation-status").val("").trigger('chosen:updated');
+        },
         search: function (searchValue) {
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
@@ -261,6 +272,8 @@ define([
                 endemicValue = JSON.stringify(endemicValue)
             }
 
+            var conservationStatusValue = this.getSelectedConservationStatus();
+
             var boundaryValue = [];
             // just get the top one.
             $('input[name=boundary-value]:checked').each(function () {
@@ -268,7 +281,6 @@ define([
             });
 
             var userBoundarySelected = Shared.UserBoundarySelected;
-
             if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
                 Shared.Dispatcher.trigger('map:boundaryEnabled', false);
                 Shared.Dispatcher.trigger('map:closeHighlightPinned');
@@ -291,7 +303,8 @@ define([
                 'months': '',
                 'reference': referenceValue,
                 'referenceCategory': referenceCategory,
-                'endemic': endemicValue
+                'endemic': endemicValue,
+                'conservationStatus': conservationStatusValue
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -317,6 +330,7 @@ define([
                 && !parameters['referenceCategory']
                 && !parameters['reference']
                 && !parameters['endemic']
+                && !parameters['conservationStatus']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -485,6 +499,9 @@ define([
         },
         handleClearOriginClicked: function (e) {
             this.clearClickedOriginButton();
+        },
+        handleClearConservationClicked: function (e) {
+            this.clearSelectedConservationStatus();
         },
         filtersUpdated: function (filters) {
             var self = this;
