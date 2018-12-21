@@ -143,6 +143,7 @@ define([
                 && !this.parameters['referenceCategory']
                 && !this.parameters['reference']
                 && !this.parameters['endemic']
+                && !this.parameters['conservationStatus']
                 && !this.parameters['boundary']) {
                 return false
             } else {
