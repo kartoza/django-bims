@@ -38,24 +38,19 @@ define([
             this.referenceCategory = parameters['referenceCategory'];
             this.endemic = parameters['endemic'];
             this.reference = parameters['reference'];
+            this.conservationStatus = parameters['conservationStatus'];
+            parameters['taxon'] = '';
+            parameters['siteId'] = '';
 
-            this.filters = 'collector=' + this.collectorValue +
-                '&category=' + this.categoryValue +
-                '&yearFrom=' + this.yearFrom +
-                '&yearTo=' + this.yearTo +
-                '&months=' + this.months +
-                '&boundary=' + this.boundary +
-                '&userBoundary=' + this.userBoundary +
-                '&referenceCategory=' + this.referenceCategory +
-                '&endemic=' + this.endemic +
-                '&reference=' + this.reference;
+            var templateUrl = _.template(Shared.SearchURLParametersTemplate);
+            this.filters = templateUrl(parameters);
+            this.url = this.searchUrl + this.filters;
 
-            this.url = this.searchUrl + '?' + 'search=' + this.searchValue + '&' + this.filters;
             // Update permalink
             if (shouldUpdateUrl) {
                 var linkUrl = 'search/';
                 linkUrl += this.searchValue;
-                linkUrl += '/' + this.filters;
+                linkUrl += '/' + this.filters.substring(1, this.filters.length);
                 Shared.Router.updateUrl(linkUrl);
             }
 

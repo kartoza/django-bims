@@ -67,6 +67,7 @@ require([
 
     // A $( document ).ready() block.
     $(document).ready(function () {
+        $("#conservation-status").chosen();
         $('#menu-dropdown-burger').click(function () {
             $('.dropdown-menu-left').toggle();
         });

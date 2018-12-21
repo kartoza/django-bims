@@ -108,6 +108,7 @@ class GetCollectionAbstract(APIView):
         months = filters.get('months', None)
         site_id = filters.get('siteId', None)
         endemic = filters.get('endemic', None)
+        conservation_status = filters.get('conservationStatus', None)
 
         if (
                 taxon or
@@ -116,6 +117,7 @@ class GetCollectionAbstract(APIView):
                 query_category or reference_category or
                 year_from or year_to or
                 months or reference or
+                conservation_status or
                 site_id or endemic):
             filter_mode = True
 
@@ -212,6 +214,14 @@ class GetCollectionAbstract(APIView):
             for query in qs:
                 qs_endemism.add(SQ(endemism=query), SQ.OR)
             results = results.filter(qs_endemism)
+
+        # query by conservation status
+        if conservation_status:
+            qs_conservation_status = SQ()
+            qs = json.loads(conservation_status)
+            for query in qs:
+                qs_conservation_status.add(SQ(iucn_status=query), SQ.OR)
+            results = results.filter(qs_conservation_status)
 
         # query by reference category
         if reference_category:

@@ -297,7 +297,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 #search-result-content .search-results-total {
-    background: ghostwhite;
+    background: #f9f9f9;
     padding-right: 15px;
     padding-left: 15px;
     padding-top: 5px;
@@ -318,7 +318,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 #search-result-content .result-search:hover {
-    background: ghostwhite;
+    background: #f9f9f9;
 }
 
 #search-result-content p {
@@ -493,7 +493,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-control-panel-box .subtitle, .search-results-total {
-    background-color: ghostwhite;
+    background-color: #f9f9f9;
     text-align: left;
     padding: 5px;
     border-bottom: 1px solid rgb(227, 227, 227);
@@ -811,7 +811,7 @@ div:hover::-webkit-scrollbar {
     font-weight: bold;
     font-size: 9pt;
     padding: 10px;
-    background-color: ghostwhite;
+    background-color: #f9f9f9;
 }
 
 .search-results-total:hover {
@@ -1046,19 +1046,19 @@ div:hover::-webkit-scrollbar {
 }
 
 #start-tutorial {
-        position: fixed;
-        bottom: 2.5em;
-        width: 31px;
-        height: 31px;
-        text-align: center;
-        padding-top: 4px;
-        font-weight: 700;
-        left: 0.5em;
-        border-radius: 5px;
-        z-index: 2;
-        opacity: 0.7;
-        background-color: #fff;
-    }
+    position: fixed;
+    bottom: 2.5em;
+    width: 31px;
+    height: 31px;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: 700;
+    left: 0.5em;
+    border-radius: 5px;
+    z-index: 2;
+    opacity: 0.7;
+    background-color: #fff;
+}
 
 #map-legend-wrapper.hide-legend {
     max-width: 31px;
@@ -1848,12 +1848,14 @@ div:hover::-webkit-scrollbar {
     background-color: black;
 }
 
-.conservation-status {
-    filter: grayscale(50%);
-    opacity: 0.4;
-    filter: alpha(opacity=40); /* msie */
-    background-color: #a0a0a0;
-    padding: 10px;
+.conservation-status-wrapper {
+    padding-top: 15px;
+    padding-bottom: 3px;
+    overflow-y: unset;
+}
+
+.conservation-status-wrapper li {
+    height: unset !important;
 }
 
 .study-reference {
@@ -2147,4 +2149,17 @@ div:hover::-webkit-scrollbar {
     font-size: 10pt;
     font-weight: bold;
     text-shadow: black 0.1em 0.1em 0.2em;
+}
+
+.small-space {
+    display: block;
+    width: 10px;
+    height: 10px;
+}
+
+.button-filter-wrapper, .sub-filter {
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
 }

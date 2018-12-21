@@ -45,6 +45,10 @@
         const ogcServerDefaultLocation = "{{ OGC_SERVER.default.PUBLIC_LOCATION }}";
         const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
         var filterParameters = {};
+        var conservationStatusData = [];
+        {% if use_conservation_status %}
+            conservationStatusData = {{ conservation_status_data | safe }};
+        {% endif %}
     </script>
     {% block extra_head %}
 
