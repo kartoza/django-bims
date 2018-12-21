@@ -580,6 +580,12 @@ define([
                     }
                 });
             }
+
+            // Conservation status
+            if (allFilters.hasOwnProperty('conservationStatus')) {
+                var conservationStatus = JSON.parse(allFilters['conservationStatus']);
+                $('#conservation-status').val(conservationStatus);
+            }
         },
     })
 

@@ -257,7 +257,6 @@ define([
             }
         },
         refresh: function () {
-            console.log('parameters', this.parameters);
             if (this.parameters['zoom'] &&
                 this.parameters['bbox'] &&
                 !this.fromSearchClick) {
