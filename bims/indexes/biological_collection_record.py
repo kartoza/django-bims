@@ -125,6 +125,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    iucn_status = indexes.CharField(
+        indexed=True
+    )
+
     boundary = indexes.IntegerField()
 
     def prepare_taxon_class(self, obj):
@@ -168,6 +172,13 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         if not obj.taxonomy.endemism:
             return ''
         return obj.taxonomy.endemism.name
+
+    def prepare_iucn_status(self, obj):
+        if not obj.taxonomy:
+            return ''
+        if not obj.taxonomy.iucn_status:
+            return ''
+        return obj.taxonomy.iucn_status.category
 
     def prepare_vernacular_names(self, obj):
         if not obj.taxonomy:
