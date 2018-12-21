@@ -502,6 +502,9 @@ define([
         },
         handleClearConservationClicked: function (e) {
             this.clearSelectedConservationStatus();
+            if (Shared.CurrentState.SEARCH) {
+                this.searchClick();
+            }
         },
         filtersUpdated: function (filters) {
             var self = this;
