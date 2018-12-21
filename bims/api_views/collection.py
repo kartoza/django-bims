@@ -123,7 +123,8 @@ class GetCollectionAbstract(APIView):
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
                     SQ(original_species_name_exact__contains=clean_query) |
-                    SQ(taxon_scientific_name_exact__contains=clean_query),
+                    SQ(taxon_scientific_name_exact__contains=clean_query) |
+                    SQ(vernacular_names__contains=clean_query),
                     validated=True
             ).models(BiologicalCollectionRecord)
 
