@@ -9,10 +9,9 @@ from bims.models.taxonomy import Taxonomy
 def autocomplete(request):
     suggestions = []
     # Search from taxon name
-    sqs = []
     try:
-        sqs = SearchQuerySet().autocomplete(
-            canonical_name_auto=request.GET.get('q', '')
+        sqs = SearchQuerySet().filter(
+            canonical_name_char__contains=request.GET.get('q', '')
         )[:10]
     except TypeError:
         return HttpResponseBadRequest()
@@ -29,9 +28,9 @@ def autocomplete(request):
 
     # Search from vernacular name
     sqs = SearchQuerySet().filter(
-        name=request.GET.get('q', ''),
+        name_char__contains=request.GET.get('q', ''),
         lang='eng'
-    ).models(VernacularName)
+    ).models(VernacularName)[:10]
 
     unique_vernacular_names = []
     for result in sqs:

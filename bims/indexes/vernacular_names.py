@@ -13,6 +13,11 @@ class VernacularNameIndex(indexes.SearchIndex, indexes.Indexable):
         model_attr='name'
     )
 
+    name_char = indexes.CharField(
+        indexed=True,
+        model_attr='name'
+    )
+
     lang = indexes.CharField(
         indexed=True,
         model_attr='language'

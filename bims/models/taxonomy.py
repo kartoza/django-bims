@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.dispatch import receiver
 
 from bims.enums.taxonomic_status import TaxonomicStatus
