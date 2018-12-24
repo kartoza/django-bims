@@ -21,7 +21,9 @@ define([
             'click .spatial-clear-filter': 'clearFilter',
             'click .spatial-scale-apply-filter': 'applyFilter',
             'click .spatial-scale-clear-filter': 'clearSpatialFilter',
-            'click #spatial-scale-container input': 'spatialScaleInputClicked'
+            'click #spatial-scale-container input': 'spatialScaleInputClicked',
+            'click .boundary-item-input': 'riverCatchmentInputClicked',
+            'click .boundary-item': 'toggleChildFilters'
         },
         initialize: function () {
             Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearAllSelected, this);
@@ -40,12 +42,14 @@ define([
             self.applyScaleFilterButton = self.$el.find('.spatial-scale-apply-filter');
             self.clearScaleFilterButton = self.$el.find('.spatial-scale-clear-filter');
             self.spatialScaleContainer = self.$el.find('#spatial-scale-container');
+            self.riverCatchmentContainer = self.$el.find('#river-catchment-container');
 
             self.applyFilterButton.prop('disabled', true);
             self.clearFilterButton.prop('disabled', true);
 
             self.getUserBoundary();
             self.getAdministrativeFilter();
+            self.getRiverCatchmentFilter();
 
             self.progress.hide();
 
@@ -168,6 +172,57 @@ define([
                 }
             });
         },
+        getRiverCatchmentFilter: function () {
+            var self = this;
+            $.ajax({
+                type: 'GET',
+                url: '/api/river-catchment-list/',
+                dataType: 'json',
+                success: function (data) {
+                    self.renderChildTree(data, self.riverCatchmentContainer, 1, true);
+                }
+            });
+        },
+        renderChildTree: function (data, wrapper, level, firstParent=false) {
+            var self = this;
+            var $itemWrapper = $('<div class="boundary-item-child"></div>');
+            if (!firstParent) {
+                $itemWrapper.hide();
+                wrapper.append($itemWrapper);
+                wrapper = $itemWrapper;
+            }
+            for (var i = 0; i < data.length; i++) {
+                var $item = $('<div class="boundary-item"></div>');
+                $item.append('<input class="boundary-item-input" type="checkbox" data-level="' + level + '" name="river-catchment-value" value="' + data[i]['value'] + '">');
+                $item.append('<label> ' + data[i]['value'] + '</label>');
+                wrapper.append($item);
+                if (data[i]['children'].length > 0) {
+                    $item.append('<i class="fa fa-plus-square-o pull-right" aria-hidden="true"> </i>');
+                    self.renderChildTree(data[i]['children'], $item, level+1);
+                }
+            }
+        },
+        riverCatchmentInputClicked: function (e) {
+            var $target = $(e.target);
+            var value = $target.val();
+            var $wrapper = $target.parent();
+            var level = $target.data('level');
+            if ($target.is(':checked')) {
+                $wrapper.children().find('input:checkbox:not(:checked)').prop('checked', true);
+            } else {
+                // Uncheck parents
+                if (level > 1) {
+                    var $parent = $wrapper.parent();
+                    for (var i = level-1; i >= 1; i--) {
+                        $parent = $parent.parent().find('input:checkbox:checked[data-level="' + (i) + '"]').prop('checked', false);
+                        console.log('level', $parent);
+                        $parent = $parent.parent().parent();
+                    }
+                }
+
+                $wrapper.children().find('input:checkbox:checked').prop('checked', false);
+            }
+        },
         spatialScaleInputClicked: function (e) {
             var $target = $(e.target);
             var value = $target.val();
@@ -185,6 +240,7 @@ define([
         },
         toggleChildFilters: function (e) {
             var $target = $(e.target);
+            e.stopPropagation();
 
             if ($target.is('input')) {
                 return true;
@@ -192,7 +248,21 @@ define([
             if (!$target.hasClass('boundary-item')) {
                 $target = $target.parent();
             }
-            $target.children().find('.boundary-item').toggle();
+            var childrens = $target.children();
+            for (var i = 0; i < childrens.length; i++) {
+                var children = $(childrens[i]);
+                if (children.hasClass('fa-plus-square-o')) {
+                    children.removeClass('fa-plus-square-o');
+                    children.addClass('fa-minus-square-o');
+                }
+                else if (children.hasClass('fa-minus-square-o')) {
+                    children.removeClass('fa-minus-square-o');
+                    children.addClass('fa-plus-square-o');
+                }
+                else if (children.hasClass('boundary-item-child') ) {
+                    children.toggle();
+                }
+            }
         },
         updateChecked: function() {
             var checked = this.$el.find('input:checkbox:checked');

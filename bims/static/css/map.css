@@ -2018,7 +2018,13 @@ div:hover::-webkit-scrollbar {
 }
 
 .boundary-item label {
+    font-size: 10pt;
+    padding-left: 5px;
     margin-bottom: 0;
+}
+
+.boundary-item-child {
+    padding-left: 15px;
 }
 
 .boundary-item, .boundary-item label {
