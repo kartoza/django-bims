@@ -1,7 +1,8 @@
 # coding=utf-8
+from haystack import indexes
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from haystack import indexes
+from bims.utils.river_catchments import get_river_catchment_site
 
 
 class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
@@ -129,6 +130,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
+    river_catchments = indexes.CharField(
+        indexed=True
+    )
+
     boundary = indexes.IntegerField()
 
     def prepare_taxon_class(self, obj):
@@ -186,6 +191,17 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         return ','.join(obj.taxonomy.vernacular_names.filter(
             language='eng'
         ).values_list('name', flat=True))
+
+    def prepare_river_catchments(self, obj):
+        if not obj.site:
+            return ''
+        if not obj.site.location_context_document:
+            return ''
+        river_catchment_array = get_river_catchment_site(obj.site)
+        if not river_catchment_array:
+            return ''
+        river_catchment_string = ',' + ','.join(river_catchment_array) + ','
+        return river_catchment_string
 
     class Meta:
         app_label = 'bims'
