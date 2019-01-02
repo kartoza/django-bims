@@ -22,8 +22,10 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
         getNodesWithoutChildren: function (boundaries, idsArray, isRoot = false) {
             var nodeIds = [];
             var self = this;
+            var rootFound = false;
             $.each(boundaries, function (index, boundary) {
                 if (idsArray.includes(boundary['value'].toString())) {
+                    rootFound = true;
                     if (boundary['children'].length > 0) {
                         nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
                     }
@@ -33,6 +35,9 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                     if (boundary['children'].length > 0) {
                         nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
                     }
+                }
+                if (isRoot && !rootFound) {
+                    nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray, isRoot));
                 }
             });
             return nodeIds;
@@ -81,14 +86,12 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                             }
 
                             if (index === 0 && !isUserBoundaryDisplayed) {
-                                console.log('switchHighlightPinned');
                                 Shared.Dispatcher.trigger('map:switchHighlightPinned', olfeature, true);
                             } else {
-                                console.log('addHighlightPinnedFeature');
                                 Shared.Dispatcher.trigger('map:addHighlightPinnedFeature', olfeature[0]);
                             }
                         });
-                        // Shared.Dispatcher.trigger('map:zoomToHighlightPinnedFeatures');
+                        Shared.Dispatcher.trigger('map:zoomToHighlightPinnedFeatures');
                     }
                 },
                 error: function () {

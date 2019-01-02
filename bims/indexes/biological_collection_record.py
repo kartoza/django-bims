@@ -134,7 +134,9 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
-    boundary = indexes.IntegerField()
+    boundary = indexes.CharField(
+        indexed=True
+    )
 
     def prepare_taxon_class(self, obj):
         if obj.taxonomy:
@@ -167,9 +169,19 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         return '0,0'
 
     def prepare_boundary(self, obj):
-        if obj.site.boundary:
-            return obj.site.boundary.id
-        return 0
+        if not obj.site:
+            return ''
+        if not obj.site.boundary:
+            return ''
+        ids = []
+        boundary = obj.site.boundary
+        while True:
+            try:
+                ids.append(boundary.id)
+                boundary = boundary.top_level_boundary
+            except AttributeError:
+                break
+        return '_' + '_'.join([str(i) for i in ids]) + '_'
 
     def prepare_endemism(self, obj):
         if not obj.taxonomy:
@@ -200,7 +212,7 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         river_catchment_array = get_river_catchment_site(obj.site)
         if not river_catchment_array:
             return ''
-        river_catchment_string = ',' + ','.join(river_catchment_array) + ','
+        river_catchment_string = '_' + '_'.join(river_catchment_array) + '_'
         return river_catchment_string
 
     class Meta:

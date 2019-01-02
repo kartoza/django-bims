@@ -191,7 +191,7 @@ define([
                 if (data[i].hasOwnProperty('value')) {
                     dataValue = data[i]['value'];
                 }
-                if (selectedArray.includes(dataValue)) {
+                if (selectedArray.includes(dataValue.toString())) {
                     _isChecked = true;
                 }
                 if (_isChecked) {
