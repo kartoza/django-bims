@@ -115,22 +115,22 @@ def get_river_catchment_tree(parent=None):
 
 def get_river_catchment_site(location_site):
     """
-    Read from location context document of location site, 
+    Read from location context document of location site,
     the return all river catchment values.
-    
+
     :param location_site: LocationSite object
     :return: array of river catchment value
     """
     if not location_site.location_context_document:
         return []
-    
+
     river_catchment_values = []
     geocontext_data = json.loads(
         location_site.location_context_document
     )
     if CONTEXT_GROUP_VALUES not in geocontext_data:
         return river_catchment_values
-    
+
     context_group = geocontext_data[CONTEXT_GROUP_VALUES]
     river_data = None
     for context_data in context_group:
