@@ -10,6 +10,7 @@ define([
     return Backbone.View.extend({
         template: _.template($('#spatial-filter-panel').html()),
         selectedPoliticalRegions: [],
+        selectedRiverCatchments: [],
         topLevel: 2,
         events: {
             'click .close-button': 'close',
@@ -21,7 +22,7 @@ define([
             'click .spatial-clear-filter': 'clearFilter',
             'click .spatial-scale-apply-filter': 'applyFilter',
             'click .spatial-scale-clear-filter': 'clearSpatialFilter',
-            'click #spatial-scale-container input': 'spatialScaleInputClicked',
+            'click .spatial-filter-item-input': 'spatialScaleInputClicked',
             'click .boundary-item-input': 'riverCatchmentInputClicked',
             'click .boundary-item': 'toggleChildFilters'
         },
@@ -101,7 +102,7 @@ define([
                 var input = $(this);
                 var val = input.val();
 
-                if(val.length >= 3) {
+                if (val.length >= 3) {
                     self.uploadButton.prop('disabled', false);
                 } else {
                     self.uploadButton.prop('disabled', true);
@@ -113,7 +114,7 @@ define([
         },
         getUserBoundary: function () {
             var self = this;
-            if(!is_logged_in) {
+            if (!is_logged_in) {
                 return false;
             }
             $.ajax({
@@ -130,8 +131,8 @@ define([
                         if (indexOf !== -1) {
                             selected = 'spatial-selected';
                         }
-                        var div = $('<div class="boundary-list-item '+selected+'" data-id="'+id+'">'+
-                            feature['properties']['name']+'</div>');
+                        var div = $('<div class="boundary-list-item ' + selected + '" data-id="' + id + '">' +
+                            feature['properties']['name'] + '</div>');
                         self.boundaryListContainer.append(div);
                     })
                 }
@@ -154,20 +155,22 @@ define([
                         }
                         var boundaryClass = 'boundary-item';
 
-                        $wrapper.append(
-                            '<div class="'+boundaryClass+'" id="boundary-wrapper-'+ data[i]['id'] +'">' +
-                            '<input type="checkbox" id="'+data[i]['id']+'" ' +
+                        var $item = $(
+                            '<div class="' + boundaryClass + '" id="boundary-wrapper-' + data[i]['id'] + '">' +
+                            '<input class="spatial-filter-item-input" type="checkbox" id="' + data[i]['id'] + '" ' +
                             'name="boundary-value" value="' + data[i]['id'] + '" ' +
                             'data-level="' + data[i]['type__level'] + '">' +
-                            '&nbsp;<label>' + data[i]['name'] + '</label>' +
-                            '<div id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div>' +
-                            '</div> ');
+                            '&nbsp;<label>' + data[i]['name'] + '</label>');
+
+                        $wrapper.append($item);
 
                         if (data[i]['type__level'] > self.topLevel) {
-                            $wrapper.find('#boundary-wrapper-'+data[i]['id']).hide();
                         } else {
-                            $wrapper.find('#boundary-wrapper-'+data[i]['id']).on('click', self.toggleChildFilters);
+                            $wrapper.find('#boundary-wrapper-' + data[i]['id']).on('click', self.toggleChildFilters);
                         }
+
+                        $item.append('<div class="boundary-item-child" id="boundary-' + data[i]['id'] + '" style="padding-left: 15px"></div></div>');
+                        $item.find('.boundary-item-child').hide();
                     }
                 }
             });
@@ -183,7 +186,7 @@ define([
                 }
             });
         },
-        renderChildTree: function (data, wrapper, level, firstParent=false) {
+        renderChildTree: function (data, wrapper, level, firstParent = false) {
             var self = this;
             var $itemWrapper = $('<div class="boundary-item-child"></div>');
             if (!firstParent) {
@@ -198,7 +201,7 @@ define([
                 wrapper.append($item);
                 if (data[i]['children'].length > 0) {
                     $item.append('<i class="fa fa-plus-square-o pull-right" aria-hidden="true"> </i>');
-                    self.renderChildTree(data[i]['children'], $item, level+1);
+                    self.renderChildTree(data[i]['children'], $item, level + 1);
                 }
             }
         },
@@ -208,20 +211,43 @@ define([
             var $wrapper = $target.parent();
             var level = $target.data('level');
             if ($target.is(':checked')) {
-                $wrapper.children().find('input:checkbox:not(:checked)').prop('checked', true);
+                this.addSelectedValue(this.selectedRiverCatchments, value);
+                var $children = $wrapper.children().find('input:checkbox:not(:checked)');
+                $children.prop('checked', true);
+                var $checkedChildren = $wrapper.children().find('input:checkbox:checked');
+                for (var j = 0; j < $checkedChildren.length; j++) {
+                    var childrenValue = $($checkedChildren[j]).val();
+                    this.removeSelectedValue(this.selectedRiverCatchments, childrenValue);
+                }
             } else {
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
-                    for (var i = level-1; i >= 1; i--) {
+                    for (var i = level - 1; i >= 1; i--) {
+                        var $checked = $parent.find('input:checkbox:checked[data-level="' + (i + 1) + '"]');
                         $parent = $parent.parent().find('input:checkbox:checked[data-level="' + (i) + '"]').prop('checked', false);
-                        console.log('level', $parent);
+                        this.removeSelectedValue(this.selectedRiverCatchments, $parent.val());
+                        for (var j = 0; j < $checked.length; j++) {
+                            var checkedValue = $($checked[j]).val();
+                            this.addSelectedValue(this.selectedRiverCatchments, checkedValue);
+                        }
                         $parent = $parent.parent().parent();
                     }
                 }
 
+                this.removeSelectedValue(this.selectedRiverCatchments, value);
                 $wrapper.children().find('input:checkbox:checked').prop('checked', false);
             }
+            this.updateChecked();
+        },
+        addSelectedValue: function (array, value) {
+            if (!array.includes(value)) {
+                array.push(value);
+            }
+        },
+        removeSelectedValue: function (array, value) {
+            var index = array.indexOf(value);
+            if (index !== -1) array.splice(index, 1);
         },
         spatialScaleInputClicked: function (e) {
             var $target = $(e.target);
@@ -248,23 +274,23 @@ define([
             if (!$target.hasClass('boundary-item')) {
                 $target = $target.parent();
             }
-            var childrens = $target.children();
-            for (var i = 0; i < childrens.length; i++) {
-                var children = $(childrens[i]);
-                if (children.hasClass('fa-plus-square-o')) {
-                    children.removeClass('fa-plus-square-o');
-                    children.addClass('fa-minus-square-o');
+            var children = $target.children();
+            for (var i = 0; i < children.length; i++) {
+                var _children = $(children[i]);
+                if (_children.hasClass('fa-plus-square-o')) {
+                    _children.removeClass('fa-plus-square-o');
+                    _children.addClass('fa-minus-square-o');
                 }
-                else if (children.hasClass('fa-minus-square-o')) {
-                    children.removeClass('fa-minus-square-o');
-                    children.addClass('fa-plus-square-o');
+                else if (_children.hasClass('fa-minus-square-o')) {
+                    _children.removeClass('fa-minus-square-o');
+                    _children.addClass('fa-plus-square-o');
                 }
-                else if (children.hasClass('boundary-item-child') ) {
-                    children.toggle();
+                else if (_children.hasClass('boundary-item-child')) {
+                    _children.toggle();
                 }
             }
         },
-        updateChecked: function() {
+        updateChecked: function () {
             var checked = this.$el.find('input:checkbox:checked');
             if (checked.length > 0) {
                 this.applyScaleFilterButton.prop('disabled', false);
@@ -313,8 +339,8 @@ define([
                 }
             );
 
-            for (var i=0; i<feature.length;i++) {
-                feature[i].setProperties({'id': 'userBoundary-'+id});
+            for (var i = 0; i < feature.length; i++) {
+                feature[i].setProperties({'id': 'userBoundary-' + id});
             }
 
             if (addFeature) {
@@ -324,7 +350,7 @@ define([
                     Shared.Dispatcher.trigger('map:addHighlightPinnedFeature', feature[0]);
                 }
             } else {
-                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', 'userBoundary-'+id);
+                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', 'userBoundary-' + id);
             }
 
             if (Shared.UserBoundarySelected.length > 0) {
@@ -365,8 +391,10 @@ define([
         },
         clearAllSelected: function (e) {
             this.clearSelected(e);
-            var spatialScaleContainer = this.$el.find('#spatial-scale-container');
-            spatialScaleContainer.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            this.selectedRiverCatchments = [];
+            this.selectedPoliticalRegions = [];
+            this.spatialScaleContainer.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            this.riverCatchmentContainer.closest('.row').find('input:checkbox:checked').prop('checked', false);
             this.applyScaleFilterButton.prop('disabled', true);
             this.clearScaleFilterButton.prop('disabled', true);
         },
@@ -374,13 +402,13 @@ define([
             this.applyFilterButton.prop('disabled', true);
             this.clearFilterButton.prop('disabled', true);
             $.each(Shared.UserBoundarySelected, function (index, id) {
-                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', 'userBoundary-'+id);
+                Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', 'userBoundary-' + id);
             });
             Shared.UserBoundarySelected = [];
             $.each(this.boundaryListContainer.children(), function (index, div) {
                 var select = $(div);
-                if(select.hasClass('spatial-selected')) {
-                   select.removeClass('spatial-selected');
+                if (select.hasClass('spatial-selected')) {
+                    select.removeClass('spatial-selected');
                 }
             });
         },
@@ -393,6 +421,7 @@ define([
         clearSpatialFilter: function (e) {
             var target = $(e.target);
             target.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            this.clearAllSelected(e);
             if (Shared.CurrentState.SEARCH) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }

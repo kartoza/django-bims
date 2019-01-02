@@ -292,6 +292,8 @@ define([
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
             }
 
+            var riverCatchments = this.spatialFilterView.selectedRiverCatchments;
+
             var parameters = {
                 'search': searchValue,
                 'collector': collectorValue,
@@ -304,7 +306,8 @@ define([
                 'reference': referenceValue,
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
-                'conservationStatus': conservationStatusValue
+                'conservationStatus': conservationStatusValue,
+                'riverCatchment': riverCatchments.length === 0 ? '' : JSON.stringify(riverCatchments)
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -331,6 +334,7 @@ define([
                 && !parameters['reference']
                 && !parameters['endemic']
                 && !parameters['conservationStatus']
+                && !parameters['riverCatchment']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
