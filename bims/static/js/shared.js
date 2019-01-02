@@ -19,6 +19,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         StorageUtil: new StorageUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
+        PoliticalRegionBoundaries: null,
         AdminAreaSelected: [],
         LegendsDisplayed: false,
         CurrentState: {

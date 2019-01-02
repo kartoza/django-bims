@@ -24,8 +24,9 @@ class BoundaryList(APIView):
             )
         for boundary in boundaries:
             boundaries_dict.append({
-                'key': boundary.name,
+                'key': boundary.type.name,
                 'value': boundary.id,
+                'name': boundary.name,
                 'children': self.get_boundary_tree(boundary)
             })
 

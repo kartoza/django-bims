@@ -274,11 +274,7 @@ define([
 
             var conservationStatusValue = this.getSelectedConservationStatus();
 
-            var boundaryValue = [];
-            // just get the top one.
-            $('input[name=boundary-value]:checked').each(function () {
-                boundaryValue.push($(this).val())
-            });
+            var boundaryValue = this.spatialFilterView.selectedPoliticalRegions;
 
             var userBoundarySelected = Shared.UserBoundarySelected;
             if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
