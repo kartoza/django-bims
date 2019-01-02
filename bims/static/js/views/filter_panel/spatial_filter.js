@@ -25,7 +25,8 @@ define([
             'click .spatial-scale-apply-filter': 'applyFilter',
             'click .spatial-scale-clear-filter': 'clearSpatialFilter',
             'click .boundary-item-input': 'itemInputClicked',
-            'click .boundary-item': 'toggleChildFilters'
+            'click .boundary-item': 'toggleChildFilters',
+            'click .spatial-scale-sub-panel': 'subPanelClicked'
         },
         initialize: function () {
             Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearAllSelected, this);
@@ -406,6 +407,41 @@ define([
             if (Shared.CurrentState.SEARCH) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }
-        }
+        },
+        subPanelClicked: function (e) {
+            var $panel = $($(e.target).next().get(0));
+            $panel.toggle();
+
+            var $target = $(e.target);
+
+            if ($target.hasClass('small-subtitle')) {
+                $target = $target.children();
+                if ($target.hasClass('fa-angle-down')) {
+                    $target.removeClass('fa-angle-down');
+                    $target.addClass('fa-angle-up');
+                } else {
+                    $target.removeClass('fa-angle-up');
+                    $target.addClass('fa-angle-down');
+                }
+            }
+        },
+        getNodesWithoutChildren: function (boundaries, idsArray, isRoot = false) {
+            var nodeIds = [];
+            var self = this;
+            $.each(boundaries, function (index, boundary) {
+                if (idsArray.includes(boundary['value'].toString())) {
+                    if (boundary['children'].length > 0) {
+                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
+                    }
+                }
+                else if (!isRoot) {
+                    nodeIds.push(boundary['value']);
+                    if (boundary['children'].length > 0) {
+                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
+                    }
+                }
+            });
+            return nodeIds;
+        },
     })
 });

@@ -274,7 +274,10 @@ define([
 
             var conservationStatusValue = this.getSelectedConservationStatus();
 
-            var boundaryValue = this.spatialFilterView.selectedPoliticalRegions;
+            var boundaryValue = this.spatialFilterView.getNodesWithoutChildren(
+                Shared.PoliticalRegionBoundaries,
+                this.spatialFilterView.selectedPoliticalRegions,
+                true);
 
             var userBoundarySelected = Shared.UserBoundarySelected;
             if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {

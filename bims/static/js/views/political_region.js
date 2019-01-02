@@ -19,34 +19,13 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
             Shared.Dispatcher.trigger('map:closeHighlightPinned');
             Shared.AdminAreaSelected = [];
         },
-        getNodesWithoutChildren: function (boundaries, idsArray, isRoot = false) {
-            var nodeIds = [];
-            var self = this;
-            $.each(boundaries, function (index, boundary) {
-                if (idsArray.includes(boundary['value'].toString())) {
-                    if (boundary['children'].length > 0) {
-                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
-                    }
-                }
-                else if (!isRoot) {
-                    nodeIds.push(boundary['value']);
-                    if (boundary['children'].length > 0) {
-                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
-                    }
-                }
-            });
-            return nodeIds;
-        },
         show: function (ids) {
             if (this.catchmentAreaXHR) {
                 this.catchmentAreaXHR.abort();
             }
 
-            var idsArray = JSON.parse(ids);
-            var nodeIds = this.getNodesWithoutChildren(Shared.PoliticalRegionBoundaries, idsArray, true);
-
             this.catchmentAreaXHR = $.get({
-                url: this.catchmentAreaBoundaryUrl + JSON.stringify(nodeIds),
+                url: this.catchmentAreaBoundaryUrl + ids,
                 dataType: 'json',
                 success: function (data) {
                     $.each(Shared.AdminAreaSelected, function (index, id) {
