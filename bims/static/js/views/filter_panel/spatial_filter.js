@@ -164,28 +164,47 @@ define([
                 }
             });
         },
-        renderChildTree: function (data, wrapper, level, name) {
+        renderChildTree: function (data, wrapper, level, name, isChecked = false) {
             var self = this;
+            var selectedArray = null;
             var $itemWrapper = $('<div class="boundary-item-child"></div>');
             if (level > 1) {
                 $itemWrapper.hide();
                 wrapper.append($itemWrapper);
                 wrapper = $itemWrapper;
             }
+            if (name === this.riverCatchmentInputName) {
+                selectedArray = this.selectedRiverCatchments;
+            } else {
+                selectedArray = this.selectedPoliticalRegions;
+            }
             for (var i = 0; i < data.length; i++) {
                 var label = '';
+                var checked = '';
+                var dataValue = '';
+                var _isChecked = isChecked;
                 if (data[i].hasOwnProperty('name')) {
                     label = data[i]['name'];
                 } else {
                     label = data[i]['value'];
                 }
+                if (data[i].hasOwnProperty('value')) {
+                    dataValue = data[i]['value'];
+                }
+                if (selectedArray.includes(dataValue)) {
+                    _isChecked = true;
+                }
+                if (_isChecked) {
+                    checked = 'checked';
+                    this.updateChecked();
+                }
                 var $item = $('<div class="boundary-item"></div>');
-                $item.append('<input class="boundary-item-input" type="checkbox" data-level="' + level + '" name="' + name + '" value="' + data[i]['value'] + '">');
+                $item.append('<input class="boundary-item-input" type="checkbox" data-level="' + level + '" name="' + name + '" value="' + dataValue + '" ' + checked + '>');
                 $item.append('<label> ' + label + '</label>');
                 wrapper.append($item);
                 if (data[i]['children'].length > 0) {
                     $item.append('<i class="fa fa-plus-square-o pull-right" aria-hidden="true"> </i>');
-                    self.renderChildTree(data[i]['children'], $item, level + 1, name);
+                    self.renderChildTree(data[i]['children'], $item, level + 1, name, _isChecked);
                 }
             }
         },
@@ -424,24 +443,6 @@ define([
                     $target.addClass('fa-angle-down');
                 }
             }
-        },
-        getNodesWithoutChildren: function (boundaries, idsArray, isRoot = false) {
-            var nodeIds = [];
-            var self = this;
-            $.each(boundaries, function (index, boundary) {
-                if (idsArray.includes(boundary['value'].toString())) {
-                    if (boundary['children'].length > 0) {
-                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
-                    }
-                }
-                else if (!isRoot) {
-                    nodeIds.push(boundary['value']);
-                    if (boundary['children'].length > 0) {
-                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
-                    }
-                }
-            });
-            return nodeIds;
-        },
+        }
     })
 });

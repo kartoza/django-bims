@@ -274,10 +274,7 @@ define([
 
             var conservationStatusValue = this.getSelectedConservationStatus();
 
-            var boundaryValue = this.spatialFilterView.getNodesWithoutChildren(
-                Shared.PoliticalRegionBoundaries,
-                this.spatialFilterView.selectedPoliticalRegions,
-                true);
+            var boundaryValue = this.spatialFilterView.selectedPoliticalRegions;
 
             var userBoundarySelected = Shared.UserBoundarySelected;
             if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
@@ -288,7 +285,7 @@ define([
             }
 
             if (boundaryValue.length > 0) {
-                Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
 
             var riverCatchments = this.spatialFilterView.selectedRiverCatchments;
@@ -591,6 +588,16 @@ define([
             if (allFilters.hasOwnProperty('conservationStatus')) {
                 var conservationStatus = JSON.parse(allFilters['conservationStatus']);
                 $('#conservation-status').val(conservationStatus);
+            }
+
+            // River catchment
+            if (allFilters.hasOwnProperty('riverCatchment')) {
+                this.spatialFilterView.selectedRiverCatchments = JSON.parse(allFilters['riverCatchment']);
+            }
+
+            // Boundary
+            if (allFilters.hasOwnProperty('boundary')) {
+                this.spatialFilterView.selectedPoliticalRegions = JSON.parse(allFilters['boundary']);
             }
         },
     })
