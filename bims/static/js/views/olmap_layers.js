@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, jqueryUI,jqueryTouch, ol, LayerStyle) {
+define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, jqueryUI, jqueryTouch, ol, LayerStyle) {
     return Backbone.View.extend({
         // source of layers
         biodiversitySource: null,
@@ -88,8 +88,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // HIGHLIGHT PINNED LAYER
             // ---------------------------------
-            self.highlightPinnedVectorSource = new ol.source.Vector({
-            });
+            self.highlightPinnedVectorSource = new ol.source.Vector({});
             self.highlightPinnedVector = new ol.layer.Vector({
                 source: self.highlightPinnedVectorSource,
                 style: function (feature) {
@@ -117,9 +116,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             return self.layerStyle.getBiodiversityStyle(feature);
                         }
                     }),
-                     new ol.layer.Vector({
+                    new ol.layer.Vector({
                         source: self.locationSiteCluster,
-                        style: function(feature, resolution) {
+                        style: function (feature, resolution) {
                             var size = feature.get('features').length;
                             return self.layerStyle.getClusterStyle(feature, size);
                         }
@@ -195,7 +194,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         var layerOrder = Shared.StorageUtil.getItemDict(value['wms_layer_name'], 'order');
                         if (layerOrder === null) {
-                            layerOrder = value['order']+1;
+                            layerOrder = value['order'] + 1;
                         }
                         self.orders[layerOrder] = value['wms_layer_name'];
 
@@ -239,7 +238,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                     var administrativeOrder = Shared.StorageUtil.getItemDict(self.administrativeKeyword, 'order');
                     if (administrativeOrder === null) {
-                        administrativeOrder = self.administrativeOrder+1;
+                        administrativeOrder = self.administrativeOrder + 1;
                     }
                     self.orders[administrativeOrder] = self.administrativeKeyword;
 
@@ -504,8 +503,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             var tags = '';
             var layerId = name;
-            if (source) {
-                tags += '<span class="badge badge-primary">' + source + '</span> ';
+
+           if (source) {
+                tags += `<a tabindex="0" 
+                      
+                            role="button" 
+                            class="olmap-meta-data"   
+                            data-toggle="popover" 
+                            data-trigger="focus" 
+                            title="<h1>Data Source</h1>" 
+                            onclick="alertHello(` + layerid.toString() + `)" 
+                            data-content="And here is some amazing content. It is very engaging. Right?"> 
+                            ` + source +
+                        '</a> ';
                 layerId += ' ' + source;
             }
             if (category) {
@@ -515,12 +525,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             var rowTemplate = _.template($('#layer-selector-row').html());
             $(rowTemplate({
-                    id: layerId,
-                    name: name,
-                    key: key,
-                    checked: checked,
-                    transparency_value: transparencyDefault,
-                    display: layerDisplayed
+                id: layerId,
+                name: name,
+                key: key,
+                checked: checked,
+                transparency_value: transparencyDefault,
+                display: layerDisplayed
             })).prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
 
             var needToReloadXHR = false;
@@ -749,6 +759,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 Shared.Dispatcher.trigger('map:showPopup', coordinate,
                                     '<div class="info-popup">' + tabs + content + '</div>');
 
+
+
                                 $('.info-wrapper-tab').click(function () {
                                     $('.info-wrapper-tab').removeClass('active');
                                     $(this).addClass('active');
@@ -771,3 +783,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         }
     })
 });
+
+function alertHello(sender) {
+    alert('test');
+}
+
