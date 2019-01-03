@@ -62,7 +62,6 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                 url: this.catchmentAreaBoundaryUrl + JSON.stringify(nodeIds),
                 dataType: 'json',
                 success: function (data) {
-                    console.log('data', data);
                     $.each(Shared.AdminAreaSelected, function (index, id) {
                         Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', id);
                     });
@@ -76,8 +75,6 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                             var olfeature = new ol.format.GeoJSON().readFeatures(feature, {
                                 featureProjection: 'EPSG:3857'
                             });
-
-                            console.log('olfeature', olfeature);
 
                             for (var i = 0; i < olfeature.length; i++) {
                                 var id = 'adminArea-' + i + '-' + index;
