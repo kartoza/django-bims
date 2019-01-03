@@ -287,7 +287,7 @@ define(
                 var text = window.location.href;
                 if (!navigator.clipboard) {
                     this.fallbackCopyTextToClipboard(text, $target);
-                    $target.attr('data-content', 'Copy Permalink');
+                    $target.attr('data-content', 'Copy sharable link for this map');
                     return;
                 }
                 navigator.clipboard.writeText(text).then(function () {
@@ -295,6 +295,7 @@ define(
                 }, function (err) {
                     $target.attr('data-content', 'Unable to copy');
                 });
+                $target.attr('data-content', 'Copy sharable link for this map');
                 $target.popover('show');
             }
         })
