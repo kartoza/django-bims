@@ -210,9 +210,11 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         if not obj.site.location_context_document:
             return ''
         river_catchment_array = get_river_catchment_site(obj.site)
-        if not river_catchment_array:
-            return ''
-        river_catchment_string = '_' + '_'.join(river_catchment_array) + '_'
+        river_catchment_string = ''
+        for river_catchment in river_catchment_array:
+            river_catchment_string += '_'
+            river_catchment_string += river_catchment.replace(' ', '_')
+            river_catchment_string += '_'
         return river_catchment_string
 
     class Meta:
