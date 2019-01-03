@@ -7,11 +7,13 @@ from haystack import indexes
 class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     site_name = indexes.CharField(indexed=True, model_attr='name')
-    boundary = indexes.IntegerField()
+    boundary = indexes.CharField(
+        indexed=True
+    )
 
     location_type_name = indexes.NgramField(
-            indexed=True,
-            model_attr='location_type__name'
+        indexed=True,
+        model_attr='location_type__name'
     )
 
     location_site_point = indexes.LocationField()
@@ -19,11 +21,11 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
     location_coordinates = indexes.CharField()
 
     location_site_name = indexes.CharField(
-            model_attr='name'
+        model_attr='name'
     )
 
     location_site_id = indexes.CharField(
-            model_attr='id'
+        model_attr='id'
     )
 
     def prepare_location_site_point(self, obj):
@@ -48,9 +50,17 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
         return ''
 
     def prepare_boundary(self, obj):
-        if obj.boundary:
-            return obj.boundary.id
-        return 0
+        if not obj.boundary:
+            return ''
+        ids = []
+        boundary = obj.boundary
+        while True:
+            try:
+                ids.append(boundary.id)
+                boundary = boundary.top_level_boundary
+            except AttributeError:
+                break
+        return '_' + '_'.join([str(i) for i in ids]) + '_'
 
     class Meta:
         app_label = 'bims'

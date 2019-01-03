@@ -1,3 +1,9 @@
+{% load static from staticfiles %}
+<!-- IntroJs -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.min.css" rel="stylesheet">
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.min.js"></script>
+<script type="text/javascript" src="{% static "js/views/introjs-tutorial.js" %}"></script>
+
 <script type='text/html' id='map-template'>
 
     <div id="map" class="map"></div>
@@ -323,23 +329,25 @@
         </div>
     </div>
     <div class="row spatial-scale-panel" style="display: none">
-        <div class="small-subtitle">Political Region</div>
-        <div class="col-lg-12 filter-content" id="spatial-scale-container">
+        <div class="small-subtitle spatial-scale-sub-panel">
+            Political Region
+            <i class="fa fa-angle-down pull-right"></i>
         </div>
+        <div class="col-lg-12 filter-content" id="spatial-scale-container" style="display: none;">
+        </div>
+        <div class="small-subtitle spatial-scale-sub-panel">
+            Catchment
+            <i class="fa fa-angle-down pull-right"></i>
+        </div>
+        <div class="col-lg-12 filter-content" id="river-catchment-container" style="display: none;">
+        </div>
+
         <div class="col-lg-12 other-filters">
             <div class="container-fluid row">
                 <div class="col-lg-5">Ecoregion</div>
                 <div class="col-lg-7">
                     <select disabled>
                         <option value="">Ecoregion</option>
-                    </select>
-                </div>
-            </div>
-            <div class="container-fluid row">
-                <div class="col-lg-5">Catchment</div>
-                <div class="col-lg-7">
-                    <select disabled>
-                        <option value="">Catchment</option>
                     </select>
                 </div>
             </div>

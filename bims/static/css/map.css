@@ -2018,7 +2018,13 @@ div:hover::-webkit-scrollbar {
 }
 
 .boundary-item label {
+    font-size: 10pt;
+    padding-left: 5px;
     margin-bottom: 0;
+}
+
+.boundary-item-child {
+    padding-left: 15px;
 }
 
 .boundary-item, .boundary-item label {
@@ -2157,9 +2163,17 @@ div:hover::-webkit-scrollbar {
     height: 10px;
 }
 
-.button-filter-wrapper, .sub-filter {
+.button-filter-wrapper, .sub-filter, .spatial-filter-wrapper {
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
+}
+
+.spatial-scale-sub-panel {
+    border-bottom: 1px solid #d6d6d6;
+}
+
+.spatial-scale-sub-panel:hover {
+    cursor: pointer;
 }

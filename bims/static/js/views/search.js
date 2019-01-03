@@ -274,11 +274,7 @@ define([
 
             var conservationStatusValue = this.getSelectedConservationStatus();
 
-            var boundaryValue = [];
-            // just get the top one.
-            $('input[name=boundary-value]:checked').each(function () {
-                boundaryValue.push($(this).val())
-            });
+            var boundaryValue = this.spatialFilterView.selectedPoliticalRegions;
 
             var userBoundarySelected = Shared.UserBoundarySelected;
             if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
@@ -289,8 +285,10 @@ define([
             }
 
             if (boundaryValue.length > 0) {
-                Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
+
+            var riverCatchments = this.spatialFilterView.selectedRiverCatchments;
 
             var parameters = {
                 'search': searchValue,
@@ -304,7 +302,8 @@ define([
                 'reference': referenceValue,
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
-                'conservationStatus': conservationStatusValue
+                'conservationStatus': conservationStatusValue,
+                'riverCatchment': riverCatchments.length === 0 ? '' : JSON.stringify(riverCatchments)
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -331,6 +330,7 @@ define([
                 && !parameters['reference']
                 && !parameters['endemic']
                 && !parameters['conservationStatus']
+                && !parameters['riverCatchment']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -588,6 +588,16 @@ define([
             if (allFilters.hasOwnProperty('conservationStatus')) {
                 var conservationStatus = JSON.parse(allFilters['conservationStatus']);
                 $('#conservation-status').val(conservationStatus);
+            }
+
+            // River catchment
+            if (allFilters.hasOwnProperty('riverCatchment')) {
+                this.spatialFilterView.selectedRiverCatchments = JSON.parse(allFilters['riverCatchment']);
+            }
+
+            // Boundary
+            if (allFilters.hasOwnProperty('boundary')) {
+                this.spatialFilterView.selectedPoliticalRegions = JSON.parse(allFilters['boundary']);
             }
         },
     })
