@@ -35,7 +35,8 @@ define(
                 'click .locate-farm': 'openLocateFarm',
                 'click .spatial-filter': 'spatialFilterClicked',
                 'click .validate-data': 'validateDataClicked',
-                'input #layer-selector-search': 'handleSearchInLayerSelector'
+                'input #layer-selector-search': 'handleSearchInLayerSelector',
+                'click #permalink-control': 'handlePermalinkClicked'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -56,7 +57,7 @@ define(
                 if (!elm.hasClass('sub-control-panel')) {
                     elm = elm.parent();
                 }
-                for (var i=0; i<this.closedPopover.length; i++) {
+                for (var i = 0; i < this.closedPopover.length; i++) {
                     this.closedPopover[i].popover('enable');
                     this.closedPopover[i].splice(i, 1);
                 }
@@ -64,7 +65,7 @@ define(
                 this.closedPopover.push(elm);
             },
             validateDataClicked: function (e) {
-                if(!this.validateDataListOpen) {
+                if (!this.validateDataListOpen) {
                     this.hidePopOver($(e.target));
                     this.resetAllControlState();
                     this.closeSearchPanel();
@@ -260,6 +261,41 @@ define(
                 layerSelectors.css('display', 'block').filter(function (index) {
                     return $(this).data("name").toLowerCase().indexOf(searchValue.toLowerCase()) === -1;
                 }).css('display', 'none');
+            },
+            fallbackCopyTextToClipboard: function (text, $divTarget) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    var successful = document.execCommand('copy');
+                    $divTarget.attr('data-content', 'Permalink copied to your clipboard');
+                } catch (err) {
+                    $divTarget.attr('data-content', 'Unable to copy');
+                }
+                $divTarget.popover('show');
+                document.body.removeChild(textArea);
+            },
+            handlePermalinkClicked: function (e) {
+                var $target = $(e.target);
+                if ($target.hasClass('fa-link')) {
+                    $target = $target.parent();
+                }
+
+                var text = window.location.href;
+                if (!navigator.clipboard) {
+                    this.fallbackCopyTextToClipboard(text, $target);
+                    $target.attr('data-content', 'Copy Permalink');
+                    return;
+                }
+                navigator.clipboard.writeText(text).then(function () {
+                    $target.attr('data-content', 'Permalink copied to your clipboard');
+                }, function (err) {
+                    $target.attr('data-content', 'Unable to copy');
+                });
+                $target.popover('show');
             }
         })
     });
