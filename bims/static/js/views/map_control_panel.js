@@ -265,7 +265,7 @@ define(
             fallbackCopyTextToClipboard: function (text, $divTarget) {
                 var textArea = document.createElement("textarea");
                 textArea.value = text;
-                document.body.appendChild(textArea);
+                document.body.insertBefore(textArea, document.body.firstChild);
                 textArea.focus();
                 textArea.select();
 
