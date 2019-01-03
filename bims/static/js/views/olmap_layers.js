@@ -503,21 +503,24 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             var tags = '';
             var layerId = name;
-
-           if (source) {
-                tags += `<a tabindex="0" 
-                      
-                            role="button" 
-                            class="olmap-meta-data"   
-                            data-toggle="popover" 
-                            data-trigger="focus" 
-                            title="<h1>Data Source</h1>" 
-                            onclick="alertHello(` + layerid.toString() + `)" 
-                            data-content="And here is some amazing content. It is very engaging. Right?"> 
-                            ` + source +
-                        '</a> ';
+            if (source) {
+                tags += '<span class="badge someotherclass badge-primary">' + source + '</span> ';
                 layerId += ' ' + source;
             }
+            // if (source) {
+            //     tags += ' <span class="badge badge-primary">Something: ' + source + '</span>';
+            //     // tags += `<a tabindex="0"
+            //     //             role="button"
+            //     //             class="olmap-meta-data"
+            //     //             data-toggle="popover"
+            //     //             data-trigger="focus"
+            //     //             title="<h1>Data Source</h1>"
+            //     //             onclick="alertHello(` + layerId.toString() + `)"
+            //     //             data-content="And here is some amazing content. It is very engaging. Right?">
+            //     //             ` + source +
+            //     //         '</a> ';
+            //     layerId += ' ' + source;
+            // }
             if (category) {
                 tags += ' <span class="badge badge-success">' + category + '</span>';
                 layerId += ' ' + category;
@@ -758,7 +761,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 Shared.Dispatcher.trigger('map:hidePopup');
                                 Shared.Dispatcher.trigger('map:showPopup', coordinate,
                                     '<div class="info-popup">' + tabs + content + '</div>');
-
 
 
                                 $('.info-wrapper-tab').click(function () {
