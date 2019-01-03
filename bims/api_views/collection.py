@@ -232,7 +232,7 @@ class GetCollectionAbstract(APIView):
             qs_river_catchment = SQ()
             qs = json.loads(river_catchments)
             for query in qs:
-                query = '_' + query + '_'
+                query = '_' + query.replace(' ', '_') + '_'
                 qs_river_catchment.add(SQ(river_catchments__contains=query),
                                        SQ.OR)
             results = results.filter(qs_river_catchment)
