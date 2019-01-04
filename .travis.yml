@@ -17,12 +17,8 @@ env:
 
 matrix:
   include:
-    # Note that for now this has no effect because we are using
-    # GeoNode default image which is pinned at specific PYTHON version.
     - python: 2.7
       env: PYTHON=2.7
-    - python: 3.6
-      env: PYTHON=3.6
 
 addons:
   hosts:
