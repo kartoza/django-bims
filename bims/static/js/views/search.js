@@ -16,7 +16,20 @@ define([
         template: _.template($('#map-search-container').html()),
         searchBox: null,
         searchBoxOpen: false,
+        shouldUpdateUrl: true,
         searchResults: {},
+        filtersReady: {
+            'endemism': false,
+            'collector': false,
+            'study-reference': false,
+            'referenceCategory': false
+        },
+        initialSelectedStudyReference: [],
+        initialSelectedCollectors: [],
+        initialSelectedReferenceCategory: [],
+        initialSelectedEndemic: [],
+        initialYearFrom: null,
+        initialYearTo: null,
         events: {
             'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
@@ -26,7 +39,8 @@ define([
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
-            'click .clear-origin-filter': 'handleClearOriginClicked'
+            'click .clear-origin-filter': 'handleClearOriginClicked',
+            'click .clear-conservation-filter': 'handleClearConservationClicked'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -38,6 +52,7 @@ define([
             Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
+            Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
         },
         render: function () {
             var self = this;
@@ -73,7 +88,7 @@ define([
             });
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
-            this.referenceCategoryView = new ReferenceCategoryView();
+            this.referenceCategoryView = new ReferenceCategoryView({parent: this});
             this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
 
             this.spatialFilterView = new SpatialFilterView();
@@ -86,15 +101,72 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     for (var i = 0; i < data.length; i++) {
+                        var checked = '';
+                        if ($.inArray(data[i], self.initialSelectedEndemic) > -1) {
+                            checked = 'checked';
+                        }
                         nativeOriginDropdown.append(
                             '<div class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
-                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '"> ' + data[i] + '</div>'
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</div>'
                         )
+                    }
+                    self.filtersReady['endemism'] = true;
+                }
+            });
+
+            $.ajax({
+                type: 'GET',
+                url: listCollectorAPIUrl,
+                dataType: 'json',
+                success: function (data) {
+                    for (var i = 0; i < data.length; i++) {
+                        var checked = '';
+                        if ($.inArray(data[i], self.initialSelectedCollectors) > -1) {
+                            checked = 'checked';
+                        }
+                        if (data[i]) {
+                            $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '" ' + checked + '> ' + data[i] + '<br>');
+                        }
+                        self.filtersReady['collector'] = true;
+                    }
+                }
+            });
+
+            $.ajax({
+                type: 'GET',
+                url: listReferenceAPIUrl,
+                dataType: 'json',
+                success: function (data) {
+                    if (data.length === 0) {
+                        $('.study-reference-wrapper').hide();
+                    } else {
+                        for (var i = 0; i < data.length; i++) {
+                            var checked = '';
+                            if ($.inArray(data[i]['reference'], self.initialSelectedStudyReference) > -1) {
+                                checked = 'checked';
+                            }
+                            if (data[i]) {
+                                $('#filter-study-reference').append('<input type="checkbox" ' +
+                                    'name="reference-value" ' +
+                                    'value="' + data[i]['reference'] + '" ' + checked + '> ' + data[i]['reference'] + '<br>');
+                            }
+                        }
+                        self.filtersReady['study-reference'] = true;
                     }
                 }
             });
 
             return this;
+        },
+        isAllFiltersReady: function () {
+            var isReady = true;
+            $.each(this.filtersReady, function (key, ready) {
+                if (!ready) {
+                    isReady = false;
+                    return false;
+                }
+            });
+            return isReady;
         },
         checkSearch: function (forceSearch) {
             var searchValue = $('#search').val();
@@ -108,8 +180,25 @@ define([
                 $('.search-arrow').removeClass('disabled');
             }
             if (forceSearch === true) {
+                if (!this.isAllFiltersReady()) {
+                    var that = this;
+                    setTimeout(function () {
+                        that.checkSearch(forceSearch);
+                    }, 500);
+                    return false;
+                }
                 this.search(searchValue);
             }
+        },
+        getSelectedConservationStatus: function () {
+            var status = this.$el.find("#conservation-status").chosen().val();
+            if (status.length > 0) {
+                return JSON.stringify(status)
+            }
+            return '';
+        },
+        clearSelectedConservationStatus: function () {
+            return this.$el.find("#conservation-status").val("").trigger('chosen:updated');
         },
         search: function (searchValue) {
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
@@ -183,14 +272,11 @@ define([
                 endemicValue = JSON.stringify(endemicValue)
             }
 
-            var boundaryValue = [];
-            // just get the top one.
-            $('input[name=boundary-value]:checked').each(function () {
-                boundaryValue.push($(this).val())
-            });
+            var conservationStatusValue = this.getSelectedConservationStatus();
+
+            var boundaryValue = this.spatialFilterView.selectedPoliticalRegions;
 
             var userBoundarySelected = Shared.UserBoundarySelected;
-
             if (userBoundarySelected.length === 0 && boundaryValue.length === 0) {
                 Shared.Dispatcher.trigger('map:boundaryEnabled', false);
                 Shared.Dispatcher.trigger('map:closeHighlightPinned');
@@ -199,8 +285,10 @@ define([
             }
 
             if (boundaryValue.length > 0) {
-                Shared.Dispatcher.trigger('catchmentArea:show-administrative', JSON.stringify(boundaryValue));
+                Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
+
+            var riverCatchments = this.spatialFilterView.selectedRiverCatchments;
 
             var parameters = {
                 'search': searchValue,
@@ -213,7 +301,9 @@ define([
                 'months': '',
                 'reference': referenceValue,
                 'referenceCategory': referenceCategory,
-                'endemic': endemicValue
+                'endemic': endemicValue,
+                'conservationStatus': conservationStatusValue,
+                'riverCatchment': riverCatchments.length === 0 ? '' : JSON.stringify(riverCatchments)
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -239,13 +329,22 @@ define([
                 && !parameters['referenceCategory']
                 && !parameters['reference']
                 && !parameters['endemic']
+                && !parameters['conservationStatus']
+                && !parameters['riverCatchment']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
+                Shared.Router.clearSearch();
                 return false
             }
             this.searchResultCollection.search(
-                this.searchPanel, parameters
+                this.searchPanel,
+                parameters,
+                self.shouldUpdateUrl
             );
+
+            if (!self.shouldUpdateUrl) {
+                self.shouldUpdateUrl = true;
+            }
         },
         searchClick: function () {
             if (Shared.CurrentState.FETCH_CLUSTERS) {
@@ -253,7 +352,6 @@ define([
             }
             Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
-            Shared.Router.clearSearch();
             this.search(searchValue);
         },
         searchEnter: function (e) {
@@ -262,12 +360,12 @@ define([
                     return true;
                 }
                 var searchValue = $('#search').val();
-                Shared.Router.clearSearch();
                 this.search(searchValue);
             }
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
+            Shared.Router.clearSearch();
             this.searchInput.val('');
             $('.clear-filter').click();
             $('.map-search-result').hide();
@@ -401,7 +499,107 @@ define([
         },
         handleClearOriginClicked: function (e) {
             this.clearClickedOriginButton();
-        }
+        },
+        handleClearConservationClicked: function (e) {
+            this.clearSelectedConservationStatus();
+            if (Shared.CurrentState.SEARCH) {
+                this.searchClick();
+            }
+        },
+        filtersUpdated: function (filters) {
+            var self = this;
+            var allFilters = {};
+
+            var urlParams = new URLSearchParams(filters);
+            for (var filter of urlParams.entries()) {
+                if (filter[1]) {
+                    allFilters[filter[0]] = filter[1];
+                }
+            }
+
+            // Category
+            if (allFilters.hasOwnProperty('category')) {
+                var categories = JSON.parse(allFilters['category']);
+                var originFilterWrapper = this.$el.find('#origin-filter-wrapper');
+                $.each(categories, function (index, category) {
+                    $('#' + category).prop('checked', true);
+                });
+                var buttons = originFilterWrapper.find('.origin-btn');
+                $.each(buttons, function (index, button) {
+                    var $button = $(button);
+                    if ($.inArray($button.data('origin'), categories) > -1) {
+                        $button.addClass('selected');
+                    }
+                })
+            }
+
+            // Collectors
+            self.initialSelectedCollectors = [];
+            if (allFilters.hasOwnProperty('collector')) {
+                self.initialSelectedCollectors = JSON.parse(allFilters['collector']);
+            }
+
+            // Study referebce
+            self.initialSelectedStudyReference = [];
+            if (allFilters.hasOwnProperty('reference')) {
+                self.initialSelectedStudyReference = JSON.parse(allFilters['reference']);
+            }
+
+            // Endemic
+            self.initialSelectedEndemic = [];
+            if (allFilters.hasOwnProperty('endemic')) {
+                self.initialSelectedEndemic = JSON.parse(allFilters['endemic']);
+                if (self.initialSelectedEndemic.length > 0) {
+                    $('#native-origin-btn').addClass('selected');
+                }
+            }
+
+            // Reference category
+            self.initialSelectedReferenceCategory = [];
+            if (allFilters.hasOwnProperty('referenceCategory')) {
+                self.initialSelectedReferenceCategory = JSON.parse(allFilters['referenceCategory']);
+            }
+
+            // Date
+            if (allFilters.hasOwnProperty('yearFrom')) {
+                self.initialYearFrom = allFilters['yearFrom'];
+            }
+            if (allFilters.hasOwnProperty('yearTo')) {
+                self.initialYearTo = allFilters['yearTo'];
+            }
+
+            if (this.initialYearFrom && this.initialYearTo) {
+                $('#year-from').html(Math.floor(this.initialYearFrom));
+                $('#year-to').html(Math.floor(this.initialYearTo));
+                this.yearSlider.set([this.initialYearFrom, this.initialYearTo]);
+            }
+
+            // Months
+            if (allFilters.hasOwnProperty('months')) {
+                var months = allFilters['months'].split(',');
+                $('#month-selector').find('input:checkbox').each(function () {
+                    if ($.inArray($(this).val(), months) > -1) {
+                        $(this).prop('checked', true);
+                    }
+                });
+            }
+
+            // Conservation status
+            if (allFilters.hasOwnProperty('conservationStatus')) {
+                var conservationStatus = JSON.parse(allFilters['conservationStatus']);
+                $('#conservation-status').val(conservationStatus);
+            }
+
+            // River catchment
+            if (allFilters.hasOwnProperty('riverCatchment')) {
+                this.spatialFilterView.selectedRiverCatchments = JSON.parse(allFilters['riverCatchment']);
+            }
+
+            // Boundary
+            if (allFilters.hasOwnProperty('boundary')) {
+                this.spatialFilterView.selectedPoliticalRegions = JSON.parse(allFilters['boundary']);
+            }
+        },
     })
 
 });

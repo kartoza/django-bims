@@ -12,6 +12,11 @@ class TaxonIndex(indexes.SearchIndex, indexes.Indexable):
             model_attr='canonical_name'
     )
 
+    canonical_name_char = indexes.CharField(
+        indexed=True,
+        model_attr='canonical_name'
+    )
+
     scientific_name = indexes.NgramField(
             indexed=True,
             model_attr='scientific_name'

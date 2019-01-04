@@ -21,11 +21,12 @@ define([
         parameters: {
             taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
-            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',
-            clusterSize: Shared.ClusterSize
+            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',  riverCatchment: '',
+            clusterSize: Shared.ClusterSize, conservationStatus: ''
         },
-        initialize: function (initExtent) {
-            this.initExtent = initExtent;
+        initialize: function (parent) {
+            this.parent = parent;
+            this.initExtent = parent.initExtent;
             Shared.Dispatcher.on('clusterBiological:clearClusters', this.clearClusters, this);
             Shared.Dispatcher.on(Shared.EVENTS.CLUSTER.GET, this.getClusters, this);
             Shared.Dispatcher.on('clusterBiological:resetParameters', this.clearParameters, this);
@@ -44,6 +45,8 @@ define([
             this.parameters['boundary'] = '';
             this.parameters['reference'] = '';
             this.parameters['endemic'] = '';
+            this.parameters['conservationStatus'] = '';
+            this.parameters['riverCatchment'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
@@ -141,6 +144,8 @@ define([
                 && !this.parameters['referenceCategory']
                 && !this.parameters['reference']
                 && !this.parameters['endemic']
+                && !this.parameters['conservationStatus']
+                && !this.parameters['riverCatchment']
                 && !this.parameters['boundary']) {
                 return false
             } else {
@@ -263,6 +268,13 @@ define([
         },
         renderCollection: function () {
             var self = this;
+            if (!this.parent.isAllLayersReady()) {
+                setTimeout(function () {
+                    self.renderCollection();
+                }, 500);
+                return false;
+            }
+            this.parent.resetAdministrativeLayers();
             $.each(this.viewCollection, function (index, view) {
                 view.destroy();
             });

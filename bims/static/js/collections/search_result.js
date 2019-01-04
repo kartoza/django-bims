@@ -23,7 +23,7 @@ define([
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
-        search: function (searchPanel, parameters) {
+        search: function (searchPanel, parameters, shouldUpdateUrl) {
             var self = this;
             this.totalRecords = 0;
             this.totalSites = 0;
@@ -38,19 +38,23 @@ define([
             this.referenceCategory = parameters['referenceCategory'];
             this.endemic = parameters['endemic'];
             this.reference = parameters['reference'];
+            this.conservationStatus = parameters['conservationStatus'];
+            this.riverCatchment = parameters['riverCatchment'];
+            parameters['taxon'] = '';
+            parameters['siteId'] = '';
 
-            this.url = this.searchUrl +
-                '?search=' + this.searchValue +
-                '&collector=' + this.collectorValue +
-                '&category=' + this.categoryValue +
-                '&yearFrom=' + this.yearFrom +
-                '&yearTo=' + this.yearTo +
-                '&months=' + this.months +
-                '&boundary=' + this.boundary +
-                '&userBoundary=' + this.userBoundary +
-                '&referenceCategory=' + this.referenceCategory +
-                '&endemic=' + this.endemic +
-                '&reference=' + this.reference;
+            var templateUrl = _.template(Shared.SearchURLParametersTemplate);
+            this.filters = templateUrl(parameters);
+            this.url = this.searchUrl + this.filters;
+
+            // Update permalink
+            if (shouldUpdateUrl) {
+                var linkUrl = 'search/';
+                linkUrl += this.searchValue;
+                linkUrl += '/' + this.filters.substring(1, this.filters.length);
+                Shared.Router.updateUrl(linkUrl);
+            }
+
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
             this.getSearchResults();
@@ -154,7 +158,6 @@ define([
             var recordsCount = this.totalRecords.toString();
             var siteCount = this.totalSites.toString();
             var speciesListName = [];
-            var siteIds = [];
 
             if (self.status === 'finish') {
                 $.each(this.recordsData, function (key, data) {
@@ -181,20 +184,16 @@ define([
                     var searchResultView = new SearchResultView({
                         model: searchModel
                     });
-                    siteIds.push(key);
                     self.viewCollection.push(searchResultView);
                 });
 
-                if (siteIds.length > 0) {
-                    // Set multiple site dashboard url
-                    var currentParameters = $.extend({}, filterParameters);
-                    currentParameters['siteId'] = siteIds.join(',');
-                    var templateParameter = _.template(Shared.SearchURLParametersTemplate);
-                    var apiUrl = templateParameter(currentParameters);
-                    apiUrl = apiUrl.substr(1);
-                    var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
-                    $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
-                }
+                // Set multiple site dashboard url
+                var currentParameters = $.extend({}, filterParameters);
+                var templateParameter = _.template(Shared.SearchURLParametersTemplate);
+                var apiUrl = templateParameter(currentParameters);
+                apiUrl = apiUrl.substr(1);
+                var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
+                $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
             }
 
             var taxaListNumberElm = $('#taxa-list-number');

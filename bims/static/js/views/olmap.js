@@ -63,7 +63,7 @@ define([
             new TaxonDetail();
             new RecordsDetail();
             this.taxonDetailDashboard = new TaxonDetailDashboard();
-            this.siteDetailedDashboard = new SiteDetailedDashboard();
+            this.siteDetailedDashboard = new SiteDetailedDashboard({parent: this});
 
             Shared.CurrentState.FETCH_CLUSTERS = true;
 
@@ -98,7 +98,7 @@ define([
             Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
 
             this.render();
-            this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
+            this.clusterBiologicalCollection = new ClusterBiologicalCollection(this);
             this.mapControlPanel.searchView.initDateFilter();
             this.showInfoPopup();
 
@@ -405,7 +405,7 @@ define([
 
                 var ready = self.numInFlightTiles === 0 && numHeldTiles === 0;
                 if (self.mapIsReady !== ready)
-                   self.mapIsReady = ready;
+                    self.mapIsReady = ready;
             });
 
             return this;
@@ -524,6 +524,17 @@ define([
             });
             return administrative;
         },
+        resetAdministrativeLayers: function () {
+            var administrative = this.checkAdministrativeLevel();
+            if (administrative !== 'detail') {
+                if (administrative === this.clusterCollection.administrative) {
+                    return
+                }
+                this.layers.changeLayerAdministrative(administrative);
+            } else {
+                this.clusterCollection.administrative = null;
+            }
+        },
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
@@ -616,6 +627,12 @@ define([
         },
         addLocationSiteClusterFeatures: function (features) {
             this.layers.locationSiteClusterSource.addFeatures(features);
+        },
+        isAllLayersReady: function () {
+            if (this.layers.locationSiteClusterSource && this.layers.highlightVectorSource && this.layers.highlightPinnedVectorSource) {
+                return true;
+            }
+            return false;
         },
         switchHighlight: function (features, ignoreZoom) {
             var self = this;

@@ -34,6 +34,7 @@ class GetCollectionAbstract(APIView):
     """
     Abstract class for getting collection
     """
+
     @staticmethod
     def queryset_gen(sqs, exlude_ids=[]):
         """Return queryset from sqs"""
@@ -68,7 +69,7 @@ class GetCollectionAbstract(APIView):
         settings.ELASTIC_MIN_SCORE = 0
         sqs = SearchQuerySet()
         results = sqs.all().models(
-                BiologicalCollectionRecord)
+            BiologicalCollectionRecord)
         results = results.filter(validated=True)
         return results
 
@@ -108,6 +109,8 @@ class GetCollectionAbstract(APIView):
         months = filters.get('months', None)
         site_id = filters.get('siteId', None)
         endemic = filters.get('endemic', None)
+        conservation_status = filters.get('conservationStatus', None)
+        river_catchments = filters.get('riverCatchment', None)
 
         if (
                 taxon or
@@ -116,15 +119,18 @@ class GetCollectionAbstract(APIView):
                 query_category or reference_category or
                 year_from or year_to or
                 months or reference or
+                conservation_status or
+                river_catchments or
                 site_id or endemic):
             filter_mode = True
 
         if query_value:
             clean_query = sqs.query.clean(query_value)
             results = sqs.filter(
-                    SQ(original_species_name_exact__contains=clean_query) |
-                    SQ(taxon_scientific_name_exact__contains=clean_query),
-                    validated=True
+                SQ(original_species_name_exact__contains=clean_query) |
+                SQ(taxon_scientific_name_exact__contains=clean_query) |
+                SQ(vernacular_names__contains=clean_query),
+                validated=True
             ).models(BiologicalCollectionRecord)
 
             if len(results) > 0:
@@ -134,14 +140,14 @@ class GetCollectionAbstract(APIView):
                 # Set min score bigger for fuzzy search
                 settings.ELASTIC_MIN_SCORE = 2
                 results = sqs.filter(
-                        SQ(original_species_name=clean_query),
-                        validated=True
+                    SQ(original_species_name=clean_query),
+                    validated=True
                 ).models(BiologicalCollectionRecord)
                 settings.ELASTIC_MIN_SCORE = 0
         else:
             if filter_mode:
                 results = sqs.all().models(
-                        BiologicalCollectionRecord)
+                    BiologicalCollectionRecord)
                 results = results.filter(validated=True)
             else:
                 results = []
@@ -181,19 +187,20 @@ class GetCollectionAbstract(APIView):
             qs_collector = SQ()
             qs = json.loads(boundary)
             for query in qs:
-                qs_collector.add(SQ(boundary=query), SQ.OR)
+                query = '_' + query + '_'
+                qs_collector.add(SQ(boundary__contains=query), SQ.OR)
             results = results.filter(qs_collector)
 
         if user_boundary:
             qs = json.loads(user_boundary)
             user_boundaries = UserBoundary.objects.filter(
-                    pk__in=qs
+                pk__in=qs
             )
             for user_boundary in user_boundaries:
                 for geom in user_boundary.geometry:
                     results = results.polygon(
-                            'location_center',
-                            geom
+                        'location_center',
+                        geom
                     )
 
         # query by category
@@ -211,6 +218,24 @@ class GetCollectionAbstract(APIView):
             for query in qs:
                 qs_endemism.add(SQ(endemism=query), SQ.OR)
             results = results.filter(qs_endemism)
+
+        # query by conservation status
+        if conservation_status:
+            qs_conservation_status = SQ()
+            qs = json.loads(conservation_status)
+            for query in qs:
+                qs_conservation_status.add(SQ(iucn_status=query), SQ.OR)
+            results = results.filter(qs_conservation_status)
+
+        # query by river catchment
+        if river_catchments:
+            qs_river_catchment = SQ()
+            qs = json.loads(river_catchments)
+            for query in qs:
+                query = '_' + query.replace(' ', '_') + '_'
+                qs_river_catchment.add(SQ(river_catchments__contains=query),
+                                       SQ.OR)
+            results = results.filter(qs_river_catchment)
 
         # query by reference category
         if reference_category:
@@ -269,7 +294,7 @@ class GetCollectionAbstract(APIView):
         location_site_search = EmptySearchQuerySet()
         if query_value:
             location_site_search = SearchQuerySet().filter(
-                    site_name__contains=query_value
+                site_name__contains=query_value
             ).models(LocationSite)
 
         location_site_results = location_site_search
@@ -279,10 +304,11 @@ class GetCollectionAbstract(APIView):
             qs_collector = SQ()
             qs = json.loads(boundary)
             for query in qs:
-                qs_collector.add(SQ(boundary=query), SQ.OR)
+                query = '_' + query + '_'
+                qs_collector.add(SQ(boundary__contains=query), SQ.OR)
             if isinstance(location_site_results, SearchQuerySet):
                 location_site_results = location_site_results.filter(
-                        qs_collector)
+                    qs_collector)
 
         if user_boundaries and isinstance(location_site_search,
                                           SearchQuerySet):
@@ -351,8 +377,8 @@ class GetCollectionExtent(GetCollectionAbstract):
                 ignore_bbox=True)
 
         multipoint = MultiPoint(
-                [result.location_center for result in collection_results] +
-                [result.location_site_point for result in site_results]
+            [result.location_center for result in collection_results] +
+            [result.location_site_point for result in site_results]
         )
         if multipoint:
             extents = multipoint.extent
@@ -493,6 +519,7 @@ class ClusterCollection(GetCollectionAbstract):
     """
     Clustering collection with same taxon
     """
+
     @staticmethod
     def clustering_process(
             collection_records,
@@ -584,16 +611,28 @@ class ClusterCollection(GetCollectionAbstract):
 
         search_uri = request.build_absolute_uri()
         search_uri = remove_params_from_uri(
-                ['zoom'],
-                search_uri
+            ['zoom'],
+            search_uri
         )
 
-        search_process, created = SearchProcess.objects.get_or_create(
+        search_processes = SearchProcess.objects.filter(
+            category='cluster_generation',
+            query=search_uri
+        )
+
+        if search_processes.exists():
+            # There should not be more than 1 data
+            if len(search_processes) > 1:
+                for search_object in search_processes[1:len(search_processes)]:
+                    search_object.delete()
+            search_process = search_processes[0]
+        else:
+            search_process = SearchProcess.objects.create(
                 category='cluster_generation',
                 query=search_uri
-        )
+            )
 
-        if not created and search_process.file_path:
+        if search_process.file_path:
             if os.path.exists(search_process.file_path):
                 try:
                     raw_data = open(search_process.file_path)
@@ -622,7 +661,7 @@ class ClusterCollection(GetCollectionAbstract):
             data_for_filename = dict()
             data_for_filename['search_uri'] = search_uri
             data_for_filename['collection_results_length'] = len(
-                    collection_results)
+                collection_results)
             data_for_filename['site_results_length'] = len(site_results)
 
             # Create filename from md5 of filters and results length
@@ -662,10 +701,10 @@ class ClusterCollection(GetCollectionAbstract):
                 pass
 
             generate_search_cluster.delay(
-                    query_value,
-                    filters,
-                    filename,
-                    path_file
+                query_value,
+                filters,
+                filename,
+                path_file
             )
 
         return Response({
