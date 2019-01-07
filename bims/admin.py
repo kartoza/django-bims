@@ -50,6 +50,7 @@ from bims.models import (
     TaxonGroup,
     VernacularName,
     RiverCatchment,
+    FbisUUID,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -485,6 +486,7 @@ admin.site.register(SearchProcess, SearchProcessAdmin)
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 admin.site.register(VernacularName, VernacularNameAdmin)
 admin.site.register(RiverCatchment, RiverCatchmentAdmin)
+admin.site.register(FbisUUID)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)
