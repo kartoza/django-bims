@@ -11,6 +11,7 @@ from bims.tests.model_factories import (
     IUCNStatusF,
     SurveyF,
     EndemismF,
+    FbisUUIDF,
 )
 from bims.models.iucn_status import iucn_status_pre_save_handler
 from bims.utils.get_key import get_key
@@ -485,3 +486,30 @@ class TestEndemismCRUD(TestCase):
 
         # check if deleted
         self.assertTrue(model.pk is None)
+
+
+class TestFbisUUID(TestCase):
+    """
+    Tests FbisUUID model.
+    """
+
+    def setUp(self):
+        """
+        Sets up before each test
+        """
+        pass
+
+    def test_create(self):
+        """
+        Tests FbisUUID creation
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from bims.models.endemism import Endemism
+
+        endemism = EndemismF.create(name='test')
+        ctype = ContentType.objects.get_for_model(Endemism)
+        fbis_uuid = FbisUUIDF.create(
+            content_type=ctype,
+            object_id=endemism.id
+        )
+        self.assertEqual(fbis_uuid.content_object.id, endemism.id)

@@ -20,7 +20,8 @@ from bims.models import (
     Cluster,
     Endemism,
     Taxonomy,
-    TaxonGroup
+    TaxonGroup,
+    FbisUUID,
 )
 
 
@@ -265,3 +266,15 @@ class ClusterF(factory.django.DjangoModelFactory):
     module = factory.Sequence(lambda n: u'Test module %s' % n)
     site_count = 1
     details = ''
+
+
+class FbisUUIDF(factory.django.DjangoModelFactory):
+    """
+    FbisUUID factory
+    """
+    class Meta:
+        model = FbisUUID
+
+    id = factory.Sequence(lambda n: n)
+    uuid = factory.Sequence(lambda n: 'uuid %s' % n)
+    content_type = factory.SubFactory(ContentTypeF)
