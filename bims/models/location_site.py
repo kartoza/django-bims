@@ -10,6 +10,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
+from django.contrib.postgres.fields import JSONField
 from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.cluster import update_cluster_by_site
@@ -67,6 +68,12 @@ class LocationSite(DocumentLinksMixin):
         verbose_name='Document for location context as JSON.',
         help_text='This document is generated from GeoContext by using '
                   'management command or changing the geometry.',
+        null=True,
+        blank=True
+    )
+
+    other_data = JSONField(
+        verbose_name='Other json data',
         null=True,
         blank=True
     )
@@ -203,7 +210,6 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
-    return
     if not issubclass(sender, LocationSite):
         return
     update_cluster_by_site(instance)

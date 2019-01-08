@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
 from sass.scripts.import_user import import_user_table
+from sass.scripts.import_site import import_site_table
+from sass.scripts.import_river import import_river_table
 
 
 class Command(BaseCommand):
     help = 'Migrate data from fbis database'
     import_scripts = {
-        'user': import_user_table
+        'user': import_user_table,
+        'site': import_site_table,
+        'river': import_river_table
     }
 
     def add_arguments(self, parser):
@@ -36,6 +40,9 @@ class Command(BaseCommand):
 
         if not accdb_table:
             print('Import all table')
+            for table_name in self.import_scripts:
+                print('Import %s' % table_name)
+                self.import_scripts[table_name](accdb_filename)
         else:
             accdb_table = accdb_table.lower()
             if accdb_table in self.import_scripts:
