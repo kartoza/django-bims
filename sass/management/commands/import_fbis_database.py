@@ -2,7 +2,7 @@
 from django.core.management.base import BaseCommand
 from sass.scripts.import_user import import_user_table
 from sass.scripts.import_site import import_site_table
-from sass.scripts.import_river import import_river_table
+from sass.scripts.fbis_river_importer import FbisRiverImporter
 
 
 class Command(BaseCommand):
@@ -10,7 +10,7 @@ class Command(BaseCommand):
     import_scripts = {
         'user': import_user_table,
         'site': import_site_table,
-        'river': import_river_table
+        'river': FbisRiverImporter
     }
 
     def add_arguments(self, parser):
@@ -47,6 +47,7 @@ class Command(BaseCommand):
             accdb_table = accdb_table.lower()
             if accdb_table in self.import_scripts:
                 print('Import %s table' % accdb_table)
-                self.import_scripts[accdb_table](accdb_filename)
+                importer = self.import_scripts[accdb_table](accdb_filename)
+                importer.import_data()
             else:
                 print('Table %s not found' % accdb_table)
