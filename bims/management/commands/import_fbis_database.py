@@ -24,7 +24,7 @@ class Command(BaseCommand):
             print('%s not found in media directory' % accdb_filename)
             return
 
-        # Read a small table.
+        # Read User table.
         df = mdb.read_table(accdb_filepath, "User")
         dhead = df.head(len(df))
         ctype = ContentType.objects.get_for_model(Profile)
