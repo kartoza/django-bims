@@ -69,11 +69,13 @@ class FbisImporter(object):
     def finish_processing_rows(self):
         return
 
-    def get_row_value(self, column_name, row):
+    def get_row_value(self, column_name, row, return_none_if_empty=False):
         column_index = self.table_colums.index(column_name)
         if column_index < 0:
             return None
         if not row[column_index]:
+            if return_none_if_empty:
+                return None
             return ''
         else:
             return row[column_index]

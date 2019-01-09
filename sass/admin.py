@@ -15,7 +15,14 @@ class RiverAdmin(admin.ModelAdmin):
 
 
 class SiteVisitAdmin(admin.ModelAdmin):
-    list_display = ('assessor', 'site_visit_date')
+    list_display = (
+        'location_site',
+        'assessor',
+        'site_visit_date',
+        'water_level',
+        'water_turbidity',
+        'canopy_cover'
+    )
 
 
 # Register your models here.

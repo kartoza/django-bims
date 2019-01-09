@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand
 from sass.scripts.fbis_user_importer import FbisUserImporter
 from sass.scripts.fbis_site_importer import FbisSiteImporter
 from sass.scripts.fbis_river_importer import FbisRiverImporter
+from sass.scripts.fbis_site_visit_importer import FbisSiteVisitImporter
 
 
 class Command(BaseCommand):
@@ -10,7 +11,8 @@ class Command(BaseCommand):
     import_scripts = {
         'user': FbisUserImporter,
         'site': FbisSiteImporter,
-        'river': FbisRiverImporter
+        'river': FbisRiverImporter,
+        'sitevisit': FbisSiteVisitImporter
     }
 
     def add_arguments(self, parser):
