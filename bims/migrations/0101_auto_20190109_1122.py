@@ -4,17 +4,15 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+from django.conf import settings
 
-def update_about_us_flatpage(apps, schema_editor):
-    data = [
+# Code adapted from DjangoUnleashed Migrating Flatpages
+
+FLATPAGES = [
         {
-            "pk": 3,
-            "model": "flatpages.flatpage",
-            "fields": {
-                "url": "/about_us/",
-                "title": "About Us",
-                "content":
-                    """<div style=\"text-align: center\">
+            "title": "About",
+            "url": "/about_us/",
+            "content": """<div style=\"text-align: center\">
                          <span><h5>FBIS is a platform for visualising and
                          sharing biodiversity information. \r\nWe strive to
                          follow open standards and work with platforms such
@@ -31,19 +29,30 @@ def update_about_us_flatpage(apps, schema_editor):
                          project builds on Kartoza's BIMS platform to provide
                          freshwater biodiversity specific features.<h5><span>
                          </div>""",
-                "enable_comments": "False",
-                "template_name": "flatpages/about_us.html",
-                "registration_required": "False",
-                "sites": [1],
-                "id": 3
-            }
         }
     ]
-    model_class = apps.get_model('flatpages', 'flatpage')
-    for record in data:
-        obj = model_class(**record['fields'])
-        obj.pk = record['pk']
-        obj.save()
+
+
+def remove_about_us_flatpage(apps, schema_editor):
+    FlatPage = apps.get_model('flatpages', 'FlatPage')
+    for page_dict in FLATPAGES:
+        page = FlatPage.objects.get(
+            url=page_dict['url'])
+        page.delete()
+
+
+def add_about_us_flatpage(apps, schema_editor):
+    FlatPage = apps.get_model('flatpages', 'FlatPage')
+    Site = apps.get_model('sites', 'Site')
+    site_id = getattr(settings, 'SITE_ID', 1)
+    current_site = Site.objects.get(pk=site_id)
+    for page_dict in FLATPAGES:
+        new_page = FlatPage.objects.create(
+            title=page_dict['title'],
+            url=page_dict['url'],
+            content=page_dict['content'])
+        new_page.sites.add(current_site)
+
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -51,6 +60,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_about_us_flatpage),
+        migrations.RunPython(
+            add_about_us_flatpage,
+            remove_about_us_flatpage,
+        ),
     ]
 
