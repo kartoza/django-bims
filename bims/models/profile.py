@@ -14,20 +14,25 @@ class Profile(models.Model):
     qualifications = models.CharField(
         max_length=250,
         blank=True,
-        default=''
+        default='',
+        null=True,
     )
     other = models.CharField(
         max_length=100,
         blank=True,
-        default=''
+        default='',
+        null=True,
     )
     fbis_username = models.CharField(
         max_length=150,
         blank=True,
-        default=''
+        default='',
+        null=True,
     )
     data = JSONField(
-        default=''
+        default='',
+        null=True,
+        blank=True,
     )
     hide_bims_info = models.BooleanField(
         default=False

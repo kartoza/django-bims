@@ -15,7 +15,7 @@ class FbisUUID(models.Model):
     uuid = models.CharField(
         null=False,
         blank=False,
-        unique=True,
+        unique=False,
         max_length=50
     )
     content_type = models.ForeignKey(ContentType)

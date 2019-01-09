@@ -451,6 +451,13 @@ class RiverCatchmentAdmin(admin.ModelAdmin):
     )
 
 
+class FbisUUIDAdmin(admin.ModelAdmin):
+    list_display = ('uuid', 'content_type', 'content_object')
+    list_filter = ('content_type',)
+    ordering = ('content_type', 'uuid')
+    search_fields = ('uuid', )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -486,7 +493,7 @@ admin.site.register(SearchProcess, SearchProcessAdmin)
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 admin.site.register(VernacularName, VernacularNameAdmin)
 admin.site.register(RiverCatchment, RiverCatchmentAdmin)
-admin.site.register(FbisUUID)
+admin.site.register(FbisUUID, FbisUUIDAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)
