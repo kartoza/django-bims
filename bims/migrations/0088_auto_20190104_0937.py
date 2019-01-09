@@ -3,18 +3,33 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
+from django.conf import settings
 
-# def update_abous_us_flatpage(apps, schema_editor):
-        # FlatPage = apps.get_model('flatpages', 'FlatPage')
-        # Site = apps.get_model('sites', 'Site')
-        # site_id = getattr(settings, 'SITE_ID', 1)
-        # current_site = Site.objects.get(pk=site_id)
-        # for page_dict in FLATPAGES:
-        #     new_page = FlatPage.objects.create(
-        #         title=page_dict['title'],
-        #         url=page_dict['url'],
-        #         content=page_dict['content'])
-        #   new_page.sites.add(current_site)
+
+def update_about_us_flatpage(apps, schema_editor):
+
+    data = [
+        {
+            "pk": 1,
+            "model": "flatpages.flatpage",
+            "fields": {
+                "url": "/about_us/",
+                "title": "About Us",
+                "content": "<div style=\"text-align: center\"><span><h5>FBIS is a platform for visualising and sharing biodiversity information. \r\nWe strive to follow open standards and work with platforms such as GBIF, IUCN etc.</h3></span>\r\n<hr/>\r\n<span><h5>\r\nVisit a production site at <a href=\"http://freshwaterbiodiversity.org\">http://freshwaterbiodiversity.org</a>. </h5></span>\r\n<hr/>\r\n<span><h5>The project has been developed in partnership with Freshwater Resarch Centre. FBIS is open source software which you can freely download and install in your own institution. The FBIS project builds on Kartoza's BIMS platform to provide freshwater biodiversity specific features.<h5><span></div>",
+                "enable_comments": "False",
+                "template_name": "flatpages/about_us.html",
+                "registration_required": "False",
+                "sites": [1],
+                "id": 1
+            }
+        }
+    ]
+
+    ModelClass = apps.get_model('flatpages', 'flatpage')
+    for record in data:
+        obj = ModelClass(**record['fields'])
+        obj.pk = record['pk']
+        obj.save()
 
 
 class Migration(migrations.Migration):
@@ -23,5 +38,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # migrations.RunPython(update_about_us_flatpage),
+         migrations.RunPython(update_about_us_flatpage),
     ]
