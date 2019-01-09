@@ -1,6 +1,7 @@
 from django.db.models import signals
 from django.db.utils import DataError
 from django.contrib.gis.geos import Point
+from django.contrib.contenttypes.models import ContentType
 from easyaudit.signals.model_signals import pre_save as easyaudit_presave
 from bims.models import (
     FbisUUID,
@@ -8,6 +9,7 @@ from bims.models import (
     LocationType,
     location_site_post_save_handler
 )
+from sass.models import River
 from sass.scripts.fbis_importer import FbisImporter
 
 
@@ -45,7 +47,8 @@ class FbisSiteImporter(FbisImporter):
         river_uuid = self.get_row_value('RiverID', row)
         if river_uuid:
             rivers = FbisUUID.objects.filter(
-                uuid=river_uuid
+                uuid=river_uuid,
+                content_type=ContentType.objects.get_for_model(River)
             )
             if rivers.exists():
                 river = rivers[0].content_object

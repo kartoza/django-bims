@@ -195,7 +195,7 @@ class LocationSite(DocumentLinksMixin):
         """Meta class for project."""
         app_label = 'bims'
 
-    def __str__(self):
+    def __unicode__(self):
         return u'%s' % self.name
 
     def save(self, *args, **kwargs):
