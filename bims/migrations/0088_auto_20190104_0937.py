@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.conf import settings
 
 
 def update_about_us_flatpage(apps, schema_editor):
@@ -15,7 +14,24 @@ def update_about_us_flatpage(apps, schema_editor):
             "fields": {
                 "url": "/about_us/",
                 "title": "About Us",
-                "content": "<div style=\"text-align: center\"><span><h5>FBIS is a platform for visualising and sharing biodiversity information. \r\nWe strive to follow open standards and work with platforms such as GBIF, IUCN etc.</h3></span>\r\n<hr/>\r\n<span><h5>\r\nVisit a production site at <a href=\"http://freshwaterbiodiversity.org\">http://freshwaterbiodiversity.org</a>. </h5></span>\r\n<hr/>\r\n<span><h5>The project has been developed in partnership with Freshwater Resarch Centre. FBIS is open source software which you can freely download and install in your own institution. The FBIS project builds on Kartoza's BIMS platform to provide freshwater biodiversity specific features.<h5><span></div>",
+                "content":
+                    """<div style=\"text-align: center\">
+                         <span><h5>FBIS is a platform for visualising and 
+                         sharing biodiversity information. \r\nWe strive to 
+                         follow open standards and work with platforms such 
+                         as GBIF, IUCN etc.</h3></span>
+                         \r\n<hr/>\r\n
+                         <span><h5>\r\nVisit a production site at 
+                         <a href=\"http://freshwaterbiodiversity.org\">
+                         http://freshwaterbiodiversity.org</a>. </h5></span>
+                         \r\n<hr/>\r\n
+                         <span><h5>The project has been developed in 
+                         partnership with Freshwater Resarch Centre. FBIS is 
+                         open source software which you can freely download 
+                         and install in your own institution. The FBIS 
+                         project builds on Kartoza's BIMS platform to provide 
+                         freshwater biodiversity specific features.<h5><span>
+                         </div>""",
                 "enable_comments": "False",
                 "template_name": "flatpages/about_us.html",
                 "registration_required": "False",
@@ -24,10 +40,9 @@ def update_about_us_flatpage(apps, schema_editor):
             }
         }
     ]
-
-    ModelClass = apps.get_model('flatpages', 'flatpage')
+    model_class = apps.get_model('flatpages', 'flatpage')
     for record in data:
-        obj = ModelClass(**record['fields'])
+        obj = model_class(**record['fields'])
         obj.pk = record['pk']
         obj.save()
 
