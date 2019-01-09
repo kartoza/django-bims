@@ -8,7 +8,7 @@ from django.db import migrations
 def update_about_us_flatpage(apps, schema_editor):
     data = [
         {
-            "pk": 1,
+            "pk": 3,
             "model": "flatpages.flatpage",
             "fields": {
                 "url": "/about_us/",
@@ -35,7 +35,7 @@ def update_about_us_flatpage(apps, schema_editor):
                 "template_name": "flatpages/about_us.html",
                 "registration_required": "False",
                 "sites": [1],
-                "id": 1
+                "id": 3
             }
         }
     ]
