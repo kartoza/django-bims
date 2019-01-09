@@ -47,7 +47,7 @@ def update_about_us_flatpage(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('bims', '0093_auto_20190107_0256'),
+        ('bims', '0100_auto_20190109_0645'),
     ]
 
     operations = [
