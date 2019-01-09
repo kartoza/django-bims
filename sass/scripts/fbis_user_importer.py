@@ -18,7 +18,8 @@ class FbisUserImporter(FbisImporter):
         )
         username_value = self.get_row_value('UserName', row).replace(
             ' ', '_').lower()
-        date_joined = dateutil.parser.parse(self.get_row_value('DateFrom', row))
+        date_joined = dateutil.parser.parse(
+            self.get_row_value('DateFrom', row))
         email_value = self.get_row_value('Email', row)
         if Profile.objects.filter(username=username_value).exists():
             profiles = Profile.objects.filter(username=username_value)
@@ -54,7 +55,9 @@ class FbisUserImporter(FbisImporter):
             'PasswordHint': str(self.get_row_value('PasswordHint', row)),
             'RegionPolID': str(self.get_row_value('RegionPolID', row)),
             'OrganisationID': str(self.get_row_value('OrganisationID', row)),
-            'RegionalChampion': str(self.get_row_value('RegionalChampion', row)),
+            'RegionalChampion': str(self.get_row_value(
+                'RegionalChampion',
+                row)),
             'NTUserName': str(self.get_row_value('NTUserName', row)),
             'SASS4': str(self.get_row_value('SASS4', row)),
             'RipVegIndex': str(self.get_row_value('RipVegIndex', row)),

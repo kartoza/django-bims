@@ -22,7 +22,7 @@ class FbisSiteVisitImporter(FbisImporter):
     table_name = 'SiteVisit'
 
     def start_processing_rows(self):
-        conn =  sqlite3.connect(self.sqlite_filepath)
+        conn = sqlite3.connect(self.sqlite_filepath)
         cur = conn.cursor()
         cur.execute('SELECT * FROM CANOPYCOVER')
         canopy_cover_rows = cur.fetchall()

@@ -37,7 +37,7 @@ class SiteVisit(models.Model):
         max_length=100,
         choices=[
             (status.name, status.value[WATER_LEVEL_NAME])
-                for status in WaterLevel],
+            for status in WaterLevel],
         blank=True,
         null=True
     )
