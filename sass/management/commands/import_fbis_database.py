@@ -4,6 +4,7 @@ from sass.scripts.fbis_user_importer import FbisUserImporter
 from sass.scripts.fbis_site_importer import FbisSiteImporter
 from sass.scripts.fbis_river_importer import FbisRiverImporter
 from sass.scripts.fbis_site_visit_importer import FbisSiteVisitImporter
+from sass.scripts.fbis_sass_biotope_importer import FbisSassBiotopeImporter
 
 
 class Command(BaseCommand):
@@ -12,7 +13,8 @@ class Command(BaseCommand):
         'user': FbisUserImporter,
         'site': FbisSiteImporter,
         'river': FbisRiverImporter,
-        'sitevisit': FbisSiteVisitImporter
+        'site_visit': FbisSiteVisitImporter,
+        'sass_biotope': FbisSassBiotopeImporter
     }
 
     def add_arguments(self, parser):

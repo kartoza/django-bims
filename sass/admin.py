@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 from django.contrib import admin
 from sass.models import (
     River,
-    SiteVisit
+    SiteVisit,
+    SassBiotope
 )
 
 
@@ -25,6 +26,22 @@ class SiteVisitAdmin(admin.ModelAdmin):
     )
 
 
+class SassBiotopeAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'display_order',
+        'biotope_form'
+    )
+    list_filter = (
+        'name',
+    )
+    ordering = (
+        'name',
+        'display_order',
+        'biotope_form'
+    )
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
+admin.site.register(SassBiotope, SassBiotopeAdmin)
