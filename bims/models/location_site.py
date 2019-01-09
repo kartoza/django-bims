@@ -10,6 +10,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
+from django.contrib.postgres.fields import JSONField
 from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.cluster import update_cluster_by_site
@@ -28,7 +29,7 @@ class LocationSite(DocumentLinksMixin):
                             '{geocontext_collection_key}'
 
     name = models.CharField(
-        max_length=100,
+        max_length=300,
         blank=False,
     )
     site_description = models.CharField(
@@ -62,11 +63,31 @@ class LocationSite(DocumentLinksMixin):
         null=True,
         blank=True,
     )
+    map_reference = models.CharField(
+        null=True,
+        blank=True,
+        max_length=200
+    )
+    land_owner_detail = models.TextField(
+        null=True,
+        blank=True,
+    )
+    river = models.ForeignKey(
+        'sass.River',
+        null=True,
+        blank=True,
+    )
 
     location_context_document = models.TextField(
         verbose_name='Document for location context as JSON.',
         help_text='This document is generated from GeoContext by using '
                   'management command or changing the geometry.',
+        null=True,
+        blank=True
+    )
+
+    additional_data = JSONField(
+        verbose_name='Additional json data',
         null=True,
         blank=True
     )
@@ -174,7 +195,7 @@ class LocationSite(DocumentLinksMixin):
         """Meta class for project."""
         app_label = 'bims'
 
-    def __str__(self):
+    def __unicode__(self):
         return u'%s' % self.name
 
     def save(self, *args, **kwargs):
@@ -203,7 +224,6 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
-    return
     if not issubclass(sender, LocationSite):
         return
     update_cluster_by_site(instance)
