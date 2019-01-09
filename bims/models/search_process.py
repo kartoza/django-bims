@@ -6,13 +6,18 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 
+CLUSTER_GENERATION = 'cluster_generation'
+SEARCH_RESULTS = 'search_results'
+SITES_SUMMARY = 'sites_summary'
+
 
 class SearchProcess(models.Model):
     """Search process model
     """
     SEARCH_TYPE = (
-        ('cluster_generation', 'Cluster Generation'),
-        ('search_results', 'Search Results'),
+        (CLUSTER_GENERATION, 'Cluster Generation'),
+        (SEARCH_RESULTS, 'Search Results'),
+        (SITES_SUMMARY, 'Site Summary'),
     )
 
     file_path = models.CharField(

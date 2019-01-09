@@ -203,6 +203,7 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
+    return
     if not issubclass(sender, LocationSite):
         return
     update_cluster_by_site(instance)

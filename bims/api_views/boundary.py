@@ -12,12 +12,32 @@ from bims.serializers.boundary_serializer import (
 class BoundaryList(APIView):
     """API for listing boundary."""
 
+    def get_boundary_tree(self, parent=None):
+        boundaries_dict = []
+        if parent:
+            boundaries = Boundary.objects.filter(
+                top_level_boundary=parent
+            )
+        else:
+            boundaries = Boundary.objects.filter(
+                top_level_boundary__isnull=True
+            )
+        for boundary in boundaries:
+            boundaries_dict.append({
+                'key': boundary.type.name,
+                'value': boundary.id,
+                'name': boundary.name,
+                'children': self.get_boundary_tree(boundary)
+            })
+
+        return boundaries_dict
+
     def get(self, request, *args):
-        boundaries = \
-            Boundary.objects.exclude(type__level=1).filter().values(
-                'id', 'name', 'type__name',
-                'top_level_boundary', 'type__level'
-            ).order_by('type__level', 'name')
+        try:
+            boundary_parent = Boundary.objects.get(type__level=1)
+        except (Boundary.DoesNotExist, Boundary.MultipleObjectsReturned):
+            boundary_parent = None
+        boundaries = self.get_boundary_tree(boundary_parent)
         return HttpResponse(json.dumps(list(boundaries)))
 
 

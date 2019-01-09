@@ -1,7 +1,8 @@
 # coding=utf-8
+from haystack import indexes
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from haystack import indexes
+from bims.utils.river_catchments import get_river_catchment_site
 
 
 class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
@@ -16,6 +17,10 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     original_species_name_exact = indexes.CharField(
         model_attr='original_species_name',
+        indexed=True
+    )
+
+    vernacular_names = indexes.CharField(
         indexed=True
     )
 
@@ -75,9 +80,9 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
 
     location_coordinates = indexes.CharField()
 
-    taxon_gbif = indexes.IntegerField(indexed=True)
+    taxonomy = indexes.IntegerField(indexed=True)
 
-    taxon_gbif_not_null = indexes.BooleanField(indexed=True)
+    taxonomy_not_null = indexes.BooleanField(indexed=True)
 
     taxon_canonical_name = indexes.NgramField(
         model_attr='taxonomy__canonical_name',
@@ -117,7 +122,21 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         indexed=True
     )
 
-    boundary = indexes.IntegerField()
+    endemism = indexes.CharField(
+        indexed=True
+    )
+
+    iucn_status = indexes.CharField(
+        indexed=True
+    )
+
+    river_catchments = indexes.CharField(
+        indexed=True
+    )
+
+    boundary = indexes.CharField(
+        indexed=True
+    )
 
     def prepare_taxon_class(self, obj):
         if obj.taxonomy:
@@ -129,12 +148,12 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.site.id
         return 0
 
-    def prepare_taxon_gbif(self, obj):
+    def prepare_taxonomy(self, obj):
         if obj.taxonomy:
             return obj.taxonomy.id
         return 0
 
-    def prepare_taxon_gbif_not_null(self, obj):
+    def prepare_taxonomy_not_null(self, obj):
         if obj.taxonomy:
             return True
         return False
@@ -150,9 +169,53 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
         return '0,0'
 
     def prepare_boundary(self, obj):
-        if obj.site.boundary:
-            return obj.site.boundary.id
-        return 0
+        if not obj.site:
+            return ''
+        if not obj.site.boundary:
+            return ''
+        ids = []
+        boundary = obj.site.boundary
+        while True:
+            try:
+                ids.append(boundary.id)
+                boundary = boundary.top_level_boundary
+            except AttributeError:
+                break
+        return '_' + '_'.join([str(i) for i in ids]) + '_'
+
+    def prepare_endemism(self, obj):
+        if not obj.taxonomy:
+            return ''
+        if not obj.taxonomy.endemism:
+            return ''
+        return obj.taxonomy.endemism.name
+
+    def prepare_iucn_status(self, obj):
+        if not obj.taxonomy:
+            return ''
+        if not obj.taxonomy.iucn_status:
+            return ''
+        return obj.taxonomy.iucn_status.category
+
+    def prepare_vernacular_names(self, obj):
+        if not obj.taxonomy:
+            return ''
+        return ','.join(obj.taxonomy.vernacular_names.filter(
+            language='eng'
+        ).values_list('name', flat=True))
+
+    def prepare_river_catchments(self, obj):
+        if not obj.site:
+            return ''
+        if not obj.site.location_context_document:
+            return ''
+        river_catchment_array = get_river_catchment_site(obj.site)
+        river_catchment_string = ''
+        for river_catchment in river_catchment_array:
+            river_catchment_string += '_'
+            river_catchment_string += river_catchment.replace(' ', '_')
+            river_catchment_string += '_'
+        return river_catchment_string
 
     class Meta:
         app_label = 'bims'

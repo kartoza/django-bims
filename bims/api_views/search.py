@@ -44,8 +44,8 @@ class SearchObjects(APIView):
 
         # calculate taxon
         for collection in collection_result:
-            if collection.taxon_gbif not in taxon_results:
-                taxon_results[collection.taxon_gbif] = {
+            if collection.taxonomy not in taxon_results:
+                taxon_results[collection.taxonomy] = {
                     COUNT_LABEL: 1,
                     NAME_LABEL: collection.original_species_name,
                     HIGHLIGHTER_LABEL: highlighter.highlight(
@@ -55,10 +55,10 @@ class SearchObjects(APIView):
                     ]
                 }
             else:
-                if collection.pk not in taxon_results[collection.taxon_gbif][
+                if collection.pk not in taxon_results[collection.taxonomy][
                     COLLECTION_IDS]:
-                    taxon_results[collection.taxon_gbif][COUNT_LABEL] += 1
-                    taxon_results[collection.taxon_gbif][
+                    taxon_results[collection.taxonomy][COUNT_LABEL] += 1
+                    taxon_results[collection.taxonomy][
                         COLLECTION_IDS].append(collection.pk)
 
             if collection.location_site_id not in site_results:

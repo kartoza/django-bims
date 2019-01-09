@@ -36,6 +36,8 @@ define([
         previousZoom: 0,
         sidePanelView: null,
         initZoom: 7,
+        numInFlightTiles: 0,
+        mapIsReady: false,
         initCenter: [22.937506, -30.559482],
         events: {
             'click .zoom-in': 'zoomInMap',
@@ -53,7 +55,7 @@ define([
         initialize: function () {
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
-            this.layers = new Layers({parent:this});
+            this.layers = new Layers({parent: this});
             this.locationSiteCollection = new LocationSiteCollection();
             this.clusterCollection = new ClusterCollection();
             this.geocontext = new Geocontext();
@@ -61,7 +63,7 @@ define([
             new TaxonDetail();
             new RecordsDetail();
             this.taxonDetailDashboard = new TaxonDetailDashboard();
-            this.siteDetailedDashboard = new SiteDetailedDashboard();
+            this.siteDetailedDashboard = new SiteDetailedDashboard({parent: this});
 
             Shared.CurrentState.FETCH_CLUSTERS = true;
 
@@ -96,7 +98,7 @@ define([
             Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
 
             this.render();
-            this.clusterBiologicalCollection = new ClusterBiologicalCollection(this.initExtent);
+            this.clusterBiologicalCollection = new ClusterBiologicalCollection(this);
             this.mapControlPanel.searchView.initDateFilter();
             this.showInfoPopup();
 
@@ -228,8 +230,8 @@ define([
 
                     this.zoomToCoordinates(
                         feature.getGeometry().getCoordinates(),
-                        this.getCurrentZoom()+2
-                        );
+                        this.getCurrentZoom() + 2
+                    );
                 } else {
                     var _properties = properties['features'][0].getProperties();
                     Shared.Dispatcher.trigger('locationSite-' + _properties.id + ':clicked');
@@ -287,7 +289,7 @@ define([
             $mapLegend.show();
             this.$mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
 
-            if(showTooltip) {
+            if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
         },
@@ -305,7 +307,7 @@ define([
             $mapLegend.hide();
             this.$mapLegendWrapper.attr('data-original-title', 'Show legends').tooltip('hide');
 
-            if(showTooltip) {
+            if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
         },
@@ -374,6 +376,36 @@ define([
                     var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
                     self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
                 }
+            });
+
+            this.map.getLayers().forEach(function (layer) {
+                try {
+                    var source = layer.getSource();
+                    if (source instanceof ol.source.TileImage) {
+                        source.on('tileloadstart', function () {
+                            ++self.numInFlightTiles
+                        });
+                        source.on('tileloadend', function () {
+                            --self.numInFlightTiles
+                        });
+                    }
+                } catch (err) {
+                }
+            });
+
+            this.map.on('postrender', function (evt) {
+                if (!evt.frameState)
+                    return;
+
+                var numHeldTiles = 0;
+                var wanted = evt.frameState.wantedTiles;
+                for (var layer in wanted)
+                    if (wanted.hasOwnProperty(layer))
+                        numHeldTiles += Object.keys(wanted[layer]).length;
+
+                var ready = self.numInFlightTiles === 0 && numHeldTiles === 0;
+                if (self.mapIsReady !== ready)
+                    self.mapIsReady = ready;
             });
 
             return this;
@@ -492,6 +524,17 @@ define([
             });
             return administrative;
         },
+        resetAdministrativeLayers: function () {
+            var administrative = this.checkAdministrativeLevel();
+            if (administrative !== 'detail') {
+                if (administrative === this.clusterCollection.administrative) {
+                    return
+                }
+                this.layers.changeLayerAdministrative(administrative);
+            } else {
+                this.clusterCollection.administrative = null;
+            }
+        },
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
@@ -526,7 +569,8 @@ define([
                             success: function () {
                                 self.fetchingFinish();
                                 self.clusterCollection.renderCollection()
-                            }, error: function (xhr, text_status, error_thrown) {
+                            },
+                            error: function (xhr, text_status, error_thrown) {
                                 self.fetchingError(error_thrown);
                             }
                         });
@@ -583,6 +627,12 @@ define([
         },
         addLocationSiteClusterFeatures: function (features) {
             this.layers.locationSiteClusterSource.addFeatures(features);
+        },
+        isAllLayersReady: function () {
+            if (this.layers.locationSiteClusterSource && this.layers.highlightVectorSource && this.layers.highlightPinnedVectorSource) {
+                return true;
+            }
+            return false;
         },
         switchHighlight: function (features, ignoreZoom) {
             var self = this;
@@ -699,48 +749,64 @@ define([
             this.taxonDetailDashboard.closeDashboard();
             this.siteDetailedDashboard.closeDashboard();
         },
+        whenMapIsReady: function (callback) {
+            var self = this;
+            if (this.mapIsReady)
+                callback();
+            else {
+                setTimeout(function () {
+                    self.map.once('change:ready', self.whenMapIsReady.bind(null, callback));
+                    self.whenMapIsReady(callback);
+                }, 100)
+            }
+        },
         downloadMap: function () {
             var that = this;
             var downloadMap = true;
 
             that.map.once('postcompose', function (event) {
                 var canvas = event.context.canvas;
-                try{
-                   canvas.toBlob(function (blob) {
+                try {
+                    canvas.toBlob(function (blob) {
                     })
                 }
-                catch(error) {
+                catch (error) {
                     $('#error-modal').modal('show');
                     downloadMap = false
                 }
             });
             that.map.renderSync();
 
-            if(downloadMap) {
+            if (downloadMap) {
                 $('#ripple-loading').show();
                 $('.map-control-panel').hide();
                 $('.zoom-control').hide();
                 $('.print-map-control').addClass('control-panel-selected');
-                var canvas = document.getElementsByClassName('map-wrapper');
-                var $mapWrapper = $('.map-wrapper');
-                var divHeight = $mapWrapper.height();
-                var divWidth = $mapWrapper.width();
-                var ratio = divHeight / divWidth;
-                html2canvas(canvas, {
-                    useCORS: true,
-                    background :'#FFFFFF',
-                    allowTaint:	false,
-                    onrendered: function (canvas) {
-                        var link = document.createElement('a');
-                        link.href = canvas.toDataURL("image/png");
-                        link.download = 'map.png';
-                        link.click();
-                        $('.zoom-control').show();
-                        $('.map-control-panel').show();
-                        $('#ripple-loading').hide();
-                        $('.print-map-control').removeClass('control-panel-selected');
-                    }
-                })
+                that.whenMapIsReady(function () {
+                    var canvas = document.getElementsByClassName('map-wrapper');
+                    var $mapWrapper = $('.map-wrapper');
+                    var divHeight = $mapWrapper.height();
+                    var divWidth = $mapWrapper.width();
+                    var ratio = divHeight / divWidth;
+                    html2canvas(canvas, {
+                        useCORS: true,
+                        background: '#FFFFFF',
+                        allowTaint: false,
+                        onrendered: function (canvas) {
+                            var link = document.createElement('a');
+                            link.setAttribute("type", "hidden");
+                            link.href = canvas.toDataURL("image/png");
+                            link.download = 'map.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                            $('.zoom-control').show();
+                            $('.map-control-panel').show();
+                            $('#ripple-loading').hide();
+                            $('.print-map-control').removeClass('control-panel-selected');
+                        }
+                    })
+                });
             }
         }
     })

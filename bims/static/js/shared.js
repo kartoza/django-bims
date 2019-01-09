@@ -3,6 +3,14 @@
 
 define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, StorageUtil) {
     return {
+        SearchURLParametersTemplate: "?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
+            "&zoom=<%= zoom %>&bbox=<%= bbox %>" +
+            "&collector=<%= collector %>&category=<%= category %>" +
+            "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
+            "&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
+            "&referenceCategory=<%= referenceCategory %>" +
+            "&riverCatchment=<%= riverCatchment %>" +
+            "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>",
         LocationSiteDetailXHRRequest: null,
         TaxonDetailXHRRequest: null,
         Dispatcher: _.extend({}, Backbone.Events),
@@ -11,6 +19,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         StorageUtil: new StorageUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
+        PoliticalRegionBoundaries: null,
         AdminAreaSelected: [],
         LegendsDisplayed: false,
         CurrentState: {

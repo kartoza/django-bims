@@ -1,4 +1,11 @@
+{% load static from staticfiles %}
+<!-- IntroJs -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.min.css" rel="stylesheet">
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.min.js"></script>
+<script type="text/javascript" src="{% static "js/views/introjs-tutorial.js" %}"></script>
+
 <script type='text/html' id='map-template'>
+
     <div id="map" class="map"></div>
     <div id="loading-warning"><span>LOADING....</span></div>
     <div id="footer-message"><span>Additional Info</span></div>
@@ -15,9 +22,19 @@
     <div class="ol-control" id="taxon-filter">
     </div>
     <div id="popup"></div>
-    <div id="map-legend-wrapper" class="control-drop-shadow hide-legend" data-toggle="tooltip" data-placement="bottom" data-original-title="Show legends" data-html="true">
+    <div id="map-legend-wrapper" class="control-drop-shadow hide-legend"
+         data-toggle="tooltip" data-placement="bottom"
+         data-original-title="Show legends" data-html="true">
         <div id="map-legend-symbol">L</div>
         <div id="map-legend" style="display: none"></div>
+    </div>
+    <div id="start-tutorial" class="map-legend-symbol control-drop-shadow
+    hide-legend" data-toggle="tooltip" data-placement="bottom"
+         data-original-title="Start tutorial" data-html="true">
+        <a style="color: #212529" href="javascript:void(0);"
+           onclick="javascript:startIntro();">?</a>
+
+        <div id="tutorial" style="display: none"></div>
     </div>
 </script>
 <script type='text/html' id='side-panel-template'>
@@ -28,7 +45,8 @@
         </div>
         <div class="right-panel-header">
             <div class="pull-right">
-                <img class="close-icon close-panel header-panel-button" src="/static/img/close_icon.svg">
+                <img class="close-icon close-panel header-panel-button"
+                     src="/static/img/close_icon.svg">
             </div>
             <div class="pull-left">
                 <i class="fa fa-caret-square-o-left return-panel header-panel-button"></i>
@@ -46,7 +64,9 @@
     <div class="map-search-box map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
-                <div class="close-button search-reset pull-left" data-toggle="tooltip" data-placement="top" data-original-title="Reset">
+                <div class="close-button search-reset pull-left"
+                     data-toggle="tooltip" data-placement="top"
+                     data-original-title="Reset">
                     <img class="close-icon" src="/static/img/reset.svg">
                 </div>
                 <span class="title">
@@ -60,7 +80,9 @@
         <div class="row">
             <div class="search-box">
                 <div class="container-1">
-                    <input type="search" id="search" placeholder="Search..."><span class="search-arrow"><i class="fa fa-angle-right"></i></span>
+                    <input type="search" id="search"
+                           placeholder="Search..."><span class="search-arrow"><i
+                        class="fa fa-angle-right"></i></span>
                 </div>
             </div>
             <div id="search-error-text">Minimal 3 character or empty.</div>
@@ -77,21 +99,29 @@
         </div>
 
         {% if modules_exists %}
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                MODULE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    MODULE <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
             </div>
-        </div>
-        <div class="row module-filters" style="display: none;"  data-toggle="tooltip" data-placement="top" title="Coming Soon">
-            <div class="col-lg-4 not-ready"><img src="/static/img/fish-2.svg"></div>
-            <div class="col-lg-4 not-ready"><img src="/static/img/invertebras-2.svg"></div>
-            <div class="col-lg-4 not-ready"><img src="/static/img/algae-2.svg"></div>
-        </div>
+            <div class="row module-filters" style="display: none;"
+                 data-toggle="tooltip" data-placement="top" title="Coming Soon">
+                <div class="col-lg-4 not-ready"><img
+                        src="/static/img/fish-2.svg"></div>
+                <div class="col-lg-4 not-ready"><img
+                        src="/static/img/invertebras-2.svg"></div>
+                <div class="col-lg-4 not-ready"><img
+                        src="/static/img/algae-2.svg"></div>
+            </div>
         {% endif %}
 
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle" id="date-filter-subtitle">
-                {{ date_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                {{ date_title }} <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="row" style="display: none">
@@ -111,92 +141,126 @@
         </div>
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                ORIGIN <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                ORIGIN <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
-        <div class="row" style="display: none">
+        <div class="row" style="display: none" id="origin-filter-wrapper">
+                <div class="btn-group-wrapper text-center">
+                <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
+                <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
+                <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
+                <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
+                    <button type="button" class="btn origin-btn btn-secondary" data-origin="alien">Non-native</button>
+                    <button type="button" class="btn origin-btn btn-secondary" data-origin="translocated">Translocated</button>
+                    <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
+                    <div class="native-origin-dropdown dropdown-menu" aria-labelledby="native-origin-btn">
+                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All endemic </div>
+                    </div>
+                </div>
+                </div>
             <div class="col-lg-12 filter-content" id="filter-category">
             </div>
             <div class="button-filter-wrapper">
                 <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter">Clear Filter</button>
+                <button class="clear-filter clear-origin-filter">Clear Filter</button>
             </div>
         </div>
 
         <div class="spatial-filter-wrapper"></div>
 
         {% if use_ecological_condition %}
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                ECOLOGICAL CONDITION <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row ecological-condition" style="display: none;"  data-toggle="tooltip" data-placement="top" title="Coming Soon">
-            <div class="row col-lg-12">
-                <div class="col-lg-4 neutral">
-                    Natural (N)
-                </div>
-                <div class="col-lg-4 good">
-                    Good (G)
-                </div>
-                <div class="col-lg-4 fair">
-                    Fair (F)
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    ECOLOGICAL CONDITION <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row col-lg-12">
-                <div class="col-lg-4 poor">
-                    Poor (P)
+            <div class="row ecological-condition" style="display: none;"
+                 data-toggle="tooltip" data-placement="top" title="Coming Soon">
+                <div class="row col-lg-12">
+                    <div class="col-lg-4 neutral">
+                        Natural (N)
+                    </div>
+                    <div class="col-lg-4 good">
+                        Good (G)
+                    </div>
+                    <div class="col-lg-4 fair">
+                        Fair (F)
+                    </div>
                 </div>
-                <div class="col-lg-4 seriously-modified">
-                    Seriously Modified (SM)
-                </div>
-                <div class="col-lg-4 critically-modified">
-                    Critically Modified (CM)
+                <div class="row col-lg-12">
+                    <div class="col-lg-4 poor">
+                        Poor (P)
+                    </div>
+                    <div class="col-lg-4 seriously-modified">
+                        Seriously Modified (SM)
+                    </div>
+                    <div class="col-lg-4 critically-modified">
+                        Critically Modified (CM)
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
 
         {% if use_conservation_status %}
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                CONSERVATION STATUS <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    CONSERVATION STATUS <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
             </div>
-        </div>
-        <div class="row" style="display: none" data-toggle="tooltip" data-placement="top" title="Coming Soon">
-            <div class="col-lg-12 filter-content conservation-status">
-                <select disabled>
-                    <option value="">Conservation Status</option>
-                </select>
+            <div class="row" style="display: none">
+                <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
+                    <select multiple  data-placeholder="Select Some Conservation Status" id="conservation-status">
+                        {% for status_data in conservation_status_data %}
+                            <option value="{{ status_data.status }}">{{ status_data.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter clear-conservation-filter">Clear
+                        Filter
+                    </button>
+                </div>
+                <div class="small-space"></div>
             </div>
-        </div>
         {% endif %}
 
 
         {% if COLLECTOR_FILTER %}
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                COLLECTOR <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    COLLECTOR <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
             </div>
-        </div>
-        <div class="row" style="display: none">
-            <div class="col-lg-12 filter-content" id="filter-collectors">
+            <div class="row" style="display: none">
+                <div class="col-lg-12 filter-content" id="filter-collectors">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
+                </div>
             </div>
-            <div class="button-filter-wrapper">
-                <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter">Clear Filter</button>
-            </div>
-        </div>
         {% endif %}
 
         <div class="study-reference-wrapper">
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    STUDY REFERENCE <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                    STUDY REFERENCE <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
             <div class="row" style="display: none">
-                <div class="col-lg-12 filter-content" id="filter-study-reference">
+                <div class="col-lg-12 filter-content"
+                     id="filter-study-reference">
                 </div>
                 <div class="button-filter-wrapper">
                     <button class="apply-filter">Apply Filter</button>
@@ -214,7 +278,9 @@
 <script type="text/html" id="reference-category-template">
     <div class="row sub-filter">
         <div class="col-lg-12 subtitle">
-            REFERENCE CATEGORY <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            REFERENCE CATEGORY <i
+                class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                class="fa fa-angle-down pull-right filter-icon-arrow"></i>
         </div>
     </div>
     <div class="row" style="display: none">
@@ -255,49 +321,56 @@
 </script>
 
 <script type="text/html" id="spatial-filter-panel">
-        <div class="row sub-filter content spatial-scale-menu">
-            <div class="col-lg-12 subtitle">
-                 {{ spatial_scale_title }} <i class="fa fa-angle-up pull-right filter-icon-arrow"></i><i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+    <div class="row sub-filter content spatial-scale-menu">
+        <div class="col-lg-12 subtitle">
+            {{ spatial_scale_title }} <i
+                class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+        </div>
+    </div>
+    <div class="row spatial-scale-panel" style="display: none">
+        <div class="small-subtitle spatial-scale-sub-panel">
+            Political Region
+            <i class="fa fa-angle-down pull-right"></i>
+        </div>
+        <div class="col-lg-12 filter-content" id="spatial-scale-container" style="display: none;">
+        </div>
+        <div class="small-subtitle spatial-scale-sub-panel">
+            Catchment
+            <i class="fa fa-angle-down pull-right"></i>
+        </div>
+        <div class="col-lg-12 filter-content" id="river-catchment-container" style="display: none;">
+        </div>
+
+        <div class="col-lg-12 other-filters">
+            <div class="container-fluid row">
+                <div class="col-lg-5">Ecoregion</div>
+                <div class="col-lg-7">
+                    <select disabled>
+                        <option value="">Ecoregion</option>
+                    </select>
+                </div>
             </div>
         </div>
-        <div class="row spatial-scale-panel" style="display: none">
-            <div class="small-subtitle">Political Region</div>
-            <div class="col-lg-12 filter-content" id="spatial-scale-container">
-            </div>
-            <div class="col-lg-12 other-filters">
-                <div class="container-fluid row">
-                    <div class="col-lg-5">Ecoregion</div>
-                    <div class="col-lg-7">
-                        <select disabled>
-                            <option value="">Ecoregion</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="container-fluid row">
-                    <div class="col-lg-5">Catchment</div>
-                    <div class="col-lg-7">
-                        <select disabled>
-                            <option value="">Catchment</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="spatial-scale-action">
-                <button class="spatial-scale-apply-filter" disabled>Apply Filter</button>
-                <button class="spatial-scale-clear-filter" disabled>Clear Filter</button>
-            </div>
+        <div class="spatial-scale-action">
+            <button class="spatial-scale-apply-filter" disabled>Apply Filter
+            </button>
+            <button class="spatial-scale-clear-filter" disabled>Clear Filter
+            </button>
         </div>
-        {% if user.is_authenticated %}
+    </div>
+    {% if user.is_authenticated %}
         <div class="row sub-filter">
             <div class="col-lg-12 subtitle">
-                 USER BOUNDARY
+                USER BOUNDARY
                 <i class="fa fa-angle-up pull-right filter-icon-arrow"></i>
                 <i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
         </div>
         <div class="user-boundary-panel" style="display: none">
             <div class="row spatial-filter-panel-upload-wrapper">
-                <button id="spatial-filter-panel-upload">Upload New Boundary</button>
+                <button id="spatial-filter-panel-upload">Upload New Boundary
+                </button>
             </div>
             <div class="row boundary-list">
             </div>
@@ -306,26 +379,33 @@
                 <button class="spatial-clear-filter">Clear Filter</button>
             </div>
         </div>
-        {% endif %}
+    {% endif %}
 
     <div class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Upload a boundary</h5>
-                    <button type="button" class="close close-upload-boundary-modal"
+                    <button type="button"
+                            class="close close-upload-boundary-modal"
                             aria-label="Close">
-                        <img class="close-icon" src="/static/img/close_icon.svg">
+                        <img class="close-icon"
+                             src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="exampleInputEmail1">Boundary Name</label>
-                        <input type="text" class="form-control" id="boundary-input-name" aria-describedby="emailHelp" placeholder="Enter boundary name">
+                        <input type="text" class="form-control"
+                               id="boundary-input-name"
+                               aria-describedby="emailHelp"
+                               placeholder="Enter boundary name">
                     </div>
                     <label for="file"><b>Upload shapefile here</b></label>
-                    <button type="button" class="btn btn-primary btn-boundary-upload">
-                        <span class="glyphicon glyphicon-cloud-upload"></span> Upload shapefiles
+                    <button type="button"
+                            class="btn btn-primary btn-boundary-upload">
+                        <span class="glyphicon glyphicon-cloud-upload"></span>
+                        Upload shapefiles
                     </button>
                     <input id="fileupload" type="file" name="shapefile" multiple
                            style="display: none;"
@@ -341,7 +421,9 @@
                         <tbody>
                         {% for shapefile in shapefiles %}
                             <tr>
-                                <td><a href="{{ shapefile.fileurl }}">{{ shapefile.filename }}</a></td>
+                                <td>
+                                    <a href="{{ shapefile.fileurl }}">{{ shapefile.filename }}</a>
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -359,12 +441,14 @@
 </script>
 
 <script type="text/html" id="layer-selector-row">
-    <li class="ui-state-default" style="display: <%= display %>" data-name="<%= id %>">
+    <li class="ui-state-default" style="display: <%= display %>"
+        data-name="<%= id %>">
         <div class="layer-selector-tags">
         </div>
         <div class="row-title">
             <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
-            <input type="checkbox" value="<%= key %>" class="layer-selector-input" <%= checked %>>
+            <input type="checkbox" value="<%= key %>"
+                   class="layer-selector-input" <%= checked %>>
             <%= name %>
         </div>
         <div class="options">
@@ -373,48 +457,81 @@
                     <div class="col-md-2 transparency-icon">
                         <img src="/static/img/transparency-icon.png"/>
                     </div>
-                    <div class="col-md-10 transparency-slider"><div class="layer-transparency" data-value="<%= transparency_value %>"></div></div>
+                    <div class="col-md-10 transparency-slider">
+                        <div class="layer-transparency"
+                             data-value="<%= transparency_value %>"></div>
+                    </div>
                 </div>
             </div>
         </div>
 </script>
 <script type="text/html" id="map-control-panel">
-    <div class="map-control-panel {% if not user.is_authenticated %}no-upload{% endif %}">
-        <div class="search-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Search">
+    <div id="map-control-panel-element" class="map-control-panel
+{% if not user.is_authenticated %}no-upload{% endif %}">
+        <div id="search-control" class="search-control sub-control-panel"
+        data-toggle="popover"
+             data-placement="right" data-trigger="hover" data-content="Search">
             <i class="fa fa-search" aria-hidden="true"></i>
         </div>
-        <div class="filter-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Layer Selector">
+        <div id="filter-control" class="filter-control sub-control-panel"
+        data-toggle="popover"
+             data-placement="right" data-trigger="hover"
+             data-content="Layer Selector">
             <i class="fa fa-map" aria-hidden="true"></i>
         </div>
-        <div class="locate-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Locate Options">
+        <div id="locate-control" class="locate-control sub-control-panel"
+        data-toggle="popover"
+             data-placement="right" data-trigger="hover"
+             data-content="Locate Options">
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
             {% if perms.bims.can_upload_csv %}
-            <div class="upload-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Capture Single Occurrence">
-                <i class="fa fa-crosshairs" aria-hidden="true"></i>
-            </div>
+                <div class="upload-data sub-control-panel" data-toggle="popover"
+                     data-placement="right" data-trigger="hover"
+                     data-content="Capture Single Occurrence">
+                    <i class="fa fa-crosshairs" aria-hidden="true"></i>
+                </div>
             {% endif %}
         {% endif %}
         {% if can_validate %}
-            <div class="validate-data sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Validate Data">
+            <div class="validate-data sub-control-panel" data-toggle="popover"
+                 data-placement="right" data-trigger="hover"
+                 data-content="Validate Data">
                 <i class="fa fa-check" aria-hidden="true"></i>
             </div>
         {% endif %}
-        <div class="download-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Download Data">
+        <div id="download-control" class="download-control sub-control-panel"
+        data-toggle="popover"
+             data-placement="right" data-trigger="hover"
+             data-content="Download Data">
             <i class="fa fa-download" aria-hidden="true"></i>
         </div>
-        <div class="print-map-control sub-control-panel" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Print Map">
+        <div id="print-control" class="print-map-control sub-control-panel"
+             data-toggle="popover"
+             data-placement="right" data-trigger="hover"
+             data-content="Print Map">
             <i class="fa fa-print" aria-hidden="true"></i>
         </div>
+        <div id="permalink-control" class="permalink-control sub-control-panel"
+        data-toggle="popover"
+             data-placement="right" data-trigger="hover"
+             data-content="Copy sharable link for this map">
+            <i class="fa fa-link" aria-hidden="true"></i>
+        </div>
     </div>
-    <div class="zoom-control row">
-        <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus" aria-hidden="true"></i></div>
-        <div class="col-lg-6 sub-zoom-control zoom-in"><i class="fa fa-minus" aria-hidden="true"></i></div>
+    <div id="zoom-control" class="zoom-control row">
+        <div class="col-lg-6 sub-zoom-control zoom-out"><i class="fa fa-plus"
+                                                           aria-hidden="true"></i>
+        </div>
+        <div class="col-lg-6 sub-zoom-control zoom-in"><i class="fa fa-minus"
+                                                          aria-hidden="true"></i>
+        </div>
     </div>
 
     {# layers selector container #}
-    <div class="layers-selector-container map-control-panel-box">
+    <div class="layers-selector-container
+         map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
                     <span class="title">
@@ -427,14 +544,16 @@
         </div>
         <div class="row content">
             <div class="input-group layer-selector-search-input">
-                <input type="text" class="form-control" placeholder="Search" id="layer-selector-search">
+                <input type="text" class="form-control" placeholder="Search"
+                       id="layer-selector-search">
             </div>
             <ul id="layers-selector" style="width:100%">
             </ul>
         </div>
     </div>
     {# locate option container #}
-    <div class="locate-options-container map-control-panel-box">
+    <div id="locate-control" class="locate-options-container
+         map-control-panel-box">
         <div class="row">
             <div class="col-lg-12" style="padding-right: 0">
                     <span class="title">
@@ -468,7 +587,8 @@
                     <h5 class="modal-title">Locate by Coordinate</h5>
                     <button type="button" class="close"
                             aria-label="Close">
-                        <img class="close-icon" src="/static/img/close_icon.svg">
+                        <img class="close-icon"
+                             src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -479,7 +599,8 @@
                         <br/> <br/> e.g. for Cape Town being -33.xxx 19.xxx
                     </p>
                     <p class="farm-form">
-                        Please enter the Farm/Farm Portion ID below (e.g. T0KT00000000001600001)
+                        Please enter the Farm/Farm Portion ID below (e.g.
+                        T0KT00000000001600001)
                     </p>
 
                     <form id="locate-form">
@@ -498,7 +619,8 @@
                                     Longitude
                                 </label>
                                 <input type="number" step="0.1" min="-180"
-                                       max="180" class="form-control mb-2 mr-sm-2"
+                                       max="180"
+                                       class="form-control mb-2 mr-sm-2"
                                        id="longitude" placeholder="Longitude">
                             </div>
                             <div class="col-6 farm-form">
@@ -510,14 +632,16 @@
                                        id="farm-id" placeholder="Farm ID">
                             </div>
                             <div class="col">
-                                <button id="go-button" type="button" class="btn btn-outline-dark mb-2 mr-sm-2">
+                                <button id="go-button" type="button"
+                                        class="btn btn-outline-dark mb-2 mr-sm-2">
                                     Go
                                 </button>
                             </div>
                         </div>
                     </form>
 
-                    <div class="alert alert-danger" role="alert" style="display: none;">
+                    <div class="alert alert-danger" role="alert"
+                         style="display: none;">
                     </div>
 
                 </div>
@@ -531,95 +655,130 @@
         <div class="modal-dialog modal-upload-data" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Capture Single Occurrence <span class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span> </h5>
+                    <h5 class="modal-title">Capture Single Occurrence <span
+                            class="badge ud-badge-same-site badge-info"> Capturing another record at the same site </span>
+                    </h5>
                     <button type="button" class="close small-close"
                             aria-label="Close">
-                        <img class="close-icon" src="/static/img/close_icon.svg">
+                        <img class="close-icon"
+                             src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
                     <form class="form">
                         <div class="upload-body-form">
-                            <div class="alert alert-danger upload-alert" role="alert">
+                            <div class="alert alert-danger upload-alert"
+                                 role="alert">
                             </div>
-                            <div class="alert alert-success upload-alert" role="alert">
+                            <div class="alert alert-success upload-alert"
+                                 role="alert">
                             </div>
                             {% if biological_modules|length > 1 %}
-                                <label for="ud_module" class="upload-input-label">
+                                <label for="ud_module"
+                                       class="upload-input-label">
                                     Module *
                                 </label>
-                                <select id="ud_module" name="Module" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                                <select id="ud_module" name="Module"
+                                        class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
                                     <option value="">-</option>
                                     {% for key, value in biological_modules.items %}
                                         <option value="{{ value }}">{{ key }}</option>
                                     {% endfor %}
                                 </select>
                             {% else %}
-                                <input type="hidden" id="ud_module" class="ud-item" name="ud_module" value="{{ biological_modules.values | first }}">
+                                <input type="hidden" id="ud_module"
+                                       class="ud-item" name="ud_module"
+                                       value="{{ biological_modules.values | first }}">
                             {% endif %}
-                            <label for="ud_species_name" class="upload-input-label">
+                            <label for="ud_species_name"
+                                   class="upload-input-label">
                                 Species Name *
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                                   id="ud_species_name" placeholder="" name="Species Name">
-                            <label for="ud_location_site" class="upload-input-label">
-                                Location Site Name * <button type="button" class="btn-ud-new-site btn btn-light"> Add new site for next record </button>
+                                   id="ud_species_name" placeholder=""
+                                   name="Species Name">
+                            <label for="ud_location_site"
+                                   class="upload-input-label">
+                                Location Site Name *
+                                <button type="button"
+                                        class="btn-ud-new-site btn btn-light">
+                                    Add new site for next record
+                                </button>
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                                   id="ud_location_site" name="Location Site" placeholder="">
-                            <label for="ud_collection_date" class="upload-input-label">
+                                   id="ud_location_site" name="Location Site"
+                                   placeholder="">
+                            <label for="ud_collection_date"
+                                   class="upload-input-label">
                                 Collection Date *
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item ud-item-required"
-                                   id="ud_collection_date" name="Collection Date" placeholder="">
+                                   id="ud_collection_date"
+                                   name="Collection Date" placeholder="">
                             <label for="ud_category" class="upload-input-label">
                                 Category *
                             </label>
-                            <select id="ud_category" name="Category" class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
+                            <select id="ud_category" name="Category"
+                                    class="form-control mb-2 mr-sm-2 ud-item-required ud-item">
                                 <option value="">-</option>
                                 {% for category in collection_category %}
                                     <option value="{{ category.0 }}">{{ category.1 }}</option>
                                 {% endfor %}
                             </select>
-                            <label for="ud_collector" class="upload-input-label">
+                            <label for="ud_collector"
+                                   class="upload-input-label">
                                 Collector *
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item-required ud-item"
-                                   id="ud_collector" placeholder="" name="Collector">
+                                   id="ud_collector" placeholder=""
+                                   name="Collector">
                             <label for="ud_notes" class="upload-input-label">
                                 Notes
                             </label>
                             <textarea class="form-control ud-item"
                                       id="ud_notes" placeholder=""></textarea>
-                            <label for="ud_custodian" class="upload-input-label" style="margin-top: 5px;">
+                            <label for="ud_custodian" class="upload-input-label"
+                                   style="margin-top: 5px;">
                                 Custodian
                             </label>
                             <input type="text"
                                    class="form-control mb-2 mr-sm-2 ud-item"
-                                   id="ud_custodian" name="Custodian" placeholder="">
-                            <label for="ud_references" class="upload-input-label">
+                                   id="ud_custodian" name="Custodian"
+                                   placeholder="">
+                            <label for="ud_references"
+                                   class="upload-input-label">
                                 References
                             </label>
                             <div class="form-group">
-                                <select multiple id="ud_references" name="References" class="ud-item">
+                                <select multiple id="ud_references"
+                                        name="References" class="ud-item">
                                 </select>
                             </div>
                             <div class="row">
                                 <div class="col-lg-4">
-                            Lat : <input type="text" id="current_lat"/></div>
+                                    Lat : <input type="text" id="current_lat"/>
+                                </div>
                                 <div class="col-lg-4">
-                            Long : <input type="text" id="current_lon"/></div>
+                                    Long : <input type="text" id="current_lon"/>
+                                </div>
                                 <div class="col-lg-4">
-                            <button style="margin-top: 20px;" id="update_coordinate">Update coordinate</button></div>
+                                    <button style="margin-top: 20px;"
+                                            id="update_coordinate">Update
+                                        coordinate
+                                    </button>
+                                </div>
                             </div>
                             <br/>
                         </div>
                         <div class="upload-body-button">
-                            <button type="button" class="btn btn-info upload-data-button">Upload</button>
+                            <button type="button"
+                                    class="btn btn-info upload-data-button">
+                                Upload
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -640,7 +799,8 @@
                     <h5 class="modal-title">Download data</h5>
                     <button type="button" class="close"
                             aria-label="Close">
-                        <img class="close-icon" src="/static/img/close_icon.svg">
+                        <img class="close-icon"
+                             src="/static/img/close_icon.svg">
                     </button>
                 </div>
                 <div class="modal-body">
@@ -649,7 +809,9 @@
                         <table>
                             <tr>
                                 <td valign="middle">
-                                    <div class="row-format" data-format="csv">.csv</div>
+                                    <div class="row-format" data-format="csv">
+                                        .csv
+                                    </div>
                                 </td>
                             </tr>
                         </table>
@@ -662,7 +824,8 @@
 </script>
 
 <script type="text/template" id="site-detail-sub-title">
-    <div class="search-result-sub-title search-results-total" data-search-result-id="">
+    <div class="search-result-sub-title search-results-total"
+         data-search-result-id="">
         <%= name %>
     </div>
 </script>
@@ -674,9 +837,11 @@
 </script>
 
 <script type="text/template" id="search-result-sub-title">
-    <div class="search-result-sub-title search-results-total" data-search-result-id="">
+    <div class="search-result-sub-title search-results-total"
+         data-search-result-id="">
         <%= name %>
-        <i class="pull-right"><span class="total-occurences"><%= count %></span> occurrences</i>
+        <i class="pull-right"><span class="total-occurences"><%= count %></span>
+            occurrences</i>
     </div>
 </script>
 
@@ -717,7 +882,8 @@
             </div>
             <div class="progress">
                 <div class="progress-text">Translocated</div>
-                <div class="progress-bar progress-translocated" role="progressbar"
+                <div class="progress-bar progress-translocated"
+                     role="progressbar"
                      style="width: <%= translocatedValue %>%"
                      aria-valuenow="<%= translocatedValue %>"
                      aria-valuemin="0"
@@ -728,21 +894,22 @@
     </div>
 </script>
 
-<script type="text/template" id="search-result-dashboard-richness-index-template">
+<script type="text/template"
+        id="search-result-dashboard-richness-index-template">
     <div class="result-search" data-search-result-id="">
         <p class="group-title" style="margin-bottom: 10px"><%= name %></p>
         <a class="group-description">
             <div class="species-richness-text row">
-                <div class="col-lg-6">Species Richness </div>
-                <div class="col-lg-5">: <%= speciesRichness %> </div>
+                <div class="col-lg-6">Species Richness</div>
+                <div class="col-lg-5">: <%= speciesRichness %></div>
             </div>
             <div class="species-richness-text row">
-                <div class="col-lg-6">Shanon Diversity </div>
-                <div class="col-lg-5">: <%= shanonDiversity %> </div>
+                <div class="col-lg-6">Shanon Diversity</div>
+                <div class="col-lg-5">: <%= shanonDiversity %></div>
             </div>
             <div class="species-richness-text row">
-                <div class="col-lg-6">Simpson Diversity </div>
-                <div class="col-lg-5">: <%= simpsonDiversity %> </div>
+                <div class="col-lg-6">Simpson Diversity</div>
+                <div class="col-lg-5">: <%= simpsonDiversity %></div>
             </div>
         </a>
     </div>
@@ -758,7 +925,8 @@
 </script>
 
 <script type="text/template" id="search-result-taxa-template">
-    <div class="result-search" data-search-result-id="" data-taxon-id="<%= id %>">
+    <div class="result-search" data-search-result-id=""
+         data-taxon-id="<%= id %>">
         <p class="group-title"><%= highlight %></p>
         <a class="group-description"><%= count %> occurrences</a>
     </div>
@@ -791,15 +959,18 @@
 
 <script type="text/template" id="species-template">
     <div class="content">
-        <div class="iucn-status"><span class="name"><%= iucn_status_name %></span><span class="full-name"><%= iucn_status_full_name %></span></div>
-        <div class="species-count"><b><%= count %></b><br> <span class="records-link"> <a href="#">records</a></span></div>
+        <div class="iucn-status"><span
+                class="name"><%= iucn_status_name %></span><span
+                class="full-name"><%= iucn_status_full_name %></span></div>
+        <div class="species-count"><b><%= count %></b><br> <span
+                class="records-link"> <a href="#">records</a></span></div>
         <div class="taxonomy-system">
 
         </div>
         <div class="origin-info">
-             <div class="row">
+            <div class="row">
                 <div class="col-lg-5">
-                   ORIGIN
+                    ORIGIN
                 </div>
                 <div class="col-lg-7">
                     : <%= origin %>
@@ -817,7 +988,9 @@
             </div>
         </div>
         <div class="open-detailed-button-container">
-            <button class="btn btn-inf open-detailed-view">Open detailed dashboard</button>
+            <button class="btn btn-inf open-detailed-view">Open detailed
+                dashboard
+            </button>
         </div>
     </div>
 </script>
@@ -857,14 +1030,18 @@
 
 <script type="text/template" id="validate-data-list-container">
     <div class="refresh-list-wrapper">
-        <button class="refresh-list"><i class="fa fa-refresh" aria-hidden="true"></i> Refresh data</button>
+        <button class="refresh-list"><i class="fa fa-refresh"
+                                        aria-hidden="true"></i> Refresh data
+        </button>
     </div>
     <div class="validate-wrapper">
     </div>
     <nav aria-label="Page navigation">
         <ul class="pagination validate-data-pagination">
-            <li class="page-item"><a class="page-link previous" href="#">Previous</a></li>
-            <li class="page-item"><a class="page-link next" href="#">Next</a></li>
+            <li class="page-item"><a class="page-link previous" href="#">Previous</a>
+            </li>
+            <li class="page-item"><a class="page-link next" href="#">Next</a>
+            </li>
         </ul>
     </nav>
 </script>
@@ -877,21 +1054,23 @@
                     Species Name
                 </div>
                 <p> <%= original_species_name %> </p>
-                <div class="detail-container-title"> Collection Date </div>
+                <div class="detail-container-title"> Collection Date</div>
                 <p> <%= collection_date %> </p>
-                <div class="detail-container-title"> Uploader </div>
-                <p> <%= owner %> ( <a href="mailto:<%= owner_email %>?Subject=Question%20for%20contributor" target="_top"><%= owner_email %></a> ) </p>
+                <div class="detail-container-title"> Uploader</div>
+                <p> <%= owner %> ( <a
+                        href="mailto:<%= owner_email %>?Subject=Question%20for%20contributor"
+                        target="_top"><%= owner_email %></a> ) </p>
             </div>
         </div>
         <div class="detail-container container">
-            <div class="detail-container-title"> Notes </div>
-            <div> <%= notes %> </div>
-            <div class="detail-container-title"> Category </div>
-            <div> <%= category %> </div>
-            <div class="detail-container-title"> Custodian </div>
-            <div> <%= institution_id %> </div>
-            <div class="detail-container-title"> Taxon Class </div>
-            <div> <%= taxonomy.taxon_class %> </div>
+            <div class="detail-container-title"> Notes</div>
+            <div> <%= notes %></div>
+            <div class="detail-container-title"> Category</div>
+            <div> <%= category %></div>
+            <div class="detail-container-title"> Custodian</div>
+            <div> <%= institution_id %></div>
+            <div class="detail-container-title"> Taxon Class</div>
+            <div> <%= taxonomy.taxon_class %></div>
         </div>
         <div class="detail-container-buttons">
             <button class="show-map-button">Show in map</button>

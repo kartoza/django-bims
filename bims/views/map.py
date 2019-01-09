@@ -9,6 +9,7 @@ from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.models.profile import Profile as BimsProfile
+from bims.models.iucn_status import IUCNStatus
 from bims.permissions.api_permission import user_has_permission_to_validate
 
 
@@ -98,6 +99,18 @@ class MapPageView(TemplateView):
                 context['hide_bims_info'] = user_profile.hide_bims_info
             except (BimsProfile.DoesNotExist, TypeError):
                 pass
+
+        # Get all the iucn conservation status
+        if context['use_conservation_status']:
+            iucn_statuses = IUCNStatus.objects.all().distinct('category')
+            conservation_status_data = []
+            categories = dict(IUCNStatus.CATEGORY_CHOICES)
+            for iucn_status in iucn_statuses:
+                conservation_status_data.append({
+                    'status': str(iucn_status.category),
+                    'name': categories[iucn_status.category]
+                })
+            context['conservation_status_data'] = conservation_status_data
 
         try:
             context['flatpage'] = FlatPage.objects.get(title__icontains='info')

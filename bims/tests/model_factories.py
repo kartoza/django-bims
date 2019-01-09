@@ -20,6 +20,8 @@ from bims.models import (
     Cluster,
     Endemism,
     Taxonomy,
+    TaxonGroup,
+    FbisUUID,
 )
 
 
@@ -46,8 +48,8 @@ class LocationSiteF(factory.django.DjangoModelFactory):
 
     location_type = factory.SubFactory(LocationTypeF)
     geometry_point = Point(
-        random.uniform(-180.0, 180.0),
-        random.uniform(-90.0, 90.0)
+        random.uniform(-30.0, 30.0),
+        random.uniform(-30.0, 30.0)
     )
 
 
@@ -183,6 +185,29 @@ class TaxonomyF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
+    canonical_name = factory.Sequence(lambda n: u'Canonical name %s' % n)
+
+
+class TaxonGroupF(factory.django.DjangoModelFactory):
+    """
+    Taxon group factory
+    """
+    class Meta:
+        model = TaxonGroup
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: u'Name %s' % n)
+
+    @factory.post_generation
+    def taxonomies(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for taxonomy in extracted:
+                self.taxonomies.add(taxonomy)
 
 
 @factory.django.mute_signals(signals.post_save)
@@ -241,3 +266,15 @@ class ClusterF(factory.django.DjangoModelFactory):
     module = factory.Sequence(lambda n: u'Test module %s' % n)
     site_count = 1
     details = ''
+
+
+class FbisUUIDF(factory.django.DjangoModelFactory):
+    """
+    FbisUUID factory
+    """
+    class Meta:
+        model = FbisUUID
+
+    id = factory.Sequence(lambda n: n)
+    uuid = factory.Sequence(lambda n: 'uuid %s' % n)
+    content_type = factory.SubFactory(ContentTypeF)
