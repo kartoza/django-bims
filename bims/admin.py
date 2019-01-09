@@ -455,6 +455,7 @@ class FbisUUIDAdmin(admin.ModelAdmin):
     list_display = ('uuid', 'content_type', 'content_object')
     list_filter = ('content_type',)
     ordering = ('content_type', 'uuid')
+    search_fields = ('uuid', )
 
 
 # Re-register GeoNode's Profile page

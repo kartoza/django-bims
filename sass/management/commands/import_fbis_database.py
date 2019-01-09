@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
-from sass.scripts.import_user import import_user_table
-from sass.scripts.import_site import import_site_table
+from sass.scripts.fbis_user_importer import FbisUserImporter
+from sass.scripts.fbis_site_importer import FbisSiteImporter
 from sass.scripts.fbis_river_importer import FbisRiverImporter
 
 
 class Command(BaseCommand):
     help = 'Migrate data from fbis database'
     import_scripts = {
-        'user': import_user_table,
-        'site': import_site_table,
+        'user': FbisUserImporter,
+        'site': FbisSiteImporter,
         'river': FbisRiverImporter
     }
 

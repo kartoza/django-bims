@@ -29,7 +29,7 @@ class LocationSite(DocumentLinksMixin):
                             '{geocontext_collection_key}'
 
     name = models.CharField(
-        max_length=100,
+        max_length=300,
         blank=False,
     )
     site_description = models.CharField(
@@ -63,6 +63,20 @@ class LocationSite(DocumentLinksMixin):
         null=True,
         blank=True,
     )
+    map_reference = models.CharField(
+        null=True,
+        blank=True,
+        max_length=200
+    )
+    land_owner_detail = models.TextField(
+        null=True,
+        blank=True,
+    )
+    river = models.ForeignKey(
+        'sass.River',
+        null=True,
+        blank=True,
+    )
 
     location_context_document = models.TextField(
         verbose_name='Document for location context as JSON.',
@@ -72,8 +86,8 @@ class LocationSite(DocumentLinksMixin):
         blank=True
     )
 
-    other_data = JSONField(
-        verbose_name='Other json data',
+    additional_data = JSONField(
+        verbose_name='Additional json data',
         null=True,
         blank=True
     )

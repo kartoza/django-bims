@@ -10,28 +10,25 @@ class FbisRiverImporter(FbisImporter):
     content_type_model = River
     table_name = 'River'
 
-    def process_row(self, index):
-        print('Processing %s of %s' % (
-            index + 1,
-            len(self.accdb_rows)))
-        validated_value = str(self.get_row_value(index, 'Validated')) == '1.0'
+    def process_row(self, row, index):
+        validated_value = str(self.get_row_value('Validated', row)) == '1'
 
         # Get owner
         owner = None
         owners = FbisUUID.objects.filter(
-            uuid=self.get_row_value(index, 'OwnerID')
+            uuid=self.get_row_value('OwnerID', row)
         )
         if owners.exists():
             owner = owners[0].content_object
 
         river, created = River.objects.get_or_create(
-            name=self.get_row_value(index, 'RiverName'),
+            name=self.get_row_value('RiverName', row),
             owner=owner
         )
         river.validated = validated_value
         river.save()
 
         self.save_uuid(
-            uuid=self.get_row_value(index, 'RiverID'),
+            uuid=self.get_row_value('RiverID', row),
             object_id=river.id
         )

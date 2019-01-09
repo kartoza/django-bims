@@ -1,6 +1,6 @@
 import os
-import pandas_access as mdb
-from pandas.core.frame import DataFrame
+import sqlite3
+from sqlite3 import Error
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from bims.models.fbis_uuid import FbisUUID
@@ -8,22 +8,47 @@ from bims.models.fbis_uuid import FbisUUID
 
 class FbisImporter(object):
 
-    def __init__(self, accdb_filename, max_row = None):
-        self.accdb_filename = accdb_filename
-        self.accdb_filepath = None
-        self.accdb_rows = None
+    def __init__(self, sqlite_filename, max_row = None):
+        self.sqlite_filename = sqlite_filename
+        self.table_colums = []
+        self.sqlite_filepath = None
+        self.sqlite_rows = None
         self.max_row = max_row
         self.content_type = None
 
     def get_file_path(self):
-        self.accdb_filepath = os.path.join(
+        self.sqlite_filepath = os.path.join(
             settings.MEDIA_ROOT,
-            self.accdb_filename
+            self.sqlite_filename
         )
-        if not os.path.isfile(self.accdb_filepath):
-            print('%s not found in media directory' % self.accdb_filename)
+        if not os.path.isfile(self.sqlite_filepath):
+            print('%s not found in media directory' % self.sqlite_filename)
             return False
         return True
+
+    def create_connection(self):
+        try:
+            conn = sqlite3.connect(self.sqlite_filepath)
+            return conn
+        except Error as e:
+            print(e)
+        return None
+
+    def select_table(self, conn):
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM {table_name}'.format(
+            table_name=self.table_name.upper()
+        ))
+        self.sqlite_rows = cur.fetchall()
+        cur.close()
+
+    def get_table_colums(self, conn):
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM {table_name} WHERE 1=0;'.format(
+            table_name=self.table_name.upper()
+        ))
+        self.table_colums = [d[0] for d in cur.description]
+        cur.close()
 
     def save_uuid(self, uuid, object_id):
         if not self.content_type:
@@ -35,17 +60,23 @@ class FbisImporter(object):
             uuid=uuid
         )
 
-    def process_row(self, index):
+    def process_row(self, row, index):
         raise NotImplementedError
 
-    def get_row_value(self, index, column):
-        if not isinstance(self.accdb_rows, DataFrame):
+    def start_processing_rows(self):
+        return
+
+    def finish_processing_rows(self):
+        return
+
+    def get_row_value(self, column_name, row):
+        column_index = self.table_colums.index(column_name)
+        if column_index < 0:
             return None
-        if column not in self.accdb_rows:
-            return None
-        if index not in self.accdb_rows[column]:
-            return None
-        return self.accdb_rows[column][index]
+        if not row[column_index]:
+            return ''
+        else:
+            return row[column_index]
 
     @property
     def content_type_model(self):
@@ -65,17 +96,21 @@ class FbisImporter(object):
             self.content_type_model
         )
 
-        # Read table.
-        df = mdb.read_table(
-            rdb_file=self.accdb_filepath,
-            table_name=self.table_name,
-            promote='nullable_int_to_float')
-
-        if self.max_row:
-            _max_row = self.max_row
-        else:
-            _max_row = len(df)
-
-        self.accdb_rows = df.head(_max_row)
-        for i in range(len(self.accdb_rows)):
-            self.process_row(i)
+        conn = self.create_connection()
+        with conn:
+            self.select_table(conn)
+            self.get_table_colums(conn)
+            self.start_processing_rows()
+            if self.max_row:
+                rows = self.sqlite_rows[:self.max_row]
+            else:
+                rows = self.sqlite_rows
+            index = 0
+            for row in rows:
+                print('Processing %s of %s\r' % (
+                    index + 1,
+                    len(rows)))
+                self.process_row(row, index)
+                index += 1
+            self.finish_processing_rows()
+        conn.close()
