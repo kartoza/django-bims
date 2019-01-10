@@ -15,6 +15,7 @@ class FbisImporter(object):
         self.sqlite_rows = None
         self.max_row = max_row
         self.content_type = None
+        self.current_row = None
 
     def get_file_path(self):
         self.sqlite_filepath = os.path.join(
@@ -25,6 +26,19 @@ class FbisImporter(object):
             print('%s not found in media directory' % self.sqlite_filename)
             return False
         return True
+
+    def get_object_from_uuid(self, column, model):
+        content_object = None
+        if not self.current_row:
+            return None
+        ctype = ContentType.objects.get_for_model(model)
+        objects = FbisUUID.objects.filter(
+            uuid=self.get_row_value(column, self.current_row),
+            content_type=ctype
+        )
+        if objects.exists():
+            content_object = objects[0].content_object
+        return content_object
 
     def create_connection(self):
         try:
@@ -69,7 +83,9 @@ class FbisImporter(object):
     def finish_processing_rows(self):
         return
 
-    def get_row_value(self, column_name, row, return_none_if_empty=False):
+    def get_row_value(self, column_name, row=None, return_none_if_empty=False):
+        if not row:
+            row = self.current_row
         column_index = self.table_colums.index(column_name)
         if column_index < 0:
             return None
@@ -112,7 +128,9 @@ class FbisImporter(object):
                 print('Processing %s of %s\r' % (
                     index + 1,
                     len(rows)))
+                self.current_row = row
                 self.process_row(row, index)
                 index += 1
             self.finish_processing_rows()
         conn.close()
+        self.current_row = None

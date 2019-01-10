@@ -3,9 +3,10 @@
 """
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import JSONField
+from sass.models.abstract_additional_data import AbstractAdditionalData
 
 
-class SassBiotope(models.Model):
+class SassBiotope(AbstractAdditionalData):
     """Sass Biotope model."""
     BIOTOPE_FORM_CHOICES = (
         ('0', '0'),
@@ -32,12 +33,6 @@ class SassBiotope(models.Model):
         max_length=2,
         choices=BIOTOPE_FORM_CHOICES,
         blank=True,
-    )
-
-    additional_data = JSONField(
-        default={},
-        null=True,
-        blank=True
     )
 
     def __unicode__(self):
