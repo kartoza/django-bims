@@ -9,7 +9,8 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
             "&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
             "&referenceCategory=<%= referenceCategory %>" +
-            "&reference=<%= reference %>&endemic=<%= endemic %>",
+            "&riverCatchment=<%= riverCatchment %>" +
+            "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>",
         LocationSiteDetailXHRRequest: null,
         TaxonDetailXHRRequest: null,
         Dispatcher: _.extend({}, Backbone.Events),
@@ -18,6 +19,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         StorageUtil: new StorageUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
+        PoliticalRegionBoundaries: null,
         AdminAreaSelected: [],
         LegendsDisplayed: false,
         CurrentState: {

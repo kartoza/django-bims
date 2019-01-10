@@ -7,6 +7,7 @@ from bims.models import (
     TaxonomyField
 )
 from bims.models.taxonomy import Taxonomy
+from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
 
 
@@ -35,6 +36,24 @@ def get_species(gbif_id):
     :return: species dictionary
     """
     api_url = 'http://api.gbif.org/v1/species/' + str(gbif_id)
+    try:
+        response = requests.get(api_url)
+        json_result = response.json()
+        return json_result
+    except (HTTPError, KeyError) as e:
+        print(e)
+        return None
+
+
+def get_vernacular_names(species_id):
+    """
+    Get vernacular names from species id
+    :param species_id: taxonomy id
+    :return: array of vernacular name
+    """
+    api_url = 'http://api.gbif.org/v1/species/%s/vernacularNames' % (
+        str(species_id)
+    )
     try:
         response = requests.get(api_url)
         json_result = response.json()
@@ -173,9 +192,24 @@ def process_taxon_identifier(key, fetch_parent=True):
             rank=TaxonomicRank[
                 detail['rank']].name,
         )
-        if 'vernacularName' in detail:
-            vernacular_names = detail['vernacularName'].split(',')
-            taxon_identifier.vernacular_names = vernacular_names
+        # Get vernacular names
+        vernacular_names = get_vernacular_names(detail['key'])
+        if vernacular_names:
+            print('Found %s vernacular names' % len(
+                vernacular_names['results']))
+            for result in vernacular_names['results']:
+                fields = {}
+                if 'source' in result:
+                    fields['source'] = result['source']
+                if 'language' in result:
+                    fields['language'] = result['language']
+                if 'taxonKey' in result:
+                    fields['taxon_key'] = int(result['taxonKey'])
+                vernacular_name, status = VernacularName.objects.get_or_create(
+                    name=result['vernacularName'],
+                    **fields
+                )
+                taxon_identifier.vernacular_names.add(vernacular_name)
             taxon_identifier.save()
 
         if 'parentKey' in detail and fetch_parent:

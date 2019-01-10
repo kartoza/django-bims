@@ -62,6 +62,7 @@ INSTALLED_APPS += (
     'haystack',
     'django_prometheus',
     'crispy_forms',
+    'sass',
 )
 
 # workaround to get flatpages picked up in installed apps.

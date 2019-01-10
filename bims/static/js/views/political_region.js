@@ -7,8 +7,8 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
             Shared.Dispatcher.on('politicalRegion:clear', this.clear, this);
         },
         clear: function () {
-            if (this.catchmentAreaXHR) {
-                this.catchmentAreaXHR.abort();
+            if (this.politicalRegionXHR) {
+                this.politicalRegionXHR.abort();
             }
             $.each(Shared.AdminAreaSelected, function (index, id) {
                 Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', id);
@@ -19,13 +19,47 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
             Shared.Dispatcher.trigger('map:closeHighlightPinned');
             Shared.AdminAreaSelected = [];
         },
-        show: function (ids) {
-            if (this.catchmentAreaXHR) {
-                this.catchmentAreaXHR.abort();
+        getNodesWithoutChildren: function (boundaries, idsArray, isRoot = false) {
+            var nodeIds = [];
+            var self = this;
+            var rootFound = false;
+            $.each(boundaries, function (index, boundary) {
+                if (idsArray.includes(boundary['value'].toString())) {
+                    rootFound = true;
+                    if (boundary['children'].length > 0) {
+                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
+                    }
+                }
+                else if (!isRoot) {
+                    nodeIds.push(boundary['value']);
+                    if (boundary['children'].length > 0) {
+                        nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray));
+                    }
+                }
+                if (isRoot && !rootFound) {
+                    nodeIds.push.apply(nodeIds, self.getNodesWithoutChildren(boundary['children'], idsArray, isRoot));
+                }
+            });
+            return nodeIds;
+        },
+        whenPoliticalRegionBoundariesReady: function (callback) {
+            var self = this;
+            if (Shared.PoliticalRegionBoundaries) {
+                callback();
+            } else {
+                setTimeout(function () {
+                    self.whenPoliticalRegionBoundariesReady(callback);
+                }, 500)
             }
+        },
+        getRegions: function (ids) {
+            var nodeIds = this.getNodesWithoutChildren(
+                Shared.PoliticalRegionBoundaries,
+                ids,
+                true);
 
-            this.catchmentAreaXHR = $.get({
-                url: this.catchmentAreaBoundaryUrl + ids,
+            this.politicalRegionXHR = $.get({
+                url: this.catchmentAreaBoundaryUrl + JSON.stringify(nodeIds),
                 dataType: 'json',
                 success: function (data) {
                     $.each(Shared.AdminAreaSelected, function (index, id) {
@@ -42,8 +76,8 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                                 featureProjection: 'EPSG:3857'
                             });
 
-                            for (var i=0;i<olfeature.length;i++) {
-                                var id = 'adminArea-'+i+'-'+index;
+                            for (var i = 0; i < olfeature.length; i++) {
+                                var id = 'adminArea-' + i + '-' + index;
                                 olfeature[i].setProperties({'id': id});
                                 Shared.AdminAreaSelected.push(id);
                             }
@@ -60,6 +94,15 @@ define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $
                 error: function () {
                     console.log('error');
                 }
+            });
+        },
+        show: function (ids) {
+            var self = this;
+            if (this.politicalRegionXHR) {
+                this.politicalRegionXHR.abort();
+            }
+            this.whenPoliticalRegionBoundariesReady(function () {
+                self.getRegions(ids)
             });
         }
     })

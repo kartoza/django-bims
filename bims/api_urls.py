@@ -48,6 +48,7 @@ from bims.api_views.user_boundary import UserBoundaryList
 from bims.api_views.documents import DocumentList
 from bims.api_views.module_summary import ModuleSummary
 from bims.api_views.endemism import EndemismList
+from bims.api_views.river_catchment import RiverCatchmentList
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -125,4 +126,7 @@ urlpatterns = [
     url(r'^endemism-list/$',
         EndemismList.as_view(),
         name='endemism-list'),
+    url(r'^river-catchment-list/$',
+        RiverCatchmentList.as_view(),
+        name='river-catchment-list'),
 ]

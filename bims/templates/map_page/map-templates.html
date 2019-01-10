@@ -1,3 +1,9 @@
+{% load static from staticfiles %}
+<!-- IntroJs -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/introjs.min.css" rel="stylesheet">
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.9.3/intro.min.js"></script>
+<script type="text/javascript" src="{% static "js/views/introjs-tutorial.js" %}"></script>
+
 <script type='text/html' id='map-template'>
 
     <div id="map" class="map"></div>
@@ -207,13 +213,21 @@
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row" style="display: none" data-toggle="tooltip"
-                 data-placement="top" title="Coming Soon">
-                <div class="col-lg-12 filter-content conservation-status">
-                    <select disabled>
-                        <option value="">Conservation Status</option>
+            <div class="row" style="display: none">
+                <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
+                    <select multiple  data-placeholder="Select Some Conservation Status" id="conservation-status">
+                        {% for status_data in conservation_status_data %}
+                            <option value="{{ status_data.status }}">{{ status_data.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter clear-conservation-filter">Clear
+                        Filter
+                    </button>
+                </div>
+                <div class="small-space"></div>
             </div>
         {% endif %}
 
@@ -315,23 +329,25 @@
         </div>
     </div>
     <div class="row spatial-scale-panel" style="display: none">
-        <div class="small-subtitle">Political Region</div>
-        <div class="col-lg-12 filter-content" id="spatial-scale-container">
+        <div class="small-subtitle spatial-scale-sub-panel">
+            Political Region
+            <i class="fa fa-angle-down pull-right"></i>
         </div>
+        <div class="col-lg-12 filter-content" id="spatial-scale-container" style="display: none;">
+        </div>
+        <div class="small-subtitle spatial-scale-sub-panel">
+            Catchment
+            <i class="fa fa-angle-down pull-right"></i>
+        </div>
+        <div class="col-lg-12 filter-content" id="river-catchment-container" style="display: none;">
+        </div>
+
         <div class="col-lg-12 other-filters">
             <div class="container-fluid row">
                 <div class="col-lg-5">Ecoregion</div>
                 <div class="col-lg-7">
                     <select disabled>
                         <option value="">Ecoregion</option>
-                    </select>
-                </div>
-            </div>
-            <div class="container-fluid row">
-                <div class="col-lg-5">Catchment</div>
-                <div class="col-lg-7">
-                    <select disabled>
-                        <option value="">Catchment</option>
                     </select>
                 </div>
             </div>
@@ -496,6 +512,12 @@
              data-placement="right" data-trigger="hover"
              data-content="Print Map">
             <i class="fa fa-print" aria-hidden="true"></i>
+        </div>
+        <div id="permalink-control" class="permalink-control sub-control-panel"
+        data-toggle="popover"
+             data-placement="right" data-trigger="hover"
+             data-content="Copy sharable link for this map">
+            <i class="fa fa-link" aria-hidden="true"></i>
         </div>
     </div>
     <div id="zoom-control" class="zoom-control row">

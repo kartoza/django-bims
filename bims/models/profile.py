@@ -2,6 +2,7 @@ __author__ = 'Irwan Fathurrahman <irwan@kartoza.com>'
 __date__ = '26/02/18'
 
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 
@@ -13,12 +14,25 @@ class Profile(models.Model):
     qualifications = models.CharField(
         max_length=250,
         blank=True,
-        default=''
+        default='',
+        null=True,
     )
     other = models.CharField(
         max_length=100,
         blank=True,
-        default=''
+        default='',
+        null=True,
+    )
+    fbis_username = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        null=True,
+    )
+    data = JSONField(
+        default='',
+        null=True,
+        blank=True,
     )
     hide_bims_info = models.BooleanField(
         default=False
