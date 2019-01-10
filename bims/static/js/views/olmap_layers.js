@@ -47,6 +47,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 var layerType = layerName;
                 var layerSource = '';
                 var layerCategory = '';
+                var layerProperties = layer.getProperties();
+
+
+                console.log(layerProperties);
                 try {
                     var layerOptions = layer.getSource()['i'];
                     if (layerOptions) {
@@ -505,15 +509,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 var tags = '';
                 var layerId = name;
                 if (source) {
-                    tags += `<span onclick="myAlert('` + source + `')"` +
-                    ' class="badge badge-primary">' + source + '</span>';
+                    tags += '<span value="' + key + '" class="badge' +
+                        ' badge-primary layer-source">' + source + '</span>';
                     layerId += ' ' + source;
                 }
                 if (category) {
                     tags += ' <span class="badge badge-success">' + category + '</span>';
                     layerId += ' ' + category;
                 }
-
+                $('.source_tag').on()
                 var rowTemplate = _.template($('#layer-selector-row').html());
                 $(rowTemplate({
                     id: layerId,
@@ -632,6 +636,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                     $('.layer-selector-input').change(function (e) {
                         self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
+                    });
+
+                    $('.layer-source').click(function (e) {
+                       self.showLayerSource(e.target.attributes["value"].value);
                     });
 
                     $('#layers-selector').sortable();
@@ -769,10 +777,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
                     }
                 });
+            },
+            showLayerSource: function(layerKey)
+            {
+                if (Object.keys(this.layers).length === 0) {
+                    return false;
+                }
+                else if (layerKey !== this.administrativeKeyword)
+                {
+                   a = this.layers[layerKey]['layer'].getProperties();
+                };
+
+
+
             }
         })
     });
-
-function myAlert(my){
-    alert(my);
-}
