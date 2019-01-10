@@ -51,6 +51,7 @@ def add_about_us_flatpage(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
+        ('flatpages', '0001_initial'),
         ('bims', '0100_auto_20190109_0645'),
     ]
 
