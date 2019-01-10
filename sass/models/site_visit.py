@@ -80,6 +80,12 @@ class SiteVisit(models.Model):
         blank=True
     )
 
+    sass_biotope_fraction = models.ManyToManyField(
+        'sass.SassBiotopeFraction',
+        null=True,
+        blank=True
+    )
+
     additional_data = JSONField(
         null=True,
         blank=True,
