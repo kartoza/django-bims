@@ -68,6 +68,7 @@ INSTALLED_APPS += (
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
+    'django.contrib.sites',
 )
 
 # Set templates
