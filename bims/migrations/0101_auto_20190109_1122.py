@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 from django.conf import settings
+from django.contrib.flatpages.models import FlatPage
 
 # Code adapted from DjangoUnleashed Migrating Flatpages
 
@@ -33,19 +34,13 @@ FLATPAGES = [
     ]
 
 
-def remove_about_us_flatpage(apps, schema_editor):
-    FlatPage = apps.get_model('flatpages', 'FlatPage')
-    for page_dict in FLATPAGES:
-        page = FlatPage.objects.get(
-            url=page_dict['url'])
-        page.delete()
-
-
 def add_about_us_flatpage(apps, schema_editor):
     FlatPage = apps.get_model('flatpages', 'FlatPage')
     Site = apps.get_model('sites', 'Site')
     site_id = getattr(settings, 'SITE_ID', 1)
     current_site = Site.objects.get(pk=site_id)
+    if len(FlatPage.objects.all()) > 0:
+        return
     for page_dict in FLATPAGES:
         new_page = FlatPage.objects.create(
             title=page_dict['title'],
@@ -62,7 +57,5 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(
             add_about_us_flatpage,
-            remove_about_us_flatpage,
         ),
     ]
-
