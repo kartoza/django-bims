@@ -29,9 +29,10 @@ class FbisSiteVisitSassBiotopeImporter(FbisImporter):
             SiteVisit
         )
 
-        if fraction not in site_visit.sass_biotope_fraction.all():
-            site_visit.sass_biotope_fraction.add(fraction)
-            site_visit.save()
+        if site_visit:
+            if fraction not in site_visit.sass_biotope_fraction.all():
+                site_visit.sass_biotope_fraction.add(fraction)
+                site_visit.save()
 
         self.save_uuid(
             uuid=self.get_row_value('SiteVisitSassBiotopeID'),

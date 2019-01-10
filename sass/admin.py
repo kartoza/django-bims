@@ -8,7 +8,8 @@ from sass.models import (
     SiteVisit,
     SassBiotope,
     SassBiotopeFraction,
-    Rate
+    Rate,
+    SassTaxon
 )
 
 
@@ -72,9 +73,17 @@ class SassBiotopeFractionAdmin(admin.ModelAdmin):
     )
 
 
+class SassTaxonAdmin(admin.ModelAdmin):
+    list_display = (
+        'taxon',
+        'score'
+    )
+
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
 admin.site.register(SassBiotope, SassBiotopeAdmin)
 admin.site.register(Rate, RateAdmin)
 admin.site.register(SassBiotopeFraction, SassBiotopeFractionAdmin)
+admin.site.register(SassTaxon, SassTaxonAdmin)

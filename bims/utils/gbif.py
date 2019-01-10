@@ -235,6 +235,9 @@ def search_taxon_identifier(search_query, fetch_parent=True):
     print('Search for %s' % search_query)
     species_detail = find_species(search_query)
 
+    if not species_detail:
+        return None
+
     key = None
     if 'nubKey' in species_detail:
         key = species_detail['nubKey']

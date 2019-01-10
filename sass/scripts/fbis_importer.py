@@ -50,17 +50,19 @@ class FbisImporter(object):
 
     def select_table(self, conn):
         cur = conn.cursor()
-        cur.execute('SELECT * FROM {table_name}'.format(
-            table_name=self.table_name.upper()
-        ))
+        sql = "select * from \'{table_name}\'".format(
+            table_name=self.table_name.lower()
+        )
+        cur.execute(sql)
         self.sqlite_rows = cur.fetchall()
         cur.close()
 
     def get_table_colums(self, conn):
         cur = conn.cursor()
-        cur.execute('SELECT * FROM {table_name} WHERE 1=0;'.format(
-            table_name=self.table_name.upper()
-        ))
+        sql = "select * from \'{table_name}\' where 1=0".format(
+            table_name=self.table_name.lower()
+        )
+        cur.execute(sql)
         self.table_colums = [d[0] for d in cur.description]
         cur.close()
 
