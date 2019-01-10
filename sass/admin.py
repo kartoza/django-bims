@@ -71,6 +71,7 @@ class SassBiotopeFractionAdmin(admin.ModelAdmin):
         'sass_biotope'
     )
 
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)

@@ -3,6 +3,7 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 
+
 class AbstractAdditionalData(models.Model):
 
     additional_data = JSONField(

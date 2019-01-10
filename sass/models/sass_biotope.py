@@ -2,7 +2,6 @@
 """Sass biotope model definition.
 """
 from django.contrib.gis.db import models
-from django.contrib.postgres.fields import JSONField
 from sass.models.abstract_additional_data import AbstractAdditionalData
 
 
