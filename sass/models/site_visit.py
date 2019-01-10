@@ -4,7 +4,6 @@
 from django.contrib.gis.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.contrib.postgres.fields import JSONField
 from bims.models import LocationSite
 from sass.enums.water_level import (
     WaterLevel,
@@ -12,9 +11,10 @@ from sass.enums.water_level import (
 )
 from sass.enums.water_turbidity import WaterTurbidity
 from sass.enums.canopy_cover import CanopyCover
+from sass.models.abstract_additional_data import AbstractAdditionalData
 
 
-class SiteVisit(models.Model):
+class SiteVisit(AbstractAdditionalData):
     """Site visit model."""
 
     location_site = models.ForeignKey(
@@ -80,8 +80,8 @@ class SiteVisit(models.Model):
         blank=True
     )
 
-    additional_data = JSONField(
+    sass_biotope_fraction = models.ManyToManyField(
+        'sass.SassBiotopeFraction',
         null=True,
-        blank=True,
-        default={}
+        blank=True
     )
