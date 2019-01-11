@@ -2182,3 +2182,8 @@ div:hover::-webkit-scrollbar {
     background-color: #1b900d;
     color: white;
 }
+
+.layer-source-info {
+    text-align: center;
+    font-size: 80%;
+}
