@@ -3,14 +3,14 @@
 """
 from django.contrib.gis.db import models
 from sass.models import Rate
-from bims.models import SassBiotope
+from bims.models import Biotope
 
 
 class SassBiotopeFraction(models.Model):
     """Sass biotope fraction biotope model."""
 
     sass_biotope = models.ForeignKey(
-        SassBiotope,
+        Biotope,
         on_delete=models.CASCADE,
         default=None,
         null=True,

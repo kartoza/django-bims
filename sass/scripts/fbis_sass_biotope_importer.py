@@ -1,4 +1,4 @@
-from bims.models import SassBiotope
+from bims.models import Biotope as SassBiotope
 from sass.scripts.fbis_importer import FbisImporter
 
 

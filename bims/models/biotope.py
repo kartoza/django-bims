@@ -5,7 +5,7 @@ from django.contrib.gis.db import models
 from sass.models.abstract_additional_data import AbstractAdditionalData
 
 
-class SassBiotope(AbstractAdditionalData):
+class Biotope(AbstractAdditionalData):
     """Sass Biotope model."""
     BIOTOPE_FORM_CHOICES = (
         ('0', '0'),

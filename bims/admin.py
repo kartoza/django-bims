@@ -51,7 +51,7 @@ from bims.models import (
     VernacularName,
     RiverCatchment,
     FbisUUID,
-    SassBiotope,
+    Biotope,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -511,7 +511,7 @@ admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 admin.site.register(VernacularName, VernacularNameAdmin)
 admin.site.register(RiverCatchment, RiverCatchmentAdmin)
 admin.site.register(FbisUUID, FbisUUIDAdmin)
-admin.site.register(SassBiotope, SassBiotopeAdmin)
+admin.site.register(Biotope, SassBiotopeAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)
