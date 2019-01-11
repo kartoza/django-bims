@@ -2,7 +2,8 @@
 """Sass biotope fraction model definition.
 """
 from django.contrib.gis.db import models
-from sass.models import Rate, SassBiotope
+from sass.models import Rate
+from bims.models import SassBiotope
 
 
 class SassBiotopeFraction(models.Model):

@@ -51,6 +51,7 @@ from bims.models import (
     VernacularName,
     RiverCatchment,
     FbisUUID,
+    SassBiotope,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -458,6 +459,22 @@ class FbisUUIDAdmin(admin.ModelAdmin):
     search_fields = ('uuid', )
 
 
+class SassBiotopeAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'display_order',
+        'biotope_form'
+    )
+    list_filter = (
+        'name',
+    )
+    ordering = (
+        'name',
+        'display_order',
+        'biotope_form'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -494,6 +511,7 @@ admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 admin.site.register(VernacularName, VernacularNameAdmin)
 admin.site.register(RiverCatchment, RiverCatchmentAdmin)
 admin.site.register(FbisUUID, FbisUUIDAdmin)
+admin.site.register(SassBiotope, SassBiotopeAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

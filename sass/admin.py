@@ -6,7 +6,6 @@ from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from sass.models import (
     River,
     SiteVisit,
-    SassBiotope,
     SassBiotopeFraction,
     Rate,
     SassTaxon
@@ -35,22 +34,6 @@ class SiteVisitAdmin(ForeignKeyAutocompleteAdmin):
     )
     raw_id_fields = (
         'location_site',
-    )
-
-
-class SassBiotopeAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'display_order',
-        'biotope_form'
-    )
-    list_filter = (
-        'name',
-    )
-    ordering = (
-        'name',
-        'display_order',
-        'biotope_form'
     )
 
 
@@ -83,7 +66,6 @@ class SassTaxonAdmin(admin.ModelAdmin):
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
-admin.site.register(SassBiotope, SassBiotopeAdmin)
 admin.site.register(Rate, RateAdmin)
 admin.site.register(SassBiotopeFraction, SassBiotopeFractionAdmin)
 admin.site.register(SassTaxon, SassTaxonAdmin)
