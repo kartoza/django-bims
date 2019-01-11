@@ -508,14 +508,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                 var tags = '';
                 var layerId = name;
-                if (source) {
-                    tags += '<span value="' + key + '" class="badge' +
-                        ' badge-primary layer-source">' + source + '</span>';
-                    layerId += ' ' + source;
+                if (!source) {
+                    source = '';
                 }
-                if (category) {
-                    tags += ' <span class="badge badge-success">' + category + '</span>';
-                    layerId += ' ' + category;
+                if (!category) {
+                    category = '';
                 }
                 $('.source_tag').on()
                 var rowTemplate = _.template($('#layer-selector-row').html());
@@ -525,7 +522,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     key: key,
                     checked: checked,
                     transparency_value: transparencyDefault,
-                    display: layerDisplayed
+                    display: layerDisplayed,
+                    source: source,
+                    category: category,
                 })).prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
 
                 var needToReloadXHR = false;
@@ -639,7 +638,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     });
 
                     $('.layer-source').click(function (e) {
-                       self.showLayerSource(e.target.attributes["value"].value);
+                        self.showLayerSource(e.target.attributes["value"].value);
                     });
 
                     $('#layers-selector').sortable();
@@ -778,18 +777,36 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     }
                 });
             },
-            showLayerSource: function(layerKey)
-            {
+            showLayerSource: function (layerKey) {
                 if (Object.keys(this.layers).length === 0) {
                     return false;
                 }
-                else if (layerKey !== this.administrativeKeyword)
-                {
-                   a = this.layers[layerKey]['layer'].getProperties();
-                };
-
-
-
+                else if (layerKey !== this.administrativeKeyword) {
+                    layerProperties = this.layers[layerKey]['layer'].getProperties();
+                    layerFormat = "image/png";
+                    if (layerKey.indexOf(":") > 0) {
+                        layerProvider = layerKey.split(":")[0];
+                        layerName = layerKey.split(":")[1];
+                    }
+                    else {
+                        layerProvider = layerKey;
+                        layerName = layerKey;
+                    }
+                    layerSourceContainer = $('div.layer-source-info[value="'+ layerKey + '"]');
+                    if (layerSourceContainer.html() == "")
+                    {
+                        layerSourceContainer.toggle();
+                        layerSourceContainer.html(`
+                            <div style="margin: 0.5rem">
+                                <div><b><i>Source Information</i></b></div>
+                                <hr>
+                                <div><b>Provider</b>  -  ` + layerProvider + `</div>
+                                <div><b>Description</b>  -  ` + layerName + `</div>
+                                <div><b>Format</b>  -  ` + layerFormat + `</div>
+                            </div>`);
+                    }
+                   layerSourceContainer.slideToggle(400);
+                }
             }
         })
     });

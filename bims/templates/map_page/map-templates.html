@@ -444,6 +444,8 @@
     <li class="ui-state-default" style="display: <%= display %>"
         data-name="<%= id %>">
         <div class="layer-selector-tags">
+            <span value="<%= key %>" class="badge badge-primary layer-source"><%= source %></span>
+            <span class="badge badge-success"><%= category %></span>
         </div>
         <div class="row-title">
             <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
@@ -464,6 +466,7 @@
                 </div>
             </div>
         </div>
+        <div value="<%= key %>" class="layer-source-info"></div>
 </script>
 <script type="text/html" id="map-control-panel">
     <div id="map-control-panel-element" class="map-control-panel
