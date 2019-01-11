@@ -504,15 +504,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             var tags = '';
             var layerId = name;
-            if (source) {
-                tags += '<span class="badge badge-primary">' + source + '</span> ';
-                layerId += ' ' + source;
+            if (!source) {
+                    source = '';
             }
-            if (category) {
-                tags += ' <span class="badge badge-success">' + category + '</span>';
-                layerId += ' ' + category;
+            if (!category) {
+                    category = '';
             }
-
             var rowTemplate = _.template($('#layer-selector-row').html());
             $(rowTemplate({
                     id: layerId,
