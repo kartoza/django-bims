@@ -38,7 +38,14 @@ def add_about_us_flatpage(apps, schema_editor):
     FlatPage = apps.get_model('flatpages', 'FlatPage')
     Site = apps.get_model('sites', 'Site')
     site_id = getattr(settings, 'SITE_ID', 1)
-    current_site = Site.objects.get(pk=site_id)
+    if Site.objects.filter(pk=site_id).exists():
+        current_site = Site.objects.get(pk=site_id)
+    else:
+        current_site = Site.objects.create(
+            pk=site_id,
+            domain='test.site.com',
+            name='Test Site'
+        )
     if len(FlatPage.objects.all()) > 0:
         return
     for page_dict in FLATPAGES:
