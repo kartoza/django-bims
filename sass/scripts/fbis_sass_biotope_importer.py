@@ -20,6 +20,13 @@ class FbisSassBiotopeImporter(FbisImporter):
                 'ComponentOfBiotopeID',
                 row),
         }
+        if self.get_row_value('ComponentOfBiotopeID'):
+            component_biotope = self.get_object_from_uuid(
+                column='ComponentOfBiotopeID',
+                model=SassBiotope
+            )
+            if component_biotope:
+                sass_biotope.biotope_component = component_biotope
         sass_biotope.save()
 
         self.save_uuid(

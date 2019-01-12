@@ -1,4 +1,4 @@
-from bims.models import Taxonomy, TaxonGroup
+from bims.models import TaxonGroup
 from sass.models import SassTaxon
 from sass.scripts.fbis_importer import FbisImporter
 from bims.utils.gbif import search_taxon_identifier
