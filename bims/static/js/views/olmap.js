@@ -44,7 +44,8 @@ define([
             'click .zoom-out': 'zoomOutMap',
             'click .layer-control': 'layerControlClicked',
             'click #map-legend-wrapper': 'mapLegendClicked',
-            'click .print-map-control': 'downloadMap'
+            'click .print-map-control': 'downloadMap',
+            'click #start-tutorial': 'startIntro',
         },
         clusterLevel: {
             5: 'country',
@@ -310,6 +311,9 @@ define([
             if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
+        },
+        startIntro: function () {
+            startIntro();
         },
         getCurrentZoom: function () {
             return this.map.getView().getZoom();

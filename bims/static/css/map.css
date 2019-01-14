@@ -1058,6 +1058,12 @@ div:hover::-webkit-scrollbar {
     z-index: 2;
     opacity: 0.7;
     background-color: #fff;
+    cursor: pointer;
+}
+
+#tutorial-symbol {
+    color: #212529;
+    z-index: 0;
 }
 
 #map-legend-wrapper.hide-legend {

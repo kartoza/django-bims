@@ -48,6 +48,7 @@ function startIntro() {
                 intro: "Here you can print exactly what you need",
                 position: 'right'
             },
+            
         ]
     });
     intro.start().onbeforechange(function () {
