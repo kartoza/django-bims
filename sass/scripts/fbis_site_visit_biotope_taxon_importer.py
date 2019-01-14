@@ -4,7 +4,7 @@ from sass.models import (
     TaxonAbundance,
     SassTaxon
 )
-from bims.models import Taxonomy, Biotope
+from bims.models import Biotope
 from sass.scripts.fbis_importer import FbisImporter
 from datetime import datetime
 

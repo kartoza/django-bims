@@ -71,7 +71,7 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
                 site_visit=site_visit
             )
         except ValueError:
-            self.failed  += 1
+            self.failed += 1
             print('Failed : %s' % self.failed)
             return
 
