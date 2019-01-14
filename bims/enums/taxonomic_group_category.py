@@ -11,3 +11,6 @@ class TaxonomicGroupCategory(Enum):
 
     # Category based on class of the species e.g. Aves
     SPECIES_CLASS = 'Species Class'
+
+    # Category for SASS Taxon Group Weight
+    SASS_TAXON_GROUP = 'SASS Taxon Group'

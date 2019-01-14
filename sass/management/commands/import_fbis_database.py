@@ -9,6 +9,8 @@ from sass.scripts.fbis_rate_importer import FbisRateImporter
 from sass.scripts.fbis_site_visit_sass_biotope_importer import (
     FbisSiteVisitSassBiotopeImporter
 )
+from sass.scripts.fbis_taxon_importer import FbisTaxonImporter
+from sass.scripts.fbis_taxon_group_importer import FbisTaxonGroupImporter
 
 
 class Command(BaseCommand):
@@ -20,7 +22,9 @@ class Command(BaseCommand):
         'site_visit': FbisSiteVisitImporter,
         'sass_biotope': FbisSassBiotopeImporter,
         'rate': FbisRateImporter,
-        'site_visit_sass_biotope': FbisSiteVisitSassBiotopeImporter
+        'site_visit_sass_biotope': FbisSiteVisitSassBiotopeImporter,
+        'taxon_group': FbisTaxonGroupImporter,
+        'taxon': FbisTaxonImporter
     }
 
     def add_arguments(self, parser):

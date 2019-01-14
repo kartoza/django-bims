@@ -5,7 +5,7 @@ from django.contrib.gis.db import models
 from sass.models.abstract_additional_data import AbstractAdditionalData
 
 
-class SassBiotope(AbstractAdditionalData):
+class Biotope(AbstractAdditionalData):
     """Sass Biotope model."""
     BIOTOPE_FORM_CHOICES = (
         ('0', '0'),
@@ -32,6 +32,13 @@ class SassBiotope(AbstractAdditionalData):
         max_length=2,
         choices=BIOTOPE_FORM_CHOICES,
         blank=True,
+    )
+
+    biotope_component = models.ForeignKey(
+        to='self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     def __unicode__(self):
