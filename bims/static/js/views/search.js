@@ -192,7 +192,7 @@ define([
         },
         getSelectedConservationStatus: function () {
             var status = this.$el.find("#conservation-status").chosen().val();
-            if (status.length > 0) {
+            if (status) {
                 return JSON.stringify(status)
             }
             return '';
