@@ -85,3 +85,6 @@ class SiteVisit(AbstractAdditionalData):
         null=True,
         blank=True
     )
+
+    def __unicode__(self):
+        return self.location_site.name

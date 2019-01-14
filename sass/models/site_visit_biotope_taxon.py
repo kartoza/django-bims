@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.utils import timezone
 
 
 class SiteVisitBiotopeTaxon(models.Model):
@@ -29,4 +30,8 @@ class SiteVisitBiotopeTaxon(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True
+    )
+
+    date = models.DateField(
+        default=timezone.now
     )

@@ -37,7 +37,9 @@ class FbisImporter(object):
             content_type=ctype
         )
         if objects.exists():
-            content_object = objects[0].content_object
+            for uuid_object in objects:
+                if uuid_object.content_object:
+                    content_object = uuid_object.content_object
         return content_object
 
     def create_connection(self):
@@ -122,6 +124,7 @@ class FbisImporter(object):
             self.get_table_colums(conn)
             self.start_processing_rows()
             if self.max_row:
+                self.max_row = int(self.max_row)
                 rows = self.sqlite_rows[:self.max_row]
             else:
                 rows = self.sqlite_rows
