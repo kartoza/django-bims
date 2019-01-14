@@ -20,6 +20,9 @@ from sass.scripts.fbis_site_visit_biotope_taxon_importer import (
 from sass.scripts.fbis_sass_validation_status_importer import (
     FbisSassValidationStatusImporter
 )
+from sass.scripts.fbis_site_visit_taxon_importer import (
+    FbisSiteVisitTaxonImporter
+)
 
 
 class Command(BaseCommand):
@@ -36,7 +39,8 @@ class Command(BaseCommand):
         'taxon': FbisTaxonImporter,
         'taxon_abundance': FbisTaxonAbundanceImporter,
         'site_visit_biotope_taxon': FbisSiteVisitBiotopeTaxonImporter,
-        'sass_validation_status': FbisSassValidationStatusImporter
+        'sass_validation_status': FbisSassValidationStatusImporter,
+        'site_visit_taxon': FbisSiteVisitTaxonImporter
     }
 
     def add_arguments(self, parser):

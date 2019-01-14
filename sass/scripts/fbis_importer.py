@@ -27,13 +27,15 @@ class FbisImporter(object):
             return False
         return True
 
-    def get_object_from_uuid(self, column, model):
+    def get_object_from_uuid(self, column, model, uuid=None):
         content_object = None
         if not self.current_row:
             return None
         ctype = ContentType.objects.get_for_model(model)
+        if not uuid:
+            uuid = self.get_row_value(column, self.current_row)
         objects = FbisUUID.objects.filter(
-            uuid=self.get_row_value(column, self.current_row),
+            uuid=uuid,
             content_type=ctype
         )
         if objects.exists():
