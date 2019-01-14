@@ -49,6 +49,7 @@ class BiologicalCollectionRecord(
         max_length=50,
         choices=CATEGORY_CHOICES,
         blank=True,
+        null=True,
     )
     present = models.BooleanField(
         default=True,
