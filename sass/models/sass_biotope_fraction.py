@@ -27,5 +27,5 @@ class SassBiotopeFraction(models.Model):
     def __unicode__(self):
         return '{rate} - {biotope}'.format(
             rate=self.rate,
-            biotope=self.biotope
+            biotope=self.sass_biotope
         )

@@ -10,7 +10,8 @@ from sass.models import (
     Rate,
     SassTaxon,
     SiteVisitBiotopeTaxon,
-    TaxonAbundance
+    TaxonAbundance,
+    SassValidationStatus
 )
 
 
@@ -92,6 +93,13 @@ class SiteVisitBiotopeTaxonAdmin(admin.ModelAdmin):
     )
 
 
+class SassValidationStatusAdmin(admin.ModelAdmin):
+    list_display = (
+        'status',
+        'colour',
+    )
+
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
@@ -100,3 +108,4 @@ admin.site.register(SassBiotopeFraction, SassBiotopeFractionAdmin)
 admin.site.register(SassTaxon, SassTaxonAdmin)
 admin.site.register(TaxonAbundance, TaxonAbundanceAdmin)
 admin.site.register(SiteVisitBiotopeTaxon, SiteVisitBiotopeTaxonAdmin)
+admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
