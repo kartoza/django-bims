@@ -312,9 +312,6 @@ define([
                 this.$mapLegendWrapper.tooltip('show');
             }
         },
-        startIntro: function () {
-            startIntro();
-        },
         getCurrentZoom: function () {
             return this.map.getView().getZoom();
         },
