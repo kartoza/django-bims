@@ -14,6 +14,7 @@ from sass.models import (
     SassValidationStatus,
     SiteVisitTaxon,
     Chem,
+    SiteVisitChem,
 )
 
 
@@ -122,6 +123,17 @@ class ChemAdmin(admin.ModelAdmin):
     )
 
 
+class SiteVisitChemAdmin(admin.ModelAdmin):
+    list_display = (
+        'site_visit',
+        'chem'
+    )
+
+    raw_id_fields = (
+        'site_visit',
+    )
+
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
@@ -133,3 +145,4 @@ admin.site.register(SiteVisitBiotopeTaxon, SiteVisitBiotopeTaxonAdmin)
 admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
 admin.site.register(SiteVisitTaxon, SiteVisitTaxonAdmin)
 admin.site.register(Chem, ChemAdmin)
+admin.site.register(SiteVisitChem, SiteVisitChemAdmin)

@@ -35,5 +35,5 @@ class Chem(models.Model):
         blank=True
     )
 
-    def __unicode(self):
+    def __unicode__(self):
         return self.chem_code
