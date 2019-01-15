@@ -84,7 +84,7 @@ services:
       - elasticsearch:elasticsearch
       - geoserver:geoserver
       - worker:worker
-      - chrome-debug:chrome-debug
+      - chrome:chrome
       - hub:hub
     volumes:
       - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
@@ -187,18 +187,6 @@ services:
       - hub
     environment:
       HUB_HOST: hub
-
-  chrome-debug:
-    image: selenium/node-chrome-debug:3.141.59-dubnium
-    volumes:
-      - ./dev/shm:/dev/shm
-      - ./scripts:/scripts
-    depends_on:
-      - hub
-    environment:
-      HUB_HOST: hub
-    ports:
-      - 5900:5900
 
   hub:
     image: selenium/hub:3.141.59-dubnium
