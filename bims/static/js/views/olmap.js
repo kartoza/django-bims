@@ -45,7 +45,7 @@ define([
             'click .layer-control': 'layerControlClicked',
             'click #map-legend-wrapper': 'mapLegendClicked',
             'click .print-map-control': 'downloadMap',
-            'click #start-tutorial': 'startIntro',
+            'click #start-tutorial': 'startTutorial',
         },
         clusterLevel: {
             5: 'country',
@@ -809,6 +809,9 @@ define([
                     })
                 });
             }
+        },
+        startTutorial: function() {
+            startIntro();
         }
     })
 });
