@@ -19,6 +19,8 @@ class AbstractAdditionalData(models.Model):
         is_dictionary = False
 
         while not is_dictionary and attempt < max_allowed:
+            if not self.additional_data:
+                break
             if isinstance(self.additional_data, dict):
                 is_dictionary = True
             else:

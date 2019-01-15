@@ -27,17 +27,21 @@ class FbisImporter(object):
             return False
         return True
 
-    def get_object_from_uuid(self, column, model):
+    def get_object_from_uuid(self, column, model, uuid=None):
         content_object = None
         if not self.current_row:
             return None
         ctype = ContentType.objects.get_for_model(model)
+        if not uuid:
+            uuid = self.get_row_value(column, self.current_row)
         objects = FbisUUID.objects.filter(
-            uuid=self.get_row_value(column, self.current_row),
+            uuid=uuid,
             content_type=ctype
         )
         if objects.exists():
-            content_object = objects[0].content_object
+            for uuid_object in objects:
+                if uuid_object.content_object:
+                    content_object = uuid_object.content_object
         return content_object
 
     def create_connection(self):
@@ -122,6 +126,7 @@ class FbisImporter(object):
             self.get_table_colums(conn)
             self.start_processing_rows()
             if self.max_row:
+                self.max_row = int(self.max_row)
                 rows = self.sqlite_rows[:self.max_row]
             else:
                 rows = self.sqlite_rows

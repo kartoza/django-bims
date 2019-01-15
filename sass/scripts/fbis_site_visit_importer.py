@@ -11,6 +11,7 @@ from sass.scripts.fbis_importer import FbisImporter
 from sass.enums.canopy_cover import CanopyCover
 from sass.enums.water_level import WaterLevel, WATER_LEVEL_NAME
 from sass.enums.water_turbidity import WaterTurbidity
+from sass.enums.channel_type import ChannelType, CHANNEL_TYPE_NAME
 
 
 class FbisSiteVisitImporter(FbisImporter):
@@ -18,6 +19,7 @@ class FbisSiteVisitImporter(FbisImporter):
     canopy_cover = {}
     water_level = {}
     water_turbidity = {}
+    channel_type = {}
     content_type_model = SiteVisit
     table_name = 'SiteVisit'
 
@@ -51,6 +53,16 @@ class FbisSiteVisitImporter(FbisImporter):
                     self.water_turbidity[water_turbidity_row[0]] = (
                         water_turbidity
                     )
+
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM CHANNELTYPE')
+        channel_type_rows = cur.fetchall()
+        cur.close()
+        for channel_type_row in channel_type_rows:
+            for channel_type in ChannelType:
+                if channel_type.value[
+                    CHANNEL_TYPE_NAME] == channel_type_row[1]:
+                    self.channel_type[channel_type_row[0]] = channel_type
 
     def process_row(self, row, index):
         # Get site id
@@ -110,20 +122,32 @@ class FbisSiteVisitImporter(FbisImporter):
 
         site_visit.additional_data = {
             'CanopyCoverComment': self.get_row_value(
-                'CanopyCoverComment',
-                row
+                'CanopyCoverComment'
             ),
             'SASSDataComment': self.get_row_value(
-                'SASSDataComment',
-                row
+                'SASSDataComment'
             ),
             'SampleInstitute': self.get_row_value(
-                'SampleInstitute',
-                row
+                'SampleInstitute'
             ),
-            'Prev': self.get_row_value('Prev', row),
-            'Frozen': self.get_row_value('Frozen', row)
+            'Prev': self.get_row_value('Prev'),
+            'Frozen': self.get_row_value('Frozen'),
+            'FishOwner': self.get_row_value('FishOwner'),
+            'FishAssessor': self.get_row_value('FishAssessor'),
+            'RipirianOwner': self.get_row_value('RipirianOwner'),
+            'RipirianAssessor': self.get_row_value('RipirianAssessor'),
+            'InvertebrateOwner': self.get_row_value('InvertebrateOwner'),
+            'InvertebrateAssessor': self.get_row_value('InvertebrateAssessor'),
+            'WaterChemistryOwner': self.get_row_value('WaterChemistryOwner'),
+            'WaterChemistryAssessor': self.get_row_value(
+                'WaterChemistryAssessor'),
         }
+
+        channel_type = None
+        channel_type_value = self.get_row_value('ChannelTypeID')
+        if channel_type_value:
+            channel_type = self.channel_type[channel_type_value].name
+        site_visit.channel_type = channel_type
         site_visit.save()
 
         self.save_uuid(

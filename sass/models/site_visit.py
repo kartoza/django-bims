@@ -9,6 +9,10 @@ from sass.enums.water_level import (
     WaterLevel,
     WATER_LEVEL_NAME,
 )
+from sass.enums.channel_type import (
+    ChannelType,
+    CHANNEL_TYPE_NAME,
+)
 from sass.enums.water_turbidity import WaterTurbidity
 from sass.enums.canopy_cover import CanopyCover
 from sass.models.abstract_additional_data import AbstractAdditionalData
@@ -38,6 +42,15 @@ class SiteVisit(AbstractAdditionalData):
         choices=[
             (status.name, status.value[WATER_LEVEL_NAME])
             for status in WaterLevel],
+        blank=True,
+        null=True
+    )
+
+    channel_type = models.CharField(
+        max_length=200,
+        choices=[
+            (status.name, status.value[CHANNEL_TYPE_NAME])
+            for status in ChannelType],
         blank=True,
         null=True
     )
@@ -85,3 +98,6 @@ class SiteVisit(AbstractAdditionalData):
         null=True,
         blank=True
     )
+
+    def __unicode__(self):
+        return self.location_site.name

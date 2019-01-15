@@ -11,6 +11,18 @@ from sass.scripts.fbis_site_visit_sass_biotope_importer import (
 )
 from sass.scripts.fbis_taxon_importer import FbisTaxonImporter
 from sass.scripts.fbis_taxon_group_importer import FbisTaxonGroupImporter
+from sass.scripts.fbis_taxon_abudance_importer import (
+    FbisTaxonAbundanceImporter
+)
+from sass.scripts.fbis_site_visit_biotope_taxon_importer import (
+    FbisSiteVisitBiotopeTaxonImporter
+)
+from sass.scripts.fbis_sass_validation_status_importer import (
+    FbisSassValidationStatusImporter
+)
+from sass.scripts.fbis_site_visit_taxon_importer import (
+    FbisSiteVisitTaxonImporter
+)
 
 
 class Command(BaseCommand):
@@ -24,44 +36,59 @@ class Command(BaseCommand):
         'rate': FbisRateImporter,
         'site_visit_sass_biotope': FbisSiteVisitSassBiotopeImporter,
         'taxon_group': FbisTaxonGroupImporter,
-        'taxon': FbisTaxonImporter
+        'taxon': FbisTaxonImporter,
+        'taxon_abundance': FbisTaxonAbundanceImporter,
+        'site_visit_biotope_taxon': FbisSiteVisitBiotopeTaxonImporter,
+        'sass_validation_status': FbisSassValidationStatusImporter,
+        'site_visit_taxon': FbisSiteVisitTaxonImporter
     }
 
     def add_arguments(self, parser):
         parser.add_argument(
             '-f',
-            '--accdb-file',
-            dest='accdb_file',
+            '--sqlite-file',
+            dest='sqlite_file',
             default=None,
-            help='Accessdb filename'
+            help='Sqlite filename'
         )
         parser.add_argument(
             '-t',
             '--table',
             dest='table_name',
             default=None,
-            help='Accessdb table to be imported'
+            help='Sqlite table to be imported'
+        )
+        parser.add_argument(
+            '-m',
+            '--max-row',
+            dest='max_row',
+            default=None,
+            help='Sqlite max row'
         )
 
     def handle(self, *args, **options):
         # check if file exists
-        accdb_filename = options.get('accdb_file', None)
-        accdb_table = options.get('table_name', None)
+        sqlite_filename = options.get('sqlite_file', None)
+        sqlite_table = options.get('table_name', None)
+        sqlite_max_row = options.get('max_row', None)
 
-        if not accdb_filename:
-            print('You need to provide a name for accessdb file')
+        if not sqlite_filename:
+            print('You need to provide a name for sqlite_filename file')
             return
 
-        if not accdb_table:
+        if not sqlite_table:
             print('Import all table')
             for table_name in self.import_scripts:
                 print('Import %s' % table_name)
-                self.import_scripts[table_name](accdb_filename)
+                self.import_scripts[table_name](sqlite_filename)
         else:
-            accdb_table = accdb_table.lower()
-            if accdb_table in self.import_scripts:
-                print('Import %s table' % accdb_table)
-                importer = self.import_scripts[accdb_table](accdb_filename)
+            sqlite_table = sqlite_table.lower()
+            if sqlite_table in self.import_scripts:
+                print('Import %s table' % sqlite_table)
+                importer = self.import_scripts[sqlite_table](
+                    sqlite_filename,
+                    max_row=sqlite_max_row
+                )
                 importer.import_data()
             else:
-                print('Table %s not found' % accdb_table)
+                print('Table %s not found' % sqlite_table)

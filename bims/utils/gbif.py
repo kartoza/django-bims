@@ -73,12 +73,15 @@ def find_species(original_species_name):
     try:
         response = species.name_lookup(
             q=original_species_name,
-            limit=5
+            limit=10
         )
         if 'results' in response:
             results = response['results']
             for result in results:
-                key_found = 'nubKey' in result or 'speciesKey' in result
+                rank = result.get('rank', '')
+                rank_key = rank.lower() + 'Key'
+                key_found = (
+                    'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
                     if result['taxonomicStatus'] == 'ACCEPTED' or \
                             result['taxonomicStatus'] == 'SYNONYM':
@@ -239,10 +242,13 @@ def search_taxon_identifier(search_query, fetch_parent=True):
         return None
 
     key = None
-    if 'nubKey' in species_detail:
+    rank = species_detail.get('rank', '')
+    rank_key = rank.lower() + 'Key'
+
+    if rank_key in species_detail:
+        key = species_detail[rank_key]
+    elif 'nubKey' in species_detail:
         key = species_detail['nubKey']
-    elif 'speciesKey' in species_detail:
-        key = species_detail['speciesKey']
 
     if key:
         species_detail = process_taxon_identifier(key, fetch_parent)

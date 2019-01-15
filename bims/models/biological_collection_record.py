@@ -2,7 +2,7 @@
 """Biological collection record model definition.
 
 """
-
+import json
 from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
@@ -49,6 +49,7 @@ class BiologicalCollectionRecord(
         max_length=50,
         choices=CATEGORY_CHOICES,
         blank=True,
+        null=True,
     )
     present = models.BooleanField(
         default=True,
@@ -117,6 +118,13 @@ class BiologicalCollectionRecord(
         default=''
     )
 
+    source_collection = models.CharField(
+        help_text='e.g. SANBI',
+        max_length=200,
+        blank=True,
+        null=True,
+    )
+
     additional_data = JSONField(
         blank=True,
         null=True
@@ -139,6 +147,21 @@ class BiologicalCollectionRecord(
     def on_post_save(self):
         if not self.taxonomy:
             update_collection_record(self)
+
+    def save(self, *args, **kwargs):
+        max_allowed = 10
+        attempt = 0
+        is_dictionary = False
+
+        while not is_dictionary and attempt < max_allowed:
+            if not self.additional_data:
+                break
+            if isinstance(self.additional_data, dict):
+                is_dictionary = True
+            else:
+                self.additional_data = json.loads(self.additional_data)
+                attempt += 1
+        super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 
     def get_children(self):
         rel_objs = [f for f in self._meta.get_fields(include_parents=False)
