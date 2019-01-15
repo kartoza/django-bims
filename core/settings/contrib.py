@@ -135,7 +135,7 @@ MIDDLEWARE_CLASSES += (
 )
 
 TESTING = sys.argv[1:2] == ['test']
-IS_ON_TRAVIS = 'TRAVIS' in os.environ and os.environ['TRAVIS'] == 'true'
+IS_ON_TRAVIS = 'ON_TRAVIS' in os.environ and os.environ['ON_TRAVIS'] == 'true'
 if not TESTING and not IS_ON_TRAVIS:
     INSTALLED_APPS += (
         'easyaudit',

@@ -12,7 +12,7 @@ env:
     - DJANGO_SETTINGS_MODULE=core.settings.travis_docker
     - ALL_FILE=all.travis.yml
     - COMPOSE_PROJECT_NAME=bims
-    - COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.override.yml
+    - COMPOSE_FILE=deployment/docker-compose.travis.yml:deployment/docker-compose.override.yml
     - MONITORING_ENABLED=False
 
 matrix:
@@ -43,7 +43,7 @@ install:
 script:
   - make flake8-check
   - make build ARGS="--log-level ERROR"
-  - make up ARGS="--log-level ERROR"
+  - make up-travis ARGS="--log-level ERROR"
   - make update-migrations ARGS="--log-level ERROR"
   - make sync-geonode ARGS="--log-level ERROR"
   - make migrate ARGS="--log-level ERROR"

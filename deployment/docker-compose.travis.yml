@@ -84,7 +84,7 @@ services:
       - elasticsearch:elasticsearch
       - geoserver:geoserver
       - worker:worker
-      - chrome-debug:chrome-debug
+      - chrome:chrome
       - hub:hub
     volumes:
       - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
