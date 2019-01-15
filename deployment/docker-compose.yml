@@ -85,6 +85,7 @@ services:
       - geoserver:geoserver
       - worker:worker
       - chrome-debug:chrome-debug
+      - chrome:chrome
       - hub:hub
     volumes:
       - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
@@ -177,6 +178,16 @@ services:
     volumes:
       - ./ipt:/usr/local/ip
     restart: unless-stopped
+
+  chrome:
+    image: selenium/node-chrome:3.141.59-dubnium
+    volumes:
+      - ./dev/shm:/dev/shm
+      - ./scripts:/scripts
+    depends_on:
+      - hub
+    environment:
+      HUB_HOST: hub
 
   chrome-debug:
     image: selenium/node-chrome-debug:3.141.59-dubnium

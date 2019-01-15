@@ -36,7 +36,6 @@ AUTHENTICATION_BACKENDS = (
 
 # Django grappelli need to be added before django.contrib.admin
 INSTALLED_APPS = (
-    'test_without_migrations',
     'grappelli',
     'colorfield',
 ) + INSTALLED_APPS
@@ -64,7 +63,6 @@ INSTALLED_APPS += (
     'crispy_forms',
     'sass',
 )
-TEST_WITHOUT_MIGRATIONS_COMMAND = 'django_nose.management.commands.test.Command'
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
@@ -137,7 +135,8 @@ MIDDLEWARE_CLASSES += (
 )
 
 TESTING = sys.argv[1:2] == ['test']
-if not TESTING:
+IS_ON_TRAVIS = 'TRAVIS' in os.environ and os.environ['TRAVIS'] == 'true'
+if not TESTING and not IS_ON_TRAVIS:
     INSTALLED_APPS += (
         'easyaudit',
     )
