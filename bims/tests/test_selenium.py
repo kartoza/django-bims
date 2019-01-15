@@ -12,11 +12,16 @@ class SeleniumTest(StaticLiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
+        options = webdriver.ChromeOptions()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        capabilities = options.to_capabilities()
+
         cls.host = socket.gethostbyname(socket.gethostname())
         """ Instantiate selenium driver instance """
         cls.selenium = webdriver.Remote(
             command_executor='http://hub:4444/wd/hub',
-            desired_capabilities=DesiredCapabilities.CHROME)
+            desired_capabilities=capabilities)
         cls.selenium.implicitly_wait(5)
         super(SeleniumTest, cls).setUpClass()
 
