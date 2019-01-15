@@ -295,3 +295,5 @@ REST_FRAMEWORK = {
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
+
+SELENIUM_WEBDRIVER = ''
