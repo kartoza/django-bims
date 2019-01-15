@@ -36,6 +36,7 @@ AUTHENTICATION_BACKENDS = (
 
 # Django grappelli need to be added before django.contrib.admin
 INSTALLED_APPS = (
+    'test_without_migrations',
     'grappelli',
     'colorfield',
 ) + INSTALLED_APPS
@@ -52,7 +53,6 @@ INSTALLED_APPS += (
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    'easyaudit',
     'rolepermissions',
     'rest_framework',
     'celery',
@@ -64,7 +64,7 @@ INSTALLED_APPS += (
     'crispy_forms',
     'sass',
 )
-
+TEST_WITHOUT_MIGRATIONS_COMMAND = 'django_nose.management.commands.test.Command'
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
@@ -132,11 +132,18 @@ STATICFILES_DIRS = [
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE_CLASSES += (
-    'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
 )
 
+TESTING = sys.argv[1:2] == ['test']
+if not TESTING:
+    INSTALLED_APPS += (
+        'easyaudit',
+    )
+    MIDDLEWARE_CLASSES += (
+        'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
+    )
 # for middleware in MIDDLEWARE_CLASSES:
 #     if middleware not in MIDDLEWARE:
 #         MIDDLEWARE += (middleware,)
