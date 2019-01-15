@@ -13,6 +13,10 @@ class FbisSiteVisitBiotopeTaxonImporter(FbisImporter):
 
     content_type_model = SiteVisitBiotopeTaxon
     table_name = 'SiteVisitBiotopeTaxon'
+    failed = 0
+
+    def finish_processing_rows(self):
+        print('Failed %s' % self.failed)
 
     def process_row(self, row, index):
         site_visit = self.get_object_from_uuid(
@@ -35,6 +39,11 @@ class FbisSiteVisitBiotopeTaxonImporter(FbisImporter):
             self.get_row_value('DateFrom'),
             '%m/%d/%y %H:%M:%S'
         )
+
+        if not site_visit or not biotope:
+            self.failed += 1
+            print('Missing site_visit or biotope')
+            return
 
         (
             site_visit_biotope,
