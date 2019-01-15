@@ -72,7 +72,7 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
                 taxon_abundance=taxon_abundance,
                 site_visit=site_visit
             )
-        except (ValueError, IntegrityError) as e:
+        except (ValueError, IntegrityError):
             self.failed += 1
             print('Error')
             return
