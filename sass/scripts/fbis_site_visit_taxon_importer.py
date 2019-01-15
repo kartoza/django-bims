@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.db.models import signals
+from django.db.utils import IntegrityError
 from easyaudit.signals.model_signals import pre_save as easyaudit_presave
 from geonode.people.models import Profile
 from sass.models import SiteVisitTaxon, SiteVisit, SassTaxon, TaxonAbundance
@@ -24,6 +25,7 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
             easyaudit_presave,
             dispatch_uid='easy_audit_signals_pre_save'
         )
+        print('Failed : %s' % self.failed)
 
     def process_row(self, row, index):
 
@@ -70,9 +72,9 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
                 taxon_abundance=taxon_abundance,
                 site_visit=site_visit
             )
-        except ValueError:
+        except (ValueError, IntegrityError) as e:
             self.failed += 1
-            print('Failed : %s' % self.failed)
+            print('Error')
             return
 
         self.save_uuid(

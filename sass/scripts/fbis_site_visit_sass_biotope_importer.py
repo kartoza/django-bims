@@ -7,6 +7,10 @@ class FbisSiteVisitSassBiotopeImporter(FbisImporter):
 
     content_type_model = SassBiotopeFraction
     table_name = 'SiteVisitSassBiotope'
+    failed = 0
+
+    def finish_processing_rows(self):
+        print('Failed : %s' % self.failed)
 
     def process_row(self, row, index):
         # Get rate
@@ -29,6 +33,10 @@ class FbisSiteVisitSassBiotopeImporter(FbisImporter):
             'SiteVisitID',
             SiteVisit
         )
+
+        if not site_visit:
+            self.failed += 1
+            return
 
         if site_visit:
             if fraction not in site_visit.sass_biotope_fraction.all():
