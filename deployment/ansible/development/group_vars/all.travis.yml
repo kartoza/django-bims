@@ -66,6 +66,11 @@ interpreters:
     pycharm_helpers: /home/web/django_project/.pycharm_helpers
     ipaddress: &inasafe_django_host_ip uwsgi
 
+selenium:
+   driver:
+     host: 172.17.0.1
+     port: 4444
+
 docker_port_forward:
   django:
     db: 6543

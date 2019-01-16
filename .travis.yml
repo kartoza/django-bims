@@ -39,16 +39,16 @@ install:
   - make setup-ansible ANSIBLE_ARGS="--extra-vars='pycharm_version=\"\"' --skip-tags=development"
   # show docker-compose.override.yml for debugging
   - cat deployment/docker-compose.override.yml
+  - make build
+  - make up-travis
+  # Wait until database migrations ready
+  - until make sync; do echo "Retrying"; sleep 5; done
+  # Show container status
+  - source compose.env.sh
+  - docker-compose ps
 
 script:
   - make flake8-check
-  - make build
-  - make up-travis
-  - sleep 10
-  - make update-migrations
-  - make sync-geonode
-  - make migrate
-  - make collectstatic
   - make coverage-django-test ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
 
 after_success:

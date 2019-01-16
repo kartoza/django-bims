@@ -317,6 +317,10 @@ enable-machine:
 	@echo "------------------------------------------------------------------"
 	@echo "eval \"$(docker-machine env freshwater)\""
 
+sync: up
+	@docker-compose ${ARGS}  exec django django-admin.py makemigrations --noinput --merge
+	@docker-compose ${ARGS}  exec django paver sync
+
 sync-geonode:
 	@docker-compose ${ARGS} exec uwsgi paver sync
 
