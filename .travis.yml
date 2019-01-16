@@ -27,7 +27,7 @@ addons:
 before_install:
   # install ansible
   - sudo apt-get -y update
-  - sudo apt-get -y install libssl-dev
+  - sudo apt-get -y install libssl-dev systemd sshpass
   - sudo pip install ansible
 
 install:
@@ -44,7 +44,6 @@ install:
   # Wait until database migrations ready
   - until make sync; do echo "Retrying"; sleep 5; done
   # Show container status
-  - source compose.env.sh
   - docker-compose ps
 
 script:
