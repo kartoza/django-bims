@@ -224,7 +224,7 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 class BiologicalCollectionAdmin(admin.ModelAdmin):
     list_filter = ('taxonomy', 'collection_date', 'category')
     list_display = (
-        'original_species_name',
+        'taxonomy',
         'category',
         'collection_date',
         'is_validated',

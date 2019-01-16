@@ -106,6 +106,8 @@ class SassValidationStatusAdmin(admin.ModelAdmin):
 class SiteVisitTaxonAdmin(admin.ModelAdmin):
     list_display = (
         'site_visit',
+        'taxonomy',
+        'taxon_abundance'
     )
 
     raw_id_fields = (
@@ -126,7 +128,12 @@ class ChemAdmin(admin.ModelAdmin):
 class SiteVisitChemAdmin(admin.ModelAdmin):
     list_display = (
         'site_visit',
-        'chem'
+        'chem',
+        'chem_value',
+    )
+
+    list_filter = (
+        'chem',
     )
 
     raw_id_fields = (
