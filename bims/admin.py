@@ -50,6 +50,8 @@ from bims.models import (
     TaxonGroup,
     VernacularName,
     RiverCatchment,
+    FbisUUID,
+    Biotope,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -222,7 +224,7 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 class BiologicalCollectionAdmin(admin.ModelAdmin):
     list_filter = ('taxonomy', 'collection_date', 'category')
     list_display = (
-        'original_species_name',
+        'taxonomy',
         'category',
         'collection_date',
         'is_validated',
@@ -450,6 +452,29 @@ class RiverCatchmentAdmin(admin.ModelAdmin):
     )
 
 
+class FbisUUIDAdmin(admin.ModelAdmin):
+    list_display = ('uuid', 'content_type', 'content_object')
+    list_filter = ('content_type',)
+    ordering = ('content_type', 'uuid')
+    search_fields = ('uuid', )
+
+
+class SassBiotopeAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'display_order',
+        'biotope_form'
+    )
+    list_filter = (
+        'name',
+    )
+    ordering = (
+        'name',
+        'display_order',
+        'biotope_form'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -485,6 +510,8 @@ admin.site.register(SearchProcess, SearchProcessAdmin)
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 admin.site.register(VernacularName, VernacularNameAdmin)
 admin.site.register(RiverCatchment, RiverCatchmentAdmin)
+admin.site.register(FbisUUID, FbisUUIDAdmin)
+admin.site.register(Biotope, SassBiotopeAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

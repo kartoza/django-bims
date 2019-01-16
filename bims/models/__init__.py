@@ -23,3 +23,5 @@ from bims.models.taxonomy import *  # noqa
 from bims.models.taxon_group import *  # noqa
 from bims.models.vernacular_name import *  # noqa
 from bims.models.river_catchment import *  # noqa
+from bims.models.fbis_uuid import *  # noqa
+from bims.models.biotope import *  # noqa

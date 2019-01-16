@@ -2,7 +2,7 @@
 FROM geosolutionsit/geonode-generic:1.0
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
-RUN apt-get update -y && apt-get -y --force-yes install yui-compressor rpl
+RUN apt-get update -y && apt-get -y --force-yes install yui-compressor rpl mdbtools
 
 ADD REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt

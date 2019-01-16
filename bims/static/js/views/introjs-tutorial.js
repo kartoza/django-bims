@@ -3,21 +3,21 @@ function startIntro() {
     intro.setOptions({
         steps: [
             {
-                intro: "Welcome! This is the BIMS Tutorial!",
+                intro: "Welcome! This is the FBIS Tutorial!",
 
             },
             {
                 element: document.querySelector('#map-control-panel-element'),
-                intro: "This is the map control panel! Handy little thing...",
+                intro: "This is the handy map control toolbar!",
             },
             {
                 element: document.querySelector('#search-control'),
-                intro: "In order to find the data you need use the" +
-                    " SEARCH,",
+                intro: "In order to find the data you need, use the" +
+                    " SEARCH function.",
             },
             {
                 element: ".map-search-box.map-control-panel-box",
-                intro: "with its many filters;",
+                intro: "with its many filters.",
                 position: 'right',
             },
             {
@@ -27,12 +27,12 @@ function startIntro() {
             },
             {
                 element: "#filter-control",
-                intro: "Visualize your data clearly using the LAYER SELECTOR.",
+                intro: "Visualise your data clearly using the LAYER SELECTOR.",
                 position: 'right',
             },
             {
                 element: '.layer-switcher',
-                intro: 'You can also easily change your BASEMAP,'
+                intro: 'You can also easily change your BASEMAP.'
             },
             {
                 element: '#locate-control',
@@ -40,14 +40,15 @@ function startIntro() {
             },
             {
                 element: "#download-control",
-                intro: "We are not stingy with our data either. DOWNLOAD...",
+                intro: "Download as much data as you desire!",
                 position: 'right'
             },
             {
                 element: "#print-control",
-                intro: "...or PRINT, exactly what you need, quickly!",
+                intro: "Here you can print exactly what you need",
                 position: 'right'
             },
+            
         ]
     });
     intro.start().onbeforechange(function () {

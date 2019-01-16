@@ -62,11 +62,13 @@ INSTALLED_APPS += (
     'haystack',
     'django_prometheus',
     'crispy_forms',
+    'sass',
 )
 
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
+    'django.contrib.sites',
 )
 
 # Set templates
@@ -195,7 +197,8 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'people.Profile',
     'bims.Pageview',
     'bims.Visitor',
-    'bims.Taxonomy'
+    'bims.Taxonomy',
+    'flatpages.FlatPage'
 ]
 
 if MONITORING_ENABLED:
