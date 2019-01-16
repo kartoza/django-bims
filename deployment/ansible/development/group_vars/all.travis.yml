@@ -18,7 +18,7 @@ django:
     GEOCONTEXT_COLLECTION_KEY: 'climate'
     CONTACT_US_EMAIL: 'dimas@kartoza.com'
     DEBUG: True
-    DJANGO_SETTINGS_MODULE: core.settings.dev_docker
+    DJANGO_SETTINGS_MODULE: core.settings.travis_docker
     RABBITMQ_HOST: rabbitmq
     HAYSTACK_HOST: elasticsearch
     PYTHONPATH: /usr/src/app:/home/web/django_project

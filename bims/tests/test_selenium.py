@@ -1,13 +1,13 @@
 import socket
 from django.conf import settings
-from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.test import override_settings
 from django.core.urlresolvers import reverse
 from selenium import webdriver
 
 
 @override_settings(ALLOWED_HOSTS=['*'])
-class SeleniumTest(StaticLiveServerTestCase):
+class SeleniumTest(LiveServerTestCase):
     port = 8080
 
     @classmethod

@@ -43,6 +43,7 @@ install:
   - make up-travis
   # Wait until database migrations ready
   - until make sync; do echo "Retrying"; sleep 5; done
+  - make collectstatic
   # Show container status
   - docker-compose ps
 
