@@ -177,22 +177,10 @@ services:
       - ./ipt:/usr/local/ip
     restart: unless-stopped
 
-  firefox-debug:
-    image: selenium/node-firefox-debug:3.141.59-dubnium
+  chrome:
+    image: selenium/node-chrome:3.141.59-dubnium
     volumes:
-      - /dev/shm:/dev/shm
-      - ./scripts:/scripts
-    depends_on:
-      - hub
-    environment:
-      HUB_HOST: hub
-    ports:
-      - 5900:5900
-
-  firefox:
-    image: selenium/node-firefox:3.141.59-dubnium
-    volumes:
-      - /dev/shm:/dev/shm
+      - ./dev/shm:/dev/shm
       - ./scripts:/scripts
     depends_on:
       - hub

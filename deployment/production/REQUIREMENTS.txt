@@ -61,3 +61,4 @@ django-crispy-forms==1.7.2
 djangorestframework-gis==0.13
 pandas==0.23.4
 git+https://github.com/dimasciput/pandas_access.git
+selenium==3.12.0

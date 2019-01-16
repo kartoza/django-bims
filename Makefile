@@ -57,6 +57,20 @@ web:
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} up -d web
+	@docker-compose ${ARGS} up -d firefox
+	@docker-compose ${ARGS} up -d firefox-debug
+	@# Dont confuse this with the dbbackup make command below
+	@# This one runs the postgis-backup cron container
+	@# We add --no-recreate so that it does not destroy & recreate the db container
+	@docker-compose ${ARGS} up --no-recreate --no-deps -d dbbackups
+
+up-travis:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in production mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} up -d web
+	@docker-compose ${ARGS} up -d firefox
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container
@@ -304,6 +318,10 @@ enable-machine:
 	@echo "------------------------------------------------------------------"
 	@echo "eval \"$(docker-machine env freshwater)\""
 
+sync: up
+	@docker-compose ${ARGS} exec uwsgi python manage.py makemigrations --noinput --merge
+	@docker-compose ${ARGS} exec uwsgi paver sync
+
 sync-geonode:
 	@docker-compose ${ARGS} exec uwsgi paver sync
 
@@ -391,6 +409,9 @@ django-test:
 
 coverage-django-test:
 	@docker-compose exec uwsgi coverage run -p --branch --source='.' manage.py test --noinput ${CMD_ARGS} bims
+
+coverage-django-test-selenium:
+	@docker-compose exec uwsgi coverage run -p --branch --source='.' manage.py test --noinput --keepdb ${CMD_ARGS} bims
 
 update-taxa:
 	@echo

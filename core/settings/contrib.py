@@ -52,7 +52,6 @@ INSTALLED_APPS += (
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    'easyaudit',
     'rolepermissions',
     'rest_framework',
     'celery',
@@ -64,7 +63,6 @@ INSTALLED_APPS += (
     'crispy_forms',
     'sass',
 )
-
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
@@ -132,11 +130,18 @@ STATICFILES_DIRS = [
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 MIDDLEWARE_CLASSES += (
-    'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
 )
 
+TESTING = sys.argv[1:2] == ['test']
+if not TESTING and not on_travis:
+    INSTALLED_APPS += (
+        'easyaudit',
+    )
+    MIDDLEWARE_CLASSES += (
+        'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
+    )
 # for middleware in MIDDLEWARE_CLASSES:
 #     if middleware not in MIDDLEWARE:
 #         MIDDLEWARE += (middleware,)
@@ -295,3 +300,7 @@ REST_FRAMEWORK = {
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
+
+SELENIUM_DRIVER = os.environ.get(
+    'SELENIUM_DRIVER',
+    'http://hub:4444/wd/hub')

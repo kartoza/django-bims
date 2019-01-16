@@ -7,7 +7,7 @@ services:
 
 env:
   global:
-    - ON_TRAVIS=true
+    - ON_TRAVIS=True
     - SECRET_KEY='tT\xd7\xb06\xf7\x9b\xff\x0fZL\xca\xca\x11\xefM\xacr\xfb\xdf\xca\x9b'
     - DJANGO_SETTINGS_MODULE=core.settings.travis_docker
     - ALL_FILE=all.travis.yml
@@ -27,7 +27,7 @@ addons:
 before_install:
   # install ansible
   - sudo apt-get -y update
-  - sudo apt-get -y install libssl-dev
+  - sudo apt-get -y install libssl-dev systemd
   - sudo pip install ansible
 
 install:
@@ -39,16 +39,17 @@ install:
   - make setup-ansible ANSIBLE_ARGS="--extra-vars='pycharm_version=\"\"' --skip-tags=development"
   # show docker-compose.override.yml for debugging
   - cat deployment/docker-compose.override.yml
+  - make build
+  - make up-travis
+  # Wait until database migrations ready
+  - until make sync; do echo "Retrying"; sleep 5; done
+  - make collectstatic
+  # Show container status
+  - docker-compose ps
 
 script:
   - make flake8-check
-  - make build ARGS="--log-level ERROR"
-  - make up ARGS="--log-level ERROR"
-  - make update-migrations ARGS="--log-level ERROR"
-  - make sync-geonode ARGS="--log-level ERROR"
-  - make migrate ARGS="--log-level ERROR"
-  - make collectstatic ARGS="--log-level ERROR" CMD_ARGS="--verbosity 0"
-  - make coverage-django-test ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
+  - make coverage-django-test-selenium ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
 
 after_success:
   - coverage combine
