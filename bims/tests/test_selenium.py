@@ -8,6 +8,7 @@ from selenium import webdriver
 
 @override_settings(ALLOWED_HOSTS=['*'])
 class SeleniumTest(StaticLiveServerTestCase):
+    port = 8080
 
     @classmethod
     def setUpClass(cls):
