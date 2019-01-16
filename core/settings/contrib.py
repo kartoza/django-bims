@@ -300,3 +300,7 @@ REST_FRAMEWORK = {
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
+
+SELENIUM_DRIVER = os.environ.get(
+    'SELENIUM_DRIVER',
+    'http://hub:4444/wd/hub')

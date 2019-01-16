@@ -1,9 +1,9 @@
 import socket
+from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
 from django.core.urlresolvers import reverse
 from selenium import webdriver
-from selenium.webdriver import DesiredCapabilities
 
 
 @override_settings(ALLOWED_HOSTS=['*'])
@@ -20,7 +20,7 @@ class SeleniumTest(StaticLiveServerTestCase):
         cls.host = socket.gethostbyname(socket.gethostname())
         """ Instantiate selenium driver instance """
         cls.selenium = webdriver.Remote(
-            command_executor='http://hub:4444/wd/hub',
+            command_executor=settings.SELENIUM_DRIVER,
             desired_capabilities=capabilities)
         cls.selenium.implicitly_wait(5)
         super(SeleniumTest, cls).setUpClass()
