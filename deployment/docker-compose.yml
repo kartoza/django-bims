@@ -177,8 +177,8 @@ services:
       - ./ipt:/usr/local/ip
     restart: unless-stopped
 
-  chrome-debug:
-    image: selenium/node-chrome-debug:3.141.59-dubnium
+  firefox-debug:
+    image: selenium/node-firefox-debug:3.141.59-dubnium
     volumes:
       - ./dev/shm:/dev/shm
       - ./scripts:/scripts
@@ -189,8 +189,8 @@ services:
     ports:
       - 5900:5900
 
-  chrome:
-    image: selenium/node-chrome:3.141.59-dubnium
+  firefox:
+    image: selenium/node-firefox:3.141.59-dubnium
     volumes:
       - ./dev/shm:/dev/shm
       - ./scripts:/scripts

@@ -15,7 +15,7 @@ class SeleniumTest(StaticLiveServerTestCase):
         """ Instantiate selenium driver instance """
         cls.selenium = webdriver.Remote(
             command_executor=settings.SELENIUM_DRIVER,
-            desired_capabilities=webdriver.DesiredCapabilities.CHROME)
+            desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
         cls.url = settings.SITEURL
         cls.selenium.implicitly_wait(5)
         super(SeleniumTest, cls).setUpClass()
