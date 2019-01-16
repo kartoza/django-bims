@@ -8,7 +8,7 @@ from selenium import webdriver
 
 @override_settings(ALLOWED_HOSTS=['*'])
 class SeleniumTest(StaticLiveServerTestCase):
-    host = '0.0.0.0'  # Bind to 0.0.0.0 to allow external access
+    # host = '0.0.0.0'  # Bind to 0.0.0.0 to allow external access
 
     @classmethod
     def setUpClass(cls):
@@ -17,7 +17,7 @@ class SeleniumTest(StaticLiveServerTestCase):
         options.add_argument("--disable-dev-shm-usage")
         capabilities = options.to_capabilities()
 
-        cls.host = socket.gethostbyname(socket.gethostname())
+        # cls.host = socket.gethostbyname(socket.gethostname())
         """ Instantiate selenium driver instance """
         cls.selenium = webdriver.Remote(
             command_executor=settings.SELENIUM_DRIVER,

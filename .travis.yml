@@ -42,12 +42,13 @@ install:
 
 script:
   - make flake8-check
-  - make build ARGS="--log-level ERROR"
-  - make up-travis ARGS="--log-level ERROR"
-  - make update-migrations ARGS="--log-level ERROR"
-  - make sync-geonode ARGS="--log-level ERROR"
-  - make migrate ARGS="--log-level ERROR"
-  - make collectstatic ARGS="--log-level ERROR" CMD_ARGS="--verbosity 0"
+  - make build
+  - make up-travis
+  - sleep 10
+  - make update-migrations
+  - make sync-geonode
+  - make migrate
+  - make collectstatic
   - make coverage-django-test ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
 
 after_success:
