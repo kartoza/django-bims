@@ -58,6 +58,7 @@ web:
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} up -d web
 	@docker-compose ${ARGS} up -d chrome
+	@docker-compose ${ARGS} up -d chrome-debug
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container

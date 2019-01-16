@@ -29,6 +29,8 @@ django:
     DATABASE_HOST: db
     SITEURL: http://uwsgi/
     SECRET_KEY: 'tT\xd7\xb06\xf7\x9b\xff\x0fZL\xca\xca\x11\xefM\xacr\xfb\xdf\xca\x9b'
+    ON_TRAVIS: True
+    SELENIUM_DRIVER: 'http://172.17.0.1:4444/wd/hub'
 
 geonode:
   environment:

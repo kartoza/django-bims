@@ -1,3 +1,4 @@
+import socket
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import override_settings
@@ -7,20 +8,15 @@ from selenium import webdriver
 
 @override_settings(ALLOWED_HOSTS=['*'])
 class SeleniumTest(StaticLiveServerTestCase):
-    # host = '0.0.0.0'  # Bind to 0.0.0.0 to allow external access
 
     @classmethod
     def setUpClass(cls):
-        options = webdriver.ChromeOptions()
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        capabilities = options.to_capabilities()
-
-        # cls.host = socket.gethostbyname(socket.gethostname())
+        cls.host = socket.gethostbyname(socket.gethostname())
         """ Instantiate selenium driver instance """
         cls.selenium = webdriver.Remote(
             command_executor=settings.SELENIUM_DRIVER,
-            desired_capabilities=capabilities)
+            desired_capabilities=webdriver.DesiredCapabilities.CHROME)
+        cls.url = settings.SITEURL
         cls.selenium.implicitly_wait(5)
         super(SeleniumTest, cls).setUpClass()
 
