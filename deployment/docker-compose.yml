@@ -180,7 +180,7 @@ services:
   firefox-debug:
     image: selenium/node-firefox-debug:3.141.59-dubnium
     volumes:
-      - ./dev/shm:/dev/shm
+      - /dev/shm:/dev/shm
       - ./scripts:/scripts
     depends_on:
       - hub
@@ -192,7 +192,7 @@ services:
   firefox:
     image: selenium/node-firefox:3.141.59-dubnium
     volumes:
-      - ./dev/shm:/dev/shm
+      - /dev/shm:/dev/shm
       - ./scripts:/scripts
     depends_on:
       - hub

@@ -11,14 +11,18 @@ class SeleniumTest(StaticLiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.host = socket.gethostbyname(socket.gethostname())
-        """ Instantiate selenium driver instance """
-        cls.selenium = webdriver.Remote(
-            command_executor=settings.SELENIUM_DRIVER,
-            desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
-        cls.url = settings.SITEURL
-        cls.selenium.implicitly_wait(5)
+        try:
+            cls.host = socket.gethostbyname(socket.gethostname())
+            """ Instantiate selenium driver instance """
+            cls.selenium = webdriver.Remote(
+                command_executor=settings.SELENIUM_DRIVER,
+                desired_capabilities=webdriver.DesiredCapabilities.FIREFOX)
+            cls.url = settings.SITEURL
+            cls.selenium.implicitly_wait(5)
+        except BaseException:
+            raise Exception('Drivernya : ' + settings.SELENIUM_DRIVER)
         super(SeleniumTest, cls).setUpClass()
+
 
     @classmethod
     def tearDownClass(cls):

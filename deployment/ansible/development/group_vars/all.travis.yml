@@ -27,7 +27,7 @@ django:
     DATABASE_PASSWORD: docker
     DATABASE_USERNAME: docker
     DATABASE_HOST: db
-    SITEURL: http://uwsgi/
+    SITEURL: http://uwsgi:8080/
     SECRET_KEY: 'tT\xd7\xb06\xf7\x9b\xff\x0fZL\xca\xca\x11\xefM\xacr\xfb\xdf\xca\x9b'
     ON_TRAVIS: True
     SELENIUM_DRIVER: 'http://hub:4444/wd/hub'

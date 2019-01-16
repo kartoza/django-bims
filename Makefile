@@ -410,6 +410,9 @@ django-test:
 coverage-django-test:
 	@docker-compose exec uwsgi coverage run -p --branch --source='.' manage.py test --noinput ${CMD_ARGS} bims
 
+coverage-django-test-selenium:
+	@docker-compose exec uwsgi coverage run -p --branch --source='.' manage.py test --noinput --keepdb --liveserver=0.0.0.0:8080 ${CMD_ARGS} bims.tests.test_selenium.SeleniumTest
+
 update-taxa:
 	@echo
 	@echo "--------------------------"
