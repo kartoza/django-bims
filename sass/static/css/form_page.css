@@ -1,0 +1,25 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box; //to account for the border on top
+    -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+
+.body-form {
+    padding-top: 100px;
+}
+
+.body-form input {
+    height: 30px;
+}
+
+td.taxon-name {
+    vertical-align: middle !important;
+    min-width: 300px;
+    max-width: 300px;
+    font-size: 11pt;
+}

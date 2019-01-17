@@ -1,0 +1,95 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load jsonify %}
+
+{% block subtitle %}
+    SASS
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/form_page.css" %}" rel="stylesheet">
+    <script type="text/javascript">
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="body-form container">
+        <table class="table table-sm">
+            <thead>
+            <tr>
+                <th scope="col">Taxon</th>
+                <th scope="col">S</th>
+                <th scope="col">Veg</th>
+                <th scope="col">GSM</th>
+                <th scope="col">TOT</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th scope="rowgroup">
+                    HEMIPTERA (Bugs)
+                </th>
+            </tr>
+            <tr>
+                <td scope="row" class="taxon-name">Belostomatidae (Giant water
+                    bugs)
+                </td>
+                <td><input type="text" class="form-control"
+                           placeholder="S"></td>
+                <td><input type="text" class="form-control"
+                           placeholder="Veg"></td>
+                <td><input type="text" class="form-control"
+                           placeholder="GSM"></td>
+                <td><input type="text" class="form-control"
+                           placeholder="TOT"></td>
+            </tr>
+            <tr>
+                <td scope="row" class="taxon-name">Gerridae (Pond skaters/Water
+                    striders)
+                </td>
+                <td><input type="text" class="form-control"
+                           placeholder="S"></td>
+                <td><input type="text" class="form-control"
+                           placeholder="Veg"></td>
+                <td><input type="text" class="form-control"
+                           placeholder="GSM"></td>
+                <td><input type="text" class="form-control"
+                           placeholder="TOT"></td>
+            </tr>
+            <tr>
+                <th colspan="5" scope="row">
+                    Other biota:
+                </th>
+            </tr>
+            <tr>
+                <td colspan="5" scope="row">
+                    <textarea class="form-control rounded" rows="6"></textarea>
+                </td>
+            </tr>
+            <tr>
+                <th colspan="5" scope="row">
+                    Comments/Observations:
+                </th>
+            </tr>
+            <tr>
+                <td colspan="5" scope="row">
+                    <textarea class="form-control rounded" rows="6"></textarea>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+
+{% endblock %}
