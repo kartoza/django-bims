@@ -74,7 +74,7 @@ try:
     TEMPLATES[0]['DIRS'] = [
         absolute_path('core', 'base_templates'),
         absolute_path('bims', 'templates'),
-        absolute_path('example', 'templates'),
+        absolute_path('sass', 'templates'),
     ] + TEMPLATES[0]['DIRS']
 
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
@@ -91,7 +91,7 @@ except KeyError:
                 # project level templates
                 absolute_path('core', 'base_templates'),
                 absolute_path('bims', 'templates'),
-                absolute_path('example', 'templates'),
+                absolute_path('sass', 'templates'),
             ],
             'APP_DIRS': True,
             'OPTIONS': {
@@ -125,6 +125,7 @@ STATICFILES_DIRS = [
     # Don't forget to use absolute paths, not relative paths.
     absolute_path('core', 'base_static'),
     absolute_path('bims', 'static'),
+    absolute_path('sass', 'static'),
 ] + STATICFILES_DIRS
 
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
