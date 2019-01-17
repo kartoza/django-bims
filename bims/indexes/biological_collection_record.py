@@ -200,6 +200,8 @@ class BiologicalCollectionIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_vernacular_names(self, obj):
         if not obj.taxonomy:
             return ''
+        if not obj.taxonomy.vernacular_names:
+            return ''
         return ','.join(obj.taxonomy.vernacular_names.filter(
             language='eng'
         ).values_list('name', flat=True))

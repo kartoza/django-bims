@@ -34,9 +34,16 @@ class Command(BaseCommand):
                     fields['language'] = result['language']
                 if 'taxonKey' in result:
                     fields['taxon_key'] = int(result['taxonKey'])
-                vernacular_name, status = VernacularName.objects.get_or_create(
+                vernacular_names = VernacularName.objects.filter(
                     name=result['vernacularName'],
                     **fields
                 )
+                if vernacular_names.exists():
+                    vernacular_name = vernacular_names[0]
+                else:
+                    vernacular_name = VernacularName.objects.create(
+                        name=result['vernacularName'],
+                        **fields
+                    )
                 taxonomy.vernacular_names.add(vernacular_name)
             taxonomy.save()
