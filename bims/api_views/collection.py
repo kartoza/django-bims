@@ -223,9 +223,10 @@ class GetCollectionAbstract(APIView):
         if conservation_status:
             qs_conservation_status = SQ()
             qs = json.loads(conservation_status)
-            for query in qs:
-                qs_conservation_status.add(SQ(iucn_status=query), SQ.OR)
-            results = results.filter(qs_conservation_status)
+            if len(qs) > 0:
+                for query in qs:
+                    qs_conservation_status.add(SQ(iucn_status=query), SQ.OR)
+                results = results.filter(qs_conservation_status)
 
         # query by river catchment
         if river_catchments:
