@@ -158,7 +158,7 @@ class SASS5SheetAdmin(admin.ModelAdmin):
 class SASS5RecordAdmin(admin.ModelAdmin):
     list_display = (
         'sass_sheet',
-        'family',
+        'taxonomy',
         'count'
     )
 
