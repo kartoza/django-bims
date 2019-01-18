@@ -12,10 +12,10 @@ class SASS5Record(models.Model):
         blank=False
     )
 
-    family = models.ForeignKey(
+    taxonomy = models.ForeignKey(
         'bims.Taxonomy',
-        verbose_name='Family',
-        help_text='Taxonomy Family',
+        verbose_name='Family/Order Taxonomy',
+        help_text='Family/Order Taxonomy',
         on_delete=models.SET_NULL,
         null=True,
         blank=True
