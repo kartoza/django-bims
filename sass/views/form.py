@@ -18,6 +18,7 @@ class FormView(PrometheusCounter, TemplateView):
         for sass_5_taxon in sass_5_taxa:
             taxon_list.append({
                 'name': sass_5_taxon.taxon_sass_5,
+                'id': sass_5_taxon.id,
                 'has_score': (
                     False if sass_5_taxon.sass_5_score is None else True
                 ),

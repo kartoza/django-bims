@@ -57,7 +57,7 @@ class Command(BaseCommand):
                                 taxon_dict[row_index] = []
                             taxon_dict[row_index].append(
                                 {
-                                    column_data: row[row_index+1]
+                                    column_data: row[row_index + 1]
                                 }
                             )
                     row_index += 1

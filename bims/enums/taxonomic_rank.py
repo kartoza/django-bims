@@ -17,4 +17,3 @@ class TaxonomicRank(Enum):
     CULTIVAR_GROUP = 'Cultivar Group'
     SUBORDER = 'Sub Order'
     INFRAORDER = 'Infra Order'
-

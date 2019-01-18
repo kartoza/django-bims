@@ -18,6 +18,184 @@
 {% block body_content %}
 
     <div class="body-form container">
+        <div class="row">
+            <div class="col-lg-9">
+                <table class="table table-sm">
+                    <thead>
+                    <tr>
+                        <th>
+                            Biotopes Sampled
+                        </th>
+                        <th>
+                            Rating (1-5)
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Stones In Current (SIC)
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Stones Out Of Current (SOOC)
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Bedrock
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td class="sampled-name">
+                            Aquatic Veg
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            MargVeg In Current
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            MargVeg Out Of Current
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td class="sampled-name">
+                            Gravel
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Sand
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Mud
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td class="sampled-name">
+                            Hand picking/Visual observation
+                        </td>
+                        <td>
+                            <select class="form-control" id="rating1">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label for="time_min" class="input-label">Time (min):</label>
+                    <input type="number" class="form-control" id="time_min">
+                </div>
+                <div class="fbis-sass-logo">
+                    <img src="{% static 'img/fbis_sass_logo.png' %}" width="100%">
+                </div>
+            </div>
+        </div>
+
         <table class="table table-sm">
             <thead>
             <tr>
@@ -32,8 +210,10 @@
             {% for taxon in taxon_list %}
                 {% if taxon.has_score %}
                     <tr>
-                        <td scope="row" class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
+                        <td scope="row"
+                            class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
                             {{ taxon.name }}
+                            <input type="hidden" value="{{ taxon.id }}">
                         </td>
                         <td><input type="text" class="form-control"
                                    placeholder="S"></td>
@@ -74,6 +254,9 @@
             </tr>
             </tbody>
         </table>
+        <div class="submit-wrapper">
+            <button class="btn btn-info">Submit</button>
+        </div>
     </div>
 
 {% endblock %}
