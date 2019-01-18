@@ -13,7 +13,7 @@ class SASS5Record(models.Model):
     )
 
     taxonomy = models.ForeignKey(
-        'bims.Taxonomy',
+        'sass.SassTaxon',
         verbose_name='Family/Order Taxonomy',
         help_text='Family/Order Taxonomy',
         on_delete=models.SET_NULL,

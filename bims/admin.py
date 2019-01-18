@@ -429,6 +429,10 @@ class TaxonIdentifierAdmin(admin.ModelAdmin):
         'rank',
     )
 
+    search_fields = (
+        'scientific_name',
+    )
+
 
 class VernacularNameAdmin(admin.ModelAdmin):
 

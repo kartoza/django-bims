@@ -3,5 +3,5 @@ from sass.views.form import FormView
 
 
 urlpatterns = [
-    url(r'^$', FormView.as_view(), name='sass-form-page'),
+    url(r'^(?P<site_id>\d+)/$', FormView.as_view(), name='sass-form-page'),
 ]

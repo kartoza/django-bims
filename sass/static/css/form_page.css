@@ -11,6 +11,11 @@ body {
 
 .body-form {
     padding-top: 100px;
+    padding-bottom: 100px;
+}
+
+.bold {
+    font-weight: bold;
 }
 
 .body-form input {

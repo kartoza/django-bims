@@ -29,37 +29,29 @@
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <th scope="rowgroup">
-                    HEMIPTERA (Bugs)
-                </th>
-            </tr>
-            <tr>
-                <td scope="row" class="taxon-name">Belostomatidae (Giant water
-                    bugs)
-                </td>
-                <td><input type="text" class="form-control"
-                           placeholder="S"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="Veg"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="GSM"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="TOT"></td>
-            </tr>
-            <tr>
-                <td scope="row" class="taxon-name">Gerridae (Pond skaters/Water
-                    striders)
-                </td>
-                <td><input type="text" class="form-control"
-                           placeholder="S"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="Veg"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="GSM"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="TOT"></td>
-            </tr>
+            {% for taxon in taxon_list %}
+                {% if taxon.has_score %}
+                    <tr>
+                        <td scope="row" class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
+                            {{ taxon.name }}
+                        </td>
+                        <td><input type="text" class="form-control"
+                                   placeholder="S"></td>
+                        <td><input type="text" class="form-control"
+                                   placeholder="Veg"></td>
+                        <td><input type="text" class="form-control"
+                                   placeholder="GSM"></td>
+                        <td><input type="text" class="form-control"
+                                   placeholder="TOT"></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <th colspan="5" scope="row">
+                            {{ taxon.name }}
+                        </th>
+                    </tr>
+                {% endif %}
+            {% endfor %}
             <tr>
                 <th colspan="5" scope="row">
                     Other biota:

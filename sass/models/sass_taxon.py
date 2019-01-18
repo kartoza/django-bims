@@ -17,6 +17,12 @@ class SassTaxon(AbstractAdditionalData):
         null=True
     )
 
+    taxon_sass_5 = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
     score = models.IntegerField(
         null=True,
         blank=True
