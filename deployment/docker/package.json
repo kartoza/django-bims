@@ -12,12 +12,12 @@
     "grunt": "^1.0.1",
     "grunt-contrib-concat": "^1.0.1",
     "grunt-contrib-requirejs": "^1.0.0",
-    "grunt-contrib-uglify": "^3.3.0",
+    "grunt-contrib-uglify-es": "^3.3.0",
     "jasmine-core": "^3.1.0",
     "karma": "^2.0.2",
-    "karma-chrome-launcher": "^2.2.0",
     "karma-jasmine": "^1.1.2",
+    "karma-requirejs": "^1.1.0",
     "requirejs": "^2.3.5",
-    "karma-requirejs": "^1.1.0"
+    "uglify-es": "^3.3.9"
   }
 }

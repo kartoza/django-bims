@@ -16,7 +16,7 @@ class Command(BaseCommand):
     def start_grunt(self):
         self.stdout.write('>>> Starting grunt')
 
-        self.grunt_process = subprocess.call([
+        self.grunt_process = subprocess.check_call([
             'grunt',
             '--gruntfile=/Gruntfile.js',
             '--base=/'],
