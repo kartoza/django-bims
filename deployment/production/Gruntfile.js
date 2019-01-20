@@ -7,11 +7,16 @@ module.exports = function(grunt) {
         requirejs: {
             compile: {
                 options: {
-                    baseUrl: '/usr/src/bims/bims/static/js',
-                    mainConfigFile: '/usr/src/bims/bims/static/js/app.js',
+                    optimize: 'none',
+                    out: function(text, sourceMapText) {
+                        var UglifyJS = require('uglify-es'),
+                        uglified = UglifyJS.minify(text);
+                        grunt.file.write('/home/web/django_project/bims/static/js/optimized.js', uglified.code);
+                    },
+                    baseUrl: '/home/web/django_project/bims/static/js',
+                    mainConfigFile: '/home/web/django_project/bims/static/js/app.js',
                     name: 'libs/almond/almond',
                     include: ['app.js'],
-                    out: '/usr/src/bims/bims/static/js/optimized.js'
                 }
             }
         }
@@ -20,7 +25,7 @@ module.exports = function(grunt) {
 
     // Load plugins here.
     grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-uglify-es');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
 
     // Register tasks here.
