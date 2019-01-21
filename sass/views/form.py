@@ -1,4 +1,6 @@
 from django.views.generic import TemplateView
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -12,6 +14,7 @@ class FormView(TemplateView):
     template_name = 'form_page.html'
     post_dictionary = {}
 
+    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
         self.post_dictionary = request.POST.dict()
@@ -121,6 +124,7 @@ class FormView(TemplateView):
         context['taxon_list'] = taxon_list
         return context
 
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id')
         self.post_dictionary = {}
