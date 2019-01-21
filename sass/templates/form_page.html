@@ -11,14 +11,33 @@
     <!-- Custom styles for this template -->
     <link href="{% static "css/form_page.css" %}" rel="stylesheet">
     <script type="text/javascript">
+        var isUpdate = {% if sass_sheet %}true{% else %}false{% endif %};
+        var sicRating = {% if sass_sheet %}"{{ sass_sheet.biotope_stones_in_current }}"{% else %}""{% endif %};
+        var soocRating = {% if sass_sheet %}"{{ sass_sheet.biotope_stones_out_of_current }}"{% else %}""{% endif %};
+        var bedrockRating = {% if sass_sheet %}"{{ sass_sheet.biotope_bedrock }}"{% else %}""{% endif %};
+
+        var aquaticVegRating = {% if sass_sheet %}"{{ sass_sheet.biotope_aquatic_vegetation }}"{% else %}""{% endif %};
+        var micRating = {% if sass_sheet %}"{{ sass_sheet.biotope_margin_veg_in_current }}"{% else %}""{% endif %};
+        var moocRating = {% if sass_sheet %}"{{ sass_sheet.biotope_margin_veg_out_of_current }}"{% else %}""{% endif %};
+
+        var gravelRating = {% if sass_sheet %}"{{ sass_sheet.biotope_gravel }}"{% else %}""{% endif %};
+        var sandRating = {% if sass_sheet %}"{{ sass_sheet.biotope_sand }}"{% else %}""{% endif %};
+        var mudRating = {% if sass_sheet %}"{{ sass_sheet.biotope_mud }}"{% else %}""{% endif %};
+
+        var handPickingRating = {% if sass_sheet %}"{{ sass_sheet.biotope_hand_picking }}"{% else %}""{% endif %};
     </script>
 
 {% endblock %}
 
 {% block body_content %}
-    <form action="/sass/9300/" method="post" id="sass-form">
+    <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
+        {% if sass_sheet %}
+            <h2>Update SASS record</h2>
+        {% else %}
+            <h2>Add SASS record</h2>
+        {% endif %}
         <div class="row">
             <div class="col-lg-9">
                 <table class="table table-sm">
@@ -189,7 +208,7 @@
             <div class="col-lg-3">
                 <div class="form-group">
                     <label for="time_min" class="input-label">Time (min):</label>
-                    <input type="number" class="form-control" id="time_min" name="time-min">
+                    <input type="number" class="form-control" id="time_min" name="time-min" {% if sass_sheet.time_minutes %} value="{{ sass_sheet.time_minutes }}" {% endif %} >
                 </div>
                 <div class="fbis-sass-logo">
                     <img src="{% static 'img/fbis_sass_logo.png' %}" width="100%">
@@ -217,13 +236,13 @@
                             <input type="hidden" value="{{ taxon.id }}">
                         </td>
                         <td><input type="text" name="{{ taxon.id }}-S" class="form-control"
-                                   placeholder="S"></td>
+                                   {% if taxon.s_value %} value="{{ taxon.s_value }}" {% endif %} placeholder="S"></td>
                         <td><input type="text" name="{{ taxon.id }}-Veg" class="form-control"
-                                   placeholder="Veg"></td>
+                                   {% if taxon.veg_value %} value="{{ taxon.veg_value }}" {% endif %} placeholder="Veg"></td>
                         <td><input type="text" name="{{ taxon.id }}-GSM" class="form-control"
-                                   placeholder="GSM"></td>
+                                   {% if taxon.gsm_value %} value="{{ taxon.gsm_value }}" {% endif %} placeholder="GSM"></td>
                         <td><input type="text" name="{{ taxon.id }}-TOT" class="form-control"
-                                   placeholder="TOT"></td>
+                                   {% if taxon.tot_value %} value="{{ taxon.tot_value }}" {% endif %} placeholder="TOT"></td>
                     </tr>
                 {% else %}
                     <tr>
@@ -240,7 +259,7 @@
             </tr>
             <tr>
                 <td colspan="5" scope="row">
-                    <textarea class="form-control rounded" rows="6" name="other-biota"></textarea>
+                    <textarea class="form-control rounded" rows="6" name="other-biota">{{ sass_sheet.other_biota }}</textarea>
                 </td>
             </tr>
             <tr>
@@ -250,7 +269,7 @@
             </tr>
             <tr>
                 <td colspan="5" scope="row">
-                    <textarea class="form-control rounded" rows="6" name="notes"></textarea>
+                    <textarea class="form-control rounded" rows="6" name="notes"> {{ sass_sheet.notes }}</textarea>
                 </td>
             </tr>
             </tbody>
