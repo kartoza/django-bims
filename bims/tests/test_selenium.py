@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.test import override_settings
 from django.core.urlresolvers import reverse
+from bims.tests.model_factories import LocationSiteF
 from selenium import webdriver
 
 
@@ -41,3 +42,11 @@ class SeleniumTest(LiveServerTestCase):
         )
 
         self.assertEqual(section_heading.text, u'BIODIVERSITY RECORDS')
+
+    def test_sass_page_get_404(self):
+        url = reverse('sass-form-page', kwargs={'site_id': 99})
+        self.selenium.get(self.live_server_url + url)
+
+        info = self.selenium.find_element_by_id('description')
+        self.assertEqual(info.text,
+                         'Page Not Found')
