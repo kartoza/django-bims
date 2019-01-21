@@ -29,6 +29,10 @@ td.taxon-name {
     font-size: 11pt;
 }
 
+td.sheet-row {
+    vertical-align: middle;
+}
+
 td.sampled-name {
     vertical-align: middle !important;
     max-width: 100px;
