@@ -4,15 +4,24 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.contrib.auth.mixins import UserPassesTestMixin
 from bims.models.location_site import LocationSite
 from sass.models import SassTaxon, SASS5Sheet, SASS5Record
 from sass.enums.sass5_rating import SASS5Rating
 
 
-class FormView(TemplateView):
+class FormView(UserPassesTestMixin, TemplateView):
     """Template view for landing page"""
     template_name = 'form_page.html'
     post_dictionary = {}
+
+    def test_func(self):
+        sass_id = self.kwargs.get('sass_id', None)
+        if not sass_id:
+            return True
+        return SASS5Sheet.objects.filter(
+            id=sass_id,
+            owner=self.request.user).exists()
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
