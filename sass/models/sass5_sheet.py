@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from django.contrib.gis.db import models
 from django.utils import timezone
+from bims.models import AbstractValidation
 from sass.enums.sass5_rating import SASS5Rating
 
 
-class SASS5Sheet(models.Model):
+class SASS5Sheet(AbstractValidation):
 
     date = models.DateTimeField(
         default=timezone.now
@@ -201,6 +202,12 @@ class SASS5Sheet(models.Model):
         app_label = 'sass'
         verbose_name_plural = 'SASS 5 Sheets'
         verbose_name = 'SASS 5 Sheet'
+
+    def data_name(self):
+        return '{location_site} - {date}'.format(
+            location_site=self.location_site.name,
+            date=self.date
+        )
 
     def __unicode__(self):
         return '{location_site} - {date}'.format(

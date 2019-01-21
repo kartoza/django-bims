@@ -16,7 +16,8 @@
 {% endblock %}
 
 {% block body_content %}
-
+    <form action="/sass/9300/" method="post">
+    {% csrf_token %}
     <div class="body-form container">
         <div class="row">
             <div class="col-lg-9">
@@ -37,7 +38,7 @@
                             Stones In Current (SIC)
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="sic-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -52,7 +53,7 @@
                             Stones Out Of Current (SOOC)
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="sooc-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -67,7 +68,7 @@
                             Bedrock
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="bedrock-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -82,7 +83,7 @@
                             Aquatic Veg
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="aquatic-veg-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -97,7 +98,7 @@
                             MargVeg In Current
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="mic-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -112,7 +113,7 @@
                             MargVeg Out Of Current
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="mooc-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -127,7 +128,7 @@
                             Gravel
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="gravel-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -142,7 +143,7 @@
                             Sand
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="sand-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -157,7 +158,7 @@
                             Mud
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="mud-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -172,7 +173,7 @@
                             Hand picking/Visual observation
                         </td>
                         <td>
-                            <select class="form-control" id="rating1">
+                            <select class="form-control" name="hand-picking-rating">
                                 <option>1</option>
                                 <option>2</option>
                                 <option>3</option>
@@ -188,7 +189,7 @@
             <div class="col-lg-3">
                 <div class="form-group">
                     <label for="time_min" class="input-label">Time (min):</label>
-                    <input type="number" class="form-control" id="time_min">
+                    <input type="number" class="form-control" id="time_min" name="time-min">
                 </div>
                 <div class="fbis-sass-logo">
                     <img src="{% static 'img/fbis_sass_logo.png' %}" width="100%">
@@ -215,13 +216,13 @@
                             {{ taxon.name }}
                             <input type="hidden" value="{{ taxon.id }}">
                         </td>
-                        <td><input type="text" class="form-control"
+                        <td><input type="text" name="{{ taxon.id }}-S" class="form-control"
                                    placeholder="S"></td>
-                        <td><input type="text" class="form-control"
+                        <td><input type="text" name="{{ taxon.id }}-Veg" class="form-control"
                                    placeholder="Veg"></td>
-                        <td><input type="text" class="form-control"
+                        <td><input type="text" name="{{ taxon.id }}-GSM" class="form-control"
                                    placeholder="GSM"></td>
-                        <td><input type="text" class="form-control"
+                        <td><input type="text" name="{{ taxon.id }}-TOT" class="form-control"
                                    placeholder="TOT"></td>
                     </tr>
                 {% else %}
@@ -255,10 +256,11 @@
             </tbody>
         </table>
         <div class="submit-wrapper">
-            <button class="btn btn-info">Submit</button>
+            <input type="submit" class="btn btn-info" value="Submit">
         </div>
     </div>
 
+    </form>
 {% endblock %}
 
 {% block foot %}
