@@ -102,7 +102,7 @@ def search_exact_match(species_name):
     try:
         response = requests.get(api_url)
         json_result = response.json()
-        if 'usageKey' in json_result:
+        if json_result and 'usageKey' in json_result:
             key = json_result['usageKey']
             return key
         return None
