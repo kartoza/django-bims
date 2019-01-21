@@ -92,6 +92,25 @@ def find_species(original_species_name):
     return None
 
 
+def search_exact_match(species_name):
+    """
+    Search species detail
+    :param species_name: species name
+    :return: species detail if found
+    """
+    api_url = 'http://api.gbif.org/v1/species/match?name=' + str(species_name)
+    try:
+        response = requests.get(api_url)
+        json_result = response.json()
+        if json_result and 'usageKey' in json_result:
+            key = json_result['usageKey']
+            return key
+        return None
+    except (HTTPError, KeyError) as e:
+        print(e)
+        return None
+
+
 def update_collection_record(collection):
     """
     Update taxon for a collection.
@@ -177,7 +196,8 @@ def process_taxon_identifier(key, fetch_parent=True):
             gbif_key=key,
             scientific_name__isnull=False
         )
-        return taxon_identifier
+        if taxon_identifier.parent or taxon_identifier.rank == 'KINGDOM':
+            return taxon_identifier
     except Taxonomy.DoesNotExist:
         pass
 
@@ -236,19 +256,18 @@ def search_taxon_identifier(search_query, fetch_parent=True):
     :return:
     """
     print('Search for %s' % search_query)
-    species_detail = find_species(search_query)
+    species_detail = None
+    key = search_exact_match(search_query)
 
-    if not species_detail:
-        return None
+    if not key:
+        species_detail = find_species(search_query)
+        rank = species_detail.get('rank', '')
+        rank_key = rank.lower() + 'Key'
 
-    key = None
-    rank = species_detail.get('rank', '')
-    rank_key = rank.lower() + 'Key'
-
-    if rank_key in species_detail:
-        key = species_detail[rank_key]
-    elif 'nubKey' in species_detail:
-        key = species_detail['nubKey']
+        if rank_key in species_detail:
+            key = species_detail[rank_key]
+        elif 'nubKey' in species_detail:
+            key = species_detail['nubKey']
 
     if key:
         species_detail = process_taxon_identifier(key, fetch_parent)

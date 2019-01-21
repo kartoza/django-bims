@@ -1,8 +1,14 @@
 import socket
 from django.conf import settings
+from django.contrib.auth import (
+    SESSION_KEY, BACKEND_SESSION_KEY,
+    get_user_model
+)
+from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.test import override_settings
 from django.core.urlresolvers import reverse
+
 from selenium import webdriver
 
 
@@ -31,6 +37,26 @@ class SeleniumTest(LiveServerTestCase):
         cls.selenium.quit()
         super(SeleniumTest, cls).tearDownClass()
 
+    def create_session_cookie(self, username, password):
+        # First, create a new test user
+        user = get_user_model()
+        user.objects.create_user(username=username, password=password)
+
+        # Then create the authenticated session using the new user credentials
+        session = SessionStore()
+        session[SESSION_KEY] = user.pk
+        session[BACKEND_SESSION_KEY] = settings.AUTHENTICATION_BACKENDS[0]
+        session.save()
+
+        # Finally, create the cookie dictionary
+        cookie = {
+            'name': settings.SESSION_COOKIE_NAME,
+            'value': session.session_key,
+            'secure': False,
+            'path': '/',
+        }
+        return cookie
+
     def test_landing_page(self):
         # Display landing page
         url = reverse('landing-page')
@@ -41,3 +67,17 @@ class SeleniumTest(LiveServerTestCase):
         )
 
         self.assertEqual(section_heading.text, u'BIODIVERSITY RECORDS')
+
+    def test_sass_page_get_404(self):
+        session_cookie = self.create_session_cookie(
+            username='test@email.com',
+            password='admin'
+        )
+        url = reverse('sass-form-page', kwargs={'site_id': 99})
+        self.selenium.get(self.live_server_url + url)
+        self.selenium.add_cookie(session_cookie)
+        self.selenium.refresh()
+
+        info = self.selenium.find_element_by_id('description')
+        self.assertEqual(info.text,
+                         'There was a problem loading this page')

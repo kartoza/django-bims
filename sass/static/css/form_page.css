@@ -11,10 +11,15 @@ body {
 
 .body-form {
     padding-top: 100px;
+    padding-bottom: 70px;
 }
 
-.body-form input {
-    height: 30px;
+.bold {
+    font-weight: bold;
+}
+
+.body-form input, .body-form select {
+    height: 30px !important;
 }
 
 td.taxon-name {
@@ -22,4 +27,40 @@ td.taxon-name {
     min-width: 300px;
     max-width: 300px;
     font-size: 11pt;
+}
+
+td.sampled-name {
+    vertical-align: middle !important;
+    max-width: 100px;
+    font-size: 11pt;
+}
+
+.submit-wrapper {
+    text-align: center;
+}
+
+.submit-wrapper .btn {
+    text-transform: capitalize;
+    border-radius: 5px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 30px;
+    font-weight: normal;
+}
+
+.no-line td {
+    border: 0 !important;
+}
+
+.input-label {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: bold;
+}
+
+.fbis-sass-logo img {
+    padding-top: 50px;
 }

@@ -16,8 +16,187 @@
 {% endblock %}
 
 {% block body_content %}
-
+    <form action="/sass/9300/" method="post" id="sass-form">
+    {% csrf_token %}
     <div class="body-form container">
+        <div class="row">
+            <div class="col-lg-9">
+                <table class="table table-sm">
+                    <thead>
+                    <tr>
+                        <th>
+                            Biotopes Sampled
+                        </th>
+                        <th>
+                            Rating (1-5)
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Stones In Current (SIC)
+                        </td>
+                        <td>
+                            <select class="form-control" name="sic-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Stones Out Of Current (SOOC)
+                        </td>
+                        <td>
+                            <select class="form-control" name="sooc-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Bedrock
+                        </td>
+                        <td>
+                            <select class="form-control" name="bedrock-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td class="sampled-name">
+                            Aquatic Veg
+                        </td>
+                        <td>
+                            <select class="form-control" name="aquatic-veg-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            MargVeg In Current
+                        </td>
+                        <td>
+                            <select class="form-control" name="mic-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            MargVeg Out Of Current
+                        </td>
+                        <td>
+                            <select class="form-control" name="mooc-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td class="sampled-name">
+                            Gravel
+                        </td>
+                        <td>
+                            <select class="form-control" name="gravel-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Sand
+                        </td>
+                        <td>
+                            <select class="form-control" name="sand-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr class="no-line">
+                        <td class="sampled-name">
+                            Mud
+                        </td>
+                        <td>
+                            <select class="form-control" name="mud-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td class="sampled-name">
+                            Hand picking/Visual observation
+                        </td>
+                        <td>
+                            <select class="form-control" name="hand-picking-rating">
+                                <option>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                            </select>
+                        </td>
+
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label for="time_min" class="input-label">Time (min):</label>
+                    <input type="number" class="form-control" id="time_min" name="time-min">
+                </div>
+                <div class="fbis-sass-logo">
+                    <img src="{% static 'img/fbis_sass_logo.png' %}" width="100%">
+                </div>
+            </div>
+        </div>
+
         <table class="table table-sm">
             <thead>
             <tr>
@@ -29,37 +208,31 @@
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <th scope="rowgroup">
-                    HEMIPTERA (Bugs)
-                </th>
-            </tr>
-            <tr>
-                <td scope="row" class="taxon-name">Belostomatidae (Giant water
-                    bugs)
-                </td>
-                <td><input type="text" class="form-control"
-                           placeholder="S"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="Veg"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="GSM"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="TOT"></td>
-            </tr>
-            <tr>
-                <td scope="row" class="taxon-name">Gerridae (Pond skaters/Water
-                    striders)
-                </td>
-                <td><input type="text" class="form-control"
-                           placeholder="S"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="Veg"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="GSM"></td>
-                <td><input type="text" class="form-control"
-                           placeholder="TOT"></td>
-            </tr>
+            {% for taxon in taxon_list %}
+                {% if taxon.has_score %}
+                    <tr>
+                        <td scope="row"
+                            class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
+                            {{ taxon.name }}
+                            <input type="hidden" value="{{ taxon.id }}">
+                        </td>
+                        <td><input type="text" name="{{ taxon.id }}-S" class="form-control"
+                                   placeholder="S"></td>
+                        <td><input type="text" name="{{ taxon.id }}-Veg" class="form-control"
+                                   placeholder="Veg"></td>
+                        <td><input type="text" name="{{ taxon.id }}-GSM" class="form-control"
+                                   placeholder="GSM"></td>
+                        <td><input type="text" name="{{ taxon.id }}-TOT" class="form-control"
+                                   placeholder="TOT"></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <th colspan="5" scope="row">
+                            {{ taxon.name }}
+                        </th>
+                    </tr>
+                {% endif %}
+            {% endfor %}
             <tr>
                 <th colspan="5" scope="row">
                     Other biota:
@@ -67,7 +240,7 @@
             </tr>
             <tr>
                 <td colspan="5" scope="row">
-                    <textarea class="form-control rounded" rows="6"></textarea>
+                    <textarea class="form-control rounded" rows="6" name="other-biota"></textarea>
                 </td>
             </tr>
             <tr>
@@ -77,13 +250,40 @@
             </tr>
             <tr>
                 <td colspan="5" scope="row">
-                    <textarea class="form-control rounded" rows="6"></textarea>
+                    <textarea class="form-control rounded" rows="6" name="notes"></textarea>
                 </td>
             </tr>
             </tbody>
         </table>
+        <div class="submit-wrapper">
+            <input type="button" name="btn" id="submitBtn" data-toggle="modal" data-target="#confirm-submit" class="btn btn-info" value="Submit">
+        </div>
+
+        <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
+             aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        Confirm Submit
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to submit the SASS form?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default"
+                                data-dismiss="modal">Cancel
+                        </button>
+                        <a href="#" id="submit"
+                           class="btn btn-success success">Submit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
     </div>
 
+    </form>
 {% endblock %}
 
 {% block foot %}
@@ -91,5 +291,6 @@
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/sass_5_record.js" %}"></script>
 
 {% endblock %}
