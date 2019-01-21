@@ -1,14 +1,13 @@
 import socket
 from django.conf import settings
 from django.contrib.auth import (
-    SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY,
+    SESSION_KEY, BACKEND_SESSION_KEY,
     get_user_model
 )
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.test import override_settings
 from django.core.urlresolvers import reverse
-from bims.tests.model_factories import LocationSiteF
 
 from selenium import webdriver
 
