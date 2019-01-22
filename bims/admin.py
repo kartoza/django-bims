@@ -5,6 +5,7 @@ from pygments import highlight
 from pygments.lexers.data import JsonLexer
 from pygments.formatters.html import HtmlFormatter
 
+from django.contrib.admin import SimpleListFilter
 from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
@@ -212,9 +213,30 @@ class ClusterAdmin(admin.ModelAdmin):
     list_filter = ('boundary', 'module')
 
 
+class PermissionContenTypeFilter(SimpleListFilter):
+    title = 'App Label'
+    parameter_name = 'content_type_app_label'
+
+    def lookups(self, request, model_admin):
+        content_types = []
+        app_labels = []
+        all_object = model_admin.model.objects.all()
+        for permission_object in all_object:
+            if permission_object.content_type.app_label not in app_labels:
+                app_labels.append(permission_object.content_type.app_label)
+                content_types.append(permission_object.content_type)
+        return [(c.app_label, c.app_label) for c in content_types]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(content_type__app_label=self.value())
+        else:
+            return queryset.all()
+
+
 class PermissionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'codename')
-    list_filter = ('name', 'codename')
+    list_display = ('content_type', 'name', 'codename')
+    list_filter = ('content_type', 'name', PermissionContenTypeFilter)
 
 
 class CarouselHeaderAdmin(OrderedModelAdmin):
