@@ -81,6 +81,7 @@ try:
         'bims.context_processor.add_recaptcha_key',
         'bims.context_processor.custom_navbar_url',
         'bims.context_processor.google_analytic_key',
+        'bims.context_processor.is_sass_enabled',
         'bims.context_processor.application_name'
     ]
 except KeyError:
@@ -305,3 +306,9 @@ REST_FRAMEWORK = {
 SELENIUM_DRIVER = os.environ.get(
     'SELENIUM_DRIVER',
     'http://hub:4444/wd/hub')
+
+# Enable or disable SASS
+try:
+    SASS_ENABLED = ast.literal_eval(os.environ.get('SASS_ENABLED', 'False'))
+except ValueError:
+    SASS_ENABLED = False
