@@ -46,6 +46,7 @@
         const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
         var filterParameters = {};
         var conservationStatusData = [];
+        const is_sass_enabled = {% if is_sass_enabled %}true{% else %}false{% endif %};
         {% if use_conservation_status %}
             conservationStatusData = {{ conservation_status_data | safe }};
         {% endif %}
