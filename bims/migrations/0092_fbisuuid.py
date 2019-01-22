@@ -8,7 +8,10 @@ import django.db.models.deletion
 def ensure_content_type_unique(apps, schema_editor):
     from django.db import connections
     with connections['default'].cursor() as cursor:
-        cursor.execute('''ALTER TABLE django_content_type ADD PRIMARY KEY (id)''')
+        cursor.execute('''select * from INFORMATION_SCHEMA.TABLE_CONSTRAINTS where CONSTRAINT_NAME=\'django_content_type_pkey\'''')
+        row = cursor.fetchall()
+        if len(row) == 0:
+            cursor.execute('''ALTER TABLE django_content_type ADD PRIMARY KEY (id)''')
 
 
 class Migration(migrations.Migration):
