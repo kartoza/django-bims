@@ -788,16 +788,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         layerName = layerKey;
                     }
                     layerSourceContainer = $('div.layer-source-info[value="'+ layerKey + '"]');
+                    let url_provider = layerProvider;
+                    let url_key = layerName;
+                    $.ajax({
+                        type: 'GET',
+                        url: `http://maps.kartoza.com/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
+                        dataType: `xml`,
+                        success: function(response){
+                            console.log(response);
+                        }
+                    });
                     if (layerSourceContainer.html() == "")
                     {
                         layerSourceContainer.toggle();
                         layerSourceContainer.html(`
                             <div style="margin: 0.5rem">
-                                <div><b><i>Source Information</i></b></div>
-                                <hr>
-                                <div><b>Provider</b>  -  ` + layerProvider + `</div>
-                                <div><b>Description</b>  -  ` + layerName + `</div>
-                                <div><b>Format</b>  -  ` + layerFormat + `</div>
+                                <div><b>Key</b>  -  ` + layerKey + `</div>
                             </div>`);
                     }
                    layerSourceContainer.slideToggle(400);
