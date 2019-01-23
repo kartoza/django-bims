@@ -31,7 +31,9 @@ TRACK_PAGEVIEWS = getattr(
 
 TRACK_IGNORE_URLS = getattr(
         django_settings,
-        'TRACK_IGNORE_URLS', (r'^(favicon\.ico|robots\.txt)$',))
+        'TRACK_IGNORE_URLS',
+        (r'^(favicon\.ico|robots\.txt|admin[/].*|bims_proxy[/].*|api[/].*)$',)
+)
 
 TRACK_IGNORE_USER_AGENTS = getattr(
         django_settings,
