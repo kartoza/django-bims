@@ -777,31 +777,58 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     return false;
                 }
                 else if (layerKey !== this.administrativeKeyword) {
-                    layerProperties = this.layers[layerKey]['layer'].getProperties();
-                    layerFormat = "image/png";
-                    if (layerKey.indexOf(":") > 0) {
-                        layerProvider = layerKey.split(":")[0];
-                        layerName = layerKey.split(":")[1];
+                    this.getLayerAbstract(layerKey);
+                }
+            },
+        getLayerAbstract: function(layerKey) {
+            if (layerKey.indexOf(":") > 0) {
+                layerProvider = layerKey.split(":")[0];
+                layerName = layerKey.split(":")[1];
+            }
+            else {
+                layerProvider = layerKey;
+                layerName = layerKey;
+            }
+            let url_provider = layerProvider;
+            let url_key = layerName;
+            var abstract_result = "";
+            $.ajax({
+                type: 'GET',
+                url: `http://maps.kartoza.com/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
+                dataType: `xml`,
+                success: function(response){
+                    var xml_response, parser, xmlDoc;
+                    xml_response = response['documentElement']['innerHTML'];
+                    xml_response = xml_response.replace(/[\r\n]*/g, "");
+                    xml_response = xml_response.replace("\\n", "");
+                    xml_response = '<document>' + xml_response.replace(" ", "") + '</document>';
+
+                    parser = new DOMParser();
+                    xmlDoc = parser.parseFromString(xml_response, 'text/xml');
+                    try{
+                        abstract_result = xmlDoc.getElementsByTagName("Abstract")[2].childNodes[0].nodeValue;
                     }
-                    else {
-                        layerProvider = layerKey;
-                        layerName = layerKey;
+                    catch (e) {
+                        abstract_result = "Abstract information unavailable.";
                     }
+                },
+                error (err) {
+                    console.log(err);
+                    abstract_result = "Abstract information unavailable.";
+                },
+                complete () {
                     layerSourceContainer = $('div.layer-source-info[value="'+ layerKey + '"]');
                     if (layerSourceContainer.html() == "")
                     {
                         layerSourceContainer.toggle();
                         layerSourceContainer.html(`
-                            <div style="margin: 0.5rem">
-                                <div><b><i>Source Information</i></b></div>
-                                <hr>
-                                <div><b>Provider</b>  -  ` + layerProvider + `</div>
-                                <div><b>Description</b>  -  ` + layerName + `</div>
-                                <div><b>Format</b>  -  ` + layerFormat + `</div>
+                            <div class="layer-abstract">
+                                ` + abstract_result + `
                             </div>`);
                     }
-                   layerSourceContainer.slideToggle(400);
+                    layerSourceContainer.slideToggle(400);
                 }
-            },
+            })
+        }
     })
 });
