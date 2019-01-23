@@ -78,8 +78,6 @@
             dateFormat: 'yyyy-mm-dd',
             autoClose: true,
             position: 'bottom left',
-            timepicker: true,
-            timeFormat: "hh:ii",
             onSelect: function (date) {
                 $("#id_end").val(date);
                 $("#id_end").datepicker({minDate: new Date(date)})
@@ -90,15 +88,16 @@
             dateFormat: 'yyyy-mm-dd',
             autoClose: true,
             position: 'bottom left',
-            timepicker: true,
-            timeFormat: "hh:ii",
             onSelect: function (date) {
                 $("#id_start").val(date);
                 $("#id_start").datepicker({maxDate: new Date(date)})
             }
         });
+        let start_dates = start_date.split(' ');
+        let start_date_object = new Date(start_dates[0]);
+        end_date = end_date.split(' ')[0];
 
-        $('#id_start').datepicker().data('datepicker').selectDate(new Date(start_date.toString()));
+        $('#id_start').datepicker().data('datepicker').selectDate(start_date_object);
         $('#id_end').datepicker().data('datepicker').selectDate(new Date(end_date.toString()));
     });
     </script>

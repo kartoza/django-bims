@@ -30,7 +30,7 @@ class DashboardForm(forms.Form):
 
 @staff_member_required()
 def dashboard(request):
-    "Counts, aggregations and more!"
+    """Counts, aggregations and more!"""
     end_time = now()
     start_time = end_time - timedelta(days=7)
     defaults = {'start': start_time, 'end': end_time}
