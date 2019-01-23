@@ -11,10 +11,6 @@ try:
 except ImportError:
     MiddlewareMixin = object
 
-from django.contrib.staticfiles.finders import find
-from django.templatetags.static import static
-from django.conf import settings
-
 from bims.models import Visitor, Pageview
 from bims.utils import get_ip_address, total_seconds
 from bims.conf import (
