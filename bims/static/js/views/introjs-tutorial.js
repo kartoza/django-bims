@@ -4,7 +4,6 @@ function startIntro() {
         steps: [
             {
                 intro: "Welcome! This is the FBIS Tutorial!",
-
             },
             {
                 element: document.querySelector('#map-control-panel-element'),
@@ -17,12 +16,12 @@ function startIntro() {
             },
             {
                 element: ".map-search-box.map-control-panel-box",
-                intro: "with its many filters.",
+                intro: "With its many filters.",
                 position: 'right',
             },
             {
                 element: ".map-search-box.map-control-panel-box",
-                intro: "such as this versatile DATE widget!",
+                intro: "Such as this versatile DATE widget!",
                 position: 'right',
             },
             {
@@ -31,12 +30,12 @@ function startIntro() {
                 position: 'right',
             },
             {
-                element: '.layer-switcher',
+                element: '.layer-switcher button',
                 intro: 'You can also easily change your BASEMAP.'
             },
             {
                 element: '#locate-control',
-                intro: 'or get straight to the point with the LOCATE tool.'
+                intro: 'Or get straight to the point with the LOCATE tool.'
             },
             {
                 element: "#download-control",
@@ -45,9 +44,20 @@ function startIntro() {
             },
             {
                 element: "#print-control",
-                intro: "Here you can print exactly what you need",
+                intro: "Here you can print exactly what you need.",
                 position: 'right'
             },
+            {
+                element: "#permalink-control",
+                intro: "You can even share this map with others! Just click" +
+                    " on the link.",
+                position: 'right'
+            },
+            {
+                element: "#fbis_logo_home",
+                intro:  "Click here to return to the landing page",
+                position: 'bottom'
+            }
             
         ]
     });
