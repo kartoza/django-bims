@@ -822,8 +822,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     {
                         layerSourceContainer.toggle();
                         layerSourceContainer.html(`
-                            <div style="margin: 0.5rem">
-                                <div>` + abstract_result + `</div>
+                            <div class="layer-abstract">
+                                ` + abstract_result + `
                             </div>`);
                     }
                     layerSourceContainer.slideToggle(400);
