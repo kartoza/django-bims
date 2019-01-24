@@ -40,6 +40,16 @@ class Boundary(models.Model):
     class Meta:
         unique_together = ("name", "code_name", "type")
 
+    def get_all_children(self):
+        children = [self]
+        try:
+            child_list = self.children.all()
+        except AttributeError:
+            return children
+        for child in child_list:
+            children.extend(child.get_all_children())
+        return children
+
     def generate_cluster(self):
         """ Generate cluster for the boundary.
         This will generate by the rule.

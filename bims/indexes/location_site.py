@@ -29,13 +29,21 @@ class LocationSiteIndex(indexes.SearchIndex, indexes.Indexable):
     )
 
     def prepare_location_site_point(self, obj):
-        return '%s,%s' % obj.get_centroid().coords
+        longitude = obj.get_centroid().y
+        latitude = obj.get_centroid().x
+        longitude = ((longitude + 180) % 360) - 180
+        latitude = ((latitude + 180) % 360) - 180
+        return '%s,%s' % (longitude, latitude)
 
     location_site_geometry = indexes.CharField()
     id = indexes.CharField()
 
     def prepare_location_coordinates(self, obj):
-        return '%s,%s' % obj.get_centroid().coords
+        longitude = obj.get_centroid().y
+        latitude = obj.get_centroid().x
+        longitude = ((longitude + 180) % 360) - 180
+        latitude = ((latitude + 180) % 360) - 180
+        return '%s,%s' % (longitude, latitude)
 
     def prepare_location_site_geometry(self, obj):
         geometry = obj.get_geometry()
