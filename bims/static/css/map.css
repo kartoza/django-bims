@@ -357,6 +357,7 @@ html, body, .map, .map-wrapper, #map-container {
     max-width: 100%;
     height: auto;
     padding: 0;
+    max-height: 200%;
 }
 
 #layers-selector li:hover .options {
