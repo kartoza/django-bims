@@ -1,10 +1,12 @@
 import json
 from django.db.models import Q, Count, F
+from django.contrib.gis.db.models import Union
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.models import (
     BiologicalCollectionRecord,
-    Boundary
+    Boundary,
+    UserBoundary
 )
 
 
@@ -64,6 +66,10 @@ class SearchVersion2(APIView):
     def boundary(self):
         return self.get_json_data('boundary')
 
+    @property
+    def user_boundary(self):
+        return self.get_json_data('userBoundary')
+
     def get(self, request):
         if self.search_query:
             bio = BiologicalCollectionRecord.objects.filter(
@@ -107,6 +113,14 @@ class SearchVersion2(APIView):
             if geometry_found:
                 filters['site__boundary__in'] = boundary
         bio = bio.filter(**filters)
+        if self.user_boundary:
+            user_boundaries = UserBoundary.objects.filter(
+                pk__in=self.user_boundary
+            )
+            if user_boundaries:
+                bio.filter(site__geometry_point__intersent=(
+                    user_boundaries.aggregate(area=Union('geometry'))['area']
+                ))
 
         total_records = len(bio)
         collections = bio.annotate(name=F('taxonomy__scientific_name'),
