@@ -361,14 +361,36 @@ define([
             });
             this.mapLocationSite.renderSync();
         },
+
+        stampedCanvas: function(canvas, text)
+        {
+            var tempCanvas=document.createElement('canvas');
+                var tempCtx=tempCanvas.getContext('2d');
+                var cw,ch;
+                cw=tempCanvas.width=canvas.width;
+                ch=tempCanvas.height=canvas.height;
+                tempCtx.drawImage(canvas,0,0);
+                tempCtx.font="24px verdana";
+                var textWidth=tempCtx.measureText(text).width;
+                tempCtx.globalAlpha=.50;
+                tempCtx.fillStyle='white'
+                tempCtx.fillText(text,cw-textWidth-10,ch-20);
+                tempCtx.fillStyle='black'
+                tempCtx.fillText(text,cw-textWidth-10+2,ch-20+2);
+                // just testing by adding tempCanvas to document
+                document.body.appendChild(tempCanvas);
+                return(tempCanvas);
+        },
         downloadOriginChart: function () {
             var title = 'site-origin-charts';
-            var canvas = this.originCategoryGraph;
+            var graph_canvas = this.originCategoryGraph;
+            var canvas = this.stampedCanvas(graph_canvas, "Testees!");
             this.downloadChart(title, canvas);
         },
         downloadRecordTimeline: function () {
             var title = 'record-timeline';
-            var canvas = this.recordsTimelineGraph;
+            var graph_canvas = this.recordsTimelineGraph;
+            var canvas = this.stampedCanvas(graph_canvas, "Testees!");
             this.downloadChart(title, canvas);
         },
         downloadCollectionTimeline: function () {
