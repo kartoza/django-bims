@@ -11,11 +11,14 @@ from bims.models import (
 
 
 class SearchVersion2(APIView):
+    """
+    Search with django query
+    """
 
     def get_request_data(self, field, default_value=None):
         return self.request.GET.get(field, default_value)
 
-    def get_json_data(self, field):
+    def parse_request_json(self, field):
         json_query = self.get_request_data(field=field)
         if json_query:
             return json.loads(json_query)
@@ -44,35 +47,35 @@ class SearchVersion2(APIView):
 
     @property
     def reference_category(self):
-        return self.get_json_data('referenceCategory')
+        return self.parse_request_json('referenceCategory')
 
     @property
     def categories(self):
-        return self.get_json_data('category')
+        return self.parse_request_json('category')
 
     @property
     def collector(self):
-        return self.get_json_data('collector')
+        return self.parse_request_json('collector')
 
     @property
     def reference(self):
-        return self.get_json_data('reference')
+        return self.parse_request_json('reference')
 
     @property
     def conservation_status(self):
-        return self.get_json_data('conservationStatus')
+        return self.parse_request_json('conservationStatus')
 
     @property
     def boundary(self):
-        return self.get_json_data('boundary')
+        return self.parse_request_json('boundary')
 
     @property
     def user_boundary(self):
-        return self.get_json_data('userBoundary')
+        return self.parse_request_json('userBoundary')
 
     @property
     def endemic(self):
-        return self.get_json_data('endemic')
+        return self.parse_request_json('endemic')
 
     def get(self, request):
         if self.search_query:
@@ -121,6 +124,7 @@ class SearchVersion2(APIView):
             if geometry_found:
                 filters['site__boundary__in'] = boundary
         bio = bio.filter(**filters)
+
         if self.user_boundary:
             user_boundaries = UserBoundary.objects.filter(
                 pk__in=self.user_boundary
@@ -134,7 +138,11 @@ class SearchVersion2(APIView):
         collections = bio.annotate(name=F('taxonomy__scientific_name'),
                                    taxon_id=F('taxonomy_id')).values(
             'taxon_id', 'name').annotate(total=Count('taxonomy'))
+        sites = bio.annotate(name=F('site__name'),
+                             site_id=F('site__id')).values(
+            'site_id', 'name').annotate(total=Count('site'))
         return Response({
             'total_records': total_records,
-            'records': collections
+            'records': collections,
+            'sites': sites
         })
