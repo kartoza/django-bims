@@ -70,6 +70,10 @@ class SearchVersion2(APIView):
     def user_boundary(self):
         return self.get_json_data('userBoundary')
 
+    @property
+    def endemic(self):
+        return self.get_json_data('endemic')
+
     def get(self, request):
         if self.search_query:
             bio = BiologicalCollectionRecord.objects.filter(
@@ -95,6 +99,10 @@ class SearchVersion2(APIView):
         if self.conservation_status:
             filters['taxonomy__iucn_status__category__in'] = (
                 self.conservation_status
+            )
+        if self.endemic:
+            filters['taxonomy__endemism__name__in'] = (
+                self.endemic
             )
         if self.boundary:
             boundary = Boundary.objects.filter(id__in=self.boundary)
