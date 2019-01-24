@@ -1,7 +1,8 @@
 {% extends "geonode_base.html" %}
 {% load static from staticfiles %}
 {% block header %}
-    <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}"
+          rel="stylesheet">
     <link href="{% static "css/base.css" %}" rel="stylesheet">
     <link href="{% static "css/navbar.css" %}" rel="stylesheet">
     <style>
@@ -10,26 +11,33 @@
             background-color: rgba(239, 239, 239, 0.27);
             padding-top: 80px;
         }
+
         .navbar-nav .dropdown-menu {
             background-color: #ffffff;
             border-top: 1px solid #ffffff;
             color: black;
         }
+
         .navbar-nav .dropdown-menu a {
             color: #000000;
         }
+
         .table {
             font-size: 11pt;
         }
+
         .list-group {
             font-size: 11pt;
         }
+
         .page-title {
             font-size: 20pt;
         }
+
         .form-group {
             width: 100% !important;
         }
+
         .form-group .btn, .form-control {
             font-size: 13pt;
         }
@@ -37,4 +45,30 @@
     {% include 'navigation_bar.html' %}
 {% endblock %}
 
-{% block footer  %}{% endblock footer %}
+{% block footer %}
+    <script type="text/javascript">
+        (function () {
+            let passwordInput = document.getElementById("div_id_password1");
+            let element = document.createElement("div");
+            element.className = 'alert alert-info password-message';
+            element.role = 'alert';
+            element.appendChild(document.createTextNode('Password must contain at least six characters, including: '));
+            let ul = document.createElement('ul');
+            let li1 = document.createElement('li');
+            li1.appendChild(document.createTextNode(' lower case letter '));
+
+            let li2 = document.createElement('li');
+            li2.appendChild(document.createTextNode(' upper case letter '));
+
+            let li3 = document.createElement('li');
+            li3.appendChild(document.createTextNode(' numeric character '));
+            ul.appendChild(li1);
+            ul.appendChild(li2);
+            ul.appendChild(li3);
+
+            element.appendChild(ul);
+            passwordInput.appendChild(element);
+        })();
+    </script>
+
+{% endblock footer %}

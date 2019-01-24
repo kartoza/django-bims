@@ -357,6 +357,7 @@ html, body, .map, .map-wrapper, #map-container {
     max-width: 100%;
     height: auto;
     padding: 0;
+    max-height: 200%;
 }
 
 #layers-selector li:hover .options {
@@ -2206,6 +2207,14 @@ div:hover::-webkit-scrollbar {
 .layer-source-info {
     text-align: center;
     font-size: 80%;
+    word-wrap: break-word;
+}
+
+.layer-abstract{
+    margin: 0.5rem;
+    word-wrap: break-word;
+    white-space: normal;
+    padding: 0.5rem 0.5rem 1rem;
 }
 
 .sass-button {

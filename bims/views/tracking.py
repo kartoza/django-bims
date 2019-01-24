@@ -9,7 +9,7 @@ from django.utils.timezone import now
 
 from bims.models import Visitor, Pageview
 from bims.conf import TRACK_PAGEVIEWS
-from bims.models import Taxon, BiologicalCollectionRecord
+from bims.models import Taxon, BiologicalCollectionRecord, LocationSite
 
 log = logging.getLogger(__file__)
 
@@ -30,7 +30,7 @@ class DashboardForm(forms.Form):
 
 @staff_member_required()
 def dashboard(request):
-    "Counts, aggregations and more!"
+    """Counts, aggregations and more!"""
     end_time = now()
     start_time = end_time - timedelta(days=7)
     defaults = {'start': start_time, 'end': end_time}
@@ -61,6 +61,7 @@ def dashboard(request):
     taxon_count = Taxon.objects.count()
     collections_count = \
         BiologicalCollectionRecord.objects.filter(validated=True).count()
+    location_site_count = LocationSite.objects.all().count()
 
     context = {
         'form': form,
@@ -71,5 +72,6 @@ def dashboard(request):
         'pageview_stats': pageview_stats,
         'taxon_count': taxon_count,
         'collections_count': collections_count,
+        'location_site_count': location_site_count,
     }
     return render(request, 'tracking/dashboard.html', context)
