@@ -362,35 +362,41 @@ define([
             this.mapLocationSite.renderSync();
         },
 
-        stampedCanvas: function(canvas, text)
+        stampCanvas: function(title, graph_canvas)
         {
+            var img = new Image();
+            var cw, ch=0;
+            cw=graph_canvas.width;
+            ch=graph_canvas.height;
+            console.log('width: ' + cw + '| height: ' + ch);
+          //  img.crossOrigin = 'anonymous';
             var tempCanvas=document.createElement('canvas');
-                var tempCtx=tempCanvas.getContext('2d');
-                var cw,ch;
-                cw=tempCanvas.width=canvas.width;
-                ch=tempCanvas.height=canvas.height;
-                tempCtx.drawImage(canvas,0,0);
-                tempCtx.font="24px verdana";
-                var textWidth=tempCtx.measureText(text).width;
-                tempCtx.globalAlpha=.50;
-                tempCtx.fillStyle='white'
-                tempCtx.fillText(text,cw-textWidth-10,ch-20);
-                tempCtx.fillStyle='black'
-                tempCtx.fillText(text,cw-textWidth-10+2,ch-20+2);
-                // just testing by adding tempCanvas to document
-                document.body.appendChild(tempCanvas);
-                return(tempCanvas);
+            var tempCtx=tempCanvas.getContext('2d');
+            var ctx = graph_canvas.getContext('2d');
+            img.src='/static/img/fbis-stamp.png';
+            img.onload = function() {
+                // graph_canvas.height = img.width;
+                // graph_canvas.width = img.height;
+                ctx.drawImage(img, 0, 0);
+                canvas = graph_canvas;
+                html2canvas(canvas, {
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
+            }
         },
         downloadOriginChart: function () {
             var title = 'site-origin-charts';
-            var graph_canvas = this.originCategoryGraph;
-            var canvas = this.stampedCanvas(graph_canvas, "Testees!");
+            var canvas = this.originCategoryGraph;
             this.downloadChart(title, canvas);
         },
         downloadRecordTimeline: function () {
             var title = 'record-timeline';
-            var graph_canvas = this.recordsTimelineGraph;
-            var canvas = this.stampedCanvas(graph_canvas, "Testees!");
+            var canvas = this.recordsTimelineGraph;
             this.downloadChart(title, canvas);
         },
         downloadCollectionTimeline: function () {
@@ -398,15 +404,8 @@ define([
             var canvas = this.originTimelineGraph;
             this.downloadChart(title, canvas);
         },
-        downloadChart: function (title, canvas) {
-            html2canvas(canvas, {
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
-            })
+        downloadChart: function (title, graph_canvas) {
+            this.stampCanvas(title, graph_canvas);
         },
         downloadingCSV: function (url, downloadButton) {
             var self = this;
