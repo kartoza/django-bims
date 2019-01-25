@@ -7,7 +7,7 @@ define([
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
-        searchUrl: "/api/search/",
+        searchUrl: "/api/search-v2/",
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
@@ -108,7 +108,7 @@ define([
                 this.isFuzzySearch = response['fuzzy_search'];
             }
             if (response.hasOwnProperty('status')) {
-                this.status = response['status']['current_status'];
+                this.status = response['status'];
             }
             if (response.hasOwnProperty('total_records')) {
                 this.totalRecords = response['total_records'];
@@ -157,15 +157,16 @@ define([
 
             var recordsCount = this.totalRecords.toString();
             var siteCount = this.totalSites.toString();
+            console.log(self.status);
             var speciesListName = [];
 
-            if (self.status === 'finish') {
+            if (self.status === 'finished') {
                 $.each(this.recordsData, function (key, data) {
                     var searchModel = new SearchModel({
-                        id: key,
-                        count: data['c'],
-                        name: data['n'],
-                        highlight: data['h'],
+                        id: data['taxon_id'],
+                        count: data['total'],
+                        name: data['name'],
+                        highlight: data['name'],
                         record_type: 'taxa'
                     });
                     var searchResultView = new SearchResultView({
@@ -176,9 +177,9 @@ define([
                 });
                 $.each(this.sitesData, function (key, data) {
                     var searchModel = new SearchModel({
-                        id: key,
-                        count: data['c'],
-                        name: data['n'],
+                        id: data['site_id'],
+                        count: data['total'],
+                        name: data['name'],
                         record_type: 'site'
                     });
                     var searchResultView = new SearchResultView({
@@ -206,9 +207,10 @@ define([
             if (self.status === 'processing') {
                 recordsCount += ' ...loading';
                 siteCount += ' ...loading';
-            } else if (self.status === 'finish') {
+            } else if (self.status === 'finished') {
                 $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             }
+            console.log(recordsCount);
             taxaListNumberElm.html(recordsCount);
             siteListNumberElm.html(siteCount);
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);

@@ -56,7 +56,7 @@ class SearchProcess(models.Model):
         if not should_save_to_file:
             return
         status = {
-            'current_status': value,
+            'status': value,
             'process': self.process_id
         }
         self.save_to_file(results=status)

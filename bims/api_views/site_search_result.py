@@ -49,7 +49,7 @@ class SiteSearchResult(APIView):
 
         return Response({
             'has_next': site_result_page.has_next(),
-            'current_page': page,
+            'current_page': int(page),
             'num_pages': site_result_paginator.num_pages,
             'data': site_result_page.object_list
         })

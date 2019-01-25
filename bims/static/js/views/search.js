@@ -299,6 +299,7 @@ define([
                 'yearFrom': '',
                 'yearTo': '',
                 'months': '',
+                'taxon': '',
                 'reference': referenceValue,
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
