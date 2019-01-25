@@ -1,4 +1,5 @@
 import json
+import hashlib
 from django.db.models import Q, Count, F
 from django.contrib.gis.db.models import Union
 from rest_framework.views import APIView
@@ -6,17 +7,64 @@ from rest_framework.response import Response
 from bims.models import (
     BiologicalCollectionRecord,
     Boundary,
-    UserBoundary
+    UserBoundary,
+    SearchProcess,
+    SEARCH_RESULTS,
+    SEARCH_PROCESSING
 )
+from bims.tasks.search_version_2 import search_task
 
 
-class SearchVersion2(APIView):
+class SearchVersion2APIView(APIView):
     """
     Search with django query
     """
 
+    def get(self, request):
+        parameters = request.GET
+        search_uri = request.build_absolute_uri()
+        search_process, created = SearchProcess.objects.get_or_create(
+            category=SEARCH_RESULTS,
+            query=search_uri
+        )
+
+        result_file = search_process.get_file_if_exits()
+        if result_file:
+            return Response(result_file)
+
+        # Create process id
+        data_for_process_id = dict()
+        data_for_process_id['search_uri'] = search_uri
+        data_for_process_id['collections_total'] = (
+            BiologicalCollectionRecord.objects.all().count()
+        )
+        # Generate unique process id by search uri and total of collections
+        process_id = hashlib.md5(
+            json.dumps(data_for_process_id, sort_keys=True)
+        ).hexdigest()
+        search_process.set_process_id(process_id)
+        search_process.set_status(SEARCH_PROCESSING)
+
+        # call worker task
+        search_task.delay(
+            parameters,
+            search_process.id,
+        )
+
+        result_file = search_process.get_file_if_exits(finished=False)
+        if result_file:
+            return Response(result_file)
+        return Response({'status': 'result/status not exists'})
+
+
+class SearchVersion2(object):
+
+    def __init__(self, parameters):
+        self.parameters = parameters
+        super(SearchVersion2, self).__init__()
+
     def get_request_data(self, field, default_value=None):
-        return self.request.GET.get(field, default_value)
+        return self.parameters.get(field, default_value)
 
     def parse_request_json(self, field):
         json_query = self.get_request_data(field=field)
@@ -77,7 +125,7 @@ class SearchVersion2(APIView):
     def endemic(self):
         return self.parse_request_json('endemic')
 
-    def get(self, request):
+    def process_search(self):
         if self.search_query:
             bio = BiologicalCollectionRecord.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
@@ -134,15 +182,15 @@ class SearchVersion2(APIView):
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
 
-        total_records = len(bio)
         collections = bio.annotate(name=F('taxonomy__scientific_name'),
                                    taxon_id=F('taxonomy_id')).values(
             'taxon_id', 'name').annotate(total=Count('taxonomy'))
         sites = bio.annotate(name=F('site__name'),
                              site_id=F('site__id')).values(
             'site_id', 'name').annotate(total=Count('site'))
-        return Response({
-            'total_records': total_records,
-            'records': collections,
-            'sites': sites
-        })
+        return {
+            'total_records': len(bio),
+            'total_sites': len(sites),
+            'records': list(collections),
+            'sites': list(sites)
+        }
