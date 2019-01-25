@@ -365,19 +365,13 @@ define([
         stampCanvas: function(title, graph_canvas)
         {
             var img = new Image();
-            var cw, ch=0;
-            cw=graph_canvas.width;
-            ch=graph_canvas.height;
-            console.log('width: ' + cw + '| height: ' + ch);
-          //  img.crossOrigin = 'anonymous';
             var tempCanvas=document.createElement('canvas');
             var tempCtx=tempCanvas.getContext('2d');
             var ctx = graph_canvas.getContext('2d');
             img.src='/static/img/fbis-stamp.png';
-            img.onload = function() {
-                // graph_canvas.height = img.width;
-                // graph_canvas.width = img.height;
-                ctx.drawImage(img, 0, 0);
+              img.onload = function() {
+                ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
+                    graph_canvas.scrollHeight - img.height - 5);
                 canvas = graph_canvas;
                 html2canvas(canvas, {
                     onrendered: function (canvas) {
