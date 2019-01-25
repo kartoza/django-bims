@@ -425,16 +425,26 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         downloadTaxaRecordsTimeline: function () {
             var title = 'taxa-record-timeline';
-            var canvas = this.taxaRecordsTimelineGraph;
-
-            html2canvas(canvas, {
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
-            })
+            var canvas = this.taxaRecordsTimelineGraph[0];
+            this.downloadChart(title, canvas);
+        },
+        downloadChart: function (title, graph_canvas) {
+            var img = new Image();
+            var ctx = graph_canvas.getContext('2d');
+            img.src='/static/img/fbis-stamp.png';
+            img.onload = function() {
+                ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
+                    graph_canvas.scrollHeight - img.height - 5);
+                canvas = graph_canvas;
+                html2canvas(canvas, {
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
+            }
         }
     })
 });
