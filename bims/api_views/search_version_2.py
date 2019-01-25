@@ -14,6 +14,8 @@ from bims.models import (
 )
 from bims.tasks.search_version_2 import search_task
 
+MAX_PAGINATED_SITES = 20
+
 
 class SearchVersion2APIView(APIView):
     """
@@ -28,9 +30,13 @@ class SearchVersion2APIView(APIView):
             query=search_uri
         )
 
-        result_file = search_process.get_file_if_exits()
-        if result_file:
-            return Response(result_file)
+        results = search_process.get_file_if_exits()
+        if results:
+            results['process_id'] = search_process.process_id
+            if 'sites' in results:
+                results['total_unique_sites'] = len(results['sites'])
+                results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
+            return Response(results)
 
         # Create process id
         data_for_process_id = dict()
