@@ -157,7 +157,6 @@ define([
 
             var recordsCount = this.totalRecords.toString();
             var siteCount = this.totalSites.toString();
-            console.log(self.status);
             var speciesListName = [];
 
             if (self.status === 'finished') {
@@ -210,9 +209,20 @@ define([
             } else if (self.status === 'finished') {
                 $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             }
-            console.log(recordsCount);
             taxaListNumberElm.html(recordsCount);
             siteListNumberElm.html(siteCount);
+            if (self.sitesData.length < self.totalSites) {
+                var searchModel = new SearchModel({
+                    id: 1,
+                    count: 1,
+                    name: 'show more',
+                    record_type: 'site'
+                });
+                var searchResultView = new SearchResultView({
+                    model: searchModel
+                });
+                self.viewCollection.push(searchResultView);
+            }
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
         }
     })
