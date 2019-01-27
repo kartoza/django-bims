@@ -68,3 +68,10 @@ td.sampled-name {
 .fbis-sass-logo img {
     padding-top: 50px;
 }
+
+.sass-radio-label {
+    line-height: 2rem;
+    text-align: center;
+    vertical-align: middle;
+    display: inline-flex;
+}
