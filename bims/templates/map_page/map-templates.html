@@ -333,7 +333,7 @@
         </div>
         <div class="col-lg-12 filter-content" id="spatial-scale-container" style="display: none;">
         </div>
-        {% if enable_catchmet_filter %}
+        {% if bims_preferences.enable_catchmet_filter %}
         <div class="small-subtitle spatial-scale-sub-panel">
             Catchment
             <i class="fa fa-angle-down pull-right"></i>
@@ -341,7 +341,7 @@
         <div class="col-lg-12 filter-content" id="river-catchment-container" style="display: none;">
         </div>
         {% endif %}
-        {% if enable_ecoregion_filter %}
+        {% if bims_preferences.enable_ecoregion_filter %}
         <div class="col-lg-12 other-filters">
             <div class="container-fluid row">
                 <div class="col-lg-5">Ecoregion</div>
