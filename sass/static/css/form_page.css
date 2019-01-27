@@ -74,4 +74,5 @@ td.sampled-name {
     text-align: center;
     vertical-align: middle;
     display: inline-flex;
+    border-style: none;
 }
