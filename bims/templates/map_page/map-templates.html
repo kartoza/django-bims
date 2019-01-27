@@ -96,7 +96,7 @@
             </div>
         </div>
 
-        {% if modules_exists %}
+        {% if bims_preferences.enable_module_filter %}
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
                     MODULE <i
@@ -333,13 +333,15 @@
         </div>
         <div class="col-lg-12 filter-content" id="spatial-scale-container" style="display: none;">
         </div>
+        {% if enable_catchmet_filter %}
         <div class="small-subtitle spatial-scale-sub-panel">
             Catchment
             <i class="fa fa-angle-down pull-right"></i>
         </div>
         <div class="col-lg-12 filter-content" id="river-catchment-container" style="display: none;">
         </div>
-
+        {% endif %}
+        {% if enable_ecoregion_filter %}
         <div class="col-lg-12 other-filters">
             <div class="container-fluid row">
                 <div class="col-lg-5">Ecoregion</div>
@@ -350,6 +352,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         <div class="spatial-scale-action">
             <button class="spatial-scale-apply-filter" disabled>Apply Filter
             </button>

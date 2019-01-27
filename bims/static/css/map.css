@@ -2003,6 +2003,7 @@ div:hover::-webkit-scrollbar {
     color: rgb(65, 65, 65);
     width: 100%;
     padding: 5px;
+    height: 25px;
 }
 
 #spatial-scale-container {
