@@ -49,6 +49,7 @@ def bims_preferences(request):
         'bims_preferences': settings.BIMS_PREFERENCES
     }
 
+
 def google_analytic_key(request):
     """
     Return google analytic key
