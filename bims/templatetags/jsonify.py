@@ -22,8 +22,9 @@ def get_html_for_radio_group(name, sass_rating):
         value = int(sass_rating[-1])
     except:
         value = 1
-    result_html = ('<div class="form-control sass-radio-label" '
-                    'name="{name}">').format(name = name)
+    result_html = (
+                '<div class="form-control sass-radio-label" '
+                'name="{name}">').format(name = name)
     for x in range(0, 5):
         if x == (value - 1):
             checked = 'checked'
@@ -38,7 +39,7 @@ def get_html_for_radio_group(name, sass_rating):
                         '{checked}>').format(
                                         name=name,
                                         checked=checked,
-                                        x=x+1,
+                                        x = x + 1,
                                         starting_space=starting_space)
     result_html += '</div>'
     return result_html
