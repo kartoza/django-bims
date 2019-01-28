@@ -19,12 +19,11 @@ def jsonify(object):
 @register.simple_tag
 def get_html_for_radio_group(name, sass_rating):
     try:
-        value = int(sass_rating[-1]);
+        value = int(sass_rating[-1])
     except:
         value = 1
-    result_html = ( '<div class="form-control sass-radio-label" '
-                    'name="{name}">').format(name=name)
-
+    result_html = ('<div class="form-control sass-radio-label" '
+                    'name="{name}">').format(name = name)
     for x in range(0, 5):
         if x == (value - 1):
             checked = 'checked'
