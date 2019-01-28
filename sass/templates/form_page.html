@@ -58,7 +58,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_stones_in_current }}
+                                {% get_html_for_radio_group "sic-rating" sass_sheet.biotope_stones_in_current %}
                             {% endautoescape %}
                         </td>
 
@@ -69,7 +69,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                 {{ sass_sheet.biotope_stones_out_of_current }}
+                                {% get_html_for_radio_group "sooc-rating" sass_sheet.biotope_stones_out_of_current %}
                             {% endautoescape %}
                         </td>
 
@@ -80,7 +80,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {% get_html_for_radio_group "test" "test4" %}
+                                {% get_html_for_radio_group "bedrock-rating" sass_sheet.boitope_bedrock %}
                             {% endautoescape %}
                         </td>
 
@@ -91,7 +91,7 @@
                         </td>
                         <td>
                            {% autoescape off %}
-                                {{ sass_sheet.biotope_aquatic_vegetation }}
+                                {% get_html_for_radio_group "aquatic-veg-rating" sass_sheet.biotope_aquatic_vegetation %}
                             {% endautoescape %}
                         </td>
 
@@ -102,7 +102,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_margin_veg_in_current }}
+                                {% get_html_for_radio_group "mic-rating" sass_sheet.biotope_margin_veg_in_current %}
                             {% endautoescape %}
                         </td>
 
@@ -113,7 +113,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_margin_veg_out_of_current }}
+                                {% get_html_for_radio_group "mooc-rating" sass_sheet.biotope_margin_veg_out_of_current %}
                             {% endautoescape %}
                         </td>
 
@@ -124,7 +124,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_gravel }}
+                                {% get_html_for_radio_group "gravel-rating" sass_sheet.biotope_gravel %}
                             {% endautoescape %}
                         </td>
 
@@ -135,7 +135,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_sand }}
+                                {% get_html_for_radio_group "sand-rating" sass_sheet.biotope_sand %}
                             {% endautoescape %}
                         </td>
 
@@ -146,7 +146,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_mud }}
+                                {% get_html_for_radio_group "mud-rating" sass_sheet.biotope_mud %}
                             {% endautoescape %}
                         </td>
 
@@ -157,7 +157,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_hand_picking }}
+                                {% get_html_for_radio_group "hand-picking-rating" sass_sheet.biotope_hand_picking %}
                             {% endautoescape %}
                         </td>
 
