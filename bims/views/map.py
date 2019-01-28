@@ -61,12 +61,12 @@ class MapPageView(TemplateView):
         # Search panel titles
         date_title = get_key('DATE_TITLE')
         if not date_title:
-            date_title = 'DATE'
+            date_title = 'TEMPORAL SCALE'
         context['date_title'] = date_title
 
         spatial_scale = get_key('SPATIAL_SCALE_TITLE')
         if not spatial_scale:
-            spatial_scale = 'ADMINISTRATIVE AREA'
+            spatial_scale = 'SPATIAL SCALE'
         context['spatial_scale_title'] = spatial_scale
 
         # get date filter
