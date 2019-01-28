@@ -20,6 +20,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         acceptValidate: function () {
             var self = this;
             var badges = $('<span class="badge badge-success">Accepted</span>');
+            var acceptValidateButton = $('.accept-validate');
+            var cancelValidateButton = $('.cancel-validate');
+            acceptValidateButton.prop('disabled', true);
+            cancelValidateButton.prop('disabled', true);
             $.ajax({
                 url: '/api/validate-object/',
                 data: {'pk': self.model.get('id')},
@@ -38,6 +42,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         },
         acceptReject: function () {
             var self = this;
+            var acceptRejectButton = $('.accept-reject');
+            var cancelRejectButton = $('.cancel-reject');
+            acceptRejectButton.prop('disabled', true);
+            cancelRejectButton.prop('disabled', true);
             var badges = $('<span class="badge badge-danger">Rejected</span>');
             $.ajax({
                 url: '/api/reject-collection-data/',
