@@ -1713,6 +1713,8 @@ div:hover::-webkit-scrollbar {
     margin-top: -1px;
     border: 1px solid #dee2e6;
     padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .info-wrapper tr:nth-child(even) {
@@ -2220,4 +2222,14 @@ div:hover::-webkit-scrollbar {
 
 .sass-button {
     margin-top: 10px;
+}
+
+.popup-loading, .popup-error {
+    text-align: center;
+    font-size: 9pt;
+    font-style: oblique;
+}
+
+.popup-error {
+    color: darkred;
 }
