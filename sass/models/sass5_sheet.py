@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.contrib.gis.db import models
-from django import template
 from django.utils import timezone
 from bims.models import AbstractValidation
 from sass.enums.sass5_rating import SASS5Rating
@@ -198,7 +197,6 @@ class SASS5Sheet(AbstractValidation):
         blank=True
     )
 
-
     class Meta:
         """Meta class for project."""
         app_label = 'sass'
@@ -211,47 +209,8 @@ class SASS5Sheet(AbstractValidation):
             date=self.date
         )
 
-
-
     def __unicode__(self):
         return '{location_site} - {date}'.format(
             location_site=self.location_site.name,
             date=self.date
         )
-
-
-    def get_html_biotope_stones_in_current(self):
-        try:
-            value = self.biotope_stones_in_current[-1] - 0;
-        except:
-            value = 1
-        return self.get_html_for_radio_group('sic-rating', value)
-
-
-    @staticmethod
-    def get_html_for_radio_group(name, sass_rating):
-        try:
-            value = int(sass_rating[-1]);
-        except:
-            value = 1
-        result_html = ('<div class="form-control sass-radio-label" '
-                       'name="{name}">').format(name=name)
-
-        for x in range(0, 5):
-            if x == (value - 1):
-                checked = 'checked'
-            else:
-                checked = ''
-            if x == 0:
-                starting_space = ''
-            else:
-                starting_space = '&nbsp;&nbsp;&nbsp;'
-            result_html += ('{starting_space}{x}&nbsp;<input type="radio" '
-                            'name="{name}" value="{x}" '
-                            '{checked}>').format(
-                name=name,
-                checked=checked,
-                x=x + 1,
-                starting_space=starting_space)
-        result_html += '</div>'
-        return result_html
