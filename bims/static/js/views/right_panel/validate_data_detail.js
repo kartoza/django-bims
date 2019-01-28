@@ -20,8 +20,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         acceptValidate: function () {
             var self = this;
             var badges = $('<span class="badge badge-success">Accepted</span>');
-            var acceptValidateButton = $('.accept-validate');
-            var cancelValidateButton = $('.cancel-validate');
+            var acceptValidateButton = this.$el.find('.accept-validate');
+            var cancelValidateButton = this.$el.find('.cancel-validate');
             acceptValidateButton.prop('disabled', true);
             cancelValidateButton.prop('disabled', true);
             $.ajax({
@@ -42,8 +42,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone,
         },
         acceptReject: function () {
             var self = this;
-            var acceptRejectButton = $('.accept-reject');
-            var cancelRejectButton = $('.cancel-reject');
+            var acceptRejectButton = this.$el.find('.accept-reject');
+            var cancelRejectButton = this.$el.find('.cancel-reject');
             acceptRejectButton.prop('disabled', true);
             cancelRejectButton.prop('disabled', true);
             var badges = $('<span class="badge badge-danger">Rejected</span>');
