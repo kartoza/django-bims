@@ -490,7 +490,7 @@
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
-            {% if perms.bims.can_upload_csv %}
+            {% if perms.bims.can_upload_csv or perms.bims.can_add_single_occurrence %}
                 <div class="upload-data sub-control-panel" data-toggle="popover"
                      data-placement="right" data-trigger="hover"
                      data-content="Capture Single Occurrence">

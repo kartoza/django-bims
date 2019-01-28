@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(name='bims.tasks.update_search_index', queue='update')
 def update_search_index():
-    call_command('update_index')
+    call_command('rebuild_index', verbosity=0, interactive=False)
 
 
 @shared_task(name='bims.tasks.update_cluster', queue='update')
