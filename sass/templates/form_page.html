@@ -1,7 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
 {% load jsonify %}
-
 {% block subtitle %}
     SASS
 {% endblock %}
@@ -30,6 +29,7 @@
 {% endblock %}
 
 {% block body_content %}
+
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
@@ -69,7 +69,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_stones_out_of_current }}
+                                 {{ sass_sheet.biotope_stones_out_of_current }}
                             {% endautoescape %}
                         </td>
 
@@ -80,7 +80,7 @@
                         </td>
                         <td>
                             {% autoescape off %}
-                                {{ sass_sheet.biotope_bedrock }}
+                                {% get_html_for_radio_group "test" "test4" %}
                             {% endautoescape %}
                         </td>
 
