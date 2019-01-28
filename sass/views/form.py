@@ -178,7 +178,10 @@ class FormView(UserPassesTestMixin, TemplateView):
         if sass_id:
             sass_sheet = SASS5Sheet.objects.filter(pk=sass_id)
             context['sass_sheet'] = sass_sheet.values()[0]
-
+            sass_5_value = context['sass_sheet']['biotope_stones_in_current']
+            context['sass_sheet']['biotope_stones_in_current'] = \
+                SASS5Sheet.get_html_for_radio_group('sic-rating', sass_5_value)
+        
         return context
 
     @method_decorator(login_required)
