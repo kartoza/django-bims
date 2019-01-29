@@ -2251,6 +2251,10 @@ div:hover::-webkit-scrollbar {
     height: 100%;
 }
 
+#filter_collectors_chosen .chosen-container {
+    height: 300%;
+}
+
 #filter_study_reference_chosen .search-choice {
     line-height: 150%;
     height: 100%;
@@ -2259,3 +2263,10 @@ div:hover::-webkit-scrollbar {
 #filter_study_reference_chosen input {
     height: 100%;
 }
+
+#filter_study_reference_chosen .chosen-container {
+    height: 300%;
+}
+
+
+
