@@ -430,6 +430,7 @@ define([
         clearFilter: function (e) {
             var target = $(e.target);
             target.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            target.closest('.row').find('select').val('').trigger("chosen:updated");
             if (target.closest('.row').find('#year-from').length > 0) {
                 this.yearSlider.set([this.startYear, this.endYear]);
                 target.closest('.row').find('#year-from').html(this.startYear);

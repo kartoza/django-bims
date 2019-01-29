@@ -2243,10 +2243,19 @@ div:hover::-webkit-scrollbar {
 }
 
 #filter_collectors_chosen .search-choice {
-    line-height: 225%;
+    line-height: 150%;
     height: 100%;
 }
 
 #filter_collectors_chosen input {
+    height: 100%;
+}
+
+#filter_study_reference_chosen .search-choice {
+    line-height: 150%;
+    height: 100%;
+}
+
+#filter_study_reference_chosen input {
     height: 100%;
 }
