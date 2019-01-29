@@ -178,7 +178,6 @@ class FormView(UserPassesTestMixin, TemplateView):
         if sass_id:
             sass_sheet = SASS5Sheet.objects.filter(pk=sass_id)
             context['sass_sheet'] = sass_sheet.values()[0]
-
         return context
 
     @method_decorator(login_required)
