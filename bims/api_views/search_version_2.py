@@ -143,6 +143,7 @@ class SearchVersion2(object):
 
         filters = dict()
         filters['validated'] = True
+        filters['taxonomy__isnull'] = False
         if self.categories:
             filters['category__in'] = self.categories
         if self.reference_category:

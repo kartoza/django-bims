@@ -2240,3 +2240,7 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
     background-color: rgba(32, 171, 15, 0.05);
 }
+
+.search-result-title-panel {
+    min-height: 12px;
+}
