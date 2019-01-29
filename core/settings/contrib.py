@@ -82,6 +82,7 @@ try:
         'bims.context_processor.custom_navbar_url',
         'bims.context_processor.google_analytic_key',
         'bims.context_processor.is_sass_enabled',
+        'bims.context_processor.bims_preferences',
         'bims.context_processor.application_name'
     ]
 except KeyError:
@@ -312,3 +313,16 @@ try:
     SASS_ENABLED = ast.literal_eval(os.environ.get('SASS_ENABLED', 'False'))
 except ValueError:
     SASS_ENABLED = False
+
+# Bims site preferences
+BIMS_PREFERENCES = {
+    'enable_module_filter': ast.literal_eval(
+        os.environ.get('ENABLE_MODULE_FILTER', 'False')
+    ),
+    'enable_catchment_filter': ast.literal_eval(
+        os.environ.get('ENABLE_CATCHMENT_FILTER', 'False')
+    ),
+    'enable_ecoregion_filter': ast.literal_eval(
+        os.environ.get('ENABLE_ECOREGION_FILTER', 'False')
+    ),
+}

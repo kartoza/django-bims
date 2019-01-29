@@ -96,7 +96,7 @@
             </div>
         </div>
 
-        {% if modules_exists %}
+        {% if bims_preferences.enable_module_filter %}
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
                     MODULE <i
@@ -137,34 +137,6 @@
                 <button class="clear-filter">Clear Filter</button>
             </div>
         </div>
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                ORIGIN <i
-                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row" style="display: none" id="origin-filter-wrapper">
-                <div class="btn-group-wrapper text-center">
-                <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
-                <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
-                <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
-                <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
-                    <button type="button" class="btn origin-btn btn-secondary" data-origin="alien">Non-native</button>
-                    <button type="button" class="btn origin-btn btn-secondary" data-origin="translocated">Translocated</button>
-                    <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
-                    <div class="native-origin-dropdown dropdown-menu" aria-labelledby="native-origin-btn">
-                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All endemic </div>
-                    </div>
-                </div>
-                </div>
-            <div class="col-lg-12 filter-content" id="filter-category">
-            </div>
-            <div class="button-filter-wrapper">
-                <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter clear-origin-filter">Clear Filter</button>
-            </div>
-        </div>
 
         <div class="spatial-filter-wrapper"></div>
 
@@ -203,6 +175,35 @@
             </div>
         {% endif %}
 
+          <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                ORIGIN <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row" style="display: none" id="origin-filter-wrapper">
+                <div class="btn-group-wrapper text-center">
+                <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
+                <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
+                <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
+                <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
+                    <button type="button" class="btn origin-btn btn-secondary" data-origin="alien">Non-native</button>
+                    <button type="button" class="btn origin-btn btn-secondary" data-origin="translocated">Translocated</button>
+                    <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
+                    <div class="native-origin-dropdown dropdown-menu" aria-labelledby="native-origin-btn">
+                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All endemic </div>
+                    </div>
+                </div>
+                </div>
+            <div class="col-lg-12 filter-content" id="filter-category">
+            </div>
+            <div class="button-filter-wrapper">
+                <button class="apply-filter">Apply Filter</button>
+                <button class="clear-filter clear-origin-filter">Clear Filter</button>
+            </div>
+        </div>
+
         {% if use_conservation_status %}
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
@@ -229,24 +230,7 @@
             </div>
         {% endif %}
 
-
-        {% if COLLECTOR_FILTER %}
-            <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
-                    COLLECTOR <i
-                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-                </div>
-            </div>
-            <div class="row" style="display: none">
-                <div class="col-lg-12 filter-content" id="filter-collectors">
-                </div>
-                <div class="button-filter-wrapper">
-                    <button class="apply-filter">Apply Filter</button>
-                    <button class="clear-filter">Clear Filter</button>
-                </div>
-            </div>
-        {% endif %}
+        <div class="reference-category-wrapper"></div>
 
         <div class="study-reference-wrapper">
             <div class="row sub-filter">
@@ -267,9 +251,23 @@
             </div>
         </div>
 
-        <div class="reference-category-wrapper"></div>
-
-
+         {% if COLLECTOR_FILTER %}
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    COLLECTOR/ASSESSOR <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row" style="display: none">
+                <div class="col-lg-12 filter-content" id="filter-collectors">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter">Apply Filter</button>
+                    <button class="clear-filter">Clear Filter</button>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </script>
 
@@ -333,13 +331,15 @@
         </div>
         <div class="col-lg-12 filter-content" id="spatial-scale-container" style="display: none;">
         </div>
+        {% if bims_preferences.enable_catchmet_filter %}
         <div class="small-subtitle spatial-scale-sub-panel">
             Catchment
             <i class="fa fa-angle-down pull-right"></i>
         </div>
         <div class="col-lg-12 filter-content" id="river-catchment-container" style="display: none;">
         </div>
-
+        {% endif %}
+        {% if bims_preferences.enable_ecoregion_filter %}
         <div class="col-lg-12 other-filters">
             <div class="container-fluid row">
                 <div class="col-lg-5">Ecoregion</div>
@@ -350,6 +350,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         <div class="spatial-scale-action">
             <button class="spatial-scale-apply-filter" disabled>Apply Filter
             </button>
@@ -487,7 +488,7 @@
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
         {% if user.is_authenticated %}
-            {% if perms.bims.can_upload_csv %}
+            {% if perms.bims.can_upload_csv or perms.bims.can_add_single_occurrence %}
                 <div class="upload-data sub-control-panel" data-toggle="popover"
                      data-placement="right" data-trigger="hover"
                      data-content="Capture Single Occurrence">

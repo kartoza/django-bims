@@ -276,6 +276,14 @@ html, body, .map, .map-wrapper, #map-container {
     margin-left: 85px;
     margin-top: 60px;
     z-index: 100;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    max-height: 90%;
+}
+
+.map-control-panel-box::-webkit-scrollbar
+{
+    width: 0px;
 }
 
 .map-search-result {
@@ -1713,6 +1721,8 @@ div:hover::-webkit-scrollbar {
     margin-top: -1px;
     border: 1px solid #dee2e6;
     padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .info-wrapper tr:nth-child(even) {
@@ -2003,6 +2013,7 @@ div:hover::-webkit-scrollbar {
     color: rgb(65, 65, 65);
     width: 100%;
     padding: 5px;
+    height: 25px;
 }
 
 #spatial-scale-container {
@@ -2219,4 +2230,14 @@ div:hover::-webkit-scrollbar {
 
 .sass-button {
     margin-top: 10px;
+}
+
+.popup-loading, .popup-error {
+    text-align: center;
+    font-size: 9pt;
+    font-style: oblique;
+}
+
+.popup-error {
+    color: darkred;
 }

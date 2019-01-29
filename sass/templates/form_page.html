@@ -1,7 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
 {% load jsonify %}
-
 {% block subtitle %}
     SASS
 {% endblock %}
@@ -30,6 +29,7 @@
 {% endblock %}
 
 {% block body_content %}
+
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
@@ -57,13 +57,9 @@
                             Stones In Current (SIC)
                         </td>
                         <td>
-                            <select class="form-control" name="sic-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "sic-rating" sass_sheet.biotope_stones_in_current %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -72,13 +68,9 @@
                             Stones Out Of Current (SOOC)
                         </td>
                         <td>
-                            <select class="form-control" name="sooc-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "sooc-rating" sass_sheet.biotope_stones_out_of_current %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -87,13 +79,9 @@
                             Bedrock
                         </td>
                         <td>
-                            <select class="form-control" name="bedrock-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "bedrock-rating" sass_sheet.biotope_bedrock  %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -102,13 +90,9 @@
                             Aquatic Veg
                         </td>
                         <td>
-                            <select class="form-control" name="aquatic-veg-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                           {% autoescape off %}
+                                {% get_html_for_radio_group "aquatic-veg-rating" sass_sheet.biotope_aquatic_vegetation %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -117,13 +101,9 @@
                             MargVeg In Current
                         </td>
                         <td>
-                            <select class="form-control" name="mic-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "mic-rating" sass_sheet.biotope_margin_veg_in_current %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -132,13 +112,9 @@
                             MargVeg Out Of Current
                         </td>
                         <td>
-                            <select class="form-control" name="mooc-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "mooc-rating" sass_sheet.biotope_margin_veg_out_of_current %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -147,13 +123,9 @@
                             Gravel
                         </td>
                         <td>
-                            <select class="form-control" name="gravel-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "gravel-rating" sass_sheet.biotope_gravel %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -162,13 +134,9 @@
                             Sand
                         </td>
                         <td>
-                            <select class="form-control" name="sand-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "sand-rating" sass_sheet.biotope_sand %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -177,13 +145,9 @@
                             Mud
                         </td>
                         <td>
-                            <select class="form-control" name="mud-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "mud-rating" sass_sheet.biotope_mud %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>
@@ -192,13 +156,9 @@
                             Hand picking/Visual observation
                         </td>
                         <td>
-                            <select class="form-control" name="hand-picking-rating">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </select>
+                            {% autoescape off %}
+                                {% get_html_for_radio_group "hand-picking-rating" sass_sheet.biotope_hand_picking %}
+                            {% endautoescape %}
                         </td>
 
                     </tr>

@@ -41,6 +41,15 @@ def is_sass_enabled(request):
     return {'is_sass_enabled': settings.SASS_ENABLED}
 
 
+def bims_preferences(request):
+    """
+    For all bims preferences
+    """
+    return {
+        'bims_preferences': settings.BIMS_PREFERENCES
+    }
+
+
 def google_analytic_key(request):
     """
     Return google analytic key

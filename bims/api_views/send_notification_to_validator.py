@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.models import Permission
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 from geonode.people.models import Profile
@@ -19,14 +20,18 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
         permission = \
             Permission.objects.filter(
                 content_type__app_label='bims', codename='can_validate_data')
-        validators = \
+        validators = (
             Profile.objects.filter(
                 Q(user_permissions=permission) |
                 Q(groups__permissions=permission)
-            ).distinct()
-        validator_emails = []
-        for validator in validators:
-            validator_emails.append(validator.email)
+            ).distinct().values_list('email', flat=True)
+        )
+        superusers = (
+            Profile.objects.filter(
+                is_superuser=True
+            ).values_list('email', flat=True)
+        )
+        validator_emails = list(validators) + list(superusers)
 
         if pk is not None:
             try:
@@ -38,15 +43,17 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                         content_type__app_label='bims',
                         codename='can_validate_%s' % taxon_classname.lower()
                     )
-                    class_validators = Profile.objects.filter(
-                        Q(user_permissions=class_permission) |
-                        Q(groups__permissions=class_permission)
+                    class_validators = (
+                        Profile.objects.filter(
+                            Q(user_permissions=class_permission) |
+                            Q(groups__permissions=class_permission)
+                        ).values_list('email', flat=True)
                     )
-                    for validator in class_validators:
-                        validator_emails.append(validator.email)
+                    validator_emails += list(class_validators)
                 except AttributeError:
                     pass
 
+                validator_emails = filter(None, validator_emails)
                 bio_record.ready_for_validation = True
                 bio_record.save()
                 send_mail(
@@ -55,7 +62,7 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                     'The following object is ready to be reviewed:\n'
                     '{}://{}/nonvalidated-list/?pk={}\n\n'
                     'Sincerely,\nBIMS Team.'.format(scheme, site, pk),
-                    '{}'.format(request.user.email),
+                    '{}'.format(settings.SERVER_EMAIL),
                     validator_emails,
                     fail_silently=False
                 )
