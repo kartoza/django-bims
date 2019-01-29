@@ -191,14 +191,26 @@ class SearchVersion2(object):
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
 
-        collections = bio.annotate(name=F('taxonomy__scientific_name'),
-                                   taxon_id=F('taxonomy_id')).values(
-            'taxon_id', 'name').annotate(total=Count('taxonomy'))
-        sites = bio.annotate(name=F('site__name'),
-                             site_id=F('site__id')).values(
-            'site_id', 'name').annotate(total=Count('site'))
+        return bio
+
+    def get_summary_data(self):
+        biological_records = self.process_search()
+
+        collections = (
+            biological_records.annotate(
+                name=F('taxonomy__scientific_name'),
+                taxon_id=F('taxonomy_id')).values(
+                'taxon_id', 'name').annotate(total=Count('taxonomy'))
+        )
+
+        sites = (
+            biological_records.annotate(
+                name=F('site__name'),
+                site_id=F('site__id')).values(
+                'site_id', 'name').annotate(total=Count('site')))
+
         return {
-            'total_records': len(bio),
+            'total_records': len(biological_records),
             'total_sites': len(sites),
             'records': list(collections),
             'sites': list(sites)
