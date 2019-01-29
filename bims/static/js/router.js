@@ -27,6 +27,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.parameters['endemic'] = '';
             this.parameters['conservationStatus'] = '';
             this.parameters['riverCatchment'] = '';
+            this.parameters['taxon'] = '';
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }

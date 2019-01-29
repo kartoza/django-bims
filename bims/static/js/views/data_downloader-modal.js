@@ -9,7 +9,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
             'click .row-format': 'download'
         },
         parameters: {
-            taxon: '', zoom: 0, bbox: [], search: '',
+            taxon: '', zoom: 0, bbox: [], search: '', siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
             boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: ''
         },
@@ -46,21 +46,21 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
                 return;
             }
             var format = $(e.target).data("format");
-            this.parameters['fileType'] = format;
+            var parameters = $.extend(true, {}, filterParameters);
+            parameters['fileType'] = format;
 
             if (format === 'csv') {
                 $(this.notification).html('downloading ' + format);
                 $(this.notification).show();
                 this.$el.find('.row-format').addClass('disabled');
 
-                var parameter = $.param(this.parameters);
-                var url = this.url + this.apiParameters(this.parameters);
+                var url = this.url + this.apiParameters(parameters);
                 if (this.xhr) {
                     this.xhr.abort();
                 }
                 this.downloading(url);
             } else {
-                location.replace(this.url + this.apiParameters(this.parameters));
+                location.replace(this.url + this.apiParameters(filterParameters));
             }
 
         },

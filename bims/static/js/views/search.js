@@ -337,6 +337,7 @@ define([
                 Shared.Router.clearSearch();
                 return false
             }
+            filterParameters = parameters;
             this.searchResultCollection.search(
                 this.searchPanel,
                 parameters,
