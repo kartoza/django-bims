@@ -33,6 +33,7 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import SearchObjects
+from bims.api_views.search_version_2 import SearchVersion2APIView
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_collection_data import RejectCollectionData
 from bims.api_views.get_biorecord import (
@@ -49,6 +50,7 @@ from bims.api_views.documents import DocumentList
 from bims.api_views.module_summary import ModuleSummary
 from bims.api_views.endemism import EndemismList
 from bims.api_views.river_catchment import RiverCatchmentList
+from bims.api_views.site_search_result import SiteSearchResult
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -80,6 +82,8 @@ urlpatterns = [
         CollectionDownloader.as_view()),
     url(r'^search/$',
         SearchObjects.as_view(), name='search-api'),
+    url(r'^search-v2/$',
+        SearchVersion2APIView.as_view(), name='search-api-version-2'),
     url(r'^boundary/geojson$',
         BoundaryGeojson.as_view(), name='boundary-geojson'),
     url(r'^list-boundary/$',
@@ -129,4 +133,7 @@ urlpatterns = [
     url(r'^river-catchment-list/$',
         RiverCatchmentList.as_view(),
         name='river-catchment-list'),
+    url(r'^site-search-result/$',
+        SiteSearchResult.as_view(),
+        name='site-search-result'),
 ]
