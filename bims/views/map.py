@@ -47,15 +47,10 @@ class MapPageView(TemplateView):
         categories = BiologicalCollectionRecord.CATEGORY_CHOICES
         context['collection_category'] = [list(x) for x in categories]
 
-        bio_childrens = BiologicalCollectionRecord.get_children_model()
-
-        # add additional module
-        context['biological_modules'] = {
-            bio._meta.app_label: str(bio._meta.label) for bio in bio_childrens
-        }
         # add base module
-        context['modules_exists'] = bool(context['biological_modules'])
-        context['biological_modules']['base'] = 'base'
+        context['biological_modules'] = {
+            'base': 'base'
+        }
 
         # Additional filters
         context['use_ecological_condition'] = bool(
@@ -66,12 +61,12 @@ class MapPageView(TemplateView):
         # Search panel titles
         date_title = get_key('DATE_TITLE')
         if not date_title:
-            date_title = 'DATE'
+            date_title = 'TEMPORAL SCALE'
         context['date_title'] = date_title
 
         spatial_scale = get_key('SPATIAL_SCALE_TITLE')
         if not spatial_scale:
-            spatial_scale = 'ADMINISTRATIVE AREA'
+            spatial_scale = 'SPATIAL SCALE'
         context['spatial_scale_title'] = spatial_scale
 
         # get date filter

@@ -12,6 +12,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>",
         LocationSiteDetailXHRRequest: null,
         TaxonDetailXHRRequest: null,
+        GetFeatureXHRRequest: [],
         Dispatcher: _.extend({}, Backbone.Events),
         Router: {},
         ClusterSize: 30,
@@ -21,6 +22,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         PoliticalRegionBoundaries: null,
         AdminAreaSelected: [],
         LegendsDisplayed: false,
+        GetFeatureRequested: false,
         CurrentState: {
             FETCH_CLUSTERS: false,
             SEARCH: false,

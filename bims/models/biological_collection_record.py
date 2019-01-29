@@ -142,6 +142,7 @@ class BiologicalCollectionRecord(
             ('can_upload_csv', 'Can upload CSV'),
             ('can_upload_shapefile', 'Can upload Shapefile'),
             ('can_validate_data', 'Can validate data'),
+            ('can_add_single_occurrence', 'Can add single Occurrence'),
         )
 
     def on_post_save(self):
