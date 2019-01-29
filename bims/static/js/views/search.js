@@ -125,10 +125,14 @@ define([
                             checked = 'checked';
                         }
                         if (data[i]) {
-                            $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '" ' + checked + '> ' + data[i] + '<br>');
+                            $('#filter-collectors').append('<option ' +
+                                ' value="' + data[i] + '"> ' + data[i] + '</option>');
                         }
                         self.filtersReady['collector'] = true;
                     }
+                    $('#filter-collectors').chosen({
+
+                        })
                 }
             });
 

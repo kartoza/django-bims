@@ -2241,3 +2241,11 @@ div:hover::-webkit-scrollbar {
 .popup-error {
     color: darkred;
 }
+
+#filter_collectors_chosen .search-choice {
+    line-height: 225%;
+}
+
+#filter_collectors_chosen input {
+    height: 110%;
+}
