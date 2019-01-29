@@ -129,7 +129,8 @@ define([
 
                         if (data[i]) {
                             $('#filter-collectors').append(`
-                                <option value="${data[i]}" ${data[i].selected}>${data[i]}</option>`);
+                                <option 
+                                value="${data[i]}" ${data[i].selected}>${data[i]}</option>`);
                         }
                         self.filtersReady['collector'] = true;
                     }
@@ -225,9 +226,7 @@ define([
             }
 
             var collectorValue = [];
-            $('input[name=collector-value]:checked').each(function () {
-                collectorValue.push($(this).val())
-            });
+            var collectorValue = $("#filter-collectors").chosen().val();
             if (collectorValue.length === 0) {
                 collectorValue = ''
             } else {
