@@ -431,7 +431,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         downloadChart: function (title, graph_canvas) {
             var img = new Image();
             var ctx = graph_canvas.getContext('2d');
-            img.src='/static/img/fbis-stamp.png';
+            img.src='/static/img/bims-stamp.png';
             img.onload = function() {
                 ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
                     graph_canvas.scrollHeight - img.height - 5);
