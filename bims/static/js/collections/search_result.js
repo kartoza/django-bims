@@ -20,6 +20,7 @@ define([
         recordsData: [],
         totalRecords: 0,
         totalSites: 0,
+        totalTaxa: 0,
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -116,15 +117,29 @@ define([
             if (response.hasOwnProperty('total_sites')) {
                 this.totalSites = response['total_sites'];
             }
+            if (response.hasOwnProperty('total_unique_taxa')) {
+                this.totalTaxa = response['total_unique_taxa'];
+            }
             this.renderCollection();
         },
         renderCollection: function () {
             var self = this;
-            var searchResultTitle = this.searchValue;
+            var searchResultTitleDiv = $('<div>');
+            searchResultTitleDiv.addClass('search-result-title-panel');
+            searchResultTitleDiv.html(this.searchValue);
             if (this.isFuzzySearch) {
-                searchResultTitle = 'similar to ' + searchResultTitle;
+                searchResultTitleDiv.html('similar to ' + this.searchValue)
             }
-            this.searchPanel.updatesearchPanelTitle(searchResultTitle);
+
+            let totalSearchResults = $('<div>');
+            totalSearchResults.addClass('total-search-results');
+            totalSearchResults.html(this.totalRecords.toString() + ' records');
+
+            var searchResultHeader = $('<div>');
+            searchResultHeader.append(searchResultTitleDiv);
+            searchResultHeader.append(totalSearchResults);
+
+            this.searchPanel.updatesearchPanelTitle(searchResultHeader);
             if (this.models.length === 1) {
                 if (this.models[0]['attributes'].hasOwnProperty('results')) {
                     self.searchPanel.fillPanelHtml(this.models[0]['attributes']['results']);
@@ -157,6 +172,7 @@ define([
 
             var recordsCount = this.totalRecords.toString();
             var siteCount = this.totalSites.toString();
+            var taxaCount = this.totalTaxa.toString();
             var speciesListName = [];
 
             if (self.status === 'finished') {
@@ -204,19 +220,17 @@ define([
             $searchResultsWrapper.find('.search-results-total').unbind();
 
             if (self.status === 'processing') {
-                recordsCount += ' ...loading';
+                taxaCount += ' ...loading';
                 siteCount += ' ...loading';
             } else if (self.status === 'finished') {
                 $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
             }
-            taxaListNumberElm.html(recordsCount);
+            taxaListNumberElm.html(taxaCount);
             siteListNumberElm.html(siteCount);
             if (self.sitesData.length < self.totalSites) {
                 var searchModel = new SearchModel({
-                    id: 1,
-                    count: 1,
-                    name: 'show more',
-                    record_type: 'site'
+                    name: 'Show More',
+                    record_type: 'show-more-site'
                 });
                 var searchResultView = new SearchResultView({
                     model: searchModel

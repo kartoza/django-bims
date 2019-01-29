@@ -36,6 +36,7 @@ class SearchVersion2APIView(APIView):
             if 'sites' in results:
                 results['total_unique_sites'] = len(results['sites'])
                 results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
+            results['total_unique_taxa'] = len(results['records'])
             return Response(results)
 
         # Create process id
@@ -140,7 +141,8 @@ class SearchVersion2(object):
         else:
             bio = BiologicalCollectionRecord.objects.all()
 
-        filters = {}
+        filters = dict()
+        filters['validated'] = True
         if self.categories:
             filters['category__in'] = self.categories
         if self.reference_category:

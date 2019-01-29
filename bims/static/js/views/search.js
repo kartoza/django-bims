@@ -127,8 +127,8 @@ define([
                         if (data[i]) {
                             $('#filter-collectors').append('<input type="checkbox" name="collector-value" value="' + data[i] + '" ' + checked + '> ' + data[i] + '<br>');
                         }
-                        self.filtersReady['collector'] = true;
                     }
+                    self.filtersReady['collector'] = true;
                 }
             });
 
@@ -151,8 +151,8 @@ define([
                                     'value="' + data[i]['reference'] + '" ' + checked + '> ' + data[i]['reference'] + '<br>');
                             }
                         }
-                        self.filtersReady['study-reference'] = true;
                     }
+                    self.filtersReady['study-reference'] = true;
                 }
             });
 
