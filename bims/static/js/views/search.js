@@ -119,19 +119,20 @@ define([
                 url: listCollectorAPIUrl,
                 dataType: 'json',
                 success: function (data) {
+                    selected_collectors = [];
                     for (var i = 0; i < data.length; i++) {
                         if ($.inArray(data[i], self.initialSelectedCollectors) > -1) {
-                            data[i].selected = 'selected="selected"';
+                            selected_collectors[i] = 'selected';
                         }
                         else {
-                            data[i].selected = '';
+                            selected_collectors[i] = '';
                         }
 
                         if (data[i]) {
                             $('#filter-collectors').append(`
                                 <option 
-                                value="${data[i]}" ${data[i].selected}>${data[i]}</option>`);
-                        }
+                                value="${data[i]}" ${selected_collectors[i]}>${data[i]}</option>`);
+                        };
                         self.filtersReady['collector'] = true;
                     }
                     $('#filter-collectors').chosen({})
@@ -226,7 +227,8 @@ define([
             }
 
             var collectorValue = [];
-            var collectorValue = $("#filter-collectors").chosen().val();
+
+            var collectorValue = $("#filter-collectors").val();
             if (collectorValue.length === 0) {
                 collectorValue = ''
             } else {
