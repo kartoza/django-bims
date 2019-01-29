@@ -119,23 +119,22 @@ define([
                 url: listCollectorAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    selected_collectors = [];
+                    var selected;
                     for (var i = 0; i < data.length; i++) {
                         if ($.inArray(data[i], self.initialSelectedCollectors) > -1) {
-                            selected_collectors[i] = 'selected';
+                            selected = 'selected';
                         }
                         else {
-                            selected_collectors[i] = '';
+                            selected = '';
                         }
 
                         if (data[i]) {
                             $('#filter-collectors').append(`
-                                <option 
-                                value="${data[i]}" ${selected_collectors[i]}>${data[i]}</option>`);
-                        };
+                                <option value="${data[i]}" ${selected}>${data[i]}</option>`);
+                        }
                         self.filtersReady['collector'] = true;
                     }
-                    $('#filter-collectors').chosen({})
+                    $('#filter-collectors').chosen({});
                 }
             });
 
@@ -147,19 +146,23 @@ define([
                     if (data.length === 0) {
                         $('.study-reference-wrapper').hide();
                     } else {
+                        var selected;
                         for (var i = 0; i < data.length; i++) {
-                            var checked = '';
                             if ($.inArray(data[i]['reference'], self.initialSelectedStudyReference) > -1) {
-                                checked = 'checked';
+                                selected = 'selected';
+                            }
+                            else
+                            {
+                                selected = '';
                             }
                             if (data[i]) {
-                                $('#filter-study-reference').append('<input type="checkbox" ' +
-                                    'name="reference-value" ' +
-                                    'value="' + data[i]['reference'] + '" ' + checked + '> ' + data[i]['reference'] + '<br>');
+                                $('#filter-study-reference').append(`
+                                    <option value="${data[i]['reference']}" ${selected}>${data[i]['reference']}</option>`);
                             }
                         }
                         self.filtersReady['study-reference'] = true;
                     }
+                    $('#filter-study-reference').chosen({});
                 }
             });
 
@@ -226,8 +229,6 @@ define([
                 referenceCategory = '';
             }
 
-            var collectorValue = [];
-
             var collectorValue = $("#filter-collectors").val();
             if (collectorValue.length === 0) {
                 collectorValue = ''
@@ -242,10 +243,7 @@ define([
             }
 
             // reference
-            var referenceValue = [];
-            $('input[name=reference-value]:checked').each(function () {
-                referenceValue.push($(this).val())
-            });
+            var referenceValue = $("#filter-study-reference").val();
             if (referenceValue.length === 0) {
                 referenceValue = ''
             } else {
