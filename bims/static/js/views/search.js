@@ -120,19 +120,20 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     for (var i = 0; i < data.length; i++) {
-                        var checked = '';
                         if ($.inArray(data[i], self.initialSelectedCollectors) > -1) {
-                            checked = 'checked';
+                            data[i].selected = 'selected="selected"';
                         }
+                        else {
+                            data[i].selected = '';
+                        }
+
                         if (data[i]) {
-                            $('#filter-collectors').append('<option ' +
-                                ' value="' + data[i] + '"> ' + data[i] + '</option>');
+                            $('#filter-collectors').append(`
+                                <option value="${data[i]}" ${data[i].selected}>${data[i]}</option>`);
                         }
                         self.filtersReady['collector'] = true;
                     }
-                    $('#filter-collectors').chosen({
-
-                        })
+                    $('#filter-collectors').chosen({})
                 }
             });
 

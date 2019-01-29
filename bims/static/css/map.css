@@ -2244,6 +2244,7 @@ div:hover::-webkit-scrollbar {
 
 #filter_collectors_chosen .search-choice {
     line-height: 225%;
+    height: 100%;
 }
 
 #filter_collectors_chosen input {
