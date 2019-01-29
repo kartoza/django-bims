@@ -51,7 +51,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             });
             return new ol.layer.Group({
                 title: 'Terrain',
-                layers: [openMapTiles, hillshading, contours]
+                layers: [openMapTiles, hillshading]
             });
         },
         getPositronBasemap: function () {

@@ -120,6 +120,9 @@ define([
             if (response.hasOwnProperty('total_unique_taxa')) {
                 this.totalTaxa = response['total_unique_taxa'];
             }
+            if (response.hasOwnProperty('sites_raw_query')) {
+                this.sitesRawQuery = response['sites_raw_query'];
+            }
             this.renderCollection();
         },
         renderCollection: function () {
@@ -176,6 +179,7 @@ define([
             var speciesListName = [];
 
             if (self.status === 'finished') {
+                Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
                 $.each(this.recordsData, function (key, data) {
                     var searchModel = new SearchModel({
                         id: data['taxon_id'],

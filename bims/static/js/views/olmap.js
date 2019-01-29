@@ -83,13 +83,11 @@ define([
             Shared.Dispatcher.on('map:removeHighlightPinnedFeature', this.removeHighlightPinnedFeature, this);
             Shared.Dispatcher.on('map:switchHighlightPinned', this.switchHighlightPinned, this);
             Shared.Dispatcher.on('map:closeHighlightPinned', this.closeHighlightPinned, this);
-            Shared.Dispatcher.on('map:refetchRecords', this.refetchRecords, this);
             Shared.Dispatcher.on('map:zoomToHighlightPinnedFeatures', this.zoomToHighlightPinnedFeatures, this);
             Shared.Dispatcher.on('map:boundaryEnabled', this.boundaryEnabled, this);
-            Shared.Dispatcher.on('map:finishFetching', this.fetchingFinish, this);
-            Shared.Dispatcher.on('map:startFetching', this.fetchingStart, this);
             Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
             Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
+            Shared.Dispatcher.on('map:updateBiodiversityLayerParams', this.updateBiodiversityLayerParams, this);
             Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
@@ -413,7 +411,7 @@ define([
         },
         mapMoved: function () {
             var self = this;
-            self.fetchingRecords();
+            // self.fetchingRecords();
         },
         loadMap: function () {
             var self = this;
@@ -466,53 +464,6 @@ define([
             this.fetchingRecords();
             $('#fetching-error .call-administrator').show();
         },
-        fetchingStart: function () {
-            Shared.CurrentState.FETCH_CLUSTERS = true;
-            $('#fetching-error').hide();
-            $('#loading-warning').show();
-            if (this.fetchXhr) {
-                this.fetchXhr.abort();
-            }
-            this.mapInteractionEnabled = false;
-            this.map.getInteractions().forEach(function (interaction) {
-                interaction.setActive(false);
-            });
-            if (this.layers.biodiversitySource) {
-                this.layers.biodiversitySource.clear();
-            }
-            if (this.layers.locationSiteClusterSource) {
-                this.layers.locationSiteClusterSource.clear();
-            }
-        },
-        fetchingFinish: function () {
-            Shared.CurrentState.FETCH_CLUSTERS = false;
-            this.fetchingReset();
-            this.mapInteractionEnabled = true;
-            this.map.getInteractions().forEach(function (interaction) {
-                interaction.setActive(true);
-            });
-            if (this.layers.biodiversitySource) {
-                this.layers.biodiversitySource.clear();
-            }
-        },
-        fetchingError: function (err) {
-            if (err['textStatus'] !== "abort") {
-                $('#fetching-error').show();
-                $('#loading-warning').hide();
-            }
-            this.mapInteractionEnabled = true;
-            this.map.getInteractions().forEach(function (interaction) {
-                interaction.setActive(true);
-            });
-        },
-        fetchingReset: function () {
-            $('#fetching-error').hide();
-            $('#loading-warning').hide();
-            $('#fetching-error .call-administrator').hide();
-            if (this.layers.administrativeBoundarySource) {
-                this.layers.administrativeBoundarySource.clear();
-            }
-        },
         checkAdministrativeLevel: function () {
             var self = this;
             var zoomLevel = this.map.getView().getZoom();
@@ -539,84 +490,75 @@ define([
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
+            return;
             if (!this.layers.isBiodiversityLayerLoaded()) {
                 return
             }
             self.updateClusterBiologicalCollectionZoomExt();
-            if (!this.clusterBiologicalCollection.isActive()) {
-                var administrative = this.checkAdministrativeLevel();
-                if (administrative !== 'detail') {
-                    var zoomLevel = this.getCurrentZoom();
-
-                    if (administrative === this.clusterCollection.administrative) {
-                        return
-                    }
-                    this.fetchingReset();
-                    // generate boundary
-                    this.layers.changeLayerAdministrative(administrative);
-                    // if layer is shows
-                    if (!this.layers.isBiodiversityLayerShow()) {
-                        return;
-                    }
-
-                    this.previousZoom = zoomLevel;
-                    this.clusterCollection.updateUrl(administrative);
-                    if (this.clusterCollection.getCache()) {
-                        this.layers.biodiversitySource.clear();
-                        this.clusterCollection.applyCache();
-                    } else {
-                        this.fetchingStart();
-                        this.fetchXhr = this.clusterCollection.fetch({
-                            success: function () {
-                                self.fetchingFinish();
-                                self.clusterCollection.renderCollection()
-                            },
-                            error: function (xhr, text_status, error_thrown) {
-                                self.fetchingError(error_thrown);
-                            }
-                        });
-                    }
-                } else {
-                    // if layer is shows
-                    if (!this.layers.isBiodiversityLayerShow()) {
-                        return;
-                    }
-                    this.previousZoom = -1;
-                    this.clusterCollection.administrative = null;
-                    this.fetchingReset();
-                    this.fetchingStart();
-                    this.locationSiteCollection.updateUrl(
-                        this.getCurrentBbox(), this.getCurrentZoom());
-                    this.fetchXhr = this.locationSiteCollection.fetch({
-                        success: function () {
-                            self.fetchingFinish();
-                            self.locationSiteCollection.renderCollection()
-                        }, error: function (xhr, text_status, error_thrown) {
-                            self.fetchingError(error_thrown);
-                        }
-                    });
-                }
-            } else {
-                // if layer is shows
-                if (!this.layers.isBiodiversityLayerShow()) {
-                    return;
-                }
-            }
+            // if (!this.clusterBiologicalCollection.isActive()) {
+            //     var administrative = this.checkAdministrativeLevel();
+            //     if (administrative !== 'detail') {
+            //         var zoomLevel = this.getCurrentZoom();
+            //
+            //         if (administrative === this.clusterCollection.administrative) {
+            //             return
+            //         }
+            //         this.fetchingReset();
+            //         // generate boundary
+            //         this.layers.changeLayerAdministrative(administrative);
+            //         // if layer is shows
+            //         if (!this.layers.isBiodiversityLayerShow()) {
+            //             return;
+            //         }
+            //
+            //         this.previousZoom = zoomLevel;
+            //         this.clusterCollection.updateUrl(administrative);
+            //         if (this.clusterCollection.getCache()) {
+            //             this.layers.biodiversitySource.clear();
+            //             this.clusterCollection.applyCache();
+            //         } else {
+            //             this.fetchingStart();
+            //             this.fetchXhr = this.clusterCollection.fetch({
+            //                 success: function () {
+            //                     self.fetchingFinish();
+            //                     self.clusterCollection.renderCollection()
+            //                 },
+            //                 error: function (xhr, text_status, error_thrown) {
+            //                     self.fetchingError(error_thrown);
+            //                 }
+            //             });
+            //         }
+            //     } else {
+            //         // if layer is shows
+            //         if (!this.layers.isBiodiversityLayerShow()) {
+            //             return;
+            //         }
+            //         this.previousZoom = -1;
+            //         this.clusterCollection.administrative = null;
+            //         this.fetchingReset();
+            //         this.fetchingStart();
+            //         this.locationSiteCollection.updateUrl(
+            //             this.getCurrentBbox(), this.getCurrentZoom());
+            //         this.fetchXhr = this.locationSiteCollection.fetch({
+            //             success: function () {
+            //                 self.fetchingFinish();
+            //                 self.locationSiteCollection.renderCollection()
+            //             }, error: function (xhr, text_status, error_thrown) {
+            //                 self.fetchingError(error_thrown);
+            //             }
+            //         });
+            //     }
+            // } else {
+            //     // if layer is shows
+            //     if (!this.layers.isBiodiversityLayerShow()) {
+            //         return;
+            //     }
+            // }
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
             this.closeHighlight();
             if (!this.sidePanelView.isSidePanelOpen() && !this.mapControlPanel.searchView.searchPanel.isPanelOpen()) {
                 return
-            }
-            this.clusterBiologicalCollection.filterClustersByTaxon(taxonID, taxonName);
-            if (!this.clusterBiologicalCollection.isActive()) {
-                this.clusterCollection.administrative = null;
-                this.previousZoom = -1;
-                this.fetchingRecords();
-            } else {
-                this.clearAllLayers();
-                var zoomToExtent = true;
-                this.clusterBiologicalCollection.refetchClusters(zoomToExtent);
             }
         },
         updateClusterBiologicalCollectionZoomExt: function () {
@@ -624,7 +566,7 @@ define([
                 this.getCurrentZoom(), this.getCurrentBbox());
         },
         addBiodiversityFeatures: function (features) {
-            this.layers.biodiversitySource.addFeatures(features);
+            // this.layers.biodiversitySource.addFeatures(features);
         },
         addLocationSiteClusterFeatures: function (features) {
             this.layers.locationSiteClusterSource.addFeatures(features);
@@ -732,9 +674,23 @@ define([
             }
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
         },
+        updateBiodiversityLayerParams: function (query) {
+            let newParams = {
+                layers: 'geonode:test_site_view',
+                format: 'image/png',
+                viewparams: 'where:' + query
+            };
+            let self = this;
+            self.layers.biodiversitySource.updateParams(newParams);
+        },
         clearAllLayers: function () {
-            this.layers.biodiversitySource.clear();
-            this.layers.locationSiteClusterSource.clear();
+            let newParams = {
+                layers: 'geonode:test_site_view',
+                format: 'image/png',
+                viewparams: 'where:0=1'
+            };
+            let self = this;
+            self.layers.biodiversitySource.updateParams(newParams);
         },
         refetchRecords: function () {
             this.zoomToDefault();

@@ -37,6 +37,11 @@ class SearchVersion2APIView(APIView):
                 results['total_unique_sites'] = len(results['sites'])
                 results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
             results['total_unique_taxa'] = len(results['records'])
+            raw = search_process.search_raw_query
+            results['sites_raw_query'] = raw[
+                raw.find('WHERE') + 6:
+                len(raw)
+            ]
             return Response(results)
 
         # Create process id
@@ -65,6 +70,8 @@ class SearchVersion2APIView(APIView):
 
 
 class SearchVersion2(object):
+
+    location_sites_raw_query = ''
 
     def __init__(self, parameters):
         self.parameters = parameters
@@ -190,7 +197,10 @@ class SearchVersion2(object):
                 bio.filter(site__geometry_point__intersent=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
-
+        self.location_sites_raw_query = bio.distinct('site').values(
+            'site_id',
+            'site__geometry_point',
+            'site__name').query
         return bio
 
     def get_summary_data(self):

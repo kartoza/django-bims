@@ -2,6 +2,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
     return Backbone.View.extend({
         // source of layers
         biodiversitySource: null,
+        biodiversityTileLayer: null,
         locationSiteCluster: null,
         locationSiteClusterLayer: null,
         locationSiteClusterSource: null,
@@ -26,7 +27,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
         },
         isBiodiversityLayerLoaded: function () {
-            return this.initialLoadBiodiversityLayersToMap
+            return true;
+            //return this.initialLoadBiodiversityLayersToMap
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Sites"]');
@@ -102,37 +104,26 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
-            self.biodiversitySource = new ol.source.Vector();
-            self.locationSiteClusterSource = new ol.source.Vector();
-            self.locationSiteCluster = new ol.source.Cluster({
-                distance: 40,
-                source: self.locationSiteClusterSource
+            var biodiversityLayersOptions = {
+                url: 'http://0.0.0.0:63301/geoserver/wms',
+                params: {
+                    layers: 'geonode:test_site_view',
+                    format: 'image/png'
+                }
+            };
+            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
+            self.biodiversityTileLayer = new ol.layer.Tile({
+                source: self.biodiversitySource
             });
-
-            self.biodiversityLayerGroups = new ol.layer.Group({
-                layers: [
-                    new ol.layer.Vector({
-                        source: self.biodiversitySource,
-                        style: function (feature) {
-                            return self.layerStyle.getBiodiversityStyle(feature);
-                        }
-                    }),
-                     new ol.layer.Vector({
-                        source: self.locationSiteCluster,
-                        style: function(feature, resolution) {
-                            var size = feature.get('features').length;
-                            return self.layerStyle.getClusterStyle(feature, size);
-                        }
-                    })
-                ]
-            });
-
-            self.initLayer(self.biodiversityLayerGroups, 'Sites', true);
+            self.initLayer(
+                self.biodiversityTileLayer,
+                'Sites',
+                true,
+            );
 
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
             }
-
 
             // RENDER LAYERS
             $.each(self.layers, function (key, value) {
@@ -243,6 +234,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     }
                     self.orders[administrativeOrder] = self.administrativeKeyword;
 
+                    self.addBiodiveristyLayersToMap(map);
                     self.addLayersFromGeonode(map, data);
                 },
                 error: function (err) {
@@ -313,7 +305,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     });
 
                     self.renderAdministrativeLayer(nonbiodiversityData);
-                    self.addBiodiveristyLayersToMap(map);
                     Shared.Dispatcher.trigger('map:reloadXHR');
                 }
             })
@@ -359,13 +350,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (Object.keys(this.layers).length === 0) {
                 return false;
             }
-            if (layername !== this.administrativeKeyword) {
-                this.layers[layername]['layer'].setOpacity(opacity);
-            } else {
-                if (this.currentAdministrativeLayer in this.layers) {
-                    this.layers[this.currentAdministrativeLayer]['layer'].setOpacity(opacity);
-                }
-            }
+            // if (layername !== this.administrativeKeyword) {
+            //     this.layers[layername]['layer'].setOpacity(opacity);
+            // } else {
+            //     if (this.currentAdministrativeLayer in this.layers) {
+            //         this.layers[this.currentAdministrativeLayer]['layer'].setOpacity(opacity);
+            //     }
+            // }
         },
         selectorChanged: function (layerName, selected) {
             Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
@@ -641,19 +632,20 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     var $layerSelectorInput = $('.layer-selector-input');
                     $($layerSelectorInput.get().reverse()).each(function (index, value) {
                         var layerName = $(value).val();
-                        if (layerName !== self.administrativeKeyword) {
-                            self.moveLayerToTop(
-                                self.layers[layerName]['layer']);
-                            self.moveLegendToTop(layerName);
-                        } else {
-                            $.each(self.administrativeLayersName, function (idx, layerName) {
-                                if (self.layers[layerName]) {
-                                    self.moveLayerToTop(
-                                        self.layers[layerName]['layer']);
-                                    self.moveLegendToTop(layerName);
-                                }
-                            });
-                        }
+                        // TODO : update this
+                        // if (layerName !== self.administrativeKeyword) {
+                        //     self.moveLayerToTop(
+                        //         self.layers[layerName]['layer']);
+                        //     self.moveLegendToTop(layerName);
+                        // } else {
+                        //     $.each(self.administrativeLayersName, function (idx, layerName) {
+                        //         if (self.layers[layerName]) {
+                        //             self.moveLayerToTop(
+                        //                 self.layers[layerName]['layer']);
+                        //             self.moveLegendToTop(layerName);
+                        //         }
+                        //     });
+                        // }
                     });
                     self.moveLayerToTop(self.highlightPinnedVector);
                     self.moveLayerToTop(self.highlightVector);
