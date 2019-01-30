@@ -81,6 +81,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 'category': layerCategory,
                 'source': layerSource
             };
+            console.log(this.layers);
             if (!visibleInDefault) {
                 layer.setVisible(false);
             }
@@ -104,15 +105,20 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
+            var extent = map.getView().calculateExtent(map.getSize());
             var biodiversityLayersOptions = {
                 url: 'http://0.0.0.0:63301/geoserver/wms',
                 params: {
-                    layers: 'geonode:test_site_view',
-                    format: 'image/png'
-                }
+                    LAYERS: 'geonode:test_site_view',
+                    FORMAT: 'image/png8',
+                    viewparams: 'where:1=1'
+                },
+                ratio: 1,
+                serverType: 'geoserver'
             };
-            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
-            self.biodiversityTileLayer = new ol.layer.Tile({
+            self.biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
+            self.biodiversityTileLayer = new ol.layer.Image({
+                extent: extent,
                 source: self.biodiversitySource
             });
             self.initLayer(
