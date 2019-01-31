@@ -18,6 +18,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         administrativeTransparency: 100,
         orders: {},
         administrativeOrder: 0,
+        layerSelector: null,
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -30,13 +31,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         isBiodiversityLayerLoaded: function () {
             return true;
         },
-        isBiodiversityLayerShow: function () {
-            var $checkbox = $('.layer-selector-input[value="Sites"]');
-            if ($checkbox.length === 0) {
-                return true
-            }
-            return $checkbox.is(':checked');
-        },
         isAdministrativeLayerSelected: function () {
             var $checkbox = $('.layer-selector-input[value="Administrative"]');
             if ($checkbox.length === 0) {
@@ -45,6 +39,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             return $checkbox.is(':checked');
         },
         initLayer: function (layer, layerName, visibleInDefault, category, source) {
+            layer.set('added', false);
             var layerType = layerName;
             var layerSource = '';
             var layerCategory = '';
@@ -191,7 +186,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (biodiversityOrder === null) {
                 biodiversityOrder = 0;
             }
-            self.orders[biodiversityOrder] = 'Sites';
+            self.orders[0] = 'Sites';
 
             $.ajax({
                 type: 'GET',
@@ -223,10 +218,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             return;
                         }
 
-                        var layerOrder = Shared.StorageUtil.getItemDict(value['wms_layer_name'], 'order');
-                        if (layerOrder === null) {
-                            layerOrder = value['order']+1;
-                        }
+                        var layerOrder = value['order']+1;
                         self.orders[layerOrder] = value['wms_layer_name'];
 
                         var defaultVisibility = Shared.StorageUtil.getItemDict(
@@ -267,18 +259,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         );
                     });
 
-                    var administrativeOrder = Shared.StorageUtil.getItemDict(self.administrativeKeyword, 'order');
-                    if (administrativeOrder === null) {
-                        administrativeOrder = self.administrativeOrder+1;
-                    }
+                    let administrativeOrder = self.administrativeOrder + 1;
                     self.orders[administrativeOrder] = self.administrativeKeyword;
 
                     self.addBiodiveristyLayersToMap(map);
                     self.addAdministrativeLayerToMap(data);
+                    // Render available layers first because fetching layer from geonode takes time
+                    self.renderLayers(true);
 
-                    self.renderLayers();
+                    self.addGeonodeLayersToMap(map);
 
-                    // self.addLayersFromGeonode(map, data);
                 },
                 error: function (err) {
                     self.addBiodiveristyLayersToMap(map);
@@ -286,7 +276,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
 
         },
-        addLayersFromGeonode: function (map) {
+        addGeonodeLayersToMap: function (map) {
             // Adding layer from GeoNode, filtering is done by the API
             var default_wms_url = ogcServerDefaultLocation + 'wms';
             var default_wms_format = 'image/png';
@@ -310,7 +300,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         };
 
                         var layerName = value.typename;
-                        var layerOrder = Shared.StorageUtil.getItemDict(layerName, 'order');
                         if (!layerName) {
                             return true;
                         }
@@ -321,9 +310,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             return true;
                         }
 
-                        if (!layerOrder) {
-                            layerOrder = (parseInt(Object.keys(self.orders)[Object.keys(self.orders).length - 1]) + 1);
-                        }
+                        let layerOrder = (parseInt(Object.keys(self.orders)[Object.keys(self.orders).length - 1]) + 1);
                         self.orders[layerOrder] = layerName;
 
                         var category = '';
@@ -347,9 +334,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             false
                         );
                     });
-
-                    // self.renderLayers();
-                    Shared.Dispatcher.trigger('map:reloadXHR');
+                    self.renderLayers(false);
+                    self.refreshLayerOrders();
                 }
             })
         },
@@ -375,13 +361,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (Object.keys(this.layers).length === 0) {
                 return false;
             }
-            if (layerName !== this.administrativeKeyword) {
-                this.layers[layerName]['layer'].setVisible(visible);
-            } else {
-                if (this.currentAdministrativeLayer in this.layers) {
-                    this.layers[this.currentAdministrativeLayer]['layer'].setVisible(visible);
-                }
-            }
+            this.layers[layerName]['layer'].setVisible(visible);
         },
         changeLayerTransparency: function (layername, opacity) {
             if (Object.keys(this.layers).length === 0) {
@@ -461,7 +441,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 '<img src="' + scr + '"></div>';
             $('#map-legend').prepend(html);
         },
-        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source) {
+        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source, isFirstTime) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
@@ -492,7 +472,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     category = '';
             }
             var rowTemplate = _.template($('#layer-selector-row').html());
-            $(rowTemplate({
+            let $rowTemplate = $(rowTemplate({
                     id: layerId,
                     name: name,
                     key: key,
@@ -501,7 +481,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     display: layerDisplayed,
                     source: source,
                     category: category,
-            })).prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
+            }));
+            if (isFirstTime) {
+                $rowTemplate.prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
+            } else {
+                $rowTemplate.appendTo('#layers-selector').find('.layer-selector-tags').append(tags);
+            }
 
             var needToReloadXHR = false;
             self.toggleLegend(key, visibleInDefault, needToReloadXHR);
@@ -537,91 +522,91 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 });
             });
         },
-        renderLayers: function () {
-            var self = this;
-            $(document).ready(function () {
-                var savedOrders = {};
-                savedOrders = $.extend({}, self.orders);
-                $.each(self.orders, function (key, layer) {
-                    var savedOrder = Shared.StorageUtil.getItemDict(layer, 'order');
-                    if (savedOrder && savedOrder !== key) {
-                        savedOrders[savedOrder] = layer;
-                    }
-                });
+        renderLayers: function (isFirstTime) {
+            let self = this;
+            let savedOrders = $.extend({}, self.orders);
 
-                // Reverse orders
-                var reversedOrders = [];
+            // Reverse orders
+            let reversedOrders = savedOrders;
+            if (isFirstTime) {
+                reversedOrders = [];
                 $.each(savedOrders, function (key, value) {
                     reversedOrders.unshift(value);
                 });
+            }
 
-                $.each(reversedOrders, function (index, key) {
-                    var value = self.layers[key];
-                    var layerName = '';
-                    var defaultVisibility = false;
-                    var category = '';
-                    var source = '';
+            $.each(reversedOrders, function (index, key) {
+                var value = self.layers[key];
+                var layerName = '';
+                var defaultVisibility = false;
+                var category = '';
+                var source = '';
 
-                    if (typeof value !== 'undefined') {
-                        layerName = value['layerName'];
-                        defaultVisibility = value['visibleInDefault'];
-                        if (value.hasOwnProperty('category')) {
-                            category = value['category'];
-                        }
-                        if (value.hasOwnProperty('source')) {
-                            source = value['source'];
-                        }
+                if (typeof value !== 'undefined') {
+                    layerName = value['layerName'];
+                    defaultVisibility = value['visibleInDefault'];
+                    if (value.hasOwnProperty('category')) {
+                        category = value['category'];
+                    }
+                    if (value.hasOwnProperty('source')) {
+                        source = value['source'];
+                    }
+                } else {
+                    layerName = key;
+                }
+
+                if (typeof layerName === 'undefined') {
+                    return true;
+                }
+
+                var currentLayerTransparency = 100;
+
+                // Get saved transparency data from storage
+                var itemName = key;
+                var layerTransparency = Shared.StorageUtil.getItemDict(itemName, 'transparency');
+                if (layerTransparency !== null) {
+                    currentLayerTransparency = layerTransparency * 100;
+                    self.changeLayerTransparency(itemName, layerTransparency);
+                } else {
+                    currentLayerTransparency = 100;
+                }
+
+                if (layerName.indexOf(self.administrativeKeyword) >= 0) {
+                    var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
+                    if (administrativeVisibility === null) {
+                        administrativeVisibility = true;
                     } else {
-                        layerName = key;
-                    }
-
-                    if (typeof layerName === 'undefined') {
-                        return true;
-                    }
-
-                    var currentLayerTransparency = 100;
-
-                    // Get saved transparency data from storage
-                    var itemName = key;
-                    var layerTransparency = Shared.StorageUtil.getItemDict(itemName, 'transparency');
-                    if (layerTransparency !== null) {
-                        currentLayerTransparency = layerTransparency * 100;
-                        self.changeLayerTransparency(itemName, layerTransparency);
-                    } else {
-                        currentLayerTransparency = 100;
-                    }
-
-                    if (layerName.indexOf(self.administrativeKeyword) >= 0) {
-                        var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
-                        if (administrativeVisibility === null) {
-                            administrativeVisibility = true;
-                        } else {
-                            if (administrativeVisibility.hasOwnProperty('selected')) {
-                                administrativeVisibility = administrativeVisibility['selected'];
-                            }
+                        if (administrativeVisibility.hasOwnProperty('selected')) {
+                            administrativeVisibility = administrativeVisibility['selected'];
                         }
-                        defaultVisibility = administrativeVisibility;
-                        source = 'Base';
                     }
+                    defaultVisibility = administrativeVisibility;
+                    source = 'Base';
+                }
 
-                    self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source);
-                });
-
-                // RENDER LAYERS
-                $.each(self.layers, function (key, value) {
-                    self.map.addLayer(value['layer']);
-                });
-                self.renderTransparencySlider();
-
-                $('.layer-selector-input').change(function (e) {
-                    self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
-                });
-
-                $('.layer-source').click(function (e) {
-                        self.showLayerSource(e.target.attributes["value"].value);
-                });
-                self.initializeLayerSelector();
+                self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source, isFirstTime);
             });
+
+            // RENDER LAYERS
+            $.each(self.layers, function (key, value) {
+                let _layer = value['layer'];
+                if (!_layer.get('added')) {
+                    _layer.set('added', true);
+                    self.map.addLayer(_layer);
+                }
+            });
+            self.renderTransparencySlider();
+
+            $('.layer-selector-input').change(function (e) {
+                self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
+            });
+
+            $('.layer-source').click(function (e) {
+                self.showLayerSource(e.target.attributes["value"].value);
+            });
+            if (isFirstTime) {
+                self.initializeLayerSelector();
+            }
         },
         showFeatureInfo: function (coordinate) {
             if (Shared.GetFeatureRequested) {
@@ -813,9 +798,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         },
         initializeLayerSelector: function () {
             let self = this;
-            let layerSelector = $('#layers-selector');
-            layerSelector.sortable();
-            layerSelector.on('sortupdate', function () {
+            this.layerSelector = $('#layers-selector');
+            this.layerSelector.sortable();
+            this.layerSelector.on('sortupdate', function () {
                 let $layerSelectorInput = $('.layer-selector-input');
                 $($layerSelectorInput.get().reverse()).each(function (index, value) {
                     let layerName = $(value).val();
@@ -831,9 +816,30 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     Shared.StorageUtil.setItemDict(layerName, 'order', parseInt(index));
                 });
             });
-
-            // trigger layer selector once
-            layerSelector.trigger('sortupdate');
+        },
+        changeLayerOder: function (layerName, order) {
+            let $layerElm = $('.layer-selector-input[value="' + layerName + '"]').parent().parent();
+            let $layerSelectorList = $('#layers-selector li');
+            if (order > $layerSelectorList.length - 1) {
+                order = $layerSelectorList.length - 1;
+            }
+            if (order <= 0) {
+                $layerElm.insertBefore($layerSelectorList.get(0));
+            } else {
+                $layerElm.insertAfter($layerSelectorList.get(order - 1));
+            }
+        },
+        refreshLayerOrders: function () {
+            let self = this;
+            let $layerSelectorInput = $('.layer-selector-input');
+            $($layerSelectorInput.get()).each(function (index, value) {
+                let layerName = $(value).val();
+                let order = Shared.StorageUtil.getItemDict(layerName, 'order');
+                if (order != null) {
+                    self.changeLayerOder(layerName, order);
+                }
+            });
+            self.layerSelector.trigger('sortupdate');
         }
     })
 });
