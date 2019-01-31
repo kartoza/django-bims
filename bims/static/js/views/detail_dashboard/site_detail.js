@@ -376,15 +376,23 @@ define([
             var canvas = this.originTimelineGraph;
             this.downloadChart(title, canvas);
         },
-        downloadChart: function (title, canvas) {
-            html2canvas(canvas, {
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
-            })
+        downloadChart: function (title, graph_canvas) {
+            var img = new Image();
+            var ctx = graph_canvas.getContext('2d');
+            img.src='/static/img/bims-stamp.png';
+            img.onload = function() {
+                ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
+                    graph_canvas.scrollHeight - img.height - 5);
+                canvas = graph_canvas;
+                html2canvas(canvas, {
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
+            }
         },
         downloadingCSV: function (url, downloadButton) {
             var self = this;
