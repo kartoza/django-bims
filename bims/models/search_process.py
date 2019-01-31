@@ -59,6 +59,11 @@ class SearchProcess(models.Model):
             r'(\()(%)([a-zA-Z0-9_ ]+)(%)(\))',
             '(\'%' + r'\3' + '%\')',
             str(raw_query))
+        raw_query_converted = re.sub(
+            r'(BETWEEN)( )(\d+-\d+-\d+)( )(AND)( )(\d+-\d+-\d+)',
+            'BETWEEN \'' + r'\3' + '\' AND \'' + r'\7' + '\'',
+            raw_query_converted
+        )
         self.search_raw_query = raw_query_converted
         self.save()
 

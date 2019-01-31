@@ -28,6 +28,7 @@ define([
             var self = this;
             this.totalRecords = 0;
             this.totalSites = 0;
+            this.totalTaxa = 0;
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
             this.categoryValue = parameters['category'];

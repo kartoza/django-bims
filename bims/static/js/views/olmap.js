@@ -675,22 +675,23 @@ define([
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
         },
         updateBiodiversityLayerParams: function (query) {
-            // let newParams = {
-            //     layers: 'geonode:test_site_view',
-            //     format: 'image/png',
-            //     viewparams: 'where:' + query
-            // };
-            // let self = this;
-            // self.layers.biodiversitySource.updateParams(newParams);
+            console.log(query);
+            let newParams = {
+                layers: 'geonode:test_site_view',
+                format: 'image/png',
+                viewparams: 'where:' + query
+            };
+            let self = this;
+            self.layers.biodiversitySource.updateParams(newParams);
         },
         clearAllLayers: function () {
-            // let newParams = {
-            //     layers: 'geonode:test_site_view',
-            //     format: 'image/png',
-            //     viewparams: 'where:0=1'
-            // };
-            // let self = this;
-            // self.layers.biodiversitySource.updateParams(newParams);
+            let newParams = {
+                layers: 'geonode:test_site_view',
+                format: 'image/png',
+                viewparams: 'where:0=1'
+            };
+            let self = this;
+            self.layers.biodiversitySource.updateParams(newParams);
         },
         refetchRecords: function () {
             this.zoomToDefault();

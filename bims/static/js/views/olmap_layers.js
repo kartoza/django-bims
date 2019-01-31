@@ -81,7 +81,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 'category': layerCategory,
                 'source': layerSource
             };
-            console.log(this.layers);
             if (!visibleInDefault) {
                 layer.setVisible(false);
             }
