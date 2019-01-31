@@ -2241,3 +2241,23 @@ div:hover::-webkit-scrollbar {
 .popup-error {
     color: darkred;
 }
+
+.species-detail-cell {
+    max-width: 50%;
+    border-style: solid;
+    border-width: 2px;
+    padding: 0.25rem;
+}
+
+.species-detail-row {
+
+}
+
+#species-detail-summary-head-table table {
+    margin: 0.25rem;
+}
+
+.species-detail-cell.cell-header
+{
+
+}

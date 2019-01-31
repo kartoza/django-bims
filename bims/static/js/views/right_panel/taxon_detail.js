@@ -144,7 +144,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', name);
+            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', "Species Overview");
 
             self.siteDetail = siteDetail;
             if (siteDetail) {
@@ -175,6 +175,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     var speciesDetailContainer = $('#species-detail');
                     // render taxon detail
                     speciesDetailContainer.append(self.renderDetail(data));
+
+                    //iucn data
                     $('#species-detail .iucn-status .name').css('background-color', data.iucn_status_colour);
                     $('#species-detail .iucn-status .full-name').css('color', data.iucn_status_colour);
                     $('#species-detail .iucn-status .full-name').css('border-color', data.iucn_status_colour);
@@ -182,52 +184,13 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                         $('#species-detail .iucn-status').hide();
                     }
 
+                    //Header Table
+
                     $('#third-party').click();
                     $('#third-party').append(self.renderThirdPartyData(data));
 
-                    var taxonomySystem = speciesDetailContainer.find('.taxonomy-system');
 
-                    if(data.hasOwnProperty('kingdom')) {
-                        taxonomySystem.append(
-                            '' + data['kingdom'] + '<br>' +
-                            '<i class="fa fa-arrow-down"></i><br>'
-                        )
-                    }
-                    if(data.hasOwnProperty('phylum')) {
-                        taxonomySystem.append(
-                            '' + data['phylum'] + '<br>' +
-                            '<i class="fa fa-arrow-down"></i><br>'
-                        )
-                    }
-                    if(data.hasOwnProperty('class')) {
-                        taxonomySystem.append(
-                            '' + data['class'] + '<br>' +
-                            '<i class="fa fa-arrow-down"></i><br>'
-                        )
-                    }
-                    if(data.hasOwnProperty('order')) {
-                        taxonomySystem.append(
-                            '' + data['order'] + '<br>' +
-                            '<i class="fa fa-arrow-down"></i><br>'
-                        )
-                    }
-                    if(data.hasOwnProperty('family')) {
-                        taxonomySystem.append(
-                            '' + data['family'] + '<br>' +
-                            '<i class="fa fa-arrow-down"></i><br>'
-                        )
-                    }
-                    if(data.hasOwnProperty('genus')) {
-                        taxonomySystem.append(
-                            '' + data['genus'] + '<br>' +
-                            '<i class="fa fa-arrow-down"></i><br>'
-                        )
-                    }
-                    if(data.hasOwnProperty('species')) {
-                        taxonomySystem.append(
-                            '' + data['species'] + '<br>'
-                        )
-                    }
+
 
                     speciesDetailContainer.find('.open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {
