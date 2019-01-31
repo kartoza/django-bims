@@ -265,6 +265,7 @@ html, body, .map, .map-wrapper, #map-container {
     width: 265px;
     background-color: white;
     position: absolute;
+    display: inline-table;
     top: 0;
     color: black;
     padding: 5px 15px 0;
@@ -279,6 +280,7 @@ html, body, .map, .map-wrapper, #map-container {
     overflow-y: scroll;
     overflow-x: hidden;
     max-height: 90%;
+    height: fit-content;
 }
 
 .map-control-panel-box::-webkit-scrollbar
@@ -2251,9 +2253,15 @@ div:hover::-webkit-scrollbar {
     height: 100%;
 }
 
-#filter_collectors_chosen .chosen-container {
-    height: 300%;
+#filter_collectors_chosen .chosen-drop {
+    max-height: 20vh;
 }
+
+
+#filter_collectors_chosen .chosen-results {
+    max-height: 20vh;
+}
+
 
 #filter_study_reference_chosen .search-choice {
     line-height: 150%;
@@ -2264,9 +2272,10 @@ div:hover::-webkit-scrollbar {
     height: 100%;
 }
 
-#filter_study_reference_chosen .chosen-container {
-    height: 300%;
+#filter_study_reference_chosen .chosen-drop {
+    max-height: 20vh;
 }
 
-
-
+#filter_study_reference_chosen .chosen-results{
+    max-height: 20vh;
+}
