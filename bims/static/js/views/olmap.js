@@ -410,8 +410,11 @@ define([
             return this;
         },
         mapMoved: function () {
-            var self = this;
-            // self.fetchingRecords();
+            let self = this;
+            let administrative = self.checkAdministrativeLevel();
+            if (administrative !== 'detail') {
+                this.layers.changeLayerAdministrative(administrative);
+            }
         },
         loadMap: function () {
             var self = this;

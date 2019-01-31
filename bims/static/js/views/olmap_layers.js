@@ -10,6 +10,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         highlightVector: null,
         highlightPinnedVectorSource: null,
         highlightPinnedVector: null,
+        administrativeLayerGroup: null,
         layers: {},
         currentAdministrativeLayer: "",
         administrativeKeyword: "Administrative",
@@ -28,7 +29,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         },
         isBiodiversityLayerLoaded: function () {
             return true;
-            //return this.initialLoadBiodiversityLayersToMap
         },
         isBiodiversityLayerShow: function () {
             var $checkbox = $('.layer-selector-input[value="Sites"]');
@@ -102,15 +102,27 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             map.addLayer(self.highlightPinnedVector);
 
             // ---------------------------------
+            // HIGHLIGHT LAYER
+            // ---------------------------------
+            self.highlightVectorSource = new ol.source.Vector();
+            self.highlightVector = new ol.layer.Vector({
+                source: self.highlightVectorSource,
+                style: function (feature) {
+                    var geom = feature.getGeometry();
+                    return self.layerStyle.getHighlightStyle(geom.getType());
+                }
+            });
+            map.addLayer(self.highlightVector);
+
+            // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
             var extent = map.getView().calculateExtent(map.getSize());
             var biodiversityLayersOptions = {
-                url: 'http://0.0.0.0:63301/geoserver/wms',
+                url: geoserverPublicUrl + 'wms',
                 params: {
                     LAYERS: 'geonode:test_site_view',
-                    FORMAT: 'image/png8',
-                    viewparams: 'where:1=1'
+                    FORMAT: 'image/png8'
                 },
                 ratio: 1,
                 serverType: 'geoserver'
@@ -129,25 +141,47 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
             }
-
-            // RENDER LAYERS
-            $.each(self.layers, function (key, value) {
-                map.addLayer(value['layer']);
+        },
+        addAdministrativeLayerToMap: function (data) {
+            let self = this;
+            let currentIndex = 0;
+            let _layerName = 'Administrative';
+            let _administrativeLayers = [];
+            $.each(this.administrativeLayersName, function (idx, layerName) {
+                $.each(data, function (index, value) {
+                    if (value.name !== layerName) {
+                        return
+                    }
+                    let options = {
+                        url: '/bims_proxy/' + encodeURI(value.wms_url),
+                        params: {
+                            layers: value.wms_layer_name,
+                            format: value.wms_format
+                        }
+                    };
+                    let layer = new ol.layer.Tile({
+                        source: new ol.source.TileWMS(options)
+                    });
+                    layer.set('layerName', layerName);
+                    layer.setVisible(currentIndex === 0);
+                    _administrativeLayers.push(layer);
+                    currentIndex += 1;
+                });
+            });
+            self.administrativeLayerGroup = new ol.layer.Group({
+                layers: _administrativeLayers
             });
 
-            // ---------------------------------
-            // HIGHLIGHT LAYER
-            // ---------------------------------
-            self.highlightVectorSource = new ol.source.Vector();
-            self.highlightVector = new ol.layer.Vector({
-                source: self.highlightVectorSource,
-                style: function (feature) {
-                    var geom = feature.getGeometry();
-                    return self.layerStyle.getHighlightStyle(geom.getType());
-                }
-            });
-            map.addLayer(self.highlightVector);
-            this.renderLayers();
+            let _isAdministrativeSelected = Shared.StorageUtil.getItemDict('Administrative', 'selected');
+            if (!_isAdministrativeSelected) {
+                _isAdministrativeSelected = false;
+            }
+
+            self.initLayer(
+                self.administrativeLayerGroup,
+                _layerName,
+               _isAdministrativeSelected
+            );
         },
         addLayersToMap: function (map) {
             var self = this;
@@ -240,14 +274,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     self.orders[administrativeOrder] = self.administrativeKeyword;
 
                     self.addBiodiveristyLayersToMap(map);
-                    self.addLayersFromGeonode(map, data);
+                    self.addAdministrativeLayerToMap(data);
+
+                    self.renderLayers();
+
+                    // self.addLayersFromGeonode(map, data);
                 },
                 error: function (err) {
                     self.addBiodiveristyLayersToMap(map);
                 }
             });
         },
-        addLayersFromGeonode: function (map, nonbiodiversityData) {
+        addLayersFromGeonode: function (map) {
             // Adding layer from GeoNode, filtering is done by the API
             var default_wms_url = ogcServerDefaultLocation + 'wms';
             var default_wms_format = 'image/png';
@@ -309,7 +347,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         );
                     });
 
-                    self.renderAdministrativeLayer(nonbiodiversityData);
+                    // self.renderLayers();
                     Shared.Dispatcher.trigger('map:reloadXHR');
                 }
             })
@@ -317,26 +355,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         changeLayerAdministrative: function (administrative) {
             var self = this;
             var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'selected');
-            if (!self.isAdministrativeLayerSelected() || !administrativeVisibility) {
+            if (!self.isAdministrativeLayerSelected() || !administrativeVisibility || !self.administrativeLayerGroup) {
                 return false;
             }
-            switch (administrative) {
-                case 'province':
-                    self.currentAdministrativeLayer = self.administrativeLayersName[0];
-                    break;
-                case 'district':
-                    self.currentAdministrativeLayer = self.administrativeLayersName[1];
-                    break;
-                case 'municipal':
-                    self.currentAdministrativeLayer = self.administrativeLayersName[2];
-                    break;
-            }
-            $.each(self.administrativeLayersName, function (idx, layerName) {
-                if (self.layers[layerName]) {
-                    self.layers[layerName]['layer'].setVisible(false);
+            for (let i = 0; i < self.administrativeLayerGroup.getLayers().getLength(); i++) {
+                let _administrativeLayer = self.administrativeLayerGroup.getLayers().item(i);
+                let _layerName = _administrativeLayer.get('layerName');
+                if (_layerName.toLowerCase().indexOf(administrative) > -1) {
+                    self.currentAdministrativeLayer = _layerName;
+                    _administrativeLayer.setVisible(true);
+                } else {
+                    _administrativeLayer.setVisible(false);
                 }
-            });
-            this.changeLayerVisibility(this.administrativeKeyword, true);
+            }
             this.changeLayerTransparency(this.administrativeKeyword, this.administrativeTransparency);
         },
         changeLayerVisibility: function (layerName, visible) {
@@ -355,13 +386,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (Object.keys(this.layers).length === 0) {
                 return false;
             }
-            // if (layername !== this.administrativeKeyword) {
-            //     this.layers[layername]['layer'].setOpacity(opacity);
-            // } else {
-            //     if (this.currentAdministrativeLayer in this.layers) {
-            //         this.layers[this.currentAdministrativeLayer]['layer'].setOpacity(opacity);
-            //     }
-            // }
+            this.layers[layername]['layer'].setOpacity(opacity);
         },
         selectorChanged: function (layerName, selected) {
             Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
@@ -434,47 +459,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 '<b>' + name + '</b><br>' +
                 '<img src="' + scr + '"></div>';
             $('#map-legend').prepend(html);
-        },
-        renderAdministrativeLayer: function (data) {
-            var self = this;
-            var currentIndex = 0;
-            $.each(this.administrativeLayersName, function (idx, layerName) {
-                $.each(data, function (index, value) {
-                    if (value.name !== layerName) {
-                        return
-                    }
-                    var options = {
-                        url: '/bims_proxy/' + encodeURI(value.wms_url),
-                        params: {
-                            layers: value.wms_layer_name,
-                            format: value.wms_format
-                        }
-                    };
-                    var initVisible = false;
-                    if (currentIndex === 0) {
-                        initVisible = true;
-                        self.currentAdministrativeLayer = layerName;
-                    }
-
-                    var administrativeSelected = Shared.StorageUtil.getItem('Administrative');
-                    if (administrativeSelected !== null) {
-                        if (administrativeSelected.hasOwnProperty('selected')) {
-                            administrativeSelected = administrativeSelected['selected'];
-                            initVisible = administrativeSelected;
-                        }
-                    }
-
-                    self.initLayer(
-                        new ol.layer.Tile({
-                            source: new ol.source.TileWMS(options)
-                        }),
-                        value.name, initVisible
-                    );
-                    currentIndex += 1;
-                    return false;
-                });
-            });
-
         },
         renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
@@ -622,6 +606,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source);
                 });
 
+                // RENDER LAYERS
+                $.each(self.layers, function (key, value) {
+                    self.map.addLayer(value['layer']);
+                });
                 self.renderTransparencySlider();
 
                 $('.layer-selector-input').change(function (e) {
