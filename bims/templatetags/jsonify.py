@@ -18,7 +18,7 @@ def jsonify(object):
 
 @register.simple_tag
 def get_html_for_radio_group(name, sass_rating):
-    column_width= 100 / 6
+    column_width = 100 / 6
     try:
         value = int(sass_rating[-1])
     except:
@@ -56,6 +56,6 @@ def get_html_for_radio_group_headings(column_count):
     for x in range(0, column_count):
         result_html += (
             '<span class="col-m" style="width: {column_width}%">'
-                '{x}'
+            '{x}'
             '</span>').format(x=x, column_width=column_width)
     return result_html
