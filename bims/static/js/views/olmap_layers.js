@@ -284,6 +284,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     self.addBiodiveristyLayersToMap(map);
                 }
             });
+
         },
         addLayersFromGeonode: function (map) {
             // Adding layer from GeoNode, filtering is done by the API
@@ -619,39 +620,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $('.layer-source').click(function (e) {
                         self.showLayerSource(e.target.attributes["value"].value);
                 });
-
-                $('#layers-selector').sortable();
-                $('#layers-selector').on('sortupdate', function () {
-                    var $layerSelectorInput = $('.layer-selector-input');
-                    $($layerSelectorInput.get().reverse()).each(function (index, value) {
-                        var layerName = $(value).val();
-                        // TODO : update this
-                        // if (layerName !== self.administrativeKeyword) {
-                        //     self.moveLayerToTop(
-                        //         self.layers[layerName]['layer']);
-                        //     self.moveLegendToTop(layerName);
-                        // } else {
-                        //     $.each(self.administrativeLayersName, function (idx, layerName) {
-                        //         if (self.layers[layerName]) {
-                        //             self.moveLayerToTop(
-                        //                 self.layers[layerName]['layer']);
-                        //             self.moveLegendToTop(layerName);
-                        //         }
-                        //     });
-                        // }
-                    });
-                    self.moveLayerToTop(self.highlightPinnedVector);
-                    self.moveLayerToTop(self.highlightVector);
-
-                    // Update saved order
-                    $($layerSelectorInput.get()).each(function (index, value) {
-                        var layerName = $(value).val();
-                        Shared.StorageUtil.setItemDict(layerName, 'order', parseInt(index));
-                    });
-                });
-                $('#layers-selector').trigger('sortupdate');
+                self.initializeLayerSelector();
             });
-
         },
         showFeatureInfo: function (coordinate) {
             if (Shared.GetFeatureRequested) {
@@ -840,6 +810,30 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     layerSourceContainer.slideToggle(400);
                 }
             })
+        },
+        initializeLayerSelector: function () {
+            let self = this;
+            let layerSelector = $('#layers-selector');
+            layerSelector.sortable();
+            layerSelector.on('sortupdate', function () {
+                let $layerSelectorInput = $('.layer-selector-input');
+                $($layerSelectorInput.get().reverse()).each(function (index, value) {
+                    let layerName = $(value).val();
+                    self.moveLayerToTop(self.layers[layerName]['layer']);
+                    self.moveLegendToTop(layerName);
+                });
+                self.moveLayerToTop(self.highlightPinnedVector);
+                self.moveLayerToTop(self.highlightVector);
+
+                // Update saved order
+                $($layerSelectorInput.get()).each(function (index, value) {
+                    let layerName = $(value).val();
+                    Shared.StorageUtil.setItemDict(layerName, 'order', parseInt(index));
+                });
+            });
+
+            // trigger layer selector once
+            layerSelector.trigger('sortupdate');
         }
     })
 });
