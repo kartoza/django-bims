@@ -47,7 +47,13 @@
                             Biotopes Sampled
                         </th>
                         <th>
-                            Rating (1-5)
+                            <div class="container-fluid">
+                                <div class="row" style="text-align: center;">
+                                    {% autoescape off %}
+                                        {% get_html_for_radio_group_headings 6 %}
+                                    {% endautoescape %}
+                                </div>
+                            </div>
                         </th>
                     </tr>
                     </thead>
@@ -57,9 +63,13 @@
                             Stones In Current (SIC)
                         </td>
                         <td>
-                            {% autoescape off %}
-                                {% get_html_for_radio_group "sic-rating" sass_sheet.biotope_stones_in_current %}
-                            {% endautoescape %}
+                             <div class="container-fluid">
+                                <div class="row">
+                                    {% autoescape off %}
+                                        {% get_html_for_radio_group "sic-rating" sass_sheet.biotope_stones_in_current %}
+                                    {% endautoescape %}
+                                </div>
+                             </div>
                         </td>
 
                     </tr>
