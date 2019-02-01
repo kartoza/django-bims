@@ -161,11 +161,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             }
 
             // Add detail dashboard button
-            var button = '<button class="btn btn-info open-detailed-site-button"> Open detailed dashboard </button>';
+            var button = '<button class="btn btn-info' +
+                ' open-detailed-site-button">Dashboard</button>';
             $detailWrapper.append(button);
 
             if (is_sass_enabled) {
-                var sassButton = '<a href="/sass/'+this.parameters['siteId']+'" class="btn btn-info sass-button"> Add SASS </a>';
+                var sassButton = '<a href="/sass/'+this.parameters['siteId']+'" class="btn btn-info sass-button">SASS +</a>';
                 $detailWrapper.append(sassButton);
             }
 
