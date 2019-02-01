@@ -160,9 +160,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             } else {
                 $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
             }
-
-
-
             return $detailWrapper;
         },
         renderDashboardDetail: function (data) {
