@@ -58,6 +58,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         },
         renderSiteDetail: function (data) {
             var $detailWrapper = $('<div></div>');
+
             var locationContext = {};
             var maxPanelThatShouldBeOpen = 1;
             var self = this;
@@ -160,7 +161,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
             }
 
-            // Add detail dashboard button
+
+
+            return $detailWrapper;
+        },
+        renderDashboardDetail: function (data) {
+            var $detailWrapper = $('<div></div>');
+
+            // Add detail dashboard and sass buttons
             var button = '<button class="btn btn-info open-detailed-site-button"> Open detailed dashboard </button>';
             $detailWrapper.append(button);
 
@@ -168,11 +176,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 var sassButton = '<a href="/sass/'+this.parameters['siteId']+'" class="btn btn-info sass-button"> Add SASS </a>';
                 $detailWrapper.append(sassButton);
             }
-
-            return $detailWrapper;
-        },
-        renderDashboardDetail: function (data) {
-            var $detailWrapper = $('<div></div>');
 
             if (!data.hasOwnProperty('records_occurrence')) {
                 $detailWrapper.append('<div class="side-panel-content">' +
@@ -353,15 +356,16 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             // Render basic information
             var $siteDetailWrapper = $('<div></div>');
             $siteDetailWrapper.append(
-                '<div id="site-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> SITE DETAILS </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $siteDetailWrapper.append(
                 '<div id="dashboard-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> DASHBOARD </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            $siteDetailWrapper.append(
+                '<div id="site-detail" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> SITE DETAILS </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> ' +
