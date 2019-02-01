@@ -178,6 +178,6 @@ h6 {
 
 .fbis-button:active {
   background-color: #17766B;
-  box-shadow:         inset 1px 1px 10px #333;
+  box-shadow:         inset 1px 1px 10px #555555;
   color: white;
 }

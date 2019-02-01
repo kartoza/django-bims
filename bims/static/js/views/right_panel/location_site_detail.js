@@ -171,7 +171,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 var sassButton = `
                     <div class="container-fluid"><a 
                     href="/sass/${this.parameters['siteId']}
-                    " class="btn right-panel-button fbis-button sass-button">SASS +</a></div>`;
+                    " class="btn right-panel-button right-panel-last-button 
+                             fbis-button sass-button">SASS +</a></div>`;
                 $detailWrapper.append(sassButton);
             }
 
