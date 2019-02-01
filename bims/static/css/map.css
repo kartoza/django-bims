@@ -2228,10 +2228,6 @@ div:hover::-webkit-scrollbar {
     padding: 0.5rem 0.5rem 1rem;
 }
 
-.sass-button {
-    margin-top: 10px;
-}
-
 .popup-loading, .popup-error {
     text-align: center;
     font-size: 9pt;
@@ -2240,4 +2236,8 @@ div:hover::-webkit-scrollbar {
 
 .popup-error {
     color: darkred;
+}
+
+.right-panel-button {
+    width: 100%;
 }
