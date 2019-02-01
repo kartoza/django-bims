@@ -62,16 +62,20 @@ define([
             this.getSearchResults();
         },
         hideAll: function (e) {
-            if ($(e.target).data('visibility')) {
-                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-down');
-                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-up');
-                $(e.target).nextAll().hide();
-                $(e.target).data('visibility', false)
+            let $target = $(e.target);
+            if (!$target.hasClass('search-results-total')) {
+                $target = $target.parent();
+            }
+            if ($target.data('visibility')) {
+                $target.find('.filter-icon-arrow').addClass('fa-angle-down');
+                $target.find('.filter-icon-arrow').removeClass('fa-angle-up');
+                $target.nextAll().hide();
+                $target.data('visibility', false)
             } else {
-                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-down');
-                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-up');
-                $(e.target).nextAll().show();
-                $(e.target).data('visibility', true)
+                $target.find('.filter-icon-arrow').removeClass('fa-angle-down');
+                $target.find('.filter-icon-arrow').addClass('fa-angle-up');
+                $target.nextAll().show();
+                $target.data('visibility', true)
             }
         },
         getSearchResults: function () {

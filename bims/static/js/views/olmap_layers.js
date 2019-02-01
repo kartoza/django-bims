@@ -112,7 +112,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // BIODIVERSITY LAYERS
             // ---------------------------------
-            var extent = map.getView().calculateExtent(map.getSize());
             var biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
                 params: {
@@ -124,7 +123,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             };
             self.biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
             self.biodiversityTileLayer = new ol.layer.Image({
-                extent: extent,
                 source: self.biodiversitySource
             });
             self.initLayer(
