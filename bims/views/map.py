@@ -43,6 +43,8 @@ class MapPageView(TemplateView):
         context['center_point_map'] = get_key('CENTER_POINT_MAP')
         context['can_validate'] = user_has_permission_to_validate(
                 self.request.user)
+        context['geoserver_public_location'] = get_key(
+            'GEOSERVER_PUBLIC_LOCATION')
 
         categories = BiologicalCollectionRecord.CATEGORY_CHOICES
         context['collection_category'] = [list(x) for x in categories]

@@ -3,6 +3,7 @@
 
 """
 import os
+import re
 import json
 import errno
 from django.conf import settings
@@ -48,6 +49,23 @@ class SearchProcess(models.Model):
     finished = models.BooleanField(
         default=False
     )
+    search_raw_query = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    def set_search_raw_query(self, raw_query):
+        raw_query_converted = re.sub(
+            r'(\()(%)([a-zA-Z0-9_ ]+)(%)(\))',
+            '(\'%' + r'\3' + '%\')',
+            str(raw_query))
+        raw_query_converted = re.sub(
+            r'(BETWEEN)( )(\d+-\d+-\d+)( )(AND)( )(\d+-\d+-\d+)',
+            'BETWEEN \'' + r'\3' + '\' AND \'' + r'\7' + '\'',
+            raw_query_converted
+        )
+        self.search_raw_query = raw_query_converted
+        self.save()
 
     def set_status(self, value, should_save_to_file=True):
         if value == SEARCH_FINISHED:

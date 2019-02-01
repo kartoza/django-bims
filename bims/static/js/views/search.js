@@ -349,18 +349,18 @@ define([
             }
         },
         searchClick: function () {
-            if (Shared.CurrentState.FETCH_CLUSTERS) {
-                return true;
-            }
+            // if (Shared.CurrentState.FETCH_CLUSTERS) {
+            //     return true;
+            // }
             Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
             this.search(searchValue);
         },
         searchEnter: function (e) {
             if (e.which === 13) {
-                if (Shared.CurrentState.FETCH_CLUSTERS) {
-                    return true;
-                }
+                // if (Shared.CurrentState.FETCH_CLUSTERS) {
+                //     return true;
+                // }
                 var searchValue = $('#search').val();
                 this.search(searchValue);
             }

@@ -28,6 +28,7 @@ define([
             var self = this;
             this.totalRecords = 0;
             this.totalSites = 0;
+            this.totalTaxa = 0;
             this.searchValue = parameters['search'];
             this.collectorValue = parameters['collector'];
             this.categoryValue = parameters['category'];
@@ -120,6 +121,9 @@ define([
             if (response.hasOwnProperty('total_unique_taxa')) {
                 this.totalTaxa = response['total_unique_taxa'];
             }
+            if (response.hasOwnProperty('sites_raw_query')) {
+                this.sitesRawQuery = response['sites_raw_query'];
+            }
             this.renderCollection();
         },
         renderCollection: function () {
@@ -176,6 +180,7 @@ define([
             var speciesListName = [];
 
             if (self.status === 'finished') {
+                Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
                 $.each(this.recordsData, function (key, data) {
                     var searchModel = new SearchModel({
                         id: data['taxon_id'],
