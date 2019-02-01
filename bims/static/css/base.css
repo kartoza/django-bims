@@ -165,10 +165,11 @@ h6 {
 }
 
 .fbis-button {
-  background-color: #18A090;
-  border-radius: 3px;
-  margin: 0.25rem;
-  color: white;
+    background-color: #18A090;
+    border-radius: 3px;
+    margin: 0.25rem;
+    font-weight: normal;
+    color: white;
 }
 
 .fbis-button:hover {
@@ -178,6 +179,6 @@ h6 {
 
 .fbis-button:active {
   background-color: #17766B;
-  box-shadow:         inset 1px 1px 10px #555555;
+  box-shadow: inset 1px 1px 6px rgba(0,0,0, 0.2);
   color: white;
 }
