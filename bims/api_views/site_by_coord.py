@@ -1,6 +1,6 @@
 # coding=utf-8
 from rest_framework.views import APIView, Response
-from django.contrib.gis.geos import GEOSGeometry, Point
+from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from bims.models.location_site import LocationSite
