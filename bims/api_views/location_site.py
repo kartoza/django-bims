@@ -2,7 +2,8 @@
 import os
 import json
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q
+from django.db.models import Q, F, Count
+from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,6 +31,7 @@ from bims.utils.search_process import (
     create_search_process_file
 )
 from bims.models.search_process import SITES_SUMMARY
+from bims.api_views.search_version_2 import SearchVersion2
 
 
 class LocationSiteList(APIView):
@@ -211,21 +213,13 @@ class LocationSitesSummary(APIView):
     TOTAL_RECORDS = 'total_records'
     RECORDS_GRAPH_DATA = 'records_graph_data'
     RECORDS_OCCURRENCE = 'records_occurrence'
+    CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
 
     def get(self, request):
-        query_value = request.GET.get('search')
         filters = request.GET
-
-        # Search collection
-        (
-            collection_results,
-            site_results,
-            fuzzy_search
-        ) = GetCollectionAbstract.apply_filter(
-            query_value,
-            filters,
-            ignore_bbox=True)
+        search = SearchVersion2(filters)
+        collection_results = search.process_search()
 
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
@@ -240,41 +234,38 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
-        records_graph_data = {}
-        records_occurrence = {}
+        records_occurrence = collection_results.annotate(
+            name=F('taxonomy__scientific_name'),
+            taxon_id=F('taxonomy_id'),
+            origin=F('category')
+        ).values(
+            'taxon_id', 'name', 'origin'
+        ).annotate(
+            count=Count('taxonomy')
+        )
 
-        for collection in collection_results:
-            collection_year = collection.collection_date_year
-            if collection_year not in records_graph_data:
-                records_graph_data[collection_year] = {}
-            if collection.category not in records_graph_data[
-                collection_year]:
-                records_graph_data[collection_year][
-                    collection.category] = 1
-            else:
-                records_graph_data[collection_year][
-                    collection.category] += 1
-            if collection.taxonomy not in records_graph_data[
-                collection_year]:
-                records_graph_data[collection_year][
-                    collection.taxonomy] = 1
-            else:
-                records_graph_data[collection_year][
-                    collection.taxonomy] += 1
+        records_graph_data = collection_results.annotate(
+            year=ExtractYear('collection_date'),
+            origin=F('category')
+        ).values(
+            'year', 'origin'
+        ).annotate(
+            count=Count('year')
+        ).order_by('year')
 
-            if collection.taxonomy not in records_occurrence:
-                records_occurrence[collection.taxonomy] = {
-                    self.COUNT: 0,
-                    self.ORIGIN: collection.category,
-                    self.TAXONOMY_NAME: collection.taxon_canonical_name
-                }
-
-            records_occurrence[collection.taxonomy]['count'] += 1
+        category_summary = collection_results.annotate(
+            origin=F('category')
+        ).values_list(
+            'origin'
+        ).annotate(
+            count=Count('category')
+        )
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
-            self.RECORDS_GRAPH_DATA: records_graph_data,
-            self.RECORDS_OCCURRENCE: records_occurrence
+            self.RECORDS_GRAPH_DATA: list(records_graph_data),
+            self.RECORDS_OCCURRENCE: list(records_occurrence),
+            self.CATEGORY_SUMMARY: dict(category_summary)
         }
 
         file_path = create_search_process_file(

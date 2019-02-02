@@ -432,12 +432,9 @@ define([
         },
         createCharts: function (data) {
             var self = this;
-            var originData = {};
-            var originColor = [];
-            var originLabel = [];
+            var categorySummary = {};
 
-            var recordsByYearLabel = [];
-            var recordsByYearData = [];
+            var recordsByYearData = {};
 
             var recordsGraphData = {};
             var dataByOrigin = {};
@@ -445,41 +442,37 @@ define([
             if (data.hasOwnProperty('records_graph_data')) {
                 recordsGraphData = data['records_graph_data'];
             }
+            if (data.hasOwnProperty('category_summary')) {
+                categorySummary = data['category_summary'];
+            }
 
             $.each(recordsGraphData, function (key, value) {
-                recordsByYearLabel.push(key);
-                var totalData = 0;
-                $.each(value, function (objectKey, objectValue) {
-                    totalData = 0;
-                    if (self.categories[objectKey]) {
-                        totalData += objectValue;
-                        var category = self.categories[objectKey];
-                        if (!originData.hasOwnProperty(category)) {
-                            originData[category] = objectValue;
-                            originColor.push(self.categoryColor[category]);
-                            originLabel.push(category);
-                        } else {
-                            originData[category] += objectValue;
-                        }
+                let year = value['year'];
+                if (!recordsByYearData.hasOwnProperty(value['year'])) {
+                    recordsByYearData[year] = value['count'];
+                } else {
+                    recordsByYearData[year] += value['count'];
+                }
+                if (!dataByOrigin.hasOwnProperty(self.categories[value['origin']])) {
+                    dataByOrigin[self.categories[value['origin']]] = {};
+                }
+                dataByOrigin[self.categories[value['origin']]][year] = value['count'];
+            });
 
-                        if (!dataByOrigin[self.categories[objectKey]]) {
-                            dataByOrigin[self.categories[objectKey]] = [
-                                objectValue
-                            ];
-                        } else {
-                            dataByOrigin[self.categories[objectKey]].push(objectValue);
-                        }
-                    }
-                });
-                recordsByYearData.push(totalData);
+            let categorySummaryLabels = [];
+            let categorySummaryColors = [];
+
+            $.each(categorySummary, function (key, value) {
+                categorySummaryLabels.push(self.categories[key]);
+                categorySummaryColors.push(self.categoryColor[self.categories[key]]);
             });
 
             this.originCategoryChart = self.createPieChart(
                 self.originCategoryGraph.getContext('2d'),
-                Object.values(originData),
-                originLabel,
+                Object.values(categorySummary),
+                categorySummaryLabels,
                 self.pieOptions,
-                originColor);
+                categorySummaryColors);
 
             var recordsByYearDatasets = [{
                 backgroundColor: '#48862b',
@@ -515,7 +508,7 @@ define([
             this.recordsTimelineGraphCanvas = new Chart(self.recordsTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: recordsByYearLabel,
+                    labels: Object.keys(recordsByYearData),
                     datasets: recordsByYearDatasets
                 },
                 options: recordsByYearGraphOptions
@@ -542,19 +535,27 @@ define([
             };
 
             var originTimelineDatasets = [];
+
+            /*
+                Example Data :
+                dataByOrigin = {
+                    'Native': {2014: 3, 2016: 4},
+                    'Non-Native': {2014: 3, 2016: 1}
+                };
+            */
             $.each(dataByOrigin, function (key, value) {
                 originTimelineDatasets.push({
                     label: key,
                     backgroundColor: self.categoryColor[key],
                     borderWidth: 1,
-                    data: value
+                    data: Object.values(value)
                 });
             });
 
             this.originTimelineGraphCanvas = new Chart(self.originTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: recordsByYearLabel,
+                    labels: Object.keys(recordsByYearData),
                     datasets: originTimelineDatasets
                 },
                 options: originTimelineGraphOptions

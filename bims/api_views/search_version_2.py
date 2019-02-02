@@ -72,6 +72,7 @@ class SearchVersion2APIView(APIView):
 class SearchVersion2(object):
 
     location_sites_raw_query = ''
+    collection_records = None
 
     def __init__(self, parameters):
         self.parameters = parameters
@@ -84,6 +85,14 @@ class SearchVersion2(object):
         json_query = self.get_request_data(field=field)
         if json_query:
             return json.loads(json_query)
+        else:
+            return None
+
+    @property
+    def site_ids(self):
+        site_ids = self.get_request_data('siteId')
+        if site_ids:
+            return site_ids.split(',')
         else:
             return None
 
@@ -151,6 +160,8 @@ class SearchVersion2(object):
         filters = dict()
         filters['validated'] = True
         filters['taxonomy__isnull'] = False
+        if self.site_ids:
+            filters['site__in'] = self.site_ids
         if self.categories:
             filters['category__in'] = self.categories
         if self.reference_category:
@@ -201,26 +212,29 @@ class SearchVersion2(object):
             'site_id',
             'site__geometry_point',
             'site__name').query
-        return bio
+
+        self.collection_records = bio
+        return self.collection_records
 
     def get_summary_data(self):
-        biological_records = self.process_search()
+        if not self.collection_records:
+            self.process_search()
 
         collections = (
-            biological_records.annotate(
+            self.collection_records.annotate(
                 name=F('taxonomy__scientific_name'),
                 taxon_id=F('taxonomy_id')).values(
                 'taxon_id', 'name').annotate(total=Count('taxonomy'))
         )
 
         sites = (
-            biological_records.annotate(
+            self.collection_records.annotate(
                 name=F('site__name'),
                 site_id=F('site__id')).values(
                 'site_id', 'name').annotate(total=Count('site')))
 
         return {
-            'total_records': len(biological_records),
+            'total_records': len(self.collection_records),
             'total_sites': len(sites),
             'records': list(collections),
             'sites': list(sites)
