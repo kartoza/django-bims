@@ -2231,7 +2231,11 @@ div:hover::-webkit-scrollbar {
 }
 
 .sass-button {
-    margin-top: 10px;
+
+}
+
+.right-panel-last-button {
+    margin-bottom: 0.25rem !important;
 }
 
 .popup-loading, .popup-error {
@@ -2279,3 +2283,9 @@ div:hover::-webkit-scrollbar {
 #filter_study_reference_chosen .chosen-results{
     max-height: 20vh;
 }
+
+.right-panel-button {
+    width: 100%;
+    margin-bottom: 0;
+}
+
