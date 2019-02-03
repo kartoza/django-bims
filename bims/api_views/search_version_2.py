@@ -1,7 +1,7 @@
 import json
 import hashlib
 from django.db.models import Q, Count, F
-from django.contrib.gis.db.models import Union
+from django.contrib.gis.db.models import Union, Extent
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.models import (
@@ -87,6 +87,15 @@ class SearchVersion2(object):
             return json.loads(json_query)
         else:
             return None
+
+    def extent(self):
+        # Get extent from collection results
+        if not self.collection_records:
+            return []
+        extent = self.collection_records.aggregate(
+            extent=Extent('site__geometry_point')
+        )
+        return list(extent['extent'])
 
     @property
     def site_ids(self):
