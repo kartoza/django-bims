@@ -13,7 +13,7 @@ CATCHMENT_AREA_ORDER = {
 }
 
 
-def generate_river_catchments():
+def generate_river_catchments(location_site_id=None):
     """
     Generate river catchments tree data from geocontext data
     then save the data to river_catchment table. This data is used for
@@ -21,10 +21,11 @@ def generate_river_catchments():
     """
 
     # Get all location site with geocontext data
-
     location_sites = LocationSite.objects.filter(
         location_context_document__isnull=False
     )
+    if location_site_id:
+        location_sites.filter(id=location_site_id)
     processed_data = 0
 
     for location_site in location_sites:
