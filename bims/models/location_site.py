@@ -78,7 +78,7 @@ class LocationSite(DocumentLinksMixin):
         blank=True,
     )
 
-    location_context_document = models.TextField(
+    location_context_document = JSONField(
         verbose_name='Document for location context as JSON.',
         help_text='This document is generated from GeoContext by using '
                   'management command or changing the geometry.',
@@ -198,8 +198,32 @@ class LocationSite(DocumentLinksMixin):
     def __unicode__(self):
         return u'%s' % self.name
 
+    def validate_json_field(self, field):
+        max_allowed = 10
+        attempt = 0
+        is_dictionary = False
+
+        while not is_dictionary and attempt < max_allowed:
+            if not field:
+                break
+            if isinstance(field, dict):
+                is_dictionary = True
+            else:
+                field = json.loads(
+                    field
+                )
+                attempt += 1
+        return field
+
     def save(self, *args, **kwargs):
         """Check if one of geometry is not null."""
+        self.additional_data = self.validate_json_field(
+            self.additional_data
+        )
+        self.location_context_document = self.validate_json_field(
+            self.location_context_document
+        )
+
         if self.geometry_point or self.geometry_line or \
                 self.geometry_polygon or self.geometry_multipolygon:
             # Check if geometry is allowed
@@ -226,4 +250,3 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     if not issubclass(sender, LocationSite):
         return
-    update_cluster_by_site(instance)
