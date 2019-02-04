@@ -13,7 +13,7 @@ CATCHMENT_AREA_ORDER = {
 }
 
 
-def generate_river_catchments():
+def generate_river_catchments(location_site_id=None):
     """
     Generate river catchments tree data from geocontext data
     then save the data to river_catchment table. This data is used for
@@ -21,20 +21,26 @@ def generate_river_catchments():
     """
 
     # Get all location site with geocontext data
-
     location_sites = LocationSite.objects.filter(
         location_context_document__isnull=False
     )
+    if location_site_id:
+        location_sites.filter(id=location_site_id)
     processed_data = 0
 
     for location_site in location_sites:
+        processed_data += 1
+        print('Data processed = %s/%s' % (processed_data, len(location_sites)))
         geocontext_data = json.loads(
             location_site.location_context_document
         )
         if CONTEXT_GROUP_VALUES not in geocontext_data:
             continue
 
-        context_group = geocontext_data[CONTEXT_GROUP_VALUES]
+        try:
+            context_group = geocontext_data[CONTEXT_GROUP_VALUES]
+        except TypeError:
+            continue
         river_data = None
         for context_data in context_group:
             if context_data['key'] == WATER_GROUP:
@@ -82,10 +88,8 @@ def generate_river_catchments():
                     value=service_data_value,
                     **extra_fields
                 )
+                river_catchment.location_sites.add(location_site)
                 river_catchments_tree[catchment_order] = river_catchment
-
-        processed_data += 1
-        print('Data processed = %s/%s' % (processed_data, len(location_sites)))
 
 
 def get_river_catchment_tree(parent=None):

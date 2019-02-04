@@ -70,9 +70,8 @@ td.sampled-name {
 }
 
 .sass-radio-label {
-    line-height: 2rem;
-    text-align: center;
-    vertical-align: middle;
     display: inline-flex;
     border-style: none;
+    padding: 0;
+    text-align: center;
 }

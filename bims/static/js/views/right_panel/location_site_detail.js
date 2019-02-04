@@ -58,7 +58,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         },
         renderSiteDetail: function (data) {
             var $detailWrapper = $('<div></div>');
-
             var locationContext = {};
             var maxPanelThatShouldBeOpen = 1;
             var self = this;
@@ -160,19 +159,27 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             } else {
                 $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
             }
+
+            // Add detail dashboard button
+            var button = `
+                <div class="container-fluid">
+                <button class="btn fbis-button right-panel-button 
+                               open-detailed-site-button">Dashboard</button>`;
+            $detailWrapper.append(button);
+
+            if (is_sass_enabled) {
+                var sassButton = `
+                    <div class="container-fluid"><a 
+                    href="/sass/${this.parameters['siteId']}
+                    " class="btn right-panel-button right-panel-last-button 
+                             fbis-button sass-button">SASS +</a></div>`;
+                $detailWrapper.append(sassButton);
+            }
+
             return $detailWrapper;
         },
         renderDashboardDetail: function (data) {
             var $detailWrapper = $('<div></div>');
-
-            // Add detail dashboard and sass buttons
-            var button = '<button class="btn btn-info open-detailed-site-button"> Open detailed dashboard </button>';
-            $detailWrapper.append(button);
-
-            if (is_sass_enabled) {
-                var sassButton = '<a href="/sass/'+this.parameters['siteId']+'" class="btn btn-info sass-button"> Add SASS </a>';
-                $detailWrapper.append(sassButton);
-            }
 
             if (!data.hasOwnProperty('records_occurrence')) {
                 $detailWrapper.append('<div class="side-panel-content">' +
