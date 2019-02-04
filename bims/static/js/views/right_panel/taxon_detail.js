@@ -186,7 +186,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     $('#third-party').click();
                     $('#third-party').append(self.renderThirdPartyData(data));
 
-                    speciesDetailContainer.find('.open-detailed-view').click(function () {
+                    speciesDetailContainer.find('#open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {
                             taxonId: self.taxonId,
                             taxonName: self.taxonName,
