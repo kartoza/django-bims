@@ -56,7 +56,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
             var template = _.template($('#third-party-template').html());
             $thirdPartyData.append(template({
-                taxon_gbif_id: this.gbifId
+                iucn_redlist_id : data['iucn_redlist_id']
             }));
 
             var $wrapper = $thirdPartyData.find('.third-party-wrapper');
@@ -92,7 +92,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                             $fetchingInfoDiv.hide();
                         }
                         $firstColumnDiv.append('<a href="'+media['references']+'">' +
-                            '<img alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
+                            '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
                     }
                     for (var j=firstColumn; j < firstColumn+secondColumn; j++) {
                         var resultSecond = results[j];
@@ -201,45 +201,39 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     var resourcesContainer = $('#taxon-resources');
                     resourcesContainer.append(self.renderResources(data))
 
-                    this.OriginInfoListChildren = $('.origin-info-list-detail').children();
-                    this.endemicInfoList = $.find('.endemic-info-list-detail');
-                    this.conservationStatusList = $.find('.conservation-status-list-detail');
+                    this.OriginInfoList = $('.origin-info-list-detail');
+                    this.endemicInfoList= $('.endemic-info-list-detail');
+                    this.conservationStatusList = $('.conservation-status-list-detail');
                     // Set origin
                     var origin = data['origin'];
 
-                    // if (origin == 'Native') {
-                    //     origin == 'Indigenous';
-                    // }
-                    // else if (origin == 'Non-native') {
-                    //     origin == 'Alien'
-                    // }
-                    $.each(this.OriginInfoListChildren, function (key, data) {
+                    $.each(this.OriginInfoList.children(), function (key, data) {
                         var $originInfoItem = $(data);
                         if ($originInfoItem.data('value') === origin) {
                             $originInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
                         }
                     });
 
-                    // // Set endemic
-                    // var endemic = data['endemism'];
-                    // $.each(this.endemicInfoList.children(), function (key, data) {
-                    //     var $endemicInfoItem = $(data);
-                    //     if (!endemic) {
-                    //         return true;
-                    //     }
-                    //     if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
-                    //         $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                    //     }
-                    // });
-                    //
-                    // // Set con status
-                    // var conservation = data['iucn_status_name'];
-                    // $.each(this.conservationStatusList.children(), function (key, data) {
-                    //     var $conservationStatusItem = $(data);
-                    //     if ($conservationStatusItem.data('value') === conservation) {
-                    //         $conservationStatusItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                    //     }
-                    // });
+                    // Set endemic
+                    var endemic = data['endemism'];
+                    $.each(this.endemicInfoList.children(), function (key, data) {
+                        var $endemicInfoItem = $(data);
+                        if (!endemic) {
+                            endemic = "undefined";
+                        }
+                        if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
+                            $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+                        }
+                    });
+
+                    // Set con status
+                    var conservation = data['iucn_status_name'];
+                    $.each(this.conservationStatusList.children(), function (key, data) {
+                        var $conservationStatusItem = $(data);
+                        if ($conservationStatusItem.data('value') === conservation) {
+                            $conservationStatusItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+                        }
+                    });
                 },
                 error: function (req, err) {
 

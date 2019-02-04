@@ -945,9 +945,9 @@
 </script>
 
 <script type="text/template" id="third-party-template">
-    <a href="https://gbif.org/species/<%= taxon_gbif_id %>/" target="_blank">
+    <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/<%= iucn_redlist_id %>/" target="_blank">
         <div class="third-party-info">
-            From gbif.org
+            Link to IUCN species page
         </div>
     </a>
     <div class="third-party-fetching-info">
@@ -1017,6 +1017,7 @@
                 <span class="dd-status-item" data-value="widespread">Widespread</span>
                 <span class="dd-status-item" data-value="regional endemic">Regional endemic</span>
                 <span class="dd-status-item" data-value="micro-endemic">Micro-endemic</span>
+                <span class="dd-status-item" data-value="undefined">Undefined</span>
             </div>
         </div>
         <div id="species-detail-summary-conservation-status">
