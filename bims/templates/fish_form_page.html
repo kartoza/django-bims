@@ -63,7 +63,27 @@
                 </tr>
                 </thead>
                 <tbody>
-
+                {% for taxon in taxa %}
+                    <tr>
+                        <td scope="row"
+                            class="taxon-name">
+                            {{ taxon.taxon_name }}
+                            <input type="hidden" value="{{ taxon.taxon_id }}">
+                        </td>
+                        <td><input type="text"
+                                   name="{{ taxon.taxon_id }}-observed"
+                                   class="form-control"
+                                   placeholder=""></td>
+                        <td><input type="text"
+                                   name="{{ taxon.taxon_id }}-abundance"
+                                   class="form-control"
+                                   placeholder=""></td>
+                        <td><input type="text"
+                                   name="{{ taxon.taxon_id }}-sampling-method"
+                                   class="form-control"
+                                   placeholder=""></td>
+                    </tr>
+                {% endfor %}
                 </tbody>
             </table>
 

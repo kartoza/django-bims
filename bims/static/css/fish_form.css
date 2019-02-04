@@ -20,3 +20,6 @@ body {
     max-height: 425px;
     padding-bottom: 15px;
 }
+td.taxon-name {
+    vertical-align: middle !important;
+}

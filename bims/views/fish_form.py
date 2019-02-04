@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.db.models import F
 from django.shortcuts import get_object_or_404
 from bims.models import LocationSite
 
@@ -15,6 +16,14 @@ class FishFormView(TemplateView):
         context['location_site_name']  = self.location_site.name
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
+        context['taxa'] = list(
+            self.location_site.biological_collection_record.values(
+                taxon_id=F('taxonomy'),
+                taxon_name=F(
+                    'taxonomy__'
+                    'canonical_name')
+            ).distinct('taxonomy')
+        )
         return context
 
     @method_decorator(login_required)
