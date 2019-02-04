@@ -963,50 +963,76 @@
 </script>
 
 <script type="text/template" id="species-template">
-    <div id="species-detail-summary-head-table">
-        <table>
-            <tr class="species-detail-row">
-                <td class="species-detail-cell cell-header">
-                    Taxon
-                </td>
-                <td class="species-detail-cell cell-content">
-                    <%= scientific_name %>
-                </td>
-            </tr>
-             <tr class="species-detail-row">
-                <td class="species-detail-cell cell-header">
-                    Common Name
-                </td>
-                <td class="species-detail-cell cell-content">
-                    <%= canonical_name %>
-                </td>
-            </tr>
-             <tr class="species-detail-row">
-                <td class="species-detail-cell cell-header">
-                    Number of occurrence records
-                </td>
-                <td class="species-detail-cell cell-content">
-                    <%= count %>
-                </td>
-            </tr>
-{#             <tr class="species-detail-row">#}
-{#                <td class="species-detail-cell cell-header">#}
-{#                    Number of sites#}
-{#                </td>#}
-{#                <td class="species-detail-cell cell-content">#}
-{#                    <%= scientific_name %>#}
-{#                </td>#}
-{#            </tr>#}
-        </table>
-    </div>
-    <div id="species-detail-summary-origin">
-
-    </div>
-    <div id="species-detail-summary-endemism">
-
-    </div>
-    <div id="species-detail-summary-conservation-status">
-
+    <div id="species-detail-wrapper">
+        <div id="species-detail-summary-head-table">
+            <table>
+                <tr class="species-detail-row">
+                    <td class="species-detail-cell cell-header">
+                        Taxon
+                    </td>
+                    <td class="species-detail-cell cell-content">
+                        <%= scientific_name %>
+                    </td>
+                </tr>
+                 <tr class="species-detail-row">
+                    <td class="species-detail-cell cell-header">
+                        Common Name
+                    </td>
+                    <td class="species-detail-cell cell-content">
+                        <%= canonical_name %>
+                    </td>
+                </tr>
+                 <tr class="species-detail-row">
+                    <td class="species-detail-cell cell-header">
+                        Number of occurrence records
+                    </td>
+                    <td class="species-detail-cell cell-content">
+                        <%= count %>
+                    </td>
+                </tr>
+    {#             <tr class="species-detail-row">#}
+    {#                <td class="species-detail-cell cell-header">#}
+    {#                    Number of sites#}
+    {#                </td>#}
+    {#                <td class="species-detail-cell cell-content">#}
+    {#                    <%= scientific_name %>#}
+    {#                </td>#}
+    {#            </tr>#}
+            </table>
+        </div>
+        <div id="species-detail-summary-origin">
+            <div class="row dd-sub-title">ORIGIN</div>
+            <div class="row dd-status-list origin-info-list">
+                <span class="dd-status-item"
+                      data-value="indigenous">Native</span>
+                <span class="dd-status-item"
+                      data-value="alien">Non-native</span>
+                <span class="dd-status-item" data-value="translocated">Translocated</span>
+            </div>
+        </div>
+        <div id="species-detail-summary-endemism">
+            <div class="row dd-sub-title">ENDEMISM</div>
+            <div class="row dd-status-list endemic-info-list">
+                <span class="dd-status-item" data-value="widespread">Widespread</span>
+                <span class="dd-status-item" data-value="regional endemic">Regional endemic</span>
+                <span class="dd-status-item" data-value="micro-endemic">Micro-endemic</span>
+            </div>
+        </div>
+        <div id="species-detail-summary-conservation-status">
+            <div class="row dd-sub-title">CONSERVATION STATUS</div>
+            <div class="row dd-status-list conservation-status-list">
+                <span class="dd-status-item"
+                      data-value="EX">Extinct (EX)</span>
+                <span class="dd-status-item" data-value="EW">Extinct in the wild (EW)</span>
+                <span class="dd-status-item" data-value="CR">Critically endangered (CR)</span>
+                <span class="dd-status-item" data-value="EN">Endangered (EN)</span>
+                <span class="dd-status-item" data-value="VU">Vulnerable (VU)</span>
+                <span class="dd-status-item" data-value="NT">Near threatened (NT)</span>
+                <span class="dd-status-item" data-value="LC">Least concern (LC)</span>
+                <span class="dd-status-item" data-value="DD">Data deficient (DD)</span>
+                <span class="dd-status-item" data-value="NE">Not evaluated (NE)</span>
+             </div>
+        </div>
     </div>
 </script>
 

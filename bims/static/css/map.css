@@ -2287,15 +2287,12 @@ div:hover::-webkit-scrollbar {
     padding: 0.25rem;
 }
 
-.species-detail-row {
 
+#species-detail-wrapper {
+    margin: 0.4rem;
 }
 
-#species-detail-summary-head-table table {
-    margin: 0.25rem;
+.side-panel-info #content-panel::-webkit-scrollbar {
+    width: 0px;
 }
 
-.species-detail-cell.cell-header
-{
-
-}
