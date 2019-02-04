@@ -134,10 +134,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 '<div class="search-results-total" data-visibility="false"> Species details ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             $detailWrapper.append(
-                '<div id="taxon-resources" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> Resources ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $detailWrapper.append(
                 '<div id="third-party" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> 3rd Party Data ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
@@ -164,6 +160,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 Shared.TaxonDetailXHRRequest.abort();
                 Shared.TaxonDetailXHRRequest = null;
             }
+            var request_data = "";
             Shared.TaxonDetailXHRRequest = $.get({
                 url: this.url,
                 dataType: 'json',
@@ -189,9 +186,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     $('#third-party').click();
                     $('#third-party').append(self.renderThirdPartyData(data));
 
-
-
-
                     speciesDetailContainer.find('.open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {
                             taxonId: self.taxonId,
@@ -205,12 +199,54 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                         taxonId: self.taxonId, taxonName: self.taxonName, siteDetail: self.siteDetail}, self.showRecords);
 
                     var resourcesContainer = $('#taxon-resources');
-                    resourcesContainer.append(self.renderResources(data));
+                    resourcesContainer.append(self.renderResources(data))
+
+                    this.OriginInfoListChildren = $('.origin-info-list-detail').children();
+                    this.endemicInfoList = $.find('.endemic-info-list-detail');
+                    this.conservationStatusList = $.find('.conservation-status-list-detail');
+                    // Set origin
+                    var origin = data['origin'];
+
+                    // if (origin == 'Native') {
+                    //     origin == 'Indigenous';
+                    // }
+                    // else if (origin == 'Non-native') {
+                    //     origin == 'Alien'
+                    // }
+                    $.each(this.OriginInfoListChildren, function (key, data) {
+                        var $originInfoItem = $(data);
+                        if ($originInfoItem.data('value') === origin) {
+                            $originInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+                        }
+                    });
+
+                    // // Set endemic
+                    // var endemic = data['endemism'];
+                    // $.each(this.endemicInfoList.children(), function (key, data) {
+                    //     var $endemicInfoItem = $(data);
+                    //     if (!endemic) {
+                    //         return true;
+                    //     }
+                    //     if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
+                    //         $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+                    //     }
+                    // });
+                    //
+                    // // Set con status
+                    // var conservation = data['iucn_status_name'];
+                    // $.each(this.conservationStatusList.children(), function (key, data) {
+                    //     var $conservationStatusItem = $(data);
+                    //     if ($conservationStatusItem.data('value') === conservation) {
+                    //         $conservationStatusItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+                    //     }
+                    // });
                 },
                 error: function (req, err) {
 
                 }
             });
-        }
+        },
     })
 });
+
+
