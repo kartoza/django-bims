@@ -1,5 +1,6 @@
 # coding=utf8
 import json
+import os
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
@@ -102,7 +103,7 @@ class LocationSiteClusterList(APIView):
     """
 
     def clustering_process(
-            self, records, zoom, pix_x, pix_y):
+        self, records, zoom, pix_x, pix_y):
         """
         Iterate records and create point clusters
         We use a simple method that for every point, that is not within any
@@ -225,13 +226,13 @@ class LocationSitesSummary(APIView):
             query=json.dumps(filters)
         )
 
-        # if search_process.file_path:
-        #     if os.path.exists(search_process.file_path):
-        #         try:
-        #             raw_data = open(search_process.file_path)
-        #             return Response(json.load(raw_data))
-        #         except ValueError:
-        #             pass
+        if search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
 
         records_occurrence = collection_results.annotate(
             name=F('taxonomy__scientific_name'),
@@ -260,12 +261,19 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
 
+        search_process.set_search_raw_query(
+            search.location_sites_raw_query
+        )
+        raw = search_process.search_raw_query
+
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
-            'extent': search.extent()
+            'process': search_process.process_id,
+            'extent': search.extent(),
+            'sites_raw_query': raw[raw.find('WHERE') + 6:len(raw)]
         }
 
         file_path = create_search_process_file(

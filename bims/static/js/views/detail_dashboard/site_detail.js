@@ -89,12 +89,19 @@ define([
                 }))
             });
 
-            this.siteLayerSource = new ol.source.Vector();
-            this.siteLayerVector = new ol.layer.Vector({
-                source: this.siteLayerSource,
-                style: function (feature) {
-                    return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
-                }
+            let biodiversityLayersOptions = {
+                url: geoserverPublicUrl + 'wms',
+                params: {
+                    LAYERS: 'geonode:test_site_view',
+                    FORMAT: 'image/png8',
+                    viewparams: 'where:0=1'
+                },
+                ratio: 1,
+                serverType: 'geoserver'
+            };
+            this.siteLayerSource = new ol.source.ImageWMS(biodiversityLayersOptions);
+            this.siteTileLayer = new ol.layer.Image({
+                source: self.siteLayerSource
             });
 
             return this;
@@ -121,6 +128,7 @@ define([
                             zoom: 2
                         })
                     });
+                    self.mapLocationSite.addLayer(self.siteTileLayer);
                 }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
@@ -146,36 +154,22 @@ define([
                 success: function (data) {
                     self.createOccurrenceTable(data);
                     self.createCharts(data);
-                    var locationSiteClusterSourceExist = false;
-                    if (self.parent.layers.locationSiteClusterSource) {
-                        if (self.parent.layers.locationSiteClusterSource.getFeatures().length > 0) {
-                            locationSiteClusterSourceExist = true;
-                        }
-                    }
-                    if (locationSiteClusterSourceExist && multipleSites) {
-                        // Copy from main map
-                        self.copyClusterLayer();
-                    } else {
-                        self.mapLocationSite.addLayer(self.siteLayerVector);
-                        self.fetchLocationSiteCoordinate(self.fetchLocationSiteCoordinateUrl + parameters);
-                    }
+
+                    // Zoom to extent
+                    let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+                    self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
+                    self.mapLocationSite.getView().setZoom(8);
+
+                    let newParams = {
+                        layers: 'geonode:test_site_view',
+                        format: 'image/png',
+                        viewparams: 'where:' + data['sites_raw_query']
+                    };
+                    self.siteLayerSource.updateParams(newParams);
+
                     self.loadingDashboard.hide();
                 }
             });
-        },
-        copyClusterLayer: function () {
-            var layer = this.parent.layers.locationSiteClusterSource;
-            var self = this;
-            if (layer) {
-                this.siteLayerVector = new ol.layer.Vector({
-                    source: this.parent.layers.locationSiteClusterSource,
-                    style: function (feature) {
-                        return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
-                    }
-                });
-                this.mapLocationSite.addLayer(this.siteLayerVector);
-                this.fitSitesToMap();
-            }
         },
         fetchLocationSiteCoordinate: function (url) {
             var self = this;
@@ -243,13 +237,6 @@ define([
         clearDashboard: function () {
             var self = this;
             this.mapLocationSite.removeLayer(this.siteLayerVector);
-            this.siteLayerSource = new ol.source.Vector({});
-            this.siteLayerVector = new ol.layer.Vector({
-                source: this.siteLayerSource,
-                style: function (feature) {
-                    return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
-                }
-            });
             this.siteName.html('');
             this.siteNameWrapper.hide();
             this.uniqueSites = [];
@@ -279,9 +266,12 @@ define([
             }
 
             if (this.mapLocationSite) {
-                this.mapLocationSite.getOverlays().getArray().slice(0).forEach(function (overlay) {
-                    this.mapLocationSite.removeOverlay(overlay);
-                }, this);
+                let newParams = {
+                    layers: 'geonode:test_site_view',
+                    format: 'image/png',
+                    viewparams: 'where:0=1'
+                };
+                self.siteLayerSource.updateParams(newParams);
             }
 
             if (Shared.LocationSiteDetailXHRRequest) {
