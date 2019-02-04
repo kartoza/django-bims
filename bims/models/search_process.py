@@ -14,6 +14,7 @@ from django.dispatch.dispatcher import receiver
 CLUSTER_GENERATION = 'cluster_generation'
 SEARCH_RESULTS = 'search_results'
 SITES_SUMMARY = 'sites_summary'
+TAXON_SUMMARY = 'taxon_summary'
 
 SEARCH_PROCESSING = 'processing'
 SEARCH_FINISHED = 'finished'
@@ -27,6 +28,7 @@ class SearchProcess(models.Model):
         (CLUSTER_GENERATION, 'Cluster Generation'),
         (SEARCH_RESULTS, 'Search Results'),
         (SITES_SUMMARY, 'Site Summary'),
+        (TAXON_SUMMARY, 'Taxon Summary'),
     )
 
     file_path = models.CharField(

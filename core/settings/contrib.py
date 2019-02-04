@@ -325,4 +325,8 @@ BIMS_PREFERENCES = {
     'enable_ecoregion_filter': ast.literal_eval(
         os.environ.get('ENABLE_ECOREGION_FILTER', 'False')
     ),
+    'geoserver_location_site_layer': os.environ.get(
+        'GEOSERVER_LOCATION_SITE_LAYER',
+        ''
+    )
 }

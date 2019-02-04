@@ -38,7 +38,8 @@ from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_collection_data import RejectCollectionData
 from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
-    GetBioRecords
+    GetBioRecords,
+    BioCollectionSummary
 )
 from bims.api_views.non_validated_record import GetNonValidatedRecords
 from bims.api_views.hide_popup_info_user import HidePopupInfoUser
@@ -112,6 +113,8 @@ urlpatterns = [
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-bio-records/$',
         GetBioRecords.as_view(), name='get-bio-records'),
+    url(r'^bio-collection-summary/$',
+        BioCollectionSummary.as_view(), name='bio-collection-summary'),
     url(r'^get-unvalidated-records/$',
         GetNonValidatedRecords.as_view(), name='get-unvalidated-records'),
     url(r'^send-email-validation/$',

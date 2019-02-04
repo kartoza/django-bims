@@ -51,6 +51,7 @@
         {% if use_conservation_status %}
             conservationStatusData = {{ conservation_status_data | safe }};
         {% endif %}
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
     </script>
     {% block extra_head %}
 
