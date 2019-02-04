@@ -1,0 +1,22 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box; //to account for the border on top
+    -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+.body-form {
+    padding-top: 100px;
+}
+.header {
+    font-size: 15pt;
+    padding-bottom: 10px;
+}
+#fish-map {
+    width: 100%;
+    max-height: 425px;
+    padding-bottom: 15px;
+}

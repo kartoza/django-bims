@@ -32,7 +32,7 @@ from bims.views.download_csv_taxa_records import \
     download_csv_site_taxa_records
 from bims.views.autocomplete_search import autocomplete
 from bims.views.proxy import proxy_request
-
+from bims.views.fish_form import FishFormView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -76,6 +76,7 @@ urlpatterns = [
         name='taxa-site-download'),
     url(r'^autocomplete/$', autocomplete, name='autocomplete-search'),
     url(r'^bims_proxy/(?P<path>.*)', proxy_request),
+    url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
 ]
 
 # Api urls
