@@ -96,6 +96,7 @@ define([
             Shared.Dispatcher.on('map:showSiteDetailedDashboard', this.showSiteDetailedDashboard, this);
             Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
             Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
+            Shared.Dispatcher.on('map:resetSitesLayer', this.resetSitesLayer, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this);
@@ -651,8 +652,7 @@ define([
                 format: 'image/png',
                 viewparams: 'where:' + query
             };
-            let self = this;
-            self.layers.biodiversitySource.updateParams(newParams);
+            this.layers.biodiversitySource.updateParams(newParams);
         },
         clearAllLayers: function () {
             let newParams = {
@@ -660,12 +660,15 @@ define([
                 format: 'image/png',
                 viewparams: 'where:0=1'
             };
-            let self = this;
-            self.layers.biodiversitySource.updateParams(newParams);
+            this.layers.biodiversitySource.updateParams(newParams);
         },
-        refetchRecords: function () {
-            this.zoomToDefault();
-            this.fetchingRecords();
+        resetSitesLayer: function () {
+            let newParams = {
+                layers: 'geonode:test_site_view',
+                format: 'image/png',
+                viewparams: 'where:1=1'
+            };
+            this.layers.biodiversitySource.updateParams(newParams);
         },
         showTaxonDetailedDashboard: function (data) {
             this.taxonDetailDashboard.show(data);

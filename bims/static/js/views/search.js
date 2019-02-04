@@ -381,7 +381,7 @@ define([
             Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
             Shared.Dispatcher.trigger('clusterBiological:clearClusters');
 
-            Shared.Dispatcher.trigger('map:clearAllLayers');
+            Shared.Dispatcher.trigger('map:resetSitesLayer');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {
