@@ -345,7 +345,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.recordsAreaTable.html('');
             this.siteGeoPoints = {};
 
-            this.taxaVectorSource.clear();
+            this.taxaVectorSource = null;
         },
         closeDashboard: function () {
             var self = this;
