@@ -10,6 +10,7 @@ body {
 }
 .body-form {
     padding-top: 100px;
+    padding-bottom: 50px;
 }
 .header {
     font-size: 15pt;
@@ -20,6 +21,9 @@ body {
     max-height: 425px;
     padding-bottom: 15px;
 }
-td.taxon-name {
+table td {
     vertical-align: middle !important;
+}
+.form-check {
+    padding-left: 45px;
 }

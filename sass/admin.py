@@ -17,6 +17,7 @@ from sass.models import (
     SiteVisitChem,
     SASS5Sheet,
     SASS5Record,
+    SamplingMethod,
 )
 
 
@@ -167,6 +168,13 @@ class SASS5RecordAdmin(admin.ModelAdmin):
     )
 
 
+class SamplingMethodAdmin(admin.ModelAdmin):
+    list_display = (
+        'sampling_method',
+        'effort_measure'
+    )
+
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
@@ -181,3 +189,4 @@ admin.site.register(Chem, ChemAdmin)
 admin.site.register(SiteVisitChem, SiteVisitChemAdmin)
 admin.site.register(SASS5Sheet, SASS5SheetAdmin)
 admin.site.register(SASS5Record, SASS5RecordAdmin)
+admin.site.register(SamplingMethod, SamplingMethodAdmin)

@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
-from bims.models import LocationSite
+from bims.models import LocationSite, Biotope
+from sass.models import SamplingMethod
 
 
 class FishFormView(TemplateView):
@@ -13,7 +14,10 @@ class FishFormView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(FishFormView, self).get_context_data(**kwargs)
+        if not self.location_site:
+            return context
         context['location_site_name']  = self.location_site.name
+        context['location_site_code']  = self.location_site.site_code
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['taxa'] = list(
@@ -21,8 +25,19 @@ class FishFormView(TemplateView):
                 taxon_id=F('taxonomy'),
                 taxon_name=F(
                     'taxonomy__'
-                    'canonical_name')
+                    'canonical_name'),
+                rank=F('taxonomy__rank')
             ).distinct('taxonomy')
+        )
+        context['biotope_list'] = list(
+            Biotope.objects.all().values(
+                'name', 'description', 'display_order'
+            ).order_by('display_order')
+        )
+        context['sampling_method_list'] = list(
+            SamplingMethod.objects.all().values(
+                'id', 'sampling_method'
+            ).order_by(F('normalisation_factor').asc(nulls_first=True))
         )
         return context
 
