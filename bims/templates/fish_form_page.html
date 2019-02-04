@@ -14,7 +14,8 @@
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
-
+        const location_site_lat = '{{ location_site_lat }}';
+        const location_site_long = '{{ location_site_long }}';
     </script>
 
 {% endblock %}
@@ -24,7 +25,7 @@
         {% csrf_token %}
         <div class="body-form container">
             <div class="header">
-                Add fish data for site
+                Add fish data for site {{ location_site_name }}
             </div>
             <div id="fish-map"></div>
             <div class="form-group row">
