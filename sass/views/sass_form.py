@@ -231,6 +231,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         context['taxon_list'] = self.get_taxon_list()
         context['assessor'] = self.site_visit.assessor
         context['date'] = self.site_visit.site_visit_date
+        context['time'] = self.site_visit.time
 
         return context
 

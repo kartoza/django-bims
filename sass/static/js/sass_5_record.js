@@ -13,4 +13,5 @@ $(document).ready(function () {
         changeMonth: true,
         changeYear: true
     });
+    $('#time').timepicker({ 'timeFormat': 'H:i' });
 });
