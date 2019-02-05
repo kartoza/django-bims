@@ -37,3 +37,8 @@ class Chem(models.Model):
 
     def __unicode__(self):
         return self.chem_code
+
+    class Meta:
+        verbose_name_plural = "Chemistry records"
+        verbose_name = "Chemistry record"
+

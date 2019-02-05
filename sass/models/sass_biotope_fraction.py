@@ -29,3 +29,7 @@ class SassBiotopeFraction(models.Model):
             rate=self.rate,
             biotope=self.sass_biotope
         )
+
+    class Meta:
+        verbose_name_plural = "SASS biotope fractions"
+        verbose_name = "SASS biotope fraction"

@@ -25,3 +25,7 @@ class SassValidationStatus(models.Model):
         null=True,
         blank=True
     )
+
+    class Meta:
+        verbose_name_plural = "SASS validation statuses"
+        verbose_name = "SASS validation status"
