@@ -30,7 +30,7 @@ from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
 from bims.views.download_csv_taxa_records import \
     download_csv_site_taxa_records
-from bims.views.autocomplete_search import autocomplete
+from bims.views.autocomplete_search import autocomplete, user_autocomplete
 from bims.views.proxy import proxy_request
 
 
@@ -75,6 +75,9 @@ urlpatterns = [
         download_csv_site_taxa_records,
         name='taxa-site-download'),
     url(r'^autocomplete/$', autocomplete, name='autocomplete-search'),
+    url(r'^user-autocomplete/$',
+        user_autocomplete,
+        name='user-autocomplete-search'),
     url(r'^bims_proxy/(?P<path>.*)', proxy_request),
 ]
 

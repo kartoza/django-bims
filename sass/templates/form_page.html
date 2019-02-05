@@ -78,7 +78,7 @@
                 <div class="form-group">
                     <label for="assessor" class="input-label">Assessor :</label>
                     <input type="text" class="form-control" id="assessor" {% if assessor %} value="{{ assessor.first_name }} {{ assessor.last_name }}" {% endif %} >
-                    <input type="hidden" name="assessor" {% if assessor %} value="{{ assessor.id }}" {% endif %}>
+                    <input type="hidden" id="assessor_id" name="assessor" {% if assessor %} value="{{ assessor.id }}" {% endif %}>
                 </div>
             </div>
         </div>
