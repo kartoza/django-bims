@@ -648,7 +648,7 @@ define([
         },
         updateBiodiversityLayerParams: function (query) {
             let newParams = {
-                layers: 'geonode:test_site_view',
+                layers: locationSiteGeoserverLayer,
                 format: 'image/png',
                 viewparams: 'where:' + query
             };
@@ -656,7 +656,7 @@ define([
         },
         clearAllLayers: function () {
             let newParams = {
-                layers: 'geonode:test_site_view',
+                layers: locationSiteGeoserverLayer,
                 format: 'image/png',
                 viewparams: 'where:0=1'
             };
@@ -664,7 +664,7 @@ define([
         },
         resetSitesLayer: function () {
             let newParams = {
-                layers: 'geonode:test_site_view',
+                layers: locationSiteGeoserverLayer,
                 format: 'image/png',
                 viewparams: 'where:1=1'
             };
