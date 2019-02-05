@@ -31,10 +31,23 @@ class SiteVisit(AbstractAdditionalData):
         default=timezone.now
     )
 
+    time = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_owner'
+    )
+
     assessor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
-        blank=True
+        blank=True,
+        related_name='%(class)s_assessor'
     )
 
     water_level = models.CharField(

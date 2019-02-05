@@ -2,7 +2,6 @@ from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from sass.models.site_visit import SiteVisit
-from sass.models.sass5_sheet import SASS5Sheet
 
 
 class SassListView(ListView):

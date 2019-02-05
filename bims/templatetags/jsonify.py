@@ -20,7 +20,7 @@ def jsonify(object):
 def get_html_for_radio_group(name, sass_rating):
     column_width = 100 / 6
     try:
-        value = int(sass_rating[-1])
+        value = int(sass_rating)
     except:
         value = 0
     result_html = (
