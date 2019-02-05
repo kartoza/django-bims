@@ -96,17 +96,29 @@ class BioCollectionSummary(APIView):
 
         search_process.set_search_raw_query(search.location_sites_raw_query)
         raw = search_process.search_raw_query
+        endemic = None
+        if taxonomy.endemism:
+            endemic = taxonomy.endemism.name
+        iucn_status = None
+        if taxonomy.iucn_status:
+            iucn_status = taxonomy.iucn_status.category
 
         response_data['taxon'] = taxonomy.scientific_name
         response_data['gbif_id'] = taxonomy.gbif_key
         response_data['total_records'] = len(collection_results)
-        response_data['conservation_status'] = taxonomy.iucn_status.category
+        response_data['conservation_status'] = iucn_status
         response_data['origin'] = collection_results[0].category
-        response_data['endemism'] = taxonomy.endemism.name
-        response_data['records_over_time'] = list(records_over_time)
+        response_data['endemism'] = endemic
+        response_data['records_over_time_labels'] = (
+            list(records_over_time.values_list('year', flat=True))
+        )
+        response_data['records_over_time_data'] = (
+            list(records_over_time.values_list('count', flat=True))
+        )
         response_data['records_per_area'] = list(records_per_area)
         response_data['sites_raw_query'] = raw[raw.find('WHERE') + 6:len(raw)]
         response_data['process_id'] = search_process.process_id
+        response_data['extent'] = search.extent()
 
         taxonomy_rank = {
             taxonomy.rank: taxonomy.scientific_name
