@@ -49,5 +49,5 @@ class SASS5Record(models.Model):
     )
 
     class Meta:
-        verbose_name = 'SASS 5 Record'
-        verbose_name_plural = 'SASS 5 Records'
+        verbose_name = 'SASS 5 record'
+        verbose_name_plural = 'SASS 5 records'

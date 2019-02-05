@@ -200,8 +200,8 @@ class SASS5Sheet(AbstractValidation):
     class Meta:
         """Meta class for project."""
         app_label = 'sass'
-        verbose_name_plural = 'SASS 5 Sheets'
-        verbose_name = 'SASS 5 Sheet'
+        verbose_name_plural = 'SASS 5 sheets'
+        verbose_name = 'SASS 5 sheet'
 
     def data_name(self):
         return '{location_site} - {date}'.format(
