@@ -112,5 +112,15 @@ class SiteVisit(AbstractAdditionalData):
         blank=True
     )
 
+    other_biota = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    comments_or_observations = models.TextField(
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.location_site.name

@@ -176,6 +176,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         biotope_taxon_list = (
             self.site_visit.sitevisitbiotopetaxon_set.all()
         )
+        site_visit_taxon_list = dict((
+            self.site_visit.sitevisittaxon_set.all()
+        ).values_list('taxonomy__id', 'taxon_abundance__abc'))
+
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
                 sass_taxon_score = sass_taxon.sass_5_score
@@ -217,6 +221,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                     taxon_dict['gsm_value'] = (
                         sass_taxon_biotope[BIOTOPE_GSM]
                     )
+            if sass_taxon.taxon.id in site_visit_taxon_list:
+                taxon_dict['tot_value'] = (
+                    site_visit_taxon_list[sass_taxon.taxon.id]
+                )
 
             taxon_list_form.append(taxon_dict)
         return taxon_list_form
