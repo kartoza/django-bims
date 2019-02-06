@@ -14,10 +14,11 @@ from sass.models import (
     SiteVisit,
     SassTaxon,
     SiteVisitBiotopeTaxon,
+    SiteVisitTaxon,
+    TaxonAbundance,
     Rate,
     SassBiotopeFraction
 )
-from sass.enums.sass5_rating import SASS5Rating
 
 BIOTOPE_STONES = 'SIC/SOOC'
 BIOTOPE_VEGETATION = 'MV/AQV'
@@ -45,6 +46,93 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             id=sass_id,
             owner=self.request.user).exists()
 
+    def get_biotope_fractions(self, post_dictionary):
+        # Get biotope fractions
+        biotope_fractions = []
+        biotope_list = dict(
+            Biotope.objects.filter(biotope_form=1).values_list(
+                'name', 'id'
+            ))
+        for biotope_key, biotope_id in biotope_list.iteritems():
+            biotope_value = post_dictionary.get(biotope_key, None)
+            try:
+                if biotope_value:
+                    rate = Rate.objects.get(
+                        rate=biotope_value,
+                        group=2
+                    )
+                else:
+                    # Empty rate
+                    rate = Rate.objects.get(
+                        rate=-1,
+                        group=2
+                    )
+                biotope_fraction = SassBiotopeFraction.objects.get(
+                    rate=rate,
+                    sass_biotope_id=biotope_id
+                )
+                biotope_fractions.append(biotope_fraction)
+            except (
+                Rate.MultipleObjectsReturned,
+                SassBiotopeFraction.MultipleObjectsReturned):
+                continue
+        return biotope_fractions
+
+    def update_site_visit_biotope_taxon(
+        self,
+        site_visit,
+        post_dictionary,
+        date):
+        biotope_labels = {
+            'S': 'SIC/SOOC',
+            'Veg': 'MV/AQV',
+            'GSM': 'G/S/M'
+        }
+        for post_key, abundance in post_dictionary.iteritems():
+            if 'taxon_list' not in post_key:
+                continue
+            taxon_id = post_key.split('-')[1]
+            sass_taxon = SassTaxon.objects.get(id=taxon_id)
+            biotope_identifier = post_key.split('-')[2]
+            taxon_abundance = TaxonAbundance.objects.get(
+                abc=abundance
+            )
+
+            # S, Veg, GSM
+            if biotope_identifier in biotope_labels:
+                biotope_name = biotope_labels[biotope_identifier]
+                biotope = Biotope.objects.get(
+                    name=biotope_name
+                )
+                site_visit_biotope_taxon, status = (
+                    SiteVisitBiotopeTaxon.objects.get_or_create(
+                        site_visit=site_visit,
+                        sass_taxon=sass_taxon,
+                        taxon=sass_taxon.taxon,
+                        biotope=biotope,
+                    )
+                )
+                site_visit_biotope_taxon.taxon_abundance = taxon_abundance
+                site_visit_biotope_taxon.date = date
+                site_visit_biotope_taxon.save()
+
+            # Total Rating
+            site_visit_taxon, created = (
+                SiteVisitTaxon.objects.get_or_create(
+                    site=site_visit.location_site,
+                    site_visit=site_visit,
+                    sass_taxon=sass_taxon,
+                    taxonomy=sass_taxon.taxon,
+                    original_species_name=sass_taxon.taxon.canonical_name,
+                    collector=self.request.user.username,
+                    notes='from sass',
+                )
+            )
+            site_visit_taxon.owner = self.request.user
+            site_visit_taxon.collection_date = date
+            site_visit_taxon.taxon_abundance = taxon_abundance
+            site_visit_taxon.save()
+
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
@@ -52,6 +140,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
         # Assessor
         assessor_id = request.POST.get('assessor', None)
+        assessor = None
         if assessor_id:
             try:
                 assessor = Profile.objects.get(id=int(assessor_id))
@@ -83,35 +172,24 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 pk=sass_id
             )
 
-        # Get biotope fractions
-        biotope_fractions = []
-        biotope_list = dict(
-            Biotope.objects.filter(biotope_form=1).values_list(
-                'name', 'id'
-            ))
-        for biotope_key, biotope_id in biotope_list.iteritems():
-            biotope_value = request.POST.get(biotope_key, None)
-            try:
-                if biotope_value:
-                    rate = Rate.objects.get(
-                        rate=biotope_value,
-                        group=2
-                    )
-                else:
-                    # Empty rate
-                    rate = Rate.objects.get(
-                        rate=-1,
-                        group=2
-                    )
-                biotope_fraction = SassBiotopeFraction.objects.get(
-                    rate=rate,
-                    sass_biotope_id=biotope_id
-                )
-                biotope_fractions.append(biotope_fraction)
-            except (
-                    Rate.MultipleObjectsReturned,
-                    SassBiotopeFraction.MultipleObjectsReturned):
-                continue
+        biotope_fractions = self.get_biotope_fractions(self.request.POST)
+
+        site_visit.sass_biotope_fraction.add(*biotope_fractions)
+        site_visit.site_visit_date = date
+        site_visit.time = datetime
+        site_visit.assessor = assessor
+        site_visit.sass_version = self.sass_version
+        site_visit.comments_or_observations = request.POST.get(
+            'notes', None
+        )
+        site_visit.other_biota = request.POST.get(
+            'other-biota', None
+        )
+        site_visit.save()
+        self.update_site_visit_biotope_taxon(
+            site_visit,
+            self.request.POST,
+            date)
 
         if site_id:
             return redirect(
@@ -120,42 +198,6 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             return redirect(
                 reverse('sass-update-page', kwargs={'sass_id': sass_id})
             )
-
-    def get_rating(self, field_name):
-        """Returns rating enum name from post data"""
-        rating = self.post_dictionary.get(field_name, None)
-        if rating:
-            try:
-                rating = SASS5Rating(rating).name
-            except ValueError:
-                pass
-        return rating
-
-    def get_sass_5_record_data(self, taxon_id):
-        """Returns a dict for sass_5_record mode
-            e.g. : {
-                'vegetation': 12,
-                'gravel_sand_mud: 1
-            }
-         """
-        sass_5_records = {}
-        s_value = self.post_dictionary.get(
-            '{taxon_id}-S'.format(taxon_id=taxon_id))
-        if s_value:
-            sass_5_records['stone_and_rock'] = int(s_value)
-        veg_value = self.post_dictionary.get(
-            '{taxon_id}-Veg'.format(taxon_id=taxon_id))
-        if veg_value:
-            sass_5_records['vegetation'] = int(veg_value)
-        gsm_value = self.post_dictionary.get(
-            '{taxon_id}-GSM'.format(taxon_id=taxon_id))
-        if gsm_value:
-            sass_5_records['gravel_sand_mud'] = int(gsm_value)
-        tot_value = self.post_dictionary.get(
-            '{taxon_id}-TOT'.format(taxon_id=taxon_id))
-        if tot_value:
-            sass_5_records['count'] = int(tot_value)
-        return sass_5_records
 
     def get_biotope_form_data(self):
         biotope_form_list = []
@@ -194,7 +236,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             )
             site_visit_taxon_list = dict((
                 self.site_visit.sitevisittaxon_set.all()
-            ).values_list('taxonomy__id', 'taxon_abundance__abc'))
+            ).values_list('sass_taxon__id', 'taxon_abundance__abc'))
 
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
@@ -224,7 +266,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 continue
 
             sass_taxon_biotope = dict(biotope_taxon_list.filter(
-                taxon=sass_taxon.taxon).values_list(
+                sass_taxon=sass_taxon).values_list(
                 'biotope__name',
                 'taxon_abundance__abc'))
 
@@ -241,9 +283,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                     taxon_dict['gsm_value'] = (
                         sass_taxon_biotope[BIOTOPE_GSM]
                     )
-            if sass_taxon.taxon.id in site_visit_taxon_list:
+            if sass_taxon.id in site_visit_taxon_list:
                 taxon_dict['tot_value'] = (
-                    site_visit_taxon_list[sass_taxon.taxon.id]
+                    site_visit_taxon_list[sass_taxon.id]
                 )
 
             taxon_list_form.append(taxon_dict)
@@ -257,6 +299,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             context['assessor'] = self.site_visit.assessor
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
+            context['comments'] = self.site_visit.comments_or_observations
+            context['other_biota'] = self.site_visit.other_biota
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()

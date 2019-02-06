@@ -55,6 +55,8 @@ class FbisSiteVisitBiotopeTaxonImporter(FbisImporter):
             taxon_abundance=taxon_abundance,
             date=date
         )
+        site_visit_biotope.sass_taxon = sass_taxon
+        site_visit_biotope.save()
         self.save_uuid(
             uuid=self.get_row_value('SiteVisitBiotopeTaxonID'),
             object_id=site_visit_biotope.id

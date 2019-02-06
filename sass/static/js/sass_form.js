@@ -65,8 +65,7 @@ $(document).ready(function () {
     });
     $ratingInput.on('keyup', function (e) {
         this.value = this.value.toUpperCase();
-
-        if ($(this).hasClass('total-input')) {
+        if ($(this).hasClass('total-rating')) {
             return true;
         } else {
             let row = $(this).parent().parent();

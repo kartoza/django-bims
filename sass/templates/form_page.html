@@ -101,13 +101,13 @@
                             class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
                             {{ taxon.name }}
                         </td>
-                        <td><input type="text" name="{{ taxon.id }}-S" class="rating-input form-control"
+                        <td><input type="text" name="taxon_list-{{ taxon.id }}-S" class="rating-input form-control"
                                    {% if taxon.s_value %} value="{{ taxon.s_value }}" {% endif %} placeholder="" maxlength="1"></td>
-                        <td><input type="text" name="{{ taxon.id }}-Veg" class="rating-input form-control"
+                        <td><input type="text" name="taxon_list-{{ taxon.id }}-Veg" class="rating-input form-control"
                                    {% if taxon.veg_value %} value="{{ taxon.veg_value }}" {% endif %} placeholder="" maxlength="1"></td>
-                        <td><input type="text" name="{{ taxon.id }}-GSM" class="rating-input form-control"
+                        <td><input type="text" name="taxon_list-{{ taxon.id }}-GSM" class="rating-input form-control"
                                    {% if taxon.gsm_value %} value="{{ taxon.gsm_value }}" {% endif %} placeholder="" maxlength="1"></td>
-                        <td><input type="text" name="{{ taxon.id }}-TOT" class="rating-input total-rating form-control"
+                        <td><input type="text" name="taxon_list-{{ taxon.id }}-TOT" class="rating-input total-rating form-control"
                                    {% if taxon.tot_value %} value="{{ taxon.tot_value }}" {% endif %} placeholder="" maxlength="1"></td>
                     </tr>
                 {% else %}
@@ -125,7 +125,7 @@
             </tr>
             <tr>
                 <td colspan="5" scope="row">
-                    <textarea class="form-control rounded" rows="6" name="other-biota">{{ sass_sheet.other_biota }}</textarea>
+                    <textarea class="form-control rounded" rows="6" name="other-biota">{{ other_biota }}</textarea>
                 </td>
             </tr>
             <tr>
@@ -135,7 +135,7 @@
             </tr>
             <tr>
                 <td colspan="5" scope="row">
-                    <textarea class="form-control rounded" rows="6" name="notes"> {{ sass_sheet.notes }}</textarea>
+                    <textarea class="form-control rounded" rows="6" name="notes"> {{ comments }}</textarea>
                 </td>
             </tr>
             </tbody>

@@ -9,11 +9,11 @@ class SassListView(ListView):
     template_name = 'sass_list_page.html'
     context_object_name = 'site_visits'
     paginate_by = 50
-    ordering = ['-site_visit_date']
+    ordering = ['site_visit_date']
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         return super(SassListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return SiteVisit.objects.all()
+        return SiteVisit.objects.all().order_by('-site_visit_date')
