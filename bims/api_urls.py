@@ -49,9 +49,12 @@ from bims.api_views.user_boundary import UserBoundaryList
 from bims.api_views.documents import DocumentList
 from bims.api_views.module_summary import ModuleSummary
 from bims.api_views.endemism import EndemismList
-from bims.api_views.river_catchment import RiverCatchmentList
 from bims.api_views.site_search_result import SiteSearchResult
 from bims.api_views.site_by_coord import SiteByCoord
+from bims.api_views.river_catchment import (
+    RiverCatchmentList,
+    RiverCatchmentTaxonList
+)
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -139,4 +142,7 @@ urlpatterns = [
         name='site-search-result'),
     url(r'^get-site-by-coord/$',
         SiteByCoord.as_view(), name='get-site-by-coord'),
+    url(r'^river-catchment-taxon-list/$',
+        RiverCatchmentTaxonList.as_view(),
+        name='river-catchment-taxon-list'),
 ]

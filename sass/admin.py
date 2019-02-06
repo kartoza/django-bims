@@ -15,8 +15,6 @@ from sass.models import (
     SiteVisitTaxon,
     Chem,
     SiteVisitChem,
-    SASS5Sheet,
-    SASS5Record,
 )
 
 
@@ -143,30 +141,6 @@ class SiteVisitChemAdmin(admin.ModelAdmin):
     )
 
 
-class SASS5SheetAdmin(admin.ModelAdmin):
-    list_display = (
-        'date',
-        'rhp_site_code',
-        'location_site'
-    )
-
-    raw_id_fields = (
-        'location_site',
-    )
-
-
-class SASS5RecordAdmin(admin.ModelAdmin):
-    list_display = (
-        'sass_sheet',
-        'taxonomy',
-        'count'
-    )
-
-    raw_id_fields = (
-        'sass_sheet',
-    )
-
-
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
@@ -179,5 +153,3 @@ admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
 admin.site.register(SiteVisitTaxon, SiteVisitTaxonAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(SiteVisitChem, SiteVisitChemAdmin)
-admin.site.register(SASS5Sheet, SASS5SheetAdmin)
-admin.site.register(SASS5Record, SASS5RecordAdmin)

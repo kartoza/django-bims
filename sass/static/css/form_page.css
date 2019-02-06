@@ -68,3 +68,16 @@ td.sampled-name {
 .fbis-sass-logo img {
     padding-top: 50px;
 }
+
+.sass-radio-label {
+    display: inline-flex;
+    border-style: none;
+    padding: 0;
+    text-align: center;
+}
+
+.site-code {
+    margin-top: -20px;
+    font-size: 14pt;
+    font-weight: bold;
+}

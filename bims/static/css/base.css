@@ -166,10 +166,29 @@ h6 {
 
 .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome and Opera */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                   supported by Chrome and Opera */
+}
+
+.fbis-button {
+    background-color: #18A090;
+    border-radius: 3px;
+    margin: 0.25rem;
+    font-weight: normal;
+    color: white;
+}
+
+.fbis-button:hover {
+  background-color: #6BC0B5;
+  color: white;
+}
+
+.fbis-button:active {
+  background-color: #17766B;
+  box-shadow: inset 1px 1px 6px rgba(0,0,0, 0.2);
+  color: white;
 }

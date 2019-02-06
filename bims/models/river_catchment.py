@@ -22,6 +22,13 @@ class RiverCatchment(models.Model):
         max_length=100
     )
 
+    location_sites = models.ManyToManyField(
+        'bims.LocationSite',
+        related_name='location_sites',
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return '%s - %s' % (
             self.key,
