@@ -28,6 +28,7 @@ from bims.utils.cluster_point import (
 from bims.models.user_boundary import UserBoundary
 from bims.models.search_process import SearchProcess
 from bims.utils.url import remove_params_from_uri
+from bims.api_views.search_version_2 import SearchVersion2
 
 
 class GetCollectionAbstract(APIView):
@@ -484,23 +485,14 @@ class CollectionDownloader(GetCollectionAbstract):
         return response
 
     def get(self, request):
-        query_value = request.GET.get('search')
         filters = request.GET
+        search = SearchVersion2(filters)
         file_type = request.GET.get('fileType', None)
-        is_using_filters = self.is_using_filters(request.GET)
         if not file_type:
             file_type = 'csv'
         site_results = None
 
-        if is_using_filters or query_value:
-            collection_results, \
-                site_results, \
-                fuzzy_search = self.apply_filter(
-                    query_value,
-                    filters,
-                    ignore_bbox=True)
-        else:
-            collection_results = self.get_all_validated()
+        collection_results = search.process_search()
 
         if file_type == 'csv':
             return self.convert_to_cvs(
