@@ -264,6 +264,7 @@ class LocationSitesSummary(APIView):
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
+        search_process.create_view()
         raw = search_process.search_raw_query
 
         response_data = {

@@ -37,11 +37,7 @@ class SearchVersion2APIView(APIView):
                 results['total_unique_sites'] = len(results['sites'])
                 results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
             results['total_unique_taxa'] = len(results['records'])
-            raw = search_process.search_raw_query
-            results['sites_raw_query'] = raw[
-                raw.find('WHERE') + 6:
-                len(raw)
-            ]
+            results['sites_raw_query'] = search_process.process_id
             return Response(results)
 
         # Create process id

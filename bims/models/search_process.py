@@ -7,6 +7,8 @@ import re
 import json
 import errno
 import urlparse
+from django.db import connection, DatabaseError
+from django.db.utils import ProgrammingError
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import pre_delete
@@ -59,20 +61,13 @@ class SearchProcess(models.Model):
 
     def save(self, *args, **kwargs):
         super(SearchProcess, self).save(*args, **kwargs)
-        return
+
+    def delete(self, *args, **kwargs):
+        self.delete_view()
+        super(SearchProcess, self).delete(*args, **kwargs)
 
     def set_search_raw_query(self, raw_query):
-        raw_query_converted = re.sub(
-            r'(\()(%)([a-zA-Z0-9_ ]+)(%)(\))',
-            '(\'%' + r'\3' + '%\')',
-            str(raw_query))
-        raw_query_converted = re.sub(
-            r'(BETWEEN)( )(\d+-\d+-\d+)( )(AND)( )(\d+-\d+-\d+)',
-            'BETWEEN \'' + r'\3' + '\' AND \'' + r'\7' + '\'',
-            raw_query_converted
-        )
-        self.search_raw_query = raw_query_converted
-
+        raw_query = str(raw_query)
         query_parsed = urlparse.urlparse(self.query)
         parameters = urlparse.parse_qs(query_parsed.query)
         for param in parameters:
@@ -82,13 +77,40 @@ class SearchProcess(models.Model):
                     query = query[1:-1]
                 for query_splitted in query.split('","'):
                     query_splitted = query_splitted.replace('"', '')
-                    self.search_raw_query = (
-                        self.search_raw_query.replace(
+                    if '%{}%'.format(query_splitted) in raw_query:
+                        query_splitted = '%{}%'.format(query_splitted)
+                    raw_query = (
+                        raw_query.replace(
                             query_splitted,
                             '\'' + query_splitted + '\''
                         )
                     )
+        self.search_raw_query = raw_query
         self.save()
+
+    def create_view(self):
+        if self.process_id and self.search_raw_query:
+            cursor = connection.cursor()
+            sql = (
+                'CREATE OR REPLACE VIEW "{view_name}" AS {sql_raw}'.
+                format(
+                    view_name=self.process_id,
+                    sql_raw=self.search_raw_query
+                ))
+            cursor.execute('''%s''' % sql)
+
+    def delete_view(self):
+        if self.finished and self.process_id and self.search_raw_query:
+            cursor = connection.cursor()
+            try:
+                sql = (
+                    'DROP VIEW IF EXISTS "{view_name}"'.
+                    format(
+                        view_name=self.process_id
+                    ))
+                cursor.execute('''%s''' % sql)
+            except (ProgrammingError, DatabaseError):
+                return
 
     def set_status(self, value, should_save_to_file=True):
         if value == SEARCH_FINISHED:
@@ -135,5 +157,7 @@ class SearchProcess(models.Model):
 @receiver(pre_delete, sender=SearchProcess)
 def searchprocess_delete(sender, instance, **kwargs):
     import os
+    if sender != SearchProcess:
+        return
     if os.path.exists(instance.file_path):
         os.remove(instance.file_path)

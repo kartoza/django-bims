@@ -94,7 +94,7 @@ define([
                 params: {
                     LAYERS: locationSiteGeoserverLayer,
                     FORMAT: 'image/png8',
-                    viewparams: 'where:0=1'
+                    viewparams: 'where:' + emptyWMSSiteParameter
                 },
                 ratio: 1,
                 serverType: 'geoserver'
@@ -271,7 +271,7 @@ define([
                 let newParams = {
                     layers: locationSiteGeoserverLayer,
                     format: 'image/png',
-                    viewparams: 'where:0=1'
+                    viewparams: 'where:' + emptyWMSSiteParameter
                 };
                 self.siteLayerSource.updateParams(newParams);
             }

@@ -652,7 +652,7 @@ define([
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
-                viewparams: 'where:' + query
+                viewparams: 'where:"' + query + '"'
             };
             this.layers.biodiversitySource.updateParams(newParams);
         },
@@ -660,7 +660,7 @@ define([
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
-                viewparams: 'where:0=1'
+                viewparams: 'where:' + emptyWMSSiteParameter
             };
             this.layers.biodiversitySource.updateParams(newParams);
         },
