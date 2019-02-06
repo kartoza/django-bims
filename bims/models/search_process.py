@@ -6,6 +6,7 @@ import os
 import re
 import json
 import errno
+import urlparse
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import pre_delete
@@ -56,6 +57,10 @@ class SearchProcess(models.Model):
         blank=True
     )
 
+    def save(self, *args, **kwargs):
+        super(SearchProcess, self).save(*args, **kwargs)
+        return
+
     def set_search_raw_query(self, raw_query):
         raw_query_converted = re.sub(
             r'(\()(%)([a-zA-Z0-9_ ]+)(%)(\))',
@@ -67,6 +72,22 @@ class SearchProcess(models.Model):
             raw_query_converted
         )
         self.search_raw_query = raw_query_converted
+
+        query_parsed = urlparse.urlparse(self.query)
+        parameters = urlparse.parse_qs(query_parsed.query)
+        for param in parameters:
+            queries = parameters[param]
+            for query in queries:
+                if query[0] == '[' and query[len(query) - 1] == ']':
+                    query = query[1:-1]
+                for query_splitted in query.split('","'):
+                    query_splitted = query_splitted.replace('"', '')
+                    self.search_raw_query = (
+                        self.search_raw_query.replace(
+                            query_splitted,
+                            '\'' + query_splitted + '\''
+                        )
+                    )
         self.save()
 
     def set_status(self, value, should_save_to_file=True):

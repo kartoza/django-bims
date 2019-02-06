@@ -18,6 +18,10 @@
     <link href="{% static "js/libs/chosen/chosen.min.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
+        String.prototype.replaceAll = function(search, replacement) {
+            let target = this;
+            return target.split(search).join(replacement);
+        };
         const max_year_filter = '{{ date_filter.max }}';
         const min_year_filter = '{{ date_filter.min }}';
         const bingMapKey = '{{ bing_map_key }}';

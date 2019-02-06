@@ -647,6 +647,8 @@ define([
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
         },
         updateBiodiversityLayerParams: function (query) {
+            query = query.replaceAll(',', '\\,');
+            query = query.replaceAll(';', '\\;');
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
