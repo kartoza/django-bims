@@ -74,7 +74,7 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
             )
             site_visit_taxon.sass_taxon = sass_taxon
             site_visit_taxon.save()
-        except (ValueError, IntegrityError):
+        except (ValueError, IntegrityError, AttributeError):
             self.failed += 1
             print('Error')
             return
