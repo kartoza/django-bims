@@ -158,7 +158,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         biotope_list = Biotope.objects.filter(biotope_form=1).order_by(
             'display_order')
         for biotope_data in biotope_list:
-            biotope_rate = None
+            biotope_rate = -1
             if biotope_data.name in biotope_fractions:
                 biotope_rate = biotope_fractions[biotope_data.name]
             biotope_form_list.append({

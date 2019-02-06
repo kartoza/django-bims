@@ -44,5 +44,22 @@ $(document).ready(function () {
             $('#assessor').val(u.item.label);
             $('#assessor_id').val(u.item.value);
         }
+    });
+
+    let $ratingInput = $('.rating-input');
+    let allowedInput = ['A', 'B', 'C', 'D', '1'];
+    $ratingInput.on('keypress', function (e) {
+        let char = e.key;
+        char = char.toUpperCase();
+        if (allowedInput.indexOf(char) === -1) {
+            return false
+        }
+    });
+    $ratingInput.on('keyup', function (e) {
+        this.value = this.value.toUpperCase();
+        if (allowedInput.indexOf(this.value) === -1) {
+            return false
+        }
     })
+
 });
