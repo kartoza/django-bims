@@ -6,9 +6,17 @@ $('#submit').click(function () {
 });
 
 $(document).ready(function () {
-    $("input[type='text']").on("click", function () {
+
+    let allInputText = $("input[type='text']");
+    allInputText.on("click", function () {
         $(this).select();
     });
+    $('#sass-form').submit(function () {
+        let emptyInputFields = allInputText.filter(function() { return this.value === ''; });
+        emptyInputFields.attr("disabled", true);
+        return true;
+    });
+
     if (isUpdate) {
         $('#submitBtn').val('Update');
     }
@@ -67,7 +75,7 @@ $(document).ready(function () {
                 let input = $($(td).find('input')[0]);
                 if (input.hasClass('rating-input') && !input.hasClass('total-rating')) {
                     let inputValue = input.val();
-                    if(!inputValue) {
+                    if (!inputValue) {
                         return true;
                     }
                     if (!greatest) {
@@ -84,6 +92,6 @@ $(document).ready(function () {
             let totalInput = row.find('.total-rating');
             totalInput.val(greatest);
         }
-    })
+    });
 
 });

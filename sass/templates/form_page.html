@@ -93,14 +93,13 @@
                 <th scope="col">Total</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="taxon-list">
             {% for taxon in taxon_list %}
                 {% if taxon.has_score %}
                     <tr>
                         <td scope="row"
                             class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
                             {{ taxon.name }}
-                            <input type="hidden" value="{{ taxon.id }}">
                         </td>
                         <td><input type="text" name="{{ taxon.id }}-S" class="rating-input form-control"
                                    {% if taxon.s_value %} value="{{ taxon.s_value }}" {% endif %} placeholder="" maxlength="1"></td>

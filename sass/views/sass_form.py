@@ -1,16 +1,21 @@
+from dateutil.parser import parse
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.mixins import UserPassesTestMixin
+from geonode.people.models import Profile
 from bims.models.location_site import LocationSite
 from bims.models.biotope import Biotope
 from sass.models import (
     SiteVisit,
     SassTaxon,
-    SiteVisitBiotopeTaxon
+    SiteVisitBiotopeTaxon,
+    Rate,
+    SassBiotopeFraction
 )
 from sass.enums.sass5_rating import SASS5Rating
 
@@ -43,72 +48,78 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
-        # sass_id = kwargs.get('sass_id', None)
-        # self.post_dictionary = request.POST.dict()
-        # time_min = self.post_dictionary.get('time-min', None)
-        # try:
-        #     time_min = int(time_min)
-        # except ValueError:
-        #     time_min = None
-        # sic_rating = self.get_rating('sic-rating')
-        # sooc_rating = self.get_rating('sooc-rating')
-        # bedrock_rating = self.get_rating('bedrock-rating')
-        # aquatic_veg_rating = self.get_rating('aquatic-veg-rating')
-        # mic_rating = self.get_rating('mic-rating')
-        # mooc_rating = self.get_rating('mooc-rating')
-        # gravel_rating = self.get_rating('gravel-rating')
-        # mud_rating = self.get_rating('mud-rating')
-        # sand_rating = self.get_rating('sand-rating')
-        # hand_picking_rating = self.get_rating('hand-picking-rating')
-        # owner = request.user
-        #
-        # if not sass_id and site_id:
-        #     sass_5_sheet = SASS5Sheet.objects.create(
-        #         owner=owner,
-        #         location_site_id=site_id
-        #     )
-        # else:
-        #     sass_5_sheet = SASS5Sheet.objects.get(
-        #         pk=sass_id
-        #     )
-        #
-        # sass_5_sheet.time_minutes = time_min
-        # sass_5_sheet.biotope_stones_in_current = sic_rating
-        # sass_5_sheet.biotope_stones_out_of_current = sooc_rating
-        # sass_5_sheet.biotope_bedrock = bedrock_rating
-        # sass_5_sheet.biotope_aquatic_vegetation = aquatic_veg_rating
-        # sass_5_sheet.biotope_margin_veg_in_current = mic_rating
-        # sass_5_sheet.biotope_margin_veg_out_of_current = mooc_rating
-        # sass_5_sheet.biotope_gravel = gravel_rating
-        # sass_5_sheet.biotope_mud = mud_rating
-        # sass_5_sheet.biotope_sand = sand_rating
-        # sass_5_sheet.biotope_hand_picking = hand_picking_rating
-        # sass_5_sheet.notes = request.POST.get('notes', None)
-        # sass_5_sheet.other_biota = request.POST.get('other-biota', None)
-        # sass_5_sheet.save()
-        #
-        # # Sass 5 records
-        # sass_5_taxa = SassTaxon.objects.filter(
-        #     taxon_sass_5__isnull=False
-        # ).order_by('display_order_sass_5')
-        # for sass_5_taxon in sass_5_taxa:
-        #     sass_5_record_data = self.get_sass_5_record_data(sass_5_taxon.id)
-        #     if sass_5_record_data:
-        #         sass_5_record, created = SASS5Record.objects.get_or_create(
-        #             sass_sheet=sass_5_sheet,
-        #             taxonomy=sass_5_taxon
-        #         )
-        #         for key, value in sass_5_record_data.iteritems():
-        #             setattr(sass_5_record, key, value)
-        #         sass_5_record.save()
-        #
-        # if site_id:
-        #     return redirect(
-        #         reverse('sass-form-page', kwargs={'site_id': site_id}))
-        # else:
-        #     return redirect(
-        #         reverse('sass-update-page', kwargs={'sass_id': sass_id})
-        #     )
+        sass_id = kwargs.get('sass_id', None)
+
+        # Assessor
+        assessor_id = request.POST.get('assessor', None)
+        if assessor_id:
+            try:
+                assessor = Profile.objects.get(id=int(assessor_id))
+            except Profile.DoesNotExist:
+                pass
+
+        # Date
+        date_string = request.POST.get('date', None)
+        date = parse(date_string) if date_string else None
+
+        # Time
+        time_string = request.POST.get('time', None)
+        datetime = None
+        if time_string:
+            try:
+                hour, minute = time_string.split(':')
+                datetime = date if date else timezone.now()
+                datetime = datetime.replace(hour=int(hour), minute=int(minute))
+            except ValueError:
+                pass
+
+        if not sass_id and site_id:
+            site_visit = SiteVisit.objects.create(
+                owner=self.request.user,
+                location_site_id=site_id
+            )
+        else:
+            site_visit = SiteVisit.objects.get(
+                pk=sass_id
+            )
+
+        # Get biotope fractions
+        biotope_fractions = []
+        biotope_list = dict(
+            Biotope.objects.filter(biotope_form=1).values_list(
+                'name', 'id'
+            ))
+        for biotope_key, biotope_id in biotope_list.iteritems():
+            biotope_value = request.POST.get(biotope_key, None)
+            try:
+                if biotope_value:
+                    rate = Rate.objects.get(
+                        rate=biotope_value,
+                        group=2
+                    )
+                else:
+                    # Empty rate
+                    rate = Rate.objects.get(
+                        rate=-1,
+                        group=2
+                    )
+                biotope_fraction = SassBiotopeFraction.objects.get(
+                    rate=rate,
+                    sass_biotope_id=biotope_id
+                )
+                biotope_fractions.append(biotope_fraction)
+            except (
+                    Rate.MultipleObjectsReturned,
+                    SassBiotopeFraction.MultipleObjectsReturned):
+                continue
+
+        if site_id:
+            return redirect(
+                reverse('sass-form-page', kwargs={'site_id': site_id}))
+        else:
+            return redirect(
+                reverse('sass-update-page', kwargs={'sass_id': sass_id})
+            )
 
     def get_rating(self, field_name):
         """Returns rating enum name from post data"""
