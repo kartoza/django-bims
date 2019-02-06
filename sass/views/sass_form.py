@@ -35,6 +35,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     post_dictionary = {}
     site_visit = SiteVisit.objects.none()
     sass_version = 5
+    site_code = ''
 
     def test_func(self):
         if self.request.user.is_superuser:
@@ -304,6 +305,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
+        context['site_code'] = self.site_code
 
         return context
 
@@ -317,16 +319,22 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
         self.post_dictionary = {}
         if site_id:
-            get_object_or_404(
+            location_site = get_object_or_404(
                 LocationSite,
                 pk=site_id
             )
+            self.site_code = location_site.site_code
+            if not self.site_code:
+                self.site_code = location_site.name
             self.sass_version = request.GET.get('sass_version', 5)
         else:
             self.site_visit = get_object_or_404(
                 SiteVisit,
                 pk=sass_id
             )
+            self.site_code = self.site_visit.location_site.site_code
+            if not self.site_code:
+                self.site_code = self.site_visit.location_site.name
             if self.site_visit.sass_version:
                 self.sass_version = self.site_visit.sass_version
         return super(SassFormView, self).get(request, *args, **kwargs)
