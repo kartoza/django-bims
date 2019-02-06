@@ -108,7 +108,7 @@
                                    {% if taxon.veg_value %} value="{{ taxon.veg_value }}" {% endif %} placeholder="" maxlength="1"></td>
                         <td><input type="text" name="{{ taxon.id }}-GSM" class="rating-input form-control"
                                    {% if taxon.gsm_value %} value="{{ taxon.gsm_value }}" {% endif %} placeholder="" maxlength="1"></td>
-                        <td><input type="text" name="{{ taxon.id }}-TOT" class="rating-input form-control"
+                        <td><input type="text" name="{{ taxon.id }}-TOT" class="rating-input total-rating form-control"
                                    {% if taxon.tot_value %} value="{{ taxon.tot_value }}" {% endif %} placeholder="" maxlength="1"></td>
                     </tr>
                 {% else %}

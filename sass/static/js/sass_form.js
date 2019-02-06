@@ -47,7 +47,7 @@ $(document).ready(function () {
     });
 
     let $ratingInput = $('.rating-input');
-    let allowedInput = ['A', 'B', 'C', 'D', '1'];
+    let allowedInput = ['D', 'C', 'B', 'A', '1'];
     $ratingInput.on('keypress', function (e) {
         let char = e.key;
         char = char.toUpperCase();
@@ -57,8 +57,32 @@ $(document).ready(function () {
     });
     $ratingInput.on('keyup', function (e) {
         this.value = this.value.toUpperCase();
-        if (allowedInput.indexOf(this.value) === -1) {
-            return false
+
+        if ($(this).hasClass('total-input')) {
+            return true;
+        } else {
+            let row = $(this).parent().parent();
+            let greatest = '';
+            $.each(row.find('td'), function (index, td) {
+                let input = $($(td).find('input')[0]);
+                if (input.hasClass('rating-input') && !input.hasClass('total-rating')) {
+                    let inputValue = input.val();
+                    if(!inputValue) {
+                        return true;
+                    }
+                    if (!greatest) {
+                        greatest = inputValue;
+                    } else {
+                        let greatestIndex = allowedInput.indexOf(greatest);
+                        let inputIndex = allowedInput.indexOf(inputValue);
+                        if (inputIndex < greatestIndex) {
+                            greatest = inputValue;
+                        }
+                    }
+                }
+            });
+            let totalInput = row.find('.total-rating');
+            totalInput.val(greatest);
         }
     })
 
