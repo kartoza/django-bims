@@ -116,7 +116,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 url: geoserverPublicUrl + 'wms',
                 params: {
                     LAYERS: locationSiteGeoserverLayer,
-                    FORMAT: 'image/png8'
+                    FORMAT: 'image/png8',
+                    viewparams: 'where:' + defaultWMSSiteParameters
                 },
                 ratio: 1,
                 serverType: 'geoserver'

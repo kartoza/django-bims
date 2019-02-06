@@ -666,7 +666,7 @@ define([
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
-                viewparams: 'where:1=1'
+                viewparams: 'where:' + defaultWMSSiteParameters
             };
             this.layers.biodiversitySource.updateParams(newParams);
         },

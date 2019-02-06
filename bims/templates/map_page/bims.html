@@ -52,6 +52,7 @@
             conservationStatusData = {{ conservation_status_data | safe }};
         {% endif %}
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '("bims_biologicalcollectionrecord"."taxonomy_id" IS NOT NULL AND "bims_biologicalcollectionrecord"."validated" = True)';
     </script>
     {% block extra_head %}
 

@@ -158,7 +158,9 @@ define([
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
-                    self.mapLocationSite.getView().setZoom(8);
+                    if (self.mapLocationSite.getView().getZoom() > 8) {
+                        self.mapLocationSite.getView().setZoom(8);
+                    }
 
                     let newParams = {
                         layers: locationSiteGeoserverLayer,
