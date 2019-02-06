@@ -92,7 +92,7 @@ define([
             let biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
                 params: {
-                    LAYERS: 'geonode:test_site_view',
+                    LAYERS: locationSiteGeoserverLayer,
                     FORMAT: 'image/png8',
                     viewparams: 'where:0=1'
                 },
@@ -161,7 +161,7 @@ define([
                     self.mapLocationSite.getView().setZoom(8);
 
                     let newParams = {
-                        layers: 'geonode:test_site_view',
+                        layers: locationSiteGeoserverLayer,
                         format: 'image/png',
                         viewparams: 'where:' + data['sites_raw_query']
                     };
@@ -267,7 +267,7 @@ define([
 
             if (this.mapLocationSite) {
                 let newParams = {
-                    layers: 'geonode:test_site_view',
+                    layers: locationSiteGeoserverLayer,
                     format: 'image/png',
                     viewparams: 'where:0=1'
                 };

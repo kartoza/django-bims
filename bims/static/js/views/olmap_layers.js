@@ -115,7 +115,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             var biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
                 params: {
-                    LAYERS: 'geonode:test_site_view',
+                    LAYERS: locationSiteGeoserverLayer,
                     FORMAT: 'image/png8'
                 },
                 ratio: 1,

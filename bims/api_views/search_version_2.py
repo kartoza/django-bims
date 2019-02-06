@@ -110,6 +110,14 @@ class SearchVersion2(object):
         return self.get_request_data('search')
 
     @property
+    def taxon_id(self):
+        taxon_id_query = self.get_request_data('taxon')
+        if taxon_id_query:
+            return taxon_id_query.split(',')
+        else:
+            return None
+
+    @property
     def year_ranges(self):
         year_from = self.get_request_data('yearFrom')
         year_to = self.get_request_data('yearTo')
@@ -191,6 +199,8 @@ class SearchVersion2(object):
             filters['taxonomy__endemism__name__in'] = (
                 self.endemic
             )
+        if self.taxon_id:
+            filters['taxonomy__in'] = self.taxon_id
         if self.boundary:
             boundary = Boundary.objects.filter(id__in=self.boundary)
             if len(boundary) == 0:
