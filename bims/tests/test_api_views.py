@@ -12,7 +12,6 @@ from bims.tests.model_factories import (
     TaxonGroupF
 )
 from bims.api_views.location_site import (
-    LocationSiteList,
     LocationSiteDetail,
 )
 from bims.api_views.location_type import (
@@ -27,10 +26,10 @@ from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
-from bims.tests.integration_test_case import IntegrationTestCase
+from django.test import TestCase
 
 
-class TestApiView(IntegrationTestCase):
+class TestApiView(TestCase):
     """Test Location site API """
 
     def setUp(self):
@@ -85,18 +84,11 @@ class TestApiView(IntegrationTestCase):
             is_superuser=True,
             is_staff=True
         )
-        self.rebuild_index()
-
-    def test_get_all_location(self):
-        view = LocationSiteList.as_view()
-        request = self.factory.get('/api/location-site/')
-        response = view(request)
-        self.assertTrue(len(response.data) > 0)
 
     def test_get_location_by_id(self):
         view = LocationSiteDetail.as_view()
         pk = '1'
-        request = self.factory.get('/api/location-site/?siteId=' + pk)
+        request = self.factory.get('/api/location-site-detail/?siteId=' + pk)
         response = view(request)
         self.assertTrue(
             'id' in response.data

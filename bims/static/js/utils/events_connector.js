@@ -6,7 +6,8 @@ define(['backbone', 'utils/class', 'shared'], function (Backbone, UtilClass, Sha
             Shared.Dispatcher.on('searchResult:siteClicked', this.searchResultSiteClicked, this);
         },
         searchHit: function (parameters) {
-            Shared.Dispatcher.trigger(Shared.EVENTS.CLUSTER.GET, parameters);
+            // TODO : Change this to geoserver cluster
+            // Shared.Dispatcher.trigger(Shared.EVENTS.CLUSTER.GET, parameters);
         },
         searchResultTaxonClicked: function (taxon) {
             if (!taxon) {

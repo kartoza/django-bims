@@ -132,8 +132,8 @@ define([
                             $('#filter-collectors').append(`
                                 <option value="${data[i]}" ${selected}>${data[i]}</option>`);
                         }
-                        self.filtersReady['collector'] = true;
                     }
+                    self.filtersReady['collector'] = true;
                     $('#filter-collectors').chosen({});
                 }
             });
@@ -160,8 +160,8 @@ define([
                                     <option value="${data[i]['reference']}" ${selected}>${data[i]['reference']}</option>`);
                             }
                         }
-                        self.filtersReady['study-reference'] = true;
                     }
+                    self.filtersReady['study-reference'] = true;
                     $('#filter-study-reference').chosen({});
                 }
             });
@@ -303,6 +303,7 @@ define([
                 'yearFrom': '',
                 'yearTo': '',
                 'months': '',
+                'taxon': '',
                 'reference': referenceValue,
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
@@ -340,6 +341,7 @@ define([
                 Shared.Router.clearSearch();
                 return false
             }
+            filterParameters = parameters;
             this.searchResultCollection.search(
                 this.searchPanel,
                 parameters,
@@ -351,18 +353,18 @@ define([
             }
         },
         searchClick: function () {
-            if (Shared.CurrentState.FETCH_CLUSTERS) {
-                return true;
-            }
+            // if (Shared.CurrentState.FETCH_CLUSTERS) {
+            //     return true;
+            // }
             Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
             this.search(searchValue);
         },
         searchEnter: function (e) {
             if (e.which === 13) {
-                if (Shared.CurrentState.FETCH_CLUSTERS) {
-                    return true;
-                }
+                // if (Shared.CurrentState.FETCH_CLUSTERS) {
+                //     return true;
+                // }
                 var searchValue = $('#search').val();
                 this.search(searchValue);
             }
@@ -383,7 +385,7 @@ define([
             Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
             Shared.Dispatcher.trigger('clusterBiological:clearClusters');
 
-            Shared.Dispatcher.trigger('map:clearAllLayers');
+            Shared.Dispatcher.trigger('map:resetSitesLayer');
             Shared.Dispatcher.trigger('map:refetchRecords');
         },
         datePickerToDate: function (element) {

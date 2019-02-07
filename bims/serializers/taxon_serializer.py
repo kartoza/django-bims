@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from bims.models import Taxon, Taxonomy
 from bims.models.iucn_status import IUCNStatus
-from bims.utils.highlighter import CustomHighlighter
 from bims.serializers.document_serializer import DocumentSerializer
 
 
@@ -85,12 +84,6 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
 
     record_type = serializers.SerializerMethodField()
     count = serializers.SerializerMethodField()
-    highlighted_common_name = serializers.SerializerMethodField()
-
-    def get_highlighted_common_name(self, obj):
-        query_value = self.context.get('query_value')
-        highlight = CustomHighlighter(query_value, max_length=100)
-        return highlight.highlight(obj.common_name)
 
     def get_record_type(self, obj):
         return 'taxa'

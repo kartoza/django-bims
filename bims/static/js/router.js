@@ -12,6 +12,25 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             "species-detail/:query": "showSpeciesDetailedDashboard"
         },
         initialize: function () {
+            this.parameters['taxon'] = '';
+            this.parameters['months'] = '';
+            this.parameters['siteId'] = '';
+            this.parameters['search'] = '';
+            this.parameters['collector'] = '';
+            this.parameters['category'] = '';
+            this.parameters['yearFrom'] = '';
+            this.parameters['yearTo'] = '';
+            this.parameters['userBoundary'] = '';
+            this.parameters['referenceCategory'] = '';
+            this.parameters['boundary'] = '';
+            this.parameters['reference'] = '';
+            this.parameters['endemic'] = '';
+            this.parameters['conservationStatus'] = '';
+            this.parameters['riverCatchment'] = '';
+            this.parameters['taxon'] = '';
+            if (typeof filterParameters !== 'undefined') {
+                filterParameters = $.extend(true, {}, this.parameters);
+            }
             this.map = new olmap();
             this.eventsConnector = new EventsConnector();
         },

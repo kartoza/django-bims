@@ -18,6 +18,10 @@
     <link href="{% static "js/libs/chosen/chosen.min.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
+        String.prototype.replaceAll = function(search, replacement) {
+            let target = this;
+            return target.split(search).join(replacement);
+        };
         const max_year_filter = '{{ date_filter.max }}';
         const min_year_filter = '{{ date_filter.min }}';
         const bingMapKey = '{{ bing_map_key }}';
@@ -44,12 +48,16 @@
         const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
         const ogcServerDefaultLocation = "{{ OGC_SERVER.default.PUBLIC_LOCATION }}";
         const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
         var filterParameters = {};
         var conservationStatusData = [];
         const is_sass_enabled = {% if is_sass_enabled %}true{% else %}false{% endif %};
         {% if use_conservation_status %}
             conservationStatusData = {{ conservation_status_data | safe }};
         {% endif %}
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
+        const emptyWMSSiteParameter = '{{ bims_preferences.empty_location_site_cluster }}';
     </script>
     {% block extra_head %}
 
