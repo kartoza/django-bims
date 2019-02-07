@@ -24,7 +24,6 @@ from bims.api_views.taxon import (
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
-    GetCollectionExtent,
     CollectionDownloader,
     ClusterCollection
 )
@@ -79,8 +78,6 @@ urlpatterns = [
         TaxonForDocument.as_view()),
     url(r'^cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
-    url(r'^collection/extent/$',
-        GetCollectionExtent.as_view()),
     url(r'^collection/cluster/$',
         ClusterCollection.as_view()),
     url(r'^collection/download/$',

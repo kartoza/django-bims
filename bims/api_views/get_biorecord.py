@@ -65,7 +65,7 @@ class BioCollectionSummary(APIView):
 
         search_process, created = get_or_create_search_process(
             TAXON_SUMMARY,
-            query=json.dumps(filters)
+            query=request.build_absolute_uri()
         )
 
         if search_process.file_path:
@@ -95,7 +95,7 @@ class BioCollectionSummary(APIView):
         taxonomy = collection_results[0].taxonomy
 
         search_process.set_search_raw_query(search.location_sites_raw_query)
-        raw = search_process.search_raw_query
+        search_process.create_view()
         endemic = None
         if taxonomy.endemism:
             endemic = taxonomy.endemism.name
@@ -116,7 +116,7 @@ class BioCollectionSummary(APIView):
             list(records_over_time.values_list('count', flat=True))
         )
         response_data['records_per_area'] = list(records_per_area)
-        response_data['sites_raw_query'] = raw[raw.find('WHERE') + 6:len(raw)]
+        response_data['sites_raw_query'] = search_process.process_id
         response_data['process_id'] = search_process.process_id
         response_data['extent'] = search.extent()
 

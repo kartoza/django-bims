@@ -29,15 +29,6 @@ DATABASES = {
     }
 }
 
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'bims.search_backends.fuzzy_elastic_search_engine'
-                  '.FuzzyElasticSearchEngine',
-        'URL': 'http://elasticsearch:9200/',
-        'INDEX_NAME': 'haystack',
-    },
-}
-
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',

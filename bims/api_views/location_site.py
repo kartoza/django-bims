@@ -223,7 +223,7 @@ class LocationSitesSummary(APIView):
 
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
-            query=json.dumps(filters)
+            query=request.build_absolute_uri()
         )
 
         if search_process.file_path:
@@ -265,7 +265,6 @@ class LocationSitesSummary(APIView):
             search.location_sites_raw_query
         )
         search_process.create_view()
-        raw = search_process.search_raw_query
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
@@ -274,7 +273,7 @@ class LocationSitesSummary(APIView):
             self.CATEGORY_SUMMARY: dict(category_summary),
             'process': search_process.process_id,
             'extent': search.extent(),
-            'sites_raw_query': raw[raw.find('WHERE') + 6:len(raw)]
+            'sites_raw_query': search_process.process_id
         }
 
         file_path = create_search_process_file(

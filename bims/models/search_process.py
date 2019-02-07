@@ -3,7 +3,6 @@
 
 """
 import os
-import re
 import json
 import errno
 import urlparse

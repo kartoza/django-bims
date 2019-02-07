@@ -58,7 +58,6 @@ INSTALLED_APPS += (
     'pipeline',
     'modelsdoc',
     'contactus',
-    'haystack',
     'django_prometheus',
     'crispy_forms',
     'sass',
@@ -191,8 +190,6 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 
 # contact us email
 CONTACT_US_EMAIL = os.environ.get('CONTACT_US_EMAIL', '')
-
-ELASTIC_MIN_SCORE = 0
 
 # site tracking stats settings
 TRACK_PAGEVIEWS = True

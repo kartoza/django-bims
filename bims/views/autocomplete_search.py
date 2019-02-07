@@ -1,10 +1,8 @@
 import simplejson as json
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 from django.conf import settings
 from django.db.models import Q, F
 from django.apps import apps
-from haystack.query import SearchQuerySet
-from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.vernacular_name import VernacularName
 from bims.models.taxonomy import Taxonomy
 
@@ -20,8 +18,8 @@ def autocomplete(request):
             canonical_name__icontains=q,
             biologicalcollectionrecord__validated=True
         ).distinct('id').
-            annotate(taxon_id=F('id'), name=F('canonical_name')).
-            values('taxon_id', 'name')
+        annotate(taxon_id=F('id'), name=F('canonical_name')).
+        values('taxon_id', 'name')
     )[:10]
 
     if len(suggestions) < 10:
@@ -30,8 +28,8 @@ def autocomplete(request):
                 name__icontains=q,
                 taxonomy__biologicalcollectionrecord__validated=True
             ).distinct('id').
-                annotate(taxon_id=F('taxonomy__id')).
-                values('taxon_id', 'name')
+            annotate(taxon_id=F('taxonomy__id')).
+            values('taxon_id', 'name')
         )[:10]
 
         suggestions.extend(vernacular_names)
