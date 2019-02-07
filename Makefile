@@ -420,6 +420,12 @@ update-taxa:
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_taxa
 
+add-default-location-site-view:
+	@echo
+	@echo "---------------------------------------"
+	@echo "Add db view for default location site"
+	@echo "---------------------------------------"
+	@docker-compose exec uwsgi python manage.py add_default_location_site_view
 
 update-location-context-documents:
 	@echo

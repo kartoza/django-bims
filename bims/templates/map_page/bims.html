@@ -56,8 +56,8 @@
             conservationStatusData = {{ conservation_status_data | safe }};
         {% endif %}
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
-        const defaultWMSSiteParameters = 'default_biotest';
-        const emptyWMSSiteParameter = 'empty_biotest';
+        const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
+        const emptyWMSSiteParameter = '{{ bims_preferences.empty_location_site_cluster }}';
     </script>
     {% block extra_head %}
 
