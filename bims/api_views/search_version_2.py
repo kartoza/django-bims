@@ -165,7 +165,9 @@ class SearchVersion2(object):
         if self.search_query:
             bio = BiologicalCollectionRecord.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
-                Q(taxonomy__scientific_name__icontains=self.search_query)
+                Q(taxonomy__scientific_name__icontains=self.search_query) |
+                Q(taxonomy__vernacular_names__name__icontains=
+                  self.search_query)
             )
         else:
             bio = BiologicalCollectionRecord.objects.all()
