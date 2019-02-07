@@ -28,14 +28,6 @@ services:
       - POSTGRES_PASS=docker
     restart: unless-stopped
 
-  elasticsearch:
-    image: elasticsearch:2.4.2
-    restart: unless-stopped
-    environment:
-      - cluster.name=docker-cluster
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-
   data-dir-conf:
     image: geosolutionsit/geoserver_data:2.13.x
     restart: on-failure
@@ -80,7 +72,6 @@ services:
     links:
       - smtp:smtp
       - db:db
-      - elasticsearch:elasticsearch
       - geoserver:geoserver
       - worker:worker
       - hub:hub
@@ -105,7 +96,6 @@ services:
       - VIRTUAL_HOST=bims.kartoza.com
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq
-      - HAYSTACK_HOST=elasticsearch
       - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
@@ -114,7 +104,6 @@ services:
     links:
       - smtp:smtp
       - db:db
-      - elasticsearch:elasticsearch
       - geoserver:geoserver
       - rabbitmq:rabbitmq
       - cache:cache
