@@ -9,7 +9,7 @@ class Command(BaseCommand):
     def create_sql_query(self, view_name, query):
         sql = (
             'CREATE OR REPLACE VIEW "{view_name}" AS {sql_raw}'.
-                format(
+            format(
                 view_name=view_name,
                 sql_raw=query
             ))
