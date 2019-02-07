@@ -1,7 +1,7 @@
 import simplejson as json
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, F
 from django.apps import apps
 from haystack.query import SearchQuerySet
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -10,54 +10,34 @@ from bims.models.taxonomy import Taxonomy
 
 
 def autocomplete(request):
-    suggestions = []
     # Search from taxon name
-    query = request.GET.get('q', '')
-    if len(query) < 3:
+    q = request.GET.get('q', '')
+    if len(q) < 3:
         return HttpResponse([])
 
-    try:
-        sqs = SearchQuerySet().filter(
-            canonical_name_char__contains=query
+    suggestions = list(
+        Taxonomy.objects.filter(
+            canonical_name__icontains=q,
+            biologicalcollectionrecord__validated=True
+        ).distinct('id').
+            annotate(taxon_id=F('id'), name=F('canonical_name')).
+            values('taxon_id', 'name')
+    )[:10]
+
+    if len(suggestions) < 10:
+        vernacular_names = list(
+            VernacularName.objects.filter(
+                name__icontains=q,
+                taxonomy__biologicalcollectionrecord__validated=True
+            ).distinct('id').
+                annotate(taxon_id=F('taxonomy__id')).
+                values('taxon_id', 'name')
         )[:10]
-    except TypeError:
-        return HttpResponseBadRequest()
 
-    for result in sqs:
-        if BiologicalCollectionRecord.objects.filter(
-            taxonomy__id=result.id,
-            validated=True
-        ).exists():
-            suggestions.append({
-                'id': result.id,
-                'name': result.canonical_name
-            })
-
-    # Search from vernacular name
-    sqs = SearchQuerySet().filter(
-        name_char__contains=query,
-        lang='eng'
-    ).models(VernacularName)[:10]
-
-    unique_vernacular_names = []
-    for result in sqs:
-        taxonomy = Taxonomy.objects.filter(
-            vernacular_names__id=result.id
-        )
-        if BiologicalCollectionRecord.objects.filter(
-                taxonomy__in=taxonomy,
-                validated=True
-        ).exists():
-            if result.name.lower() in unique_vernacular_names:
-                continue
-            unique_vernacular_names.append(result.name.lower())
-            suggestions.append({
-                'id': result.id,
-                'name': result.name
-            })
+        suggestions.extend(vernacular_names)
 
     the_data = json.dumps({
-        'results': suggestions[:10]
+        'results': suggestions
     })
     return HttpResponse(the_data, content_type='application/json')
 
