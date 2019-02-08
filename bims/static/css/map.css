@@ -2313,3 +2313,27 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     margin-bottom: 0;
 }
+
+#site-details-wrapper .row {
+    border: 1px solid #d3d4d1;
+    background-color: #ebebeb;
+    font-family: "Roboto Condensed";
+    color: #4a4a4a;
+    font-size: 0.75rem;
+    line-height: 2rem;
+
+}
+
+#site-details-wrapper .row .value-column {
+    color: navy;
+    text-align: right;
+    align-self: center;
+}
+
+
+#site-details-wrapper .row .caption-column {
+    color: navy;
+    text-align: right;
+    align-self: center;
+}
+
