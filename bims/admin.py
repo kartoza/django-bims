@@ -53,6 +53,7 @@ from bims.models import (
     RiverCatchment,
     FbisUUID,
     Biotope,
+    DataSource,
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -501,6 +502,13 @@ class SassBiotopeAdmin(admin.ModelAdmin):
     )
 
 
+class DataSourceAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'category'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -532,6 +540,7 @@ admin.site.register(Permission, PermissionAdmin)
 
 admin.site.register(UserBoundary, UserBoundaryAdmin)
 admin.site.register(SearchProcess, SearchProcessAdmin)
+admin.site.register(DataSource, DataSourceAdmin)
 
 admin.site.register(ReferenceLink, ReferenceLinkAdmin)
 admin.site.register(VernacularName, VernacularNameAdmin)

@@ -122,5 +122,11 @@ class SiteVisit(AbstractAdditionalData):
         blank=True
     )
 
+    data_source = models.ForeignKey(
+        'bims.DataSource',
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.location_site.name
