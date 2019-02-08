@@ -5,14 +5,50 @@ $('#submit').click(function () {
     $('#sass-form').submit();
 });
 
+let biotope = {
+    'stones': {},
+    'vegetation': {},
+    'gsm': {},
+    'total': {}
+};
+
+let biotope_number = {
+    'stones': 0,
+    'vegetation': 0,
+    'gsm': 0,
+    'total': 0
+};
+
+function getTaxaNumber(bio, bioObject) {
+    let notEmptyInputs = $('#taxon-list').find("[data-biotope='" + bio + "']").filter(function () {
+        return this.value !== '';
+    });
+    $.each(notEmptyInputs, function (index, input) {
+        let id = $(input).data('id');
+        if (!bioObject[bio].hasOwnProperty(id)) {
+            bioObject[bio][id] =  $(input).val();
+        }
+    });
+    return notEmptyInputs.length;
+}
+
 $(document).ready(function () {
+    let totalTaxa = $.extend({}, biotope);
+    let totalTaxaNumber = $.extend({}, biotope_number);
+
+    $.each(biotope_number, function (key, value) {
+        totalTaxaNumber[key] = getTaxaNumber(key, totalTaxa);
+        $('#number-taxa-' + key).html(totalTaxaNumber[key]);
+    });
 
     let allInputText = $("input[type='text']");
     allInputText.on("click", function () {
         $(this).select();
     });
     $('#sass-form').submit(function () {
-        let emptyInputFields = allInputText.filter(function() { return this.value === ''; });
+        let emptyInputFields = allInputText.filter(function () {
+            return this.value === '';
+        });
         emptyInputFields.attr("disabled", true);
         return true;
     });
@@ -90,6 +126,30 @@ $(document).ready(function () {
             });
             let totalInput = row.find('.total-rating');
             totalInput.val(greatest);
+        }
+    });
+
+    $ratingInput.on('focusout', function (e) {
+        let biotope = $(this).data('biotope');
+        let id = $(this).data('id');
+
+        if (!this.value) {
+            if (totalTaxa[biotope].hasOwnProperty(id)) {
+                delete totalTaxa[biotope][id];
+                totalTaxaNumber[biotope] -= 1;
+            }
+        } else {
+            if (!totalTaxa[biotope].hasOwnProperty(id)) {
+                totalTaxa[biotope][id] = this.value;
+                totalTaxaNumber[biotope] += 1;
+            }
+        }
+        $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
+
+        // Need to update total column
+        if (biotope !== 'total') {
+            let total = $('#taxon-list').find("[data-id='" + id + "'].total-rating");
+            total.trigger('focusout');
         }
     });
 
