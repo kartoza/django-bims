@@ -110,6 +110,10 @@ class LocationSite(DocumentLinksMixin):
         null=True
     )
 
+    def get_site_detail_info(self):
+        """ Getting data for overview panel site_detail_info widget """
+        
+
     def get_centroid(self):
         """ Getting centroid of location site """
 

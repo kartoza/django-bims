@@ -56,7 +56,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 target.data('visibility', true)
             }
         },
-        renderSiteDetail: function (data) {
+            renderSiteDetail: function (data) {
             var $detailWrapper = $('<div></div>');
             var locationContext = {};
             var maxPanelThatShouldBeOpen = 1;
@@ -178,6 +178,21 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
+        renderSiteDetailInfo: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('site_detail_info')) {
+                var siteDetailsTemplate = _.template($('#site-details-template').html());
+                $detailWrapper.append(siteDetailsTemplate({
+                    'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
+                    'site_coordinates' : data['site_detail_info']['site_coordinates'],
+                    'site_description' : data['site_detail_info']['site_description'],
+                    'geomorphological_zone' : data['site_detail_info']['geomorphological_zone'],
+                    'river' : data['site_detail_info']['river'],
+                }));
+            }
+            return $detailWrapper;
+        },
+
         renderDashboardDetail: function (data) {
             var $detailWrapper = $('<div></div>');
 
@@ -409,7 +424,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         }
                     }
                     // render site detail
-                    $('#site-detail').append(self.renderSiteDetail(data));
+                    $('#site-detail').append(self.renderSiteDetailInfo(data));
                     $.each(self.siteChartData, function (key, value) {
                         var chartConfig = {
                             type: 'line',
@@ -462,6 +477,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     // dashboard detail
                     try {
                         // Custom dashboard
+                        $('#dashboard-detail').append(renderDashboard(data));
+                        calculateChart($('#dashboard-detail'), data);
+                    } catch (err) {
+                        $('#dashboard-detail').append(self.renderDashboardDetail(data));
+                    }
+
+                    // site detail info
+                    try {
                         $('#dashboard-detail').append(renderDashboard(data));
                         calculateChart($('#dashboard-detail'), data);
                     } catch (err) {

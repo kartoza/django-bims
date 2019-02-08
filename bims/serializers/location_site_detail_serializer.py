@@ -25,6 +25,19 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         else:
             return ''
 
+    def get_site_detail_info(self, obj):
+        site_coordinates = "{latitude} {longitude}".format(
+            latitude=obj.geometry_point.x,
+            longitude=obj.geometry_point.y)
+        parse_string = lambda string_in:  "Unknown" if not string_in else string_in
+        site_detail_info = {
+            'fbis_site_code' : parse_string(obj.id),
+            'site_coordinates' : parse_string(site_coordinates),
+            'site_description' : parse_string(obj.site_description),
+            'geomorphological_zone' : parse_string("Unknown"),
+            'river' : parse_string(obj.river) }
+        return site_detail_info
+
     class Meta:
         model = LocationSite
         fields = [
@@ -59,6 +72,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             )
         records_occurrence = {}
         module_info = {}
+        site_detail_info = self.get_site_detail_info(instance)
         for model in collections:
             taxonomy = model.taxonomy
             category = model.category
@@ -135,4 +149,5 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
+        result['site_detail_info'] = site_detail_info
         return result

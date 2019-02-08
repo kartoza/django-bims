@@ -91,6 +91,7 @@ class LocationSiteDetail(APIView):
             'collection_ids': collection_ids
         }
         location_site = self.get_object(site_id)
+
         serializer = LocationSiteDetailSerializer(
             location_site,
             context=context)
