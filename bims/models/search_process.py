@@ -2,6 +2,7 @@
 """Search process model definition.
 
 """
+import re
 import os
 import json
 import errno
@@ -67,9 +68,12 @@ class SearchProcess(models.Model):
 
     def set_search_raw_query(self, raw_query):
         raw_query = str(raw_query)
+        ignored_params = ['yearFrom', 'yearTo', 'months']
         query_parsed = urlparse.urlparse(self.query)
         parameters = urlparse.parse_qs(query_parsed.query)
         for param in parameters:
+            if param in ignored_params:
+                continue
             queries = parameters[param]
             for query in queries:
                 if query[0] == '[' and query[len(query) - 1] == ']':
@@ -86,6 +90,11 @@ class SearchProcess(models.Model):
                             '\'' + query_splitted + '\''
                         )
                     )
+        raw_query = re.sub(
+            r'(BETWEEN)( )(\d+-\d+-\d+)( )(AND)( )(\d+-\d+-\d+)',
+            'BETWEEN \'' + r'\3' + '\' AND \'' + r'\7' + '\'',
+            raw_query
+        )
         self.search_raw_query = raw_query
         self.save()
 
