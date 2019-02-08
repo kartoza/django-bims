@@ -44,6 +44,10 @@ $(document).ready(function () {
         calculateTaxa(key, totalTaxa, totalTaxaNumber, totalTaxaScore);
         $('#number-taxa-' + key).html(totalTaxaNumber[key]);
         $('#sass-score-' + key).html(totalTaxaScore[key]);
+        let aspt = parseFloat(totalTaxaScore[key]) / parseFloat(totalTaxaNumber[key]);
+        if(aspt) {
+            $('#aspt-' + key).html(aspt.toFixed(1));
+        }
     });
 
     let allInputText = $("input[type='text']");
@@ -154,6 +158,8 @@ $(document).ready(function () {
         }
         $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
         $('#sass-score-' + biotope).html(totalTaxaScore[biotope]);
+        let aspt = parseFloat(totalTaxaScore[biotope]) / parseFloat(totalTaxaNumber[biotope]);
+        $('#aspt-' + biotope).html(aspt.toFixed(1));
 
         // Need to update total column
         if (biotope !== 'total') {
