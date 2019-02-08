@@ -19,26 +19,31 @@ let biotope_number = {
     'total': 0
 };
 
-function getTaxaNumber(bio, bioObject) {
+function calculateTaxa(bio, bioObject, totalTaxaNumber, totalTaxaScore) {
     let notEmptyInputs = $('#taxon-list').find("[data-biotope='" + bio + "']").filter(function () {
         return this.value !== '';
     });
     $.each(notEmptyInputs, function (index, input) {
         let id = $(input).data('id');
         if (!bioObject[bio].hasOwnProperty(id)) {
-            bioObject[bio][id] =  $(input).val();
+            // get score
+            let scoreDiv = $(input).parent().parent().find('.taxon-name');
+            bioObject[bio][id] =  scoreDiv.data('score');
+            totalTaxaScore[bio] += parseInt(scoreDiv.data('score'));
         }
     });
-    return notEmptyInputs.length;
+    totalTaxaNumber[bio] = notEmptyInputs.length;
 }
 
 $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
+    let totalTaxaScore = $.extend({}, biotope_number);
 
     $.each(biotope_number, function (key, value) {
-        totalTaxaNumber[key] = getTaxaNumber(key, totalTaxa);
+        calculateTaxa(key, totalTaxa, totalTaxaNumber, totalTaxaScore);
         $('#number-taxa-' + key).html(totalTaxaNumber[key]);
+        $('#sass-score-' + key).html(totalTaxaScore[key]);
     });
 
     let allInputText = $("input[type='text']");
@@ -132,19 +137,23 @@ $(document).ready(function () {
     $ratingInput.on('focusout', function (e) {
         let biotope = $(this).data('biotope');
         let id = $(this).data('id');
+        let scoreDiv = $(this).parent().parent().find('.taxon-name');
 
         if (!this.value) {
             if (totalTaxa[biotope].hasOwnProperty(id)) {
                 delete totalTaxa[biotope][id];
                 totalTaxaNumber[biotope] -= 1;
+                totalTaxaScore[biotope] -= parseInt(scoreDiv.data('score'));
             }
         } else {
             if (!totalTaxa[biotope].hasOwnProperty(id)) {
-                totalTaxa[biotope][id] = this.value;
+                totalTaxa[biotope][id] = scoreDiv.data('score');
                 totalTaxaNumber[biotope] += 1;
+                totalTaxaScore[biotope] += parseInt(scoreDiv.data('score'));
             }
         }
         $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
+        $('#sass-score-' + biotope).html(totalTaxaScore[biotope]);
 
         // Need to update total column
         if (biotope !== 'total') {

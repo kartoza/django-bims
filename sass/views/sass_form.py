@@ -270,9 +270,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             taxon_dict = {
                 'name': sass_taxon_name.upper(),
                 'id': sass_taxon.id,
-                'has_score': (
-                    False if sass_taxon_score is None else True
-                ),
+                'score': sass_taxon_score,
                 's_value': None,
                 'veg_value': None,
                 'gsm_value': None,

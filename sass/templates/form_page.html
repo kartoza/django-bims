@@ -103,9 +103,9 @@
             </thead>
             <tbody id="taxon-list">
             {% for taxon in taxon_list %}
-                {% if taxon.has_score %}
+                {% if taxon.score %}
                     <tr>
-                        <td scope="row"
+                        <td data-score="{{ taxon.score }}" data-id="{{ taxon.id }}" scope="row"
                             class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
                             {{ taxon.name }}
                         </td>
