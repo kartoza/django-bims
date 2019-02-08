@@ -165,7 +165,7 @@ define([
                     let newParams = {
                         layers: locationSiteGeoserverLayer,
                         format: 'image/png',
-                        viewparams: 'where:' + data['sites_raw_query']
+                        viewparams: 'where:"' + data['sites_raw_query'] + '"'
                     };
                     self.siteLayerSource.updateParams(newParams);
 
