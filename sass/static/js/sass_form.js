@@ -159,6 +159,9 @@ $(document).ready(function () {
         $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
         $('#sass-score-' + biotope).html(totalTaxaScore[biotope]);
         let aspt = parseFloat(totalTaxaScore[biotope]) / parseFloat(totalTaxaNumber[biotope]);
+        if (!aspt) {
+            aspt = 0;
+        }
         $('#aspt-' + biotope).html(aspt.toFixed(1));
 
         // Need to update total column
