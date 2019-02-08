@@ -78,6 +78,8 @@ class SearchProcess(models.Model):
                     query_splitted = query_splitted.replace('"', '')
                     if '%{}%'.format(query_splitted) in raw_query:
                         query_splitted = '%{}%'.format(query_splitted)
+                    if not query_splitted:
+                        continue
                     raw_query = (
                         raw_query.replace(
                             query_splitted,
