@@ -5,14 +5,59 @@ $('#submit').click(function () {
     $('#sass-form').submit();
 });
 
+let biotope = {
+    'stones': {},
+    'vegetation': {},
+    'gsm': {},
+    'total': {}
+};
+
+let biotope_number = {
+    'stones': 0,
+    'vegetation': 0,
+    'gsm': 0,
+    'total': 0
+};
+
+function calculateTaxa(bio, bioObject, totalTaxaNumber, totalTaxaScore) {
+    let notEmptyInputs = $('#taxon-list').find("[data-biotope='" + bio + "']").filter(function () {
+        return this.value !== '';
+    });
+    $.each(notEmptyInputs, function (index, input) {
+        let id = $(input).data('id');
+        if (!bioObject[bio].hasOwnProperty(id)) {
+            // get score
+            let scoreDiv = $(input).parent().parent().find('.taxon-name');
+            bioObject[bio][id] =  scoreDiv.data('score');
+            totalTaxaScore[bio] += parseInt(scoreDiv.data('score'));
+        }
+    });
+    totalTaxaNumber[bio] = notEmptyInputs.length;
+}
+
 $(document).ready(function () {
+    let totalTaxa = $.extend({}, biotope);
+    let totalTaxaNumber = $.extend({}, biotope_number);
+    let totalTaxaScore = $.extend({}, biotope_number);
+
+    $.each(biotope_number, function (key, value) {
+        calculateTaxa(key, totalTaxa, totalTaxaNumber, totalTaxaScore);
+        $('#number-taxa-' + key).html(totalTaxaNumber[key]);
+        $('#sass-score-' + key).html(totalTaxaScore[key]);
+        let aspt = parseFloat(totalTaxaScore[key]) / parseFloat(totalTaxaNumber[key]);
+        if(aspt) {
+            $('#aspt-' + key).html(aspt.toFixed(1));
+        }
+    });
 
     let allInputText = $("input[type='text']");
     allInputText.on("click", function () {
         $(this).select();
     });
     $('#sass-form').submit(function () {
-        let emptyInputFields = allInputText.filter(function() { return this.value === ''; });
+        let emptyInputFields = allInputText.filter(function () {
+            return this.value === '';
+        });
         emptyInputFields.attr("disabled", true);
         return true;
     });
@@ -90,6 +135,39 @@ $(document).ready(function () {
             });
             let totalInput = row.find('.total-rating');
             totalInput.val(greatest);
+        }
+    });
+
+    $ratingInput.on('focusout', function (e) {
+        let biotope = $(this).data('biotope');
+        let id = $(this).data('id');
+        let scoreDiv = $(this).parent().parent().find('.taxon-name');
+
+        if (!this.value) {
+            if (totalTaxa[biotope].hasOwnProperty(id)) {
+                delete totalTaxa[biotope][id];
+                totalTaxaNumber[biotope] -= 1;
+                totalTaxaScore[biotope] -= parseInt(scoreDiv.data('score'));
+            }
+        } else {
+            if (!totalTaxa[biotope].hasOwnProperty(id)) {
+                totalTaxa[biotope][id] = scoreDiv.data('score');
+                totalTaxaNumber[biotope] += 1;
+                totalTaxaScore[biotope] += parseInt(scoreDiv.data('score'));
+            }
+        }
+        $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
+        $('#sass-score-' + biotope).html(totalTaxaScore[biotope]);
+        let aspt = parseFloat(totalTaxaScore[biotope]) / parseFloat(totalTaxaNumber[biotope]);
+        if (!aspt) {
+            aspt = 0;
+        }
+        $('#aspt-' + biotope).html(aspt.toFixed(1));
+
+        // Need to update total column
+        if (biotope !== 'total') {
+            let total = $('#taxon-list').find("[data-id='" + id + "'].total-rating");
+            total.trigger('focusout');
         }
     });
 
