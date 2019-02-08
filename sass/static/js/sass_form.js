@@ -93,4 +93,33 @@ $(document).ready(function () {
         }
     });
 
+    $('#data-source').autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: '/data-source-autocomplete/?term=' + encodeURIComponent(request.term),
+                type: 'get',
+                dataType: 'json',
+                success: function (data) {
+                    response($.map(data, function (item) {
+                        return {
+                            label: item.name,
+                            value: item.id
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 2,
+        open: function (event, ui) {
+            setTimeout(function () {
+                $('.ui-autocomplete').css('z-index', 99);
+            }, 0);
+        },
+        select: function (e, u) {
+            e.preventDefault();
+            $('#data-source').val(u.item.label);
+            $('#data-source-id').val(u.item.value);
+        }
+    });
+
 });

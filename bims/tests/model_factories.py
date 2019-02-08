@@ -22,6 +22,7 @@ from bims.models import (
     Taxonomy,
     TaxonGroup,
     FbisUUID,
+    DataSource,
 )
 
 
@@ -278,3 +279,14 @@ class FbisUUIDF(factory.django.DjangoModelFactory):
     id = factory.Sequence(lambda n: n)
     uuid = factory.Sequence(lambda n: 'uuid %s' % n)
     content_type = factory.SubFactory(ContentTypeF)
+
+
+class DataSourceF(factory.django.DjangoModelFactory):
+    """
+    Data source factory
+    """
+    class Meta:
+        model = DataSource
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: 'data-source %s' % n)
