@@ -10,6 +10,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from geonode.people.models import Profile
 from bims.models.location_site import LocationSite
 from bims.models.biotope import Biotope
+from bims.models.data_source import DataSource
 from sass.models import (
     SiteVisit,
     SassTaxon,
@@ -152,6 +153,21 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         date_string = request.POST.get('date', None)
         date = parse(date_string) if date_string else None
 
+        # Data source
+        data_source = None
+        data_source_name = request.POST.get('data-source-name', None)
+        data_source_id = request.POST.get('data-source-id', None)
+        if data_source_name and data_source_id:
+            try:
+                data_source = DataSource.objects.get(
+                    id=data_source_id,
+                    name=data_source_name
+                )
+            except DataSource.DoesNotExist:
+                data_source = DataSource.objects.create(
+                    name=data_source_name
+                )
+
         # Time
         time_string = request.POST.get('time', None)
         datetime = None
@@ -180,6 +196,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         site_visit.time = datetime
         site_visit.assessor = assessor
         site_visit.sass_version = self.sass_version
+        site_visit.data_source = data_source
         site_visit.comments_or_observations = request.POST.get(
             'notes', None
         )
@@ -300,8 +317,11 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             context['assessor'] = self.site_visit.assessor
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
-            context['comments'] = self.site_visit.comments_or_observations
-            context['other_biota'] = self.site_visit.other_biota
+            if self.site_visit.comments_or_observations:
+                context['comments'] = self.site_visit.comments_or_observations
+            if self.site_visit.other_biota:
+                context['other_biota'] = self.site_visit.other_biota
+            context['data_source'] = self.site_visit.data_source
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
