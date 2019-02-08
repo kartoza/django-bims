@@ -22,8 +22,9 @@ class TestApiView(TestCase):
             url=reverse('data-source-autocomplete-search'),
             search='foo'
         )
-        r = self.client.get(url_path,
-                        **{'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'})
+        r = self.client.get(
+            url_path,
+            **{'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'})
         response_data = json.loads(r.content)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(response_data), 2)
