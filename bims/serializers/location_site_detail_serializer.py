@@ -26,9 +26,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return ''
 
     def get_site_detail_info(self, obj):
-        site_coordinates = "{latitude} {longitude}".format(
-            latitude=obj.geometry_point.x,
-            longitude=obj.geometry_point.y)
+        site_coordinates = "{latitude}, {longitude}".format(
+            latitude=round(obj.geometry_point.x, 3),
+            longitude=round(obj.geometry_point.y, 3))
         parse_string = lambda string_in:  "Unknown" if not string_in else string_in
         site_detail_info = {
             'fbis_site_code' : parse_string(obj.id),
