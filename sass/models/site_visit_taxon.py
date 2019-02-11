@@ -17,3 +17,10 @@ class SiteVisitTaxon(BiologicalCollectionRecord):
         null=True,
         blank=True
     )
+
+    sass_taxon = models.ForeignKey(
+        'sass.SassTaxon',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )

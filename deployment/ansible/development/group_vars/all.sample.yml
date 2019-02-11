@@ -20,7 +20,6 @@ django:
     DEBUG: True
     DJANGO_SETTINGS_MODULE: core.settings.dev_docker
     RABBITMQ_HOST: rabbitmq
-    HAYSTACK_HOST: elasticsearch
     PYTHONPATH: /usr/src/app:/home/web/django_project
     ROOT_URLCONF: core.urls
     DATABASE_NAME: gis
@@ -69,7 +68,6 @@ interpreters:
 docker_port_forward:
   django:
     db: 6543
-    elastic_search: 9200
     http: 63302
     ssh: 63303
     karma_tests: 63304

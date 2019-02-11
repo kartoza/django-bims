@@ -28,11 +28,7 @@
             </div>
             <div class="col-lg-8 dashboard-graph-wrapper">
                 <div class="row">
-                    <div class="col-lg-6">
-                        <h5 class="dd-title">Records over time</h5>
-                        <div class="dashboard-table records-table"></div>
-                    </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-12">
                         <h5 class="dd-title">Records per area</h5>
                         <div class="dashboard-table records-area-table"></div>
                     </div>
@@ -248,5 +244,18 @@
                 </div>
             </div>
         </div>
+    </div>
+</script>
+
+<script type="text/template" id="third-party-template">
+    <a href="https://gbif.org/species/<%= taxon_gbif_id %>/" target="_blank">
+        <div class="third-party-info">
+            From gbif.org
+        </div>
+    </a>
+    <div class="third-party-fetching-info">
+        Fetching...
+    </div>
+    <div class="content row third-party-wrapper">
     </div>
 </script>

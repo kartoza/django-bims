@@ -10,12 +10,7 @@ from django.utils import timezone
 from django.contrib.postgres.fields import JSONField
 
 from bims.models.location_site import LocationSite
-from bims.utils.cluster import (
-    update_cluster_by_collection,
-    update_cluster_by_site
-)
 from bims.utils.gbif import update_collection_record
-from bims.tasks.collection_record import update_search_index
 from bims.models.validation import AbstractValidation
 from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.taxonomy import Taxonomy
@@ -220,9 +215,7 @@ def collection_post_save_handler(sender, instance, **kwargs):
     )
     instance.on_post_save()
     if instance.is_cluster_generation_applied():
-        update_cluster_by_collection(instance)
         SearchProcess.objects.all().delete()
-        update_search_index.delay()
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
@@ -239,7 +232,3 @@ def cluster_post_delete_handler(sender, instance, using, **kwargs):
     if not issubclass(sender, BiologicalCollectionRecord) and \
             not issubclass(sender, LocationSite):
         return
-    if issubclass(sender, BiologicalCollectionRecord):
-        update_cluster_by_collection(instance)
-    if issubclass(sender, LocationSite):
-        update_cluster_by_site(instance)
