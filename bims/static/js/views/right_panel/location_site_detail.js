@@ -179,11 +179,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             return $detailWrapper;
         },
 
-        renderSiteClimateData: function (data) {
-
+        renderClimateData: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('climate_data'))  {
-
+                var climateDataTemplate = _.template($('#climate-data-template').html());
+                $detailWrapper.append(climateDataTemplate({
+                    'mean_annual_temperature' : data['climate_data']['mean_annual_temperature'],
+                    'mean_annual_rainfall' : data['climate_data']['mean_annual_rainfall']
+                }));
             };
         },
 
@@ -383,6 +386,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 '<div class="search-results-total" data-visibility="true"> ' +
                 '<span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) ' +
                 '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            $siteDetailWrapper.append(
+                '<div id="climate-data" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> ' +
+                '<span class="search-result-title"> CLIMATE DATA (<span class="climate-data-count"><i>loading</i></span>) ' +
+                '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+
+
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
@@ -480,6 +490,9 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     // render species list
                     $('#species-list').append(self.renderSpeciesList(data));
                     Shared.LocationSiteDetailXHRRequest = null;
+
+                    // render climate data
+                    $('#climate-data').appendChild(self.renderClimateData(data))
                 },
                 error: function (req, err) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
