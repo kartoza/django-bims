@@ -188,6 +188,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     'mean_annual_rainfall' : data['climate_data']['mean_annual_rainfall']
                 }));
             };
+            return $detailWrapper;
         },
 
         renderDashboardDetail: function (data) {
@@ -389,7 +390,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $siteDetailWrapper.append(
                 '<div id="climate-data" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> ' +
-                '<span class="search-result-title"> CLIMATE DATA (<span class="climate-data-count"><i>loading</i></span>) ' +
+                '<span class="search-result-title"> CLIMATE DATA </span>) ' +
                 '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
 
@@ -492,7 +493,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     Shared.LocationSiteDetailXHRRequest = null;
 
                     // render climate data
-                    $('#climate-data').appendChild(self.renderClimateData(data))
+                    var climateDataHTML = self.renderClimateData(data);
+                    $('#climate-data').append(climateDataHTML)
                 },
                 error: function (req, err) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
