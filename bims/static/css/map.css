@@ -2332,8 +2332,8 @@ div:hover::-webkit-scrollbar {
 
 
 #site-details-wrapper .row .caption-column {
-    color: navy;
-    text-align: right;
+    color: #4a4a4a;
+    text-align: left;
     align-self: center;
 }
 
