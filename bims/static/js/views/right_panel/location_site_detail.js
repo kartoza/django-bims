@@ -178,6 +178,15 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
+
+        renderSiteClimateData: function (data) {
+
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('climate_data'))  {
+
+            };
+        },
+
         renderDashboardDetail: function (data) {
             var $detailWrapper = $('<div></div>');
 

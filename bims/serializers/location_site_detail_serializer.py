@@ -25,6 +25,16 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         else:
             return ''
 
+
+    def get_site_climate_data(self, context_document):
+        mean_annual_temperature = 32.4
+        mean_annual_rainfall = 28.6
+        site_climate_data = {
+            'mean_annual_temperature' : mean_annual_temperature,
+            'mean_annual_rainfall' : mean_annual_rainfall
+        }
+        return site_climate_data
+
     class Meta:
         model = LocationSite
         fields = [
@@ -133,6 +143,10 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
 
+        # get climate data
+        climate_data = self.get_site_climate_data(collections)
+
+        result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
         return result
