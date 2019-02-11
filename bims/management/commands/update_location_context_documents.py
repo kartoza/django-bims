@@ -29,7 +29,7 @@ class Command(BaseCommand):
                 location_context_document__isnull=True,
             )
         else:
-            location_sites = LocationSite.objects.all()
+            location_sites = LocationSite.objects.filter(id=9344)
         num = len(location_sites)
         i = 1
 

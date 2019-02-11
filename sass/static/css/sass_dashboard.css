@@ -1,0 +1,34 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box; //to account for the border on top
+    -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+
+.body-form {
+    padding-top: 100px;
+    padding-bottom: 70px;
+}
+
+#map {
+    height: 400px;
+    width: 100%;
+}
+
+#sass-score-chart {
+    display: block;
+    width: 100%;
+}
+
+.chart-container, .map-container {
+    padding: 10px;
+    border: 1px solid rgba(219, 175, 0, 0.41);
+}
+
+.dashboard-title {
+    border-bottom: 3px solid #1b900d;
+}

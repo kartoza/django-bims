@@ -1,0 +1,51 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    SASS Dashboard Single Site
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <script type="text/javascript">
+        const sassScores = {{ sass_scores }};
+        const yearLabels = {{ year_labels }};
+        const taxaNumbers = {{ taxa_numbers }};
+        const asptList = {{ aspt_list }};
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+
+        <h2 class="dashboard-title">SASS Dashboard</h2>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="map-container" id="map"></div>
+            </div>
+            <div class="col-lg-6 mp">
+                <div class="chart-container">
+                    <canvas id="sass-score-chart"></canvas>
+                    <canvas id="taxa-numbers-chart"></canvas>
+                    <canvas id="aspt-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script src="{% static "js/sass_dashboard.js" %}"></script>
+
+{% endblock %}
