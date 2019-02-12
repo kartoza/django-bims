@@ -6,7 +6,9 @@
 import logging
 import requests
 import json
+import re
 
+from collections import defaultdict
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
@@ -163,7 +165,7 @@ class LocationSite(DocumentLinksMixin):
         """Update location context document."""
         LOGGER.debug('update_location_context_document')
         geocontext_url = get_key('GEOCONTEXT_URL')
-        geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
+        geocontext_collection_key = 'land_cover_land_use' #get_key('GEOCONTEXT_COLLECTION_KEY')
         geocontext_group_keys = [
             "political_boundary_group",
             "cadastre_group",
@@ -198,9 +200,10 @@ class LocationSite(DocumentLinksMixin):
             return False, message
         longitude = self.get_centroid().x
         latitude = self.get_centroid().y
-
-        self.location_context_document = ""
+        location_context_string = '{"context_group_values" : ['
+        self.location_context_document = {}
         for group_key in geocontext_group_keys:
+            x = 0
             # build url
             url = self.geocontext_url_format.format(
                 geocontext_url=geocontext_url,
@@ -216,28 +219,14 @@ class LocationSite(DocumentLinksMixin):
                         'context document.' % (url, r.status_code, r.reason))
                 return False, message
 
-            self.location_context_document['context_group_values'].append(json.dumps(r.json()))
+            location_context_string += json.dumps(r.json()) + ','
 
-        return True, 'Successfully update location context document.'
-
-
-        # # build url
-        # url = self.geocontext_url_format.format(
-        #     geocontext_url=geocontext_url,
-        #     longitude=longitude,
-        #     latitude=latitude,
-        #     geocontext_collection_key=geocontext_collection_key,
-        # )
-
-        # r = requests.get(url)
-        # if r.status_code != 200:
-        #     message = (
-        #         'Request to url %s got %s [%s], can not update location '
-        #         'context document.' % (url, r.status_code, r.reason))
-        #     return False, message
-        #
-        # self.location_context_document = json.dumps(r.json())
-        # return True, 'Successfully update location context document.'
+            # response_group_values[group_key] = re.findall('{"service_registry_values": \[(.*?)\]', json.dumps(r.json()))[0]
+            # location_context_dictionary = location_context_dictionary['context_group_values'].replace("'", "")
+            x += 1
+        location_context_string = location_context_string[:-1] + ']}'
+        self.location_context_document = location_context_string
+        return True, "Updated site location document"
 
     # noinspection PyClassicStyleClass
     class Meta:
