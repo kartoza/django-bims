@@ -2,8 +2,10 @@ import json
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.http import Http404
-from django.db.models import Case, When, F, Count, Sum, FloatField, Value, \
-    CharField
+from django.db.models import (
+    Case, When, F, Count, Sum, FloatField, Value,
+    IntegerField, Q
+)
 from django.db.models.functions import ExtractYear, Cast
 from bims.models.location_site import LocationSite
 from bims.api_views.search_version_2 import SearchVersion2
@@ -17,18 +19,19 @@ from sass.models import (
 class SassDashboardView(TemplateView):
     template_name = 'sass_dashboard_single_site.html'
     location_site = LocationSite.objects.none()
+    site_visit_taxa = SiteVisitTaxon.objects.none()
 
-    def get_site_visit_taxon_summary(self):
+    def get_site_visit_taxon(self):
         filters = self.request.GET
         search = SearchVersion2(filters)
         collection_records = search.process_search()
-        data = {}
-
-        site_visit_taxa = SiteVisitTaxon.objects.filter(
+        self.site_visit_taxa = SiteVisitTaxon.objects.filter(
             id__in=collection_records
         )
 
-        summary = site_visit_taxa.annotate(
+    def get_sass_score_chart_data(self):
+        data = {}
+        summary = self.site_visit_taxa.annotate(
             year=ExtractYear('site_visit__site_visit_date')
         ).values('year').annotate(
             count=Count('sass_taxon'),
@@ -51,9 +54,12 @@ class SassDashboardView(TemplateView):
             summary.values_list('sass_score', flat=True))
         data['aspt_list'] = list(
             summary.values_list('aspt', flat=True))
+        return data
 
+    def get_sass_taxon_table_data(self):
+        data = {}
         sass_taxon_data = (
-            site_visit_taxa.annotate(
+            self.site_visit_taxa.annotate(
                 sass_taxon_name=Case(
                     When(site_visit__sass_version=5, then=
                     'sass_taxon__taxon_sass_5'),
@@ -80,8 +86,8 @@ class SassDashboardView(TemplateView):
 
         biotope_data = (
             SiteVisitBiotopeTaxon.objects.filter(
-                sass_taxon__in=site_visit_taxa.values_list('sass_taxon'),
-                site_visit__in=site_visit_taxa.values_list(
+                sass_taxon__in=self.site_visit_taxa.values_list('sass_taxon'),
+                site_visit__in=self.site_visit_taxa.values_list(
                     'site_visit')).values('biotope__name', 'sass_taxon',
                                           'taxon_abundance__abc')
         )
@@ -89,13 +95,72 @@ class SassDashboardView(TemplateView):
         data['biotope_data'] = json.dumps(list(biotope_data))
         return data
 
+    def get_sensitivity_chart_data(self):
+        # Ordered by
+        # Highly tolerant = 1 - 3
+        # Tolerant = 4 - 7
+        # Sensitive = 8 - 11
+        # Highly Sensitive 12 - 15
+        sensitvity_data = (
+            self.site_visit_taxa.annotate(
+                sass_score=Case(
+                    When(site_visit__sass_version=5,
+                         then='sass_taxon__sass_5_score'),
+                    When(site_visit__sass_version=4,
+                         then='sass_taxon__score'),
+                    default='sass_taxon__sass_5_score',
+                    output_field=IntegerField()
+                ),
+            ).annotate(
+                highly_tolerant_value=Case(
+                    When(
+                        condition=Q(
+                            sass_score__gte=1, sass_score__lte=3),
+                        then=1),
+                    output_field=IntegerField()
+                ),
+                tolerant_value=Case(
+                    When(
+                        condition=Q(
+                            sass_score__gte=4, sass_score__lte=7),
+                        then=1),
+                    output_field=IntegerField()
+                ),
+                sensitive_value=Case(
+                    When(
+                        condition=Q(
+                            sass_score__gte=8, sass_score__lte=11),
+                        then=1),
+                    output_field=IntegerField()
+                ),
+                highly_sensitive_value=Case(
+                    When(
+                        condition=Q(
+                            sass_score__gte=12, sass_score__lte=15),
+                        then=1),
+                    output_field=IntegerField()
+                ),
+            ).aggregate(
+                highly_tolerant=Sum('highly_tolerant_value'),
+                tolerant=Sum('tolerant_value'),
+                sensitive=Sum('sensitive_value'),
+                highly_sensitive=Sum('highly_sensitive_value')
+            )
+        )
+
+        return sensitvity_data
+
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
         context['coord'] = [
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
         ]
-        context = self.get_site_visit_taxon_summary()
+        self.get_site_visit_taxon()
+
+        context['sass_score_chart_data'] = self.get_sass_score_chart_data()
+        context['sass_taxon_table_data'] = self.get_sass_taxon_table_data()
+        context['sentivity_chart_data'] = self.get_sensitivity_chart_data()
 
         return context
 

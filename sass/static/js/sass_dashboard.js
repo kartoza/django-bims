@@ -72,7 +72,7 @@ function renderSASSTaxonPerBiotope() {
     let sassTaxon = {};
     let table = $('#sass-taxon-per-biotope');
     $.each(sassTaxonData, function (index, value) {
-        let $tr = $('<tr data-id="'+value['sass_taxon_id']+'">');
+        let $tr = $('<tr data-id="' + value['sass_taxon_id'] + '">');
         if (sassTaxon.hasOwnProperty(value['taxonomy__canonical_name'])) {
             $tr.append('<td></td>');
             $tr.insertAfter(sassTaxon[value['taxonomy__canonical_name']]);
@@ -102,21 +102,53 @@ function renderSASSTaxonPerBiotope() {
     });
 
     $.each(biotopeData, function (index, value) {
-       let sassTaxonId = value['sass_taxon'];
-       let $tr = table.find("[data-id='" + sassTaxonId + "']");
-       if (!$tr) {
-           return true;
-       }
-       let lowercaseValue = value['biotope__name'].toLowerCase();
-       let $td = $('<div>');
-       if (lowercaseValue.includes('vegetation')) {
-           $td =  $tr.find('.veg');
-       } else if (lowercaseValue.includes('stone')) {
-           $td =  $tr.find('.stone');
-       } else {
-           $td =  $tr.find('.gravel');
-       }
-       $td.html(value['taxon_abundance__abc']);
+        let sassTaxonId = value['sass_taxon'];
+        let $tr = table.find("[data-id='" + sassTaxonId + "']");
+        if (!$tr) {
+            return true;
+        }
+        let lowercaseValue = value['biotope__name'].toLowerCase();
+        let $td = $('<div>');
+        if (lowercaseValue.includes('vegetation')) {
+            $td = $tr.find('.veg');
+        } else if (lowercaseValue.includes('stone')) {
+            $td = $tr.find('.stone');
+        } else {
+            $td = $tr.find('.gravel');
+        }
+        $td.html(value['taxon_abundance__abc']);
+    });
+}
+
+function renderSensitivityChart() {
+    let options = {};
+    console.log(sensitivityChartData);
+    let data = {
+        datasets: [{
+            data: [
+                sensitivityChartData['highly_sensitive'],
+                sensitivityChartData['sensitive'],
+                sensitivityChartData['tolerant'],
+                sensitivityChartData['highly_tolerant']
+            ],
+            backgroundColor: [
+                "#4dcfff",
+                "#5cff8b",
+                "#ffee66",
+                "#ff5d49"
+            ]
+        }],
+        labels: [
+            'Highly Sensitive',
+            'Sensitive',
+            'Tolerant',
+            'Highly Tolerant'
+        ],
+    };
+    let sensitivityChart = new Chart($('#sensitivity-chart'), {
+        type: 'pie',
+        data: data,
+        options: options
     });
 }
 
@@ -124,4 +156,5 @@ $(function () {
     drawMap();
     renderSASSSummaryChart();
     renderSASSTaxonPerBiotope();
+    renderSensitivityChart();
 });

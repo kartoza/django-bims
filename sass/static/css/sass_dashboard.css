@@ -41,10 +41,11 @@ body {
     border-bottom: 3px solid #1b900d;
 }
 
-.table-title {
+.table-title, .chart-title {
     padding-bottom: 10px;
     font-size: 13pt;
     font-weight: bold;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .sass-taxon-per-biotope-table {

@@ -12,12 +12,13 @@
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
           rel="stylesheet">
     <script type="text/javascript">
-        const sassScores = {{ sass_scores }};
-        const yearLabels = {{ year_labels }};
-        const taxaNumbers = {{ taxa_numbers }};
-        const asptList = {{ aspt_list }};
-        const sassTaxonData = {{ sass_taxon_data | safe }};
-        const biotopeData = {{ biotope_data | safe }};
+        const sassScores = {{ sass_score_chart_data.sass_scores }};
+        const yearLabels = {{ sass_score_chart_data.year_labels }};
+        const taxaNumbers = {{ sass_score_chart_data.taxa_numbers }};
+        const asptList = {{ sass_score_chart_data.aspt_list }};
+        const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
+        const biotopeData = {{ sass_taxon_table_data.biotope_data | safe }};
+        const sensitivityChartData = {{ sentivity_chart_data | safe }};
     </script>
 
 {% endblock %}
@@ -79,6 +80,11 @@
                     <canvas id="sass-score-chart"></canvas>
                     <canvas id="taxa-numbers-chart"></canvas>
                     <canvas id="aspt-chart"></canvas>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="chart-container">
+                    <div class="chart-title">Proportion of sensitive to tolerant</div>
+                    <canvas id="sensitivity-chart"></canvas>
                 </div>
             </div>
         </div>
