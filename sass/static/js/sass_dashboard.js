@@ -19,6 +19,7 @@ function renderSASSSummaryChart() {
         'datasets': [{
             'label': 'SASS Scores',
             'data': sassScores,
+            'backgroundColor': '#589f48',
             'fill': 'false',
         }]
     };
@@ -27,6 +28,7 @@ function renderSASSSummaryChart() {
         'datasets': [{
             'label': 'Number of Taxa',
             'data': taxaNumbers,
+            'backgroundColor': '#589f48',
             'fill': 'false',
         }]
     };
@@ -35,6 +37,7 @@ function renderSASSSummaryChart() {
         'datasets': [{
             'label': 'ASPT',
             'data': asptList,
+            'backgroundColor': '#589f48',
             'fill': 'false',
         }]
     };
@@ -65,7 +68,60 @@ function renderSASSSummaryChart() {
     });
 }
 
+function renderSASSTaxonPerBiotope() {
+    let sassTaxon = {};
+    let table = $('#sass-taxon-per-biotope');
+    $.each(sassTaxonData, function (index, value) {
+        let $tr = $('<tr data-id="'+value['sass_taxon_id']+'">');
+        if (sassTaxon.hasOwnProperty(value['taxonomy__canonical_name'])) {
+            $tr.append('<td></td>');
+            $tr.insertAfter(sassTaxon[value['taxonomy__canonical_name']]);
+        } else {
+            sassTaxon[value['taxonomy__canonical_name']] = $tr;
+            $tr.append('<td>' +
+                value['taxonomy__canonical_name'] +
+                '</td>');
+            table.append($tr);
+        }
+        sassTaxon[value['taxonomy__canonical_name']] = $tr;
+        $tr.append('<td>' +
+            value['sass_taxon_name'] +
+            '</td>');
+        $tr.append('<td>' +
+            value['sass_score'] +
+            '</td>');
+        $tr.append('<td class="stone">' +
+            '</td>');
+        $tr.append('<td class="veg">' +
+            '</td>');
+        $tr.append('<td class="gravel">' +
+            '</td>');
+        $tr.append('<td class="gravel">' +
+            value['taxon_abundance__abc'] +
+            '</td>');
+    });
+
+    $.each(biotopeData, function (index, value) {
+       let sassTaxonId = value['sass_taxon'];
+       let $tr = table.find("[data-id='" + sassTaxonId + "']");
+       if (!$tr) {
+           return true;
+       }
+       let lowercaseValue = value['biotope__name'].toLowerCase();
+       let $td = $('<div>');
+       if (lowercaseValue.includes('vegetation')) {
+           $td =  $tr.find('.veg');
+       } else if (lowercaseValue.includes('stone')) {
+           $td =  $tr.find('.stone');
+       } else {
+           $td =  $tr.find('.gravel');
+       }
+       $td.html(value['taxon_abundance__abc']);
+    });
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
+    renderSASSTaxonPerBiotope();
 });

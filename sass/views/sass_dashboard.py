@@ -1,7 +1,9 @@
+import json
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.http import Http404
-from django.db.models import Case, When, F, Count, Sum, FloatField
+from django.db.models import Case, When, F, Count, Sum, FloatField, Value, \
+    CharField
 from django.db.models.functions import ExtractYear, Cast
 from bims.models.location_site import LocationSite
 from bims.api_views.search_version_2 import SearchVersion2
@@ -20,6 +22,7 @@ class SassDashboardView(TemplateView):
         filters = self.request.GET
         search = SearchVersion2(filters)
         collection_records = search.process_search()
+        data = {}
 
         site_visit_taxa = SiteVisitTaxon.objects.filter(
             id__in=collection_records
@@ -40,7 +43,51 @@ class SassDashboardView(TemplateView):
                  Cast(F('count'), FloatField()),
         ).order_by('year')
 
-        return summary
+        data['year_labels'] = list(
+            summary.values_list('year', flat=True))
+        data['taxa_numbers'] = list(
+            summary.values_list('count', flat=True))
+        data['sass_scores'] = list(
+            summary.values_list('sass_score', flat=True))
+        data['aspt_list'] = list(
+            summary.values_list('aspt', flat=True))
+
+        sass_taxon_data = (
+            site_visit_taxa.annotate(
+                sass_taxon_name=Case(
+                    When(site_visit__sass_version=5, then=
+                    'sass_taxon__taxon_sass_5'),
+                    When(site_visit__sass_version=4, then=
+                    'sass_taxon__taxon_sass_4'),
+                    default='sass_taxon__taxon_sass_4'
+                ),
+                sass_score=Case(
+                    When(site_visit__sass_version=5, then=
+                    'sass_taxon__sass_5_score'),
+                    When(site_visit__sass_version=4, then=
+                    'sass_taxon__score'),
+                    default='sass_taxon__sass_5_score'
+                ),
+            ).values(
+                'taxonomy__canonical_name',
+                'taxon_abundance__abc',
+                'sass_taxon_name',
+                'sass_score',
+                'sass_taxon_id')
+                .order_by('sass_taxon_name')
+                .distinct('sass_taxon_name')
+        )
+
+        biotope_data = (
+            SiteVisitBiotopeTaxon.objects.filter(
+                sass_taxon__in=site_visit_taxa.values_list('sass_taxon'),
+                site_visit__in=site_visit_taxa.values_list(
+                    'site_visit')).values('biotope__name', 'sass_taxon',
+                                          'taxon_abundance__abc')
+        )
+        data['sass_taxon_data'] = json.dumps(list(sass_taxon_data))
+        data['biotope_data'] = json.dumps(list(biotope_data))
+        return data
 
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
@@ -48,16 +95,7 @@ class SassDashboardView(TemplateView):
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
         ]
-        summary = self.get_site_visit_taxon_summary()
-
-        context['year_labels'] = list(
-            summary.values_list('year', flat=True))
-        context['taxa_numbers'] = list(
-            summary.values_list('count', flat=True))
-        context['sass_scores'] = list(
-            summary.values_list('sass_score', flat=True))
-        context['aspt_list'] = list(
-            summary.values_list('aspt', flat=True))
+        context = self.get_site_visit_taxon_summary()
 
         return context
 

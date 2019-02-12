@@ -24,11 +24,33 @@ body {
     width: 100%;
 }
 
-.chart-container, .map-container {
+.vertical-space {
+    height: 10px;
+}
+
+.chart-container, .map-container, .table-container {
     padding: 10px;
     border: 1px solid rgba(219, 175, 0, 0.41);
 }
 
+.table-container {
+    padding-top: 20px;
+}
+
 .dashboard-title {
     border-bottom: 3px solid #1b900d;
+}
+
+.table-title {
+    padding-bottom: 10px;
+    font-size: 13pt;
+    font-weight: bold;
+}
+
+.sass-taxon-per-biotope-table {
+    font-size: 10pt;
+}
+
+.sass-taxon-per-biotope-table td, .sass-taxon-per-biotope-table th {
+    padding: .50rem !important;
 }
