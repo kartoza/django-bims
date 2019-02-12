@@ -198,13 +198,13 @@ class LocationSite(DocumentLinksMixin):
         new_data = self.get_geocontext_group_data(group_key)
         if doc_end_position < 1:
             old_location_context_string = (
-                '{"context_group_values":[%s]}' %new_data)
+                '{"context_group_values":[%s]}' % new_data)
             self.location_context_document = old_location_context_string
             return True, "Group values added to empty document"
         old_string_content = (
-            old_location_context_string[:doc_end_position+1])
+            old_location_context_string[:doc_end_position + 1])
         old_string_end = (
-            old_location_context_string[doc_end_position+1:])
+            old_location_context_string[doc_end_position + 1:])
         new_location_context_string = (
             '{old_string_content},{new_data}{old_string_end}').format(
                 old_string_content=old_string_content,
