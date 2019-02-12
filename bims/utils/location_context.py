@@ -66,6 +66,8 @@ def format_location_context(location_site_id, force_update=False):
                 logger.info('Formatted location context already exist')
                 return
 
+    if not isinstance(location_context, dict):
+        return
     for context_key, context_value in location_context.iteritems():
         if isinstance(context_value, list):
             formatted[context_key] = array_to_dict(
