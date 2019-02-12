@@ -193,7 +193,8 @@ class LocationSite(DocumentLinksMixin):
         doc_end_position = (
             old_location_context_string.rfind('}]'))
         new_data = json.dumps(r.json())
-        if doc_end_position == 0:
+        print(new_data)
+        if doc_end_position < 1:
             old_location_context_string = (
                 '{"context_group_values":[%s]}' %new_data)
             self.location_context_document = old_location_context_string
@@ -210,6 +211,10 @@ class LocationSite(DocumentLinksMixin):
         print('New location context string: \n' + new_location_context_string)
         self.location_context_document = new_location_context_string
         return True, "Group values added"
+
+    def clear_location_context_document(self):
+        self.location_context_document = ""
+        return True, "Document cleared"
 
     def update_location_context_document(self):
         """Update location context document."""
