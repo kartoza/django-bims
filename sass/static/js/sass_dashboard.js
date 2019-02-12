@@ -15,7 +15,7 @@ function drawMap() {
 
 function renderSASSSummaryChart() {
     let data = {
-        'labels': yearLabels,
+        'labels': dateLabels,
         'datasets': [{
             'label': 'SASS Scores',
             'data': sassScores,
@@ -24,7 +24,7 @@ function renderSASSSummaryChart() {
         }]
     };
     let taxaNumberData = {
-        'labels': yearLabels,
+        'labels': dateLabels,
         'datasets': [{
             'label': 'Number of Taxa',
             'data': taxaNumbers,
@@ -33,7 +33,7 @@ function renderSASSSummaryChart() {
         }]
     };
     let asptData = {
-        'labels': yearLabels,
+        'labels': dateLabels,
         'datasets': [{
             'label': 'ASPT',
             'data': asptList,
@@ -41,7 +41,13 @@ function renderSASSSummaryChart() {
             'fill': 'false',
         }]
     };
-    let options = {};
+    let options = {
+        scales: {
+            xAxes: [{
+                display: false
+            }]
+        }
+    };
     let sassScoreChart = new Chart($('#sass-score-chart'), {
         type: 'bar',
         data: data,
@@ -56,6 +62,11 @@ function renderSASSSummaryChart() {
         type: 'bar',
         data: asptData,
         options: {
+            scales: {
+                xAxes: [{
+                    display: false 
+                }]
+            },
             tooltips: {
                 callbacks: {
                     label: function (tooltipItem, chart) {
@@ -169,7 +180,7 @@ function renderSASSTaxonPerBiotope() {
     $.each(totalSass, function (index, value) {
         $sassScoreTr.find('.' + index).html(value);
         $numberTaxaTr.find('.' + index).html(numberOfTaxa[index]);
-        $asptTr.find('.' + index).html(parseFloat(value/numberOfTaxa[index]).toFixed(2))
+        $asptTr.find('.' + index).html(parseFloat(value / numberOfTaxa[index]).toFixed(2))
     });
 }
 

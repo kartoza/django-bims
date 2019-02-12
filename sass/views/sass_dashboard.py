@@ -4,9 +4,9 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Value,
-    IntegerField, Q
+    IntegerField, Q, DateField, CharField
 )
-from django.db.models.functions import ExtractYear, Cast
+from django.db.models.functions import TruncDay, Cast
 from bims.models.location_site import LocationSite
 from bims.api_views.search_version_2 import SearchVersion2
 from sass.models import (
@@ -32,8 +32,8 @@ class SassDashboardView(TemplateView):
     def get_sass_score_chart_data(self):
         data = {}
         summary = self.site_visit_taxa.annotate(
-            year=ExtractYear('site_visit__site_visit_date')
-        ).values('year').annotate(
+            date=F('site_visit__site_visit_date'),
+        ).values('date').annotate(
             count=Count('sass_taxon'),
             sass_score=Case(
                 When(site_visit__sass_version=5, then=Sum(
@@ -44,10 +44,11 @@ class SassDashboardView(TemplateView):
         ).annotate(
             aspt=Cast(F('sass_score'), FloatField()) /
                  Cast(F('count'), FloatField()),
-        ).order_by('year')
+        )
 
-        data['year_labels'] = list(
-            summary.values_list('year', flat=True))
+        data['date_labels'] = (
+            [dt.strftime('%m/%d/%Y')
+             for dt in summary.values_list('date', flat=True)])
         data['taxa_numbers'] = list(
             summary.values_list('count', flat=True))
         data['sass_scores'] = list(
@@ -94,7 +95,7 @@ class SassDashboardView(TemplateView):
             SiteVisitBiotopeTaxon.objects.filter(
                 sass_taxon__in=self.site_visit_taxa.values_list('sass_taxon'),
                 site_visit=latest_site_visit).values(
-                'biotope__name', 'sass_taxon','taxon_abundance__abc')
+                'biotope__name', 'sass_taxon', 'taxon_abundance__abc')
         )
         data['sass_taxon_data'] = json.dumps(list(sass_taxon_data))
         data['biotope_data'] = json.dumps(list(biotope_data))

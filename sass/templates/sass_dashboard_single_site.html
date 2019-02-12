@@ -13,7 +13,7 @@
           rel="stylesheet">
     <script type="text/javascript">
         const sassScores = {{ sass_score_chart_data.sass_scores }};
-        const yearLabels = {{ sass_score_chart_data.year_labels }};
+        const dateLabels = {{ sass_score_chart_data.date_labels | safe }};
         const taxaNumbers = {{ sass_score_chart_data.taxa_numbers }};
         const asptList = {{ sass_score_chart_data.aspt_list }};
         const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
@@ -100,6 +100,7 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/sass_dashboard.js" %}"></script>
 
