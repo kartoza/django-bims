@@ -155,7 +155,7 @@ class LocationSite(DocumentLinksMixin):
 
         return geometry
 
-    def get_geocontext_group_data(self, group_key)
+    def get_geocontext_group_data(self, group_key):
         LOGGER.debug('get_location_group_data for ' + group_key)
         geocontext_url = get_key('GEOCONTEXT_URL')
         if not geocontext_url:
@@ -196,8 +196,6 @@ class LocationSite(DocumentLinksMixin):
         doc_end_position = (
             old_location_context_string.rfind('}]'))
         new_data = self.get_geocontext_group_data(group_key)
-        print(doc_end_position)
-        print('old string: ' + old_location_context_string)
         if doc_end_position < 1:
             old_location_context_string = (
                 '{"context_group_values":[%s]}' %new_data)
@@ -205,17 +203,13 @@ class LocationSite(DocumentLinksMixin):
             return True, "Group values added to empty document"
         old_string_content = (
             old_location_context_string[:doc_end_position+1])
-        print('old string content: ' + old_string_content)
         old_string_end = (
             old_location_context_string[doc_end_position+1:])
-
-        print('old string end: ' + old_string_end)
         new_location_context_string = (
             '{old_string_content},{new_data}{old_string_end}').format(
                 old_string_content=old_string_content,
                 new_data=new_data,
                 old_string_end=old_string_end)
-        print('New location context string: \n' + new_location_context_string)
         self.location_context_document = new_location_context_string
         return True, "Group values added"
 
