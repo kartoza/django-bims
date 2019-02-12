@@ -155,6 +155,70 @@ class LocationSite(DocumentLinksMixin):
 
         return geometry
 
+    def add_context_group(self, group_key):
+        geocontext_group_keys = [
+            "political_boundary_group",
+            "cadastre_group",
+            "elevation_group",
+            "water_group",
+            "rainfall_group",
+            "land_cover_group",
+            "vegetation_group",
+            "monthly_mean_daily_maximum_temperature_group",
+            "monthly_mean_daily_average_temperature_group",
+            "monthly_mean_daily_average_relative_humidity_group",
+            "monthly_standard_deviation_daily_maximum_temperature_group",
+            "monthly_standard_deviation_daily_maximum_relative_humidity_group",
+            "monthly_standard_deviation_of_daily_mean_temperature_group",
+            "monthly_means_of_daily_minimum_temperature_group",
+            "monthly_standard_deviation_of_daily_minimum_temperature_group"
+        ]
+
+        LOGGER.debug('get_location_group_data for ' + group_key)
+        geocontext_url = get_key('GEOCONTEXT_URL')
+        if not geocontext_url:
+            message = (
+                'Can not update location context document because geocontext '
+                'url is None. Please set it.')
+            return False, message
+        if not geocontext_collection_key:
+            message = (
+                'Can not update location context document because geocontext '
+                'collection key is None. Please set it.')
+            return False, message
+        if not self.get_centroid():
+            message = (
+                'Can not update location context document because centroid is '
+                'None. Please set it.')
+            return False, message
+        longitude = self.get_centroid().x
+        latitude = self.get_centroid().y
+
+        # build url
+        url = self.geocontext_url_format.format(
+            geocontext_url=geocontext_url,
+            longitude=longitude,
+            latitude=latitude,
+            geocontext_group_key=group_key,
+        )
+
+        r = requests.get(url)
+        if r.status_code != 200:
+            message = (
+                    'Request to url %s got %s [%s], can not update location '
+                    'context document.' % (url, r.status_code, r.reason))
+            return False, message
+        doc_end_position = (
+            self.location_context_document.rfind('}]'))
+        new_data = json.dumps(r.json())
+        old_location_context_string = (
+            self.location_context_document[:doc_end_position] + new_data)
+        location_context_string = (
+                old_location_context_string[:-1] + ']}}')
+        print('New location context string: \n' + location_context_string)
+        self.location_context_document = (old_location_context_string +
+                                          location_context_group_string)
+
     def update_location_context_document(self):
         """Update location context document."""
         LOGGER.debug('update_location_context_document')
