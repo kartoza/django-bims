@@ -55,3 +55,8 @@ body {
 .sass-taxon-per-biotope-table td, .sass-taxon-per-biotope-table th {
     padding: .50rem !important;
 }
+
+.total-table {
+    font-weight: bolder;
+    background-color: rgba(88, 159, 72, 0.1) !important;
+}

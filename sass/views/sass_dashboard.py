@@ -58,8 +58,14 @@ class SassDashboardView(TemplateView):
 
     def get_sass_taxon_table_data(self):
         data = {}
+        latest_site_visit = (
+            self.site_visit_taxa.order_by('-site_visit__site_visit_date')[0].
+                site_visit
+        )
         sass_taxon_data = (
-            self.site_visit_taxa.annotate(
+            self.site_visit_taxa.filter(
+                site_visit=latest_site_visit
+            ).annotate(
                 sass_taxon_name=Case(
                     When(site_visit__sass_version=5, then=
                     'sass_taxon__taxon_sass_5'),
@@ -87,12 +93,12 @@ class SassDashboardView(TemplateView):
         biotope_data = (
             SiteVisitBiotopeTaxon.objects.filter(
                 sass_taxon__in=self.site_visit_taxa.values_list('sass_taxon'),
-                site_visit__in=self.site_visit_taxa.values_list(
-                    'site_visit')).values('biotope__name', 'sass_taxon',
-                                          'taxon_abundance__abc')
+                site_visit=latest_site_visit).values(
+                'biotope__name', 'sass_taxon','taxon_abundance__abc')
         )
         data['sass_taxon_data'] = json.dumps(list(sass_taxon_data))
         data['biotope_data'] = json.dumps(list(biotope_data))
+        data['site_visit_date'] = latest_site_visit.site_visit_date
         return data
 
     def get_sensitivity_chart_data(self):
@@ -101,7 +107,7 @@ class SassDashboardView(TemplateView):
         # Tolerant = 4 - 7
         # Sensitive = 8 - 11
         # Highly Sensitive 12 - 15
-        sensitvity_data = (
+        sensitivity_data = (
             self.site_visit_taxa.annotate(
                 sass_score=Case(
                     When(site_visit__sass_version=5,
@@ -148,7 +154,7 @@ class SassDashboardView(TemplateView):
             )
         )
 
-        return sensitvity_data
+        return sensitivity_data
 
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
@@ -156,6 +162,8 @@ class SassDashboardView(TemplateView):
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
         ]
+        context['site_code'] = self.location_site.site_code
+        context['site_description'] = self.location_site.site_description
         self.get_site_visit_taxon()
 
         context['sass_score_chart_data'] = self.get_sass_score_chart_data()

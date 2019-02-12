@@ -70,9 +70,22 @@ function renderSASSSummaryChart() {
 
 function renderSASSTaxonPerBiotope() {
     let sassTaxon = {};
+    let totalSass = {
+        'stone': 0,
+        'veg': 0,
+        'gravel': 0,
+        'site': 0
+    };
+    let numberOfTaxa = {
+        'stone': 0,
+        'veg': 0,
+        'gravel': 0,
+        'site': 0,
+    };
+
     let table = $('#sass-taxon-per-biotope');
     $.each(sassTaxonData, function (index, value) {
-        let $tr = $('<tr data-id="' + value['sass_taxon_id'] + '">');
+        let $tr = $('<tr data-id="' + value['sass_taxon_id'] + '" data-weight="' + value['sass_score'] + '">');
         if (sassTaxon.hasOwnProperty(value['taxonomy__canonical_name'])) {
             $tr.append('<td></td>');
             $tr.insertAfter(sassTaxon[value['taxonomy__canonical_name']]);
@@ -99,7 +112,36 @@ function renderSASSTaxonPerBiotope() {
         $tr.append('<td class="gravel">' +
             value['taxon_abundance__abc'] +
             '</td>');
+        totalSass['site'] += parseInt(value['sass_score']);
+        numberOfTaxa['site'] += 1;
     });
+
+    // SASS Score total
+    let $sassScoreTr = $('<tr class="total-table" id="sass-score-total">');
+    $sassScoreTr.append('<td colspan="3">SASS Score</td>');
+    $sassScoreTr.append('<td class="stone">-</td>');
+    $sassScoreTr.append('<td class="veg">-</td>');
+    $sassScoreTr.append('<td class="gravel">-</td>');
+    $sassScoreTr.append('<td class="site">-</td>');
+    table.append($sassScoreTr);
+
+    // Number of taxa
+    let $numberTaxaTr = $('<tr class="total-table" id="number-taxa">');
+    $numberTaxaTr.append('<td colspan="3">Number of Taxa</td>');
+    $numberTaxaTr.append('<td class="stone">-</td>');
+    $numberTaxaTr.append('<td class="veg">-</td>');
+    $numberTaxaTr.append('<td class="gravel">-</td>');
+    $numberTaxaTr.append('<td class="site">-</td>');
+    table.append($numberTaxaTr);
+
+    // ASPT
+    let $asptTr = $('<tr class="total-table" id="total-aspt">');
+    $asptTr.append('<td colspan="3">ASPT</td>');
+    $asptTr.append('<td class="stone">-</td>');
+    $asptTr.append('<td class="veg">-</td>');
+    $asptTr.append('<td class="gravel">-</td>');
+    $asptTr.append('<td class="site">-</td>');
+    table.append($asptTr);
 
     $.each(biotopeData, function (index, value) {
         let sassTaxonId = value['sass_taxon'];
@@ -108,21 +150,31 @@ function renderSASSTaxonPerBiotope() {
             return true;
         }
         let lowercaseValue = value['biotope__name'].toLowerCase();
-        let $td = $('<div>');
+        let biotope = '';
         if (lowercaseValue.includes('vegetation')) {
-            $td = $tr.find('.veg');
+            biotope = 'veg';
         } else if (lowercaseValue.includes('stone')) {
-            $td = $tr.find('.stone');
+            biotope = 'stone';
         } else {
-            $td = $tr.find('.gravel');
+            biotope = 'gravel';
+        }
+        let $td = $tr.find('.' + biotope);
+        if ($tr.data('weight')) {
+            totalSass[biotope] += parseInt($tr.data('weight'));
+            numberOfTaxa[biotope] += 1;
         }
         $td.html(value['taxon_abundance__abc']);
+    });
+
+    $.each(totalSass, function (index, value) {
+        $sassScoreTr.find('.' + index).html(value);
+        $numberTaxaTr.find('.' + index).html(numberOfTaxa[index]);
+        $asptTr.find('.' + index).html(parseFloat(value/numberOfTaxa[index]).toFixed(2))
     });
 }
 
 function renderSensitivityChart() {
     let options = {};
-    console.log(sensitivityChartData);
     let data = {
         datasets: [{
             data: [
