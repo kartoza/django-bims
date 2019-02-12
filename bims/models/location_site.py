@@ -23,9 +23,13 @@ class LocationSite(DocumentLinksMixin):
     """Location Site model."""
 
     __original_centroid = None
+    # geocontext_url_format = '{geocontext_url}/api/v1/geocontext/value/' \
+    #                         'collection/{longitude}/{latitude}/' \
+    #                         '{geocontext_collection_key}'
+
     geocontext_url_format = '{geocontext_url}/api/v1/geocontext/value/' \
-                            'collection/{longitude}/{latitude}/' \
-                            '{geocontext_collection_key}'
+                            'group/{longitude}/{latitude}/' \
+                            '{geocontext_group_key}'
 
     name = models.CharField(
         max_length=300,
@@ -160,6 +164,23 @@ class LocationSite(DocumentLinksMixin):
         LOGGER.debug('update_location_context_document')
         geocontext_url = get_key('GEOCONTEXT_URL')
         geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
+        geocontext_group_keys = [
+            "political_boundary_group",
+            "cadastre_group",
+            "elevation_group",
+            "water_group",
+            "rainfall_group",
+            "land_cover_group",
+            "vegetation_group",
+            "monthly_mean_daily_maximum_temperature_group",
+            "monthly_mean_daily_average_temperature_group",
+            "monthly_mean_daily_average_relative_humidity_group",
+            "monthly_standard_deviation_daily_maximum_temperature_group",
+            "monthly_standard_deviation_daily_maximum_relative_humidity_group",
+            "monthly_standard_deviation_of_daily_mean_temperature_group",
+            "monthly_means_of_daily_minimum_temperature_group",
+            "monthly_standard_deviation_of_daily_minimum_temperature_group"
+        ]
         if not geocontext_url:
             message = (
                 'Can not update location context document because geocontext '
@@ -178,23 +199,45 @@ class LocationSite(DocumentLinksMixin):
         longitude = self.get_centroid().x
         latitude = self.get_centroid().y
 
-        # build url
-        url = self.geocontext_url_format.format(
-            geocontext_url=geocontext_url,
-            longitude=longitude,
-            latitude=latitude,
-            geocontext_collection_key=geocontext_collection_key,
-        )
+        self.location_context_document = ""
+        for group_key in geocontext_group_keys:
+            # build url
+            url = self.geocontext_url_format.format(
+                geocontext_url=geocontext_url,
+                longitude=longitude,
+                latitude=latitude,
+                geocontext_group_key=group_key,
+            )
 
-        r = requests.get(url)
-        if r.status_code != 200:
-            message = (
-                'Request to url %s got %s [%s], can not update location '
-                'context document.' % (url, r.status_code, r.reason))
-            return False, message
+            r = requests.get(url)
+            if r.status_code != 200:
+                message = (
+                        'Request to url %s got %s [%s], can not update location '
+                        'context document.' % (url, r.status_code, r.reason))
+                return False, message
 
-        self.location_context_document = json.dumps(r.json())
+            self.location_context_document['context_group_values'].append(json.dumps(r.json()))
+
         return True, 'Successfully update location context document.'
+
+
+        # # build url
+        # url = self.geocontext_url_format.format(
+        #     geocontext_url=geocontext_url,
+        #     longitude=longitude,
+        #     latitude=latitude,
+        #     geocontext_collection_key=geocontext_collection_key,
+        # )
+
+        # r = requests.get(url)
+        # if r.status_code != 200:
+        #     message = (
+        #         'Request to url %s got %s [%s], can not update location '
+        #         'context document.' % (url, r.status_code, r.reason))
+        #     return False, message
+        #
+        # self.location_context_document = json.dumps(r.json())
+        # return True, 'Successfully update location context document.'
 
     # noinspection PyClassicStyleClass
     class Meta:
