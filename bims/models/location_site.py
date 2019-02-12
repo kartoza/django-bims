@@ -155,7 +155,7 @@ class LocationSite(DocumentLinksMixin):
 
         return geometry
 
-    def add_context_group(self, group_key):
+    def get_geocontext_group_data(self, group_key)
         LOGGER.debug('get_location_group_data for ' + group_key)
         geocontext_url = get_key('GEOCONTEXT_URL')
         if not geocontext_url:
@@ -189,10 +189,13 @@ class LocationSite(DocumentLinksMixin):
                     'context document.' % (url, r.status_code, r.reason))
             return False, message
 
+        return json.dumps(r.json())
+
+    def add_context_group(self, group_key):
         old_location_context_string = self.location_context_document
         doc_end_position = (
             old_location_context_string.rfind('}]'))
-        new_data = json.dumps(r.json())
+        new_data = self.get_geocontext_group_data(group_key)
         print(doc_end_position)
         print('old string: ' + old_location_context_string)
         if doc_end_position < 1:

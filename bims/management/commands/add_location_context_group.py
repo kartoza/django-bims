@@ -26,19 +26,19 @@ class Command(BaseCommand):
         geocontext_group_keys = [
             "political_boundary_group",
             "cadastre_group",
-            # "elevation_group",
-            # "water_group",
-            # "rainfall_group",
-            # "land_cover_group",
-            # "vegetation_group",
-            # "monthly_mean_daily_maximum_temperature_group",
-            # "monthly_mean_daily_average_temperature_group",
-            # "monthly_mean_daily_average_relative_humidity_group",
-            # "monthly_standard_deviation_daily_maximum_temperature_group",
-            # "monthly_standard_deviation_daily_maximum_relative_humidity_group",
-            # "monthly_standard_deviation_of_daily_mean_temperature_group",
-            # "monthly_means_of_daily_minimum_temperature_group",
-            # "monthly_standard_deviation_of_daily_minimum_temperature_group"
+            "elevation_group",
+            "water_group",
+            "rainfall_group",
+            "land_cover_group",
+            "vegetation_group",
+            "monthly_mean_daily_maximum_temperature_group",
+            "monthly_mean_daily_average_temperature_group",
+            "monthly_mean_daily_average_relative_humidity_group",
+            "monthly_standard_deviation_daily_maximum_temperature_group",
+            "monthly_standard_deviation_daily_maximum_relative_humidity_group",
+            "monthly_standard_deviation_of_daily_mean_temperature_group",
+            "monthly_means_of_daily_minimum_temperature_group",
+            "monthly_standard_deviation_of_daily_minimum_temperature_group"
         ]
 
         ignore_not_empty = options.get('ignore_not_empty')
