@@ -161,6 +161,10 @@ class LocationSite(DocumentLinksMixin):
 
         return geometry
 
+    def get_location_group_data(self, group_key):
+        LOGGER.debug('get_location_group_data for ' + group_key)
+        geocontext_url = get_key('GEOCONTEXT_URL')
+
     def update_location_context_document(self):
         """Update location context document."""
         LOGGER.debug('update_location_context_document')
