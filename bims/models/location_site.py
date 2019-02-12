@@ -85,6 +85,13 @@ class LocationSite(DocumentLinksMixin):
         blank=True
     )
 
+    location_context = JSONField(
+        verbose_name='Formatted location_context_document',
+        help_text='This is intended for filtering',
+        null=True,
+        blank=True
+    )
+
     additional_data = JSONField(
         verbose_name='Additional json data',
         null=True,
@@ -222,6 +229,9 @@ class LocationSite(DocumentLinksMixin):
         self.location_context_document = self.validate_json_field(
             self.location_context_document
         )
+        self.location_context = self.validate_json_field(
+            self.location_context
+        )
 
         if self.geometry_point or self.geometry_line or \
                 self.geometry_polygon or self.geometry_multipolygon:
@@ -247,5 +257,7 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
+    from bims.utils.location_context import format_location_context
     if not issubclass(sender, LocationSite):
         return
+    format_location_context(instance.id)

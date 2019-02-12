@@ -39,6 +39,7 @@ class LocationTypeF(factory.django.DjangoModelFactory):
     allowed_geometry = 'POINT'
 
 
+@factory.django.mute_signals(signals.post_save)
 class LocationSiteF(factory.django.DjangoModelFactory):
     """
     Location site factory
