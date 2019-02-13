@@ -10,7 +10,6 @@ from django.db.models.functions import Cast, Coalesce
 from bims.models.location_site import LocationSite
 from bims.api_views.search_version_2 import SearchVersion2
 from sass.models import (
-    SiteVisit,
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon
 )
@@ -42,12 +41,12 @@ class SassDashboardView(TemplateView):
                     'sass_taxon__score')),
                 default=Sum('sass_taxon__sass_5_score')),
         ).annotate(
-            aspt=Cast(F('sass_score'), FloatField()) /
-                 Cast(F('count'), FloatField()),
-        )
+            aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
+                                                            FloatField()),
+        ).order_by('date')
 
         data['date_labels'] = (
-            [dt.strftime('%m/%d/%Y')
+            [dt.strftime('%d-%m-%Y')
              for dt in summary.values_list('date', flat=True)])
         data['taxa_numbers'] = list(
             summary.values_list('count', flat=True))
@@ -60,25 +59,25 @@ class SassDashboardView(TemplateView):
     def get_sass_taxon_table_data(self):
         data = {}
         latest_site_visit = (
-            self.site_visit_taxa.order_by('-site_visit__site_visit_date')[0].
-                site_visit
+            self.site_visit_taxa.
+            order_by('-site_visit__site_visit_date')[0].site_visit
         )
         sass_taxon_data = (
             self.site_visit_taxa.filter(
                 site_visit=latest_site_visit
             ).annotate(
                 sass_taxon_name=Case(
-                    When(site_visit__sass_version=5, then=
-                    'sass_taxon__taxon_sass_5'),
-                    When(site_visit__sass_version=4, then=
-                    'sass_taxon__taxon_sass_4'),
+                    When(site_visit__sass_version=5,
+                         then='sass_taxon__taxon_sass_5'),
+                    When(site_visit__sass_version=4,
+                         then='sass_taxon__taxon_sass_4'),
                     default='sass_taxon__taxon_sass_4'
                 ),
                 sass_score=Case(
-                    When(site_visit__sass_version=5, then=
-                    'sass_taxon__sass_5_score'),
-                    When(site_visit__sass_version=4, then=
-                    'sass_taxon__score'),
+                    When(site_visit__sass_version=5,
+                         then='sass_taxon__sass_5_score'),
+                    When(site_visit__sass_version=4,
+                         then='sass_taxon__score'),
                     default='sass_taxon__sass_5_score'
                 ),
             ).values(
@@ -87,8 +86,8 @@ class SassDashboardView(TemplateView):
                 'sass_taxon_name',
                 'sass_score',
                 'sass_taxon_id')
-                .order_by('sass_taxon_name')
-                .distinct('sass_taxon_name')
+            .order_by('sass_taxon_name')
+            .distinct('sass_taxon_name')
         )
 
         biotope_data = (
@@ -157,6 +156,39 @@ class SassDashboardView(TemplateView):
 
         return sensitivity_data
 
+    def get_biotope_ratings_chart_data(self):
+        data = {}
+
+        biotope_ratings = self.site_visit_taxa.filter(
+            site_visit__sass_biotope_fraction__sass_biotope__biotope_form=1
+        ).annotate(
+            date=F('site_visit__site_visit_date'),
+            rate=F('site_visit__sass_biotope_fraction__rate'),
+            biotope=F('site_visit__sass_biotope_fraction__sass_biotope__name')
+        ).values('date', 'rate', 'biotope').order_by(
+            'site_visit__site_visit_date',
+            'site_visit__sass_biotope_fraction__sass_biotope__display_order'
+        ).distinct()
+
+        biotope_labels = []
+
+        for rating_data in biotope_ratings:
+            date = rating_data['date'].strftime('%d-%m-%Y')
+            if date not in data:
+                data[date] = {}
+            rate = rating_data['rate']
+            biotope = rating_data['biotope'].encode('utf-8')
+            if not rate:
+                rate = 0
+            data[date][biotope] = rate
+            if biotope not in biotope_labels:
+                biotope_labels.append(biotope)
+
+        return {
+            'rating_data': data,
+            'biotope_labels': biotope_labels
+        }
+
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
         context['coord'] = [
@@ -169,7 +201,10 @@ class SassDashboardView(TemplateView):
 
         context['sass_score_chart_data'] = self.get_sass_score_chart_data()
         context['sass_taxon_table_data'] = self.get_sass_taxon_table_data()
-        context['sentivity_chart_data'] = self.get_sensitivity_chart_data()
+        context['sensitivity_chart_data'] = self.get_sensitivity_chart_data()
+        context['biotope_ratings_chart_data'] = (
+            self.get_biotope_ratings_chart_data()
+        )
 
         return context
 

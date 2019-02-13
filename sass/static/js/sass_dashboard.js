@@ -263,9 +263,87 @@ function renderSensitivityChart() {
     });
 }
 
+function renderBiotopeRatingsChart() {
+    let barOptions_stacked = {
+        scales: {
+            xAxes: [{
+                ticks: {
+                    beginAtZero: true,
+                },
+                gridLines: {},
+                stacked: true
+            }],
+            yAxes: [{
+                barPercentage: 1,
+                gridLines: {
+                    display: false,
+                    color: "#fff",
+                },
+                stacked: true
+            }]
+        }
+    };
+
+    let ctx = document.getElementById("biotope-ratings-chart");
+
+    let labels = [];
+    let datasets = {};
+    let datasetsList = [];
+
+    let color = {
+        'Stones in current (SIC)': '#1F4E7A',
+        'Stones out of current (SOOC)' : '#2E76B6',
+        'Aquatic vegetation': '#375822',
+        'Gravel': '#4E7F31',
+        'Sand': '#BE9001',
+        'Silt/mud/clay': '#bdbe0d'
+    };
+
+    $.each(dateLabels, function (index, date) {
+        if (!biotopeRatingData.hasOwnProperty(date)) {
+            return true;
+        }
+        let data = biotopeRatingData[date];
+        labels.push(date);
+        $.each(biotopeRatingLabels, function (index, biotopeName) {
+            let ratingNumber = 0;
+            let datasetsIndex = 0;
+            if (data.hasOwnProperty(biotopeName)) {
+                ratingNumber = parseInt(data[biotopeName]);
+            }
+            if (!datasets.hasOwnProperty(biotopeName)) {
+                let backgroundColor = "rgba(63,103,126,1)";
+                if (color.hasOwnProperty(biotopeName)) {
+                    backgroundColor = color[biotopeName];
+                }
+                datasetsList.push({
+                    'label': biotopeName,
+                    'data': [],
+                    backgroundColor: backgroundColor
+                });
+                datasetsIndex = datasetsList.length - 1;
+                datasets[biotopeName] = datasetsIndex
+            } else {
+                datasetsIndex = datasets[biotopeName];
+            }
+            datasetsList[datasetsIndex]['data'].push(ratingNumber);
+        });
+    });
+
+    let biotopeRatingsChart = new Chart(ctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: labels,
+            datasets: datasetsList
+        },
+        options: barOptions_stacked,
+    });
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
     renderSASSTaxonPerBiotope();
     renderSensitivityChart();
+    renderBiotopeRatingsChart();
 });

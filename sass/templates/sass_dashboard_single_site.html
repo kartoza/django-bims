@@ -20,9 +20,11 @@
         const asptList = {{ sass_score_chart_data.aspt_list }};
         const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
         const biotopeData = {{ sass_taxon_table_data.biotope_data | safe }};
-        const sensitivityChartData = {{ sentivity_chart_data | safe }};
+        const sensitivityChartData = {{ sensitivity_chart_data | safe }};
         const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
         const siteCode = "{{ site_code }}";
+        const biotopeRatingData = {{ biotope_ratings_chart_data.rating_data | safe }};
+        const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
     </script>
 
 {% endblock %}
@@ -92,6 +94,11 @@
                 <div class="chart-container">
                     <div class="chart-title">Proportion of sensitive to tolerant</div>
                     <canvas id="sensitivity-chart"></canvas>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="chart-container">
+                    <div class="chart-title">Biotope ratings</div>
+                    <canvas id="biotope-ratings-chart"></canvas>
                 </div>
             </div>
         </div>
