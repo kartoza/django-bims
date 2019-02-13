@@ -210,8 +210,9 @@ class SassDashboardView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
-        if not site_id:
-            return Http404()
+        if not site_id or not request.GET or not request.GET.get(
+            'siteId', None):
+            raise Http404()
         self.location_site = get_object_or_404(
             LocationSite,
             pk=site_id
