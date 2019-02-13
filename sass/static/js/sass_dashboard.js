@@ -346,4 +346,10 @@ $(function () {
     renderSASSTaxonPerBiotope();
     renderSensitivityChart();
     renderBiotopeRatingsChart();
+
+    if (dateLabels) {
+        $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
+        $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('MMMM D, Y'));
+        $('#number-of-sass-record').html(dateLabels.length);
+    }
 });
