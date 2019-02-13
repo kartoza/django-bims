@@ -1,5 +1,9 @@
 function drawMap() {
+    let scaleLineControl = new ol.control.ScaleLine();
     let map = new ol.Map({
+        controls: ol.control.defaults().extend([
+            scaleLineControl
+        ]),
         layers: [
             new ol.layer.Tile({
                 source: new ol.source.OSM({
