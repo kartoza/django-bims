@@ -15,6 +15,8 @@ from sass.models import (
     SiteVisitTaxon,
     Chem,
     SiteVisitChem,
+    SassEcologicalCategory,
+    SassEcologicalCondition,
 )
 
 
@@ -141,6 +143,26 @@ class SiteVisitChemAdmin(admin.ModelAdmin):
     )
 
 
+class SassEcologicalCategoryAdmin(admin.ModelAdmin):
+    list_display = (
+        'category',
+        'name',
+        'colour'
+    )
+
+    ordering = ('order', )
+
+
+class SassEcologicalConditionAdmin(admin.ModelAdmin):
+    list_display = (
+        'ecoregion_level_1',
+        'geomorphological_zone',
+        'ecological_category',
+        'sass_score_precentile',
+        'aspt_score_precentile'
+    )
+
+
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
@@ -153,3 +175,5 @@ admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
 admin.site.register(SiteVisitTaxon, SiteVisitTaxonAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(SiteVisitChem, SiteVisitChemAdmin)
+admin.site.register(SassEcologicalCategory, SassEcologicalCategoryAdmin)
+admin.site.register(SassEcologicalCondition, SassEcologicalConditionAdmin)
