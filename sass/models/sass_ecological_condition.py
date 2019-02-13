@@ -32,4 +32,3 @@ class SassEcologicalCondition(models.Model):
         null=True,
         blank=True
     )
-
