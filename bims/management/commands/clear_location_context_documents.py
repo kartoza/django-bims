@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Update location context document."""
+"""Clear location context document."""
 
 from django.core.management.base import BaseCommand
 from django.contrib.gis.db import models
@@ -22,13 +22,7 @@ class Command(BaseCommand):
             help='Only update empty location context')
 
     def handle(self, *args, **options):
-        ignore_not_empty = options.get('ignore_not_empty')
-        if ignore_not_empty:
-            location_sites = LocationSite.objects.filter(
-                location_context_document__isnull=True,
-            )
-        else:
-            location_sites = LocationSite.objects.all()
+        location_sites = LocationSite.objects.all()
         num = len(location_sites)
         i = 1
 
@@ -38,7 +32,7 @@ class Command(BaseCommand):
         for location_site in location_sites:
             print('Updating %s of %s, %s' % (i, num, location_site.name))
             i += 1
-            success, message = location_site.update_location_context_document()
+            success, message = location_site.clear_location_context_document()
             if not success:
                 print('[FAILED] %s : %s' % (location_site.name, message))
             if success:

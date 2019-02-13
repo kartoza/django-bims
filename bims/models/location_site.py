@@ -155,6 +155,68 @@ class LocationSite(DocumentLinksMixin):
 
         return geometry
 
+    def get_geocontext_group_data(self, group_key):
+        LOGGER.debug('get_location_group_data for ' + group_key)
+        geocontext_url = get_key('GEOCONTEXT_URL')
+        if not geocontext_url:
+            message = (
+                'Can not update location context document because geocontext '
+                'url is None. Please set it.')
+            return False, message
+        if not self.get_centroid():
+            message = (
+                'Can not update location context document because centroid is '
+                'None. Please set it.')
+            return False, message
+        longitude = self.get_centroid().x
+        latitude = self.get_centroid().y
+
+        geocontext_group_url_format = (
+            '{geocontext_url}/api/v1/geocontext/value/group/'
+            '{longitude}/{latitude}/{geocontext_group_key}')
+        # build url
+        url = geocontext_group_url_format.format(
+            geocontext_url=geocontext_url,
+            longitude=longitude,
+            latitude=latitude,
+            geocontext_group_key=group_key,
+        )
+
+        r = requests.get(url)
+        if r.status_code != 200:
+            message = (
+                    'Request to url %s got %s [%s], can not update location '
+                    'context document.' % (url, r.status_code, r.reason))
+            return False, message
+
+        return json.dumps(r.json())
+
+    def add_context_group(self, group_key):
+        old_location_context_string = self.location_context_document
+        doc_end_position = (
+            old_location_context_string.rfind('}]'))
+        new_data = self.get_geocontext_group_data(group_key)
+        if doc_end_position < 1:
+            old_location_context_string = (
+                '{"context_group_values":[%s]}' % new_data)
+            self.location_context_document = old_location_context_string
+            return True, "Group values added to empty document"
+        old_string_content = (
+            old_location_context_string[:doc_end_position + 1])
+        old_string_end = (
+            old_location_context_string[doc_end_position + 1:])
+        new_location_context_string = (
+            '{old_string_content},{new_data}{old_string_end}').format(
+                old_string_content=old_string_content,
+                new_data=new_data,
+                old_string_end=old_string_end)
+        self.location_context_document = new_location_context_string
+        return True, "Group values added"
+
+    def clear_location_context_document(self):
+        self.location_context_document = ""
+        return True, "Document cleared"
+
     def update_location_context_document(self):
         """Update location context document."""
         LOGGER.debug('update_location_context_document')

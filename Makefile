@@ -434,6 +434,23 @@ update-location-context-documents:
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_location_context_documents
 
+clear-location-context-documents:
+	@echo
+	@echo "--------------------------"
+	@echo "Clearing ALL location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py clear_location_context_documents
+
+add-location-context-group:
+	@echo
+	@echo "--------------------------"
+	@echo "Adding group to the location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py add_location_context_group
+
+
+
+
 # --------------- help --------------------------------
 
 help:
