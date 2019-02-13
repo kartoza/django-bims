@@ -11,6 +11,8 @@
     <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
           rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
     <script type="text/javascript">
         const sassScores = {{ sass_score_chart_data.sass_scores }};
         const dateLabels = {{ sass_score_chart_data.date_labels | safe }};

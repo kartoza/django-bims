@@ -3,10 +3,10 @@ from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.db.models import (
-    Case, When, F, Count, Sum, FloatField, Value,
-    IntegerField, Q, DateField, CharField
+    Case, When, F, Count, Sum, FloatField,
+    IntegerField, Q
 )
-from django.db.models.functions import TruncDay, Cast
+from django.db.models.functions import Cast, Coalesce
 from bims.models.location_site import LocationSite
 from bims.api_views.search_version_2 import SearchVersion2
 from sass.models import (
@@ -148,10 +148,10 @@ class SassDashboardView(TemplateView):
                     output_field=IntegerField()
                 ),
             ).aggregate(
-                highly_tolerant=Sum('highly_tolerant_value'),
-                tolerant=Sum('tolerant_value'),
-                sensitive=Sum('sensitive_value'),
-                highly_sensitive=Sum('highly_sensitive_value')
+                highly_tolerant=Coalesce(Sum('highly_tolerant_value'), 0),
+                tolerant=Coalesce(Sum('tolerant_value'), 0),
+                sensitive=Coalesce(Sum('sensitive_value'), 0),
+                highly_sensitive=Coalesce(Sum('highly_sensitive_value'), 0)
             )
         )
 

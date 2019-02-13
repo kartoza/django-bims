@@ -2,7 +2,9 @@ function drawMap() {
     let map = new ol.Map({
         layers: [
             new ol.layer.Tile({
-                source: new ol.source.OSM()
+                source: new ol.source.OSM({
+                    wrapX: false
+                })
             })
         ],
         target: 'map',
@@ -11,6 +13,17 @@ function drawMap() {
             zoom: 2
         })
     });
+
+    let graticule = new ol.Graticule({
+        strokeStyle: new ol.style.Stroke({
+            color: 'rgba(255,120,0,0.9)',
+            width: 2,
+            lineDash: [0.5, 4]
+        }),
+        showLabels: true
+    });
+
+    graticule.setMap(map);
 }
 
 function renderSASSSummaryChart() {
@@ -41,12 +54,18 @@ function renderSASSSummaryChart() {
             'fill': 'false',
         }]
     };
+    let scalesOption = {
+        xAxes: [{
+            display: false
+        }],
+        yAxes: [{
+            ticks: {
+                beginAtZero: true
+            }
+        }]
+    };
     let options = {
-        scales: {
-            xAxes: [{
-                display: false
-            }]
-        }
+        scales: scalesOption
     };
     let sassScoreChart = new Chart($('#sass-score-chart'), {
         type: 'bar',
@@ -62,11 +81,7 @@ function renderSASSSummaryChart() {
         type: 'bar',
         data: asptData,
         options: {
-            scales: {
-                xAxes: [{
-                    display: false 
-                }]
-            },
+            scales: scalesOption,
             tooltips: {
                 callbacks: {
                     label: function (tooltipItem, chart) {
@@ -180,7 +195,9 @@ function renderSASSTaxonPerBiotope() {
     $.each(totalSass, function (index, value) {
         $sassScoreTr.find('.' + index).html(value);
         $numberTaxaTr.find('.' + index).html(numberOfTaxa[index]);
-        $asptTr.find('.' + index).html(parseFloat(value / numberOfTaxa[index]).toFixed(2))
+        if (value && numberOfTaxa[index]) {
+            $asptTr.find('.' + index).html(parseFloat(value / numberOfTaxa[index]).toFixed(2))
+        }
     });
 }
 
