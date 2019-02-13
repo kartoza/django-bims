@@ -28,6 +28,33 @@ function drawMap() {
     });
 
     graticule.setMap(map);
+
+    // Map marker
+    let iconFeatures = [];
+    let iconFeature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.transform(coordinates, 'EPSG:4326', 'EPSG:3857')),
+        name: siteCode,
+    });
+    iconFeatures.push(iconFeature);
+    let vectorSource = new ol.source.Vector({
+        features: iconFeatures
+    });
+    let iconStyle = new ol.style.Style({
+        image: new ol.style.Icon(({
+            anchor: [0.5, 46],
+            anchorXUnits: 'fraction',
+            anchorYUnits: 'pixels',
+            opacity: 0.75,
+            src: '/static/img/map-marker.png'
+        }))
+    });
+    let vectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+        style: iconStyle
+    });
+    map.addLayer(vectorLayer);
+    map.getView().fit(vectorSource.getExtent(), map.getSize());
+    map.getView().setZoom(10);
 }
 
 function renderSASSSummaryChart() {

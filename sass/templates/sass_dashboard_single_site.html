@@ -21,6 +21,8 @@
         const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
         const biotopeData = {{ sass_taxon_table_data.biotope_data | safe }};
         const sensitivityChartData = {{ sentivity_chart_data | safe }};
+        const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
+        const siteCode = "{{ site_code }}";
     </script>
 
 {% endblock %}
