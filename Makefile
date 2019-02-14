@@ -448,7 +448,12 @@ add-location-context-group:
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py add_location_context_group
 
-
+update-ecological-data:
+	@echo
+	@echo "--------------------------"
+	@echo "Update ecological category and condition data from csv"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py update_ecological_data
 
 
 # --------------- help --------------------------------
