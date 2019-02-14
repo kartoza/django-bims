@@ -29,12 +29,18 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_coordinates = "{latitude}, {longitude}".format(
             latitude=round(obj.geometry_point.x, 3),
             longitude=round(obj.geometry_point.y, 3))
+        context_data = json.loads(obj.location_context)
+        geomorphological_zone = (context_data['context_group_values']
+                                             ['eco_geo_group']
+                                             ['service_registry_values']
+                                             ['geoclass']
+                                             ['value'])
         parse_string = lambda string_in:  "Unknown" if not string_in else string_in
         site_detail_info = {
             'fbis_site_code' : parse_string(obj.id),
             'site_coordinates' : parse_string(site_coordinates),
             'site_description' : parse_string(obj.site_description),
-            'geomorphological_zone' : parse_string("Unknown"),
+            'geomorphological_zone' : parse_string(geomorphological_zone),
             'river' : parse_string(obj.river) }
         return site_detail_info
 

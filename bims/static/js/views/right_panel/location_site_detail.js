@@ -382,7 +382,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $siteDetailWrapper.append(
                 '<div id="site-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> SITE DETAILS </span> ' +
+                '<span class="search-result-title"> Site Details </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             $siteDetailWrapper.append(
