@@ -187,31 +187,45 @@ class LocationSite(DocumentLinksMixin):
             message = (
                     'Request to url %s got %s [%s], can not update location '
                     'context document.' % (url, r.status_code, r.reason))
-            return False, message
+            LOGGER.info(message)
+            return None
 
         return json.dumps(r.json())
 
     def add_context_group(self, group_key):
         old_location_context_string = self.location_context_document
-        doc_end_position = (
-            old_location_context_string.rfind('}]'))
+        old_location_context = None
+        if old_location_context_string:
+            try:
+                old_location_context = json.loads(old_location_context_string)
+            except ValueError:
+                LOGGER.info('No JSON Object')
         new_data = self.get_geocontext_group_data(group_key)
-        if doc_end_position < 1:
+        if not new_data:
+            return False, "Error from GeoContext"
+        if not old_location_context:
             old_location_context_string = (
                 '{"context_group_values":[%s]}' % new_data)
             self.location_context_document = old_location_context_string
             return True, "Group values added to empty document"
-        old_string_content = (
-            old_location_context_string[:doc_end_position + 1])
-        old_string_end = (
-            old_location_context_string[doc_end_position + 1:])
-        new_location_context_string = (
-            '{old_string_content},{new_data}{old_string_end}').format(
-                old_string_content=old_string_content,
-                new_data=new_data,
-                old_string_end=old_string_end)
-        self.location_context_document = new_location_context_string
-        return True, "Group values added"
+        new_context_data = json.loads(new_data)
+        key = new_context_data['key']
+        data_exists = False
+        return_message = ''
+        for context_group in old_location_context['context_group_values']:
+            if context_group['key'] == key:
+                return_message = 'Group value updated'
+                data_exists = True
+                context_group['service_registry_values'] = (
+                    new_context_data['service_registry_values']
+                )
+        if not data_exists:
+            return_message = 'Group values added'
+            old_location_context['context_group_values'].append(
+                new_context_data
+            )
+        self.location_context_document = json.dumps(old_location_context)
+        return True, return_message
 
     def clear_location_context_document(self):
         self.location_context_document = ""

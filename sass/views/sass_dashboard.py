@@ -163,7 +163,7 @@ class SassDashboardView(TemplateView):
             site_visit__sass_biotope_fraction__sass_biotope__biotope_form=1
         ).annotate(
             date=F('site_visit__site_visit_date'),
-            rate=F('site_visit__sass_biotope_fraction__rate'),
+            rate=F('site_visit__sass_biotope_fraction__rate__rate'),
             biotope=F('site_visit__sass_biotope_fraction__sass_biotope__name')
         ).values('date', 'rate', 'biotope').order_by(
             'site_visit__site_visit_date',

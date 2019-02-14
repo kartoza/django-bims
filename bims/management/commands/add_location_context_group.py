@@ -2,10 +2,8 @@
 """Add group to location context document."""
 
 from django.core.management.base import BaseCommand
-from django.contrib.gis.db import models
 from bims.models.location_site import (
     LocationSite,
-    location_site_post_save_handler,
 )
 
 
@@ -21,39 +19,63 @@ class Command(BaseCommand):
             default=False,
             help='Only update empty location context')
 
+        parser.add_argument(
+            '-g',
+            '--groups',
+            dest='groups',
+            default=None,
+            help='Geocontext groups keys')
+
+        parser.add_argument(
+            '-s',
+            '--site-id',
+            dest='site_id',
+            default=None,
+            help='Update location context for specific site')
+
     def handle(self, *args, **options):
 
-        geocontext_group_keys = [
-            "political_boundary_group",
-            "cadastre_group",
-            "elevation_group",
-            "water_group",
-            "rainfall_group",
-            "land_cover_group",
-            "vegetation_group",
-            "monthly_mean_daily_maximum_temperature_group",
-            "monthly_mean_daily_average_temperature_group",
-            "monthly_mean_daily_average_relative_humidity_group",
-            "monthly_standard_deviation_daily_maximum_temperature_group",
-            "monthly_standard_deviation_daily_maximum_relative_humidity_group",
-            "monthly_standard_deviation_of_daily_mean_temperature_group",
-            "monthly_means_of_daily_minimum_temperature_group",
-            "monthly_standard_deviation_of_daily_minimum_temperature_group"
-        ]
+        groups = options.get('groups', None)
+        if groups:
+            geocontext_group_keys = groups.split(',')
+        else:
+            geocontext_group_keys = [
+                "political_boundary_group",
+                "cadastre_group",
+                "elevation_group",
+                "water_group",
+                "rainfall_group",
+                "land_cover_group",
+                "vegetation_group",
+                "monthly_mean_daily_maximum_temperature_group",
+                "monthly_mean_daily_average_temperature_group",
+                "monthly_mean_daily_average_relative_humidity_group",
+                "monthly_standard_deviation_daily_maximum_temperature_group",
+                "monthly_standard_deviation_daily_"
+                "maximum_relative_humidity_group",
+                "monthly_standard_deviation_of_daily_mean_temperature_group",
+                "monthly_means_of_daily_minimum_temperature_group",
+                "monthly_standard_deviation_of_"
+                "daily_minimum_temperature_group",
+                "eco_geo_group"
+            ]
 
         ignore_not_empty = options.get('ignore_not_empty')
+        site_id = options.get('site_id', None)
+
         if ignore_not_empty:
             location_sites = LocationSite.objects.filter(
                 location_context_document__isnull=True,
             )
         else:
             location_sites = LocationSite.objects.all()
+
+        if site_id:
+            location_sites = location_sites.filter(id=site_id)
+
         num = len(location_sites)
         i = 1
 
-        models.signals.post_save.disconnect(
-            location_site_post_save_handler,
-        )
         success = True
         for location_site in location_sites:
             print('Updating %s of %s, %s' % (i, num, location_site.name))
@@ -65,8 +87,5 @@ class Command(BaseCommand):
             if not success:
                 print('[FAILED] %s : %s' % (location_site.name, message))
             if success:
+                print('[SUCCESS] %s : %s' % (location_site.name, message))
                 location_site.save()
-
-        models.signals.post_save.connect(
-            location_site_post_save_handler,
-        )
