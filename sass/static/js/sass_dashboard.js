@@ -340,12 +340,8 @@ function renderBiotopeRatingsChart() {
     });
 }
 
-function downloadCSV(e) {
-    let downloadButton = $(e.target);
+function downloadCSV(url, downloadButton) {
     let self = this;
-    let url = '/sass/download-sass-data-site/' + siteId + '/';
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
     self.downloadCSVXhr = $.get({
         url: url,
         dataType: 'json',
@@ -360,7 +356,7 @@ function downloadCSV(e) {
                 } else {
                     setTimeout(
                         function () {
-                            self.downloadingCSV(url, downloadButton);
+                            downloadCSV(url, downloadButton);
                         }, 5000);
                 }
             } else {
@@ -383,13 +379,21 @@ function downloadCSV(e) {
     });
 }
 
+function onDownloadCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let url = '/sass/download-sass-data-site/' + siteId + '/';
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
     renderSASSTaxonPerBiotope();
     renderSensitivityChart();
     renderBiotopeRatingsChart();
-    $('.download-as-csv').click(downloadCSV);
+    $('.download-as-csv').click(onDownloadCSVClicked);
 
     if (dateLabels) {
         $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
