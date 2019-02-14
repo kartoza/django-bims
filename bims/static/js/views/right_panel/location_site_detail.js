@@ -85,9 +85,16 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                      }
 
                      // TODO : Change this to check graphable value
-                     var isChart = value['name'].toLowerCase().includes('monthly') | value['service_registry_values'][0]['key'].includes('monthly');
+                     var chartName = value['name'].toString().toLowerCase();
+                     var service_registry_key = value['service_registry_values'][0]['key'];
+                     var isChart = false;
+                     if (!((typeof chartName == 'undefined') | (typeof chartName == null))) {
+                          isChart = chartName.includes('monthly')
+                     };
+                     if (!((typeof service_registry_key == 'undefined') | (typeof service_registry_key == null)) & (isChart == false)) {
+                        isChart = service_registry_key.toString().toLowerCase().includes('monthly');
+                     };
                      var chartData = [];
-
                      $.each(value['service_registry_values'], function (service_index, service_value) {
                          if (!service_value.hasOwnProperty('name') ||
                              !service_value.hasOwnProperty('value')) {

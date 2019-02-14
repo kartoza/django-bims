@@ -27,11 +27,28 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
 
     def get_site_climate_data(self, context_document):
-        mean_annual_temperature = 32.4
-        mean_annual_rainfall = 28.6
+        context_document_dictionary = json.loads(context_document)
+        monthly_annual_temperature_values = (context_document_dictionary
+            ['context_group_values']
+            ['monthly_mean_daily_average_temperature_group']
+            ['service_registry_values'])
+        monthly_annual_rainfall_values = (context_document_dictionary
+            ['context_group_values']
+            ['rainfall_group']
+            ['service_registry_values'])
+        temperature_total = 0
+        rainfall_total = 0
+        for month_temperature in monthly_annual_temperature_values.iteritems():
+            temperature_total += month_temperature[1]['value']
+        mean_annual_temperature = (
+            temperature_total / len(monthly_annual_temperature_values))
+        for month_rainfall in monthly_annual_rainfall_values.iteritems():
+            rainfall_total += month_rainfall[1]['value']
+        mean_annual_rainfall = (
+                rainfall_total / len(monthly_annual_rainfall_values))
         site_climate_data = {
-            'mean_annual_temperature' : mean_annual_temperature,
-            'mean_annual_rainfall' : mean_annual_rainfall
+            'mean_annual_temperature' : round(mean_annual_temperature, 2),
+            'mean_annual_rainfall' : round(mean_annual_rainfall, 2)
         }
         return site_climate_data
 
@@ -144,7 +161,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['non-sensitive'] += 1
 
         # get climate data
-        climate_data = self.get_site_climate_data(collections)
+        climate_data = self.get_site_climate_data(instance.location_context)
 
         result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
