@@ -292,7 +292,7 @@ function renderBiotopeRatingsChart() {
 
     let color = {
         'Stones in current (SIC)': '#1F4E7A',
-        'Stones out of current (SOOC)' : '#2E76B6',
+        'Stones out of current (SOOC)': '#2E76B6',
         'Aquatic vegetation': '#375822',
         'Gravel': '#4E7F31',
         'Sand': '#BE9001',
@@ -340,12 +340,105 @@ function renderBiotopeRatingsChart() {
     });
 }
 
+function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function createBoundaryDataset(label, x, y, color) {
+    let rgb = hexToRgb(color);
+    return {
+        type: 'scatter',
+        fill: true,
+        lineTension: 0,
+        pointRadius: 0,
+        pointHitRadius: 0,
+        pointHoverRadius: 0,
+        showTooltips: false,
+        label: label,
+        data: [
+            {"x": 0, "y": y},
+            {"x": x, "y": y},
+            {"x": x, "y": 0}
+        ],
+        backgroundColor: "rgba(" + rgb['r'] + ", " + rgb['g'] + ", " + rgb['b'] + ", 0.8)"
+}
+    ;
+}
+
+function renderEcologicalCategoryChart() {
+    let canvasChart = $('#ecological-category-chart');
+    var options = {
+        hover: {
+            intersect:true
+        },
+        legend: {
+            labels: {
+                filter: function (item, chart) {
+                    return !item.text.includes('hide');
+                }
+            }
+        },
+        scales: {
+            yAxes: [{
+                display: true,
+                ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 10
+                }
+            }],
+            xAxes: [{
+                type: 'linear',
+                position: 'bottom',
+                display: true,
+                ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 200
+                }
+            }]
+        }
+    };
+
+    let ecologicalChart = new Chart(canvasChart, {
+        type: "bar",
+        labels: ['30', '45', '60'],
+        data: {
+            datasets: [{
+                type: 'scatter',
+                fill: false,
+                label: "hide",
+                showLine: false,
+                showTooltips: false,
+                data: [
+                    {"x": 20, "y": 2},
+                    {"x": 40, "y": 2.3},
+                    {"x": 25, "y": 3.5}
+                ],
+                backgroundColor: "#ff7146",
+                borderColor: null
+            },
+                createBoundaryDataset('E/F', 60, 4.5, '#c1c2ff'),
+                createBoundaryDataset('D', 90, 6, '#ff5d49'),
+                createBoundaryDataset('C', 130, 7.2, '#ffed10'),
+                createBoundaryDataset('B', 150, 8, '#98ff1e'),
+                createBoundaryDataset('A', 200, 10, '#64bbff'),
+            ]
+        },
+        options: options
+    });
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
     renderSASSTaxonPerBiotope();
     renderSensitivityChart();
     renderBiotopeRatingsChart();
+    renderEcologicalCategoryChart();
 
     if (dateLabels) {
         $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
