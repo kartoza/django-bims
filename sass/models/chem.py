@@ -41,4 +41,3 @@ class Chem(models.Model):
     class Meta:
         verbose_name_plural = "Chemistry records"
         verbose_name = "Chemistry record"
-
