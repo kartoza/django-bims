@@ -398,7 +398,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $siteDetailWrapper.append(
                 '<div id="climate-data" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> ' +
-                '<span class="search-result-title"> CLIMATE DATA </span>) ' +
+                '<span class="search-result-title"> Climate Data </span> ' +
                 '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
 
