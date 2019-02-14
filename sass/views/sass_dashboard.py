@@ -196,6 +196,7 @@ class SassDashboardView(TemplateView):
             self.location_site.get_centroid().y
         ]
         context['site_code'] = self.location_site.site_code
+        context['site_id'] = self.location_site.id
         context['site_description'] = self.location_site.site_description
         self.get_site_visit_taxon()
 
