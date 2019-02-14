@@ -1,5 +1,13 @@
 body {
     font-family: "Roboto Condensed";
+    --primary-red: #8D2641;
+    --primary-yellow: #D7CD47;
+    --primary-light-green: #A2CE89;
+    --primary-dark-green: #4E6440;
+    --primary-dark-grey: #525351;
+    --primary-light-grey: #F8F7F4;
+    --primary-turquoise: #18A090;
+    --primary-blue: #3D647D;
 }
 
 #mainNav {
@@ -2321,7 +2329,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #climate-data-wrapper .row .value-column {
-    color: navy;
+    color: var(--primary-blue);
     text-align: right;
     align-self: center;
 }
