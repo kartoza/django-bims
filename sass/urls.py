@@ -2,6 +2,7 @@ from django.conf.urls import url
 from sass.views.sass_form import SassFormView
 from sass.views.sass_list import SassListView
 from sass.views.sass_dashboard import SassDashboardView
+from sass.views.download_sass_data_site import download_sass_data_site
 
 
 urlpatterns = [
@@ -13,4 +14,7 @@ urlpatterns = [
     url(r'^dashboard/(?P<site_id>\d+)/$',
         SassDashboardView.as_view(),
         name='sass-dashboard-single-site'),
+    url(r'^download-sass-data-site/(?P<site_id>\d+)/$',
+        download_sass_data_site,
+        name='download-sass-data-site'),
 ]

@@ -292,7 +292,7 @@ function renderBiotopeRatingsChart() {
 
     let color = {
         'Stones in current (SIC)': '#1F4E7A',
-        'Stones out of current (SOOC)' : '#2E76B6',
+        'Stones out of current (SOOC)': '#2E76B6',
         'Aquatic vegetation': '#375822',
         'Gravel': '#4E7F31',
         'Sand': '#BE9001',
@@ -340,12 +340,60 @@ function renderBiotopeRatingsChart() {
     });
 }
 
+function downloadCSV(url, downloadButton) {
+    let self = this;
+    self.downloadCSVXhr = $.get({
+        url: url,
+        dataType: 'json',
+        success: function (data) {
+            if (data['status'] !== "success") {
+                if (data['status'] === "failed") {
+                    if (self.downloadCSVXhr) {
+                        self.downloadCSVXhr.abort();
+                    }
+                    downloadButton.html('Download as CSV');
+                    downloadButton.prop("disabled", false);
+                } else {
+                    setTimeout(
+                        function () {
+                            downloadCSV(url, downloadButton);
+                        }, 5000);
+                }
+            } else {
+                var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                if (is_safari) {
+                    var a = window.document.createElement('a');
+                    a.href = '/uploaded/csv_processed/' + data['message'];
+                    a.download = data['message'];
+                    a.click();
+                } else {
+                    location.replace('/uploaded/csv_processed/' + data['message']);
+                }
+
+                downloadButton.html('Download as CSV');
+                downloadButton.prop("disabled", false);
+            }
+        },
+        error: function (req, err) {
+        }
+    });
+}
+
+function onDownloadCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let url = '/sass/download-sass-data-site/' + siteId + '/';
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
     renderSASSTaxonPerBiotope();
     renderSensitivityChart();
     renderBiotopeRatingsChart();
+    $('.download-as-csv').click(onDownloadCSVClicked);
 
     if (dateLabels) {
         $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
