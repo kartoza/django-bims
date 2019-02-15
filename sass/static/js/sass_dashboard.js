@@ -448,19 +448,21 @@ function renderMetricsData() {
 
 $(function () {
     drawMap();
-    renderSASSSummaryChart();
-    renderSASSTaxonPerBiotope();
-    renderSensitivityChart();
-    renderBiotopeRatingsChart();
-    renderLocationContextTable();
-    renderMetricsData();
+    if (sassExists) {
+        renderSASSSummaryChart();
+        renderSASSTaxonPerBiotope();
+        renderSensitivityChart();
+        renderBiotopeRatingsChart();
+        renderLocationContextTable();
+        renderMetricsData();
+        if (dateLabels) {
+            $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
+            $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('MMMM D, Y'));
+            $('#number-of-sass-record').html(dateLabels.length);
+        }
+    }
     $('.download-as-csv').click(onDownloadCSVClicked);
 
-    if (dateLabels) {
-        $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
-        $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('MMMM D, Y'));
-        $('#number-of-sass-record').html(dateLabels.length);
-    }
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
 });
