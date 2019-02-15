@@ -424,6 +424,28 @@ function renderLocationContextTable() {
     })
 }
 
+function renderMetricsData() {
+    let $table = $('.sass-metrics-table tbody');
+    $table.append('<tr>\n' +
+        '<td> SASS Score </td>\n' +
+        '<td>' + arrAvg(sassScores).toFixed(0) + '</td>\n' +
+        '<td>' + Math.min(...sassScores) + '</td>\n' +
+        '<td>' + Math.max(...sassScores) + '</td>\n' +
+        '</tr>');
+    $table.append('<tr>\n' +
+        '<td> Number of Taxa </td>\n' +
+        '<td>' + arrAvg(taxaNumbers).toFixed(0) + '</td>\n' +
+        '<td>' + Math.min(...taxaNumbers) + '</td>\n' +
+        '<td>' + Math.max(...taxaNumbers) + '</td>\n' +
+        '</tr>');
+    $table.append('<tr>\n' +
+        '<td> ASPT </td>\n' +
+        '<td>' + arrAvg(asptList).toFixed(2) + '</td>\n' +
+        '<td>' + Math.min(...asptList).toFixed(2) + '</td>\n' +
+        '<td>' + Math.max(...asptList).toFixed(2) + '</td>\n' +
+        '</tr>');
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
@@ -431,6 +453,7 @@ $(function () {
     renderSensitivityChart();
     renderBiotopeRatingsChart();
     renderLocationContextTable();
+    renderMetricsData();
     $('.download-as-csv').click(onDownloadCSVClicked);
 
     if (dateLabels) {
