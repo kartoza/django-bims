@@ -26,20 +26,24 @@
         const siteId = "{{ site_id }}";
         const biotopeRatingData = {{ biotope_ratings_chart_data.rating_data | safe }};
         const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
+        const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
+        const arrAvg = arr => arr.reduce((a,b) => a + b, 0) / arr.length;
     </script>
 
 {% endblock %}
 
 {% block body_content %}
     <div class="body-form container">
-        <div class="logo hide-logo pull-right"><img width="50" src="{% static 'img/bims-stamp.png' %}"></div>
+        <div class="logo hide-logo pull-right"><img width="50"
+                                                    src="{% static 'img/bims-stamp.png' %}">
+        </div>
         <h2 class="dashboard-title">SASS Dashboard</h2>
         <div class="row">
             <div class="col-md-6">
                 <div class="map-container" id="map"></div>
                 <div class="vertical-space"></div>
                 <div class="table-container">
-                    <table class="table table-striped">
+                    <table class="sass-info table table-striped">
                         <tbody>
                         <tr>
                             <th scope="row">FBIS Site Code</th>
@@ -65,6 +69,32 @@
                             <th scope="row">Latest record</th>
                             <td id="latest-record">-</td>
                         </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="table-container">
+                    <div class="table-title">
+                        Metrics Data
+                    </div>
+                    <table class="table table-condensed table-striped sass-metrics-table">
+                        <thead>
+                        <tr>
+                            <th>
+                                Metric
+                            </th>
+                            <th>
+                                Average
+                            </th>
+                            <th>
+                                Minimum
+                            </th>
+                            <th>
+                                Maximum
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
                         </tbody>
                     </table>
                 </div>
@@ -106,7 +136,10 @@
             <div class="col-md-6 mp">
                 <div class="chart-container">
                     <div class="chart-title">SASS charts
-                        <i data-download-title="SASS charts" data-toggle="tooltip" data-placement="left" title="Download charts" class="fa fa-download pull-right download-chart"></i>
+                        <i data-download-title="SASS charts"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download charts"
+                           class="fa fa-download pull-right download-chart"></i>
                     </div>
                     <canvas id="sass-score-chart"></canvas>
                     <canvas id="taxa-numbers-chart"></canvas>
@@ -114,15 +147,22 @@
                 </div>
                 <div class="vertical-space"></div>
                 <div class="chart-container">
-                    <div class="chart-title">Proportion of sensitive to tolerant
-                        <i data-download-title="Proportion of sensitive to tolerant" data-toggle="tooltip" data-placement="left" title="Download chart" class="fa fa-download pull-right download-chart"></i>
+                    <div class="chart-title">Proportion of sensitive to
+                        tolerant
+                        <i data-download-title="Proportion of sensitive to tolerant"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-chart"></i>
                     </div>
                     <canvas id="sensitivity-chart"></canvas>
                 </div>
                 <div class="vertical-space"></div>
                 <div class="chart-container">
                     <div class="chart-title">Biotope ratings
-                        <i data-download-title="Biotope ratings" data-toggle="tooltip" data-placement="left" title="Download chart" class="fa fa-download pull-right download-chart"></i>
+                        <i data-download-title="Biotope ratings"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-chart"></i>
                     </div>
                     <canvas id="biotope-ratings-chart"></canvas>
                 </div>
