@@ -26,6 +26,7 @@
         const siteId = "{{ site_id }}";
         const biotopeRatingData = {{ biotope_ratings_chart_data.rating_data | safe }};
         const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
+        const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
     </script>
 
 {% endblock %}
@@ -39,7 +40,7 @@
                 <div class="map-container" id="map"></div>
                 <div class="vertical-space"></div>
                 <div class="table-container">
-                    <table class="table table-striped">
+                    <table class="sass-info table table-striped">
                         <tbody>
                         <tr>
                             <th scope="row">FBIS Site Code</th>

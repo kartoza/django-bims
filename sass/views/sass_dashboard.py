@@ -206,6 +206,17 @@ class SassDashboardView(TemplateView):
         context['biotope_ratings_chart_data'] = (
             self.get_biotope_ratings_chart_data()
         )
+        location_context = json.loads(self.location_site.location_context)
+
+        try:
+            context['river_catchments'] = (
+                json.dumps(
+                    location_context['context_group_values'][
+                        'water_group']['service_registry_values']
+                )
+            )
+        except KeyError:
+            pass
 
         return context
 

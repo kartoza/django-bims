@@ -411,12 +411,26 @@ function onDownloadChartClicked(e) {
     })
 }
 
+function renderLocationContextTable() {
+    let $table = $('.sass-info tbody');
+    // River catchments
+    $.each(riverCatchments, function (key, data) {
+        if (data['value']) {
+            $table.append('<tr>\n' +
+                '<th scope="row">' + data['name'] + '</th>' +
+                '<td>' + data['value'] + '</td>\n' +
+                '</tr>')
+        }
+    })
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
     renderSASSTaxonPerBiotope();
     renderSensitivityChart();
     renderBiotopeRatingsChart();
+    renderLocationContextTable();
     $('.download-as-csv').click(onDownloadCSVClicked);
 
     if (dateLabels) {
