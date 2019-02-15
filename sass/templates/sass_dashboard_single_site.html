@@ -32,7 +32,7 @@
 
 {% block body_content %}
     <div class="body-form container">
-
+        <div class="logo hide-logo pull-right"><img width="50" src="{% static 'img/bims-stamp.png' %}"></div>
         <h2 class="dashboard-title">SASS Dashboard</h2>
         <div class="row">
             <div class="col-md-6">
@@ -105,20 +105,25 @@
             </div>
             <div class="col-md-6 mp">
                 <div class="chart-container">
+                    <div class="chart-title">SASS charts
+                        <i data-download-title="SASS charts" data-toggle="tooltip" data-placement="left" title="Download charts" class="fa fa-download pull-right download-chart"></i>
+                    </div>
                     <canvas id="sass-score-chart"></canvas>
                     <canvas id="taxa-numbers-chart"></canvas>
                     <canvas id="aspt-chart"></canvas>
                 </div>
                 <div class="vertical-space"></div>
                 <div class="chart-container">
-                    <div class="chart-title">Proportion of sensitive to
-                        tolerant
+                    <div class="chart-title">Proportion of sensitive to tolerant
+                        <i data-download-title="Proportion of sensitive to tolerant" data-toggle="tooltip" data-placement="left" title="Download chart" class="fa fa-download pull-right download-chart"></i>
                     </div>
                     <canvas id="sensitivity-chart"></canvas>
                 </div>
                 <div class="vertical-space"></div>
                 <div class="chart-container">
-                    <div class="chart-title">Biotope ratings</div>
+                    <div class="chart-title">Biotope ratings
+                        <i data-download-title="Biotope ratings" data-toggle="tooltip" data-placement="left" title="Download chart" class="fa fa-download pull-right download-chart"></i>
+                    </div>
                     <canvas id="biotope-ratings-chart"></canvas>
                 </div>
             </div>
@@ -130,10 +135,11 @@
 
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/moment.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/sass_dashboard.js" %}"></script>
 
 {% endblock %}

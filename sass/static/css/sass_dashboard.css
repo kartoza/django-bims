@@ -31,6 +31,7 @@ body {
 .chart-container, .map-container, .table-container {
     padding: 10px;
     border: 1px solid rgba(219, 175, 0, 0.41);
+    background-color: white;
 }
 
 .table-container {
@@ -70,4 +71,22 @@ body {
     font-size: 10pt;
     text-transform: none;
     border-radius: 5px;
+}
+
+.download-chart {
+    padding-top: 2px;
+    color: #818181;
+    cursor: pointer;
+}
+
+.download-chart:hover {
+    color: #565656;
+}
+
+.logo {
+    padding: 5px;
+}
+
+.hide-logo {
+    display: none;
 }
