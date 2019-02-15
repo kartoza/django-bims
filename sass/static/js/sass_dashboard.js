@@ -365,7 +365,10 @@ function createBoundaryDataset(label, x, y, color) {
             {"x": x, "y": y},
             {"x": x, "y": 0}
         ],
-        backgroundColor: "rgba(" + rgb['r'] + ", " + rgb['g'] + ", " + rgb['b'] + ", 0.8)"
+        backgroundColor: "rgba(" + rgb['r'] + ", " + rgb['g'] + ", " + rgb['b'] + ", 0.8)",
+        showLine: true,
+        borderColor: '#000',
+        borderWidth: 0.5
 }
     ;
 }
