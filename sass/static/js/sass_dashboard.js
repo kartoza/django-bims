@@ -387,6 +387,30 @@ function onDownloadCSVClicked(e) {
     downloadCSV(url, downloadButton);
 }
 
+function onDownloadChartClicked(e) {
+    let wrapper = $(this).parent().parent();
+    let button = $(this);
+    let title = $(this).data('download-title');
+    let $logo = $('.logo').clone();
+    button.hide();
+    $(wrapper).css({"padding-bottom": "55px"});
+    $(wrapper).append($logo.removeClass('hide-logo'));
+    let container = $(wrapper);
+    html2canvas(wrapper, {
+        scale: 1,
+        dpi: 144,
+        onrendered: function (canvas) {
+            $logo.remove();
+            container.css({"padding-bottom": "5px"});
+            button.show();
+            let link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            link.download = title + '.png';
+            link.click();
+        }
+    })
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
@@ -400,4 +424,6 @@ $(function () {
         $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('MMMM D, Y'));
         $('#number-of-sass-record').html(dateLabels.length);
     }
+    $('[data-toggle="tooltip"]').tooltip();
+    $('.download-chart').click(onDownloadChartClicked);
 });
