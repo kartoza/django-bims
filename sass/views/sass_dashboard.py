@@ -191,6 +191,7 @@ class SassDashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
+        self.get_site_visit_taxon()
         context['coord'] = [
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
@@ -198,7 +199,12 @@ class SassDashboardView(TemplateView):
         context['site_code'] = self.location_site.site_code
         context['site_id'] = self.location_site.id
         context['site_description'] = self.location_site.site_description
-        self.get_site_visit_taxon()
+
+        if not self.site_visit_taxa:
+            context['sass_exists'] = False
+            return context
+
+        context['sass_exists'] = True
 
         context['sass_score_chart_data'] = self.get_sass_score_chart_data()
         context['sass_taxon_table_data'] = self.get_sass_taxon_table_data()
