@@ -214,9 +214,9 @@ function renderSASSTaxonPerBiotope() {
         }
         let lowercaseValue = value['biotope__name'].toLowerCase();
         let biotope = '';
-        if (lowercaseValue.includes('vegetation')) {
+        if (lowercaseValue.includes('vegetation') || lowercaseValue.includes('mv') || lowercaseValue.includes('aqv')) {
             biotope = 'veg';
-        } else if (lowercaseValue.includes('stone')) {
+        } else if (lowercaseValue.includes('stone') || lowercaseValue.includes('sic') || lowercaseValue.includes('sooc')) {
             biotope = 'stone';
         } else {
             biotope = 'gravel';
