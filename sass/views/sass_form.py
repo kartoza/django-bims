@@ -31,7 +31,7 @@ BSS_STONES_OUT_OF_CURRENT = 'Stones out of current (SOOC)'
 
 
 class SassFormView(UserPassesTestMixin, TemplateView):
-    """Template view for landing page"""
+    """Template view for Sass Form"""
     template_name = 'form_page.html'
     post_dictionary = {}
     site_visit = SiteVisit.objects.none()
@@ -252,9 +252,11 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             biotope_taxon_list = (
                 self.site_visit.sitevisitbiotopetaxon_set.all()
             )
-            site_visit_taxon_list = dict((
-                self.site_visit.sitevisittaxon_set.all()
-            ).values_list('sass_taxon__id', 'taxon_abundance__abc'))
+            site_visit_taxon_list = (
+                dict((self.site_visit.sitevisittaxon_set.all()).values_list(
+                        'sass_taxon__id',
+                        'taxon_abundance__abc'))
+            )
 
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
@@ -356,3 +358,41 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             if self.site_visit.sass_version:
                 self.sass_version = self.site_visit.sass_version
         return super(SassFormView, self).get(request, *args, **kwargs)
+
+
+class SassReadFormView(SassFormView):
+    template_name = 'form_only_read_page.html'
+
+    def test_func(self):
+        return True
+
+    def get(self, request, *args, **kwargs):
+        site_id = kwargs.get('site_id')
+        sass_id = kwargs.get('sass_id')
+        sass_version_param = kwargs.get('sass_version')
+        if sass_version_param:
+            self.sass_version = int(sass_version_param)
+
+        self.post_dictionary = {}
+        if site_id:
+            location_site = get_object_or_404(
+                LocationSite,
+                pk=site_id
+            )
+            self.site_code = location_site.site_code
+            if not self.site_code:
+                self.site_code = location_site.name
+            self.sass_version = request.GET.get('sass_version', 5)
+        else:
+            self.site_visit = get_object_or_404(
+                SiteVisit,
+                pk=sass_id
+            )
+            self.site_code = self.site_visit.location_site.site_code
+            if not self.site_code:
+                self.site_code = self.site_visit.location_site.name
+            if self.site_visit.sass_version:
+                self.sass_version = self.site_visit.sass_version
+        return super(SassFormView, self).get(
+            request, *args, **kwargs
+        )
