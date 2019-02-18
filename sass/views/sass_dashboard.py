@@ -40,6 +40,7 @@ class SassDashboardView(TemplateView):
                 When(site_visit__sass_version=4, then=Sum(
                     'sass_taxon__score')),
                 default=Sum('sass_taxon__sass_5_score')),
+            sass_id=F('site_visit__id')
         ).annotate(
             aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
                                                             FloatField()),
@@ -54,6 +55,8 @@ class SassDashboardView(TemplateView):
             summary.values_list('sass_score', flat=True))
         data['aspt_list'] = list(
             summary.values_list('aspt', flat=True))
+        data['sass_ids'] = list(
+            summary.values_list('sass_id', flat=True))
         return data
 
     def get_sass_taxon_table_data(self):
