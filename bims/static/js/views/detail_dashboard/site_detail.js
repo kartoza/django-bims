@@ -151,7 +151,6 @@ define([
             }
 
             if (is_sass_enabled) {
-                console.log(parameters);
                 var obj = {};
                 parameters.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
                     obj[decodeURIComponent(key)] = decodeURIComponent(value);
