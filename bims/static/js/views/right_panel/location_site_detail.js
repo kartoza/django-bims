@@ -355,6 +355,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $('.species-list-count').html(speciesListCount);
             return $specialListWrapper;
         },
+
         showDetail: function (name, zoomToObject) {
             var self = this;
             // Render basic information
