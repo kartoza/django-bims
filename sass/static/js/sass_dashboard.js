@@ -154,9 +154,15 @@ function renderSASSTaxonPerBiotope() {
             table.append($tr);
         }
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
-        $tr.append('<td>' +
-            value['sass_taxon_name'] +
-            '</td>');
+        if (value['sass_taxon_name']) {
+            $tr.append('<td>' +
+                value['sass_taxon_name'] +
+                '</td>');
+        } else {
+            $tr.append('<td>' +
+                value['taxonomy__canonical_name'] +
+                '</td>');
+        }
         $tr.append('<td>' +
             value['sass_score'] +
             '</td>');
