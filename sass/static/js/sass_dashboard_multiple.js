@@ -7,7 +7,9 @@ function drawMap(data) {
         layers: [
             new ol.layer.Tile({
                 source: new ol.source.OSM({
-                    wrapX: false
+                    wrapDateLine: false,
+                    wrapX: false,
+                    noWrap: true
                 })
             })
         ],
@@ -54,7 +56,10 @@ function drawMap(data) {
     });
     map.addLayer(vectorLayer);
     map.getView().fit(vectorSource.getExtent(), map.getSize());
-    map.getView().setZoom(10);
+    let zoom = map.getView().getZoom();
+    if (zoom > 10) {
+        map.getView().setZoom(10);
+    }
 }
 
 function renderSassScoreChart(data) {
@@ -108,7 +113,9 @@ function renderSassScoreChart(data) {
                     beginAtZero: true
                 }
             }]
-        }
+        },
+        responsive: true,
+        maintainAspectRatio: false,
     };
     let hiddenYAxesLabelOptions = JSON.parse(JSON.stringify(options));
     hiddenYAxesLabelOptions['scales']['yAxes'] = [{
@@ -122,7 +129,8 @@ function renderSassScoreChart(data) {
         }
     };
 
-    let sassScoreChart = new Chart($('#sass-score-chart'), {
+    $("#sass-score-chart").height(18 * sassScoreData['labels'].length);
+    let sassScoreChart = new Chart(document.getElementById('sass-score-chart'), {
         type: 'horizontalBar',
         data: sassScoreData,
         options: options
