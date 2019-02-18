@@ -252,10 +252,11 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             biotope_taxon_list = (
                 self.site_visit.sitevisitbiotopetaxon_set.all()
             )
-            site_visit_taxon_list = dict((
-                                             self.site_visit.sitevisittaxon_set.all()
-                                         ).values_list('sass_taxon__id',
-                                                       'taxon_abundance__abc'))
+            site_visit_taxon_list = (
+                dict((self.site_visit.sitevisittaxon_set.all()).values_list(
+                        'sass_taxon__id',
+                        'taxon_abundance__abc'))
+            )
 
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
