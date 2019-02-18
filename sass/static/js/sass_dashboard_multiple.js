@@ -147,9 +147,47 @@ function renderSassScoreChart(data) {
     });
 }
 
+function renderSassSummaryTable(data) {
+    let siteCodes = data['sass_score_chart_data']['site_code'];
+    let table = $('#sass-summary-table');
+    $.each(siteCodes, function (index, value) {
+        let $tr = $('<tr>');
+        $tr.append(
+            '<td>' + value + '</td>'
+        );
+        $tr.append(
+            '<td>' + Math.round(data['sass_score_chart_data']['sass_score_average'][index]['avg']) + '(' + data['sass_score_chart_data']['sass_score_average'][index]['min'] + '-' + data['sass_score_chart_data']['sass_score_average'][index]['max'] + ') </td>'
+        );
+        $tr.append(
+            '<td>' + Math.round(data['sass_score_chart_data']['taxa_number_average'][index]['avg']) + '(' + data['sass_score_chart_data']['taxa_number_average'][index]['min'] + '-' + data['sass_score_chart_data']['taxa_number_average'][index]['max'] + ') </td>'
+        );
+        $tr.append(
+            '<td>' + data['sass_score_chart_data']['aspt_average'][index]['avg'].toFixed(2) + '(' + data['sass_score_chart_data']['aspt_average'][index]['min'].toFixed(2) + '-' + data['sass_score_chart_data']['aspt_average'][index]['max'].toFixed(2) + ') </td>'
+        );
+        $tr.append(
+            '<td>' + data['sass_score_chart_data']['number_assessments'][index] + '</td>'
+        );
+        $tr.append(
+            '<td>' + data['sass_score_chart_data']['sass_score'][index] + '</td>'
+        );
+        $tr.append(
+            '<td>' + data['sass_score_chart_data']['taxa_count'][index] + '</td>'
+        );
+        $tr.append(
+            '<td>' + data['sass_score_chart_data']['aspt_score'][index] + '</td>'
+        );
+        $tr.append(
+            '<td> <a href="/sass/view/' + data['sass_score_chart_data']['sass_ids'][index] + '">' + data['sass_score_chart_data']['date'][index] + '</a></td>'
+        );
+
+        table.append($tr);
+    });
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
+    renderSassSummaryTable(data);
 }
 
 $(function () {
