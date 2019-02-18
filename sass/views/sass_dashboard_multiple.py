@@ -19,12 +19,13 @@ class SassDashboardMultipleSitesApiView(APIView):
 
     def get_sass_score_chart_data(self):
         summary = self.site_visit_taxa.annotate(
+            date=F('site_visit__site_visit_date'),
             site_code=Case(
                 When(site_visit__location_site__site_code__isnull=False,
                      then='site_visit__location_site__site_code'),
                 default='site_visit__location_site__name'
             ),
-        ).values('site_code').annotate(
+        ).values('site_code', 'date').annotate(
             count=Count('sass_taxon'),
             sass_score=Case(
                 When(site_visit__sass_version=5, then=Sum(
@@ -35,14 +36,21 @@ class SassDashboardMultipleSitesApiView(APIView):
         ).annotate(
             aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
                                                             FloatField()),
-        )
+        ).order_by('-date')
         chart_data = {
             'site_code': [],
             'sass_score': [],
             'aspt_score': [],
-            'taxa_count': []
+            'taxa_count': [],
+            'date': []
         }
+        site_codes = []
         for data in summary:
+            # Get the latest data
+            if data['site_code'] in site_codes:
+                continue
+            site_codes.append(data['site_code'])
+
             chart_data['site_code'].append(
                 data['site_code']
             )
@@ -54,6 +62,9 @@ class SassDashboardMultipleSitesApiView(APIView):
             )
             chart_data['taxa_count'].append(
                 data['count']
+            )
+            chart_data['date'].append(
+                data['date'].strftime('%d-%m-%Y')
             )
         return chart_data
 

@@ -89,63 +89,53 @@ function renderSassScoreChart(data) {
             data: data['sass_score_chart_data']['aspt_score']
         }]
     };
+    let options = {
+        legend: {
+            position: 'bottom'
+        },
+        tooltips: {
+            enabled: true,
+            mode: 'single',
+            callbacks: {
+                afterBody: function (_data) {
+                    return 'Date : ' + data['sass_score_chart_data']['date'][_data[0]['index']];
+                }
+            }
+        },
+        scales: {
+            xAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    };
+    let hiddenYAxesLabelOptions = JSON.parse(JSON.stringify(options));
+    hiddenYAxesLabelOptions['scales']['yAxes'] = [{
+        ticks: {
+            display: false
+        }
+    }];
+    hiddenYAxesLabelOptions['tooltips']['callbacks'] = {
+        afterBody: function (_data) {
+            return 'Date : ' + data['sass_score_chart_data']['date'][_data[0]['index']];
+        }
+    };
+
     let sassScoreChart = new Chart($('#sass-score-chart'), {
         type: 'horizontalBar',
         data: sassScoreData,
-        options: {
-            legend: {
-                position: 'bottom'
-            },
-            scales: {
-                xAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
-        }
+        options: options
     });
     let taxaCountScoreChart = new Chart($('#taxa-numbers-chart'), {
         type: 'horizontalBar',
         data: taxaCountData,
-        options: {
-            legend: {
-                position: 'bottom'
-            },
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        display: false
-                    }
-                }],
-                xAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
-        }
+        options: hiddenYAxesLabelOptions
     });
     let asptScoreChart = new Chart($('#aspt-chart'), {
         type: 'horizontalBar',
         data: asptScoreData,
-        options: {
-            legend: {
-                position: 'bottom'
-            },
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        display: false
-                    }
-                }],
-                xAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
-        }
+        options: hiddenYAxesLabelOptions
     });
 }
 
