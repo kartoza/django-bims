@@ -39,7 +39,7 @@
                 <div class="map-container ajax-container" id="map"></div>
                 <div class="vertical-space"></div>
                 <div class="chart-container ajax-container">
-                    <div class="chart-title">SASS charts
+                    <div class="chart-title">SASS Charts
                         <i data-download-title="SASS charts"
                            data-toggle="tooltip" data-placement="left"
                            title="Download charts"
@@ -47,7 +47,7 @@
                     </div>
                     <div class="row no-padding">
                         <div class="col-md-4">
-                            <canvas id="sass-score-chart"></canvas>
+                            <canvas id="sass-score-chart" style="position: relative;"></canvas>
                         </div>
                         <div class="col-md-4">
                             <canvas id="taxa-numbers-chart"></canvas>
@@ -57,6 +57,47 @@
                         </div>
                     </div>
                 </div>
+                <div class="vertical-space"></div>
+                 <div class="table-container">
+                        <div class="table-title">
+                            SASS Summary
+                        </div>
+                        <table class="table table-condensed table-striped sass-summary-table">
+                            <thead>
+                            <tr>
+                                <th>
+                                    Site Code
+                                </th>
+                                <th>
+                                    Average (min-max) SASS Score
+                                </th>
+                                <th>
+                                    Average (min-max) Number of Taxa
+                                </th>
+                                <th>
+                                    Average (min-max) ASPT
+                                </th>
+                                <th>
+                                    Number of assessments
+                                </th>
+                                <th>
+                                    Latest SASS Score
+                                </th>
+                                <th>
+                                    Latest Number of Taxa
+                                </th>
+                                <th>
+                                    Latest ASPT
+                                </th>
+                                <th>
+                                    Date of latest SASS assessment
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody id="sass-summary-table">
+                            </tbody>
+                        </table>
+                    </div>
             </div>
         </div>
     </div>

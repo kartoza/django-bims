@@ -70,27 +70,24 @@ class SassDashboardView(TemplateView):
                 site_visit=latest_site_visit
             ).annotate(
                 sass_taxon_name=Case(
-                    When(site_visit__sass_version=5,
-                         then='sass_taxon__taxon_sass_5'),
-                    When(site_visit__sass_version=4,
-                         then='sass_taxon__taxon_sass_4'),
+                    When(
+                        condition=Q(site_visit__sass_version=5,
+                                    sass_taxon__taxon_sass_5__isnull=False),
+                        then='sass_taxon__taxon_sass_5'),
                     default='sass_taxon__taxon_sass_4'
                 ),
                 sass_score=Case(
                     When(site_visit__sass_version=5,
                          then='sass_taxon__sass_5_score'),
-                    When(site_visit__sass_version=4,
-                         then='sass_taxon__score'),
-                    default='sass_taxon__sass_5_score'
+                    default='sass_taxon__score'
                 ),
             ).values(
+                'sass_taxon_id',
                 'taxonomy__canonical_name',
                 'taxon_abundance__abc',
                 'sass_taxon_name',
-                'sass_score',
-                'sass_taxon_id')
-            .order_by('sass_taxon_name')
-            .distinct('sass_taxon_name')
+                'sass_score')
+            .order_by('taxonomy__canonical_name', 'sass_taxon_name')
         )
 
         biotope_data = (
