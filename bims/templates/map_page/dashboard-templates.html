@@ -173,6 +173,13 @@
                         </div>
                     </div>
                 </div>
+
+                {% if is_sass_enabled %}
+                      <div class="container-fluid sass-dashboard-button" style="padding-top: 20px; color: white; padding-left: 0; padding-right: 0">
+                          <a class="btn right-panel-button right-panel-last-button fbis-button sass-button" style="margin: 0 !important;">Open SASS Dashboard</a>
+                      </div>
+                {% endif %}
+
             </div>
             <div class="col-lg-8" id="dashboard-graph-wrapper">
                 <div class="card">

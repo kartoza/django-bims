@@ -70,7 +70,6 @@ class SassDashboardMultipleSitesApiView(APIView):
 
     def get(self, request):
         filters = request.GET
-        site_ids = filters.get('siteId', '')
         search = SearchVersion2(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
@@ -79,8 +78,8 @@ class SassDashboardMultipleSitesApiView(APIView):
         sass_score_chart_data = self.get_sass_score_chart_data()
 
         location_sites = LocationSite.objects.filter(
-            id__in=site_ids.split(',')
-        ).distinct()
+            id__in=collection_records.values('site').distinct()
+        )
         coordinates = []
         for location_site in location_sites:
             coordinates.append({
