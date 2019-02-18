@@ -1,0 +1,79 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    SASS Dashboard Single Site
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <link href="{% static "js/libs/pace-0.5.3/pace-theme.css" %}"
+          rel="stylesheet">
+    <script type="text/javascript">
+        paceOptions = {
+            elements: {
+                selectors: ['.map-container']
+            },
+            // Only show the progress on regular and ajax-y page navigation,
+            // not every request
+            restartOnRequestAfter: false
+        }
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="logo hide-logo pull-right"><img width="50"
+                                                    src="{% static 'img/bims-stamp.png' %}">
+        </div>
+        <h2 class="dashboard-title">SASS Dashboard</h2>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="map-container ajax-container" id="map"></div>
+                <div class="vertical-space"></div>
+                <div class="chart-container ajax-container">
+                    <div class="chart-title">SASS charts
+                        <i data-download-title="SASS charts"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download charts"
+                           class="fa fa-download pull-right download-chart"></i>
+                    </div>
+                    <div class="row no-padding">
+                        <div class="col-md-4">
+                            <canvas id="sass-score-chart"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <canvas id="taxa-numbers-chart"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <canvas id="aspt-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+
+    <script src="{% static "js/libs/pace-0.5.3/pace.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
+
+{% endblock %}
