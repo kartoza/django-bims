@@ -14,6 +14,13 @@ class SassDataSerializer(serializers.ModelSerializer):
     v = serializers.SerializerMethodField()
     g = serializers.SerializerMethodField()
     site = serializers.SerializerMethodField()
+    site_code = serializers.SerializerMethodField()
+
+    def get_site_code(self, obj):
+        site_code = obj.site_visit.location_site.site_code
+        if not site_code:
+            return obj.site_visit.location_site.name
+        return site_code
 
     def get_date(self, obj):
         return obj.site_visit.site_visit_date
@@ -85,6 +92,7 @@ class SassDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteVisitTaxon
         fields = [
+            'site_code',
             'date',
             'sass_version',
             'taxa',

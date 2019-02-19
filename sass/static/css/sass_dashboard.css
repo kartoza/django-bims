@@ -113,3 +113,8 @@ body {
     overflow-x: auto;
     overflow-y: hidden;
 }
+
+.download-top-container {
+    float: right;
+    margin-top: -8px;
+}

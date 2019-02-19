@@ -309,7 +309,9 @@ function renderBiotopeRatingsChart(data) {
         maintainAspectRatio: false,
     };
     let dataLength = Object.keys(biotopeRatingData).length;
-    if (dataLength < 10) {
+    if (dataLength < 5) {
+        $("#biotope-ratings-chart").height(100 * Object.keys(biotopeRatingData).length);
+    } else if (dataLength < 15) {
         $("#biotope-ratings-chart").height(50 * Object.keys(biotopeRatingData).length);
     } else {
         $("#biotope-ratings-chart").height(25 * Object.keys(biotopeRatingData).length);
@@ -371,6 +373,16 @@ function renderBiotopeRatingsChart(data) {
     });
 }
 
+function onDownloadCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-data-site/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
@@ -393,5 +405,7 @@ $(function () {
 
     Pace.on('hide', function (context) {
         $('.loading-title').hide();
-    })
+    });
+
+    $('.download-as-csv').click(onDownloadCSVClicked);
 });
