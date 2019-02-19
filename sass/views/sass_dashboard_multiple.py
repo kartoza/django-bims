@@ -42,6 +42,7 @@ class SassDashboardMultipleSitesApiView(APIView):
         ).order_by('-date')
         chart_data = {
             'sass_ids': [],
+            'site_id': [],
             'site_code': [],
             'sass_score': [],
             'aspt_score': [],
@@ -64,6 +65,9 @@ class SassDashboardMultipleSitesApiView(APIView):
             )
             chart_data['sass_ids'].append(
                 data['sass_id']
+            )
+            chart_data['site_id'].append(
+                data['site_id']
             )
             chart_data['sass_score'].append(
                 data['sass_score']
@@ -146,7 +150,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'abundance',
                 'taxon_name',
                 'score')
-                .order_by('canonical_name', 'taxon_name')
+            .order_by('canonical_name', 'taxon_name')
         )
         biotope_data = (
             SiteVisitBiotopeTaxon.objects.filter(
@@ -180,6 +184,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             try:
                 sass_taxon_data_dict[name].pop('site_id')
                 sass_taxon_data_dict[name].pop('abundance')
+                sass_taxon_data_dict[name].pop('site_code')
             except KeyError:
                 pass
 
@@ -222,6 +227,5 @@ class SassDashboardMultipleSitesApiView(APIView):
         return Response({
             'sass_score_chart_data': sass_score_chart_data,
             'taxa_per_biotope_data': taxa_per_biotope_data,
-            'coordinates': coordinates,
-            'site_ids': list(location_sites.values_list('id', flat=True))
+            'coordinates': coordinates
         })

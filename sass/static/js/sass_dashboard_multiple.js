@@ -188,7 +188,7 @@ function renderTaxaPerBiotopeTable(data) {
     let $table = $('#sass-taxa-per-biotope');
     let tableData = data['taxa_per_biotope_data'];
     let siteCodes = data['sass_score_chart_data']['site_code'];
-    let siteIds = data['site_ids'];
+    let siteIds = data['sass_score_chart_data']['site_id'];
     let dates = data['sass_score_chart_data']['date'];
     let $row1 = $($table.find('.row1')[0]);
     let $row2 = $($table.find('.row2')[0]);
@@ -209,8 +209,8 @@ function renderTaxaPerBiotopeTable(data) {
         $row2.append(
             '<th> S </th> <th> V </th> <th> G </th> <th> Site </th>'
         );
-        numberOfTaxaPerSite[siteIds[index]] = JSON.parse(JSON.stringify(biotopeEnum));
-        totalSassPerSite[siteIds[index]] = JSON.parse(JSON.stringify(biotopeEnum));
+        numberOfTaxaPerSite[siteId] = JSON.parse(JSON.stringify(biotopeEnum));
+        totalSassPerSite[siteId] = JSON.parse(JSON.stringify(biotopeEnum));
     });
 
     // Add data
@@ -267,25 +267,19 @@ function renderTaxaPerBiotopeTable(data) {
     $asptTr.append('<td colspan="3"> ASPT </td>');
 
     $.each(totalSassPerSite, function (siteId, totalSassScore) {
-        $sassScoreTr.append('<td>' + totalSassScore['stone'] + '</td>');
-        $sassScoreTr.append('<td>' + totalSassScore['veg'] + '</td>');
-        $sassScoreTr.append('<td>' + totalSassScore['gravel'] + '</td>');
-        $sassScoreTr.append('<td>' + totalSassScore['site'] + '</td>');
-
-        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['stone'] + '</td>');
-        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['veg'] + '</td>');
-        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['gravel'] + '</td>');
-        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['site'] + '</td>');
-
-        $asptTr.append('<td>' + (totalSassScore['stone'] / numberOfTaxaPerSite[siteId]['stone']).toFixed(2) + '</td>');
-        $asptTr.append('<td>' + (totalSassScore['veg'] / numberOfTaxaPerSite[siteId]['veg']).toFixed(2) + '</td>');
-        $asptTr.append('<td>' + (totalSassScore['gravel'] / numberOfTaxaPerSite[siteId]['gravel']).toFixed(2) + '</td>');
-        $asptTr.append('<td>' + (totalSassScore['site'] / numberOfTaxaPerSite[siteId]['site']).toFixed(2) + '</td>');
+        $.each(totalSassScore, function (category, value) {
+            $sassScoreTr.append('<td>' + value + '</td>');
+            $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId][category] + '</td>');
+            if (value && numberOfTaxaPerSite[siteId][category]) {
+                $asptTr.append('<td>' + (value / numberOfTaxaPerSite[siteId][category]).toFixed(2) + '</td>');
+            } else {
+                $asptTr.append('<td> - </td>');
+            }
+        });
     });
     $table.append($sassScoreTr);
     $table.append($taxaNumbersTr);
     $table.append($asptTr);
-
 }
 
 function renderAll(data) {
