@@ -154,9 +154,15 @@ function renderSASSTaxonPerBiotope() {
             table.append($tr);
         }
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
-        $tr.append('<td>' +
-            value['sass_taxon_name'] +
-            '</td>');
+        if (value['sass_taxon_name']) {
+            $tr.append('<td>' +
+                value['sass_taxon_name'] +
+                '</td>');
+        } else {
+            $tr.append('<td>' +
+                value['taxonomy__canonical_name'] +
+                '</td>');
+        }
         $tr.append('<td>' +
             value['sass_score'] +
             '</td>');
@@ -208,9 +214,9 @@ function renderSASSTaxonPerBiotope() {
         }
         let lowercaseValue = value['biotope__name'].toLowerCase();
         let biotope = '';
-        if (lowercaseValue.includes('vegetation')) {
+        if (lowercaseValue.includes('vegetation') || lowercaseValue.includes('mv') || lowercaseValue.includes('aqv')) {
             biotope = 'veg';
-        } else if (lowercaseValue.includes('stone')) {
+        } else if (lowercaseValue.includes('stone') || lowercaseValue.includes('sic') || lowercaseValue.includes('sooc')) {
             biotope = 'stone';
         } else {
             biotope = 'gravel';
@@ -340,48 +346,11 @@ function renderBiotopeRatingsChart() {
     });
 }
 
-function downloadCSV(url, downloadButton) {
-    let self = this;
-    self.downloadCSVXhr = $.get({
-        url: url,
-        dataType: 'json',
-        success: function (data) {
-            if (data['status'] !== "success") {
-                if (data['status'] === "failed") {
-                    if (self.downloadCSVXhr) {
-                        self.downloadCSVXhr.abort();
-                    }
-                    downloadButton.html('Download as CSV');
-                    downloadButton.prop("disabled", false);
-                } else {
-                    setTimeout(
-                        function () {
-                            downloadCSV(url, downloadButton);
-                        }, 5000);
-                }
-            } else {
-                var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                if (is_safari) {
-                    var a = window.document.createElement('a');
-                    a.href = '/uploaded/csv_processed/' + data['message'];
-                    a.download = data['message'];
-                    a.click();
-                } else {
-                    location.replace('/uploaded/csv_processed/' + data['message']);
-                }
-
-                downloadButton.html('Download as CSV');
-                downloadButton.prop("disabled", false);
-            }
-        },
-        error: function (req, err) {
-        }
-    });
-}
-
 function onDownloadCSVClicked(e) {
     let downloadButton = $(e.target);
-    let url = '/sass/download-sass-data-site/' + siteId + '/';
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-data-site/?' + queryString;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
     downloadCSV(url, downloadButton);

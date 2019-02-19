@@ -1,4 +1,5 @@
 {% extends 'main_base.html' %}
+{% load jsonify  %}
 {% load static from staticfiles %}
 
 {% block subtitle %}
@@ -136,6 +137,41 @@
                             </button>
                         </div>
                     </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <div class="table-title">
+                            SASS Records
+                        </div>
+                        <table class="table table-condensed table-striped sass-records">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>SASS5/SASS4 Score</th>
+                                <th>Number of Taxa</th>
+                                <th>ASPT</th>
+                            </tr>
+                            </thead>
+                            <tbody id="sass-records">
+                                {% for date in sass_score_chart_data.date_labels %}
+                                    <tr>
+                                        <td>
+                                            <a href="/sass/view/{{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}">{{ date }}</a>
+                                        </td>
+                                        <td>
+                                            {{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}
+                                        </td>
+                                        <td>
+                                            {{ sass_score_chart_data.taxa_numbers | value_by_key:forloop.counter0 }}
+                                        </td>
+                                        <td>
+                                            {{ sass_score_chart_data.aspt_list | value_by_key:forloop.counter0 | floatformat:'2' }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
                 <div class="col-md-6 mp">
                     <div class="chart-container">
@@ -220,6 +256,7 @@
     <script src="{% static "js/libs/moment.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/sass_dashboard.js" %}"></script>
 
 {% endblock %}

@@ -90,3 +90,31 @@ body {
 .hide-logo {
     display: none;
 }
+
+.ajax-container {
+    display: none;
+}
+
+.loading-title {
+    position: absolute;
+    font-size: 30px;
+    color: #1b900d;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -40%);
+}
+
+.chart-container .row {
+    padding-top: 10px;
+}
+
+.table-overflow {
+    overflow: scroll;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.download-top-container {
+    float: right;
+    margin-top: -8px;
+}

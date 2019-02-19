@@ -168,11 +168,17 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $detailWrapper.append(button);
 
             if (is_sass_enabled) {
+                var sassDetailedDashboardButton = `
+                    <div class="container-fluid"><a 
+                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}
+                    " class="btn right-panel-button right-panel-last-button 
+                             fbis-button sass-button">SASS Dashboard</a></div>`;
                 var sassButton = `
                     <div class="container-fluid"><a 
                     href="/sass/${this.parameters['siteId']}
                     " class="btn right-panel-button right-panel-last-button 
                              fbis-button sass-button">SASS +</a></div>`;
+                $detailWrapper.append(sassDetailedDashboardButton);
                 $detailWrapper.append(sassButton);
             }
 
