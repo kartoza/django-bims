@@ -205,6 +205,42 @@ class SassDashboardMultipleSitesApiView(APIView):
                 )
         return sass_taxon_data_dict
 
+    def get_biotope_ratings_chart_data(self, sass_ids=None):
+        data = {}
+
+        biotope_ratings = self.site_visit_taxa.filter(
+            site_visit_id__in=sass_ids,
+            site_visit__sass_biotope_fraction__sass_biotope__biotope_form=1
+        ).annotate(
+            date=F('site_visit__site_visit_date'),
+            rate=F('site_visit__sass_biotope_fraction__rate__rate'),
+            biotope=F('site_visit__sass_biotope_fraction__sass_biotope__name')
+        ).values('date', 'rate', 'biotope', 'site_id').order_by(
+            '-site_visit__site_visit_date',
+            'site_visit__sass_biotope_fraction__sass_biotope__display_order'
+        ).distinct()
+
+        biotope_labels = []
+
+        for rating_data in biotope_ratings:
+            date = rating_data['date'].strftime('%d-%m-%Y')
+            site_id = rating_data['site_id']
+            if site_id not in data:
+                data[site_id] = {}
+            rate = rating_data['rate']
+            biotope = rating_data['biotope'].encode('utf-8')
+            if not rate:
+                rate = 0
+            data[site_id]['date'] = date
+            data[site_id][biotope] = rate
+            if biotope not in biotope_labels:
+                biotope_labels.append(biotope)
+
+        return {
+            'rating_data': data,
+            'biotope_labels': biotope_labels
+        }
+
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
@@ -214,6 +250,9 @@ class SassDashboardMultipleSitesApiView(APIView):
         )
         sass_score_chart_data = self.get_sass_score_chart_data()
         taxa_per_biotope_data = self.get_taxa_per_biotope_data()
+        biotope_ratings_chart_data = self.get_biotope_ratings_chart_data(
+            sass_ids=sass_score_chart_data['sass_ids']
+        )
 
         location_sites = LocationSite.objects.filter(
             id__in=collection_records.values('site').distinct()
@@ -227,5 +266,6 @@ class SassDashboardMultipleSitesApiView(APIView):
         return Response({
             'sass_score_chart_data': sass_score_chart_data,
             'taxa_per_biotope_data': taxa_per_biotope_data,
+            'biotope_ratings_chart_data': biotope_ratings_chart_data,
             'coordinates': coordinates
         })
