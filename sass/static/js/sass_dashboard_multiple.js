@@ -217,6 +217,10 @@ function renderTaxaPerBiotopeTable(data) {
             }
             $tr.append('<td class="stone"></td><td class="veg"></td><td class="gravel"></td><td class="site">' + siteAbundance + '</td>');
             let siteCodeStr = siteId.toString();
+            let biotopeData = _tableData['biotope_data'];
+            if (typeof biotopeData === 'undefined') {
+                return true;
+            }
             if (_tableData['biotope_data'].hasOwnProperty(siteCodeStr)) {
                 let biotopeData = _tableData['biotope_data'][siteCodeStr];
                 $.each(biotopeData, function (biotopeName, abundance) {

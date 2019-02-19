@@ -177,6 +177,11 @@ class SassDashboardMultipleSitesApiView(APIView):
             sass_taxon_data_dict[name]['site_abundance'][site_id] = (
                 taxon_data['abundance']
             )
+            try:
+                sass_taxon_data_dict[name].pop('site_id')
+                sass_taxon_data_dict[name].pop('abundance')
+            except KeyError:
+                pass
 
         for biotope in biotope_data:
             key = '{name}-{sass_taxon_id}'.format(
