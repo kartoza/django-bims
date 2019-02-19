@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from django.views.generic import TemplateView
 from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Avg, Min, Max, Q
@@ -108,7 +109,6 @@ class SassDashboardMultipleSitesApiView(APIView):
         return chart_data
 
     def get_taxa_per_biotope_data(self):
-        data = {}
         latest_site_visits = self.site_visit_taxa.order_by(
             'site',
             '-site_visit__site_visit_date'
@@ -153,6 +153,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 sass_taxon__in=self.site_visit_taxa.values_list('sass_taxon'),
                 site_visit__in=latest_site_visits
             ).annotate(
+                canonical_name=F('taxon__canonical_name'),
                 abundance=F('taxon_abundance__abc'),
                 biotope_name=F('biotope__name'),
                 site_id=F('site_visit__location_site__id'),
@@ -160,29 +161,39 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'site_id',
                 'biotope_name',
                 'sass_taxon_id',
+                'canonical_name',
                 'abundance')
         )
-        sass_taxon_data_dict = {}
-        for taxon_data in sass_taxon_data:
-            name = '{site_id}-{sass_taxon_id}'.format(
-                site_id=taxon_data['site_id'],
+        sass_taxon_data_dict = OrderedDict()
+        for taxon_data in list(sass_taxon_data):
+            name = '{name}-{sass_taxon_id}'.format(
+                name=taxon_data['canonical_name'],
                 sass_taxon_id=taxon_data['sass_taxon_id']
             )
-            sass_taxon_data_dict[name] = taxon_data
+            site_id = taxon_data['site_id']
+            if name not in sass_taxon_data_dict:
+                sass_taxon_data_dict[name] = taxon_data
+                sass_taxon_data_dict[name]['site_abundance'] = {}
+            sass_taxon_data_dict[name]['site_abundance'][site_id] = (
+                taxon_data['abundance']
+            )
+
         for biotope in biotope_data:
-            key = '{site_id}-{sass_taxon_id}'.format(
-                site_id=biotope['site_id'],
+            key = '{name}-{sass_taxon_id}'.format(
+                name=biotope['canonical_name'],
                 sass_taxon_id=biotope['sass_taxon_id']
             )
+            site_id = str(biotope['site_id'])
             if key in sass_taxon_data_dict:
                 if 'biotope_data' not in sass_taxon_data_dict[key]:
                     sass_taxon_data_dict[key]['biotope_data'] = {}
+                if site_id not in sass_taxon_data_dict[key]['biotope_data']:
+                    sass_taxon_data_dict[key]['biotope_data'][site_id] = {}
                 sass_taxon_data_dict[key][
-                    'biotope_data'][biotope['biotope_name']] = (
+                    'biotope_data'][site_id][biotope['biotope_name']] = (
                     biotope['abundance']
                 )
-        data['sass_taxon_data'] = sass_taxon_data_dict
-        return data
+        return sass_taxon_data_dict
 
     def get(self, request):
         filters = request.GET
@@ -206,5 +217,6 @@ class SassDashboardMultipleSitesApiView(APIView):
         return Response({
             'sass_score_chart_data': sass_score_chart_data,
             'taxa_per_biotope_data': taxa_per_biotope_data,
-            'coordinates': coordinates
+            'coordinates': coordinates,
+            'site_ids': list(location_sites.values_list('id', flat=True))
         })

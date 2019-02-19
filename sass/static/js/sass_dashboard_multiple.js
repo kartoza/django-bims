@@ -184,10 +184,66 @@ function renderSassSummaryTable(data) {
     });
 }
 
+function renderTaxaPerBiotopeTable(data) {
+    let $table = $('#sass-taxa-per-biotope');
+    let tableData = data['taxa_per_biotope_data'];
+    let siteCodes = data['sass_score_chart_data']['site_code'];
+    let siteIds = data['site_ids'];
+    let dates = data['sass_score_chart_data']['date'];
+    let $row1 = $($table.find('.row1')[0]);
+    let $row2 = $($table.find('.row2')[0]);
+
+    // Create heading
+    $.each(siteCodes, function (index, siteCode) {
+        $row1.append(
+            '<th colspan="4">' + siteCode + '<br>' + dates[index] + '</th>'
+        );
+        $row2.append(
+            '<th> S </th> <th> V </th> <th> G </th> <th> Site </th>'
+        )
+    });
+
+    // Add data
+    $.each(tableData, function (key, _tableData) {
+        let $tr = $('<tr>');
+        $tr.append('<td>' + _tableData['canonical_name'] + '</td>');
+        $tr.append('<td>' + _tableData['taxon_name'] + '</td>');
+        $tr.append('<td>' + _tableData['score'] + '</td>');
+
+        $.each(siteIds, function (index, siteId) {
+            let siteAbundance = _tableData['site_abundance'][siteId];
+            if (typeof siteAbundance === 'undefined') {
+                siteAbundance = '';
+            }
+            $tr.append('<td class="stone"></td><td class="veg"></td><td class="gravel"></td><td class="site">' + siteAbundance + '</td>');
+            let siteCodeStr = siteId.toString();
+            if (_tableData['biotope_data'].hasOwnProperty(siteCodeStr)) {
+                let biotopeData = _tableData['biotope_data'][siteCodeStr];
+                $.each(biotopeData, function (biotopeName, abundance) {
+                    let lowercaseValue = biotopeName.toLowerCase();
+                    let biotope = '';
+                    if (lowercaseValue.includes('vegetation') || lowercaseValue.includes('mv') || lowercaseValue.includes('aqv')) {
+                        biotope = 'veg';
+                    } else if (lowercaseValue.includes('stone') || lowercaseValue.includes('sic') || lowercaseValue.includes('sooc')) {
+                        biotope = 'stone';
+                    } else {
+                        biotope = 'gravel';
+                    }
+                    $tr.find('.' + biotope).html(
+                        abundance
+                    )
+                })
+            }
+        });
+        $table.append($tr);
+    })
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
     renderSassSummaryTable(data);
+    renderTaxaPerBiotopeTable(data);
 }
 
 $(function () {
