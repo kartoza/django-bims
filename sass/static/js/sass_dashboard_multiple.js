@@ -192,15 +192,25 @@ function renderTaxaPerBiotopeTable(data) {
     let dates = data['sass_score_chart_data']['date'];
     let $row1 = $($table.find('.row1')[0]);
     let $row2 = $($table.find('.row2')[0]);
+    let biotopeEnum = {
+        'stone': 0,
+        'veg': 0,
+        'gravel': 0,
+        'site': 0,
+    };
+    let numberOfTaxaPerSite = {};
+    let totalSassPerSite = {};
 
     // Create heading
-    $.each(siteCodes, function (index, siteCode) {
+    $.each(siteIds, function (index, siteId) {
         $row1.append(
-            '<th colspan="4">' + siteCode + '<br>' + dates[index] + '</th>'
+            '<th colspan="4">' + siteCodes[index] + '<br>' + dates[index] + '</th>'
         );
         $row2.append(
             '<th> S </th> <th> V </th> <th> G </th> <th> Site </th>'
-        )
+        );
+        numberOfTaxaPerSite[siteIds[index]] = JSON.parse(JSON.stringify(biotopeEnum));
+        totalSassPerSite[siteIds[index]] = JSON.parse(JSON.stringify(biotopeEnum));
     });
 
     // Add data
@@ -212,10 +222,14 @@ function renderTaxaPerBiotopeTable(data) {
 
         $.each(siteIds, function (index, siteId) {
             let siteAbundance = _tableData['site_abundance'][siteId];
+            let score = _tableData['score'];
             if (typeof siteAbundance === 'undefined') {
                 siteAbundance = '';
+            } else {
+                totalSassPerSite[siteId]['site'] += parseInt(score);
+                numberOfTaxaPerSite[siteId]['site'] += 1;
             }
-            $tr.append('<td class="stone"></td><td class="veg"></td><td class="gravel"></td><td class="site">' + siteAbundance + '</td>');
+            $tr.append('<td class="stone-' + siteId + '"></td><td class="veg-' + siteId + '"></td><td class="gravel-' + siteId + '"></td><td class="site">' + siteAbundance + '</td>');
             let siteCodeStr = siteId.toString();
             let biotopeData = _tableData['biotope_data'];
             if (typeof biotopeData === 'undefined') {
@@ -233,14 +247,45 @@ function renderTaxaPerBiotopeTable(data) {
                     } else {
                         biotope = 'gravel';
                     }
-                    $tr.find('.' + biotope).html(
+
+                    totalSassPerSite[siteId][biotope] += parseInt(score);
+                    numberOfTaxaPerSite[siteId][biotope] += 1;
+
+                    $tr.find('.' + biotope + '-' + siteId).html(
                         abundance
                     )
                 })
             }
         });
         $table.append($tr);
-    })
+    });
+    let $sassScoreTr = $('<tr class="total-table" >');
+    $sassScoreTr.append('<td colspan="3"> SASS Score </td>');
+    let $taxaNumbersTr = $('<tr class="total-table" >');
+    $taxaNumbersTr.append('<td colspan="3"> Number of Taxa </td>');
+    let $asptTr = $('<tr class="total-table" >');
+    $asptTr.append('<td colspan="3"> ASPT </td>');
+
+    $.each(totalSassPerSite, function (siteId, totalSassScore) {
+        $sassScoreTr.append('<td>' + totalSassScore['stone'] + '</td>');
+        $sassScoreTr.append('<td>' + totalSassScore['veg'] + '</td>');
+        $sassScoreTr.append('<td>' + totalSassScore['gravel'] + '</td>');
+        $sassScoreTr.append('<td>' + totalSassScore['site'] + '</td>');
+
+        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['stone'] + '</td>');
+        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['veg'] + '</td>');
+        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['gravel'] + '</td>');
+        $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId]['site'] + '</td>');
+
+        $asptTr.append('<td>' + (totalSassScore['stone'] / numberOfTaxaPerSite[siteId]['stone']).toFixed(2) + '</td>');
+        $asptTr.append('<td>' + (totalSassScore['veg'] / numberOfTaxaPerSite[siteId]['veg']).toFixed(2) + '</td>');
+        $asptTr.append('<td>' + (totalSassScore['gravel'] / numberOfTaxaPerSite[siteId]['gravel']).toFixed(2) + '</td>');
+        $asptTr.append('<td>' + (totalSassScore['site'] / numberOfTaxaPerSite[siteId]['site']).toFixed(2) + '</td>');
+    });
+    $table.append($sassScoreTr);
+    $table.append($taxaNumbersTr);
+    $table.append($asptTr);
+
 }
 
 function renderAll(data) {
