@@ -27,7 +27,7 @@ urlpatterns = [
     url(r'^dashboard-multi-sites-api/$',
         SassDashboardMultipleSitesApiView.as_view(),
         name='sass-dashboard-multiple-sites-api'),
-    url(r'^download-sass-data-site/(?P<site_id>\d+)/$',
+    url(r'^download-sass-data-site/$',
         download_sass_data_site,
         name='download-sass-data-site'),
 ]

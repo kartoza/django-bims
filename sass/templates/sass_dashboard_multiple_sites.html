@@ -103,7 +103,14 @@
                 <div class="table-container ajax-container">
                     <div class="table-title">
                         SASS Taxa per biotope
+                        <div class="download-top-container">
+                            Download all SASS data :
+                            <button class="btn btn-info download-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
                     </div>
+
                     <div class="table-overflow">
                         <table class="table table-bordered table-condensed table-striped sass-taxon-per-biotope-table"
                                id="sass-taxa-per-biotope">
@@ -149,6 +156,7 @@
     <script src="{% static "js/libs/moment.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
 
 {% endblock %}

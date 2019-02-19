@@ -5,8 +5,8 @@ from hashlib import md5
 import datetime
 from django.http.response import JsonResponse
 from django.conf import settings
-from bims.models.location_site import LocationSite
-from sass.models.site_visit import SiteVisit
+from bims.api_views.search_version_2 import SearchVersion2
+from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.tasks.download_sass_data_site import download_sass_data_site_task
 
 FAILED_STATUS = 'failed'
@@ -33,18 +33,19 @@ def download_sass_data_site(request, **kwargs):
     """
     Download all sass data by site id
     """
-    site_id = kwargs.get('site_id', None)
-    try:
-        site = LocationSite.objects.get(id=site_id)
-    except LocationSite.DoesNotExist:
+    filters = request.GET
+    search = SearchVersion2(filters)
+    collection_records = search.process_search()
+
+    if not collection_records:
         response_message = 'Location Site does not exist'
         return JsonResponse(get_response(FAILED_STATUS, response_message))
 
     # Get SASS data
-    site_visits = SiteVisit.objects.filter(
-        location_site=site
+    site_visit_taxa = SiteVisitTaxon.objects.filter(
+        id__in=collection_records
     )
-    if not site_visits:
+    if not site_visit_taxa:
         response_message = 'No SASS data for this site'
         return JsonResponse(get_response(FAILED_STATUS, response_message))
 
@@ -55,7 +56,7 @@ def download_sass_data_site(request, **kwargs):
     filename = md5(
         '%s%s%s' % (
             search_uri,
-            len(site_visits),
+            len(site_visit_taxa),
             date_data)
     ).hexdigest()
     filename += '.csv'
@@ -75,7 +76,7 @@ def download_sass_data_site(request, **kwargs):
 
     download_sass_data_site_task.delay(
         filename,
-        site_id,
+        filters,
         path_file
     )
 
