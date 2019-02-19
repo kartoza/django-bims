@@ -104,10 +104,33 @@
                     <div class="table-title">
                         SASS Taxa per biotope
                     </div>
-                    <table class="table table-bordered table-condensed table-striped sass-taxon-per-biotope-table" id="sass-taxa-per-biotope">
-                        <tr class="row1"><th></th><th></th><th></th></tr>
-                        <tr class="row2"><th width="150">Taxa</th><th width="150"></th><th width="50">Sensitivity Weighting</th></tr>
-                    </table>
+                    <div class="table-overflow">
+                        <table class="table table-bordered table-condensed table-striped sass-taxon-per-biotope-table"
+                               id="sass-taxa-per-biotope">
+                            <tr class="row1">
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            <tr class="row2">
+                                <th width="150">Taxa</th>
+                                <th width="150"></th>
+                                <th width="50">Sensitivity Weighting</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="chart-container ajax-container">
+                    <div class="chart-title">Biotope ratings
+                        <i data-download-title="Biotope ratings"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-chart"></i>
+                        <div>
+                            <canvas id="biotope-ratings-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

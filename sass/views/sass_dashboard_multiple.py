@@ -212,10 +212,15 @@ class SassDashboardMultipleSitesApiView(APIView):
             site_visit_id__in=sass_ids,
             site_visit__sass_biotope_fraction__sass_biotope__biotope_form=1
         ).annotate(
+            site_code=Case(
+                When(site_visit__location_site__site_code__isnull=False,
+                     then='site_visit__location_site__site_code'),
+                default='site_visit__location_site__name'
+            ),
             date=F('site_visit__site_visit_date'),
             rate=F('site_visit__sass_biotope_fraction__rate__rate'),
             biotope=F('site_visit__sass_biotope_fraction__sass_biotope__name')
-        ).values('date', 'rate', 'biotope', 'site_id').order_by(
+        ).values('date', 'rate', 'biotope', 'site_id', 'site_code').order_by(
             '-site_visit__site_visit_date',
             'site_visit__sass_biotope_fraction__sass_biotope__display_order'
         ).distinct()
@@ -232,6 +237,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             if not rate:
                 rate = 0
             data[site_id]['date'] = date
+            data[site_id]['site_code'] = rating_data['site_code']
             data[site_id][biotope] = rate
             if biotope not in biotope_labels:
                 biotope_labels.append(biotope)
