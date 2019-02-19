@@ -184,10 +184,109 @@ function renderSassSummaryTable(data) {
     });
 }
 
+function renderTaxaPerBiotopeTable(data) {
+    let $table = $('#sass-taxa-per-biotope');
+    let tableData = data['taxa_per_biotope_data'];
+    let siteCodes = data['sass_score_chart_data']['site_code'];
+    let siteIds = data['sass_score_chart_data']['site_id'];
+    let dates = data['sass_score_chart_data']['date'];
+    let $row1 = $($table.find('.row1')[0]);
+    let $row2 = $($table.find('.row2')[0]);
+    let biotopeEnum = {
+        'stone': 0,
+        'veg': 0,
+        'gravel': 0,
+        'site': 0,
+    };
+    let numberOfTaxaPerSite = {};
+    let totalSassPerSite = {};
+
+    // Create heading
+    $.each(siteIds, function (index, siteId) {
+        $row1.append(
+            '<th colspan="4">' + siteCodes[index] + '<br>' + dates[index] + '</th>'
+        );
+        $row2.append(
+            '<th> S </th> <th> V </th> <th> G </th> <th> Site </th>'
+        );
+        numberOfTaxaPerSite[siteId] = JSON.parse(JSON.stringify(biotopeEnum));
+        totalSassPerSite[siteId] = JSON.parse(JSON.stringify(biotopeEnum));
+    });
+
+    // Add data
+    $.each(tableData, function (key, _tableData) {
+        let $tr = $('<tr>');
+        $tr.append('<td>' + _tableData['canonical_name'] + '</td>');
+        $tr.append('<td>' + _tableData['taxon_name'] + '</td>');
+        $tr.append('<td>' + _tableData['score'] + '</td>');
+
+        $.each(siteIds, function (index, siteId) {
+            let siteAbundance = _tableData['site_abundance'][siteId];
+            let score = _tableData['score'];
+            if (typeof siteAbundance === 'undefined') {
+                siteAbundance = '';
+            } else {
+                totalSassPerSite[siteId]['site'] += parseInt(score);
+                numberOfTaxaPerSite[siteId]['site'] += 1;
+            }
+            $tr.append('<td class="stone-' + siteId + '"></td><td class="veg-' + siteId + '"></td><td class="gravel-' + siteId + '"></td><td class="site">' + siteAbundance + '</td>');
+            let siteCodeStr = siteId.toString();
+            let biotopeData = _tableData['biotope_data'];
+            if (typeof biotopeData === 'undefined') {
+                return true;
+            }
+            if (_tableData['biotope_data'].hasOwnProperty(siteCodeStr)) {
+                let biotopeData = _tableData['biotope_data'][siteCodeStr];
+                $.each(biotopeData, function (biotopeName, abundance) {
+                    let lowercaseValue = biotopeName.toLowerCase();
+                    let biotope = '';
+                    if (lowercaseValue.includes('vegetation') || lowercaseValue.includes('mv') || lowercaseValue.includes('aqv')) {
+                        biotope = 'veg';
+                    } else if (lowercaseValue.includes('stone') || lowercaseValue.includes('sic') || lowercaseValue.includes('sooc')) {
+                        biotope = 'stone';
+                    } else {
+                        biotope = 'gravel';
+                    }
+
+                    totalSassPerSite[siteId][biotope] += parseInt(score);
+                    numberOfTaxaPerSite[siteId][biotope] += 1;
+
+                    $tr.find('.' + biotope + '-' + siteId).html(
+                        abundance
+                    )
+                })
+            }
+        });
+        $table.append($tr);
+    });
+    let $sassScoreTr = $('<tr class="total-table" >');
+    $sassScoreTr.append('<td colspan="3"> SASS Score </td>');
+    let $taxaNumbersTr = $('<tr class="total-table" >');
+    $taxaNumbersTr.append('<td colspan="3"> Number of Taxa </td>');
+    let $asptTr = $('<tr class="total-table" >');
+    $asptTr.append('<td colspan="3"> ASPT </td>');
+
+    $.each(totalSassPerSite, function (siteId, totalSassScore) {
+        $.each(totalSassScore, function (category, value) {
+            $sassScoreTr.append('<td>' + value + '</td>');
+            $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId][category] + '</td>');
+            if (value && numberOfTaxaPerSite[siteId][category]) {
+                $asptTr.append('<td>' + (value / numberOfTaxaPerSite[siteId][category]).toFixed(2) + '</td>');
+            } else {
+                $asptTr.append('<td> - </td>');
+            }
+        });
+    });
+    $table.append($sassScoreTr);
+    $table.append($taxaNumbersTr);
+    $table.append($asptTr);
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
     renderSassSummaryTable(data);
+    renderTaxaPerBiotopeTable(data);
 }
 
 $(function () {

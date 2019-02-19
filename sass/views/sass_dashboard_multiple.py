@@ -1,13 +1,14 @@
+from collections import OrderedDict
 from django.views.generic import TemplateView
 from django.db.models import (
-    Case, When, F, Count, Sum, FloatField, Avg, Min, Max
+    Case, When, F, Count, Sum, FloatField, Avg, Min, Max, Q
 )
 from django.db.models.functions import Cast
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models import LocationSite
-from sass.models import SiteVisitTaxon
+from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon
 
 
 class SassDashboardMultipleSitesView(TemplateView):
@@ -41,6 +42,7 @@ class SassDashboardMultipleSitesApiView(APIView):
         ).order_by('-date')
         chart_data = {
             'sass_ids': [],
+            'site_id': [],
             'site_code': [],
             'sass_score': [],
             'aspt_score': [],
@@ -63,6 +65,9 @@ class SassDashboardMultipleSitesApiView(APIView):
             )
             chart_data['sass_ids'].append(
                 data['sass_id']
+            )
+            chart_data['site_id'].append(
+                data['site_id']
             )
             chart_data['sass_score'].append(
                 data['sass_score']
@@ -107,6 +112,99 @@ class SassDashboardMultipleSitesApiView(APIView):
             })
         return chart_data
 
+    def get_taxa_per_biotope_data(self):
+        latest_site_visits = self.site_visit_taxa.order_by(
+            'site',
+            '-site_visit__site_visit_date'
+        ).distinct('site').values('site_visit')
+        sass_taxon_data = (
+            self.site_visit_taxa.filter(
+                site_visit__in=latest_site_visits
+            ).annotate(
+                site_code=Case(
+                    When(site_visit__location_site__site_code__isnull=False,
+                         then='site_visit__location_site__site_code'),
+                    default='site_visit__location_site__name'
+                ),
+                taxon_name=Case(
+                    When(
+                        condition=Q(site_visit__sass_version=5,
+                                    sass_taxon__taxon_sass_5__isnull=False),
+                        then='sass_taxon__taxon_sass_5'),
+                    default='sass_taxon__taxon_sass_4'
+                ),
+                sass_score=Case(
+                    When(site_visit__sass_version=5,
+                         then='sass_taxon__sass_5_score'),
+                    default='sass_taxon__score'
+                ),
+                site_id=F('site_visit__location_site__id'),
+                canonical_name=F('taxonomy__canonical_name'),
+                abundance=F('taxon_abundance__abc'),
+                score=F('sass_score'),
+            ).values(
+                'site_id',
+                'site_code',
+                'sass_taxon_id',
+                'canonical_name',
+                'abundance',
+                'taxon_name',
+                'score')
+            .order_by('canonical_name', 'taxon_name')
+        )
+        biotope_data = (
+            SiteVisitBiotopeTaxon.objects.filter(
+                sass_taxon__in=self.site_visit_taxa.values_list('sass_taxon'),
+                site_visit__in=latest_site_visits
+            ).annotate(
+                canonical_name=F('taxon__canonical_name'),
+                abundance=F('taxon_abundance__abc'),
+                biotope_name=F('biotope__name'),
+                site_id=F('site_visit__location_site__id'),
+            ).values(
+                'site_id',
+                'biotope_name',
+                'sass_taxon_id',
+                'canonical_name',
+                'abundance')
+        )
+        sass_taxon_data_dict = OrderedDict()
+        for taxon_data in list(sass_taxon_data):
+            name = '{name}-{sass_taxon_id}'.format(
+                name=taxon_data['canonical_name'],
+                sass_taxon_id=taxon_data['sass_taxon_id']
+            )
+            site_id = taxon_data['site_id']
+            if name not in sass_taxon_data_dict:
+                sass_taxon_data_dict[name] = taxon_data
+                sass_taxon_data_dict[name]['site_abundance'] = {}
+            sass_taxon_data_dict[name]['site_abundance'][site_id] = (
+                taxon_data['abundance']
+            )
+            try:
+                sass_taxon_data_dict[name].pop('site_id')
+                sass_taxon_data_dict[name].pop('abundance')
+                sass_taxon_data_dict[name].pop('site_code')
+            except KeyError:
+                pass
+
+        for biotope in biotope_data:
+            key = '{name}-{sass_taxon_id}'.format(
+                name=biotope['canonical_name'],
+                sass_taxon_id=biotope['sass_taxon_id']
+            )
+            site_id = str(biotope['site_id'])
+            if key in sass_taxon_data_dict:
+                if 'biotope_data' not in sass_taxon_data_dict[key]:
+                    sass_taxon_data_dict[key]['biotope_data'] = {}
+                if site_id not in sass_taxon_data_dict[key]['biotope_data']:
+                    sass_taxon_data_dict[key]['biotope_data'][site_id] = {}
+                sass_taxon_data_dict[key][
+                    'biotope_data'][site_id][biotope['biotope_name']] = (
+                    biotope['abundance']
+                )
+        return sass_taxon_data_dict
+
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
@@ -115,6 +213,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             id__in=collection_records
         )
         sass_score_chart_data = self.get_sass_score_chart_data()
+        taxa_per_biotope_data = self.get_taxa_per_biotope_data()
 
         location_sites = LocationSite.objects.filter(
             id__in=collection_records.values('site').distinct()
@@ -127,5 +226,6 @@ class SassDashboardMultipleSitesApiView(APIView):
             })
         return Response({
             'sass_score_chart_data': sass_score_chart_data,
+            'taxa_per_biotope_data': taxa_per_biotope_data,
             'coordinates': coordinates
         })
