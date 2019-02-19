@@ -362,6 +362,20 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             return $specialListWrapper;
         },
 
+        renderBiodiversityData: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('biodiversity_data'))  {
+
+
+                var climateDataTemplate = _.template($('#climate-data-template').html());
+                $detailWrapper.append(climateDataTemplate({
+                    'mean_annual_temperature' : data['climate_data']['mean_annual_temperature'],
+                    'mean_annual_rainfall' : data['climate_data']['mean_annual_rainfall']
+                }));
+            };
+            return $detailWrapper;
+        },
+
         showDetail: function (name, zoomToObject) {
             var self = this;
             // Render basic information
@@ -381,6 +395,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 '<div id="species-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> ' +
                 '<span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) ' +
+                '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+
+            $siteDetailWrapper.append(
+                '<div id="species-list" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="true"> ' +
+                '<span class="search-result-title"> Biodiversity Data  (<span class="species-list-count"><i>loading</i></span>) ' +
                 '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});

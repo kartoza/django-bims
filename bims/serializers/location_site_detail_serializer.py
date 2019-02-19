@@ -43,6 +43,14 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return taxonomy.canonical_name
         return None
 
+
+    def get_biodiversity_data(self, instance):
+        context_document_dictionary = self.get_location_context_document_json(instance.context_document)
+        Occurences = [0, 0, 0]
+
+
+
+
     def to_representation(self, instance):
         collection_ids = self.context.get("collection_ids")
         result = super(
