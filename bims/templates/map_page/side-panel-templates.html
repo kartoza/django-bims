@@ -22,11 +22,98 @@
 </script>
 
 <script type='text/html' id='biodiversity-data-template'>
-   <div id="site-detail" class="search-results-wrapper">
-       <div class="search-results-total" data-visibility="false">
-           <span class="search-result-title"> Biodiversity Data </span>
-           <i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-       </div>
-   </div>
+
 </script>
 
+<script type='text/html' id='biodiversity-data-template'>
+    <div id="site-detail" class="search-results-wrapper">
+        <div class="search-results-total" data-visibility="false">
+            <span class="search-result-title"> Biodiversity Data </span>
+            <i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+        </div>
+    </div>
+    <div class="container-fluid">
+        <h3>Biodiversity Data</h3>
+        <div class="container-fluid">
+            <div class="biodiversity-data-types row">
+                <div class="col-3">
+                    Occurences
+                </div>
+                <div class="col-3">
+                    <%= fish_occurences %>
+                </div>
+                <div class="col-3">
+                    <%= crab_occurences %>
+                </div>
+                <div class="col-3">
+                    <%= algae_occurences %>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    Origin
+                </div>
+                <div class="col-3">
+                    fish_origin_chart
+                </div>
+                <div class="col-3">
+                    crab_origin_chart
+                </div>
+                <div class="col-3">
+                    algae_origin_chart
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    Endemism
+                </div>
+                <div class="col-3">
+                    fish_endemism_chart
+                </div>
+                <div class="col-3">
+                    crab_endemism_chart
+                </div>
+                <div class="col-3">
+                    algae_endemism_chart
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    Conservation
+                </div>
+                <div class="col-3">
+                    fish_conservation_chart
+                </div>
+                <div class="col-3">
+                    crab_conservation_chart
+                </div>
+                <div class="col-3">
+                    algae_conservation_chart
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-3">
+                    No. of taxa
+                </div>
+                <div class="col-3">
+                    <%= fish_taxa %>
+                </div>
+                <div class="col-3">
+                    <%= crab_taxa %>
+                </div>
+                <div class="col-3">
+                    <%= algae_taxa %>
+                </div>
+            </div>
+            <div class="row">
+                Ecological Condition
+            </div>
+            <div>
+                View Detailed Dashboard
+            </div>
+            <div>
+                Upload Data
+            </div>
+        </div>
+	</div>
+</script>
