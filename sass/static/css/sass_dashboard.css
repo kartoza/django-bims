@@ -107,3 +107,9 @@ body {
 .chart-container .row {
     padding-top: 10px;
 }
+
+.table-overflow {
+    overflow: scroll;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
