@@ -150,10 +150,18 @@ function renderSassScoreChart(data) {
 function renderSassSummaryTable(data) {
     let siteCodes = data['sass_score_chart_data']['site_code'];
     let table = $('#sass-summary-table');
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let queries = queryString.split('siteId=');
+
     $.each(siteCodes, function (index, value) {
+        let siteUrls = JSON.parse(JSON.stringify(queries));
+        siteUrls[0] += 'siteId=' + data['sass_score_chart_data']['site_id'][index] + '&';
+        siteUrls[1] = siteUrls[1].substring(siteUrls[1].indexOf('&') + 1);
+
         let $tr = $('<tr>');
         $tr.append(
-            '<td>' + value + '</td>'
+            '<td> <a href="/sass/dashboard/' + data['sass_score_chart_data']['site_id'][index] + '/?' + siteUrls.join('') + '">' + value + '</a></td>'
         );
         $tr.append(
             '<td>' + Math.round(data['sass_score_chart_data']['sass_score_average'][index]['avg']) + '(' + data['sass_score_chart_data']['sass_score_average'][index]['min'] + '-' + data['sass_score_chart_data']['sass_score_average'][index]['max'] + ') </td>'
