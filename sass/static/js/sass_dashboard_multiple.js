@@ -448,12 +448,21 @@ function onDownloadSummaryCSVClicked(e) {
     downloadCSV(url, downloadButton);
 }
 
+function renderDataSources(data) {
+    let ulDiv = $('#data-source-list');
+    let dataSources = data['data_sources'];
+    $.each(dataSources, function (index, source) {
+        ulDiv.append('<li>' + source + '</li>')
+    });
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
     renderSassSummaryTable(data);
     renderTaxaPerBiotopeTable(data);
     renderBiotopeRatingsChart(data);
+    renderDataSources(data);
 }
 
 $(function () {

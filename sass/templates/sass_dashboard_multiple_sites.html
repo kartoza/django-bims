@@ -2,7 +2,7 @@
 {% load static from staticfiles %}
 
 {% block subtitle %}
-    SASS Dashboard Single Site
+    SASS Dashboard Multiple Sites
 {% endblock %}
 
 {% block head %}
@@ -47,14 +47,21 @@
                 </div>
             </div>
             <div class="col-md-5">
-
                 <div class="table-container ajax-container">
                     <div class="table-title">
                         Filters
                     </div>
                     <table class="table table-condensed table-striped filter-table"></table>
                 </div>
-
+                <div class="vertical-space"></div>
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        Data Sources
+                    </div>
+                    <div class="data-content">
+                        <ul id="data-source-list"></ul>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="row">
