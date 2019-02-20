@@ -172,7 +172,7 @@
                                         <a href="/sass/view/{{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}">{{ date }}</a>
                                     </td>
                                     <td>
-                                        {{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}
+                                        {{ sass_score_chart_data.sass_scores | value_by_key:forloop.counter0 }}
                                     </td>
                                     <td>
                                         {{ sass_score_chart_data.taxa_numbers | value_by_key:forloop.counter0 }}

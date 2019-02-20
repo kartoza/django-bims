@@ -7,7 +7,7 @@ import datetime
 from django.http.response import JsonResponse
 from django.conf import settings
 from django.db.models import (
-    Case, When, F, Count, Sum, FloatField,
+    Case, When, F, Count, Sum, FloatField, Q
 )
 from django.db.models.functions import Cast
 from bims.api_views.search_version_2 import SearchVersion2
@@ -112,12 +112,13 @@ def download_sass_summary_data(request):
         date=F('site_visit__site_visit_date'),
     ).values('date').annotate(
         count=Count('sass_taxon'),
-        sass_score=Case(
-            When(site_visit__sass_version=5, then=Sum(
-                'sass_taxon__sass_5_score')),
-            When(site_visit__sass_version=4, then=Sum(
-                'sass_taxon__score')),
-            default=Sum('sass_taxon__sass_5_score')),
+        sass_score=Sum(Case(
+            When(
+                condition=Q(site_visit__sass_version=5,
+                            sass_taxon__sass_5_score__isnull=False),
+                then='sass_taxon__sass_5_score'),
+            default='sass_taxon__score'
+        )),
         sass_id=F('site_visit__id'),
         site_code=Case(
             When(site_visit__location_site__site_code__isnull=False,
