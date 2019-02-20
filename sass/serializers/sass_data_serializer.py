@@ -103,3 +103,48 @@ class SassDataSerializer(serializers.ModelSerializer):
             'g',
             'site'
         ]
+
+
+class SassSummaryDataSerializer(serializers.ModelSerializer):
+
+    site_code = serializers.SerializerMethodField()
+    sass_score = serializers.SerializerMethodField()
+    taxa_number = serializers.SerializerMethodField()
+    aspt = serializers.SerializerMethodField()
+    date = serializers.SerializerMethodField()
+    assessor = serializers.SerializerMethodField()
+    sass_version = serializers.SerializerMethodField()
+
+    def get_site_code(self, obj):
+        return obj['site_code']
+
+    def get_assessor(self, obj):
+        return obj['assessor']
+
+    def get_sass_version(self, obj):
+        return obj['sass_version']
+
+    def get_sass_score(self, obj):
+        return obj['sass_score']
+
+    def get_taxa_number(self, obj):
+        return obj['count']
+
+    def get_aspt(self, obj):
+        return '{0:.2f}'.format(obj['aspt'])
+
+    def get_date(self, obj):
+        site_visit_date = obj['date']
+        return site_visit_date.strftime('%d-%m-%Y')
+
+    class Meta:
+        model = SiteVisitTaxon
+        fields = [
+            'date',
+            'site_code',
+            'sass_score',
+            'taxa_number',
+            'aspt',
+            'assessor',
+            'sass_version'
+        ]
