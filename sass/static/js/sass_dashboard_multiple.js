@@ -1,6 +1,8 @@
+let map = null;
+
 function drawMap(data) {
     let scaleLineControl = new ol.control.ScaleLine();
-    let map = new ol.Map({
+    map = new ol.Map({
         controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
@@ -391,6 +393,51 @@ function onDownloadCSVClicked(e) {
     downloadCSV(url, downloadButton);
 }
 
+function onDownloadChartClicked(e) {
+    let wrapper = $(this).parent().parent();
+    let button = $(this);
+    let title = $(this).data('download-title');
+    let $logo = $('.logo').clone();
+    button.hide();
+    $(wrapper).css({"padding-bottom": "55px"});
+    $(wrapper).append($logo.removeClass('hide-logo'));
+    let container = $(wrapper);
+    html2canvas(wrapper, {
+        scale: 1,
+        dpi: 144,
+        onrendered: function (canvas) {
+            $logo.remove();
+            container.css({"padding-bottom": "5px"});
+            button.show();
+            let link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            link.download = title + '.png';
+            link.click();
+        }
+    })
+}
+
+function onDownloadMapClicked(e) {
+    map.once('postrender', function (event) {
+        var canvas = $('#map');
+        html2canvas(canvas, {
+            useCORS: true,
+            background: '#FFFFFF',
+            allowTaint: false,
+            onrendered: function (canvas) {
+                let link = document.createElement('a');
+                link.setAttribute("type", "hidden");
+                link.href = canvas.toDataURL("image/png");
+                link.download = 'map.png';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        });
+    });
+    map.renderSync();
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
@@ -416,4 +463,7 @@ $(function () {
     });
 
     $('.download-as-csv').click(onDownloadCSVClicked);
+    $('.download-chart').click(onDownloadChartClicked);
+    $('.download-map').click(onDownloadMapClicked);
+    $('[data-toggle="tooltip"]').tooltip();
 });

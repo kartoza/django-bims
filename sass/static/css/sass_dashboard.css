@@ -73,13 +73,13 @@ body {
     border-radius: 5px;
 }
 
-.download-chart {
+.download-icon {
     padding-top: 2px;
     color: #818181;
     cursor: pointer;
 }
 
-.download-chart:hover {
+.download-icon:hover {
     color: #565656;
 }
 
