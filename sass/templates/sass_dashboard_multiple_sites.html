@@ -35,8 +35,22 @@
         </div>
         <h2 class="dashboard-title">SASS Dashboard</h2>
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-7">
                 <div class="map-container ajax-container" id="map"></div>
+            </div>
+            <div class="col-md-5">
+
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        Filters
+                    </div>
+                    <table class="table table-condensed table-striped filter-table"></table>
+                </div>
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
                 <div class="vertical-space"></div>
                 <div class="chart-container ajax-container">
                     <div class="chart-title">SASS Charts
@@ -163,6 +177,7 @@
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/utils/filter_list.js" %}"></script>
     <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
 
 {% endblock %}
