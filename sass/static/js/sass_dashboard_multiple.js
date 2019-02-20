@@ -464,6 +464,7 @@ $(function () {
         dataType: 'json',
         success: function (data) {
             $('.ajax-container').show();
+            renderFilterList($('.filter-table'));
             renderAll(data);
         }
     });

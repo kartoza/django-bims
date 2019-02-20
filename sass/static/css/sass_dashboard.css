@@ -118,3 +118,12 @@ body {
     float: right;
     margin-top: -8px;
 }
+
+.filter-table {
+    font-size: 11pt;
+}
+
+.filter-table td, .filter-table th {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
