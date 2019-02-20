@@ -127,3 +127,8 @@ body {
     padding-top: 5px;
     padding-bottom: 5px;
 }
+
+.data-content {
+    padding-top: 10px;
+    font-size: 11pt;
+}

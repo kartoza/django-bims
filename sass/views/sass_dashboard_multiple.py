@@ -273,5 +273,12 @@ class SassDashboardMultipleSitesApiView(APIView):
             'sass_score_chart_data': sass_score_chart_data,
             'taxa_per_biotope_data': taxa_per_biotope_data,
             'biotope_ratings_chart_data': biotope_ratings_chart_data,
-            'coordinates': coordinates
+            'coordinates': coordinates,
+            'data_sources': list(
+                self.site_visit_taxa.exclude(
+                    site_visit__data_source__isnull=True
+                ).values_list(
+                    'site_visit__data_source__name',
+                    flat=True
+                ).distinct())
         })

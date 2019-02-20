@@ -212,6 +212,13 @@ class SassDashboardView(TemplateView):
         context['biotope_ratings_chart_data'] = (
             self.get_biotope_ratings_chart_data()
         )
+        context['data_sources'] = list(
+            self.site_visit_taxa.exclude(
+                site_visit__data_source__isnull=True
+            ).values_list(
+                'site_visit__data_source__name',
+                flat=True
+            ).distinct())
 
         try:
             location_context = json.loads(self.location_site.location_context)
