@@ -155,12 +155,12 @@ define([
                 parameters.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
                     obj[decodeURIComponent(key)] = decodeURIComponent(value);
                 });
-                siteIds = obj['siteId'].split(',');
+                let siteIds = obj['siteId'].split(',');
                 var sassDashboardButton = self.$el.find('.sass-dashboard-button');
-                if (siteIds.length > 1) {
-                    sassDashboardButton.find('a').attr('href', '/sass/dashboard-multi-sites/?' + parameters);
-                } else {
+                if (siteIds.length === 1 && siteIds[0] !== '') {
                     sassDashboardButton.find('a').attr('href', '/sass/dashboard/' + siteIds[0] + '/?' + parameters);
+                } else {
+                    sassDashboardButton.find('a').attr('href', '/sass/dashboard-multi-sites/?' + parameters);
                 }
             }
 
