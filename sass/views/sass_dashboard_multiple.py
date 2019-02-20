@@ -30,12 +30,13 @@ class SassDashboardMultipleSitesApiView(APIView):
             site_id=F('site_visit__location_site__id'),
         ).values('site_code', 'date', 'site_id', 'sass_id').annotate(
             count=Count('sass_taxon'),
-            sass_score=Case(
-                When(site_visit__sass_version=5, then=Sum(
-                    'sass_taxon__sass_5_score')),
-                When(site_visit__sass_version=4, then=Sum(
-                    'sass_taxon__score')),
-                default=Sum('sass_taxon__sass_5_score')),
+            sass_score=Sum(Case(
+                When(
+                    condition=Q(site_visit__sass_version=5,
+                                sass_taxon__sass_5_score__isnull=False),
+                    then='sass_taxon__sass_5_score'),
+                default='sass_taxon__score'
+            )),
         ).annotate(
             aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
                                                             FloatField()),
@@ -134,8 +135,10 @@ class SassDashboardMultipleSitesApiView(APIView):
                     default='sass_taxon__taxon_sass_4'
                 ),
                 sass_score=Case(
-                    When(site_visit__sass_version=5,
-                         then='sass_taxon__sass_5_score'),
+                    When(
+                        condition=Q(site_visit__sass_version=5,
+                                    sass_taxon__sass_5_score__isnull=False),
+                        then='sass_taxon__sass_5_score'),
                     default='sass_taxon__score'
                 ),
                 site_id=F('site_visit__location_site__id'),
