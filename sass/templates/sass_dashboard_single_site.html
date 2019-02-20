@@ -1,5 +1,5 @@
 {% extends 'main_base.html' %}
-{% load jsonify  %}
+{% load jsonify %}
 {% load static from staticfiles %}
 
 {% block subtitle %}
@@ -45,7 +45,15 @@
             <h2 class="dashboard-title">SASS Dashboard</h2>
             <div class="row">
                 <div class="col-md-6">
-                    <div class="map-container" id="map"></div>
+                    <div class="map-container">
+                        <div class="chart-title">Map
+                            <i data-download-title="SASS charts"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download map as PNG"
+                               class="fa fa-download pull-right download-icon download-map"></i>
+                        </div>
+                        <div id="map"></div>
+                    </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
                         <table class="sass-info table table-striped">
@@ -158,22 +166,22 @@
                             </tr>
                             </thead>
                             <tbody id="sass-records">
-                                {% for date in sass_score_chart_data.date_labels %}
-                                    <tr>
-                                        <td>
-                                            <a href="/sass/view/{{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}">{{ date }}</a>
-                                        </td>
-                                        <td>
-                                            {{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}
-                                        </td>
-                                        <td>
-                                            {{ sass_score_chart_data.taxa_numbers | value_by_key:forloop.counter0 }}
-                                        </td>
-                                        <td>
-                                            {{ sass_score_chart_data.aspt_list | value_by_key:forloop.counter0 | floatformat:'2' }}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
+                            {% for date in sass_score_chart_data.date_labels %}
+                                <tr>
+                                    <td>
+                                        <a href="/sass/view/{{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}">{{ date }}</a>
+                                    </td>
+                                    <td>
+                                        {{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}
+                                    </td>
+                                    <td>
+                                        {{ sass_score_chart_data.taxa_numbers | value_by_key:forloop.counter0 }}
+                                    </td>
+                                    <td>
+                                        {{ sass_score_chart_data.aspt_list | value_by_key:forloop.counter0 | floatformat:'2' }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -185,7 +193,7 @@
                             <i data-download-title="SASS charts"
                                data-toggle="tooltip" data-placement="left"
                                title="Download charts"
-                               class="fa fa-download pull-right download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart"></i>
                         </div>
                         <canvas id="sass-score-chart"></canvas>
                         <canvas id="taxa-numbers-chart"></canvas>
@@ -198,7 +206,7 @@
                             <i data-download-title="Proportion of sensitive to tolerant"
                                data-toggle="tooltip" data-placement="left"
                                title="Download chart"
-                               class="fa fa-download pull-right download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart"></i>
                         </div>
                         <canvas id="sensitivity-chart"></canvas>
                     </div>
@@ -208,7 +216,7 @@
                             <i data-download-title="Biotope ratings"
                                data-toggle="tooltip" data-placement="left"
                                title="Download chart"
-                               class="fa fa-download pull-right download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart"></i>
                         </div>
                         <canvas id="biotope-ratings-chart"></canvas>
                     </div>

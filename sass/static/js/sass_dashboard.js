@@ -1,6 +1,8 @@
+let map = null;
+
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
-    let map = new ol.Map({
+    map = new ol.Map({
         controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
@@ -390,6 +392,27 @@ function onDownloadChartClicked(e) {
     })
 }
 
+function onDownloadMapClicked(e) {
+    map.once('postrender', function (event) {
+        var canvas = $('#map');
+        html2canvas(canvas, {
+            useCORS: true,
+            background: '#FFFFFF',
+            allowTaint: false,
+            onrendered: function (canvas) {
+                let link = document.createElement('a');
+                link.setAttribute("type", "hidden");
+                link.href = canvas.toDataURL("image/png");
+                link.download = 'map.png';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        });
+    });
+    map.renderSync();
+}
+
 function renderLocationContextTable() {
     let $table = $('.sass-info tbody');
     // River catchments
@@ -445,4 +468,5 @@ $(function () {
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
+    $('.download-map').click(onDownloadMapClicked);
 });
