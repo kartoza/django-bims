@@ -438,6 +438,16 @@ function onDownloadMapClicked(e) {
     map.renderSync();
 }
 
+function onDownloadSummaryCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-summary-data/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
@@ -465,5 +475,6 @@ $(function () {
     $('.download-as-csv').click(onDownloadCSVClicked);
     $('.download-chart').click(onDownloadChartClicked);
     $('.download-map').click(onDownloadMapClicked);
+    $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
     $('[data-toggle="tooltip"]').tooltip();
 });

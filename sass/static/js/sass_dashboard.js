@@ -358,6 +358,16 @@ function onDownloadCSVClicked(e) {
     downloadCSV(url, downloadButton);
 }
 
+function onDownloadSummaryCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-summary-data/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
 function onDownloadChartClicked(e) {
     let wrapper = $(this).parent().parent();
     let button = $(this);
@@ -454,6 +464,7 @@ $(function () {
         }
     }
     $('.download-as-csv').click(onDownloadCSVClicked);
+    $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
