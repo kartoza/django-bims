@@ -34,7 +34,8 @@ define([
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
-            'Translocated': '#e0d43f'
+            'Translocated': '#e0d43f',
+            'No origin data': '#565656',
         },
         pieOptions: {
             legend: {
@@ -46,7 +47,8 @@ define([
         categories: {
             'indigenous': 'Native',
             'alien': 'Non-Native',
-            'translocated': 'Translocated'
+            'translocated': 'Translocated',
+            null: 'No origin data'
         },
         events: {
             'click .close-dashboard': 'closeDashboard',
@@ -146,6 +148,20 @@ define([
             if (Shared.LocationSiteDetailXHRRequest) {
                 Shared.LocationSiteDetailXHRRequest.abort();
                 Shared.LocationSiteDetailXHRRequest = null;
+            }
+
+            if (is_sass_enabled) {
+                var obj = {};
+                parameters.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
+                    obj[decodeURIComponent(key)] = decodeURIComponent(value);
+                });
+                let siteIds = obj['siteId'].split(',');
+                var sassDashboardButton = self.$el.find('.sass-dashboard-button');
+                if (siteIds.length === 1 && siteIds[0] !== '') {
+                    sassDashboardButton.find('a').attr('href', '/sass/dashboard/' + siteIds[0] + '/?' + parameters);
+                } else {
+                    sassDashboardButton.find('a').attr('href', '/sass/dashboard-multi-sites/?' + parameters);
+                }
             }
 
             Shared.LocationSiteDetailXHRRequest = $.get({
@@ -371,8 +387,8 @@ define([
         downloadChart: function (title, graph_canvas) {
             var img = new Image();
             var ctx = graph_canvas.getContext('2d');
-            img.src='/static/img/bims-stamp.png';
-            img.onload = function() {
+            img.src = '/static/img/bims-stamp.png';
+            img.onload = function () {
                 ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
                     graph_canvas.scrollHeight - img.height - 5);
                 canvas = graph_canvas;

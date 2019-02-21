@@ -31,6 +31,7 @@ body {
 .chart-container, .map-container, .table-container {
     padding: 10px;
     border: 1px solid rgba(219, 175, 0, 0.41);
+    background-color: white;
 }
 
 .table-container {
@@ -59,4 +60,75 @@ body {
 .total-table {
     font-weight: bolder;
     background-color: rgba(88, 159, 72, 0.1) !important;
+}
+
+.download-container {
+    font-size: 11pt;
+    font-weight: bold;
+}
+
+.download-as-csv, .download-summary-as-csv {
+    font-size: 10pt;
+    text-transform: none;
+    border-radius: 5px;
+}
+
+.download-icon {
+    padding-top: 2px;
+    color: #818181;
+    cursor: pointer;
+}
+
+.download-icon:hover {
+    color: #565656;
+}
+
+.logo {
+    padding: 5px;
+}
+
+.hide-logo {
+    display: none;
+}
+
+.ajax-container {
+    display: none;
+}
+
+.loading-title {
+    position: absolute;
+    font-size: 30px;
+    color: #1b900d;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -40%);
+}
+
+.chart-container .row {
+    padding-top: 10px;
+}
+
+.table-overflow {
+    overflow: scroll;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.download-top-container {
+    float: right;
+    margin-top: -8px;
+}
+
+.filter-table {
+    font-size: 11pt;
+}
+
+.filter-table td, .filter-table th {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.data-content {
+    padding-top: 10px;
+    font-size: 11pt;
 }

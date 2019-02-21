@@ -1,6 +1,8 @@
+let map = null;
+
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
-    let map = new ol.Map({
+    map = new ol.Map({
         controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
@@ -154,9 +156,15 @@ function renderSASSTaxonPerBiotope() {
             table.append($tr);
         }
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
-        $tr.append('<td>' +
-            value['sass_taxon_name'] +
-            '</td>');
+        if (value['sass_taxon_name']) {
+            $tr.append('<td>' +
+                value['sass_taxon_name'] +
+                '</td>');
+        } else {
+            $tr.append('<td>' +
+                value['taxonomy__canonical_name'] +
+                '</td>');
+        }
         $tr.append('<td>' +
             value['sass_score'] +
             '</td>');
@@ -208,9 +216,9 @@ function renderSASSTaxonPerBiotope() {
         }
         let lowercaseValue = value['biotope__name'].toLowerCase();
         let biotope = '';
-        if (lowercaseValue.includes('vegetation')) {
+        if (lowercaseValue.includes('vegetation') || lowercaseValue.includes('mv') || lowercaseValue.includes('aqv')) {
             biotope = 'veg';
-        } else if (lowercaseValue.includes('stone')) {
+        } else if (lowercaseValue.includes('stone') || lowercaseValue.includes('sic') || lowercaseValue.includes('sooc')) {
             biotope = 'stone';
         } else {
             biotope = 'gravel';
@@ -369,15 +377,14 @@ function createBoundaryDataset(label, x, y, color) {
         showLine: true,
         borderColor: '#000',
         borderWidth: 0.5
-}
-    ;
+    };
 }
 
 function renderEcologicalCategoryChart() {
     let canvasChart = $('#ecological-category-chart');
     var options = {
         hover: {
-            intersect:true
+            intersect: true
         },
         legend: {
             labels: {
@@ -435,6 +442,106 @@ function renderEcologicalCategoryChart() {
     });
 }
 
+function onDownloadCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-data-site/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
+function onDownloadSummaryCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-summary-data/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
+function onDownloadChartClicked(e) {
+    let wrapper = $(this).parent().parent();
+    let button = $(this);
+    let title = $(this).data('download-title');
+    let $logo = $('.logo').clone();
+    button.hide();
+    $(wrapper).css({"padding-bottom": "55px"});
+    $(wrapper).append($logo.removeClass('hide-logo'));
+    let container = $(wrapper);
+    html2canvas(wrapper, {
+        scale: 1,
+        dpi: 144,
+        onrendered: function (canvas) {
+            $logo.remove();
+            container.css({"padding-bottom": "5px"});
+            button.show();
+            let link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            link.download = title + '.png';
+            link.click();
+        }
+    })
+}
+
+function onDownloadMapClicked(e) {
+    map.once('postrender', function (event) {
+        var canvas = $('#map');
+        html2canvas(canvas, {
+            useCORS: true,
+            background: '#FFFFFF',
+            allowTaint: false,
+            onrendered: function (canvas) {
+                let link = document.createElement('a');
+                link.setAttribute("type", "hidden");
+                link.href = canvas.toDataURL("image/png");
+                link.download = 'map.png';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        });
+    });
+    map.renderSync();
+}
+
+function renderLocationContextTable() {
+    let $table = $('.sass-info tbody');
+    // River catchments
+    $.each(riverCatchments, function (key, data) {
+        if (data['value']) {
+            $table.append('<tr>\n' +
+                '<th scope="row">' + data['name'] + '</th>' +
+                '<td>' + data['value'] + '</td>\n' +
+                '</tr>')
+        }
+    })
+}
+
+function renderMetricsData() {
+    let $table = $('.sass-metrics-table tbody');
+    $table.append('<tr>\n' +
+        '<td> SASS Score </td>\n' +
+        '<td>' + arrAvg(sassScores).toFixed(0) + '</td>\n' +
+        '<td>' + Math.min(...sassScores) + '</td>\n' +
+        '<td>' + Math.max(...sassScores) + '</td>\n' +
+        '</tr>');
+    $table.append('<tr>\n' +
+        '<td> Number of Taxa </td>\n' +
+        '<td>' + arrAvg(taxaNumbers).toFixed(0) + '</td>\n' +
+        '<td>' + Math.min(...taxaNumbers) + '</td>\n' +
+        '<td>' + Math.max(...taxaNumbers) + '</td>\n' +
+        '</tr>');
+    $table.append('<tr>\n' +
+        '<td> ASPT </td>\n' +
+        '<td>' + arrAvg(asptList).toFixed(2) + '</td>\n' +
+        '<td>' + Math.min(...asptList).toFixed(2) + '</td>\n' +
+        '<td>' + Math.max(...asptList).toFixed(2) + '</td>\n' +
+        '</tr>');
+}
+
 $(function () {
     drawMap();
     renderSASSSummaryChart();
@@ -443,9 +550,23 @@ $(function () {
     renderBiotopeRatingsChart();
     renderEcologicalCategoryChart();
 
-    if (dateLabels) {
-        $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
-        $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('MMMM D, Y'));
-        $('#number-of-sass-record').html(dateLabels.length);
+    if (sassExists) {
+        renderSASSSummaryChart();
+        renderSASSTaxonPerBiotope();
+        renderSensitivityChart();
+        renderBiotopeRatingsChart();
+        renderLocationContextTable();
+        renderMetricsData();
+        if (dateLabels) {
+            $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
+            $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('MMMM D, Y'));
+            $('#number-of-sass-record').html(dateLabels.length);
+        }
     }
+    $('.download-as-csv').click(onDownloadCSVClicked);
+    $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
+
+    $('[data-toggle="tooltip"]').tooltip();
+    $('.download-chart').click(onDownloadChartClicked);
+    $('.download-map').click(onDownloadMapClicked);
 });
