@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict, Counter
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -43,13 +44,59 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return taxonomy.canonical_name
         return None
 
-
     def get_biodiversity_data(self, instance):
-        context_document_dictionary = self.get_location_context_document_json(instance.context_document)
-        Occurences = [0, 0, 0]
+        biodiversity_data = defaultdict(dict)
+        biodiversity_data['occurences'] = [0, 5, 3]
+        biodiversity_data['number_of_taxa'] = [3, 9, 4]
+        biodiversity_data['eco_condition'] = ['TBA', 'TBA', 'TBA']
+        collection_ids = self.context.get("collection_ids")
+        if collection_ids:
+            collections = BiologicalCollectionRecord.objects.filter(
+                id__in=collection_ids
+            )
+        else:
+            collections = BiologicalCollectionRecord.objects.filter(
+                site=instance,
+                validated=True
+            )
+        taxa = self.get_origin_cons_endemsim_data(collections)
+        # If I found more than one class of animal
+        if not 'Actinopterygii' in taxa:
+            print('Hey there, you are not a fish!')
+        else:
+            biodiversity_data['fish']['origin_chart']['data'] = (
+                taxa['Actinopterygii']['origin_chart']['data'])
+            biodiversity_data['fish']['origin_chart']['keys'] = (
+                taxa['Actinopterygii']['origin_chart']['keys'])
+
+            biodiversity_data['fish']['cons_status_data'] = (
+                taxa['Actinopterygii']['cons_status_data'])
+            biodiversity_data['fish']['endemism_data'] = (
+                taxa['Actinopterygii']['endemism_data'])
+        biodiversity_data['taxa'] = taxa
+        return biodiversity_data
 
 
-
+    def get_origin_cons_endemsim_data(self, collections):
+        taxa = defaultdict(dict)
+        for model in collections:
+            if not model.taxonomy.class_name in taxa.values():
+                taxa[model.taxonomy.class_name]['origin_data'] = []
+                taxa[model.taxonomy.class_name]['cons_status_data'] = []
+                taxa[model.taxonomy.class_name]['endemism_data'] = []
+            taxa[model.taxonomy.class_name]['origin_data'].append(
+                model.category)
+            taxa[model.taxonomy.class_name]['cons_status_data'].append(
+                model.taxonomy.iucn_status.category)
+            taxa[model.taxonomy.class_name]['endemism_data'].append(
+                model.taxonomy.endemism)
+        for class_name in model.taxonomy:
+            taxa[class_name]['origin_chart']['data'].append(Counter(
+                taxa[class_name]['origin_data']).values())
+            taxa[class_name]['origin_chart']['data'].append(Counter(
+                taxa[class_name]['origin_data']).keys())
+        words = ['a', 'b', 'c', 'a']
+        return taxa
 
     def to_representation(self, instance):
         collection_ids = self.context.get("collection_ids")
@@ -140,7 +187,10 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['sensitive'] += 1
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
+        biodiversity_data = self.get_biodiversity_data(instance)
+
 
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
+        result['biodiversity_data'] = biodiversity_data
         return result

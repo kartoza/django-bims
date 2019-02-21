@@ -2313,3 +2313,8 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     margin-bottom: 0;
 }
+
+#biodiversity-data-wrapper .col-3 {
+    padding: 0;
+    margin: 0;
+}

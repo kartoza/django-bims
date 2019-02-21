@@ -23,21 +23,22 @@
 
 
 <script type='text/html' id='biodiversity-data-template'>
-    <div class="container-fluid">
+    <div class="container-fluid" id="biodiversity-data-wrapper">
         <h3>Biodiversity Data</h3>
         <div class="container-fluid">
             <div class="biodiversity-data-types row">
+                <canvas id="fish-origin-chart"></canvas>
                 <div class="col-3">
                     Occurences
                 </div>
                 <div class="col-3">
-                    <%= fish_occurences %>
+                    <%= occurences[0] %>
                 </div>
                 <div class="col-3">
-                    <%= crab_occurences %>
+                    <%= occurences[1] %>
                 </div>
                 <div class="col-3">
-                    <%= algae_occurences %>
+                    <%= occurences[2] %>
                 </div>
             </div>
             <div class="row">
@@ -45,7 +46,7 @@
                     Origin
                 </div>
                 <div class="col-3">
-                    fish_origin_chart
+
                 </div>
                 <div class="col-3">
                     crab_origin_chart
@@ -87,13 +88,13 @@
                     No. of taxa
                 </div>
                 <div class="col-3">
-                    <%= fish_taxa %>
+                    <%= number_of_taxa[0] %>
                 </div>
                 <div class="col-3">
-                    <%= crab_taxa %>
+                    <%= number_of_taxa[1] %>
                 </div>
                 <div class="col-3">
-                    <%= algae_taxa %>
+                    <%= number_of_taxa[2] %>
                 </div>
             </div>
             <div class="row">
