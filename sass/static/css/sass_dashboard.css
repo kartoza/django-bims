@@ -132,3 +132,7 @@ body {
     padding-top: 10px;
     font-size: 11pt;
 }
+
+.taxon-group {
+    border-top: 2px solid black;
+}

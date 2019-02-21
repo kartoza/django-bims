@@ -86,13 +86,25 @@ class SassDashboardView(TemplateView):
                         then='sass_taxon__sass_5_score'),
                     default='sass_taxon__score'
                 ),
+                display_order=Case(
+                    When(
+                        condition=Q(
+                            site_visit__sass_version=5,
+                            sass_taxon__display_order_sass_5__isnull=False),
+                        then='sass_taxon__display_order_sass_5'),
+                    default='sass_taxon__display_order_sass_4'
+                ),
             ).values(
                 'sass_taxon_id',
                 'taxonomy__canonical_name',
+                'taxonomy__id',
+                'taxonomy__taxongroup__name',
                 'taxon_abundance__abc',
                 'sass_taxon_name',
-                'sass_score')
-            .order_by('taxonomy__canonical_name', 'sass_taxon_name')
+                'sass_score',
+                'display_order'
+            )
+            .order_by('display_order')
         )
 
         biotope_data = (
