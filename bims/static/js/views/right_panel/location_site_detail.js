@@ -218,8 +218,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             for (var i = 0; i < dataLength; i++)
             {
                 chart_labels[chartName] += '<div><span style="color:' +
-                    backgroundColours[i] + ';">■</span><span>' +
-                    dataKeys[i] + '</span></div>'
+                    backgroundColours[i] + ';">■</span>' +
+                    '<span>' + dataKeys[i] + '</span></div>'
             }
             $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
             new ChartJs(ctx, originChartConfig);
@@ -410,7 +410,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 $detailWrapper.append(biodiversityDataWrapper({
                     'occurences' : data['biodiversity_data']['occurences'],
                     'origin_data' : data['biodiversity_data']['taxa'],
-                    'number_of_taxa' : data['biodiversity_data']['number_of_taxa']
+                    'number_of_taxa' : data['biodiversity_data']['number_of_taxa'],
+                    'ecological_condition' : data['biodiversity_data']['ecological_condition']
                 }));
             };
             return $detailWrapper;

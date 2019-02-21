@@ -48,7 +48,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         biodiversity_data = defaultdict(dict)
         biodiversity_data['occurences'] = [0, 5, 3]
         biodiversity_data['number_of_taxa'] = [3, 9, 4]
-        biodiversity_data['eco_condition'] = ['TBA', 'TBA', 'TBA']
+        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         collection_ids = self.context.get("collection_ids")
         if collection_ids:
             collections = BiologicalCollectionRecord.objects.filter(
