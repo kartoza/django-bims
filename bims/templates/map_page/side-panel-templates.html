@@ -27,9 +27,6 @@
         <h3>Biodiversity Data</h3>
         <div class="container-fluid">
             <div class="biodiversity-data-types row">
-                <canvas id="fish_origin_chart"></canvas>
-                <canvas id="fish_cons_status_chart"></canvas>
-                <canvas id="fish_endemism_chart"></canvas>
                 <div class="col-3">
                     Occurences
                 </div>
@@ -43,46 +40,49 @@
                     <%= occurences[2] %>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" style="max-height: 10vh;">
                 <div class="col-3">
-                    Origin
+                    <div>Origin</div>
+                    <div id="origin_chart_labels"></div>
                 </div>
-                <div class="col-3">
-
+                <div class="col-3" style="position: relative">
+                    <canvas id="fish_origin_chart"></canvas>
                 </div>
-                <div class="col-3">
-                    crab_origin_chart
+                 <div class="col-3" style="position: relative">
+                    <canvas id="invertebrate_origin_chart"></canvas>
                 </div>
-                <div class="col-3">
-                    algae_origin_chart
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-3">
-                    Endemism
-                </div>
-                <div class="col-3">
-                    fish_endemism_chart
-                </div>
-                <div class="col-3">
-                    crab_endemism_chart
-                </div>
-                <div class="col-3">
-                    algae_endemism_chart
+                <div class="col-3" style="position: relative">
+                    <canvas id="algae_origin_chart"></canvas>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" style="max-height: 10vh;">
                 <div class="col-3">
-                    Conservation
+                    <div>Endemism</div>
+                    <div id="endemism_chart_labels"></div>
                 </div>
-                <div class="col-3">
-                    fish_conservation_chart
+                 <div class="col-3" style="position: relative">
+                    <canvas id="fish_endemism_chart"></canvas>
                 </div>
-                <div class="col-3">
-                    crab_conservation_chart
+                 <div class="col-3" style="position: relative">
+                    <canvas id="invertebrate_endemism_chart"></canvas>
                 </div>
+                <div class="col-3" style="position: relative">
+                    <canvas id="algae_endemism_chart"></canvas>
+                </div>
+            </div>
+            <div class="row" style="max-height: 10vh;">
                 <div class="col-3">
-                    algae_conservation_chart
+                    <div>Conservation</div>
+                    <div id="cons_status_chart_labels"></div>
+                </div>
+                <div class="col-3" style="position: relative">
+                    <canvas id="fish_cons_status_chart"></canvas>
+                </div>
+                 <div class="col-3" style="position: relative">
+                    <canvas id="invertebrate_cons_status_chart"></canvas>
+                </div>
+                <div class="col-3" style="position: relative">
+                    <canvas id="algae_cons_status_chart"></canvas>
                 </div>
             </div>
             <div class="row">

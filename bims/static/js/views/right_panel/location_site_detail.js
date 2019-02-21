@@ -186,31 +186,42 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         },
         
         renderPieChart: function(data, speciesType, chartName) {
+            var backgroundColours = [
+                            '#8D2641',
+                            '#D7CD47',
+                            '#18A090',
+                            '#A2CE89',
+                            '#4E6440',
+                            '#525351']
             var originChartConfig = {
                 type: 'pie',
                 data: {
                     datasets: [{
                         data: data['biodiversity_data'][speciesType][chartName + '_chart']['data'],
-                        backgroundColor: [
-                            'rgb(#8D2641)',
-                            'rgb(#D7CD47)',
-                            'rgb(#18A090)',
-                            'rgb(#A2CE89)',
-                            'rgb(#4E6440)',
-                            'rgb(#525351)']
+                        backgroundColor: backgroundColours
                     }],
                     labels: data['biodiversity_data'][speciesType][chartName + '_chart']['keys']
                 },
                 options: {
-                    responsive: false,
-                    legend: { display: false },
+                    responsive: true,
+                    legend:{ display: false },
                     title: { display: false },
                     hover: { mode: 'nearest', intersect: false},
                 }
             };
-
             var chartCanvas = document.getElementById(speciesType + '_' + chartName + '_chart');
             var ctx = chartCanvas.getContext('2d');
+            var dataKeys = data['biodiversity_data'][speciesType][chartName + '_chart']['keys'];
+            var dataLength = dataKeys.length;
+            var chart_labels = {};
+            chart_labels[chartName] = ''
+            for (var i = 0; i < dataLength; i++)
+            {
+                chart_labels[chartName] += '<div><span style="color:' +
+                    backgroundColours[i] + ';">■</span><span>' +
+                    dataKeys[i] + '</span></div>'
+            }
+            $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
             new ChartJs(ctx, originChartConfig);
         },
 
@@ -531,9 +542,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
                     $('#biodiversity-data').append(
                         self.renderBiodiversityData(data));
-                    self.renderPieChart(data, 'fish', 'origin');
-                    self.renderPieChart(data, 'fish', 'cons_status');
-                    self.renderPieChart(data, 'fish', 'endemism');
+                        self.renderPieChart(data, 'fish', 'origin');
+                        self.renderPieChart(data, 'fish', 'cons_status');
+                        self.renderPieChart(data, 'fish', 'endemism');
+
+
+
+                        origin_chart_labels
 
                     // $('#biodiversity-data').find('#fish-origin-chart')
                     //     .html($fishOriginChart);

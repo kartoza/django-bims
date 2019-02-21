@@ -2317,4 +2317,7 @@ div:hover::-webkit-scrollbar {
 #biodiversity-data-wrapper .col-3 {
     padding: 0;
     margin: 0;
+    max-height: 10vh;
 }
+
+
