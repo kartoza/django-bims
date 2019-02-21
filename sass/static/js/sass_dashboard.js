@@ -143,18 +143,25 @@ function renderSASSTaxonPerBiotope() {
     };
 
     let table = $('#sass-taxon-per-biotope');
+    let lastTaxonGroup = '';
     $.each(sassTaxonData, function (index, value) {
         let $tr = $('<tr data-id="' + value['sass_taxon_id'] + '" data-weight="' + value['sass_score'] + '">');
-        if (sassTaxon.hasOwnProperty(value['taxonomy__canonical_name'])) {
-            $tr.append('<td></td>');
-            $tr.insertAfter(sassTaxon[value['taxonomy__canonical_name']]);
+        let taxonGroupName = value['taxonomy__taxongroup__name'];
+
+        if (lastTaxonGroup === '') {
+            lastTaxonGroup = taxonGroupName;
+        } else if (lastTaxonGroup !== taxonGroupName) {
+            // add border
+            lastTaxonGroup = taxonGroupName;
+            $tr.addClass('taxon-group');
         } else {
-            sassTaxon[value['taxonomy__canonical_name']] = $tr;
-            $tr.append('<td>' +
-                value['taxonomy__canonical_name'] +
-                '</td>');
-            table.append($tr);
+            taxonGroupName = '';
         }
+
+        $tr.append('<td>' +
+            taxonGroupName +
+        '</td>');
+        table.append($tr);
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
         if (value['sass_taxon_name']) {
             $tr.append('<td>' +
