@@ -429,8 +429,9 @@ function renderEcologicalCategoryChart() {
         tooltips: {
             callbacks: {
                 title: function (tooltipItems, data) {
+                    console.log(ecoregionChartDotsLabel);
                     let label = '-';
-                    let dotIdentifier = tooltipItems[0]['xLabel'] + '-' + tooltipItems[0]['yLabel'];
+                    let dotIdentifier = tooltipItems[0]['xLabel'] + '-' + parseFloat(tooltipItems[0]['yLabel']).toFixed(2);
                     if (ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
                         label = ecoregionChartDotsLabel[dotIdentifier];
                     }
@@ -491,7 +492,10 @@ function renderEcologicalCategoryChart() {
             if (!ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
                 ecoregionChartDotsLabel[dotIdentifier] = '';
             }
-            ecoregionChartDotsLabel[dotIdentifier] += dateLabels[index] + ' ';
+            if (ecoregionChartDotsLabel[dotIdentifier]) {
+                ecoregionChartDotsLabel[dotIdentifier] += ', ';
+            }
+            ecoregionChartDotsLabel[dotIdentifier] += dateLabels[index];
             scatterDatasets[scatterData['label']]['data'].push({
                 'x': scatterData['x'],
                 'y': scatterData['y'],
