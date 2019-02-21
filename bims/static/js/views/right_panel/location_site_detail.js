@@ -184,13 +184,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
-
-        renderFishOriginChart: function(data) {
-            var fishOriginChartConfig = {
+        
+        renderPieChart: function(data, speciesType, chartName) {
+            var originChartConfig = {
                 type: 'pie',
                 data: {
                     datasets: [{
-                        data: data['biodiversity_data']['fish']['origin_chart']['data'],
+                        data: data['biodiversity_data'][speciesType][chartName + '_chart']['data'],
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
                             'rgba(54, 162, 235, 0.2)',
@@ -199,14 +199,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                             'rgba(153, 102, 255, 0.2)',
                             'rgba(255, 159, 64, 0.2)']
                     }],
-                    labels: [
-                        'Red',
-                        'Orange',
-                        'Yellow',
-                        'Green',
-                        'Blue',
-                        'Pink'
-                    ]
+                    labels: data['biodiversity_data'][speciesType][chartName + '_chart']['keys']
                 },
                 options: {
                     responsive: true,
@@ -216,9 +209,9 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 }
             };
 
-            var chartCanvas = document.getElementById('fish-origin-chart');
+            var chartCanvas = document.getElementById(speciesType + '_' + chartName + '_chart');
             var ctx = chartCanvas.getContext('2d');
-            new ChartJs(ctx, fishOriginChartConfig);
+            new ChartJs(ctx, originChartConfig);
         },
 
         renderDashboardDetail: function (data) {
@@ -538,7 +531,10 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
                     $('#biodiversity-data').append(
                         self.renderBiodiversityData(data));
-                    self.renderFishOriginChart(data);
+                    self.renderPieChart(data, 'fish', 'origin');
+                    self.renderPieChart(data, 'fish', 'cons_status');
+                    self.renderPieChart(data, 'fish', 'endemism');
+
                     // $('#biodiversity-data').find('#fish-origin-chart')
                     //     .html($fishOriginChart);
                     Shared.LocationSiteDetailXHRRequest = null;

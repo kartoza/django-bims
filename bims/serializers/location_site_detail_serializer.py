@@ -64,15 +64,21 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         if not 'Actinopterygii' in taxa:
             print('Hey there, you are not a fish!')
         else:
+            biodiversity_data['fish']['origin_chart'] = {}
+            biodiversity_data['fish']['cons_status_chart'] = {}
+            biodiversity_data['fish']['endemism_chart'] = {}
             biodiversity_data['fish']['origin_chart']['data'] = (
                 taxa['Actinopterygii']['origin_chart']['data'])
             biodiversity_data['fish']['origin_chart']['keys'] = (
                 taxa['Actinopterygii']['origin_chart']['keys'])
-
-            biodiversity_data['fish']['cons_status_data'] = (
-                taxa['Actinopterygii']['cons_status_data'])
-            biodiversity_data['fish']['endemism_data'] = (
-                taxa['Actinopterygii']['endemism_data'])
+            biodiversity_data['fish']['cons_status_chart']['data'] = (
+                taxa['Actinopterygii']['cons_status_chart']['data'])
+            biodiversity_data['fish']['cons_status_chart']['keys'] = (
+                taxa['Actinopterygii']['cons_status_chart']['keys'])
+            biodiversity_data['fish']['endemism_chart']['data'] = (
+                taxa['Actinopterygii']['endemism_chart']['data'])
+            biodiversity_data['fish']['endemism_chart']['keys'] = (
+                taxa['Actinopterygii']['endemism_chart']['keys'])
         biodiversity_data['taxa'] = taxa
         return biodiversity_data
 
@@ -80,7 +86,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     def get_origin_cons_endemsim_data(self, collections):
         taxa = defaultdict(dict)
         for model in collections:
-            if not model.taxonomy.class_name in taxa.values():
+            if not (model.taxonomy.class_name in taxa):
                 taxa[model.taxonomy.class_name]['origin_data'] = []
                 taxa[model.taxonomy.class_name]['cons_status_data'] = []
                 taxa[model.taxonomy.class_name]['endemism_data'] = []
@@ -90,12 +96,39 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 model.taxonomy.iucn_status.category)
             taxa[model.taxonomy.class_name]['endemism_data'].append(
                 model.taxonomy.endemism)
-        for class_name in model.taxonomy:
-            taxa[class_name]['origin_chart']['data'].append(Counter(
-                taxa[class_name]['origin_data']).values())
-            taxa[class_name]['origin_chart']['data'].append(Counter(
-                taxa[class_name]['origin_data']).keys())
-        words = ['a', 'b', 'c', 'a']
+        for class_name in taxa:
+            if 'origin_chart' not in taxa[class_name]:
+                taxa[class_name]['origin_chart'] = {}
+                taxa[class_name]['origin_chart']['data'] = []
+                taxa[class_name]['origin_chart']['keys'] = []
+                taxa[class_name]['cons_status_chart'] = {}
+                taxa[class_name]['cons_status_chart']['data'] = []
+                taxa[class_name]['cons_status_chart']['keys'] = []
+                taxa[class_name]['endemism_chart'] = {}
+                taxa[class_name]['endemism_chart']['data'] = []
+                taxa[class_name]['endemism_chart']['keys'] = []
+            data_counter_origin = (
+                Counter(taxa[class_name]['origin_data']))
+            data_counter_cons_status = (
+                Counter(taxa[class_name]['cons_status_data']))
+            data_counter_endemism = (
+                Counter(taxa[class_name]['endemism_data']))
+            taxa[class_name]['origin_chart']['data'].append(
+                data_counter_origin.values()[0])
+            taxa[class_name]['origin_chart']['keys'].append(
+                data_counter_origin.keys()[0])
+            taxa[class_name]['cons_status_chart']['data'].append(
+                data_counter_cons_status.values())
+            taxa[class_name]['cons_status_chart']['data'] = (
+                taxa[class_name]['cons_status_chart']['data'][0])
+            taxa[class_name]['cons_status_chart']['keys'].append(
+                data_counter_cons_status.keys())
+            taxa[class_name]['cons_status_chart']['keys'] = (
+                taxa[class_name]['cons_status_chart']['keys'][0])
+            taxa[class_name]['endemism_chart']['data'].append(
+                data_counter_endemism.values()[0])
+            taxa[class_name]['endemism_chart']['keys'].append(
+                data_counter_endemism.keys()[0])
         return taxa
 
     def to_representation(self, instance):
@@ -189,8 +222,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['non-sensitive'] += 1
         biodiversity_data = self.get_biodiversity_data(instance)
 
-
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
         result['biodiversity_data'] = biodiversity_data
+
         return result
