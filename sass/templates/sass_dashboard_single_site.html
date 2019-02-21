@@ -34,6 +34,7 @@
             const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
             const biotopeData = {{ sass_taxon_table_data.biotope_data | safe }};
             const sensitivityChartData = {{ sensitivity_chart_data | safe }};
+            const ecologicalChartData = {{ ecological_chart_data | safe }};
             const biotopeRatingData = {{ biotope_ratings_chart_data.rating_data | safe }};
             const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
             const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
@@ -43,6 +44,7 @@
                                                         src="{% static 'img/bims-stamp.png' %}">
             </div>
             <h2 class="dashboard-title">SASS Dashboard</h2>
+        {{ ecological_chart_data | safe }}
             <div class="row">
                 <div class="col-md-6">
                     <div class="map-container">
@@ -221,6 +223,11 @@
                         <canvas id="biotope-ratings-chart"></canvas>
                     </div>
                     <div class="vertical-space"></div>
+                    <div class="chart-container">
+                        <div class="chart-title">Ecological category</div>
+                        <canvas id="ecological-category-chart"></canvas>
+                    </div>
+                    <div class="vertical-space"></div>
                     <div class="table-container">
                         <div class="table-title">
                             Data Sources
@@ -268,11 +275,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-                <div class="vertical-space"></div>
-                <div class="chart-container">
-                    <div class="chart-title">Ecological category</div>
-                    <canvas id="ecological-category-chart"></canvas>
                 </div>
             </div>
         </div>

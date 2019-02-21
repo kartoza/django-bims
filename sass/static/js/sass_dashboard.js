@@ -357,27 +357,40 @@ function hexToRgb(hex) {
     } : null;
 }
 
-function createBoundaryDataset(label, x, y, color) {
+function createBoundaryDataset(x, y, color) {
     let rgb = hexToRgb(color);
     return {
         type: 'scatter',
-        fill: true,
+        fill: false,
         lineTension: 0,
         pointRadius: 0,
         pointHitRadius: 0,
         pointHoverRadius: 0,
         showTooltips: false,
-        label: label,
+        label: 'hide',
         data: [
             {"x": 0, "y": y},
             {"x": x, "y": y},
             {"x": x, "y": 0}
         ],
-        backgroundColor: "rgba(" + rgb['r'] + ", " + rgb['g'] + ", " + rgb['b'] + ", 0.8)",
         showLine: true,
-        borderColor: '#000',
+        borderColor: "#000",
         borderWidth: 0.5
     };
+}
+
+function createEcologicalScatterDataset(colour, label, data) {
+    let rgb = hexToRgb(colour);
+    return {
+        type: 'scatter',
+        fill: true,
+        label: label,
+        showLine: false,
+        showTooltips: false,
+        data: data,
+        backgroundColor: "rgba(" + rgb['r'] + ", " + rgb['g'] + ", " + rgb['b'] + ", 1)",
+        borderColor: null
+    }
 }
 
 function renderEcologicalCategoryChart() {
@@ -413,30 +426,80 @@ function renderEcologicalCategoryChart() {
         }
     };
 
+    let dataSets = [];
+    let scatterDatasets = {};
+    let lowestDots = [];
+
+    // CREATE BOUNDARIES
+    $.each(ecologicalChartData, function (index, ecologicalData) {
+        dataSets.unshift(createBoundaryDataset(
+            ecologicalData['sass_score_precentile'],
+            ecologicalData['aspt_score_precentile'],
+            ecologicalData['ecological_colour'])
+        );
+        let ecologicalColor = ecologicalData['ecological_colour'];
+        let ecologicalCategoryName = ecologicalData['ecological_category_name'];
+        if (!scatterDatasets.hasOwnProperty(ecologicalCategoryName)) {
+            scatterDatasets[ecologicalCategoryName] = createEcologicalScatterDataset(
+                ecologicalColor,
+                ecologicalCategoryName,
+                []
+            );
+        }
+    });
+
+    // CREATE SCATTERED DOTS
+    let reverseEcologicalChartData = ecologicalChartData;
+    $.each(sassScores, function (index, sassScore) {
+        let asptScore = asptList[index];
+        let scatterData = null;
+        $.each(reverseEcologicalChartData, function (index, ecologicalData) {
+            let ecologicalCategoryName = ecologicalData['ecological_category_name'];
+            if (sassScore > ecologicalData['sass_score_precentile'] || asptScore > ecologicalData['aspt_score_precentile']) {
+                scatterData = {
+                    'label': ecologicalCategoryName,
+                    'x': sassScore,
+                    'y': asptScore
+                };
+                // Break loop
+                return false;
+            }
+        });
+        if (scatterData) {
+            scatterDatasets[scatterData['label']]['data'].push({
+                'x': scatterData['x'],
+                'y': scatterData['y']
+            });
+            scatterData = null;
+        }
+    });
+
+    if (lowestDots.length > 0) {
+        let scatterData = [];
+        $.each(lowestDots, function (index, value) {
+            let x = value.split('-')[0];
+            let y = value.split('-')[1];
+            scatterData.push({
+                "x": x,
+                "y": y
+            });
+        });
+        scatterDatasets['E/F'] = createEcologicalScatterDataset(
+            '#b780ff',
+            'E/F',
+            scatterData
+        );
+    }
+
+    for (let key in scatterDatasets) {
+        dataSets.unshift(scatterDatasets[key]);
+    }
+
     let ecologicalChart = new Chart(canvasChart, {
         type: "bar",
-        labels: ['30', '45', '60'],
+        labels: [],
         data: {
-            datasets: [{
-                type: 'scatter',
-                fill: false,
-                label: "hide",
-                showLine: false,
-                showTooltips: false,
-                data: [
-                    {"x": 20, "y": 2},
-                    {"x": 40, "y": 2.3},
-                    {"x": 25, "y": 3.5}
-                ],
-                backgroundColor: "#ff7146",
-                borderColor: null
-            },
-                createBoundaryDataset('E/F', 60, 4.5, '#c1c2ff'),
-                createBoundaryDataset('D', 90, 6, '#ff5d49'),
-                createBoundaryDataset('C', 130, 7.2, '#ffed10'),
-                createBoundaryDataset('B', 150, 8, '#98ff1e'),
-                createBoundaryDataset('A', 200, 10, '#64bbff'),
-            ]
+            datasets: dataSets
         },
         options: options
     });
@@ -544,11 +607,6 @@ function renderMetricsData() {
 
 $(function () {
     drawMap();
-    renderSASSSummaryChart();
-    renderSASSTaxonPerBiotope();
-    renderSensitivityChart();
-    renderBiotopeRatingsChart();
-    renderEcologicalCategoryChart();
 
     if (sassExists) {
         renderSASSSummaryChart();
@@ -556,6 +614,7 @@ $(function () {
         renderSensitivityChart();
         renderBiotopeRatingsChart();
         renderLocationContextTable();
+        renderEcologicalCategoryChart();
         renderMetricsData();
         if (dateLabels) {
             $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
