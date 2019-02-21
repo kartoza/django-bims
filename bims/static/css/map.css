@@ -2322,4 +2322,12 @@ div:hover::-webkit-scrollbar {
     max-height: 10vh;
 }
 
+.side-panel-grey-row {
+    background-color: #ebebeb
+}
+
+.right-panel-chart {
+    position: relative;
+    align-self: center;
+}
 

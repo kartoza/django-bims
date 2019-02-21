@@ -26,8 +26,8 @@
     <div class="container-fluid" id="biodiversity-data-wrapper">
         <h3>Biodiversity Data</h3>
         <div class="container-fluid">
-            <div class="biodiversity-data-types row">
-                <div class="col-3">
+            <div class="biodiversity-data-types row" style="text-align: center;">
+                <div class="col-3" style="text-align: left;">
                     Occurences
                 </div>
                 <div class="col-3">
@@ -40,18 +40,18 @@
                     <%= occurences[2] %>
                 </div>
             </div>
-            <div class="row" style="max-height: 10vh;">
+            <div class="row side-panel-grey-row" style="max-height: 10vh;">
                 <div class="col-3">
                     <div>Origin</div>
                     <div id="origin_chart_labels"></div>
                 </div>
-                <div class="col-3" style="position: relative">
+                <div class="col-3 right-panel-chart">
                     <canvas id="fish_origin_chart"></canvas>
                 </div>
-                 <div class="col-3" style="position: relative">
+                 <div class="col-3 right-panel-chart">
                     <canvas id="invertebrate_origin_chart"></canvas>
                 </div>
-                <div class="col-3" style="position: relative">
+                <div class="col-3 right-panel-chart">
                     <canvas id="algae_origin_chart"></canvas>
                 </div>
             </div>
@@ -60,28 +60,28 @@
                     <div>Endemism</div>
                     <div id="endemism_chart_labels"></div>
                 </div>
-                 <div class="col-3" style="position: relative">
+                 <div class="col-3 right-panel-chart">
                     <canvas id="fish_endemism_chart"></canvas>
                 </div>
-                 <div class="col-3" style="position: relative">
+                 <div class="col-3 right-panel-chart">
                     <canvas id="invertebrate_endemism_chart"></canvas>
                 </div>
-                <div class="col-3" style="position: relative">
+                <div class="col-3 right-panel-chart">
                     <canvas id="algae_endemism_chart"></canvas>
                 </div>
             </div>
-            <div class="row" style="max-height: 10vh;">
+            <div class="row side-panel-grey-row" style="max-height: 10vh;">
                 <div class="col-3">
-                    <div>Conservation</div>
+                    <div>Cons. Status</div>
                     <div id="cons_status_chart_labels"></div>
                 </div>
-                <div class="col-3" style="position: relative">
+                <div class="col-3 right-panel-chart">
                     <canvas id="fish_cons_status_chart"></canvas>
                 </div>
-                 <div class="col-3" style="position: relative">
+                 <div class="col-3 right-panel-chart">
                     <canvas id="invertebrate_cons_status_chart"></canvas>
                 </div>
-                <div class="col-3" style="position: relative">
+                <div class="col-3 right-panel-chart">
                     <canvas id="algae_cons_status_chart"></canvas>
                 </div>
             </div>
@@ -99,7 +99,7 @@
                     <%= number_of_taxa[2] %>
                 </div>
             </div>
-            <div class="row" style="text-align: center;">
+            <div class="row side-panel-grey-row" style="text-align: center;">
                  <div class="col-3" style="text-align: left;">
                     Ecological Condition
                 </div>
@@ -115,61 +115,61 @@
             </div>
             <div class="row">
                 <div class="col-3" style="align-self: center">
-                    View Detailed Dashboard
+                    Dashboards
                 </div>
                 <div class="col-3">
-                    <div class="fbis-button-small"><span>View Fish</span></div>
+                    <div class="fbis-button-small"><span>FISH</span></div>
                 </div>
                 <div class="col-3">
                     <div class="row">
                         <div class="col-12">
-                            <div class="fbis-button-small"><span>View SASS</span></div>
+                            <div class="fbis-button-small" style="font-size: 80%"><span>SASS</span></div>
                         </div>
 
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            <div class="fbis-button-small">
-                                <span>View Invertebrates</span>
+                            <div class="fbis-button-small" style="font-size: 80%">
+                                <span>INVERTEBRATES</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-3">
                     <div class="fbis-button-small">
-                        <span>View Algae</span>
+                        <span>ALGAE</span>
                     </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-3" style="align-self: center">
-                    Upload Data
+                    Forms
                 </div>
                 <div class="col-3">
-                    <div class="fbis-button-small">
-                        <span>Upload Fish</span>
+                    <div class="fbis-button-small fbis-red">
+                        <span>ADD FISH</span>
                     </div>
                 </div>
                 <div class="col-3">
                     <div class="row">
                         <div class="col-12">
-                            <div class="fbis-button-small">
-                                <span>Upload SASS</span>
+                            <div class="fbis-button-small fbis-red" style="font-size: 80%">
+                                <span>ADD SASS</span>
                             </div>
                         </div>
 
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            <div class="fbis-button-small">
-                                <span>Upload Invertebrates</span>
+                            <div class="fbis-button-small fbis-red" style="font-size: 80%">
+                                <span>ADD INVERTEBRATES</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-3">
-                    <div class="fbis-button-small">
-                        <span>Upload Algae</span>
+                    <div class="fbis-button-small fbis-red">
+                        <span>ADD ALGAE</span>
                     </div>
                 </div>
             </div>
