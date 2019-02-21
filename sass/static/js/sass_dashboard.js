@@ -357,6 +357,8 @@ function hexToRgb(hex) {
     } : null;
 }
 
+let ecoregionChartDotsLabel = {};
+
 function createBoundaryDataset(x, y, color) {
     let rgb = hexToRgb(color);
     return {
@@ -423,12 +425,31 @@ function renderEcologicalCategoryChart() {
                     suggestedMax: 200
                 }
             }]
+        },
+        tooltips: {
+            callbacks: {
+                title: function (tooltipItems, data) {
+                    let label = '-';
+                    let dotIdentifier = tooltipItems[0]['xLabel'] + '-' + tooltipItems[0]['yLabel'];
+                    if (ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
+                        label = ecoregionChartDotsLabel[dotIdentifier];
+                    }
+                    return label;
+                },
+                label: function (tooltipItem, data) {
+                    let label = data.datasets[tooltipItem.datasetIndex].label || '';
+                    if (label) {
+                        label += ': ';
+                    }
+                    label += tooltipItem.xLabel + ', ' + tooltipItem.yLabel;
+                    return label;
+                }
+            }
         }
     };
 
     let dataSets = [];
     let scatterDatasets = {};
-    let lowestDots = [];
 
     // CREATE BOUNDARIES
     $.each(ecologicalChartData, function (index, ecologicalData) {
@@ -459,37 +480,26 @@ function renderEcologicalCategoryChart() {
                 scatterData = {
                     'label': ecologicalCategoryName,
                     'x': sassScore,
-                    'y': asptScore
+                    'y': asptScore.toFixed(2)
                 };
                 // Break loop
                 return false;
             }
         });
         if (scatterData) {
+            let dotIdentifier = scatterData['x'] + '-' + scatterData['y'];
+            if (!ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
+                ecoregionChartDotsLabel[dotIdentifier] = '';
+            }
+            ecoregionChartDotsLabel[dotIdentifier] += dateLabels[index] + ' ';
             scatterDatasets[scatterData['label']]['data'].push({
                 'x': scatterData['x'],
-                'y': scatterData['y']
+                'y': scatterData['y'],
+                'id': 1
             });
             scatterData = null;
         }
     });
-
-    if (lowestDots.length > 0) {
-        let scatterData = [];
-        $.each(lowestDots, function (index, value) {
-            let x = value.split('-')[0];
-            let y = value.split('-')[1];
-            scatterData.push({
-                "x": x,
-                "y": y
-            });
-        });
-        scatterDatasets['E/F'] = createEcologicalScatterDataset(
-            '#b780ff',
-            'E/F',
-            scatterData
-        );
-    }
 
     for (let key in scatterDatasets) {
         dataSets.unshift(scatterDatasets[key]);

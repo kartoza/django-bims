@@ -204,8 +204,8 @@ class SassDashboardView(TemplateView):
                     'utf-8')
             )
             geo_class = (
-               location_context['context_group_values']['eco_geo_group'][
-                   'service_registry_values']['geo_class']['value'].encode(
+                location_context['context_group_values']['eco_geo_group'][
+                    'service_registry_values']['geo_class']['value'].encode(
                     'utf-8')
             )
             ecological_conditions = SassEcologicalCondition.objects.filter(
