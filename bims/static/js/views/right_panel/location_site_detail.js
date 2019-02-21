@@ -192,19 +192,19 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     datasets: [{
                         data: data['biodiversity_data'][speciesType][chartName + '_chart']['data'],
                         backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)']
+                            'rgb(#8D2641)',
+                            'rgb(#D7CD47)',
+                            'rgb(#18A090)',
+                            'rgb(#A2CE89)',
+                            'rgb(#4E6440)',
+                            'rgb(#525351)']
                     }],
                     labels: data['biodiversity_data'][speciesType][chartName + '_chart']['keys']
                 },
                 options: {
-                    responsive: true,
+                    responsive: false,
                     legend: { display: false },
-                    title: { display: true },
+                    title: { display: false },
                     hover: { mode: 'nearest', intersect: false},
                 }
             };

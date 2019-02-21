@@ -85,6 +85,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
     def get_origin_cons_endemsim_data(self, collections):
         taxa = defaultdict(dict)
+
         for model in collections:
             if not (model.taxonomy.class_name in taxa):
                 taxa[model.taxonomy.class_name]['origin_data'] = []
@@ -96,6 +97,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 model.taxonomy.iucn_status.category)
             taxa[model.taxonomy.class_name]['endemism_data'].append(
                 model.taxonomy.endemism)
+
         for class_name in taxa:
             if 'origin_chart' not in taxa[class_name]:
                 taxa[class_name]['origin_chart'] = {}
@@ -107,6 +109,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 taxa[class_name]['endemism_chart'] = {}
                 taxa[class_name]['endemism_chart']['data'] = []
                 taxa[class_name]['endemism_chart']['keys'] = []
+
             data_counter_origin = (
                 Counter(taxa[class_name]['origin_data']))
             data_counter_cons_status = (
@@ -117,6 +120,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 data_counter_origin.values()[0])
             taxa[class_name]['origin_chart']['keys'].append(
                 data_counter_origin.keys()[0])
+
             taxa[class_name]['cons_status_chart']['data'].append(
                 data_counter_cons_status.values())
             taxa[class_name]['cons_status_chart']['data'] = (
@@ -125,6 +129,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 data_counter_cons_status.keys())
             taxa[class_name]['cons_status_chart']['keys'] = (
                 taxa[class_name]['cons_status_chart']['keys'][0])
+
             taxa[class_name]['endemism_chart']['data'].append(
                 data_counter_endemism.values()[0])
             taxa[class_name]['endemism_chart']['keys'].append(
