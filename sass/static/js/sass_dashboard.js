@@ -258,10 +258,10 @@ function renderSensitivityChart() {
                 sensitivityChartData['highly_tolerant']
             ],
             backgroundColor: [
-                "#4dcfff",
-                "#5cff8b",
-                "#ffee66",
-                "#ff5d49"
+                "#027EC6",
+                "#007236",
+                "#FBA618",
+                "#ED1B24"
             ]
         }],
         labels: [
