@@ -11,7 +11,9 @@ from bims.models.location_site import LocationSite
 from bims.api_views.search_version_2 import SearchVersion2
 from sass.models import (
     SiteVisitTaxon,
-    SiteVisitBiotopeTaxon
+    SiteVisitBiotopeTaxon,
+    SassEcologicalCondition,
+    SassEcologicalCategory
 )
 
 
@@ -192,6 +194,64 @@ class SassDashboardView(TemplateView):
             'biotope_labels': biotope_labels
         }
 
+    def get_ecological_chart_data(self):
+        chart_data = {}
+        try:
+            location_context = json.loads(self.location_site.location_context)
+            eco_region = (
+                location_context['context_group_values']['eco_geo_group'][
+                    'service_registry_values']['eco_region']['value'].encode(
+                    'utf-8')
+            )
+            geo_class = (
+                location_context['context_group_values']['eco_geo_group'][
+                    'service_registry_values']['geo_class']['value'].encode(
+                    'utf-8')
+            )
+            ecological_conditions = SassEcologicalCondition.objects.filter(
+                ecoregion_level_1__icontains=eco_region,
+                geomorphological_zone__icontains=geo_class
+            )
+
+            if not ecological_conditions:
+                # check Combined data
+                geo_class = 'combined'
+                ecological_conditions = SassEcologicalCondition.objects.filter(
+                    ecoregion_level_1__icontains=eco_region,
+                    geomorphological_zone__icontains=geo_class
+                )
+
+            ecological_conditions = ecological_conditions.annotate(
+                ecological_name=F('ecological_category__name'),
+                ecological_category_name=F('ecological_category__category'),
+                ecological_colour=F('ecological_category__colour'),
+            ).values(
+                'ecological_name',
+                'ecological_category_name',
+                'ecological_colour',
+                'sass_score_precentile',
+                'aspt_score_precentile'
+            ).order_by('ecological_category__order')
+            chart_data = list(ecological_conditions)
+            if chart_data:
+                lowest_category = SassEcologicalCategory.objects.filter(
+                    Q(category__icontains='e') |
+                    Q(category__icontains='f')
+                )
+                if lowest_category.exists():
+                    lowest_category = lowest_category[0]
+                    chart_data.append({
+                        'ecological_name': lowest_category.name,
+                        'ecological_category_name': 'E/F',
+                        'ecological_colour': lowest_category.colour,
+                        'sass_score_precentile': 0,
+                        'aspt_score_precentile': 0.0
+                    })
+            chart_data = json.dumps(chart_data)
+        except (KeyError, TypeError):
+            pass
+        return chart_data
+
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
         self.get_site_visit_taxon()
@@ -212,6 +272,7 @@ class SassDashboardView(TemplateView):
         context['sass_score_chart_data'] = self.get_sass_score_chart_data()
         context['sass_taxon_table_data'] = self.get_sass_taxon_table_data()
         context['sensitivity_chart_data'] = self.get_sensitivity_chart_data()
+        context['ecological_chart_data'] = self.get_ecological_chart_data()
         context['biotope_ratings_chart_data'] = (
             self.get_biotope_ratings_chart_data()
         )
