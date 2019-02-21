@@ -13,9 +13,6 @@ from sass.models import (
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon
 )
-from bims.enums import TaxonomicRank
-from bims.models import TaxonGroup
-from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 class SassDashboardView(TemplateView):
