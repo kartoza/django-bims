@@ -235,12 +235,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 return $detailWrapper;
             }
 
-            var recordsOccurence = data['records_occurrence'];
+            var recordsOccurrence = data['records_occurrence'];
             var originTemplate = _.template($('#search-result-dashboard-origin-template').html());
             var richnessIndexTemplate = _.template($('#search-result-dashboard-richness-index-template').html());
-            var classes = Object.keys(recordsOccurence).sort();
+            var classes = Object.keys(recordsOccurrence).sort();
 
-            if (recordsOccurence.length === 0) {
+            if (recordsOccurrence.length === 0) {
                  $detailWrapper.append('<div class="side-panel-content">' +
                     'No detail for this site.' +
                     '</div>');
@@ -250,7 +250,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             var totalSpeciesRichness = 0;
 
             $.each(classes, function (index, className) {
-                var record = recordsOccurence[className];
+                var record = recordsOccurrence[className];
                 if (!className) {
                     className = 'Unknown Class';
                 }
@@ -408,7 +408,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             if (data.hasOwnProperty('biodiversity_data'))  {
                 var biodiversityDataWrapper = _.template($('#biodiversity-data-template').html());
                 $detailWrapper.append(biodiversityDataWrapper({
-                    'occurences' : data['biodiversity_data']['occurences'],
+                    'occurrences' : data['biodiversity_data']['occurrences'],
                     'origin_data' : data['biodiversity_data']['taxa'],
                     'number_of_taxa' : data['biodiversity_data']['number_of_taxa'],
                     'ecological_condition' : data['biodiversity_data']['ecological_condition']

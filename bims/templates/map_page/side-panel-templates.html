@@ -24,20 +24,31 @@
 
 <script type='text/html' id='biodiversity-data-template'>
     <div class="container-fluid" id="biodiversity-data-wrapper">
-        <h3>Biodiversity Data</h3>
         <div class="container-fluid">
-            <div class="biodiversity-data-types row" style="text-align: center;">
+            <div class="row side-panel-white-row" style="text-align: center;">
                 <div class="col-3" style="text-align: left;">
-                    Occurences
+
+                </div>
+                <div class="col-9 biodiversity-data-images" style="background-color: #b0b1ad">
+                    <div class="row">
+                        <div class="col-4"><img src="/static/img/fish-2.png"></div>
+                        <div class="col-4"><img src="/static/img/invertebras-2.png"></div>
+                        <div class="col-4"><img src="/static/img/algae-2.png"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="biodiversity-data-types row side-panel-white-row" style="text-align: center;">
+                <div class="col-3" style="text-align: left;">
+                    Occurrences
                 </div>
                 <div class="col-3">
-                    <%= occurences[0] %>
+                    <%= occurrences[0] %>
                 </div>
                 <div class="col-3">
-                    <%= occurences[1] %>
+                    <%= occurrences[1] %>
                 </div>
                 <div class="col-3">
-                    <%= occurences[2] %>
+                    <%= occurrences[2] %>
                 </div>
             </div>
             <div class="row side-panel-grey-row" style="max-height: 10vh;">
@@ -55,7 +66,7 @@
                     <canvas id="algae_origin_chart"></canvas>
                 </div>
             </div>
-            <div class="row" style="max-height: 10vh;">
+            <div class="row side-panel-white-row" style="max-height: 10vh;">
                 <div class="col-3">
                     <div>Endemism</div>
                     <div id="endemism_chart_labels"></div>
@@ -85,7 +96,7 @@
                     <canvas id="algae_cons_status_chart"></canvas>
                 </div>
             </div>
-           <div class="row" style="text-align: center;">
+           <div class="row side-panel-white-row" style="text-align: center;">
                  <div class="col-3" style="text-align: left;">
                     No. of taxa
                 </div>
@@ -113,7 +124,7 @@
                     <%= ecological_condition[2] %>
                 </div>
             </div>
-            <div class="row">
+            <div class="row side-panel-white-row">
                 <div class="col-3" style="align-self: center">
                     Dashboards
                 </div>
@@ -141,7 +152,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
+            <div class="row side-panel-white-row">
                 <div class="col-3" style="align-self: center">
                     Forms
                 </div>

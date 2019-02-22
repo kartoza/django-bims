@@ -87,9 +87,8 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: relative;
     height: 100%;
-    width: 100%;
-    max-width: 40vw;
-    min-width: 400px;
+    max-width: 35vw;
+    min-width: 422px;
     background: rgb(255, 255, 255);
     color: #4e4e4e;
     z-index: 2000;
@@ -2323,11 +2322,20 @@ div:hover::-webkit-scrollbar {
 }
 
 .side-panel-grey-row {
-    background-color: #ebebeb
+    background-color: #ebebeb;
+    padding: 0.25rem;
+}
+
+side-panel-white-row {
+    padding: 0.25rem;
 }
 
 .right-panel-chart {
     position: relative;
     align-self: center;
+}
+
+.biodiversity-data-images img {
+    max-height: 5vh;
 }
 
