@@ -451,7 +451,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     'occurrences' : data['biodiversity_data']['occurrences'],
                     'origin_data' : data['biodiversity_data']['taxa'],
                     'number_of_taxa' : data['biodiversity_data']['number_of_taxa'],
-                    'ecological_condition' : data['biodiversity_data']['ecological_condition']
+                    'ecological_condition' : data['biodiversity_data']['ecological_condition'],
                 }));
             };
             return $detailWrapper;

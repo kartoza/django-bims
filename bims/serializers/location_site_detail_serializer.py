@@ -101,9 +101,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
     def get_biodiversity_data(self, instance):
         biodiversity_data = defaultdict(dict)
-        biodiversity_data['occurrences'] = [0, 5, 3]
-        biodiversity_data['number_of_taxa'] = [3, 9, 4]
-        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         collection_ids = self.context.get("collection_ids")
         if collection_ids:
             collections = BiologicalCollectionRecord.objects.filter(
@@ -119,6 +116,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         if 'Actinopterygii' not in taxa:
             print('Hey there, you are not a fish!')
         else:
+            biodiversity_data['fish'] = {}
             biodiversity_data['fish']['origin_chart'] = {}
             biodiversity_data['fish']['cons_status_chart'] = {}
             biodiversity_data['fish']['endemism_chart'] = {}
@@ -135,6 +133,15 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             biodiversity_data['fish']['endemism_chart']['keys'] = (
                 taxa['Actinopterygii']['endemism_chart']['keys'])
         biodiversity_data['taxa'] = taxa
+
+        biodiversity_data['occurrences'] = [0, 0, 0]
+        biodiversity_data['occurrences'][0] = (
+            sum(taxa['Actinopterygii']['occurrences']))
+
+        biodiversity_data['number_of_taxa'] = [0, 0 ,0]
+        biodiversity_data['number_of_taxa'][0] = (
+            len(taxa['Actinopterygii']['number_of_taxa']))
+        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         return biodiversity_data
 
     def get_origin_cons_endemsim_data(self, collections):
@@ -145,12 +152,16 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 taxa[model.taxonomy.class_name]['origin_data'] = []
                 taxa[model.taxonomy.class_name]['cons_status_data'] = []
                 taxa[model.taxonomy.class_name]['endemism_data'] = []
+                taxa[model.taxonomy.class_name]['occurrence_data'] = []
+
             taxa[model.taxonomy.class_name]['origin_data'].append(
                 model.category)
             taxa[model.taxonomy.class_name]['cons_status_data'].append(
                 model.taxonomy.iucn_status.category)
             taxa[model.taxonomy.class_name]['endemism_data'].append(
                 model.taxonomy.endemism)
+            taxa[model.taxonomy.class_name]['occurrence_data'].append(
+                model.taxonomy.scientific_name)
 
         for class_name in taxa:
             if 'origin_chart' not in taxa[class_name]:
@@ -163,6 +174,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 taxa[class_name]['endemism_chart'] = {}
                 taxa[class_name]['endemism_chart']['data'] = []
                 taxa[class_name]['endemism_chart']['keys'] = []
+                taxa[class_name]['occurrences'] = []
+                taxa[class_name]['number_of_taxa'] = []
 
             data_counter_origin = (
                 Counter(taxa[class_name]['origin_data']))
@@ -170,6 +183,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 Counter(taxa[class_name]['cons_status_data']))
             data_counter_endemism = (
                 Counter(taxa[class_name]['endemism_data']))
+            data_counter_occurrence = (
+                Counter(taxa[class_name]['occurrence_data']))
+
             taxa[class_name]['origin_chart']['data'].append(
                 data_counter_origin.values()[0])
             taxa[class_name]['origin_chart']['keys'].append(
@@ -188,6 +204,10 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 data_counter_endemism.values()[0])
             taxa[class_name]['endemism_chart']['keys'].append(
                 data_counter_endemism.keys()[0])
+            taxa[class_name]['occurrences'].append(
+                data_counter_occurrence.values()[0])
+            taxa[class_name]['number_of_taxa'].append(
+                data_counter_occurrence.keys()[0])
         return taxa
 
     def to_representation(self, instance):

@@ -75,7 +75,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             if (typeof properties !== 'undefined') {
                 this.clearSidePanel();
                 this.$el.find('.panel-loading').show();
-                this.updateSidePanelTitle('<i class="fa fa-map-marker"></i> ' + properties['name'] + '</span>');
+                this.updateSidePanelTitle('<i class="fa fa-map-marker"></i>Overview</span>');
                 if (properties.hasOwnProperty('location_type')) {
                     this.fillSidePanel(properties['location_type']);
                 }
@@ -100,7 +100,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         updateSidePanelTitle: function (title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');
             $rightPanelTitle.html(title);
-            $('.side-panel-info').css("padding-top", $('.right-panel-header').outerHeight());
+            $('.side-panel-info').css("padding-top", '3rem');
         },
         closeSidePanelAnimation: function () {
             var self = this;

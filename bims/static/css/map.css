@@ -115,9 +115,9 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 10px;
     padding-left: 15px;
     padding-right: 10px;
-    min-height: 60px;
-    background: #1b900d;
-    color: white;
+    min-height: 3rem;
+    background: transparent;
+    color: var(--c-grey-d);
     position: absolute;
     top: 0;
     left: 0;
@@ -125,7 +125,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .right-panel-header .fa-map-marker {
-    color: #AFC9FA;
+    color: var(--c-grey-d);
 }
 
 .right-panel-title {
@@ -2326,7 +2326,7 @@ div:hover::-webkit-scrollbar {
     padding: 0.25rem;
 }
 
-side-panel-white-row {
+.side-panel-white-row {
     padding: 0.25rem;
 }
 
