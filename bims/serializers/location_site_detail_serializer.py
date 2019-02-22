@@ -44,6 +44,37 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return taxonomy.canonical_name
         return None
 
+    def get_site_climate_data(self, context_document):
+        site_climate_data = {}
+        if context_document:
+            context_document_dictionary = json.loads(context_document)
+            monthly_annual_temperature_values = (
+                context_document_dictionary
+                ['context_group_values']
+                ['monthly_mean_daily_average_temperature_group']
+                ['service_registry_values'])
+            monthly_annual_rainfall_values = (
+                context_document_dictionary
+                ['context_group_values']
+                ['rainfall_group']
+                ['service_registry_values'])
+            temperature_total = 0
+            rainfall_total = 0
+            for month_temperature in monthly_annual_temperature_values.iteritems():
+                temperature_total += month_temperature[1]['value']
+            mean_annual_temperature = (
+                temperature_total / len(monthly_annual_temperature_values))
+            for month_rainfall in monthly_annual_rainfall_values.iteritems():
+                rainfall_total += month_rainfall[1]['value']
+            mean_annual_rainfall = (
+                    rainfall_total / len(monthly_annual_rainfall_values))
+            site_climate_data = {
+                'mean_annual_temperature': round(mean_annual_temperature, 2),
+                'mean_annual_rainfall': round(mean_annual_rainfall, 2)
+            }
+        return site_climate_data
+
+
     def get_biodiversity_data(self, instance):
         biodiversity_data = defaultdict(dict)
         biodiversity_data['occurrences'] = [0, 5, 3]
@@ -81,7 +112,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 taxa['Actinopterygii']['endemism_chart']['keys'])
         biodiversity_data['taxa'] = taxa
         return biodiversity_data
-
 
     def get_origin_cons_endemsim_data(self, collections):
         taxa = defaultdict(dict)
@@ -225,8 +255,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['sensitive'] += 1
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
-        biodiversity_data = self.get_biodiversity_data(instance)
 
+        biodiversity_data = self.get_biodiversity_data(instance)
+        climate_data = self.get_site_climate_data(instance.location_context)
+
+        result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
         result['biodiversity_data'] = biodiversity_data

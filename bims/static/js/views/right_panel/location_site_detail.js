@@ -85,7 +85,15 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                      }
 
                      // TODO : Change this to check graphable value
-                     var isChart = value['name'].toLowerCase().includes('monthly') | value['service_registry_values'][0]['key'].includes('monthly');
+                     var chartName = value['name'].toString().toLowerCase();
+                     var service_registry_key = value['service_registry_values'][0]['key'];
+                     var isChart = false;
+                     if (!((typeof chartName == 'undefined') | (typeof chartName == null))) {
+                          isChart = chartName.includes('monthly')
+                     };
+                     if (!((typeof service_registry_key == 'undefined') | (typeof service_registry_key == null)) & (isChart == false)) {
+                        isChart = service_registry_key.toString().toLowerCase().includes('monthly');
+                     };
                      var chartData = [];
 
                      $.each(value['service_registry_values'], function (service_index, service_value) {
@@ -184,7 +192,20 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
-        
+
+        renderClimateData: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('climate_data'))  {
+                var climateDataTemplate = _.template($('#climate-data-template').html());
+                $detailWrapper.append(climateDataTemplate({
+                    'mean_annual_temperature' : data['climate_data']['mean_annual_temperature'],
+                    'mean_annual_rainfall' : data['climate_data']['mean_annual_rainfall']
+                }));
+            };
+            return $detailWrapper;
+        },
+
+
         renderPieChart: function(data, speciesType, chartName) {
             var backgroundColours = [
                             '#8D2641',
@@ -207,10 +228,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     legend:{ display: false },
                     title: { display: false },
                     hover: { mode: 'nearest', intersect: false},
+                    borderWidth: 0,
                 }
             };
             var chartCanvas = document.getElementById(speciesType + '_' + chartName + '_chart');
             var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, originChartConfig);
+
+            // Render chart labels
             var dataKeys = data['biodiversity_data'][speciesType][chartName + '_chart']['keys'];
             var dataLength = dataKeys.length;
             var chart_labels = {};
@@ -219,10 +244,10 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             {
                 chart_labels[chartName] += '<div><span style="color:' +
                     backgroundColours[i] + ';">■</span>' +
-                    '<span>' + dataKeys[i] + '</span></div>'
+                    '<span style="font-style: italic;">' +
+                    dataKeys[i] + '</span></div>'
             }
             $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
-            new ChartJs(ctx, originChartConfig);
         },
 
         renderDashboardDetail: function (data) {
@@ -426,11 +451,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> DASHBOARD </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $siteDetailWrapper.append(
-                '<div id="site-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> SITE DETAILS </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
@@ -442,6 +462,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 '<div id="biodiversity-data" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+
+            $siteDetailWrapper.append(
+                '<div id="climate-data" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> Climate Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
@@ -541,18 +567,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     // render species list
                     $('#species-list').append(self.renderSpeciesList(data));
 
-                    $('#biodiversity-data').append(
-                        self.renderBiodiversityData(data));
-                        self.renderPieChart(data, 'fish', 'origin');
-                        self.renderPieChart(data, 'fish', 'cons_status');
-                        self.renderPieChart(data, 'fish', 'endemism');
+                    $('#biodiversity-data').append(self.renderBiodiversityData(data));
+                    self.renderPieChart(data, 'fish', 'origin');
+                    self.renderPieChart(data, 'fish', 'cons_status');
+                    self.renderPieChart(data, 'fish', 'endemism');
 
+                    var climateDataHTML = self.renderClimateData(data);
+                    $('#climate-data').append(climateDataHTML)
 
-
-                        origin_chart_labels
-
-                    // $('#biodiversity-data').find('#fish-origin-chart')
-                    //     .html($fishOriginChart);
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {
