@@ -196,7 +196,7 @@ h6 {
 .fbis-button-small {
     background-color: #18A090;
     border-radius: 2.5px;
-    padding: 0.05rem;
+    padding: 0.4rem;
     font-weight: normal;
     color: white;
     border-color: white;
@@ -204,6 +204,8 @@ h6 {
     height: 100%;
     border-width: 1px;
     text-align: center;
+    border-right: 0;
+    border-bottom: 0;
 }
 
 .fbis-button-small:hover {

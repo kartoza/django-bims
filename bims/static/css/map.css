@@ -2324,10 +2324,13 @@ div:hover::-webkit-scrollbar {
 .side-panel-grey-row {
     background-color: #ebebeb;
     padding: 0.25rem;
+    padding-right: 0rem;
 }
 
 .side-panel-white-row {
     padding: 0.25rem;
+    padding-right: 0;
+    padding-bottom: 0;
 }
 
 .right-panel-chart {
