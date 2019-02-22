@@ -468,12 +468,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             $siteDetailWrapper.append(
-                '<div id="species-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> ' +
-                '<span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) ' +
-                '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-
-            $siteDetailWrapper.append(
                 '<div id="biodiversity-data" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
