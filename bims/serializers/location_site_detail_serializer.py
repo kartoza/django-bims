@@ -66,9 +66,16 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         return None
 
     def get_site_climate_data(self, context_document):
-        site_climate_data = {
-            'mean_annual_temperature': 0,
-            'mean_annual_rainfall': 0}
+        site_climate_data = {}
+        site_climate_data['temperature_chart'] = {}
+        site_climate_data['temperature_chart']['values'] = []
+        site_climate_data['temperature_chart']['keys'] = []
+        site_climate_data['rainfall_chart'] = {}
+        site_climate_data['rainfall_chart']['values'] = []
+        site_climate_data['rainfall_chart']['keys'] = []
+        temperature_data = []
+        rainfall_data = []
+
         if context_document:
             context_document_dictionary = json.loads(context_document)
             monthly_annual_temperature_values = (
@@ -83,19 +90,26 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 ['service_registry_values'])
             temperature_total = 0
             rainfall_total = 0
+            count = 0
             for month_temperature in \
                     monthly_annual_temperature_values.iteritems():
-                temperature_total += month_temperature[1]['value']
-            mean_annual_temperature = (
-                temperature_total / len(monthly_annual_temperature_values))
+                count += 1
+                site_climate_data['temperature_chart']['values'].append(
+                    month_temperature[1]['value'])
+                site_climate_data['temperature_chart']['keys'].append(
+                    str(count))
+            count = 0
+
             for month_rainfall in monthly_annual_rainfall_values.iteritems():
-                rainfall_total += month_rainfall[1]['value']
-            mean_annual_rainfall = (
-                    rainfall_total / len(monthly_annual_rainfall_values))
-            site_climate_data = {
-                'mean_annual_temperature': round(mean_annual_temperature, 2),
-                'mean_annual_rainfall': round(mean_annual_rainfall, 2)
-            }
+                count += 1
+                site_climate_data['rainfall_chart']['values'].append(
+                    month_rainfall[1]['value'])
+                site_climate_data['rainfall_chart']['keys'].append(
+                    str(count))
+
+        site_climate_data['monthly_mean_daily_average_temperature_group']\
+            ['title'] = 'Annual Temperature'
+        site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
 
 
