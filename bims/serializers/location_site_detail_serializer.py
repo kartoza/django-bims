@@ -43,12 +43,12 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             longitude=round(obj.geometry_point.y, 3))
         context_data = json.loads(obj.location_context)
         geomorphological_zone = (context_data['context_group_values']
-        ['eco_geo_group']
-        ['service_registry_values']
-        ['geoclass']
-        ['value'])
-        parse_string = lambda \
-            string_in: "Unknown" if not string_in else string_in
+            ['eco_geo_group']
+            ['service_registry_values']
+            ['geoclass']
+            ['value'])
+        def parse_string(string_in):
+            return "Unknown" if not string_in else string_in
         site_detail_info = {
             'fbis_site_code': parse_string(obj.id),
             'site_coordinates': parse_string(site_coordinates),
@@ -68,7 +68,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     def get_site_climate_data(self, context_document):
         site_climate_data = {
             'mean_annual_temperature': 0,
-            'mean_annual_rainfall': 0 }
+            'mean_annual_rainfall': 0}
         if context_document:
             context_document_dictionary = json.loads(context_document)
             monthly_annual_temperature_values = (
@@ -83,7 +83,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 ['service_registry_values'])
             temperature_total = 0
             rainfall_total = 0
-            for month_temperature in monthly_annual_temperature_values.iteritems():
+            for month_temperature in \
+                    monthly_annual_temperature_values.iteritems():
                 temperature_total += month_temperature[1]['value']
             mean_annual_temperature = (
                 temperature_total / len(monthly_annual_temperature_values))
@@ -115,7 +116,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             )
         taxa = self.get_origin_cons_endemsim_data(collections)
         # If I found more than one class of animal
-        if not 'Actinopterygii' in taxa:
+        if 'Actinopterygii' not in taxa:
             print('Hey there, you are not a fish!')
         else:
             biodiversity_data['fish']['origin_chart'] = {}
