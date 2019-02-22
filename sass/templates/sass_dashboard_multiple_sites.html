@@ -135,6 +135,13 @@
                     </table>
                 </div>
                 <div class="vertical-space"></div>
+                <div class="chart-container ajax-container">
+                     <div class="table-title">
+                        Ecological Chart
+                    </div>
+                    <div id="ecological-chart-container" class="row"></div>
+                </div>
+                <div class="vertical-space"></div>
                 <div class="table-container ajax-container">
                     <div class="table-title">
                         SASS Taxa per biotope
@@ -193,6 +200,7 @@
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/utils/filter_list.js" %}"></script>
+    <script src="{% static "js/ecological_chart.js" %}"></script>
     <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
 
 {% endblock %}

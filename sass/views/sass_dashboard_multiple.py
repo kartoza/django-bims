@@ -160,7 +160,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'abundance',
                 'taxon_name',
                 'score')
-                .order_by('canonical_name', 'taxon_name')
+            .order_by('canonical_name', 'taxon_name')
         )
         biotope_data = (
             SiteVisitBiotopeTaxon.objects.filter(
@@ -347,7 +347,11 @@ class SassDashboardMultipleSitesApiView(APIView):
                     })
             all_chart_data.append({
                 'chart_data': chart_data,
-                'site_ids': site_ids
+                'site_data': {
+                    'site_ids': site_ids,
+                    'eco_region': eco_region,
+                    'geo_class': geo_class
+                }
             })
         return all_chart_data
 

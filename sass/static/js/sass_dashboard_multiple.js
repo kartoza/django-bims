@@ -456,6 +456,40 @@ function renderDataSources(data) {
     });
 }
 
+function renderEcologicalChart(data) {
+    let $container = $('#ecological-chart-container');
+    let ecologicalChartData = data['ecological_chart_data'];
+    let rowSize = 12 / ecologicalChartData.length;
+    let rowClass = 'col-md-' + rowSize;
+
+    $.each(ecologicalChartData, function (index, chartData) {
+
+        let siteIds = chartData['site_data']['site_ids'];
+        let plotData = [];
+        $.each(siteIds, (indexSiteId, siteId) => {
+            let sassData = data['sass_score_chart_data'];
+            let index = sassData['site_id'].indexOf(siteId);
+            plotData.push({
+                'aspt': sassData['aspt_score'][index],
+                'sass': sassData['sass_score'][index],
+                'label': sassData['site_code'][index] + ' (' + sassData['date'][index] + ')'
+            })
+        });
+
+        let $div = $('<div>');
+        $div.addClass(rowClass);
+        let $chartCanvas = $('<canvas>');
+        $div.append($chartCanvas);
+        createEcologicalChart(
+            $chartCanvas,
+            chartData['chart_data'],
+            plotData,
+            chartData['site_data']['eco_region'] + ' - ' + chartData['site_data']['geo_class']
+            );
+        $container.append($div);
+    });
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
@@ -463,6 +497,7 @@ function renderAll(data) {
     renderTaxaPerBiotopeTable(data);
     renderBiotopeRatingsChart(data);
     renderDataSources(data);
+    renderEcologicalChart(data);
 }
 
 $(function () {

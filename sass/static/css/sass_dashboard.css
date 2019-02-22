@@ -136,3 +136,9 @@ body {
 .taxon-group {
     border-top: 2px solid black;
 }
+
+.chart-bottom-title {
+    text-align: center;
+    font-size: 10pt;
+    font-weight: bold;
+}
