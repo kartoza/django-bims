@@ -582,7 +582,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     }
 
                     // render species list
-                    $('#species-list').append(self.renderSpeciesList(data));
+                    //$('#species-list').append(self.renderSpeciesList(data));
 
                     $('#biodiversity-data').append(self.renderBiodiversityData(data));
                     self.renderPieChart(data, 'fish', 'origin');

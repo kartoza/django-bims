@@ -66,7 +66,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         return None
 
     def get_site_climate_data(self, context_document):
-        site_climate_data = {}
+        site_climate_data = {
+            'mean_annual_temperature': 0,
+            'mean_annual_rainfall': 0 }
         if context_document:
             context_document_dictionary = json.loads(context_document)
             monthly_annual_temperature_values = (
