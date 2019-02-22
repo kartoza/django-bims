@@ -193,6 +193,21 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             return $detailWrapper;
         },
 
+        renderSiteDetailInfo: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('site_detail_info')) {
+                var siteDetailsTemplate = _.template($('#site-details-template').html());
+                $detailWrapper.append(siteDetailsTemplate({
+                    'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
+                    'site_coordinates' : data['site_detail_info']['site_coordinates'],
+                    'site_description' : data['site_detail_info']['site_description'],
+                    'geomorphological_zone' : data['site_detail_info']['geomorphological_zone'],
+                    'river' : data['site_detail_info']['river'],
+                }));
+            }
+            return $detailWrapper;
+        },
+
         renderClimateData: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('climate_data'))  {
@@ -447,9 +462,9 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             // Render basic information
             var $siteDetailWrapper = $('<div></div>');
             $siteDetailWrapper.append(
-                '<div id="dashboard-detail" class="search-results-wrapper">' +
+                '<div id="site-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> DASHBOARD </span> ' +
+                '<span class="search-result-title"> Site Details </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             $siteDetailWrapper.append(
@@ -504,7 +519,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         }
                     }
                     // render site detail
-                    $('#site-detail').append(self.renderSiteDetail(data));
+                    $('#site-detail').append(self.renderSiteDetailInfo(data));
                     $.each(self.siteChartData, function (key, value) {
                         var chartConfig = {
                             type: 'line',
@@ -562,6 +577,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     } catch (err) {
                         $('#dashboard-detail').append(
                             self.renderDashboardDetail(data));
+                    }
+
+                    // render site detail info
+                    try {
+                        $('#dashboard-detail').append(renderDashboard(data));
+                        calculateChart($('#dashboard-detail'), data);
+                    } catch (err) {
+                        $('#dashboard-detail').append(self.renderDashboardDetail(data));
                     }
 
                     // render species list

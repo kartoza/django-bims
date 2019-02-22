@@ -36,6 +36,27 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'location_context_document_json',
         ]
 
+
+    def get_site_detail_info(self, obj):
+        site_coordinates = "{latitude}, {longitude}".format(
+            latitude=round(obj.geometry_point.x, 3),
+            longitude=round(obj.geometry_point.y, 3))
+        context_data = json.loads(obj.location_context)
+        geomorphological_zone = (context_data['context_group_values']
+        ['eco_geo_group']
+        ['service_registry_values']
+        ['geoclass']
+        ['value'])
+        parse_string = lambda \
+            string_in: "Unknown" if not string_in else string_in
+        site_detail_info = {
+            'fbis_site_code': parse_string(obj.id),
+            'site_coordinates': parse_string(site_coordinates),
+            'site_description': parse_string(obj.site_description),
+            'geomorphological_zone': parse_string(geomorphological_zone),
+            'river': parse_string(obj.river)}
+        return site_detail_info
+
     def get_class_from_taxonomy(self, taxonomy):
         if taxonomy.rank != TaxonomicRank.CLASS.name:
             if taxonomy.parent:
@@ -182,6 +203,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             )
         records_occurrence = {}
         module_info = {}
+        site_detail_info = self.get_site_detail_info(instance)
         for model in collections:
             taxonomy = model.taxonomy
             category = model.category
@@ -263,5 +285,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
         result['biodiversity_data'] = biodiversity_data
+        result['site_detail_info'] = site_detail_info
 
         return result
