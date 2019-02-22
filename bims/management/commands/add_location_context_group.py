@@ -62,6 +62,8 @@ class Command(BaseCommand):
 
         ignore_not_empty = options.get('ignore_not_empty')
         site_id = options.get('site_id', None)
+        if site_id:
+            site_id = site_id.split(',')
 
         if ignore_not_empty:
             location_sites = LocationSite.objects.filter(
@@ -71,7 +73,7 @@ class Command(BaseCommand):
             location_sites = LocationSite.objects.all()
 
         if site_id:
-            location_sites = location_sites.filter(id=site_id)
+            location_sites = location_sites.filter(id__in=site_id)
 
         num = len(location_sites)
         i = 1
