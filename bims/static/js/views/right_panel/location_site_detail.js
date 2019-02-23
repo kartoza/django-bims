@@ -428,6 +428,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
+
         renderSpeciesList: function (data) {
             var that = this;
             var $specialListWrapper = $('<div style="display: none"></div>');
