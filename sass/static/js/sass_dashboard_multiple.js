@@ -1,6 +1,8 @@
+let map = null;
+
 function drawMap(data) {
     let scaleLineControl = new ol.control.ScaleLine();
-    let map = new ol.Map({
+    map = new ol.Map({
         controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
@@ -150,10 +152,18 @@ function renderSassScoreChart(data) {
 function renderSassSummaryTable(data) {
     let siteCodes = data['sass_score_chart_data']['site_code'];
     let table = $('#sass-summary-table');
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let queries = queryString.split('siteId=');
+
     $.each(siteCodes, function (index, value) {
+        let siteUrls = JSON.parse(JSON.stringify(queries));
+        siteUrls[0] += 'siteId=' + data['sass_score_chart_data']['site_id'][index] + '&';
+        siteUrls[1] = siteUrls[1].substring(siteUrls[1].indexOf('&') + 1);
+
         let $tr = $('<tr>');
         $tr.append(
-            '<td>' + value + '</td>'
+            '<td> <a href="/sass/dashboard/' + data['sass_score_chart_data']['site_id'][index] + '/?' + siteUrls.join('') + '">' + value + '</a></td>'
         );
         $tr.append(
             '<td>' + Math.round(data['sass_score_chart_data']['sass_score_average'][index]['avg']) + '(' + data['sass_score_chart_data']['sass_score_average'][index]['min'] + '-' + data['sass_score_chart_data']['sass_score_average'][index]['max'] + ') </td>'
@@ -383,12 +393,76 @@ function onDownloadCSVClicked(e) {
     downloadCSV(url, downloadButton);
 }
 
+function onDownloadChartClicked(e) {
+    let wrapper = $(this).parent().parent();
+    let button = $(this);
+    let title = $(this).data('download-title');
+    let $logo = $('.logo').clone();
+    button.hide();
+    $(wrapper).css({"padding-bottom": "55px"});
+    $(wrapper).append($logo.removeClass('hide-logo'));
+    let container = $(wrapper);
+    html2canvas(wrapper, {
+        scale: 1,
+        dpi: 144,
+        onrendered: function (canvas) {
+            $logo.remove();
+            container.css({"padding-bottom": "5px"});
+            button.show();
+            let link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            link.download = title + '.png';
+            link.click();
+        }
+    })
+}
+
+function onDownloadMapClicked(e) {
+    map.once('postrender', function (event) {
+        var canvas = $('#map');
+        html2canvas(canvas, {
+            useCORS: true,
+            background: '#FFFFFF',
+            allowTaint: false,
+            onrendered: function (canvas) {
+                let link = document.createElement('a');
+                link.setAttribute("type", "hidden");
+                link.href = canvas.toDataURL("image/png");
+                link.download = 'map.png';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        });
+    });
+    map.renderSync();
+}
+
+function onDownloadSummaryCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-summary-data/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
+function renderDataSources(data) {
+    let ulDiv = $('#data-source-list');
+    let dataSources = data['data_sources'];
+    $.each(dataSources, function (index, source) {
+        ulDiv.append('<li>' + source + '</li>')
+    });
+}
+
 function renderAll(data) {
     drawMap(data);
     renderSassScoreChart(data);
     renderSassSummaryTable(data);
     renderTaxaPerBiotopeTable(data);
     renderBiotopeRatingsChart(data);
+    renderDataSources(data);
 }
 
 $(function () {
@@ -399,6 +473,7 @@ $(function () {
         dataType: 'json',
         success: function (data) {
             $('.ajax-container').show();
+            renderFilterList($('.filter-table'));
             renderAll(data);
         }
     });
@@ -408,4 +483,8 @@ $(function () {
     });
 
     $('.download-as-csv').click(onDownloadCSVClicked);
+    $('.download-chart').click(onDownloadChartClicked);
+    $('.download-map').click(onDownloadMapClicked);
+    $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
+    $('[data-toggle="tooltip"]').tooltip();
 });

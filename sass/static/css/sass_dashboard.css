@@ -67,19 +67,19 @@ body {
     font-weight: bold;
 }
 
-.download-as-csv {
+.download-as-csv, .download-summary-as-csv {
     font-size: 10pt;
     text-transform: none;
     border-radius: 5px;
 }
 
-.download-chart {
+.download-icon {
     padding-top: 2px;
     color: #818181;
     cursor: pointer;
 }
 
-.download-chart:hover {
+.download-icon:hover {
     color: #565656;
 }
 
@@ -117,4 +117,22 @@ body {
 .download-top-container {
     float: right;
     margin-top: -8px;
+}
+
+.filter-table {
+    font-size: 11pt;
+}
+
+.filter-table td, .filter-table th {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.data-content {
+    padding-top: 10px;
+    font-size: 11pt;
+}
+
+.taxon-group {
+    border-top: 2px solid black;
 }

@@ -1,6 +1,8 @@
+let map = null;
+
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
-    let map = new ol.Map({
+    map = new ol.Map({
         controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
@@ -141,18 +143,25 @@ function renderSASSTaxonPerBiotope() {
     };
 
     let table = $('#sass-taxon-per-biotope');
+    let lastTaxonGroup = '';
     $.each(sassTaxonData, function (index, value) {
         let $tr = $('<tr data-id="' + value['sass_taxon_id'] + '" data-weight="' + value['sass_score'] + '">');
-        if (sassTaxon.hasOwnProperty(value['taxonomy__canonical_name'])) {
-            $tr.append('<td></td>');
-            $tr.insertAfter(sassTaxon[value['taxonomy__canonical_name']]);
+        let taxonGroupName = value['taxonomy__taxongroup__name'];
+
+        if (lastTaxonGroup === '') {
+            lastTaxonGroup = taxonGroupName;
+        } else if (lastTaxonGroup !== taxonGroupName) {
+            // add border
+            lastTaxonGroup = taxonGroupName;
+            $tr.addClass('taxon-group');
         } else {
-            sassTaxon[value['taxonomy__canonical_name']] = $tr;
-            $tr.append('<td>' +
-                value['taxonomy__canonical_name'] +
-                '</td>');
-            table.append($tr);
+            taxonGroupName = '';
         }
+
+        $tr.append('<td>' +
+            taxonGroupName +
+        '</td>');
+        table.append($tr);
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
         if (value['sass_taxon_name']) {
             $tr.append('<td>' +
@@ -249,10 +258,10 @@ function renderSensitivityChart() {
                 sensitivityChartData['highly_tolerant']
             ],
             backgroundColor: [
-                "#4dcfff",
-                "#5cff8b",
-                "#ffee66",
-                "#ff5d49"
+                "#027EC6",
+                "#007236",
+                "#FBA618",
+                "#ED1B24"
             ]
         }],
         labels: [
@@ -346,11 +355,192 @@ function renderBiotopeRatingsChart() {
     });
 }
 
+function hexToRgb(hex) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+let ecoregionChartDotsLabel = {};
+
+function createBoundaryDataset(x, y, color) {
+    let rgb = hexToRgb(color);
+    return {
+        type: 'scatter',
+        fill: false,
+        lineTension: 0,
+        pointRadius: 0,
+        pointHitRadius: 0,
+        pointHoverRadius: 0,
+        showTooltips: false,
+        label: 'hide',
+        data: [
+            {"x": 0, "y": y},
+            {"x": x, "y": y},
+            {"x": x, "y": 0}
+        ],
+        showLine: true,
+        borderColor: "#000",
+        borderWidth: 0.5
+    };
+}
+
+function createEcologicalScatterDataset(colour, label, data) {
+    let rgb = hexToRgb(colour);
+    return {
+        type: 'scatter',
+        fill: true,
+        label: label,
+        showLine: false,
+        showTooltips: false,
+        data: data,
+        backgroundColor: "rgba(" + rgb['r'] + ", " + rgb['g'] + ", " + rgb['b'] + ", 1)",
+        borderColor: null
+    }
+}
+
+function renderEcologicalCategoryChart() {
+    let canvasChart = $('#ecological-category-chart');
+    var options = {
+        hover: {
+            intersect: true
+        },
+        legend: {
+            labels: {
+                filter: function (item, chart) {
+                    return !item.text.includes('hide');
+                }
+            }
+        },
+        scales: {
+            yAxes: [{
+                display: true,
+                ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 10
+                }
+            }],
+            xAxes: [{
+                type: 'linear',
+                position: 'bottom',
+                display: true,
+                ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 200
+                }
+            }]
+        },
+        tooltips: {
+            callbacks: {
+                title: function (tooltipItems, data) {
+                    console.log(ecoregionChartDotsLabel);
+                    let label = '-';
+                    let dotIdentifier = tooltipItems[0]['xLabel'] + '-' + parseFloat(tooltipItems[0]['yLabel']).toFixed(2);
+                    if (ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
+                        label = ecoregionChartDotsLabel[dotIdentifier];
+                    }
+                    return label;
+                },
+                label: function (tooltipItem, data) {
+                    let label = data.datasets[tooltipItem.datasetIndex].label || '';
+                    if (label) {
+                        label += ': ';
+                    }
+                    label += tooltipItem.xLabel + ', ' + tooltipItem.yLabel;
+                    return label;
+                }
+            }
+        }
+    };
+
+    let dataSets = [];
+    let scatterDatasets = {};
+
+    // CREATE BOUNDARIES
+    $.each(ecologicalChartData, function (index, ecologicalData) {
+        dataSets.unshift(createBoundaryDataset(
+            ecologicalData['sass_score_precentile'],
+            ecologicalData['aspt_score_precentile'],
+            ecologicalData['ecological_colour'])
+        );
+        let ecologicalColor = ecologicalData['ecological_colour'];
+        let ecologicalCategoryName = ecologicalData['ecological_category_name'];
+        if (!scatterDatasets.hasOwnProperty(ecologicalCategoryName)) {
+            scatterDatasets[ecologicalCategoryName] = createEcologicalScatterDataset(
+                ecologicalColor,
+                ecologicalCategoryName,
+                []
+            );
+        }
+    });
+
+    // CREATE SCATTERED DOTS
+    let reverseEcologicalChartData = ecologicalChartData;
+    $.each(sassScores, function (index, sassScore) {
+        let asptScore = asptList[index];
+        let scatterData = null;
+        $.each(reverseEcologicalChartData, function (index, ecologicalData) {
+            let ecologicalCategoryName = ecologicalData['ecological_category_name'];
+            if (sassScore > ecologicalData['sass_score_precentile'] || asptScore > ecologicalData['aspt_score_precentile']) {
+                scatterData = {
+                    'label': ecologicalCategoryName,
+                    'x': sassScore,
+                    'y': asptScore.toFixed(2)
+                };
+                // Break loop
+                return false;
+            }
+        });
+        if (scatterData) {
+            let dotIdentifier = scatterData['x'] + '-' + scatterData['y'];
+            if (!ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
+                ecoregionChartDotsLabel[dotIdentifier] = '';
+            }
+            if (ecoregionChartDotsLabel[dotIdentifier]) {
+                ecoregionChartDotsLabel[dotIdentifier] += ', ';
+            }
+            ecoregionChartDotsLabel[dotIdentifier] += dateLabels[index];
+            scatterDatasets[scatterData['label']]['data'].push({
+                'x': scatterData['x'],
+                'y': scatterData['y'],
+                'id': 1
+            });
+            scatterData = null;
+        }
+    });
+
+    for (let key in scatterDatasets) {
+        dataSets.unshift(scatterDatasets[key]);
+    }
+
+    let ecologicalChart = new Chart(canvasChart, {
+        type: "bar",
+        labels: [],
+        data: {
+            datasets: dataSets
+        },
+        options: options
+    });
+}
+
 function onDownloadCSVClicked(e) {
     let downloadButton = $(e.target);
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = '/sass/download-sass-data-site/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
+function onDownloadSummaryCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/sass/download-sass-summary-data/?' + queryString;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
     downloadCSV(url, downloadButton);
@@ -378,6 +568,27 @@ function onDownloadChartClicked(e) {
             link.click();
         }
     })
+}
+
+function onDownloadMapClicked(e) {
+    map.once('postrender', function (event) {
+        var canvas = $('#map');
+        html2canvas(canvas, {
+            useCORS: true,
+            background: '#FFFFFF',
+            allowTaint: false,
+            onrendered: function (canvas) {
+                let link = document.createElement('a');
+                link.setAttribute("type", "hidden");
+                link.href = canvas.toDataURL("image/png");
+                link.download = 'map.png';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        });
+    });
+    map.renderSync();
 }
 
 function renderLocationContextTable() {
@@ -417,12 +628,14 @@ function renderMetricsData() {
 
 $(function () {
     drawMap();
+
     if (sassExists) {
         renderSASSSummaryChart();
         renderSASSTaxonPerBiotope();
         renderSensitivityChart();
         renderBiotopeRatingsChart();
         renderLocationContextTable();
+        renderEcologicalCategoryChart();
         renderMetricsData();
         if (dateLabels) {
             $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
@@ -431,7 +644,9 @@ $(function () {
         }
     }
     $('.download-as-csv').click(onDownloadCSVClicked);
+    $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
+    $('.download-map').click(onDownloadMapClicked);
 });

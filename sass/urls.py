@@ -6,7 +6,10 @@ from sass.views.sass_dashboard_multiple import (
     SassDashboardMultipleSitesView,
     SassDashboardMultipleSitesApiView
 )
-from sass.views.download_sass_data_site import download_sass_data_site
+from sass.views.download_sass_data_site import (
+    download_sass_data_site,
+    download_sass_summary_data
+)
 
 
 urlpatterns = [
@@ -30,4 +33,7 @@ urlpatterns = [
     url(r'^download-sass-data-site/$',
         download_sass_data_site,
         name='download-sass-data-site'),
+    url(r'^download-sass-summary-data/$',
+        download_sass_summary_data,
+        name='download-sass-summary-data'),
 ]

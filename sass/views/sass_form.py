@@ -65,10 +65,14 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                     )
                 else:
                     # Empty rate
-                    rate = Rate.objects.get(
-                        rate=-1,
+                    rate = Rate.objects.filter(
+                        description__icontains='not rated',
                         group=2
                     )
+                    if rate.exists():
+                        rate = rate[0]
+                    else:
+                        rate = Rate.objects.none()
                 biotope_fraction = SassBiotopeFraction.objects.get(
                     rate=rate,
                     sass_biotope_id=biotope_id
@@ -76,7 +80,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 biotope_fractions.append(biotope_fraction)
             except (
                 Rate.MultipleObjectsReturned,
-                SassBiotopeFraction.MultipleObjectsReturned):
+                SassBiotopeFraction.MultipleObjectsReturned,
+                SassBiotopeFraction.DoesNotExist):
                 continue
         return biotope_fractions
 
