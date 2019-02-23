@@ -224,41 +224,48 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
         },
 
-        renderLineChart: function(data, chartName) {
-            if (!(data.hasOwnProperty(chartName + '_chart')))
+
+
+        renderMonthlyLineChart: function(data_in, chartName) {
+
+            if (!(data_in.hasOwnProperty(chartName + '_chart')))
             {
                return false;
             };
 
-            var originChartConfig = {
+            var chartConfig = {
                 type: 'line',
                 data: {
                     datasets: [{
-                        data: data[chartName + '_chart']['values'],
-                        backgroundColor: '#FFFFFF',
-                        label: data[chartName + '_chart']
+                        data: data_in[chartName + '_chart']['values'],
+                        backgroundColor: '#D7CD47',
+                        borderColor: '#D7CD47',
+                        fill: false
                     }],
-                    labels: data[chartName + '_chart']['keys']
+                    labels: data_in[chartName + '_chart']['keys']
                 },
                 options: {
                     responsive: true,
                     legend:{ display: false },
                     title: { display: false },
-                    hover: { mode: 'nearest', intersect: false},
+                    hover: { mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                    },
                     borderWidth: 0,
                     scales: {
 					xAxes: [{
 						display: true,
 						scaleLabel: {
-							display: true,
-							labelString: 'Month'
+							display: false,
+							labelString: ''
 						}
 					}],
 					yAxes: [{
-						display: false,
+						display: true,
 						scaleLabel: {
-							display: true,
-							labelString: 'Value'
+							display: false,
+							labelString: ''
 						}
 					}]
 				}
@@ -266,7 +273,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             };
             var chartCanvas = document.getElementById(chartName + '_chart');
             var ctx = chartCanvas.getContext('2d');
-            new ChartJs(ctx, originChartConfig);
+            new ChartJs(ctx, chartConfig);
         },
 
         renderSidePanelPieChart: function(data, speciesType, chartName) {
@@ -639,8 +646,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
                     var climateDataHTML = self.renderClimateData(data);
                     $('#climate-data').append(climateDataHTML)
-                    self.renderLineChart(data['climate_data'], 'temperature');
-                    self.renderLineChart(data['climate_data'], 'rainfall');
+                    self.renderMonthlyLineChart(data['climate_data'], 'temperature');
+                    self.renderMonthlyLineChart(data['climate_data'], 'rainfall');
 
                     Shared.LocationSiteDetailXHRRequest = null;
                 },

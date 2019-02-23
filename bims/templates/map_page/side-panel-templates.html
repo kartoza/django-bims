@@ -189,18 +189,22 @@
 </script>
 
 <script type='text/html' id='climate-data-template'>
-    <div class="container-fluid" id="climate-data-wrapper">
-        <div class="row">
-            <div class="col-12 caption-column">Mean annual temperature</div>
-            <div class="col-12 right-panel-chart">
-                <canvas id="temperature_chart"></canvas>
-            </div>
+    <div id="temperature-chart-wrapper" class="search-results-wrapper">
+        <div class="search-result-sub-title search-results-total"
+             data-search-result-id="">
+            Mean Annual Temperature
         </div>
-        <div class="row">
-            <div class="col-8 caption-column">Mean annual rainfall</div>
-            <div class="col-12 right-panel-chart">
-                <canvas id="rainfall_chart"></canvas>
-            </div>
+        <div class="col-12 right-panel-chart">
+            <canvas id="temperature_chart"></canvas>
+        </div>
+    </div>
+    <div id="rainfall-chart-wrapper" class="search-results-wrapper">
+        <div class="search-result-sub-title search-results-total"
+         data-search-result-id="">
+            Mean Annual Rainfall
+        </div>
+        <div class="col-12 right-panel-chart">
+            <canvas id="rainfall_chart"></canvas>
         </div>
     </div>
 </script>

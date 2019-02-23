@@ -66,6 +66,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         return None
 
     def get_site_climate_data(self, context_document):
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+                  'Oct', 'Nov', 'Dec']
         site_climate_data = {}
         site_climate_data['temperature_chart'] = {}
         site_climate_data['temperature_chart']['values'] = []
@@ -73,8 +75,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_climate_data['rainfall_chart'] = {}
         site_climate_data['rainfall_chart']['values'] = []
         site_climate_data['rainfall_chart']['keys'] = []
-        temperature_data = []
-        rainfall_data = []
 
         if context_document:
             context_document_dictionary = json.loads(context_document)
@@ -88,24 +88,23 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 ['context_group_values']
                 ['rainfall_group']
                 ['service_registry_values'])
-            temperature_total = 0
-            rainfall_total = 0
             count = 0
             for month_temperature in \
                     monthly_annual_temperature_values.iteritems():
-                count += 1
-                site_climate_data['temperature_chart']['values'].append(
-                    month_temperature[1]['value'])
+
+                site_climate_data['temperature_chart']['values'].append(round(
+                    month_temperature[1]['value'], 2))
                 site_climate_data['temperature_chart']['keys'].append(
-                    str(count))
+                    str(months[count]))
+                count += 1
             count = 0
 
             for month_rainfall in monthly_annual_rainfall_values.iteritems():
-                count += 1
-                site_climate_data['rainfall_chart']['values'].append(
-                    month_rainfall[1]['value'])
+                site_climate_data['rainfall_chart']['values'].append(round(
+                    month_rainfall[1]['value'], 2))
                 site_climate_data['rainfall_chart']['keys'].append(
-                    str(count))
+                    str(months[count]))
+                count += 1
         site_climate_data['temperature_chart'][ 'title'] = 'Annual Temperature'
         site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
@@ -248,7 +247,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 taxon_class = self.get_class_from_taxonomy(taxonomy)
                 if not taxon_class:
                     taxon_class = 'No Class'
-
                 try:
                     records_occurrence[taxon_class]
                 except KeyError:
