@@ -106,9 +106,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     month_rainfall[1]['value'])
                 site_climate_data['rainfall_chart']['keys'].append(
                     str(count))
-
-        site_climate_data['monthly_mean_daily_average_temperature_group']\
-            ['title'] = 'Annual Temperature'
+        site_climate_data['temperature_chart'][ 'title'] = 'Annual Temperature'
         site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
 
