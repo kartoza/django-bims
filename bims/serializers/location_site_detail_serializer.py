@@ -42,11 +42,12 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             latitude=round(obj.geometry_point.x, 3),
             longitude=round(obj.geometry_point.y, 3))
         context_data = json.loads(obj.location_context)
-        geomorphological_zone = (context_data['context_group_values']
-            ['eco_geo_group']
-            ['service_registry_values']
-            ['geoclass']
-            ['value'])
+        geomorphological_zone = (context_data
+        ['context_group_values']
+        ['eco_geo_group']
+        ['service_registry_values']
+        ['geoclass']
+        ['value'])
         def parse_string(string_in):
             return "Unknown" if not string_in else string_in
         site_detail_info = {
@@ -66,8 +67,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         return None
 
     def get_site_climate_data(self, context_document):
-        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-                  'Oct', 'Nov', 'Dec']
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+                  'Sep', 'Oct', 'Nov', 'Dec']
         site_climate_data = {}
         site_climate_data['temperature_chart'] = {}
         site_climate_data['temperature_chart']['values'] = []
@@ -105,7 +106,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 site_climate_data['rainfall_chart']['keys'].append(
                     str(months[count]))
                 count += 1
-        site_climate_data['temperature_chart'][ 'title'] = 'Annual Temperature'
+        site_climate_data['temperature_chart']['title'] = 'Annual Temperature'
         site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
 
@@ -149,7 +150,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         biodiversity_data['occurrences'][0] = (
             sum(taxa['Actinopterygii']['occurrences']))
 
-        biodiversity_data['number_of_taxa'] = [0, 0 ,0]
+        biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['number_of_taxa'][0] = (
             len(taxa['Actinopterygii']['number_of_taxa']))
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
