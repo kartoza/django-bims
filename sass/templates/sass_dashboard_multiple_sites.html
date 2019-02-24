@@ -1,0 +1,198 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    SASS Dashboard Multiple Sites
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <link href="{% static "js/libs/pace-0.5.3/pace-theme.css" %}"
+          rel="stylesheet">
+    <script type="text/javascript">
+        paceOptions = {
+            elements: {
+                selectors: ['.map-container']
+            },
+            // Only show the progress on regular and ajax-y page navigation,
+            // not every request
+            restartOnRequestAfter: false
+        }
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="logo hide-logo pull-right"><img width="50"
+                                                    src="{% static 'img/bims-stamp.png' %}">
+        </div>
+        <h2 class="dashboard-title">SASS Dashboard</h2>
+        <div class="row">
+            <div class="col-md-7">
+                <div class="map-container ajax-container">
+                    <div class="chart-title">Map
+                        <i data-download-title="SASS charts"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download map as PNG"
+                           class="fa fa-download pull-right download-icon download-map"></i>
+                    </div>
+                    <div id="map"></div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        Filters
+                    </div>
+                    <table class="table table-condensed table-striped filter-table"></table>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        Data Sources
+                    </div>
+                    <div class="data-content">
+                        <ul id="data-source-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="vertical-space"></div>
+                <div class="chart-container ajax-container">
+                    <div class="chart-title">SASS Charts
+                        <i data-download-title="SASS charts"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download charts"
+                           class="fa fa-download pull-right download-icon download-chart"></i>
+                    </div>
+                    <div class="row no-padding">
+                        <div class="col-md-4">
+                            <canvas id="sass-score-chart"
+                                    style="position: relative;"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <canvas id="taxa-numbers-chart"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <canvas id="aspt-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        SASS Summary
+                        <div class="download-top-container">
+                            Download summary data :
+                            <button class="btn btn-info download-summary-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
+                    </div>
+                    <table class="table table-condensed table-striped sass-summary-table">
+                        <thead>
+                        <tr>
+                            <th>
+                                Site Code
+                            </th>
+                            <th>
+                                Average (min-max) SASS Score
+                            </th>
+                            <th>
+                                Average (min-max) Number of Taxa
+                            </th>
+                            <th>
+                                Average (min-max) ASPT
+                            </th>
+                            <th>
+                                Number of assessments
+                            </th>
+                            <th>
+                                Latest SASS Score
+                            </th>
+                            <th>
+                                Latest Number of Taxa
+                            </th>
+                            <th>
+                                Latest ASPT
+                            </th>
+                            <th>
+                                Date of latest SASS assessment
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody id="sass-summary-table">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        SASS Taxa per biotope
+                        <div class="download-top-container">
+                            Download all SASS data :
+                            <button class="btn btn-info download-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-overflow">
+                        <table class="table table-bordered table-condensed table-striped sass-taxon-per-biotope-table"
+                               id="sass-taxa-per-biotope">
+                            <tr class="row1">
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            <tr class="row2">
+                                <th width="150">Taxa</th>
+                                <th width="150"></th>
+                                <th width="50">Sensitivity Weighting</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="chart-container ajax-container">
+                    <div class="chart-title">Biotope ratings
+                        <i data-download-title="Biotope ratings"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon download-chart"></i>
+                        <div>
+                            <canvas id="biotope-ratings-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+
+    <script src="{% static "js/libs/pace-0.5.3/pace.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/utils/filter_list.js" %}"></script>
+    <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
+
+{% endblock %}

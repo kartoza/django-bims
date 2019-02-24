@@ -15,8 +15,8 @@ from sass.models import (
     SiteVisitTaxon,
     Chem,
     SiteVisitChem,
-    SASS5Sheet,
-    SASS5Record,
+    SassEcologicalCategory,
+    SassEcologicalCondition,
 )
 
 
@@ -143,27 +143,23 @@ class SiteVisitChemAdmin(admin.ModelAdmin):
     )
 
 
-class SASS5SheetAdmin(admin.ModelAdmin):
+class SassEcologicalCategoryAdmin(admin.ModelAdmin):
     list_display = (
-        'date',
-        'rhp_site_code',
-        'location_site'
+        'category',
+        'name',
+        'colour'
     )
 
-    raw_id_fields = (
-        'location_site',
-    )
+    ordering = ('order', )
 
 
-class SASS5RecordAdmin(admin.ModelAdmin):
+class SassEcologicalConditionAdmin(admin.ModelAdmin):
     list_display = (
-        'sass_sheet',
-        'taxonomy',
-        'count'
-    )
-
-    raw_id_fields = (
-        'sass_sheet',
+        'ecoregion_level_1',
+        'geomorphological_zone',
+        'ecological_category',
+        'sass_score_precentile',
+        'aspt_score_precentile'
     )
 
 
@@ -179,5 +175,5 @@ admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
 admin.site.register(SiteVisitTaxon, SiteVisitTaxonAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(SiteVisitChem, SiteVisitChemAdmin)
-admin.site.register(SASS5Sheet, SASS5SheetAdmin)
-admin.site.register(SASS5Record, SASS5RecordAdmin)
+admin.site.register(SassEcologicalCategory, SassEcologicalCategoryAdmin)
+admin.site.register(SassEcologicalCondition, SassEcologicalConditionAdmin)

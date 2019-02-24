@@ -21,7 +21,6 @@ class Command(BaseCommand):
             default=False,
             help='Only update empty location context')
 
-
     def handle(self, *args, **options):
         ignore_not_empty = options.get('ignore_not_empty')
         if ignore_not_empty:
@@ -29,14 +28,13 @@ class Command(BaseCommand):
                 location_context_document__isnull=True,
             )
         else:
-            location_sites = LocationSite.objects.all()
+            location_sites = LocationSite.objects.filter(id=9344)
         num = len(location_sites)
         i = 1
 
         models.signals.post_save.disconnect(
             location_site_post_save_handler,
         )
-
         for location_site in location_sites:
             print('Updating %s of %s, %s' % (i, num, location_site.name))
             i += 1

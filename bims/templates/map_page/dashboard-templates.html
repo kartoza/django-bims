@@ -28,11 +28,7 @@
             </div>
             <div class="col-lg-8 dashboard-graph-wrapper">
                 <div class="row">
-                    <div class="col-lg-6">
-                        <h5 class="dd-title">Records over time</h5>
-                        <div class="dashboard-table records-table"></div>
-                    </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-12">
                         <h5 class="dd-title">Records per area</h5>
                         <div class="dashboard-table records-area-table"></div>
                     </div>
@@ -177,6 +173,13 @@
                         </div>
                     </div>
                 </div>
+
+                {% if is_sass_enabled %}
+                      <div class="container-fluid sass-dashboard-button" style="padding-top: 20px; color: white; padding-left: 0; padding-right: 0">
+                          <a class="btn right-panel-button right-panel-last-button fbis-button sass-button" style="margin: 0 !important;">Open SASS Dashboard</a>
+                      </div>
+                {% endif %}
+
             </div>
             <div class="col-lg-8" id="dashboard-graph-wrapper">
                 <div class="card">
@@ -248,5 +251,18 @@
                 </div>
             </div>
         </div>
+    </div>
+</script>
+
+<script type="text/template" id="third-party-template">
+    <a href="https://gbif.org/species/<%= taxon_gbif_id %>/" target="_blank">
+        <div class="third-party-info">
+            From gbif.org
+        </div>
+    </a>
+    <div class="third-party-fetching-info">
+        Fetching...
+    </div>
+    <div class="content row third-party-wrapper">
     </div>
 </script>

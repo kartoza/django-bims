@@ -239,26 +239,6 @@ define([
                 Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
             }
         },
-        getExtentOfRecords: function () {
-            Shared.Dispatcher.trigger('cluster:updated', this.parameters);
-            var self = this;
-            if (this.isActive()) {
-                var extentUrl = '/api/collection/extent/' + this.apiParameters(this.parameters);
-                $.ajax({
-                    url: extentUrl,
-                    dataType: "json",
-                    success: function (data) {
-                        if (data.length === 4) {
-                            Shared.Dispatcher.trigger('map:zoomToExtent', data);
-                        } else {
-                            Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
-                        }
-                    }
-                });
-            } else {
-                Shared.Dispatcher.trigger('map:zoomToExtent', self.initExtent);
-            }
-        },
         refresh: function () {
             if (this.parameters['zoom'] &&
                 this.parameters['bbox'] &&

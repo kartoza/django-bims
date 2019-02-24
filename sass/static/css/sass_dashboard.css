@@ -1,0 +1,138 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box; //to account for the border on top
+    -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+
+.body-form {
+    padding-top: 100px;
+    padding-bottom: 70px;
+}
+
+#map {
+    height: 400px;
+    width: 100%;
+}
+
+#sass-score-chart {
+    display: block;
+    width: 100%;
+}
+
+.vertical-space {
+    height: 10px;
+}
+
+.chart-container, .map-container, .table-container {
+    padding: 10px;
+    border: 1px solid rgba(219, 175, 0, 0.41);
+    background-color: white;
+}
+
+.table-container {
+    padding-top: 20px;
+}
+
+.dashboard-title {
+    border-bottom: 3px solid #1b900d;
+}
+
+.table-title, .chart-title {
+    padding-bottom: 10px;
+    font-size: 13pt;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.sass-taxon-per-biotope-table {
+    font-size: 10pt;
+}
+
+.sass-taxon-per-biotope-table td, .sass-taxon-per-biotope-table th {
+    padding: .50rem !important;
+}
+
+.total-table {
+    font-weight: bolder;
+    background-color: rgba(88, 159, 72, 0.1) !important;
+}
+
+.download-container {
+    font-size: 11pt;
+    font-weight: bold;
+}
+
+.download-as-csv, .download-summary-as-csv {
+    font-size: 10pt;
+    text-transform: none;
+    border-radius: 5px;
+}
+
+.download-icon {
+    padding-top: 2px;
+    color: #818181;
+    cursor: pointer;
+}
+
+.download-icon:hover {
+    color: #565656;
+}
+
+.logo {
+    padding: 5px;
+}
+
+.hide-logo {
+    display: none;
+}
+
+.ajax-container {
+    display: none;
+}
+
+.loading-title {
+    position: absolute;
+    font-size: 30px;
+    color: #1b900d;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -40%);
+}
+
+.chart-container .row {
+    padding-top: 10px;
+}
+
+.table-overflow {
+    overflow: scroll;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.download-top-container {
+    float: right;
+    margin-top: -8px;
+}
+
+.filter-table {
+    font-size: 11pt;
+}
+
+.filter-table td, .filter-table th {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.data-content {
+    padding-top: 10px;
+    font-size: 11pt;
+}
+
+.taxon-group {
+    border-top: 2px solid black;
+}

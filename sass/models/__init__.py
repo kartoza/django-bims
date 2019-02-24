@@ -9,5 +9,5 @@ from sass.models.sass_validation_status import *  # noqa
 from sass.models.site_visit_taxon import *  # noqa
 from sass.models.chem import *  # noqa
 from sass.models.site_visit_chem import *  # noqa
-from sass.models.sass5_sheet import *  # noqa
-from sass.models.sass5_record import *  # noqa
+from sass.models.sass_ecological_category import *  # noqa
+from sass.models.sass_ecological_condition import *  # noqa

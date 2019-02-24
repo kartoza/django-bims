@@ -296,9 +296,14 @@ html, body, .map, .map-wrapper, #map-container {
 
 .map-search-result .search-box {
     color: white;
-    padding-top: 10px;
     font-weight: 700;
     font-size: 16px;
+}
+
+.total-search-results {
+    font-weight: normal;
+    font-size: 13px;
+    margin-top: -2px;
 }
 
 #search-result-content {
@@ -336,9 +341,8 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 #search-result-content .search-results-section {
-    max-height: 500px;
-    overflow-y: auto;
-    margin-right: -17px;
+    max-height: 275px;
+    overflow-y: visible;
 }
 
 .search-results-wrapper {
@@ -2236,6 +2240,27 @@ div:hover::-webkit-scrollbar {
 
 .right-panel-last-button {
     margin-bottom: 0.25rem !important;
+}
+
+.show-more-button {
+    height: 35px;
+    font-size: 11pt;
+    text-align: center;
+}
+
+.show-more-button .group-title {
+    height: 100%;
+    padding-top: 5px;
+    color: #353535;
+}
+
+.show-more-button :hover {
+    cursor: pointer;
+    background-color: rgba(32, 171, 15, 0.05);
+}
+
+.search-result-title-panel {
+    min-height: 12px;
 }
 
 .popup-loading, .popup-error {

@@ -47,12 +47,3 @@ EMAIL_HOST_USER = 'noreply@kartoza.com'
 EMAIL_HOST_PASSWORD = 'docker'
 EMAIL_USE_TLS = False
 EMAIL_SUBJECT_PREFIX = '[FRESHWATER]'
-
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'bims.search_backends.fuzzy_elastic_search_engine'
-                  '.FuzzyElasticSearchEngine',
-        'URL': 'http://%s:9200/' % os.environ['HAYSTACK_HOST'],
-        'INDEX_NAME': 'haystack',
-    },
-}

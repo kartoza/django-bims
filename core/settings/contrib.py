@@ -58,7 +58,6 @@ INSTALLED_APPS += (
     'pipeline',
     'modelsdoc',
     'contactus',
-    'haystack',
     'django_prometheus',
     'crispy_forms',
     'sass',
@@ -192,8 +191,6 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 # contact us email
 CONTACT_US_EMAIL = os.environ.get('CONTACT_US_EMAIL', '')
 
-ELASTIC_MIN_SCORE = 0
-
 # site tracking stats settings
 TRACK_PAGEVIEWS = True
 TRACK_AJAX_REQUESTS = False
@@ -325,4 +322,16 @@ BIMS_PREFERENCES = {
     'enable_ecoregion_filter': ast.literal_eval(
         os.environ.get('ENABLE_ECOREGION_FILTER', 'False')
     ),
+    'geoserver_location_site_layer': os.environ.get(
+        'GEOSERVER_LOCATION_SITE_LAYER',
+        ''
+    ),
+    'default_location_site_cluster': os.environ.get(
+        'DEFAULT_LOCATION_SITE_CLUSTER',
+        'default_location_site_cluster'
+    ),
+    'empty_location_site_cluster': os.environ.get(
+        'EMPTY_LOCATION_SITE_CLUSTER',
+        'empty_location_site_cluster'
+    )
 }

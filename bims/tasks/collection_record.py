@@ -37,9 +37,9 @@ def update_cluster(ids=None):
 def download_data_to_csv(path_file, request):
     from bims.serializers.bio_collection_serializer import \
         BioCollectionOneRowSerializer
-    from bims.api_views.collection import GetCollectionAbstract
     from bims.utils.celery import memcache_lock
     from bims.models import BiologicalCollectionRecord
+    from bims.api_views.search_version_2 import SearchVersion2
 
     path_file_hexdigest = md5(path_file).hexdigest()
 
@@ -52,21 +52,10 @@ def download_data_to_csv(path_file, request):
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            query_value = request.get('search', '')
             filters = request
-            is_using_filters = GetCollectionAbstract.is_using_filters(filters)
             site_results = None
-
-            if is_using_filters or query_value:
-                collection_results, \
-                    site_results, \
-                    fuzzy_search = GetCollectionAbstract.\
-                    apply_filter(
-                        query_value,
-                        filters,
-                        ignore_bbox=True)
-            else:
-                collection_results = GetCollectionAbstract.get_all_validated()
+            search = SearchVersion2(filters)
+            collection_results = search.process_search()
 
             if not collection_results and site_results:
                 site_ids = site_results.values_list('id', flat=True)
@@ -75,8 +64,8 @@ def download_data_to_csv(path_file, request):
                 ).distinct()
 
             serializer = BioCollectionOneRowSerializer(
-                    collection_results,
-                    many=True
+                collection_results,
+                many=True
             )
             headers = serializer.data[0].keys()
             rows = serializer.data
