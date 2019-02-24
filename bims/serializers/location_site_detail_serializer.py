@@ -43,11 +43,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             longitude=round(obj.geometry_point.y, 3))
         context_data = json.loads(obj.location_context)
         geomorphological_zone = (context_data
-            ['context_group_values']
-            ['eco_geo_group']
-            ['service_registry_values']
-            ['geoclass']
-            ['value'])
+                                ['context_group_values']
+                                ['eco_geo_group']
+                                ['service_registry_values']
+                                ['geoclass']
+                                ['value'])
 
         def parse_string(string_in):
             return "Unknown" if not string_in else string_in
