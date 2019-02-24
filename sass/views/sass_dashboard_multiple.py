@@ -259,6 +259,7 @@ class SassDashboardMultipleSitesApiView(APIView):
 
     def get_ecological_chart_data(self):
         chart_data = {}
+        unique_ecoregions = []
         all_chart_data = []
         eco_geo_data = (self.location_sites.annotate(
             geo_class=KeyTextTransform(
@@ -298,7 +299,11 @@ class SassDashboardMultipleSitesApiView(APIView):
         index = 0
         for eco_geo, site_ids in unique_eco_geo.iteritems():
             if index >= max_charts:
-                break
+                unique_ecoregions.append({
+                    'eco_regions': eco_geo,
+                    'site_ids': site_ids
+                })
+                continue
             index += 1
             eco_region = eco_geo[0]
             geo_class = eco_geo[1]
@@ -353,7 +358,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                     'geo_class': geo_class
                 }
             })
-        return all_chart_data
+        return all_chart_data, unique_ecoregions
 
     def get(self, request):
         filters = request.GET
@@ -372,7 +377,9 @@ class SassDashboardMultipleSitesApiView(APIView):
             id__in=collection_records.values('site').distinct()
         )
         coordinates = []
-        ecological_chart_data = self.get_ecological_chart_data()
+        ecological_chart_data, unique_ecoregions = (
+            self.get_ecological_chart_data()
+        )
         for location_site in self.location_sites:
             coordinates.append({
                 'x': location_site.get_centroid().x,
@@ -383,6 +390,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             'taxa_per_biotope_data': taxa_per_biotope_data,
             'biotope_ratings_chart_data': biotope_ratings_chart_data,
             'ecological_chart_data': ecological_chart_data,
+            'unique_ecoregions': unique_ecoregions,
             'coordinates': coordinates,
             'data_sources': list(
                 self.site_visit_taxa.exclude(

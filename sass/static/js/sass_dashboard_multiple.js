@@ -463,6 +463,18 @@ function renderEcologicalChart(data) {
     let rowClass = 'col-md-' + rowSize;
     let legendCreated = false;
 
+    if (data['unique_ecoregions'].length > 0) {
+        let $ecologicalAlert = $('.ecological-alert');
+        $ecologicalAlert.show();
+        $ecologicalAlert.append('<br/>');
+        let $ul = $('<ul style="padding-top: 10px;">');
+        $ecologicalAlert.append($ul);
+        $.each(data['unique_ecoregions'], (index, uniqueEcoregion) => {
+            let combination = uniqueEcoregion['eco_regions'][0] + '-' +  uniqueEcoregion['eco_regions'][1];
+            $ul.append('<li>' + combination + '</li>');
+        })
+    }
+
     $.each(ecologicalChartData, function (index, chartData) {
         let siteIds = chartData['site_data']['site_ids'];
         let plotData = [];
