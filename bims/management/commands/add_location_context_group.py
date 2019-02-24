@@ -76,16 +76,18 @@ class Command(BaseCommand):
         num = len(location_sites)
         i = 1
 
-        success = True
         for location_site in location_sites:
             print('Updating %s of %s, %s' % (i, num, location_site.name))
             i += 1
             for group_key in geocontext_group_keys:
                 current_outcome, message = (
                     location_site.add_context_group(group_key))
-                success = success * current_outcome
-            if not success:
-                print('[FAILED] %s : %s' % (location_site.name, message))
-            if success:
-                print('[SUCCESS] %s : %s' % (location_site.name, message))
-                location_site.save()
+                success = current_outcome
+                print('[{status}] [{site_id}] [{group}] - {message}'.format(
+                    status='SUCCESS' if success else 'FAILED',
+                    site_id=location_site.id,
+                    message=message,
+                    group=group_key
+                ))
+                if success:
+                    location_site.save()
