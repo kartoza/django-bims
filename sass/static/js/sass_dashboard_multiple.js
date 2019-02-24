@@ -461,9 +461,9 @@ function renderEcologicalChart(data) {
     let ecologicalChartData = data['ecological_chart_data'];
     let rowSize = 12 / ecologicalChartData.length;
     let rowClass = 'col-md-' + rowSize;
+    let legendCreated = false;
 
     $.each(ecologicalChartData, function (index, chartData) {
-
         let siteIds = chartData['site_data']['site_ids'];
         let plotData = [];
         $.each(siteIds, (indexSiteId, siteId) => {
@@ -476,6 +476,18 @@ function renderEcologicalChart(data) {
             })
         });
 
+        // Create legend
+        if (!legendCreated) {
+            legendCreated = true;
+            let legendContainer = $('.ecological-legend-container');
+            $.each(chartData['chart_data'].reverse(), (indexChartData, boundaryData) => {
+                let $legend = $('<span class="ecological-chart-legend">&nbsp;</span>');
+                legendContainer.append($legend);
+                $legend.after(boundaryData['ec_category']);
+                $legend.css('background-color', boundaryData['color']);
+            })
+        }
+
         let $div = $('<div>');
         $div.addClass(rowClass);
         let $chartCanvas = $('<canvas>');
@@ -484,6 +496,7 @@ function renderEcologicalChart(data) {
             $chartCanvas,
             chartData['chart_data'],
             plotData,
+            true,
             chartData['site_data']['eco_region'] + ' - ' + chartData['site_data']['geo_class']
             );
         $container.append($div);

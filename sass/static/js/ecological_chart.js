@@ -102,6 +102,7 @@ function createEcologicalChart(
     canvas,
     ecologicalCategoryData,
     scatterPlotData,
+    hideLegend = false,
     chartTitle = '',
     sass_key = 'sass', aspt_key = 'aspt', color_key = 'color', category_key = 'ec_category') {
 
@@ -167,6 +168,7 @@ function createEcologicalChart(
         dataSets.unshift(scatterDatasets[key]);
     }
 
+    ecologicalChartOptions['legend']['display'] = !hideLegend;
     new Chart(canvas, {
         type: "bar",
         labels: [],

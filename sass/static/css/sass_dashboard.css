@@ -142,3 +142,16 @@ body {
     font-size: 10pt;
     font-weight: bold;
 }
+
+.ecological-legend-container {
+    padding-top: 5px;
+    text-align: center;
+    font-size: 11pt;
+}
+
+.ecological-chart-legend {
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-right: 5px;
+    margin-left: 10px;
+}
