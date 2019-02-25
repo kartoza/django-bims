@@ -6,3 +6,4 @@ from django.apps import AppConfig
 
 class SassConfig(AppConfig):
     name = 'sass'
+    verbose_name = 'SASS'
