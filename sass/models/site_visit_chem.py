@@ -35,3 +35,7 @@ class SiteVisitChem(models.Model):
             site_visit=self.site_visit.location_site.name,
             chem=self.chem.chem_code
         )
+
+    class Meta:
+        verbose_name_plural = "Site visit chemistry records"
+        verbose_name = "Site visit chemistry record"

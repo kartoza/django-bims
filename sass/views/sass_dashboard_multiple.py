@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from django.views.generic import TemplateView
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Avg, Min, Max, Q
 )
@@ -8,7 +9,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models import LocationSite
-from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon
+from sass.models import (
+    SiteVisitTaxon,
+    SiteVisitBiotopeTaxon,
+    SassEcologicalCategory,
+    SassEcologicalCondition
+)
 
 
 class SassDashboardMultipleSitesView(TemplateView):
@@ -17,6 +23,7 @@ class SassDashboardMultipleSitesView(TemplateView):
 
 class SassDashboardMultipleSitesApiView(APIView):
     site_visit_taxa = SiteVisitTaxon.objects.none()
+    location_sites = LocationSite.objects.none()
 
     def get_sass_score_chart_data(self):
         summary = self.site_visit_taxa.annotate(
@@ -250,6 +257,109 @@ class SassDashboardMultipleSitesApiView(APIView):
             'biotope_labels': biotope_labels
         }
 
+    def get_ecological_chart_data(self):
+        chart_data = {}
+        unique_ecoregions = []
+        all_chart_data = []
+        eco_geo_data = (self.location_sites.annotate(
+            geo_class=KeyTextTransform(
+                'value', KeyTextTransform(
+                    'geo_class',
+                    KeyTextTransform(
+                        'service_registry_values',
+                        KeyTextTransform(
+                            'eco_geo_group',
+                            KeyTextTransform(
+                                'context_group_values',
+                                'location_context'))))),
+            eco_region=KeyTextTransform(
+                'value', KeyTextTransform(
+                    'eco_region',
+                    KeyTextTransform(
+                        'service_registry_values',
+                        KeyTextTransform(
+                            'eco_geo_group',
+                            KeyTextTransform(
+                                'context_group_values',
+                                'location_context')))))
+        ).values('geo_class', 'eco_region', 'id')).distinct()
+
+        unique_eco_geo = {}
+        max_charts = 4
+        for eco_geo in eco_geo_data:
+            eco_region = eco_geo['eco_region']
+            geo_class = eco_geo['geo_class']
+            if not eco_region or not geo_class:
+                continue
+            tuple_key = (eco_region, geo_class)
+            if tuple_key not in unique_eco_geo:
+                unique_eco_geo[tuple_key] = []
+            unique_eco_geo[tuple_key].append(eco_geo['id'])
+
+        index = 0
+        for eco_geo, site_ids in unique_eco_geo.iteritems():
+            if index >= max_charts:
+                unique_ecoregions.append({
+                    'eco_regions': eco_geo,
+                    'site_ids': site_ids
+                })
+                continue
+            index += 1
+            eco_region = eco_geo[0]
+            geo_class = eco_geo[1]
+            ecological_conditions = SassEcologicalCondition.objects.filter(
+                ecoregion_level_1__icontains=eco_region,
+                geomorphological_zone__icontains=geo_class
+            )
+
+            if not ecological_conditions:
+                # check Combined data
+                geo_class = 'combined'
+                ecological_conditions = (
+                    SassEcologicalCondition.objects.filter(
+                        ecoregion_level_1__icontains=eco_region,
+                        geomorphological_zone__icontains=geo_class
+                    ))
+
+            ecological_conditions = ecological_conditions.annotate(
+                ec_name=F('ecological_category__name'),
+                ec_category=F(
+                    'ecological_category__category'),
+                color=F('ecological_category__colour'),
+                sass=F('sass_score_precentile'),
+                aspt=F('aspt_score_precentile'),
+            ).values(
+                'ec_name',
+                'ec_category',
+                'color',
+                'sass',
+                'aspt'
+            ).order_by('ecological_category__order')
+            chart_data = list(ecological_conditions)
+            if chart_data:
+                lowest_category = SassEcologicalCategory.objects.filter(
+                    Q(category__icontains='e') |
+                    Q(category__icontains='f')
+                )
+                if lowest_category.exists():
+                    lowest_category = lowest_category[0]
+                    chart_data.append({
+                        'ec_name': lowest_category.name,
+                        'ec_category': 'E/F',
+                        'color': lowest_category.colour,
+                        'sass': 0,
+                        'aspt': 0.0
+                    })
+            all_chart_data.append({
+                'chart_data': chart_data,
+                'site_data': {
+                    'site_ids': site_ids,
+                    'eco_region': eco_region,
+                    'geo_class': geo_class
+                }
+            })
+        return all_chart_data, unique_ecoregions
+
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
@@ -263,11 +373,14 @@ class SassDashboardMultipleSitesApiView(APIView):
             sass_ids=sass_score_chart_data['sass_ids']
         )
 
-        location_sites = LocationSite.objects.filter(
+        self.location_sites = LocationSite.objects.filter(
             id__in=collection_records.values('site').distinct()
         )
         coordinates = []
-        for location_site in location_sites:
+        ecological_chart_data, unique_ecoregions = (
+            self.get_ecological_chart_data()
+        )
+        for location_site in self.location_sites:
             coordinates.append({
                 'x': location_site.get_centroid().x,
                 'y': location_site.get_centroid().y
@@ -276,6 +389,8 @@ class SassDashboardMultipleSitesApiView(APIView):
             'sass_score_chart_data': sass_score_chart_data,
             'taxa_per_biotope_data': taxa_per_biotope_data,
             'biotope_ratings_chart_data': biotope_ratings_chart_data,
+            'ecological_chart_data': ecological_chart_data,
+            'unique_ecoregions': unique_ecoregions,
             'coordinates': coordinates,
             'data_sources': list(
                 self.site_visit_taxa.exclude(

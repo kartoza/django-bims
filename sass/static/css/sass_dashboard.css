@@ -136,3 +136,32 @@ body {
 .taxon-group {
     border-top: 2px solid black;
 }
+
+.chart-bottom-title {
+    text-align: center;
+    font-size: 10pt;
+    font-weight: bold;
+}
+
+.ecological-legend-container {
+    padding-top: 5px;
+    text-align: center;
+    font-size: 11pt;
+}
+
+.ecological-chart-legend {
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-right: 5px;
+    margin-left: 10px;
+}
+
+.ecological-alert-container {
+    padding-top: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.ecological-alert {
+    display: none;
+}

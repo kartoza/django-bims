@@ -38,6 +38,7 @@
             const biotopeRatingData = {{ biotope_ratings_chart_data.rating_data | safe }};
             const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
             const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
+            const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -57,7 +58,7 @@
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <table class="sass-info table table-striped">
+                        <table class="table table-striped">
                             <tbody>
                             <tr>
                                 <th scope="row">FBIS Site Code</th>
@@ -71,6 +72,13 @@
                                 <th scope="row">Site description</th>
                                 <td>{{ site_description }}</td>
                             </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <table class="sass-info table table-striped">
+                            <tbody>
                             <tr>
                                 <th scope="row">Number of SASS records</th>
                                 <td id="number-of-sass-record">0</td>
@@ -85,15 +93,6 @@
                             </tr>
                             </tbody>
                         </table>
-                        <div class="download-container">
-                            Download summary data :
-                            <button class="btn btn-info download-summary-as-csv">
-                                Download as CSV
-                            </button>
-                        </div>
-                    </div>
-                    <div class="vertical-space"></div>
-                    <div class="table-container">
                         <div class="table-title">
                             Metrics Data
                         </div>
@@ -117,6 +116,13 @@
                             <tbody>
                             </tbody>
                         </table>
+
+                        <div class="download-container">
+                            Download summary data :
+                            <button class="btn btn-info download-summary-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
@@ -204,7 +210,7 @@
                     <div class="chart-container">
                         <div class="chart-title">
                             <span data-toggle="tooltip" data-placement="top"
-                               title="Proportions based on sensitivity weightings as follows:
+                                  title="Proportions based on sensitivity weightings as follows:
                                Highly tolerant (1 to 3),
                                Tolerant (4 to 7),
                                Sensitive (8 to 11),
