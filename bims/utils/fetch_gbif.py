@@ -60,6 +60,7 @@ def create_or_update_taxonomy(gbif_data):
     taxonomy.save()
     return taxonomy
 
+
 def fetch_all_species_from_gbif(
     species='',
     taxonomic_rank=None,
