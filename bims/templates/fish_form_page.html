@@ -25,7 +25,9 @@
         {% csrf_token %}
         <div class="body-form container">
             <div class="header">
-                Add fish data for site {{ location_site_code }}
+                Add fish data for site
+                {% if location_site_code %}{{ location_site_code }} {% else %}
+                    {{ location_site_name }}{% endif %}
             </div>
             <div id="fish-map"></div>
             <div class="form-group row">
@@ -50,6 +52,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="biotope" id="biotope">
+                        <option value=""> Not specified</option>
                         {% for biotope in biotope_list %}
                             <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
                         {% endfor %}
@@ -94,6 +97,7 @@
                         <td>
                             <select class="form-control"
                                     name="{{ taxon.taxon_id }}-sampling-method">
+                                <option value=""> Not specified</option>
                                 {% for sampling_method in sampling_method_list %}
                                     <option value="{{ sampling_method.id }}"> {{ sampling_method.sampling_method }} </option>
                                 {% endfor %}
@@ -104,6 +108,11 @@
                 </tbody>
             </table>
 
+        </div>
+        <div class="submit-wrapper">
+            <input type="button" name="btn" id="submitBtn" data-toggle="modal"
+                   data-target="#confirm-submit" class="btn btn-info"
+                   value="Submit">
         </div>
     </form>
 {% endblock %}

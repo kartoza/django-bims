@@ -27,3 +27,13 @@ table td {
 .form-check {
     padding-left: 45px;
 }
+.submit-wrapper {
+    text-align: center;
+}
+.submit-wrapper .btn {
+    text-transform: capitalize;
+    border-radius: 5px;
+    padding-left: 50px;
+    padding-right: 50px;
+    font-weight: normal;
+}
