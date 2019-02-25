@@ -51,7 +51,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             e.preventDefault();
             Shared.Dispatcher.trigger('recordsDetail:show', e.data.taxonId, e.data.taxonName, e.data.siteDetail);
         },
-        renderThirdPartyData: function (data) {
+         renderThirdPartyData: function (data) {
             var $thirdPartyData = $('<div>');
 
             var template = _.template($('#third-party-template').html());
@@ -125,6 +125,39 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
             return $thirdPartyData;
         },
+
+        renderEndemismBlockData: function(data) {
+            var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
+            $detailWrapper.append(this.getHtmlForFBISBlocks(data));
+            return $detailWrapper;
+        },
+
+        getHtmlForFBISBlocks: function (new_data_in) {
+            var result_html = '<div class ="fbis-data-flex-block-row">'
+            var data_in = {
+                value: 'Apple',
+                value_title: 'Apple Pie',
+                keys: ['Apple', 'Banana', 'Cat']
+            }
+            var data_value = data_in.value;
+            var data_title = data_in.value_title;
+            var keys = data_in.keys;
+            var key = '';
+            for (let i = 0; i < keys.length; i++) {
+                key = keys[i];
+                if (key == data_value) {
+                    result_html += ('<div class="fbis-data-flex-block fbis-selected">'
+                        + data_title + '</div>')
+                } else {
+                    result_html += ('<div class="fbis-data-flex-block">'
+                        + key + '</div>')
+
+                }
+            }
+            result_html += '</div>'
+            return result_html
+        },
+
         showDetail: function (name, siteDetail, count) {
             var self = this;
             // Render basic information
@@ -160,7 +193,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 Shared.TaxonDetailXHRRequest.abort();
                 Shared.TaxonDetailXHRRequest = null;
             }
-            var request_data = "";
+            var request_data = '';
             Shared.TaxonDetailXHRRequest = $.get({
                 url: this.url,
                 dataType: 'json',
@@ -183,8 +216,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
                     //Header Table
 
-                    $('#third-party').click();
-                    $('#third-party').append(self.renderThirdPartyData(data));
+                    // $('#third-party').click();
+                    // $('#third-party').append(self.renderThirdPartyData(data));
 
                     speciesDetailContainer.find('#open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {
@@ -215,16 +248,23 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     });
 
                     // Set endemic
-                    var endemic = data['endemism'];
-                    $.each(this.endemicInfoList.children(), function (key, data) {
-                        var $endemicInfoItem = $(data);
-                        if (!endemic) {
-                            endemic = "undefined";
-                        }
-                        if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
-                            $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                        }
-                    });
+                    var endemism_block_data = {};
+                    endemism_block_data['value'] = 'Apple';
+                    endemism_block_data['keys'] = ['Apple', 'Banana', 'Carrots'];
+                    endemism_block_data['value_title'] = 'Apple Tree';
+
+                    this.endemicInfoList.append(self.renderEndemismBlockData(endemism_block_data));
+
+                    // var endemic = data['endemism'];
+                    // $.each(this.endemicInfoList.children(), function (key, data) {
+                    //     var $endemicInfoItem = $(data);
+                    //     if (!endemic) {
+                    //         endemic = "undefined";
+                    //     }
+                    //     if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
+                    //         $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+                    //     }
+                    // });
 
                     // Set con status
                     var conservation = data['iucn_status_name'];
@@ -234,6 +274,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                             $conservationStatusItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
                         }
                     });
+
                 },
                 error: function (req, err) {
 

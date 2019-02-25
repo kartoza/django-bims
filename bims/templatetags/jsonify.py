@@ -67,15 +67,18 @@ def get_html_for_fbis_blocks(data_in):
         return empty_div
 
     result_html = '<div class ="fbis-data-flex-block-row">'
-#     My data looks like data_in = { value : 'Apple', value_title: 'Apple Pie' keys : { 'Apple', 'Banana', 'Cat' } }
+#     My data should look like data_in = { value : 'Apple', value_title: 'Apple Pie' keys : { 'Apple', 'Banana', 'Cat' } }
     data_value = data_in['value']
     data_title = data_in['value_title']
     for key in data_in['keys']:
         if key == data_value:
-            result_html += '<div class="fbis-data-flex-block">' + data_title + '</div>'
+            result_html += ('<div class="fbis-data-flex-block fbis-selected">'
+                            + data_title + '</div>')
         else:
-            result_html += '<div class="fbis-data-flex-block">' + key + '</div>'
+            result_html += ('<div class="fbis-data-flex-block">'
+                            + key + '</div>')
     result_html += '</div>'
+    return result_html
 
 @register.filter
 def value_by_key(d, key):

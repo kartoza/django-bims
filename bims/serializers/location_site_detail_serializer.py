@@ -35,6 +35,13 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'location_context_document_json',
         ]
 
+    def get_endemism_block_data(self):
+        endemism_block_data = {}
+        endemism_block_data['value'] = 'Apple'
+        endemism_block_data['value_title'] = 'Apple Pie'
+        endemism_block_data['keys'] = ['Apple', 'Bananan', 'Carrot']
+        return endemism_block_data
+
     def get_class_from_taxonomy(self, taxonomy):
         if taxonomy.rank != TaxonomicRank.CLASS.name:
             if taxonomy.parent:
@@ -45,6 +52,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
     def to_representation(self, instance):
         collection_ids = self.context.get("collection_ids")
+
+        endemism_block_data = self.get_endemism_block_data()
+
         result = super(
             LocationSiteDetailSerializer, self).to_representation(
             instance)
@@ -132,6 +142,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['sensitive'] += 1
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
+
 
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
