@@ -56,7 +56,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
             var template = _.template($('#third-party-template').html());
             $thirdPartyData.append(template({
-                iucn_redlist_id : data['iucn_redlist_id']
+                // iucn_redlist_id : data['iucn_redlist_id']
             }));
 
             var $wrapper = $thirdPartyData.find('.third-party-wrapper');
@@ -64,19 +64,18 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
 
             $.get({
-                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this.gbifId+'&limit=5',
+                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this.gbifId+'&limit=4',
                 dataType: 'json',
                 success: function (data) {
                     var results = data['results'];
 
-                    var firstColumn = Math.ceil(results.length/2);
-                    var secondColumn = Math.floor(results.length/2);
+                    var $rowWrapper = $('<div id="gbif-images-row" class="row"></div>');
 
-                    var $firstColumnDiv = $('<div class="column">');
-                    var $secondColumnDiv = $('<div class="column">');
-
-                    for (var i=0; i < firstColumn; i++) {
-                        var result = results[i];
+                    var result = {};
+                    for (let result_id in results)
+                    {
+                        var $firstColumnDiv = $('<div class="col-6" "></div>');
+                        result = results[result_id];
                         if(!result.hasOwnProperty('media')) {
                             continue;
                         }
@@ -91,31 +90,49 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                         if(mediaFound) {
                             $fetchingInfoDiv.hide();
                         }
-                        $firstColumnDiv.append('<a href="'+media['references']+'">' +
+                        $firstColumnDiv.append('<a target="_blank" href="'+media['references']+'">' +
                             '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
+                        $rowWrapper.append($firstColumnDiv);
                     }
-                    for (var j=firstColumn; j < firstColumn+secondColumn; j++) {
-                        var resultSecond = results[j];
-                        if(!resultSecond.hasOwnProperty('media')) {
-                            continue;
-                        }
-                        if(resultSecond['media'].length === 0) {
-                            continue;
-                        }
-                        var mediaSecond = resultSecond['media'][0];
-                        if(!mediaSecond.hasOwnProperty('identifier')) {
-                            continue;
-                        }
-                        mediaFound = true;
-                        if(mediaFound) {
-                            $fetchingInfoDiv.hide();
-                        }
-                        $secondColumnDiv.append('<a href="'+mediaSecond['references']+'">' +
-                            '<img alt="'+media['rightsHolder']+'" src="'+mediaSecond['identifier']+'" width="100%"/></a>');
-                    }
-                    $wrapper.append($firstColumnDiv);
-                    $wrapper.append($secondColumnDiv);
-
+                    // for (var i=0; i < firstColumn; i++) {
+                    //     var result = results[i];
+                    //     if(!result.hasOwnProperty('media')) {
+                    //         continue;
+                    //     }
+                    //     if(result['media'].length === 0) {
+                    //         continue;
+                    //     }
+                    //     var media = result['media'][0];
+                    //     if(!media.hasOwnProperty('identifier')) {
+                    //         continue;
+                    //     }
+                    //     mediaFound = true;
+                    //     if(mediaFound) {
+                    //         $fetchingInfoDiv.hide();
+                    //     }
+                    //     $firstColumnDiv.append('<a href="'+media['references']+'">' +
+                    //         '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
+                    // }
+                    // for (var j=firstColumn; j < firstColumn+secondColumn; j++) {
+                    //     var resultSecond = results[j];
+                    //     if(!resultSecond.hasOwnProperty('media')) {
+                    //         continue;
+                    //     }
+                    //     if(resultSecond['media'].length === 0) {
+                    //         continue;
+                    //     }
+                    //     var mediaSecond = resultSecond['media'][0];
+                    //     if(!mediaSecond.hasOwnProperty('identifier')) {
+                    //         continue;
+                    //     }
+                    //     mediaFound = true;
+                    //     if(mediaFound) {
+                    //         $fetchingInfoDiv.hide();
+                    //     }
+                    //     $secondColumnDiv.append('<a href="'+mediaSecond['references']+'">' +
+                    //         '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+mediaSecond['identifier']+'" width="100%"/></a>');
+                    // }
+                    $wrapper.append($rowWrapper);
                     if(!mediaFound) {
                         $fetchingInfoDiv.html('Media not found');
                     }
@@ -126,19 +143,16 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             return $thirdPartyData;
         },
 
-        renderEndemismBlockData: function(data) {
+        renderFBISRPanelBlocks: function(data, stretch_selection = false) {
             var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
-            $detailWrapper.append(this.getHtmlForFBISBlocks(data));
+            $detailWrapper.append(this.getHtmlForFBISBlocks(data), stretch_selection);
             return $detailWrapper;
         },
 
-        getHtmlForFBISBlocks: function (new_data_in) {
+
+        getHtmlForFBISBlocks: function (new_data_in, stretch_selection) {
             var result_html = '<div class ="fbis-data-flex-block-row">'
-            var data_in = {
-                value: 'Apple',
-                value_title: 'Apple Pie',
-                keys: ['Apple', 'Banana', 'Cat']
-            }
+            var data_in = new_data_in;
             var data_value = data_in.value;
             var data_title = data_in.value_title;
             var keys = data_in.keys;
@@ -150,13 +164,17 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 style_class = "fbis-rpanel-block";
                 var temp_key = key;
                 //Highlight my selected box with a different colour
+                if (for_count == keys.length)
+                {
+                     style_class += " fbis-rpanel-block-last";
+                }
                 if (key == data_value) {
                     style_class += " fbis-rpanel-block-selected";
                     temp_key = data_title;
                 }
-                if (for_count == keys.length)
+                if (stretch_selection == true)
                 {
-                     style_class += " fbis-rpanel-block-last";
+                    style_class += " fbis-rpanel-block-selected flex-base-auto";
                 }
                 result_html += (`<div class="${style_class}">
                                  <div class="fbis-rpanel-block-text">
@@ -174,10 +192,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             $detailWrapper.append(
                 '<div id="species-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> Species details ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $detailWrapper.append(
-                '<div id="third-party" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> 3rd Party Data ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
@@ -225,8 +239,8 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
                     //Header Table
 
-                    // $('#third-party').click();
-                    // $('#third-party').append(self.renderThirdPartyData(data));
+                    $('#third-party-images').click();
+                    $('#third-party-images').append(self.renderThirdPartyData(data));
 
                     speciesDetailContainer.find('#open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {
@@ -246,43 +260,27 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     this.OriginInfoList = $('.origin-info-list-detail');
                     this.endemicInfoList= $('.endemic-info-list-detail');
                     this.conservationStatusList = $('.conservation-status-list-detail');
-                    // Set origin
-                    var origin = data['origin'];
 
-                    $.each(this.OriginInfoList.children(), function (key, data) {
-                        var $originInfoItem = $(data);
-                        if ($originInfoItem.data('value') === origin) {
-                            $originInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                        }
-                    });
+                    // Set origin
+                    var origin_block_data = {};
+                    origin_block_data['value'] = data['origin'];;
+                    origin_block_data['keys'] = ['Native', 'Non-native', 'Translocated'];
+                    origin_block_data['value_title'] = data['origin'];
+                    this.OriginInfoList.append(self.renderFBISRPanelBlocks(origin_block_data));
 
                     // Set endemic
                     var endemism_block_data = {};
-                    endemism_block_data['value'] = 'Apple';
-                    endemism_block_data['keys'] = ['Apple', 'Banana', 'Carrots'];
-                    endemism_block_data['value_title'] = 'Apple Tree';
+                    endemism_block_data['value'] = data['endemism'];;
+                    endemism_block_data['keys'] = ['Widespread', 'Regional Endemic', 'Micro-endemic'];
+                    endemism_block_data['value_title'] = data['endemism'];
+                    this.endemicInfoList.append(self.renderFBISRPanelBlocks(endemism_block_data));
 
-                    this.endemicInfoList.append(self.renderEndemismBlockData(endemism_block_data));
-
-                    // var endemic = data['endemism'];
-                    // $.each(this.endemicInfoList.children(), function (key, data) {
-                    //     var $endemicInfoItem = $(data);
-                    //     if (!endemic) {
-                    //         endemic = "undefined";
-                    //     }
-                    //     if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
-                    //         $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                    //     }
-                    // });
-
-                    // Set con status
-                    var conservation = data['iucn_status_name'];
-                    $.each(this.conservationStatusList.children(), function (key, data) {
-                        var $conservationStatusItem = $(data);
-                        if ($conservationStatusItem.data('value') === conservation) {
-                            $conservationStatusItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                        }
-                    });
+                    //Set conservation status
+                    var cons_status_block_data = {};
+                    cons_status_block_data['value'] = data['iucn_status_name'];;
+                    cons_status_block_data['keys'] = ['NE', 'DD', 'LC' ,'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
+                    cons_status_block_data['value_title'] = data['iucn_status_name'];
+                    this.conservationStatusList.append(self.renderFBISRPanelBlocks(cons_status_block_data, true));
 
                 },
                 error: function (req, err) {

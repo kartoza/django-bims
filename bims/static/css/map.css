@@ -1330,6 +1330,8 @@ div:hover::-webkit-scrollbar {
 #species-detail .content {
     padding: 10px;
     color: #131313;
+    padding-top: 0px;
+    margin-top: -4px;
 }
 
 #species-detail .content .species-count {
@@ -2323,11 +2325,6 @@ div:hover::-webkit-scrollbar {
     padding: 0.25rem;
 }
 
-
-#species-detail-wrapper {
-    margin: 0.4rem;
-}
-
 .side-panel-info #content-panel::-webkit-scrollbar {
     width: 0px;
 }
@@ -2336,12 +2333,13 @@ div:hover::-webkit-scrollbar {
     display: inline-flex;
     width: 100%;
     flex-wrap: wrap;
+    line-height: 2rem;
 }
 
 .fbis-rpanel-block {
     display: inline-flex;
     flex-grow: 1;
-    flex-basis: 15%;
+    flex-basis: 0;
     border: 1px solid #d3d4d1;
     border-right: none;
     background-color: #859fac;
@@ -2362,3 +2360,35 @@ div:hover::-webkit-scrollbar {
 .fbis-rpanel-block-last {
     border-right: 1px solid #d3d4d1;
 }
+
+.flex-base-auto {
+    flex-basis: auto !important;
+}
+
+.iucn-species-page-link {
+    font-family: "Roboto Condensed";
+    font-size: 9px;
+    font-weight: 400;
+    text-decoration: underline;
+    color: #18a090;
+}
+
+#gbif-images-row {
+    padding: 0;
+    margin: 0;
+    z-index: -1;
+}
+
+#gbif-images-row .col-6 {
+    padding: 0;
+    margin: 0;
+}
+
+#gbif-images-row .col-6 img {
+    height: 100%;
+    border-radius: 5px;
+    border: solid;
+    width: 100%;
+    color: white;
+}
+
