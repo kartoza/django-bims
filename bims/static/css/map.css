@@ -2332,3 +2332,14 @@ div:hover::-webkit-scrollbar {
     width: 0px;
 }
 
+.fbis-data-flex-block-row {
+    display: inline-flex;
+    width: 100%;
+    flex-wrap: wrap;s
+}
+
+.fbis-data-flex-block {
+    display: inline-flex;
+    border-style: solid;
+    flex-grow: 1;
+}
