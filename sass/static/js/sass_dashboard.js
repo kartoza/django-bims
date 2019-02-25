@@ -601,6 +601,14 @@ function renderLocationContextTable() {
                 '<td>' + data['value'] + '</td>\n' +
                 '</tr>')
         }
+    });
+    $.each(ecoGeoGroup, function (key, data) {
+        if (data['value']) {
+            $table.append('<tr>\n' +
+                '<th scope="row">' + data['name'] + '</th>' +
+                '<td>' + data['value'] + '</td>\n' +
+                '</tr>')
+        }
     })
 }
 
