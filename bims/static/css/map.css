@@ -2338,12 +2338,27 @@ div:hover::-webkit-scrollbar {
     flex-wrap: wrap;
 }
 
-.fbis-data-flex-block {
+.fbis-rpanel-block {
     display: inline-flex;
-    border-style: solid;
     flex-grow: 1;
+    flex-basis: 15%;
+    border: 1px solid #d3d4d1;
+    border-right: none;
+    background-color: #859fac;
 }
 
-.fbis-selected {
-    background-color: red;
+.fbis-rpanel-block-selected {
+    background-color: #3d647d;
+}
+
+.fbis-rpanel-block-text {
+    text-align: center;
+    width: 100%;
+    color: white;
+    font-family: "Roboto Condensed";
+    font-weight: 400;
+}
+
+.fbis-rpanel-block-last {
+    border-right: 1px solid #d3d4d1;
 }

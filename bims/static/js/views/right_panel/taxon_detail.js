@@ -143,19 +143,28 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var data_title = data_in.value_title;
             var keys = data_in.keys;
             var key = '';
-            for (let i = 0; i < keys.length; i++) {
-                key = keys[i];
+            var style_class = '';
+            var for_count = 0;
+            for (let key of keys) {
+                for_count += 1;
+                style_class = "fbis-rpanel-block";
+                var temp_key = key;
+                //Highlight my selected box with a different colour
                 if (key == data_value) {
-                    result_html += ('<div class="fbis-data-flex-block fbis-selected">'
-                        + data_title + '</div>')
-                } else {
-                    result_html += ('<div class="fbis-data-flex-block">'
-                        + key + '</div>')
-
+                    style_class += " fbis-rpanel-block-selected";
+                    temp_key = data_title;
                 }
-            }
-            result_html += '</div>'
-            return result_html
+                if (for_count == keys.length)
+                {
+                     style_class += " fbis-rpanel-block-last";
+                }
+                result_html += (`<div class="${style_class}">
+                                 <div class="fbis-rpanel-block-text">
+                                 ${temp_key}</div></div>`)
+                
+            };
+            result_html += '</div>';
+            return result_html;
         },
 
         showDetail: function (name, siteDetail, count) {
