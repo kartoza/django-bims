@@ -34,7 +34,8 @@ define([
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
-            'Translocated': '#e0d43f'
+            'Translocated': '#e0d43f',
+            'No origin data': '#565656',
         },
         pieOptions: {
             legend: {
@@ -46,7 +47,8 @@ define([
         categories: {
             'indigenous': 'Native',
             'alien': 'Non-Native',
-            'translocated': 'Translocated'
+            'translocated': 'Translocated',
+            null: 'No origin data'
         },
         events: {
             'click .close-dashboard': 'closeDashboard',
@@ -89,12 +91,19 @@ define([
                 }))
             });
 
-            this.siteLayerSource = new ol.source.Vector();
-            this.siteLayerVector = new ol.layer.Vector({
-                source: this.siteLayerSource,
-                style: function (feature) {
-                    return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
-                }
+            let biodiversityLayersOptions = {
+                url: geoserverPublicUrl + 'wms',
+                params: {
+                    LAYERS: locationSiteGeoserverLayer,
+                    FORMAT: 'image/png8',
+                    viewparams: 'where:' + emptyWMSSiteParameter
+                },
+                ratio: 1,
+                serverType: 'geoserver'
+            };
+            this.siteLayerSource = new ol.source.ImageWMS(biodiversityLayersOptions);
+            this.siteTileLayer = new ol.layer.Image({
+                source: self.siteLayerSource
             });
 
             return this;
@@ -121,6 +130,7 @@ define([
                             zoom: 2
                         })
                     });
+                    self.mapLocationSite.addLayer(self.siteTileLayer);
                 }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
@@ -140,42 +150,44 @@ define([
                 Shared.LocationSiteDetailXHRRequest = null;
             }
 
+            if (is_sass_enabled) {
+                var obj = {};
+                parameters.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
+                    obj[decodeURIComponent(key)] = decodeURIComponent(value);
+                });
+                let siteIds = obj['siteId'].split(',');
+                var sassDashboardButton = self.$el.find('.sass-dashboard-button');
+                if (siteIds.length === 1 && siteIds[0] !== '') {
+                    sassDashboardButton.find('a').attr('href', '/sass/dashboard/' + siteIds[0] + '/?' + parameters);
+                } else {
+                    sassDashboardButton.find('a').attr('href', '/sass/dashboard-multi-sites/?' + parameters);
+                }
+            }
+
             Shared.LocationSiteDetailXHRRequest = $.get({
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
                     self.createOccurrenceTable(data);
                     self.createCharts(data);
-                    var locationSiteClusterSourceExist = false;
-                    if (self.parent.layers.locationSiteClusterSource) {
-                        if (self.parent.layers.locationSiteClusterSource.getFeatures().length > 0) {
-                            locationSiteClusterSourceExist = true;
-                        }
+
+                    // Zoom to extent
+                    let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+                    self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
+                    if (self.mapLocationSite.getView().getZoom() > 8) {
+                        self.mapLocationSite.getView().setZoom(8);
                     }
-                    if (locationSiteClusterSourceExist && multipleSites) {
-                        // Copy from main map
-                        self.copyClusterLayer();
-                    } else {
-                        self.mapLocationSite.addLayer(self.siteLayerVector);
-                        self.fetchLocationSiteCoordinate(self.fetchLocationSiteCoordinateUrl + parameters);
-                    }
+
+                    let newParams = {
+                        layers: locationSiteGeoserverLayer,
+                        format: 'image/png',
+                        viewparams: 'where:"' + data['sites_raw_query'] + '"'
+                    };
+                    self.siteLayerSource.updateParams(newParams);
+
                     self.loadingDashboard.hide();
                 }
             });
-        },
-        copyClusterLayer: function () {
-            var layer = this.parent.layers.locationSiteClusterSource;
-            var self = this;
-            if (layer) {
-                this.siteLayerVector = new ol.layer.Vector({
-                    source: this.parent.layers.locationSiteClusterSource,
-                    style: function (feature) {
-                        return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
-                    }
-                });
-                this.mapLocationSite.addLayer(this.siteLayerVector);
-                this.fitSitesToMap();
-            }
         },
         fetchLocationSiteCoordinate: function (url) {
             var self = this;
@@ -243,13 +255,6 @@ define([
         clearDashboard: function () {
             var self = this;
             this.mapLocationSite.removeLayer(this.siteLayerVector);
-            this.siteLayerSource = new ol.source.Vector({});
-            this.siteLayerVector = new ol.layer.Vector({
-                source: this.siteLayerSource,
-                style: function (feature) {
-                    return self.parent.layers.layerStyle.getBiodiversityStyle(feature);
-                }
-            });
             this.siteName.html('');
             this.siteNameWrapper.hide();
             this.uniqueSites = [];
@@ -279,9 +284,12 @@ define([
             }
 
             if (this.mapLocationSite) {
-                this.mapLocationSite.getOverlays().getArray().slice(0).forEach(function (overlay) {
-                    this.mapLocationSite.removeOverlay(overlay);
-                }, this);
+                let newParams = {
+                    layers: locationSiteGeoserverLayer,
+                    format: 'image/png',
+                    viewparams: 'where:' + emptyWMSSiteParameter
+                };
+                self.siteLayerSource.updateParams(newParams);
             }
 
             if (Shared.LocationSiteDetailXHRRequest) {
@@ -379,8 +387,8 @@ define([
         downloadChart: function (title, graph_canvas) {
             var img = new Image();
             var ctx = graph_canvas.getContext('2d');
-            img.src='/static/img/bims-stamp.png';
-            img.onload = function() {
+            img.src = '/static/img/bims-stamp.png';
+            img.onload = function () {
                 ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
                     graph_canvas.scrollHeight - img.height - 5);
                 canvas = graph_canvas;
@@ -440,12 +448,9 @@ define([
         },
         createCharts: function (data) {
             var self = this;
-            var originData = {};
-            var originColor = [];
-            var originLabel = [];
+            var categorySummary = {};
 
-            var recordsByYearLabel = [];
-            var recordsByYearData = [];
+            var recordsByYearData = {};
 
             var recordsGraphData = {};
             var dataByOrigin = {};
@@ -453,41 +458,37 @@ define([
             if (data.hasOwnProperty('records_graph_data')) {
                 recordsGraphData = data['records_graph_data'];
             }
+            if (data.hasOwnProperty('category_summary')) {
+                categorySummary = data['category_summary'];
+            }
 
             $.each(recordsGraphData, function (key, value) {
-                recordsByYearLabel.push(key);
-                var totalData = 0;
-                $.each(value, function (objectKey, objectValue) {
-                    totalData = 0;
-                    if (self.categories[objectKey]) {
-                        totalData += objectValue;
-                        var category = self.categories[objectKey];
-                        if (!originData.hasOwnProperty(category)) {
-                            originData[category] = objectValue;
-                            originColor.push(self.categoryColor[category]);
-                            originLabel.push(category);
-                        } else {
-                            originData[category] += objectValue;
-                        }
+                let year = value['year'];
+                if (!recordsByYearData.hasOwnProperty(value['year'])) {
+                    recordsByYearData[year] = value['count'];
+                } else {
+                    recordsByYearData[year] += value['count'];
+                }
+                if (!dataByOrigin.hasOwnProperty(self.categories[value['origin']])) {
+                    dataByOrigin[self.categories[value['origin']]] = {};
+                }
+                dataByOrigin[self.categories[value['origin']]][year] = value['count'];
+            });
 
-                        if (!dataByOrigin[self.categories[objectKey]]) {
-                            dataByOrigin[self.categories[objectKey]] = [
-                                objectValue
-                            ];
-                        } else {
-                            dataByOrigin[self.categories[objectKey]].push(objectValue);
-                        }
-                    }
-                });
-                recordsByYearData.push(totalData);
+            let categorySummaryLabels = [];
+            let categorySummaryColors = [];
+
+            $.each(categorySummary, function (key, value) {
+                categorySummaryLabels.push(self.categories[key]);
+                categorySummaryColors.push(self.categoryColor[self.categories[key]]);
             });
 
             this.originCategoryChart = self.createPieChart(
                 self.originCategoryGraph.getContext('2d'),
-                Object.values(originData),
-                originLabel,
+                Object.values(categorySummary),
+                categorySummaryLabels,
                 self.pieOptions,
-                originColor);
+                categorySummaryColors);
 
             var recordsByYearDatasets = [{
                 backgroundColor: '#48862b',
@@ -523,7 +524,7 @@ define([
             this.recordsTimelineGraphCanvas = new Chart(self.recordsTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: recordsByYearLabel,
+                    labels: Object.keys(recordsByYearData),
                     datasets: recordsByYearDatasets
                 },
                 options: recordsByYearGraphOptions
@@ -550,19 +551,27 @@ define([
             };
 
             var originTimelineDatasets = [];
+
+            /*
+                Example Data :
+                dataByOrigin = {
+                    'Native': {2014: 3, 2016: 4},
+                    'Non-Native': {2014: 3, 2016: 1}
+                };
+            */
             $.each(dataByOrigin, function (key, value) {
                 originTimelineDatasets.push({
                     label: key,
                     backgroundColor: self.categoryColor[key],
                     borderWidth: 1,
-                    data: value
+                    data: Object.values(value)
                 });
             });
 
             this.originTimelineGraphCanvas = new Chart(self.originTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: recordsByYearLabel,
+                    labels: Object.keys(recordsByYearData),
                     datasets: originTimelineDatasets
                 },
                 options: originTimelineGraphOptions

@@ -420,6 +420,12 @@ update-taxa:
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_taxa
 
+add-default-location-site-view:
+	@echo
+	@echo "---------------------------------------"
+	@echo "Add db view for default location site"
+	@echo "---------------------------------------"
+	@docker-compose exec uwsgi python manage.py add_default_location_site_view
 
 update-location-context-documents:
 	@echo
@@ -427,6 +433,28 @@ update-location-context-documents:
 	@echo "Updating ALL location context documents"
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_location_context_documents
+
+clear-location-context-documents:
+	@echo
+	@echo "--------------------------"
+	@echo "Clearing ALL location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py clear_location_context_documents
+
+add-location-context-group:
+	@echo
+	@echo "--------------------------"
+	@echo "Adding group to the location context documents"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py add_location_context_group
+
+update-ecological-data:
+	@echo
+	@echo "--------------------------"
+	@echo "Update ecological category and condition data from csv"
+	@echo "--------------------------"
+	@docker-compose exec uwsgi python manage.py update_ecological_data
+
 
 # --------------- help --------------------------------
 

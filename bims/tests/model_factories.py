@@ -22,6 +22,7 @@ from bims.models import (
     Taxonomy,
     TaxonGroup,
     FbisUUID,
+    DataSource,
 )
 
 
@@ -38,6 +39,7 @@ class LocationTypeF(factory.django.DjangoModelFactory):
     allowed_geometry = 'POINT'
 
 
+@factory.django.mute_signals(signals.post_save)
 class LocationSiteF(factory.django.DjangoModelFactory):
     """
     Location site factory
@@ -278,3 +280,14 @@ class FbisUUIDF(factory.django.DjangoModelFactory):
     id = factory.Sequence(lambda n: n)
     uuid = factory.Sequence(lambda n: 'uuid %s' % n)
     content_type = factory.SubFactory(ContentTypeF)
+
+
+class DataSourceF(factory.django.DjangoModelFactory):
+    """
+    Data source factory
+    """
+    class Meta:
+        model = DataSource
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: 'data-source %s' % n)

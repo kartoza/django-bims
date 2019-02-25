@@ -7,9 +7,9 @@ define([
     describe("Biological Model", function() {
         it("should expose an Attribute", function() {
             let biological = new Biological({
-                title: "Hollywood"
+                title: "species_name"
             });
-            expect(biological.get('title')).toEqual("Hollywood");
+            expect(biological.get('title')).toEqual("species_name");
         });
     });
 

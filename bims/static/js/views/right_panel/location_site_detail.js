@@ -168,11 +168,17 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $detailWrapper.append(button);
 
             if (is_sass_enabled) {
+                var sassDetailedDashboardButton = `
+                    <div class="container-fluid"><a 
+                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}
+                    " class="btn right-panel-button right-panel-last-button 
+                             fbis-button sass-button">SASS Dashboard</a></div>`;
                 var sassButton = `
                     <div class="container-fluid"><a 
                     href="/sass/${this.parameters['siteId']}
                     " class="btn right-panel-button right-panel-last-button 
                              fbis-button sass-button">SASS +</a></div>`;
+                $detailWrapper.append(sassDetailedDashboardButton);
                 $detailWrapper.append(sassButton);
             }
 
@@ -360,15 +366,16 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             // Render basic information
             var $siteDetailWrapper = $('<div></div>');
             $siteDetailWrapper.append(
-                '<div id="site-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> SITE DETAILS </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $siteDetailWrapper.append(
                 '<div id="dashboard-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> DASHBOARD </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            $siteDetailWrapper.append(
+                '<div id="site-detail" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> SITE DETAILS </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+
             $siteDetailWrapper.append(
                 '<div id="species-list" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> ' +

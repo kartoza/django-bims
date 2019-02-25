@@ -75,3 +75,22 @@ td.sampled-name {
     padding: 0;
     text-align: center;
 }
+
+.site-code {
+    margin-top: -20px;
+    font-size: 14pt;
+    font-weight: bold;
+}
+
+.sass-score {
+    float: right;
+    padding-right: 10px;
+}
+
+.sass-score-row {
+    background-color: rgba(29, 188, 13, 0.08);
+}
+
+.sass-score-row .taxon-name {
+    font-size: 13pt;
+}

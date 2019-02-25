@@ -31,10 +31,23 @@ class SiteVisit(AbstractAdditionalData):
         default=timezone.now
     )
 
+    time = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_owner'
+    )
+
     assessor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
-        blank=True
+        blank=True,
+        related_name='%(class)s_assessor'
     )
 
     water_level = models.CharField(
@@ -95,6 +108,22 @@ class SiteVisit(AbstractAdditionalData):
 
     sass_biotope_fraction = models.ManyToManyField(
         'sass.SassBiotopeFraction',
+        null=True,
+        blank=True
+    )
+
+    other_biota = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    comments_or_observations = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    data_source = models.ForeignKey(
+        'bims.DataSource',
         null=True,
         blank=True
     )

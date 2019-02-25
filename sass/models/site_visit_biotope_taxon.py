@@ -18,6 +18,13 @@ class SiteVisitBiotopeTaxon(models.Model):
         blank=False
     )
 
+    sass_taxon = models.ForeignKey(
+        'sass.SassTaxon',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
     biotope = models.ForeignKey(
         'bims.Biotope',
         on_delete=models.SET_NULL,
@@ -35,3 +42,6 @@ class SiteVisitBiotopeTaxon(models.Model):
     date = models.DateField(
         default=timezone.now
     )
+
+    class Meta:
+        verbose_name_plural = "Site visit biotope taxa"

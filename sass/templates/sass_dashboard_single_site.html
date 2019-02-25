@@ -1,0 +1,308 @@
+{% extends 'main_base.html' %}
+{% load jsonify %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    SASS Dashboard Single Site
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script type="text/javascript">
+        const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
+        const siteCode = "{{ site_code }}";
+        const siteId = "{{ site_id }}";
+        const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+        const sassExists = {% if sass_exists %}true{% else %}false{% endif %};
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    {% if sass_exists %}
+        <script type="text/javascript">
+            const sassScores = {{ sass_score_chart_data.sass_scores }};
+            const dateLabels = {{ sass_score_chart_data.date_labels | safe }};
+            const taxaNumbers = {{ sass_score_chart_data.taxa_numbers }};
+            const asptList = {{ sass_score_chart_data.aspt_list }};
+            const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
+            const biotopeData = {{ sass_taxon_table_data.biotope_data | safe }};
+            const sensitivityChartData = {{ sensitivity_chart_data | safe }};
+            const ecologicalChartData = {{ ecological_chart_data | safe }};
+            const biotopeRatingData = {{ biotope_ratings_chart_data.rating_data | safe }};
+            const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
+            const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
+            const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
+        </script>
+        <div class="body-form container">
+            <div class="logo hide-logo pull-right"><img width="50"
+                                                        src="{% static 'img/bims-stamp.png' %}">
+            </div>
+            <h2 class="dashboard-title">SASS Dashboard</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="map-container">
+                        <div class="chart-title">Map
+                            <i data-download-title="SASS charts"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download map as PNG"
+                               class="fa fa-download pull-right download-icon download-map"></i>
+                        </div>
+                        <div id="map"></div>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <table class="table table-striped">
+                            <tbody>
+                            <tr>
+                                <th scope="row">FBIS Site Code</th>
+                                <td>{{ site_code }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Site coordinates</th>
+                                <td>{{ coord.0 }}, {{ coord.1 }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Site description</th>
+                                <td>{{ site_description }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <table class="sass-info table table-striped">
+                            <tbody>
+                            <tr>
+                                <th scope="row">Number of SASS records</th>
+                                <td id="number-of-sass-record">0</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Earliest record</th>
+                                <td id="earliest-record">-</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Latest record</th>
+                                <td id="latest-record">-</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <div class="table-title">
+                            Metrics Data
+                        </div>
+                        <table class="table table-condensed table-striped sass-metrics-table">
+                            <thead>
+                            <tr>
+                                <th>
+                                    Metric
+                                </th>
+                                <th>
+                                    Average
+                                </th>
+                                <th>
+                                    Minimum
+                                </th>
+                                <th>
+                                    Maximum
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+
+                        <div class="download-container">
+                            Download summary data :
+                            <button class="btn btn-info download-summary-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <div class="table-title">
+                            SASS Taxa per biotope
+                            <span class="pull-right">
+                            {{ sass_taxon_table_data.site_visit_date }}
+                        </span>
+                        </div>
+                        <table class="table table-condensed table-striped sass-taxon-per-biotope-table">
+                            <thead>
+                            <tr>
+                                <th>
+                                    TAXA
+                                </th>
+                                <th></th>
+                                <th>
+                                    Weight
+                                </th>
+                                <th>S</th>
+                                <th>V</th>
+                                <th>G</th>
+                                <th>Site</th>
+                            </tr>
+                            </thead>
+                            <tbody id="sass-taxon-per-biotope">
+                            </tbody>
+                        </table>
+                        <div class="download-container">
+                            Download all SASS data for this site :
+                            <button class="btn btn-info download-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <div class="table-title">
+                            SASS Records
+                        </div>
+                        <table class="table table-condensed table-striped sass-records">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>SASS5/SASS4 Score</th>
+                                <th>Number of Taxa</th>
+                                <th>ASPT</th>
+                            </tr>
+                            </thead>
+                            <tbody id="sass-records">
+                            {% for date in sass_score_chart_data.date_labels %}
+                                <tr>
+                                    <td>
+                                        <a href="/sass/view/{{ sass_score_chart_data.sass_ids | value_by_key:forloop.counter0 }}">{{ date }}</a>
+                                    </td>
+                                    <td>
+                                        {{ sass_score_chart_data.sass_scores | value_by_key:forloop.counter0 }}
+                                    </td>
+                                    <td>
+                                        {{ sass_score_chart_data.taxa_numbers | value_by_key:forloop.counter0 }}
+                                    </td>
+                                    <td>
+                                        {{ sass_score_chart_data.aspt_list | value_by_key:forloop.counter0 | floatformat:'2' }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+                <div class="col-md-6 mp">
+                    <div class="chart-container">
+                        <div class="chart-title">SASS charts
+                            <i data-download-title="SASS charts"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download charts"
+                               class="fa fa-download pull-right download-icon download-chart"></i>
+                        </div>
+                        <canvas id="sass-score-chart"></canvas>
+                        <canvas id="taxa-numbers-chart"></canvas>
+                        <canvas id="aspt-chart"></canvas>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <span data-toggle="tooltip" data-placement="top"
+                                  title="Proportions based on sensitivity weightings as follows:
+                               Highly tolerant (1 to 3),
+                               Tolerant (4 to 7),
+                               Sensitive (8 to 11),
+                               Highly sensitive (12 to 15)">
+                                Proportion of sensitive to tolerant
+                            </span>
+                            <i data-download-title="Proportion of sensitive to tolerant"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download chart"
+                               class="fa fa-download pull-right download-icon download-chart"></i>
+                        </div>
+                        <canvas id="sensitivity-chart"></canvas>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="chart-container">
+                        <div class="chart-title">Biotope ratings
+                            <i data-download-title="Biotope ratings"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download chart"
+                               class="fa fa-download pull-right download-icon download-chart"></i>
+                        </div>
+                        <canvas id="biotope-ratings-chart"></canvas>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="chart-container">
+                        <div class="chart-title">Ecological category</div>
+                        <canvas id="ecological-category-chart"></canvas>
+                    </div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <div class="table-title">
+                            Data Sources
+                        </div>
+                        <div class="data-content">
+                            <ul id="data-source-list">
+                                {% for data_source in data_sources %}
+                                    <li>{{ data_source }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="body-form container">
+            <h2 class="dashboard-title">SASS Dashboard</h2>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="alert alert-warning jumbotron ">
+                        <div class="container" style="padding-top: 15px;">
+                            <p class="lead">
+                                No SASS data found for this site or filters
+                            </p>
+                        </div>
+                    </div>
+                    <div class="map-container" id="map"></div>
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <table class="sass-info table table-striped">
+                            <tbody>
+                            <tr>
+                                <th scope="row">FBIS Site Code</th>
+                                <td>{{ site_code }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Site coordinates</th>
+                                <td>{{ coord.0 }}, {{ coord.1 }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Site description</th>
+                                <td>{{ site_description }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/sass_dashboard.js" %}"></script>
+
+{% endblock %}

@@ -84,8 +84,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     location_site = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
-    species_name = serializers.SerializerMethodField()
-    notes = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
     date = serializers.SerializerMethodField()
     collector = serializers.SerializerMethodField()
@@ -94,38 +92,18 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     reference_category = serializers.SerializerMethodField()
 
     def get_taxon_class(self, obj):
-        try:
-            taxon_class = obj.taxon_class
-        except AttributeError:
-            taxon_class = obj.taxonomy.class_name
-        return taxon_class
+        return obj.taxonomy.class_name
 
     def get_location_site(self, obj):
-        try:
-            location_site_name = obj.location_site_name.encode('utf8')
-        except AttributeError:
-            location_site_name = obj.site.name.encode('utf8')
-        return location_site_name
+        return obj.site.name.encode('utf8')
 
     def get_latitude(self, obj):
-        try:
-            lat = obj.location_center.x
-        except AttributeError:
-            lat = obj.site.get_centroid().x
+        lat = obj.site.get_centroid().x
         return lat
 
     def get_longitude(self, obj):
-        try:
-            lon = obj.location_center.y
-        except AttributeError:
-            lon = obj.site.get_centroid().y
+        lon = obj.site.get_centroid().y
         return lon
-
-    def get_species_name(self, obj):
-        return obj.original_species_name.encode('utf8')
-
-    def get_notes(self, obj):
-        return obj.notes.replace(';', '-').encode('utf8')
 
     def get_origin(self, obj):
         category = obj.category
@@ -152,7 +130,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         model = BiologicalCollectionRecord
         fields = [
             'location_site', 'latitude', 'longitude',
-            'species_name', 'notes', 'origin',
+            'original_species_name', 'notes', 'origin',
             'date', 'collector', 'taxon_class',
             'reference', 'reference_category']
 

@@ -1,0 +1,7 @@
+Ecological Category,Ecological Category Name,Description,Colour
+A,Natural,Unmodified natural,#027EC6
+B,Good,Largely natural with few modifications,#007236
+C,Fair,Moderately modified,#FBA618
+D,Poor,Largely modified,#ED1B24
+E,Seriously modified,Seriously modified,#963965
+F,Critically modified,Critically or extremely modified,#000000
