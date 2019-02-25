@@ -135,6 +135,27 @@
                     </table>
                 </div>
                 <div class="vertical-space"></div>
+                <div class="chart-container ajax-container">
+                    <div class="table-title">
+                        Ecological Chart
+                        <i data-download-title="Ecological charts"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download charts"
+                           class="fa fa-download pull-right download-icon download-chart"></i>
+                    </div>
+                    <div class="ecological-legend-container">
+                    </div>
+                    <div id="ecological-chart-container" class="row"></div>
+                    <div class="ecological-alert-container">
+                        <div class="ecological-alert alert alert-warning"
+                             role="alert">
+                            Too many ecoregions combination selected to show
+                            all
+                            charts. Combinations not displayed :
+                        </div>
+                    </div>
+                </div>
+                <div class="vertical-space"></div>
                 <div class="table-container ajax-container">
                     <div class="table-title">
                         SASS Taxa per biotope
@@ -193,6 +214,7 @@
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/utils/filter_list.js" %}"></script>
+    <script src="{% static "js/ecological_chart.js" %}"></script>
     <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
 
 {% endblock %}
