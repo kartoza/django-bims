@@ -228,7 +228,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     // Set endemic
                     var endemism_block_data = {};
                     endemism_block_data['value'] = data['endemism'];;
-                    endemism_block_data['keys'] = ['Widespread', 'Regional Endemic', 'Micro-endemic'];
+                    endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
                     endemism_block_data['value_title'] = data['endemism'];
                     this.endemicInfoList.append(self.renderFBISRPanelBlocks(endemism_block_data));
 
