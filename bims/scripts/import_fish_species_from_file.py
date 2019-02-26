@@ -31,13 +31,9 @@ def import_fish_species_from_file(fish_file=FISH_FILE):
                 fish_data.setdefault(col_header, []).append(
                     data_column)
 
-    i = 0
-
-    scientific_name = fish_data[SCIENTIFIC_NAME_KEY][i]
-    canonical_name = fish_data[CANONICAL_NAME_KEY][i]
-    common_name = fish_data[COMMON_NAME_KEY][i]
-
-    fetch_all_species_from_gbif(
-        species=canonical_name,
-        should_get_children=False
-    )
+    for i in range(data_length):
+        canonical_name = fish_data[CANONICAL_NAME_KEY][i]
+        fetch_all_species_from_gbif(
+            species=canonical_name,
+            should_get_children=False
+        )

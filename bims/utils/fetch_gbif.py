@@ -20,6 +20,8 @@ def merge_taxa_data(gbif_key, excluded_taxon):
     if len(taxa) <= 1:
         return
 
+    logger.info('Merging %s data' % len(taxa))
+
     for taxon in taxa[1:]:
         BiologicalCollectionRecord.objects.filter(
             taxonomy=taxon
@@ -155,17 +157,20 @@ def fetch_all_species_from_gbif(
         taxonomy.parent = parent
         taxonomy.save()
     else:
-        # Get parent
-        parent_taxonomy = None
-        if 'parentKey' in species_data:
-            parent_taxonomy = fetch_all_species_from_gbif(
-                gbif_key=species_data['parentKey'],
-                parent=None,
-                should_get_children=False
-            )
-        if parent_taxonomy:
-            taxonomy.parent = parent_taxonomy
-            taxonomy.save()
+        if not taxonomy.parent:
+            # Get parent
+            parent_taxonomy = None
+            if 'parentKey' in species_data:
+                parent_key = species_data['parentKey']
+                logger.info('Get parent with parentKey : %s' % parent_key)
+                parent_taxonomy = fetch_all_species_from_gbif(
+                    gbif_key=parent_key,
+                    parent=None,
+                    should_get_children=False
+                )
+            if parent_taxonomy:
+                taxonomy.parent = parent_taxonomy
+                taxonomy.save()
 
     if not should_get_children:
         return taxonomy
