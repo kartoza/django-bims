@@ -236,7 +236,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     var cons_status_block_data = {};
                     cons_status_block_data['value'] = data['iucn_status_name'];;
                     cons_status_block_data['keys'] = ['NE', 'DD', 'LC' ,'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
-                    cons_status_block_data['value_title'] = data['iucn_status_name'];
+                    cons_status_block_data['value_title'] = data['iucn_status_name'] + ' (' + data['iucn_status_full_name'] + ')';
                     this.conservationStatusList.append(self.renderFBISRPanelBlocks(cons_status_block_data, true));
 
                 },
