@@ -63,17 +63,38 @@ def get_vernacular_names(species_id):
         return None
 
 
-def find_species(original_species_name):
+def get_children(key):
+    """
+    Lists all direct child usages for a name usage
+    :return: list of species
+    """
+    api_url = 'http://api.gbif.org/v1/species/{key}/children'.format(
+        key=key
+    )
+    try:
+        response = requests.get(api_url)
+        json_response = response.json()
+        if json_response['results']:
+            return json_response['results']
+        return None
+    except (HTTPError, KeyError) as e:
+        print(e)
+        return None
+
+
+def find_species(original_species_name, rank=None):
     """
     Find species from gbif with lookup query.
     :param original_species_name: the name of species we want to find
+    :param rank: taxonomy rank
     :return: List of species
     """
     print('Find species : %s' % original_species_name)
     try:
         response = species.name_lookup(
             q=original_species_name,
-            limit=10
+            limit=10,
+            rank=rank
         )
         if 'results' in response:
             results = response['results']
@@ -84,7 +105,7 @@ def find_species(original_species_name):
                     'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
                     if result['taxonomicStatus'] == 'ACCEPTED' or \
-                            result['taxonomicStatus'] == 'SYNONYM':
+                        result['taxonomicStatus'] == 'SYNONYM':
                         return result
     except HTTPError:
         print('Species not found')
@@ -171,7 +192,7 @@ def update_taxonomy_fields(taxon, response):
                 for vernacular_name in response['vernacularNames']:
                     if 'vernacularName' in vernacular_name:
                         vernacular_names.append(
-                                vernacular_name['vernacularName']
+                            vernacular_name['vernacularName']
                         )
                 taxon.vernacular_names = vernacular_names
         except (AttributeError, KeyError) as e:
