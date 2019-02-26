@@ -152,6 +152,15 @@ class SassDashboardMultipleSitesApiView(APIView):
                 canonical_name=F('taxonomy__canonical_name'),
                 abundance=F('taxon_abundance__abc'),
                 score=F('sass_score'),
+                group_name=F('taxonomy__taxongroup__name'),
+                display_order=Case(
+                    When(
+                        condition=Q(
+                            site_visit__sass_version=5,
+                            sass_taxon__display_order_sass_5__isnull=False),
+                        then='sass_taxon__display_order_sass_5'),
+                    default='sass_taxon__display_order_sass_4'
+                ),
             ).values(
                 'site_id',
                 'site_code',
@@ -159,8 +168,11 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'canonical_name',
                 'abundance',
                 'taxon_name',
-                'score')
-            .order_by('canonical_name', 'taxon_name')
+                'score',
+                'group_name',
+                'display_order'
+            )
+            .order_by('display_order')
         )
         biotope_data = (
             SiteVisitBiotopeTaxon.objects.filter(
