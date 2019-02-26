@@ -40,8 +40,51 @@ $(function () {
         changeMonth: true,
         changeYear: true
     });
-    $(".taxon-abundance").keyup(function () {
+
+    let $taxonAbundance = $('.taxon-abundance');
+
+    $taxonAbundance.keyup(function () {
         this.value = this.value.replace(/[^0-9\.]/g, '');
+    });
+
+    $taxonAbundance.change(e => {
+        let value = parseInt(e.target.value);
+        if (value) {
+            if (value > 0) {
+                $(e.target).parent().parent().find('.observed').prop('checked', true);
+                return true;
+            }
+        }
+        $(e.target).parent().parent().find('.observed').prop('checked', false);
+    });
+
+    $('#collector').autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                type: 'get',
+                dataType: 'json',
+                success: function (data) {
+                    response($.map(data, function (item) {
+                        return {
+                            label: item.first_name + ' ' + item.last_name,
+                            value: item.id
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 2,
+        open: function (event, ui) {
+            setTimeout(function () {
+                $('.ui-autocomplete').css('z-index', 99);
+            }, 0);
+        },
+        select: function (e, u) {
+            e.preventDefault();
+            $('#collector').val(u.item.label);
+            $('#collector_id').val(u.item.value);
+        }
     });
 
 });
