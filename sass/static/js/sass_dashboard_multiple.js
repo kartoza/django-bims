@@ -224,9 +224,20 @@ function renderTaxaPerBiotopeTable(data) {
     });
 
     // Add data
+    let lastTaxonGroup = '';
     $.each(tableData, function (key, _tableData) {
+        let taxonGroupName = _tableData['group_name'];
         let $tr = $('<tr>');
-        $tr.append('<td>' + _tableData['canonical_name'] + '</td>');
+        if (lastTaxonGroup === '') {
+            lastTaxonGroup = taxonGroupName;
+        } else if (lastTaxonGroup !== taxonGroupName) {
+            // add border
+            lastTaxonGroup = taxonGroupName;
+            $tr.addClass('taxon-group');
+        } else {
+            taxonGroupName = '';
+        }
+        $tr.append('<td>' + taxonGroupName + '</td>');
         $tr.append('<td>' + _tableData['taxon_name'] + '</td>');
         $tr.append('<td>' + _tableData['score'] + '</td>');
 
@@ -470,7 +481,7 @@ function renderEcologicalChart(data) {
         let $ul = $('<ul style="padding-top: 10px;">');
         $ecologicalAlert.append($ul);
         $.each(data['unique_ecoregions'], (index, uniqueEcoregion) => {
-            let combination = uniqueEcoregion['eco_regions'][0] + '-' +  uniqueEcoregion['eco_regions'][1];
+            let combination = uniqueEcoregion['eco_regions'][0] + '-' + uniqueEcoregion['eco_regions'][1];
             $ul.append('<li>' + combination + '</li>');
         })
     }
@@ -510,7 +521,7 @@ function renderEcologicalChart(data) {
             plotData,
             true,
             chartData['site_data']['eco_region'] + ' - ' + chartData['site_data']['geo_class']
-            );
+        );
         $container.append($div);
     });
 }
