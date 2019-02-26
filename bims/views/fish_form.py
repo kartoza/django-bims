@@ -51,3 +51,7 @@ class FishFormView(TemplateView):
             )
 
         return super(FishFormView, self).get(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        date_string = request.POST.get('date', None)

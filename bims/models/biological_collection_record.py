@@ -125,6 +125,18 @@ class BiologicalCollectionRecord(
         null=True
     )
 
+    abundance_number = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    biotope = models.ForeignKey(
+        'bims.Biotope',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     @property
     def data_name(self):
         return self.original_species_name

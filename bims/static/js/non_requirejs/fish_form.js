@@ -87,4 +87,10 @@ $(function () {
         }
     });
 
+    $('#submitBtn').click(function () {
+    });
+
+    $('#submit').click(function () {
+        $('#fish-form').submit();
+    });
 });

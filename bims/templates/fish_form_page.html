@@ -34,7 +34,8 @@
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Date</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control form-control-sm"
+                    <input type="text" name="date"
+                           class="form-control form-control-sm"
                            id="date" placeholder="">
                 </div>
             </div>
@@ -80,7 +81,8 @@
                         </td>
                         <td>
                             <div class="form-check">
-                                <input class="form-check-input observed" type="checkbox"
+                                <input class="form-check-input observed"
+                                       type="checkbox"
                                        value=""
                                        name="{{ taxon.taxon_id }}-observed">
                                 <label class="form-check-label">
@@ -114,6 +116,28 @@
                    data-target="#confirm-submit" class="btn btn-info"
                    value="Submit">
         </div>
+
+        <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
+             aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        Confirm Submit
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to submit the SASS form?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default"
+                                data-dismiss="modal">Cancel
+                        </button>
+                        <a href="#" id="submit"
+                           class="btn btn-success success">Submit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </form>
 {% endblock %}
 
