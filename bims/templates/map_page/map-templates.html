@@ -65,7 +65,7 @@
                     </tr>
                     <tr class="species-detail-row">
                         <td class="species-detail-cell cell-header">
-                            Number of occurrence records
+                            Occurrences
                         </td>
                         <td class="species-detail-cell cell-content">
                             <%= count %>
@@ -74,17 +74,17 @@
                 </table>
             </div>
             <div id="species-detail-summary-origin">
-                <div class="row dd-sub-title">Origin</div>
+                <div class="search-results-total">Origin</div>
                 <div class="row dd-status-list origin-info-list-detail">
                 </div>
             </div>
             <div id="species-detail-summary-endemism">
-                <div class="row dd-sub-title">Endemism</div>
+                <div class="search-results-total">Endemism</div>
                 <div class="row dd-status-list endemic-info-list-detail">
                 </div>
             </div>
             <div id="species-detail-summary-conservation-status">
-                <div class="row dd-sub-title">Conservation Status</div>
+                <div class="search-results-total">Conservation Status</div>
                 <div class="row dd-status-list conservation-status-list-detail">
             </div>
             <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/<%= iucn_redlist_id %>/" target="_blank">
@@ -98,7 +98,7 @@
                     <i class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-             <div class="container-fluid">
+             <div class="container-fluid" style="padding: 0.25rem;">
                 <button id="open-detailed-view"
                         class="btn fbis-button right-panel-button right-panel-last-button">
                     OPEN DASHBOARD

@@ -55,9 +55,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $thirdPartyData = $('<div>');
 
             var template = _.template($('#third-party-template').html());
-            $thirdPartyData.append(template({
-                // iucn_redlist_id : data['iucn_redlist_id']
-            }));
+            $thirdPartyData.append(template({}));
 
             var $wrapper = $thirdPartyData.find('.third-party-wrapper');
             var mediaFound = false;
@@ -94,49 +92,10 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                             '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
                         $rowWrapper.append($firstColumnDiv);
                     }
-                    // for (var i=0; i < firstColumn; i++) {
-                    //     var result = results[i];
-                    //     if(!result.hasOwnProperty('media')) {
-                    //         continue;
-                    //     }
-                    //     if(result['media'].length === 0) {
-                    //         continue;
-                    //     }
-                    //     var media = result['media'][0];
-                    //     if(!media.hasOwnProperty('identifier')) {
-                    //         continue;
-                    //     }
-                    //     mediaFound = true;
-                    //     if(mediaFound) {
-                    //         $fetchingInfoDiv.hide();
-                    //     }
-                    //     $firstColumnDiv.append('<a href="'+media['references']+'">' +
-                    //         '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
-                    // }
-                    // for (var j=firstColumn; j < firstColumn+secondColumn; j++) {
-                    //     var resultSecond = results[j];
-                    //     if(!resultSecond.hasOwnProperty('media')) {
-                    //         continue;
-                    //     }
-                    //     if(resultSecond['media'].length === 0) {
-                    //         continue;
-                    //     }
-                    //     var mediaSecond = resultSecond['media'][0];
-                    //     if(!mediaSecond.hasOwnProperty('identifier')) {
-                    //         continue;
-                    //     }
-                    //     mediaFound = true;
-                    //     if(mediaFound) {
-                    //         $fetchingInfoDiv.hide();
-                    //     }
-                    //     $secondColumnDiv.append('<a href="'+mediaSecond['references']+'">' +
-                    //         '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+mediaSecond['identifier']+'" width="100%"/></a>');
-                    // }
                     $wrapper.append($rowWrapper);
                     if(!mediaFound) {
                         $fetchingInfoDiv.html('Media not found');
                     }
-
                 }
             });
 
@@ -145,7 +104,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
         renderFBISRPanelBlocks: function(data, stretch_selection = false) {
             var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
-            $detailWrapper.append(this.getHtmlForFBISBlocks(data), stretch_selection);
+            $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
             return $detailWrapper;
         },
 
@@ -164,17 +123,13 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 style_class = "fbis-rpanel-block";
                 var temp_key = key;
                 //Highlight my selected box with a different colour
-                if (for_count == keys.length)
-                {
-                     style_class += " fbis-rpanel-block-last";
-                }
                 if (key == data_value) {
                     style_class += " fbis-rpanel-block-selected";
                     temp_key = data_title;
-                }
-                if (stretch_selection == true)
-                {
-                    style_class += " fbis-rpanel-block-selected flex-base-auto";
+                    if (stretch_selection == true)
+                    {
+                        style_class += " flex-base-auto";
+                    }
                 }
                 result_html += (`<div class="${style_class}">
                                  <div class="fbis-rpanel-block-text">

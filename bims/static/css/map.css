@@ -317,8 +317,9 @@ html, body, .map, .map-wrapper, #map-container {
     padding-left: 15px;
     padding-top: 5px;
     padding-bottom: 5px;
-    font-weight: normal;
+    font-weight: 400;
     font-size: 16px;
+    font-family: "Roboto Condensed";
 }
 
 #search-result-content .result-search {
@@ -1328,7 +1329,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #species-detail .content {
-    padding: 10px;
+    padding: 6px;
     color: #131313;
     padding-top: 0px;
     margin-top: -4px;
@@ -1381,6 +1382,11 @@ div:hover::-webkit-scrollbar {
     padding: 10px;
     margin-top: 10px;
     font-size: 12px;
+}
+
+#species-detail-summary-head-table table {
+    width: 100%;
+    background-color: #ebebeb;
 }
 
 .search-result-sub-title {
@@ -2323,6 +2329,7 @@ div:hover::-webkit-scrollbar {
     border-style: solid;
     border-width: 2px;
     padding: 0.25rem;
+    border: 1px solid #d3d4d1;
 }
 
 .side-panel-info #content-panel::-webkit-scrollbar {
@@ -2334,6 +2341,7 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     flex-wrap: wrap;
     line-height: 2rem;
+    border-right: 1px solid #d3d4d1;
 }
 
 .fbis-rpanel-block {
@@ -2357,9 +2365,6 @@ div:hover::-webkit-scrollbar {
     font-weight: 400;
 }
 
-.fbis-rpanel-block-last {
-    border-right: 1px solid #d3d4d1;
-}
 
 .flex-base-auto {
     flex-basis: auto !important;
@@ -2371,6 +2376,8 @@ div:hover::-webkit-scrollbar {
     font-weight: 400;
     text-decoration: underline;
     color: #18a090;
+    padding: 0.3rem;
+    padding-left: 10px;
 }
 
 #gbif-images-row {

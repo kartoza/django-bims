@@ -116,6 +116,7 @@
 #open-detailed-view {
     font-size: 10pt;
     text-transform: none;
+    width: -webkit-fill-available;
 }
 
 .download-as-csv {
