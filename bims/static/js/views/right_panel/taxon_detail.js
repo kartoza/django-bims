@@ -149,9 +149,11 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 '<div class="search-results-total" data-visibility="false"> Species details ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
+            var $overviewPanelTitle = $('<div><img src="/static/img/fish-2-grey.png" style="width:36px;">&nbsp;Overview</div>');
+
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', "Species Overview");
+            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', $overviewPanelTitle);
 
             self.siteDetail = siteDetail;
             if (siteDetail) {

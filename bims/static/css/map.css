@@ -115,12 +115,13 @@ html, body, .map, .map-wrapper, #map-container {
     padding-left: 15px;
     padding-right: 10px;
     min-height: 60px;
-    background: #1b900d;
-    color: white;
+    background: white;
+    color: #4e4e4e;
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
+    z-index: -1;
 }
 
 .right-panel-header .fa-map-marker {
@@ -824,10 +825,12 @@ div:hover::-webkit-scrollbar {
 }
 
 .search-results-total {
-    font-weight: bold;
-    font-size: 9pt;
     padding: 10px;
     background-color: #f9f9f9;
+    font-weight: 400;
+    font-size: 16px;
+    font-family: "Roboto Condensed";
+
 }
 
 .search-results-total:hover {
@@ -1401,6 +1404,7 @@ div:hover::-webkit-scrollbar {
 .sub-species-wrapper .search-result-sub-title {
     background-color: rgba(215, 215, 215, 0.5) !important;
     border-bottom: 1px solid rgba(209, 209, 209, 0.44);
+    font-size: 12px;
 }
 
 .search-result-sub-title:hover {
