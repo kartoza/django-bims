@@ -111,7 +111,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         generateDashboard: function (data) {
             var self = this;
-            this.dashboardTitleContainer.html(this.taxonName);
+            this.dashboardTitleContainer.html(data['taxon'] + ' (' + data['common_name'] + ')');
             var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
             var canonicalName = data['taxon'];

@@ -130,7 +130,7 @@ class BioCollectionSummary(APIView):
             )
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
-
+        response_data['common_name'] = taxonomy.vernacular_names.name
         file_path = create_search_process_file(
             data=response_data,
             search_process=search_process,
