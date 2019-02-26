@@ -41,7 +41,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_coordinates = "{latitude}, {longitude}".format(
             latitude=round(obj.geometry_point.x, 3),
             longitude=round(obj.geometry_point.y, 3))
-        context_data = json.loads(obj.location_context)
+        try:
+            print "Hello World"
+        except:
+            print "This is an error message!"
+        context_data = json.loads(str(obj.location_context))
         geomorphological_zone = (context_data
                                  ['context_group_values']
                                  ['eco_geo_group']
@@ -239,7 +243,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             )
         records_occurrence = {}
         module_info = {}
-        site_detail_info = self.get_site_detail_info(instance)
+
+
         for model in collections:
             taxonomy = model.taxonomy
             category = model.category
@@ -312,9 +317,18 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['sensitive'] += 1
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
-
-        biodiversity_data = self.get_biodiversity_data(instance)
-        climate_data = self.get_site_climate_data(instance.location_context)
+        try:
+            biodiversity_data = self.get_biodiversity_data(instance)
+        except:
+            biodiversity_data = {}
+        try:
+            climate_data = self.get_site_climate_data(instance.location_context)
+        except:
+            climate_data = {}
+        try:
+            site_detail_info = self.get_site_detail_info(instance)
+        except:
+            site_detail_info = {}
 
         result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
