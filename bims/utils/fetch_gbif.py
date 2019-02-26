@@ -134,7 +134,7 @@ def fetch_all_species_from_gbif(
         species_data = find_species(species, taxonomic_rank)
 
     # Check if nubKey same with the key
-    # if not then fetch the species with the nubKey to get the better data
+    # if not then fetch the species with the nubKey to get better data
     if 'nubKey' in species_data:
         if gbif_key:
             temp_key = gbif_key
@@ -190,3 +190,4 @@ def fetch_all_species_from_gbif(
                 species=child['scientificName'],
                 parent=taxonomy
             )
+        return taxonomy
