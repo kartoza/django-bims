@@ -132,8 +132,11 @@ class BioCollectionSummary(APIView):
         response_data['taxonomy_rank'] = taxonomy_rank
 
 
-
-        response_data['common_name'] = taxonomy.vernacular_names.name
+        # # common_names = taxonomy['vernacular_names']
+        # for each in taxonomy.vernacular_names.all():
+        #     print each.name
+        # # print(common_names)
+        # response_data['common_name'] = taxonomy.vernacular_names.name
         file_path = create_search_process_file(
             data=response_data,
             search_process=search_process,
