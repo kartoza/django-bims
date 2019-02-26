@@ -64,4 +64,3 @@ def get_html_for_radio_group_headings(column_count):
 @register.filter
 def value_by_key(d, key):
     return d[key]
-
