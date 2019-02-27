@@ -45,17 +45,6 @@ def process_spatial_scale_data(location_context_data, group=None):
             context_group = location_context_data[context_group_value]
         except TypeError:
             return
-        spatial_scale_group, created = (
-            SpatialScaleGroup.objects.get_or_create(
-                key=context_group['key'],
-                name=context_group['name'],
-                parent=group
-            ))
-        if 'service_registry_values' in context_group:
-            process_spatial_scale_data(
-                context_group['service_registry_values'],
-                group=spatial_scale_group
-            )
         if 'value' in context_group:
             if not context_group['value']:
                 continue
@@ -64,6 +53,14 @@ def process_spatial_scale_data(location_context_data, group=None):
             if isinstance(context_group['value'], (int, float)):
                 spatial_type = 'input'
                 spatial_query = context_group['key']
+                spatial_scale_group = group
+            else:
+                spatial_scale_group, created = (
+                    SpatialScaleGroup.objects.get_or_create(
+                        key=context_group['key'],
+                        name=context_group['name'],
+                        parent=group
+                    ))
             spatial_scale, spatial_created = (
                 SpatialScale.objects.get_or_create(
                     group=spatial_scale_group,
@@ -73,6 +70,18 @@ def process_spatial_scale_data(location_context_data, group=None):
                     query=spatial_query
                 )
             )
+        else:
+            spatial_scale_group, created = (
+                SpatialScaleGroup.objects.get_or_create(
+                    key=context_group['key'],
+                    name=context_group['name'],
+                    parent=group
+                ))
+            if 'service_registry_values' in context_group:
+                process_spatial_scale_data(
+                    context_group['service_registry_values'],
+                    group=spatial_scale_group
+                )
 
 
 def format_location_context(location_site_id, force_update=False):
