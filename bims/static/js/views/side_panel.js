@@ -100,7 +100,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         updateSidePanelTitle: function (title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');
             $rightPanelTitle.html(title);
-            $('.side-panel-info').css("padding-top", $('.right-panel-header').outerHeight());
+            $('.side-panel-info').css("padding-top", '55px');
         },
         closeSidePanelAnimation: function () {
             var self = this;
