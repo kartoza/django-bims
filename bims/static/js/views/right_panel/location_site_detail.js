@@ -428,7 +428,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
-
         renderSpeciesList: function (data) {
             var that = this;
             var $specialListWrapper = $('<div style="display: none"></div>');
@@ -537,7 +536,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i>  ' + name);
+            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i> ' + name);
             $siteDetailWrapper.find('.search-results-total').click(self.hideAll);
             $siteDetailWrapper.find('.search-results-total').click();
 
@@ -552,7 +551,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 success: function (data) {
                     self.siteDetailData = data;
                      Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
-                     if (data['geometry']) {
+                    if (data['geometry']) {
                         var feature = {
                             id: data['id'],
                             type: "Feature",
@@ -627,14 +626,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     } catch (err) {
                         $('#dashboard-detail').append(
                             self.renderDashboardDetail(data));
-                    }
-
-                    // render site detail info
-                    try {
-                        $('#dashboard-detail').append(renderDashboard(data));
-                        calculateChart($('#dashboard-detail'), data);
-                    } catch (err) {
-                        $('#dashboard-detail').append(self.renderDashboardDetail(data));
                     }
 
                     // render species list

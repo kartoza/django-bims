@@ -62,6 +62,8 @@ class Command(BaseCommand):
 
         ignore_not_empty = options.get('ignore_not_empty')
         site_id = options.get('site_id', None)
+        if site_id:
+            site_id = site_id.split(',')
 
         if ignore_not_empty:
             location_sites = LocationSite.objects.filter(
@@ -71,21 +73,23 @@ class Command(BaseCommand):
             location_sites = LocationSite.objects.all()
 
         if site_id:
-            location_sites = location_sites.filter(id=site_id)
+            location_sites = location_sites.filter(id__in=site_id)
 
         num = len(location_sites)
         i = 1
 
-        success = True
         for location_site in location_sites:
             print('Updating %s of %s, %s' % (i, num, location_site.name))
             i += 1
             for group_key in geocontext_group_keys:
                 current_outcome, message = (
                     location_site.add_context_group(group_key))
-                success = success * current_outcome
-            if not success:
-                print('[FAILED] %s : %s' % (location_site.name, message))
-            if success:
-                print('[SUCCESS] %s : %s' % (location_site.name, message))
-                location_site.save()
+                success = current_outcome
+                print('[{status}] [{site_id}] [{group}] - {message}'.format(
+                    status='SUCCESS' if success else 'FAILED',
+                    site_id=location_site.id,
+                    message=message,
+                    group=group_key
+                ))
+                if success:
+                    location_site.save()

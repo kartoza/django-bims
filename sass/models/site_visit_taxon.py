@@ -24,3 +24,6 @@ class SiteVisitTaxon(BiologicalCollectionRecord):
         null=True,
         blank=True
     )
+
+    class Meta:
+        verbose_name_plural = "Site visit taxa"

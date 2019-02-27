@@ -229,6 +229,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
     def to_representation(self, instance):
         collection_ids = self.context.get("collection_ids")
+
         result = super(
             LocationSiteDetailSerializer, self).to_representation(
             instance)
@@ -243,8 +244,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             )
         records_occurrence = {}
         module_info = {}
-
-
         for model in collections:
             taxonomy = model.taxonomy
             category = model.category
@@ -254,6 +253,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 taxon_class = self.get_class_from_taxonomy(taxonomy)
                 if not taxon_class:
                     taxon_class = 'No Class'
+
                 try:
                     records_occurrence[taxon_class]
                 except KeyError:

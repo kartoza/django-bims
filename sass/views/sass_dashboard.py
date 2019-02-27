@@ -304,6 +304,12 @@ class SassDashboardView(TemplateView):
                         'water_group']['service_registry_values']
                 )
             )
+            context['eco_geo'] = (
+                json.dumps(
+                    location_context['context_group_values'][
+                        'eco_geo_group']['service_registry_values']
+                )
+            )
         except (KeyError, TypeError):
             pass
 

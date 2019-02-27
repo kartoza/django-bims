@@ -42,3 +42,6 @@ class SiteVisitBiotopeTaxon(models.Model):
     date = models.DateField(
         default=timezone.now
     )
+
+    class Meta:
+        verbose_name_plural = "Site visit biotope taxa"
