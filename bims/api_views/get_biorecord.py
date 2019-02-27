@@ -130,11 +130,15 @@ class BioCollectionSummary(APIView):
             )
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
-        response_data['common_names'] = list(taxonomy.vernacular_names.all().values())
-        try:
-            common_name = response_data['common_names'][0]['name']
-        except:
-            response_data['common_names'][0]['name'] = ''
+        common_names = list(taxonomy.vernacular_names.all().filter(language='eng').values())
+        if len(common_names) == 0:
+            common_names = list(taxonomy.vernacular_names.all().values())
+            if len(common_names) == 0:
+                response_data['common_name'] = ''
+            else:
+                response_data['common_name'] = common_names[0]['name']
+        else:
+            response_data['common_name'] = common_names[0]['name']
         file_path = create_search_process_file(
             data=response_data,
             search_process=search_process,

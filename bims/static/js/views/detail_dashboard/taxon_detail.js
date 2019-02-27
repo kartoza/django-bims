@@ -111,10 +111,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         generateDashboard: function (data) {
             var self = this;
-            if (data['common_names'][0]['name'] != '')
+            if (data['common_name'] != '')
             {
                 this.dashboardTitleContainer.html(data['taxon'] + ' ('
-                + data['common_names'][0]['name'] + ')');
+                + data['common_name'] + ')');
             }
             else
             {
