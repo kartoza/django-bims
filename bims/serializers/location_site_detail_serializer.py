@@ -322,7 +322,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         except:
             biodiversity_data = {}
         try:
-            climate_data = self.get_site_climate_data(instance.location_context)
+            climate_data = self.get_site_climate_data(
+                instance.location_context)
         except:
             climate_data = {}
         try:
