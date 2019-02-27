@@ -6,7 +6,8 @@ from bims.models.location_site import (
     location_site_post_save_handler,
     LocationSite
 )
-
+from bims.models.spatial_scale import SpatialScale
+from bims.models.spatial_scale_group import SpatialScaleGroup
 
 logger = logging.getLogger('bims')
 
@@ -38,6 +39,42 @@ def array_to_dict(array, key_name='key'):
     return dictionary
 
 
+def process_spatial_scale_data(location_context_data, group=None):
+    for context_group_value in location_context_data:
+        try:
+            context_group = location_context_data[context_group_value]
+        except TypeError:
+            return
+        spatial_scale_group, created = (
+            SpatialScaleGroup.objects.get_or_create(
+                key=context_group['key'],
+                name=context_group['name'],
+                parent=group
+            ))
+        if 'service_registry_values' in context_group:
+            process_spatial_scale_data(
+                context_group['service_registry_values'],
+                group=spatial_scale_group
+            )
+        if 'value' in context_group:
+            if not context_group['value']:
+                continue
+            spatial_type = 'select'
+            spatial_query = context_group['value']
+            if isinstance(context_group['value'], (int, float)):
+                spatial_type = 'input'
+                spatial_query = context_group['key']
+            spatial_scale, spatial_created = (
+                SpatialScale.objects.get_or_create(
+                    group=spatial_scale_group,
+                    key=context_group['key'],
+                    name=context_group['name'],
+                    type=spatial_type,
+                    query=spatial_query
+                )
+            )
+
+
 def format_location_context(location_site_id, force_update=False):
     try:
         location_site = LocationSite.objects.get(
@@ -63,6 +100,9 @@ def format_location_context(location_site_id, force_update=False):
         )
         if 'hash' in formatted_location_context:
             if formatted_location_context['hash'] == hash_string:
+                process_spatial_scale_data(
+                    formatted_location_context['context_group_values']
+                )
                 logger.info('Formatted location context already exist')
                 return
 
@@ -79,6 +119,9 @@ def format_location_context(location_site_id, force_update=False):
         location_site_post_save_handler,
     )
 
+    process_spatial_scale_data(
+        formatted['context_group_values']
+    )
     formatted['hash'] = hash_string
     location_site.location_context = formatted
     location_site.save()
