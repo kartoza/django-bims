@@ -23,6 +23,7 @@
 {% block body_content %}
     <form action="{{ request.path }}" method="post" id="fish-form">
         {% csrf_token %}
+        <input type="hidden" name="site-id" value="{{ site_id }}">
         <div class="body-form container">
             <div class="header">
                 Add fish data for site
