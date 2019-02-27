@@ -45,6 +45,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
     def to_representation(self, instance):
         collection_ids = self.context.get("collection_ids")
+
         result = super(
             LocationSiteDetailSerializer, self).to_representation(
             instance)
@@ -132,6 +133,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     module_info[module]['iucn_status']['sensitive'] += 1
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
+
 
         result['records_occurrence'] = records_occurrence
         result['modules_info'] = module_info
