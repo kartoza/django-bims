@@ -215,6 +215,7 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
+    SITE_DETAILS = {}
 
     def get(self, request):
         filters = request.GET
@@ -261,6 +262,8 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
 
+        site_details = self.get_site_details()
+
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -271,6 +274,8 @@ class LocationSitesSummary(APIView):
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.SITE_DETAILS: dict(site_details),
+
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
@@ -287,6 +292,83 @@ class LocationSitesSummary(APIView):
             return Response(json.load(file_data))
         except ValueError:
             return Response(response_data)
+
+    def get_site_details(self):
+        # get single site detailed dashboard overview data
+
+        overview = {}
+        overview['title'] = []
+        overview['value'] = []
+        catchments = {}
+        catchments['title'] = []
+        catchments['value'] = []
+        sa_ecoregions = {}
+        sa_ecoregions['title'] = []
+        sa_ecoregions['value'] = []
+        sub_water_management_areas = {}
+        sub_water_management_areas['title'] = []
+        sub_water_management_areas['value'] = []
+
+        overview['title'].append('FBIS Site Code')
+        overview['value'].append('value')
+
+        overview['title'].append('Site coordinates')
+        overview['value'].append('')
+
+        overview['title'].append('Site description')
+        overview['value'].append('value')
+
+        overview['title'].append('River')
+        overview['value'].append('value')
+
+        overview['title'].append('Geomorphological zone')
+        overview['value'].append('value')
+
+        overview['title'].append('River Management Units')
+        overview['value'].append('value')
+
+        catchments['title'].append('Primary')
+        catchments['value'].append('value')
+
+        catchments['title'].append('Secondary')
+        catchments['value'].append('value')
+
+        catchments['title'].append('Tertiary')
+        catchments['value'].append('value')
+
+        catchments['title'].append('Quaternary')
+        catchments['value'].append('value')
+
+        catchments['title'].append('Quinary')
+        catchments['value'].append('value')
+
+        sub_water_management_areas['title'].append(
+            'Sub-Water Management Areas')
+        sub_water_management_areas['value'].append('value')
+
+        sub_water_management_areas['title'].append(
+            'Water Management Areas (WMA)')
+        sub_water_management_areas['value'].append('value')
+
+        sa_ecoregions['title'].append('Ecoregion Level 1')
+        sa_ecoregions['value'].append('value')
+
+        sa_ecoregions['title'].append('Ecoregion Level 2')
+        sa_ecoregions['value'].append('value')
+
+        sa_ecoregions['title'].append('Freshwater Ecoregion')
+        sa_ecoregions['value'].append('value')
+
+        sa_ecoregions['title'].append('Province')
+        sa_ecoregions['value'].append('value')
+
+        result = {}
+        result['overview'] = overview
+        result['catchments'] = catchments
+        result['sub_water_management_areas'] = sub_water_management_areas
+        result['sa_ecoregions'] = sa_ecoregions
+
+        return result
 
 
 class LocationSitesCoordinate(ListAPIView):
@@ -309,3 +391,6 @@ class LocationSitesCoordinate(ListAPIView):
             ignore_bbox=True,
             only_site=True)
         return collection_results
+
+
+
