@@ -588,7 +588,7 @@ define([
                 title = data['title'][i];
                 value = data['value'][i];
                 temp_result = `<div class="row">
-                               <div class="col-6">${title}</div>
+                               <div class="col-6 title_column">${title}</div>
                                <div class="col-6">${value}</div>
                                </div>`
                 $result.append(temp_result);

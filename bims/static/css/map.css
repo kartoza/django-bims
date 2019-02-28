@@ -2413,13 +2413,22 @@ div:hover::-webkit-scrollbar {
     padding: 0.25rem;
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
+    font-size: 12px;
 }
 
-#fish-ssdd-site-details .card-body {
-    padding: 0.5rem;
+#fish-ssdd-site-details .col-12.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
 }
 
-
-#fish-ssdd-site-details .col-lg-4 {
-    padding: 0;
+#fish-ssdd-distribution {
+    padding-bottom: 15px;
 }
+
+#fish-ssdd-site-details .title_column {
+    font-weight: 700;
+
+}
+

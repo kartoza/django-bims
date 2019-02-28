@@ -123,14 +123,13 @@
                 <div class="container dashboard-wrapper">
                     <div class="container row">
                         <div class="col-lg-4">
-                            <div class="row">
+                            <div class="container row">
                                 {# Distribution #}
-                                <div class="col-lg-12"
-                                     id="fish-ssdd-distribution">
+                                <div class="col-lg-12" id="fish-ssdd-distribution">
                                     <div class="card">
                                         <div class="card-header">
                                             <div class="card-header-title pull-left d-inline">
-                                                Overview
+                                                Distribution
                                             </div>
                                             <button id="export-locationsite-map"
                                                     class="btn btn-default pull-right">
@@ -141,76 +140,58 @@
                                         <div class="card-body locationsite-map-wrapper">
                                             <div id="locationsite-map"
                                                  class="map"
-                                                 style="height: 300px; width: 100%;"></div>
-                                            <div id="overview-dashboard-table"
-                                                 class="dashboard-table"
-                                                 style="margin-top: 10px; margin-bottom: 10px">
-                                                <table class="table">
-                                                    <tr>
-                                                        <td id="site-name-label">
-                                                            Name
-                                                        </td>
-                                                        <td id="site-name"></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Total Records</td>
-                                                        <td id="total-records">
-                                                            0
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    {# Overview #}
-                                    <div class="col-lg-12"
-                                         id="fish-ssdd-overview">
-                                        <div class="card">
-                                            <div class="card-header">Overview
+                                                 style="height: 300px; width: 100%;">
                                             </div>
 
-                                            {# Overview Site details #}
-                                            <div class="container row"
-                                                 id="fish-ssdd-site-details">
-
-                                                <div class="col-12"
-                                                     id="overview"></div>
-                                                <div class="col-12 sub-title"
-                                                     class="site-details-header">
-                                                    Catchments
-                                                </div>
-                                                <div class="col-12"
-                                                     id="catchments"></div>
-                                                <div class="col-12 sub-title"
-                                                     class="site-details-header">
-                                                    Water Management Areas
-                                                </div>
-                                                <div class="col-12"
-                                                     id="sub_water_management_areas"></div>
-                                                <div class="col-12 sub-title"
-                                                     class="site-details-header">
-                                                    SA Ecoregion
-                                                </div>
-                                                <div class="col-12"
-                                                     id="sa_ecoregions"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        {# Occurrence Data #}
-                                        <div class="col-lg-12"
-                                             id="fish-ssdd-occurrence-data">
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-lg-8 dashboard-graph-wrapper">
 
+                            <div class="container row" id="#fish-ssdd-site-details">
+                                {# Overview #}
+                                <div class="col-lg-12" id="fish-ssdd-overview">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div class="card-header-title pull-left d-inline">
+                                                    Overview
+                                            </div>
+                                        </div>
+                                        {# Overview Site details #}
+                                        <div class="card-body" id="fish-ssdd-site-details">
+                                            <div class="col-12"
+                                                 id="overview"></div>
+                                            <div class="col-12 sub-title"
+                                                 class="site-details-header">
+                                                Catchments
+                                            </div>
+                                            <div class="col-12"
+                                                 id="catchments"></div>
+                                            <div class="col-12 sub-title"
+                                                 class="site-details-header">
+                                                Water Management Areas
+                                            </div>
+                                            <div class="col-12"
+                                                 id="sub_water_management_areas"></div>
+                                            <div class="col-12 sub-title"
+                                                 class="site-details-header">
+                                                SA Ecoregion
+                                            </div>
+                                            <div class="col-12"
+                                                 id="sa_ecoregions"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                {# Occurrence Data #}
+                                <div class="col-lg-12"
+                                     id="fish-ssdd-occurrence-data">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-8 dashboard-graph-wrapper">
                         </div>
                     </div>
                 </div>

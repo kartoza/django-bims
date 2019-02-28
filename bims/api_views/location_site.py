@@ -342,46 +342,109 @@ class LocationSitesSummary(APIView):
         overview['title'].append('River')
         overview['value'].append(site_river)
 
+        eco_region = (context_document
+                      ['context_group_values']
+                      ['eco_geo_group']
+                      ['service_registry_values']
+                      ['eco_region']
+                      ['value'])
+        geo_class = (context_document
+                     ['context_group_values']
+                     ['eco_geo_group']
+                     ['service_registry_values']
+                     ['geo_class']
+                     ['value'])
+        geo_zone = ('{geo_class} {eco_region}'.format(
+            geo_class = geo_class,
+            eco_region = eco_region))
+
         overview['title'].append('Geomorphological zone')
-        overview['value'].append('value')
+        overview['value'].append(geo_zone)
 
         overview['title'].append('River Management Units')
-        overview['value'].append('value')
+        overview['value'].append('???')
+
+        # Catchments
+        primary_catchment = (context_document
+                             ['context_group_values']
+                             ['water_group']
+                             ['service_registry_values']
+                             ['primary_catchment_area']
+                             ['value'])
+        secondary_catchment = (context_document
+                               ['context_group_values']
+                               ['water_group']
+                               ['service_registry_values']
+                               ['secondary_catchment_area']
+                               ['value'])
+        tertiary_catchment_area = (context_document
+                                   ['context_group_values']
+                                   ['water_group']
+                                   ['service_registry_values']
+                                   ['tertiary_catchment_area']
+                                   ['value'])
+        # quaternary_catchment_area = (context_document
+        #                              ['context_group_values']
+        #                              ['water_group']
+        #                              ['service_registry_values']
+        #                              ['quaternary_catchment_area']
+        #                              ['value'])
+
+        # quinary_catchment_area = (context_document
+    #                               ['context_group_values']
+    #                               ['water_group']
+    #                               ['service_registry_values']
+    #                               ['quinary_catchment_area']
+    #                               ['value'])
 
         catchments['title'].append('Primary')
-        catchments['value'].append('value')
+        catchments['value'].append(primary_catchment)
 
         catchments['title'].append('Secondary')
-        catchments['value'].append('value')
+        catchments['value'].append(secondary_catchment)
 
         catchments['title'].append('Tertiary')
-        catchments['value'].append('value')
+        catchments['value'].append(tertiary_catchment_area)
 
         catchments['title'].append('Quaternary')
-        catchments['value'].append('value')
+        catchments['value'].append('Coming Soon')
 
         catchments['title'].append('Quinary')
-        catchments['value'].append('value')
+        catchments['value'].append('very soon...')
+
+        water_management_areas = (context_document
+                                  ['context_group_values']
+                                  ['water_group']
+                                  ['service_registry_values']
+                                  ['water_management_area']
+                                  ['value'])
 
         sub_water_management_areas['title'].append(
             'Sub-Water Management Areas')
-        sub_water_management_areas['value'].append('value')
+        sub_water_management_areas['value'].append('???')
 
         sub_water_management_areas['title'].append(
             'Water Management Areas (WMA)')
-        sub_water_management_areas['value'].append('value')
+        sub_water_management_areas['value'].append(water_management_areas)
+
+        province = self.parse_string(str(context_document
+                                         ['context_group_values']
+                                         ['political_boundary_group']
+                                         ['service_registry_values']
+                                         ['sa_provinces']
+                                         ['value']))
 
         sa_ecoregions['title'].append('Ecoregion Level 1')
-        sa_ecoregions['value'].append('value')
+        sa_ecoregions['value'].append('???')
 
         sa_ecoregions['title'].append('Ecoregion Level 2')
-        sa_ecoregions['value'].append('value')
+        sa_ecoregions['value'].append('???')
 
         sa_ecoregions['title'].append('Freshwater Ecoregion')
-        sa_ecoregions['value'].append('value')
+        sa_ecoregions['value'].append('???')
 
         sa_ecoregions['title'].append('Province')
-        sa_ecoregions['value'].append('value')
+        sa_ecoregions['value'].append(province)
 
         result = {}
         result['overview'] = overview

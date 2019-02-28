@@ -40,8 +40,8 @@ class Command(BaseCommand):
             geocontext_group_keys = groups.split(',')
         else:
             geocontext_group_keys = [
-                "political_boundary_group",
-                "cadastre_group",
+                # "political_boundary_group",
+                # "cadastre_group",
                 "elevation_group",
                 "water_group",
                 "rainfall_group",
@@ -51,12 +51,10 @@ class Command(BaseCommand):
                 "monthly_mean_daily_average_temperature_group",
                 "monthly_mean_daily_average_relative_humidity_group",
                 "monthly_standard_deviation_daily_maximum_temperature_group",
-                "monthly_standard_deviation_daily_"
-                "maximum_relative_humidity_group",
+                "monthly_standard_deviation_daily_maximum_relative_humidity_group",
                 "monthly_standard_deviation_of_daily_mean_temperature_group",
                 "monthly_means_of_daily_minimum_temperature_group",
-                "monthly_standard_deviation_of_"
-                "daily_minimum_temperature_group",
+                "monthly_standard_deviation_of_daily_minimum_temperature_group",
                 "eco_geo_group"
             ]
 
