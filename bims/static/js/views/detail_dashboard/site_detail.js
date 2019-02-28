@@ -598,8 +598,8 @@ define([
 
         createFishSSDDSiteDetails: function (data) {
             var siteDetails = $('#fish-ssdd-site-details');
-            var overView = siteDetails.find('#overview');
-            overView.append(this.renderTableFromTitlesValuesLists(
+            var overview = siteDetails.find('#overview');
+            overview.append(this.renderTableFromTitlesValuesLists(
                 data['site_details']['overview']));
             var catchments = siteDetails.find('#catchments');
             catchments.append(this.renderTableFromTitlesValuesLists(

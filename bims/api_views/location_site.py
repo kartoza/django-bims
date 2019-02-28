@@ -32,6 +32,7 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
+from sass.models.river import River
 
 
 class LocationSiteList(APIView):
@@ -215,13 +216,14 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
-    SITE_DETAILS = {}
+    SITE_DETAILS = 'site_details'
 
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
         collection_results = search.process_search()
 
+        site_id = filters['siteId']
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
             query=request.build_absolute_uri()
@@ -261,8 +263,7 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('category')
         )
-
-        site_details = self.get_site_details()
+        site_details = self.get_site_details(site_id)
 
         search_process.set_search_raw_query(
             search.location_sites_raw_query
@@ -293,9 +294,25 @@ class LocationSitesSummary(APIView):
         except ValueError:
             return Response(response_data)
 
-    def get_site_details(self):
+    def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
+        location_sites = LocationSite.objects.filter(id=site_id).all()
+        site_longitude = self.parse_string(
+            str(location_sites.values('longitude')[0]['longitude']))
+        site_latitude = self.parse_string(
+            str(location_sites.values('latitude')[0]['latitude']))
+        site_description = self.parse_string(str(location_sites.values(
+                'site_description')[0]['site_description']))
+        site_name = self.parse_string(
+            str(location_sites.values('name')[0]['name']))
+        context_document = dict(json.loads(
+            location_sites.values('location_context')[0]['location_context']))
 
+
+        site_river_id = location_sites.values('river_id')[0]['river_id']
+        site_code = location_sites.values('site_code')[0]['site_code']
+
+        site_river = River.objects.filter(id=site_river_id).values('name')[0]['name']
         overview = {}
         overview['title'] = []
         overview['value'] = []
@@ -310,16 +327,20 @@ class LocationSitesSummary(APIView):
         sub_water_management_areas['value'] = []
 
         overview['title'].append('FBIS Site Code')
-        overview['value'].append('value')
+        overview['value'].append(str(site_id))
 
         overview['title'].append('Site coordinates')
-        overview['value'].append('')
+        overview['value'].append(
+            str('Longitude: {site_longitude}, '
+                'Latitude: {site_latitude}').format(
+                site_longitude = site_longitude,
+                site_latitude = site_latitude))
 
         overview['title'].append('Site description')
-        overview['value'].append('value')
+        overview['value'].append(site_description)
 
         overview['title'].append('River')
-        overview['value'].append('value')
+        overview['value'].append(site_river)
 
         overview['title'].append('Geomorphological zone')
         overview['value'].append('value')
@@ -369,6 +390,12 @@ class LocationSitesSummary(APIView):
         result['sa_ecoregions'] = sa_ecoregions
 
         return result
+
+    def parse_string(self, string_in):
+        if not string_in:
+            return 'Unknown'
+        else:
+            return string_in
 
 
 class LocationSitesCoordinate(ListAPIView):
