@@ -2403,3 +2403,9 @@ div:hover::-webkit-scrollbar {
     color: white;
 }
 
+.overview-taxa-table {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
