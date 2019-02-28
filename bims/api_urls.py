@@ -55,6 +55,7 @@ from bims.api_views.river_catchment import (
     RiverCatchmentList,
     RiverCatchmentTaxonList
 )
+from bims.api_views.spatial_scale_filter import SpatialScaleFilterList
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -137,6 +138,9 @@ urlpatterns = [
     url(r'^river-catchment-list/$',
         RiverCatchmentList.as_view(),
         name='river-catchment-list'),
+    url(r'^spatial-scale-filter-list/$',
+        SpatialScaleFilterList.as_view(),
+        name='spatial-scale-filter-list'),
     url(r'^site-search-result/$',
         SiteSearchResult.as_view(),
         name='site-search-result'),

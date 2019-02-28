@@ -26,3 +26,5 @@ from bims.models.river_catchment import *  # noqa
 from bims.models.fbis_uuid import *  # noqa
 from bims.models.biotope import *  # noqa
 from bims.models.data_source import *  # noqa
+from bims.models.spatial_scale import *  # noqa
+from bims.models.spatial_scale_group import *  # noqa
