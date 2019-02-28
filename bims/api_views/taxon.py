@@ -106,10 +106,10 @@ class TaxonDetail(APIView):
         if len(common_names) == 0:
             common_names = list(taxon.vernacular_names.all().values())
             if len(common_names) == 0:
-                data['common_name'] = ''
+                data['common_name'] = 'Unknown'
             else:
-                data['common_name'] = common_names[0]['name']
+                data['common_name'] = str(common_names[0]['name']).capitalize()
         else:
-            data['common_name'] = common_names[0]['name']
+            data['common_name'] = str(common_names[0]['name']).capitalize()
 
         return Response(data)
