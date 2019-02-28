@@ -71,6 +71,8 @@ class TaxonDetail(APIView):
 
     def get(self, request, pk, format=None):
         taxon = self.get_object(pk)
+
+
         serializer = TaxonSerializer(taxon)
         data = serializer.data
 
@@ -97,5 +99,17 @@ class TaxonDetail(APIView):
         taxonomic_rank = self.get_taxonomic_rank_values(taxon)
         for rank in taxonomic_rank:
             data.update(rank)
+
+        # Common name
+        common_names = list(
+            taxon.vernacular_names.all().filter(language='eng').values())
+        if len(common_names) == 0:
+            common_names = list(taxon.vernacular_names.all().values())
+            if len(common_names) == 0:
+                data['common_name'] = ''
+            else:
+                data['common_name'] = common_names[0]['name']
+        else:
+            data['common_name'] = common_names[0]['name']
 
         return Response(data)
