@@ -51,8 +51,9 @@ define([
             self.clearFilterButton.prop('disabled', true);
 
             self.getUserBoundary();
-            self.getAdministrativeFilter();
-            self.getRiverCatchmentFilter();
+            // self.getAdministrativeFilter();
+            // self.getRiverCatchmentFilter();
+            self.getSpatialScaleFilter();
 
             self.progress.hide();
 
@@ -149,9 +150,22 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     Shared.PoliticalRegionBoundaries = data;
+                    console.log('political_region', data);
                     self.renderChildTree(data, self.spatialScaleContainer, 1, self.politicalBoundaryInputName);
                 }
             });
+        },
+        getSpatialScaleFilter: function () {
+            var self = this;
+            $.ajax({
+                type: 'GET',
+                url: '/api/spatial-scale-filter-list/',
+                dataType: 'json',
+                success: function (data) {
+                    console.log('spatial_scale', data);
+                    self.renderSpatialScaleFilter(data);
+                }
+            })
         },
         getRiverCatchmentFilter: function () {
             var self = this;
@@ -163,6 +177,38 @@ define([
                     self.renderChildTree(data, self.riverCatchmentContainer, 1, self.riverCatchmentInputName);
                 }
             });
+        },
+        renderSpatialScaleFilter: function (data) {
+            let self = this;
+            let $container = self.$el.find('.spatial-filter-container');
+
+            $.each(data, function (index, spatialData) {
+                if (spatialData.hasOwnProperty('value') &&
+                    spatialData['value'].length < 1) {
+                    return true;
+                }
+                if (!spatialData.hasOwnProperty('children')) {
+                    return true;
+                }
+                let header = $('<div class="small-subtitle spatial-scale-sub-panel">\n' +
+                                spatialData['name'] + '\n' +
+                                '<i class="fa fa-angle-down pull-right"></i>\n' +
+                             '</div>');
+                $container.append(header);
+                header.after(self.renderSpatialChildren(spatialData['children']));
+            });
+        },
+        renderSpatialChildren: function (spatialData) {
+            let tree = $('<div class="col-lg-12 filter-content">');
+            let self = this;
+            self.renderChildTree(spatialData, tree, 1, spatialData['name']);
+
+            // $.each(spatialData, function (index, spatialDataChild) {
+            //     self.renderChildTree(spatialDataChild, tree, 1, spatialDataChild['name']);
+            //     // tree.append('<div class="boundary-item">' + spatialDataChild['name'] + '</div>');
+            // });
+
+            return tree;
         },
         renderChildTree: function (data, wrapper, level, name, isChecked = false) {
             var self = this;
@@ -182,29 +228,41 @@ define([
                 var label = '';
                 var checked = '';
                 var dataValue = '';
+                var dataName = '';
+
                 var _isChecked = isChecked;
-                if (data[i].hasOwnProperty('name')) {
-                    label = data[i]['name'];
+                dataValue = data[i]['id'];
+
+                if (data[i].hasOwnProperty('query')) {
+                    label = data[i]['query'];
+                    dataName = data[i]['query'];
                 } else {
-                    label = data[i]['value'];
+                    label = data[i]['name'];
+                    dataName = data[i]['key'];
+                    dataValue = 'group-' + data[i]['id'];
                 }
-                if (data[i].hasOwnProperty('value')) {
-                    dataValue = data[i]['value'];
-                }
-                if (selectedArray.includes(dataValue.toString())) {
-                    _isChecked = true;
-                }
+
+                // if (data[i].hasOwnProperty('value')) {
+                //     dataValue = data[i]['value'];
+                // }
+                // if (selectedArray.includes(dataValue.toString())) {
+                //     _isChecked = true;
+                // }
                 if (_isChecked) {
                     checked = 'checked';
                     this.updateChecked();
                 }
                 var $item = $('<div class="boundary-item"></div>');
-                $item.append('<input class="boundary-item-input" type="checkbox" data-level="' + level + '" name="' + name + '" value="' + dataValue + '" ' + checked + '>');
+                $item.append('<input class="boundary-item-input" type="checkbox" ' +
+                    'data-level="' + level + '" name="' + dataName + '" ' +
+                    'value="' + dataValue + '" ' + checked + '>');
                 $item.append('<label> ' + label + '</label>');
                 wrapper.append($item);
-                if (data[i]['children'].length > 0) {
-                    $item.append('<i class="fa fa-plus-square-o pull-right" aria-hidden="true"> </i>');
-                    self.renderChildTree(data[i]['children'], $item, level + 1, name, _isChecked);
+
+                if (data[i].hasOwnProperty('value') && data[i]['value'].length > 0) {
+                    $item.append('<i class="fa fa-plus-square-o pull-right" ' +
+                        'aria-hidden="true"> </i>');
+                    self.renderChildTree(data[i]['value'], $item, level + 1, dataName, _isChecked);
                 }
             }
         },
@@ -401,6 +459,7 @@ define([
         },
         clearSelected: function (e) {
             this.applyFilterButton.prop('disabled', true);
+
             this.clearFilterButton.prop('disabled', true);
             $.each(Shared.UserBoundarySelected, function (index, id) {
                 Shared.Dispatcher.trigger('map:removeHighlightPinnedFeature', 'userBoundary-' + id);

@@ -10,7 +10,9 @@ from bims.models import (
     UserBoundary,
     SearchProcess,
     SEARCH_RESULTS,
-    SEARCH_PROCESSING
+    SEARCH_PROCESSING,
+    SpatialScale,
+    SpatialScaleGroup
 )
 from bims.tasks.search_version_2 import search_task
 
@@ -161,6 +163,10 @@ class SearchVersion2(object):
     def endemic(self):
         return self.parse_request_json('endemic')
 
+    @property
+    def spatial_filter(self):
+        return self.parse_request_json('spatialFilter')
+
     def process_search(self):
         if self.search_query:
             bio = BiologicalCollectionRecord.objects.filter(
@@ -217,12 +223,36 @@ class SearchVersion2(object):
                 filters['site__boundary__in'] = boundary
         bio = bio.filter(**filters)
 
+        if self.spatial_filter:
+            spatial_filters = SpatialScale.objects.filter(
+                id__in=self.spatial_filter
+            ).values('query', 'group__key', 'group__parent__key')
+            spatial_query_list = []
+            for spatial_filter in spatial_filters:
+                spatial_query = (
+                    'site__location_context__context_group_values__'
+                )
+                spatial_query_value = ''
+                if spatial_filter['group__parent__key']:
+                    spatial_query += spatial_filter['group__parent__key'] + '__'
+                if spatial_filter['group__key']:
+                    spatial_query += 'service_registry_values__'
+                    spatial_query += spatial_filter['group__key'] + '__'
+                if spatial_filter['query']:
+                    spatial_query += 'value'
+                    spatial_query_value = spatial_filter['query']
+                spatial_query_list.append({
+                    spatial_query: spatial_query_value
+                })
+            for spatial_query_data in spatial_query_list:
+                bio = bio.filter(**spatial_query_data)
+
         if self.user_boundary:
             user_boundaries = UserBoundary.objects.filter(
                 pk__in=self.user_boundary
             )
             if user_boundaries:
-                bio.filter(site__geometry_point__intersent=(
+                bio = bio.filter(site__geometry_point__intersent=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
         self.location_sites_raw_query = bio.distinct('site').values(
