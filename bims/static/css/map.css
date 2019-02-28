@@ -2409,3 +2409,17 @@ div:hover::-webkit-scrollbar {
     width: 100%;
 }
 
+#fish-ssdd-site-details .col-6 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+}
+
+#fish-ssdd-site-details .card-body {
+    padding: 0.5rem;
+}
+
+
+#fish-ssdd-site-details .col-lg-4 {
+    padding: 0;
+}

@@ -168,9 +168,9 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.createOccurrenceTable(data);
-                    self.createCharts(data);
-
+                 //   self.createOccurrenceTable(data);
+                 //   self.createCharts(data);
+                    self.createFishSSDDSiteDetails(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -576,7 +576,41 @@ define([
                 },
                 options: originTimelineGraphOptions
             })
+        },
+        renderTableFromTitlesValuesLists: function (data) {
+            var title = '';
+            var value = '';
+            var temp_result;
+            var $result = $('<div></div>');
+            var count = data['value'].length;
+            for (let i = 0; i < count; i++)
+            {
+                title = data['title'][i];
+                value = data['value'][i];
+                temp_result = `<div class="row">
+                               <div class="col-6">${title}</div>
+                               <div class="col-6">${value}</div>
+                               </div>`
+                $result.append(temp_result);
+            }
+            return $result;
+        },
+
+        createFishSSDDSiteDetails: function (data) {
+            var siteDetails = $('#fish-ssdd-site-details');
+            var overView = siteDetails.find('#overview');
+            overView.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['overview']));
+            var catchments = siteDetails.find('#catchments');
+            catchments.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['catchments']));
+            var sub_water_management_areas = siteDetails.find(
+                '#sub_water_management_areas');
+            sub_water_management_areas.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['sub_water_management_areas']));
+            var sa_ecoregions = siteDetails.find('#sa_ecoregions');
+            sa_ecoregions.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['sa_ecoregions']));
         }
-        ,
     })
 });

@@ -149,16 +149,12 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
 
             var overViewTable = _.template($('#taxon-overview-table').html());
-
-            // this.overviewTaxaTable.html(
-            //     this.renderTableFromTitlesValuesLists(data['site_details'][']));
-            //     overViewTable({
-            //     csv_downloads_url: self.csvDownloadsUrl,
-            //     count: data.length,
-            //     taxon_class: data['taxon'],
-            //     gbif_id: gbif_key
-            // })
-            // );
+            this.overviewTaxaTable.html(overViewTable({
+                csv_downloads_url: self.csvDownloadsUrl,
+                count: data.length,
+                taxon_class: data['taxon'],
+                gbif_id: gbif_key
+            }));
 
             let taxonDetailTable = _.template($('#taxon-detail-table').html());
             this.overviewNameTaxonTable.html(taxonDetailTable());
@@ -329,32 +325,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        },
-        renderTableFromTitlesValuesLists: function (data) {
-            var title = '';
-            var value = '';
-            var temp_result;
-            var $result = $('<div></div>');
-            var count = data['value'].length;
-            for (let i = 0; i < count; i++)
-            {
-                title = data['title'][i];
-                value = data['value'][i];
-                temp_result = `<div class="row">
-                               <div class="col-6">${title}</div>
-                               <div class="col-6">${value}</div>
-                               </div>`
-                $result.append(temp_result);
-            }
-            return $result;
-        },
-
-        renderFishSSDDSiteDetails: function (data) {
-            var siteDetails = $('#fish-ssdd-site-details');
-            var overView = siteDetails.find('#overview');
-            overView.append(this.renderTableFromTitlesValuesLists(data['site-detail']['overview']))
         }
-        
-
     })
 });
