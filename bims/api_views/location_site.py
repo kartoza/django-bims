@@ -307,8 +307,8 @@ class LocationSitesSummary(APIView):
         site_description = self.parse_string(str(location_sites.values(
                 'site_description')[0]['site_description']))
         try:
-            context_document = dict(json.loads(str(
-            location_sites.values('location_context')[0]['location_context'])))
+            context_document = dict(json.loads(str(location_sites.values(
+                'location_context')[0]['location_context'])))
         except ValueError:
             context_document = ''
         site_river_id = location_sites.values('river_id')[0]['river_id']
