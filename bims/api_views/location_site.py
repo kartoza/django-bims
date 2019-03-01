@@ -303,16 +303,12 @@ class LocationSitesSummary(APIView):
             str(location_sites.values('latitude')[0]['latitude']))
         site_description = self.parse_string(str(location_sites.values(
                 'site_description')[0]['site_description']))
-        site_name = self.parse_string(
-            str(location_sites.values('name')[0]['name']))
         context_document = dict(json.loads(
             location_sites.values('location_context')[0]['location_context']))
-
-
         site_river_id = location_sites.values('river_id')[0]['river_id']
-        site_code = location_sites.values('site_code')[0]['site_code']
 
-        site_river = River.objects.filter(id=site_river_id).values('name')[0]['name']
+        site_river = River.objects.filter(
+            id=site_river_id).values('name')[0]['name']
         overview = {}
         overview['title'] = []
         overview['value'] = []
@@ -481,6 +477,4 @@ class LocationSitesCoordinate(ListAPIView):
             ignore_bbox=True,
             only_site=True)
         return collection_results
-
-
 
