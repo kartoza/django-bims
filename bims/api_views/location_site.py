@@ -477,4 +477,3 @@ class LocationSitesCoordinate(ListAPIView):
             ignore_bbox=True,
             only_site=True)
         return collection_results
-
