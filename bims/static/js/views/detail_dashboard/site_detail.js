@@ -598,6 +598,7 @@ define([
 
         createFishSSDDSiteDetails: function (data) {
             var siteDetails = $('#fish-ssdd-site-details');
+            var recordSites = $('#fish-ssdd-records-sites');
             var overview = siteDetails.find('#overview');
             overview.append(this.renderTableFromTitlesValuesLists(
                 data['site_details']['overview']));
@@ -608,9 +609,11 @@ define([
                 '#sub_water_management_areas');
             sub_water_management_areas.append(this.renderTableFromTitlesValuesLists(
                 data['site_details']['sub_water_management_areas']));
-            var sa_ecoregions = siteDetails.find('#sa_ecoregions');
+            var sa_ecoregions = siteDetails.find('#sa-ecoregions');
             sa_ecoregions.append(this.renderTableFromTitlesValuesLists(
                 data['site_details']['sa_ecoregions']));
+            var recordSitesSub = recordSites.find('#records-sites')
+            recordSitesSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
         }
     })
 });

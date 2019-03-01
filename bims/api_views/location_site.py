@@ -264,7 +264,8 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
         site_details = self.get_site_details(site_id)
-
+        site_details['records_and_sites'] = self.get_number_of_records_and_taxa(
+            collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -303,8 +304,11 @@ class LocationSitesSummary(APIView):
             str(location_sites.values('latitude')[0]['latitude']))
         site_description = self.parse_string(str(location_sites.values(
                 'site_description')[0]['site_description']))
-        context_document = dict(json.loads(
-            location_sites.values('location_context')[0]['location_context']))
+        try:
+            context_document = dict(json.loads(str(
+            location_sites.values('location_context')[0]['location_context'])))
+        except ValueError:
+            context_document = ''
         site_river_id = location_sites.values('river_id')[0]['river_id']
 
         site_river = River.objects.filter(
@@ -337,22 +341,27 @@ class LocationSitesSummary(APIView):
 
         overview['title'].append('River')
         overview['value'].append(site_river)
-
-        eco_region = (context_document
-                      ['context_group_values']
-                      ['eco_geo_group']
-                      ['service_registry_values']
-                      ['eco_region']
-                      ['value'])
-        geo_class = (context_document
-                     ['context_group_values']
-                     ['eco_geo_group']
-                     ['service_registry_values']
-                     ['geo_class']
-                     ['value'])
-        geo_zone = ('{geo_class} {eco_region}'.format(
-            geo_class = geo_class,
-            eco_region = eco_region))
+        if 'context_group_values' in context_document:
+            if 'eco_geo_group' in context_document:
+                eco_region = (context_document
+                              ['context_group_values']
+                              ['eco_geo_group']
+                              ['service_registry_values']
+                              ['eco_region']
+                              ['value'])
+                geo_class = (context_document
+                             ['context_group_values']
+                             ['eco_geo_group']
+                             ['service_registry_values']
+                             ['geo_class']
+                             ['value'])
+                geo_zone = ('{geo_class} {eco_region}'.format(
+                    geo_class=geo_class,
+                    eco_region=eco_region))
+            else:
+                geo_zone = 'Unknown'
+        else:
+            geo_zone = 'Unknown'
 
         overview['title'].append('Geomorphological zone')
         overview['value'].append(geo_zone)
@@ -361,37 +370,42 @@ class LocationSitesSummary(APIView):
         overview['value'].append('???')
 
         # Catchments
-        primary_catchment = (context_document
-                             ['context_group_values']
-                             ['water_group']
-                             ['service_registry_values']
-                             ['primary_catchment_area']
-                             ['value'])
-        secondary_catchment = (context_document
-                               ['context_group_values']
-                               ['water_group']
-                               ['service_registry_values']
-                               ['secondary_catchment_area']
-                               ['value'])
-        tertiary_catchment_area = (context_document
-                                   ['context_group_values']
-                                   ['water_group']
-                                   ['service_registry_values']
-                                   ['tertiary_catchment_area']
-                                   ['value'])
-        # quaternary_catchment_area = (context_document
-        #                              ['context_group_values']
-        #                              ['water_group']
-        #                              ['service_registry_values']
-        #                              ['quaternary_catchment_area']
-        #                              ['value'])
-
-        # quinary_catchment_area = (context_document
-    #                               ['context_group_values']
-    #                               ['water_group']
-    #                               ['service_registry_values']
-    #                               ['quinary_catchment_area']
-    #                               ['value'])
+        if 'context_group_values' in context_document:
+            if 'water_group' in context_document:
+                primary_catchment = (context_document
+                                     ['context_group_values']
+                                     ['water_group']
+                                     ['service_registry_values']
+                                     ['primary_catchment_area']
+                                     ['value'])
+                secondary_catchment = (context_document
+                                       ['context_group_values']
+                                       ['water_group']
+                                       ['service_registry_values']
+                                       ['secondary_catchment_area']
+                                       ['value'])
+                tertiary_catchment_area = (context_document
+                                           ['context_group_values']
+                                           ['water_group']
+                                           ['service_registry_values']
+                                           ['tertiary_catchment_area']
+                                           ['value'])
+                water_management_areas = (context_document
+                                          ['context_group_values']
+                                          ['water_group']
+                                          ['service_registry_values']
+                                          ['water_management_area']
+                                          ['value'])
+            else:
+                primary_catchment = 'Unknown'
+                secondary_catchment = 'Unknown'
+                tertiary_catchment_area = 'Unknown'
+                water_management_areas = 'Unknown'
+        else:
+            primary_catchment = 'Unknown'
+            secondary_catchment = 'Unknown'
+            tertiary_catchment_area = 'Unknown'
+            water_management_areas = 'Unknown'
 
         catchments['title'].append('Primary')
         catchments['value'].append(primary_catchment)
@@ -408,12 +422,7 @@ class LocationSitesSummary(APIView):
         catchments['title'].append('Quinary')
         catchments['value'].append('very soon...')
 
-        water_management_areas = (context_document
-                                  ['context_group_values']
-                                  ['water_group']
-                                  ['service_registry_values']
-                                  ['water_management_area']
-                                  ['value'])
+
 
         sub_water_management_areas['title'].append(
             'Sub-Water Management Areas')
@@ -423,12 +432,19 @@ class LocationSitesSummary(APIView):
             'Water Management Areas (WMA)')
         sub_water_management_areas['value'].append(water_management_areas)
 
-        province = self.parse_string(str(context_document
-                                         ['context_group_values']
-                                         ['political_boundary_group']
-                                         ['service_registry_values']
-                                         ['sa_provinces']
-                                         ['value']))
+        # Catchments
+        if 'context_group_values' in context_document:
+            if 'political_boundary_group' in context_document:
+                province = self.parse_string(str(context_document
+                                                 ['context_group_values']
+                                                 ['political_boundary_group']
+                                                 ['service_registry_values']
+                                                 ['sa_provinces']
+                                                 ['value']))
+            else:
+                province = 'Unknown'
+        else:
+            province = 'Unknown'
 
         sa_ecoregions['title'].append('Ecoregion Level 1')
         sa_ecoregions['value'].append('???')
@@ -455,6 +471,27 @@ class LocationSitesSummary(APIView):
             return 'Unknown'
         else:
             return string_in
+
+    def get_number_of_records_and_taxa(self, records_collection):
+        result = {}
+        result['title'] = []
+        result['value'] = []
+
+        number_of_occurrence_records = 0
+        taxonomy_list = []
+        for each_record in records_collection:
+            number_of_occurrence_records += 1
+            taxonomy_id = each_record.taxonomy.id
+            taxonomy_list.append(taxonomy_id)
+        number_of_unique_taxa = len(set(taxonomy_list))
+
+        result['title'].append('Number of occurrence records')
+        result['value'].append(str(self.parse_string(
+            number_of_occurrence_records)))
+        result['title'].append('Number of species')
+        result['value'].append(str(self.parse_string(number_of_unique_taxa)))
+
+        return result
 
 
 class LocationSitesCoordinate(ListAPIView):
