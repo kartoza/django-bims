@@ -264,8 +264,8 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
         site_details = self.get_site_details(site_id)
-        site_details['records_and_sites'] = self.get_number_of_records_and_taxa(
-            collection_results)
+        site_details['records_and_sites'] = (
+            self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
             collection_results)
         search_process.set_search_raw_query(
