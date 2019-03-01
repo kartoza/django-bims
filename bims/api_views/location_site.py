@@ -268,7 +268,7 @@ class LocationSitesSummary(APIView):
             self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
             collection_results)
-        site_details['conservation_data'] = self.get_conservation_status_data(
+        site_details['conservation_status_data'] = self.get_conservation_status_data(
             collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query)

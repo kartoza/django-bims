@@ -626,6 +626,11 @@ define([
             var originsWrapper = $('#fish-ssdd-origins');
             var originsSub = originsWrapper.find('#origins');
             originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], false));
+
+            var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
+            var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
+            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], false));
+
         }
     })
 });
