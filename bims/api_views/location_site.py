@@ -295,7 +295,7 @@ class LocationSitesSummary(APIView):
         try:
             return Response(json.load(file_data))
         except ValueError:
-        return Response(response_data)
+            return Response(response_data)
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
