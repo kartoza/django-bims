@@ -577,18 +577,23 @@ define([
                 options: originTimelineGraphOptions
             })
         },
-        renderTableFromTitlesValuesLists: function (data) {
+        renderTableFromTitlesValuesLists: function (data, bold_title=true) {
             var title = '';
             var value = '';
             var temp_result;
+            var title_class = ''
             var $result = $('<div></div>');
+            if (bold_title == true)
+            {
+                title_class = 'title_column';
+            }
             var count = data['value'].length;
             for (let i = 0; i < count; i++)
             {
                 title = data['title'][i];
                 value = data['value'][i];
                 temp_result = `<div class="row">
-                               <div class="col-6 title_column">${title}</div>
+                               <div class="col-6 ${title_class}">${title}</div>
                                <div class="col-6">${value}</div>
                                </div>`
                 $result.append(temp_result);
@@ -619,9 +624,8 @@ define([
             recordSitesSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
 
             var originsWrapper = $('#fish-ssdd-origins');
-            var originsSub = originsWrapper.find('#origins')
-            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data']))
-
+            var originsSub = originsWrapper.find('#origins');
+            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], false));
         }
     })
 });
