@@ -266,6 +266,8 @@ class LocationSitesSummary(APIView):
         site_details = self.get_site_details(site_id)
         site_details['records_and_sites'] = self.get_number_of_records_and_taxa(
             collection_results)
+        site_details['origins_data'] = self.get_origin_data(
+            collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -283,17 +285,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
@@ -492,6 +494,34 @@ class LocationSitesSummary(APIView):
             number_of_occurrence_records)))
         result['title'].append('Number of species')
         result['value'].append(str(self.parse_string(number_of_unique_taxa)))
+
+        return result
+
+    def get_origin_data(self, records_collection):
+        result = {}
+        result['title'] = []
+        result['value'] = []
+
+        number_of_native = 0
+        number_of_non_native = 0
+        number_of_translocated = 0
+        for each_record in records_collection:
+            try:
+                if str(each_record.category) == 'indigenous':
+                    number_of_native += 1
+                if str(each_record.category) == 'alien':
+                    number_of_non_native += 1
+                if str(each_record.category) == 'translocated':
+                    number_of_translocated += 1
+            except KeyError:
+                pass
+
+        result['title'].append('Native')
+        result['value'].append(str(number_of_native))
+        result['title'].append('Non-native')
+        result['value'].append(str(number_of_non_native))
+        result['title'].append('Translocated')
+        result['value'].append(str(number_of_translocated))
 
         return result
 
