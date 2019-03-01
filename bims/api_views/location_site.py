@@ -268,8 +268,8 @@ class LocationSitesSummary(APIView):
             self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
             collection_results)
-        site_details['conservation_status_data'] = self.get_conservation_status_data(
-            collection_results)
+        site_details['conservation_status_data'] = (
+            self.get_conservation_status_data(collection_results))
         search_process.set_search_raw_query(
             search.location_sites_raw_query)
         search_process.create_view()
@@ -308,8 +308,8 @@ class LocationSitesSummary(APIView):
         site_description = self.parse_string(str(location_sites.values(
                 'site_description')[0]['site_description']))
         try:
-            context_document = dict(json.loads(str(
-            location_sites.values('location_context')[0]['location_context'])))
+            context_document = dict(json.loads(str(location_sites.values(
+                'location_context')[0]['location_context'])))
         except ValueError:
             context_document = ''
         site_river_id = location_sites.values('river_id')[0]['river_id']
@@ -537,17 +537,10 @@ class LocationSitesSummary(APIView):
                 iucn_status = each_record.taxonomy.iucn_status
                 if (str(iucn_status.category)
                         not in iucn_status_count):
-                    (iucn_status_count
-                        [iucn_status.category]) = {}
-                    (iucn_status_count
-                        [iucn_status.category]
-                        ['value']) = 0
-                iucn_status_count \
-                    [iucn_status.category]['value'] \
-                    += 1;
-                iucn_status_count \
-                    [iucn_status.category]['title'] \
-                    = iucn_status
+                    iucn_status_count[iucn_status.category] = {}
+                    iucn_status_count[iucn_status.category]['value'] = 0
+                iucn_status_count[iucn_status.category]['value'] += 1
+                iucn_status_count[iucn_status.category]['title'] = iucn_status
             except KeyError:
                 pass
 
