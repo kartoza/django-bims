@@ -310,9 +310,11 @@ class LocationSitesSummary(APIView):
         except ValueError:
             context_document = ''
         site_river_id = location_sites.values('river_id')[0]['river_id']
-
-        site_river = River.objects.filter(
-            id=site_river_id).values('name')[0]['name']
+        try:
+            site_river = River.objects.filter(
+                id=site_river_id).values('name')[0]['name']
+        except IndexError:
+            site_river = 'Unknown'
         overview = {}
         overview['title'] = []
         overview['value'] = []
