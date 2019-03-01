@@ -268,9 +268,10 @@ class LocationSitesSummary(APIView):
             self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
             collection_results)
+        site_details['conservation_data'] = self.get_conservation_status_data(
+            collection_results)
         search_process.set_search_raw_query(
-            search.location_sites_raw_query
-        )
+            search.location_sites_raw_query)
         search_process.create_view()
 
         response_data = {
@@ -295,7 +296,7 @@ class LocationSitesSummary(APIView):
         try:
             return Response(json.load(file_data))
         except ValueError:
-        return Response(response_data)
+            return Response(response_data)
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
@@ -524,6 +525,70 @@ class LocationSitesSummary(APIView):
         result['value'].append(str(number_of_translocated))
 
         return result
+
+    def get_conservation_status_data(self, records_collection):
+        result = {}
+        result['title'] = []
+        result['value'] = []
+
+        iucn_status_count = {}
+        for each_record in records_collection:
+            try:
+                iucn_status = each_record.taxonomy.iucn_status
+                if (str(iucn_status.category)
+                        not in iucn_status_count):
+                    (iucn_status_count
+                        [iucn_status.category]) = {}
+                    (iucn_status_count
+                        [iucn_status.category]
+                        ['value']) = 0
+                iucn_status_count \
+                    [iucn_status.category]['value'] \
+                    += 1;
+                iucn_status_count \
+                    [iucn_status.category]['title'] \
+                    = iucn_status
+            except KeyError:
+                pass
+
+        result['title'].append('Not Evaluated (NE)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'NE'))
+        result['title'].append('Data Deficient (DD)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'DD'))
+        result['title'].append('Least Concern (LC)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'LC'))
+        result['title'].append('Near Threatened (NT)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'NT'))
+        result['title'].append('Vulnerable (VU)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'VU'))
+        result['title'].append('Endangered (EN)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'EN'))
+        result['title'].append('Critically Endangered (CR)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'CR'))
+        result['title'].append('Extinct in the Wild (EW)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'EW'))
+        result['title'].append('Extinct (EX)')
+        result['value'].append(self.get_value_or_zero_from_key(
+            iucn_status_count, 'EX'))
+
+        return result
+
+    def get_value_or_zero_from_key(self, data, key):
+        result = {}
+        result['value'] = 0
+        try:
+            return str(data[key]['value'])
+        except KeyError:
+            return str(0)
+
 
 
 class LocationSitesCoordinate(ListAPIView):
