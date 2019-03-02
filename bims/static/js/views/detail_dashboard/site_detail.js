@@ -647,7 +647,7 @@ define([
             {
                 chart_labels[chartName] += '<div><span style="color:' +
                     backgroundColours[i] + ';">■</span>' +
-                    '<span style="font-style: italic;">&nbsp;' +
+                    '<span class="fish-ssdd-legend-title">&nbsp;' +
                     dataKeys[i] + '</span></div>'
             }
             var element_name = `#fish-ssdd-${chartName}-legend`;
