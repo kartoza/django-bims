@@ -168,9 +168,10 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.createOccurrenceTable(data);
-                    self.createCharts(data);
-
+                 //   self.createOccurrenceTable(data);
+                 //   self.createCharts(data);
+                 //    self.createFishSSDDSiteDetails(data);
+                    self.createOccurrenceDataTable(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -576,7 +577,62 @@ define([
                 },
                 options: originTimelineGraphOptions
             })
-        }
-        ,
+        },
+        createOccurrenceDataTable(data) {
+            var renderedOccurrenceData = this.renderOccurrenceData(data['occurrence_data']);
+            var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
+            var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
+            occurrenceDataSub.append(renderedOccurrenceData);
+        },
+        renderOccurrenceData(data_in) {
+            var $result = $('<div></div>');
+            var $new_row_template = $('<div class="row"></div>');
+
+            var count = 0;
+            var column_count = 0;
+            var column_class = '';
+            var column_value = '';
+            var next_col = '';
+            // Render headings
+            count = data_in['keys'].length;
+
+            for (let i = 0; i < count; i++) {
+                var $new_row = $new_row_template
+    
+                column_class = 'col-2 occurrence-data-heading';
+                column_value = data_in['keys'][i];
+                // Make my first column wider
+                if (i == 0) {
+                    column_class = 'col-4 occurrence-data-heading';
+                }
+
+                next_col = `<div ${column_class}>${column_value}</div>`;
+                $new_row.append(next_col);
+            }
+            $result.append($new_row);
+            // Render rows
+            column_count = count;
+            count = data_in['taxon_count'];
+            var taxon_values = []
+            var data_key = ''
+            for (let i = 0; i < count; i++) {
+
+                data_key = Object.keys(data_in['data'])[i];
+                taxon_values = data_in['data'][data_key];
+                var column_key = ''
+                for (let j = 0; j < column_count; j++) {
+                    column_class = 'col-2';
+                    column_key = data_in['keys'][j]
+                    column_value = taxon_values[column_key];
+                    // Make my first column wider
+                    if (j== 0) {
+                        column_class = 'col-4';
+                    }
+                    next_col = `<div class="${column_class}">${column_value}</div>`;
+                    $result.append(next_col);
+                }
+            }
+            return $result
+        },
     })
 });

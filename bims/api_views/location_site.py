@@ -32,6 +32,7 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
+from sass.models.river import River
 
 
 class LocationSiteList(APIView):
@@ -215,12 +216,14 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
+    OCCURRENCE_DATA = 'occurrence_data'
 
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
         collection_results = search.process_search()
 
+        site_id = filters['siteId']
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
             query=request.build_absolute_uri()
@@ -265,28 +268,104 @@ class LocationSitesSummary(APIView):
             search.location_sites_raw_query
         )
         search_process.create_view()
+        occurrence_data = self.get_occurence_data(collection_results)
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.OCCURRENCE_DATA: dict(occurrence_data),
+
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
 
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
+
+    def get_occurence_data(self, records_collection):
+        keys = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
+        occurrence_data = {}
+        occurrence_data['data'] = {}
+        occurrence_data['keys'] = keys
+        taxon_count = 0
         try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+            for each_record in records_collection: \
+                    # type: BiologicalCollectionRecord
+                taxonomy_id = '"{taxon_id}"'.format(
+                        taxon_id=each_record.taxonomy.id)
+                if taxonomy_id not in occurrence_data:
+                    taxon_count += 1
+                    occurrence_data['data'][taxonomy_id] = {}
+                    occurrence_data['data'][taxonomy_id]['values'] = []
+                    occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
+                    try:
+                        this_taxon = (str(
+                          each_record.taxonomy.scientific_name))
+                        occurrence_data['data'][taxonomy_id]['Taxon'] = (
+                            this_taxon.capitalize())
+                    except AttributeError:
+                        occurrence_data['data'][taxonomy_id]['Taxon'] = (
+                            'Unknown')
+                    try:
+
+                        occurrence_data['data'][taxonomy_id]['Origin'] = (
+                            str(each_record.category).capitalize())
+                    except AttributeError:
+                        occurrence_data['data'][taxonomy_id]['Origin'] = (
+                            'Unknown')
+                    try:
+                        this_endemism_name = (
+                           str(each_record.taxonomy.endemism.name))
+                        occurrence_data['data'][taxonomy_id]['Endemism'] = (
+                            this_endemism_name.capitalize())
+                    except :
+                        occurrence_data['data'][taxonomy_id]['Endemism'] = (
+                            'Unknown')
+                    try:
+                        occurrence_data \
+                            ['data'][taxonomy_id]['Cons. Status'] = (
+                                each_record.taxonomy.iucn_status.get_status())
+                        # cons_keys = (
+                        #     each_record.taxonomy.iucn_status.CATEGORY_CHOICES)
+                        # cons_key_value = (
+                        #     each_record.taxonomy.iucn_status.category)
+                        # if cons_key_value in cons_keys:
+                        #     cons_key_title = cons_keys[cons_key_value];
+                        #     occurrence_data \
+                        #         ['data'][taxonomy_id]['Cons. Status'] = (
+                        #         cons_key_title)
+                        # else:
+                        #     raise AttributeError
+                    except:
+                        occurrence_data['data'][taxonomy_id]['Cons. Status'] = 'Unknown'
+                occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
+        except KeyError:
+            pass
+        occurrence_data['taxon_count'] = taxon_count
+        # for each_taxonomy in occurrence_data['data'].iteritems():
+        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
+        #         each_taxonomy[1]['Occurrences'])
+        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
+        #         each_taxonomy[1]['Taxon'])
+        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
+        #         each_taxonomy[1]['Origin'])
+        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
+        #         each_taxonomy[1]['Endemism'])
+        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
+        #         each_taxonomy[1]['Cons. Status'])
+        return occurrence_data
 
 
 class LocationSitesCoordinate(ListAPIView):
