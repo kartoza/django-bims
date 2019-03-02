@@ -1,6 +1,7 @@
 # coding=utf8
 import json
 import os
+from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
@@ -215,6 +216,7 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
+    BIODIVERSITY_DATA = 'biodiversity_data'
 
     def get(self, request):
         filters = request.GET
@@ -266,27 +268,139 @@ class LocationSitesSummary(APIView):
         )
         search_process.create_view()
 
+        biodiversity_data = self.get_biodiversity_data(collection_results)
+
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+
+    def get_biodiversity_data(self, collections):
+        biodiversity_data = {}
+        taxa = self.get_origin_cons_endemsim_data(collections)
+        # If I found more than one class of animal
+        if 'Actinopterygii' not in taxa:
+            print('Hey there, you are not a fish!')
+        else:
+            biodiversity_data['fish'] = {}
+            biodiversity_data['fish']['origin_chart'] = {}
+            biodiversity_data['fish']['cons_status_chart'] = {}
+            biodiversity_data['fish']['endemism_chart'] = {}
+            biodiversity_data['fish']['origin_chart']['data'] = (
+                taxa['Actinopterygii']['origin_chart']['data'])
+            biodiversity_data['fish']['origin_chart']['keys'] = (
+                taxa['Actinopterygii']['origin_chart']['keys'])
+            biodiversity_data['fish']['cons_status_chart']['data'] = (
+                taxa['Actinopterygii']['cons_status_chart']['data'])
+            biodiversity_data['fish']['cons_status_chart']['keys'] = (
+                taxa['Actinopterygii']['cons_status_chart']['keys'])
+            biodiversity_data['fish']['endemism_chart']['data'] = (
+                taxa['Actinopterygii']['endemism_chart']['data'])
+            biodiversity_data['fish']['endemism_chart']['keys'] = (
+                taxa['Actinopterygii']['endemism_chart']['keys'])
+        biodiversity_data['taxa'] = taxa
+
+        biodiversity_data['occurrences'] = [0, 0, 0]
+
+        biodiversity_data['occurrences'][0] = (
+            sum(taxa['Actinopterygii']['occurrences']))
+
+        biodiversity_data['number_of_taxa'] = [0, 0, 0]
+
+
+        biodiversity_data['number_of_taxa'][0] = (
+            len(taxa['Actinopterygii']['number_of_taxa']))
+        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
+        return biodiversity_data
+
+
+    def get_origin_cons_endemsim_data(self, collections):
+        taxa ={}
+
+        for model in collections:
+            if not (model.taxonomy.class_name in taxa):
+                taxa[model.taxonomy.class_name] = {}
+                taxa[model.taxonomy.class_name]['origin_data'] = []
+                taxa[model.taxonomy.class_name]['cons_status_data'] = []
+                taxa[model.taxonomy.class_name]['endemism_data'] = []
+                taxa[model.taxonomy.class_name]['occurrence_data'] = []
+
+            taxa[model.taxonomy.class_name]['origin_data'].append(
+                model.category)
+            taxa[model.taxonomy.class_name]['cons_status_data'].append(
+                model.taxonomy.iucn_status.category)
+            taxa[model.taxonomy.class_name]['endemism_data'].append(
+                model.taxonomy.endemism)
+            taxa[model.taxonomy.class_name]['occurrence_data'].append(
+                model.taxonomy.scientific_name)
+
+        for class_name in taxa:
+            if 'origin_chart' not in taxa[class_name]:
+                taxa[class_name]['origin_chart'] = {}
+                taxa[class_name]['origin_chart']['data'] = []
+                taxa[class_name]['origin_chart']['keys'] = []
+                taxa[class_name]['cons_status_chart'] = {}
+                taxa[class_name]['cons_status_chart']['data'] = []
+                taxa[class_name]['cons_status_chart']['keys'] = []
+                taxa[class_name]['endemism_chart'] = {}
+                taxa[class_name]['endemism_chart']['data'] = []
+                taxa[class_name]['endemism_chart']['keys'] = []
+                taxa[class_name]['occurrences'] = []
+                taxa[class_name]['number_of_taxa'] = []
+
+            data_counter_origin = (
+                Counter(taxa[class_name]['origin_data']))
+            data_counter_cons_status = (
+                Counter(taxa[class_name]['cons_status_data']))
+            data_counter_endemism = (
+                Counter(taxa[class_name]['endemism_data']))
+            data_counter_occurrence = (
+                Counter(taxa[class_name]['occurrence_data']))
+
+            taxa[class_name]['origin_chart']['data'].append(
+                data_counter_origin.values()[0])
+        taxa[class_name]['origin_chart']['keys'].append(
+            data_counter_origin.keys()[0])
+
+        taxa[class_name]['cons_status_chart']['data'].append(
+            data_counter_cons_status.values())
+
+
+        taxa[class_name]['cons_status_chart']['data'] = (
+            taxa[class_name]['cons_status_chart']['data'][0])
+        taxa[class_name]['cons_status_chart']['keys'].append(
+            data_counter_cons_status.keys())
+        taxa[class_name]['cons_status_chart']['keys'] = (
+            taxa[class_name]['cons_status_chart']['keys'][0])
+
+        taxa[class_name]['endemism_chart']['data'].append(
+            data_counter_endemism.values()[0])
+        taxa[class_name]['endemism_chart']['keys'].append(
+            data_counter_endemism.keys()[0])
+        taxa[class_name]['occurrences'].append(
+            data_counter_occurrence.values()[0])
+        taxa[class_name]['number_of_taxa'].append(
+            data_counter_occurrence.keys()[0])
+        return taxa
 
 
 class LocationSitesCoordinate(ListAPIView):

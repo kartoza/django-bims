@@ -576,7 +576,71 @@ define([
                 },
                 options: originTimelineGraphOptions
             })
-        }
-        ,
+        },
+
+        renderSiteDetailInfo: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('site_detail_info')) {
+                var siteDetailsTemplate = _.template($('#site-details-template').html());
+                $detailWrapper.append(siteDetailsTemplate({
+                    'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
+                    'site_coordinates' : data['site_detail_info']['site_coordinates'],
+                    'site_description' : data['site_detail_info']['site_description'],
+                    'geomorphological_zone' : data['site_detail_info']['geomorphological_zone'],
+                    'river' : data['site_detail_info']['river'],
+                }));
+            }
+            return $detailWrapper;
+         },
+
+         renderDataSummary: function (data) {
+
+         },
+
+         renderPieChart: function(data, speciesType, chartName, chartCanvas) {
+            var backgroundColours = [
+                            '#8D2641',
+                            '#D7CD47',
+                            '#18A090',
+                            '#A2CE89',
+                            '#4E6440',
+                            '#525351']
+            var chartConfig = {
+                type: 'pie',
+                data: {
+                    datasets: [{
+                        data: data['biodiversity_data'][speciesType][chartName + '_chart']['data'],
+                        backgroundColor: backgroundColours
+                    }],
+                    labels: data['biodiversity_data'][speciesType][chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: true,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'nearest', intersect: false},
+                    borderWidth: 0,
+                }
+            };
+            // var chartCanvas = document.getElementById(speciesType + '_' + chartName + '_chart');
+            var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, chartConfig);
+
+             // Render chart labels
+            var dataKeys = data['biodiversity_data'][speciesType][chartName + '_chart']['keys'];
+            var dataLength = dataKeys.length;
+            var chart_labels = {};
+            chart_labels[chartName] = ''
+            for (var i = 0; i < dataLength; i++)
+            {
+                chart_labels[chartName] += '<div><span style="color:' +
+                    backgroundColours[i] + ';">■</span>' +
+                    '<span style="font-style: italic;">' +
+                    dataKeys[i] + '</span></div>'
+            }
+            $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
+        },
+
+
     })
 });
