@@ -585,38 +585,37 @@ define([
             occurrenceDataSub.append(renderedOccurrenceData);
         },
         renderOccurrenceData(data_in) {
-            var $result = $('<div></div>');
-            var $new_row_template = $('<div class="row"></div>');
-
+            var result = '<div>';
             var count = 0;
             var column_count = 0;
             var column_class = '';
             var column_value = '';
             var next_col = '';
+
             // Render headings
             count = data_in['keys'].length;
-
+            result += '<div class="row">'; //Open new row
             for (let i = 0; i < count; i++) {
-                var $new_row = $new_row_template
-    
+
                 column_class = 'col-2 occurrence-data-heading';
                 column_value = data_in['keys'][i];
                 // Make my first column wider
                 if (i == 0) {
                     column_class = 'col-4 occurrence-data-heading';
                 }
+                next_col = `<div class="${column_class}">${column_value}</div>`;
+                result += next_col ;
 
-                next_col = `<div ${column_class}>${column_value}</div>`;
-                $new_row.append(next_col);
             }
-            $result.append($new_row);
+            result += ' </div>' //Close my row
             // Render rows
             column_count = count;
             count = data_in['taxon_count'];
-            var taxon_values = []
-            var data_key = ''
-            for (let i = 0; i < count; i++) {
+            var taxon_values = [];
+            var data_key = '';
 
+            for (let i = 0; i < count; i++) {
+                result += '<div class="row">'; //Open new row
                 data_key = Object.keys(data_in['data'])[i];
                 taxon_values = data_in['data'][data_key];
                 var column_key = ''
@@ -629,9 +628,12 @@ define([
                         column_class = 'col-4';
                     }
                     next_col = `<div class="${column_class}">${column_value}</div>`;
-                    $result.append(next_col);
+                    result += next_col;
                 }
+                result += '</div>'; //Close row
             }
+            result += '</div>'; //Close row
+            var $result = $.parseHTML(result);
             return $result
         },
     })
