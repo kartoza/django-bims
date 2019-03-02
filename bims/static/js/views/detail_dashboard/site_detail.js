@@ -597,13 +597,15 @@ define([
             result += '<div class="row">'; //Open new row
             for (let i = 0; i < count; i++) {
 
-                column_class = 'col-2 occurrence-data-heading';
+                column_class = 'col-2 title-column';
                 column_value = data_in['keys'][i];
                 // Make my first column wider
                 if (i == 0) {
-                    column_class = 'col-4 occurrence-data-heading';
+                    column_class = 'col-4 title-column';
                 }
-                next_col = `<div class="${column_class}">${column_value}</div>`;
+                next_col = `<div class="${column_class}">
+                            <div class="center-self">${column_value}
+                            </div></div>`;
                 result += next_col ;
 
             }
@@ -627,7 +629,9 @@ define([
                     if (j== 0) {
                         column_class = 'col-4';
                     }
-                    next_col = `<div class="${column_class}">${column_value}</div>`;
+                    next_col = `<div class="${column_class}">
+                                <div class="center-self">${column_value}
+                                </div></div>`;
                     result += next_col;
                 }
                 result += '</div>'; //Close row
