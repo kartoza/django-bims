@@ -336,7 +336,7 @@ class LocationSitesSummary(APIView):
     def get_origin_cons_endemsim_data(self, collections):
         taxa ={}
 
-        for model in collections:
+        for model in collections: # type: BiologicalCollectionRecord
             if not (model.taxonomy.class_name in taxa):
                 taxa[model.taxonomy.class_name] = {}
                 taxa[model.taxonomy.class_name]['origin_data'] = []
@@ -353,13 +353,25 @@ class LocationSitesSummary(APIView):
                 iucn_name=iucn_name))
             taxa[model.taxonomy.class_name]['cons_status_data'].append(
                 iucn_title)
+
+            if str(model.taxonomy.endemism) == 'None':
+                endemism_title = 'Unknown'
+            else:
+                endemism_title = str(model.taxonomy.endemism)
+
             taxa[model.taxonomy.class_name]['endemism_data'].append(
-                model.taxonomy.endemism)
+                endemism_title)
+
+            if str(model.taxonomy.scientific_name) == 'null':
+                scientific_name = 'Unknown'
+            else:
+                scientific_name = str(model.taxonomy.endemism)
+
             taxa[model.taxonomy.class_name]['occurrence_data'].append(
-                model.taxonomy.scientific_name)
+                scientific_name)
 
         for class_name in taxa:
-            if 'origin_chart' not in taxa[class_name]
+            if 'origin_chart' not in taxa[class_name]:
                 taxa[class_name]['origin_chart'] = {}
                 taxa[class_name]['origin_chart']['data'] = []
                 taxa[class_name]['origin_chart']['keys'] = []
@@ -382,29 +394,38 @@ class LocationSitesSummary(APIView):
                 Counter(taxa[class_name]['occurrence_data']))
 
             taxa[class_name]['origin_chart']['data'].append(
-                data_counter_origin.values()[0])
-        taxa[class_name]['origin_chart']['keys'].append(
-            data_counter_origin.keys()[0])
+                data_counter_origin.values())
+            taxa[class_name]['origin_chart']['keys'].append(
+                data_counter_origin.keys())
 
-        taxa[class_name]['cons_status_chart']['data'].append(
-            data_counter_cons_status.values())
+            taxa[class_name]['origin_chart']['data'] = (
+                taxa[class_name]['origin_chart']['data'][0])
+            taxa[class_name]['origin_chart']['keys'] = (
+                taxa[class_name]['origin_chart']['keys'][0])
+            for index, each in enumerate(
+                    taxa[class_name]['origin_chart']['keys']):
+                taxa[class_name]['origin_chart']['keys'][index] = (
+                    str(each).capitalize())
+
+            taxa[class_name]['cons_status_chart']['data'].append(
+                data_counter_cons_status.values())
 
 
-        taxa[class_name]['cons_status_chart']['data'] = (
-            taxa[class_name]['cons_status_chart']['data'][0])
-        taxa[class_name]['cons_status_chart']['keys'].append(
-            data_counter_cons_status.keys())
-        taxa[class_name]['cons_status_chart']['keys'] = (
-            taxa[class_name]['cons_status_chart']['keys'][0])
+            taxa[class_name]['cons_status_chart']['data'] = (
+                taxa[class_name]['cons_status_chart']['data'][0])
+            taxa[class_name]['cons_status_chart']['keys'].append(
+                data_counter_cons_status.keys())
+            taxa[class_name]['cons_status_chart']['keys'] = (
+                taxa[class_name]['cons_status_chart']['keys'][0])
 
-        taxa[class_name]['endemism_chart']['data'].append(
-            data_counter_endemism.values()[0])
-        taxa[class_name]['endemism_chart']['keys'].append(
-            data_counter_endemism.keys()[0])
-        taxa[class_name]['occurrences'].append(
-            data_counter_occurrence.values()[0])
-        taxa[class_name]['number_of_taxa'].append(
-            data_counter_occurrence.keys()[0])
+            taxa[class_name]['endemism_chart']['data'].append(
+                data_counter_endemism.values()[0])
+            taxa[class_name]['endemism_chart']['keys'].append(
+                data_counter_endemism.keys()[0])
+            taxa[class_name]['occurrences'].append(
+                data_counter_occurrence.values()[0])
+            taxa[class_name]['number_of_taxa'].append(
+                data_counter_occurrence.keys()[0])
         return taxa
 
 
