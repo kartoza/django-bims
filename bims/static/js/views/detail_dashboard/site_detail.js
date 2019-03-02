@@ -4,14 +4,16 @@ define([
     'ol',
     'jquery',
     'shared',
-    'htmlToCanvas'
+    'htmlToCanvas',
+    'chartJs'
 ], function (
     Backbone,
     _,
     ol,
     $,
     Shared,
-    HtmlToCanvas
+    HtmlToCanvas,
+    ChartJs
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
@@ -168,9 +170,8 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.createOccurrenceTable(data);
-                    self.createCharts(data);
 
+                    self.createDataSummary(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -593,8 +594,11 @@ define([
             return $detailWrapper;
          },
 
-         renderDataSummary: function (data) {
+         createDataSummary: function (data) {
 
+            var origin_data = data['biodiversity_data'];
+            var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
+            this.renderPieChart(origin_data, 'fish', 'origin', origin_pie_canvas);
          },
 
          renderPieChart: function(data, speciesType, chartName, chartCanvas) {
@@ -609,10 +613,10 @@ define([
                 type: 'pie',
                 data: {
                     datasets: [{
-                        data: data['biodiversity_data'][speciesType][chartName + '_chart']['data'],
+                        data: data[speciesType][chartName + '_chart']['data'],
                         backgroundColor: backgroundColours
                     }],
-                    labels: data['biodiversity_data'][speciesType][chartName + '_chart']['keys']
+                    labels: data[speciesType][chartName + '_chart']['keys']
                 },
                 options: {
                     responsive: true,
@@ -627,7 +631,7 @@ define([
             new ChartJs(ctx, chartConfig);
 
              // Render chart labels
-            var dataKeys = data['biodiversity_data'][speciesType][chartName + '_chart']['keys'];
+            var dataKeys = data[speciesType][chartName + '_chart']['keys'];
             var dataLength = dataKeys.length;
             var chart_labels = {};
             chart_labels[chartName] = ''
