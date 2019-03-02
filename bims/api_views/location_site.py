@@ -32,7 +32,6 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
-from sass.models.river import River
 
 
 class LocationSiteList(APIView):
@@ -222,8 +221,6 @@ class LocationSitesSummary(APIView):
         filters = request.GET
         search = SearchVersion2(filters)
         collection_results = search.process_search()
-
-        site_id = filters['siteId']
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
             query=request.build_absolute_uri()
@@ -312,14 +309,13 @@ class LocationSitesSummary(APIView):
                     occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
                     try:
                         this_taxon = (str(
-                          each_record.taxonomy.scientific_name))
+                            each_record.taxonomy.scientific_name))
                         occurrence_data['data'][taxonomy_id]['Taxon'] = (
                             this_taxon.capitalize())
                     except AttributeError:
                         occurrence_data['data'][taxonomy_id]['Taxon'] = (
                             'Unknown')
                     try:
-
                         occurrence_data['data'][taxonomy_id]['Origin'] = (
                             str(each_record.category).capitalize())
                     except AttributeError:
@@ -330,13 +326,12 @@ class LocationSitesSummary(APIView):
                            str(each_record.taxonomy.endemism.name))
                         occurrence_data['data'][taxonomy_id]['Endemism'] = (
                             this_endemism_name.capitalize())
-                    except :
+                    except:
                         occurrence_data['data'][taxonomy_id]['Endemism'] = (
                             'Unknown')
                     try:
-                        occurrence_data \
-                            ['data'][taxonomy_id]['Cons. Status'] = (
-                                each_record.taxonomy.iucn_status.get_status())
+                        occurrence_data['data'][taxonomy_id]['Cons. Status'] \
+                            = (each_record.taxonomy.iucn_status.get_status())
                     except:
                         occurrence_data \
                             ['data'][taxonomy_id]['Cons. Status'] = 'Unknown'
