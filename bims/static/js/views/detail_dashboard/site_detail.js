@@ -596,9 +596,17 @@ define([
 
          createDataSummary: function (data) {
 
-            var origin_data = data['biodiversity_data'];
+            var bio_data = data['biodiversity_data'];
             var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
-            this.renderPieChart(origin_data, 'fish', 'origin', origin_pie_canvas);
+            this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
+
+            var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
+            this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
+
+            var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
+            this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
+
+
          },
 
          renderPieChart: function(data, speciesType, chartName, chartCanvas) {
@@ -639,10 +647,11 @@ define([
             {
                 chart_labels[chartName] += '<div><span style="color:' +
                     backgroundColours[i] + ';">■</span>' +
-                    '<span style="font-style: italic;">' +
+                    '<span style="font-style: italic;">&nbsp;' +
                     dataKeys[i] + '</span></div>'
             }
-            $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
+            var element_name = `#fish-ssdd-${chartName}-legend`;
+            $(element_name).html(chart_labels[chartName]);
         },
 
 

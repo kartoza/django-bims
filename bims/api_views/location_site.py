@@ -346,15 +346,20 @@ class LocationSitesSummary(APIView):
 
             taxa[model.taxonomy.class_name]['origin_data'].append(
                 model.category)
+            iucn_category = model.taxonomy.iucn_status.category
+            iucn_name = model.taxonomy.iucn_status.get_status()
+            iucn_title = ('({iucn_category}) {iucn_name}'.format(
+                iucn_category=iucn_category,
+                iucn_name=iucn_name))
             taxa[model.taxonomy.class_name]['cons_status_data'].append(
-                model.taxonomy.iucn_status.category)
+                iucn_title)
             taxa[model.taxonomy.class_name]['endemism_data'].append(
                 model.taxonomy.endemism)
             taxa[model.taxonomy.class_name]['occurrence_data'].append(
                 model.taxonomy.scientific_name)
 
         for class_name in taxa:
-            if 'origin_chart' not in taxa[class_name]:
+            if 'origin_chart' not in taxa[class_name]
                 taxa[class_name]['origin_chart'] = {}
                 taxa[class_name]['origin_chart']['data'] = []
                 taxa[class_name]['origin_chart']['keys'] = []
