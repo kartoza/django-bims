@@ -282,17 +282,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
 
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
     def get_occurence_data(self, records_collection):
         keys = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
@@ -337,34 +337,13 @@ class LocationSitesSummary(APIView):
                         occurrence_data \
                             ['data'][taxonomy_id]['Cons. Status'] = (
                                 each_record.taxonomy.iucn_status.get_status())
-                        # cons_keys = (
-                        #     each_record.taxonomy.iucn_status.CATEGORY_CHOICES)
-                        # cons_key_value = (
-                        #     each_record.taxonomy.iucn_status.category)
-                        # if cons_key_value in cons_keys:
-                        #     cons_key_title = cons_keys[cons_key_value];
-                        #     occurrence_data \
-                        #         ['data'][taxonomy_id]['Cons. Status'] = (
-                        #         cons_key_title)
-                        # else:
-                        #     raise AttributeError
                     except:
-                        occurrence_data['data'][taxonomy_id]['Cons. Status'] = 'Unknown'
+                        occurrence_data \
+                            ['data'][taxonomy_id]['Cons. Status'] = 'Unknown'
                 occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
         except KeyError:
             pass
         occurrence_data['taxon_count'] = taxon_count
-        # for each_taxonomy in occurrence_data['data'].iteritems():
-        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
-        #         each_taxonomy[1]['Occurrences'])
-        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
-        #         each_taxonomy[1]['Taxon'])
-        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
-        #         each_taxonomy[1]['Origin'])
-        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
-        #         each_taxonomy[1]['Endemism'])
-        #     occurrence_data['data'][each_taxonomy[0]]['values'].append(
-        #         each_taxonomy[1]['Cons. Status'])
         return occurrence_data
 
 

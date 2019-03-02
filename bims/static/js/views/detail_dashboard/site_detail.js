@@ -168,9 +168,6 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                 //   self.createOccurrenceTable(data);
-                 //   self.createCharts(data);
-                 //    self.createFishSSDDSiteDetails(data);
                     self.createOccurrenceDataTable(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
