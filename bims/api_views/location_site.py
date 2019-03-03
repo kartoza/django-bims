@@ -335,7 +335,7 @@ class LocationSitesSummary(APIView):
 
     def get_origin_cons_endemsim_data(self, collections):
         taxa = {}
-        for model in collections: #  type: BiologicalCollectionRecord
+        for model in collections:  # type: BiologicalCollectionRecord
             if not (model.taxonomy.class_name in taxa):
                 taxa[model.taxonomy.class_name] = {}
                 taxa[model.taxonomy.class_name]['origin_data'] = []
