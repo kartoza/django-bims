@@ -4,14 +4,16 @@ define([
     'ol',
     'jquery',
     'shared',
-    'htmlToCanvas'
+    'htmlToCanvas',
+    'chartJs',
 ], function (
     Backbone,
     _,
     ol,
     $,
     Shared,
-    HtmlToCanvas
+    HtmlToCanvas,
+    ChartJs,
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
@@ -168,9 +170,9 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.createOccurrenceTable(data);
-                    self.createCharts(data);
-
+                    // self.createOccurrenceTable(data);
+                    // self.createCharts(data);
+                    self.createOccurrencesBarChart(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -521,6 +523,8 @@ define([
                 }
             };
 
+
+
             this.recordsTimelineGraphCanvas = new Chart(self.recordsTimelineGraph.getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -578,5 +582,67 @@ define([
             })
         }
         ,
+        renderBarChart: function(data_in, chartName, chartCanvas) {
+
+             if (!(data_in.hasOwnProperty(chartName + '_chart')))
+            {
+               return false;
+            };
+
+             var chartConfig = {
+                type: 'bar',
+                data: {
+                    datasets: [{
+                        data: data_in[chartName + '_chart']['values'],
+                        backgroundColor: '#D7CD47',
+                        borderColor: '#D7CD47',
+                        fill: false
+                    }],
+                    labels: data_in[chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: true,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                    },
+                    borderWidth: 0,
+                    scales: {
+					xAxes: [{
+						display: true,
+						scaleLabel: {
+							display: false,
+							labelString: ''
+						}
+					}],
+
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: data_in[chartName + '_chart']['title']
+						},
+						ticks: {
+                          beginAtZero: true,
+                          callback: function(value) {if (value % 1 === 0) {return value;}}
+                        }
+					}]
+				}
+                }
+            };
+            //var chartCanvas = document.getElementById(chartName + '_chart');
+            var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, chartConfig);
+        },
+        createOccurrencesBarChart: function (data) {
+            var locationContext = {}
+            var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
+
+             if (data.hasOwnProperty('records_occurrence')) {
+                this.renderBarChart(data['records_occurrence'], 'occurrences_line', chartCanvas);
+             }
+         },
     })
 });

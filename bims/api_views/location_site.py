@@ -1,6 +1,7 @@
 # coding=utf8
 import json
 import os
+from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
@@ -233,16 +234,19 @@ class LocationSitesSummary(APIView):
                     return Response(json.load(raw_data))
                 except ValueError:
                     pass
+        #
+        # records_occurrence = collection_results.annotate(
+        #     name=F('taxonomy__scientific_name'),
+        #     taxon_id=F('taxonomy_id'),
+        #     origin=F('category')
+        # ).values(
+        #     'taxon_id', 'name', 'origin'
+        # ).annotate(
+        #     count=Count('taxonomy')
+        # )
 
-        records_occurrence = collection_results.annotate(
-            name=F('taxonomy__scientific_name'),
-            taxon_id=F('taxonomy_id'),
-            origin=F('category')
-        ).values(
-            'taxon_id', 'name', 'origin'
-        ).annotate(
-            count=Count('taxonomy')
-        )
+        records_occurrence = self.get_site_occurrences_per_year(
+            collection_results)
 
         records_graph_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
@@ -269,24 +273,52 @@ class LocationSitesSummary(APIView):
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
-            self.RECORDS_OCCURRENCE: list(records_occurrence),
+            self.RECORDS_OCCURRENCE: dict(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+    def get_site_occurrences_per_year(self, collection_records):
+        result = {}
+        occurrences_data = []
+        result['occurrences_line_chart'] = {}
+        result['occurrences_line_chart']['values'] = []
+        result['occurrences_line_chart']['keys'] = []
+        result['occurrences_line_chart']['title'] \
+            = 'Occurrences'
+
+        for each_record in collection_records:  # type: BiologicalCollectionRecord
+            occurrences_data.append(each_record.collection_date.year)
+
+        data_counter_occurrences = (
+            Counter(occurrences_data))
+
+        result['occurrences_line_chart']['values'].append(
+            data_counter_occurrences.values())
+        result['occurrences_line_chart']['keys'].append(
+            data_counter_occurrences.keys())
+        result['occurrences_line_chart']['values'] = (
+            result['occurrences_line_chart']['values'][0])
+        result['occurrences_line_chart']['keys'] = (
+            result['occurrences_line_chart']['keys'][0])
+
+        return result
+
+
 
 
 class LocationSitesCoordinate(ListAPIView):
