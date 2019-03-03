@@ -323,7 +323,7 @@ class LocationSitesSummary(APIView):
                             'Unknown')
                     try:
                         this_endemism_name = (
-                           str(each_record.taxonomy.endemism.name))
+                            str(each_record.taxonomy.endemism.name))
                         occurrence_data['data'][taxonomy_id]['Endemism'] = (
                             this_endemism_name.capitalize())
                     except:
@@ -333,8 +333,8 @@ class LocationSitesSummary(APIView):
                         occurrence_data['data'][taxonomy_id]['Cons. Status'] \
                             = (each_record.taxonomy.iucn_status.get_status())
                     except:
-                        occurrence_data \
-                            ['data'][taxonomy_id]['Cons. Status'] = 'Unknown'
+                        occurrence_data['data'][taxonomy_id]['Cons. Status'] \
+                            = 'Unknown'
                 occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
         except KeyError:
             pass
