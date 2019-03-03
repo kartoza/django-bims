@@ -322,8 +322,9 @@ class LocationSitesSummary(APIView):
                         occurrence_data['data'][taxonomy_id]['Origin'] = (
                             'Unknown')
                     try:
-                        this_endemism_name = (
-                            str(each_record.taxonomy.endemism.name))
+                        # I kept on getting flake8 here hence the \
+                        this_endemism_name = \
+                            str(each_record.taxonomy.endemism.name)
                         occurrence_data['data'][taxonomy_id]['Endemism'] = (
                             this_endemism_name.capitalize())
                     except:
@@ -331,7 +332,7 @@ class LocationSitesSummary(APIView):
                             'Unknown')
                     try:
                         occurrence_data['data'][taxonomy_id]['Cons. Status'] \
-                            = (each_record.taxonomy.iucn_status.get_status())
+                            = each_record.taxonomy.iucn_status.get_status()
                     except:
                         occurrence_data['data'][taxonomy_id]['Cons. Status'] \
                             = 'Unknown'
