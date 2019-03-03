@@ -234,16 +234,6 @@ class LocationSitesSummary(APIView):
                     return Response(json.load(raw_data))
                 except ValueError:
                     pass
-        #
-        # records_occurrence = collection_results.annotate(
-        #     name=F('taxonomy__scientific_name'),
-        #     taxon_id=F('taxonomy_id'),
-        #     origin=F('category')
-        # ).values(
-        #     'taxon_id', 'name', 'origin'
-        # ).annotate(
-        #     count=Count('taxonomy')
-        # )
 
         records_occurrence = self.get_site_occurrences_per_year(
             collection_results)
@@ -280,17 +270,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
-        #
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
     def get_site_occurrences_per_year(self, collection_records):
         result = {}
@@ -301,7 +291,7 @@ class LocationSitesSummary(APIView):
         result['occurrences_line_chart']['title'] \
             = 'Occurrences'
 
-        for each_record in collection_records:  # type: BiologicalCollectionRecord
+        for each_record in collection_records:
             occurrences_data.append(each_record.collection_date.year)
 
         data_counter_occurrences = (
