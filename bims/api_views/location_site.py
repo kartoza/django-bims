@@ -281,17 +281,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
-        #
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
 
     def get_biodiversity_data(self, collections):
@@ -334,16 +334,14 @@ class LocationSitesSummary(APIView):
 
 
     def get_origin_cons_endemsim_data(self, collections):
-        taxa ={}
-
-        for model in collections: # type: BiologicalCollectionRecord
+        taxa = {}
+        for model in collections: #  type: BiologicalCollectionRecord
             if not (model.taxonomy.class_name in taxa):
                 taxa[model.taxonomy.class_name] = {}
                 taxa[model.taxonomy.class_name]['origin_data'] = []
                 taxa[model.taxonomy.class_name]['cons_status_data'] = []
                 taxa[model.taxonomy.class_name]['endemism_data'] = []
                 taxa[model.taxonomy.class_name]['occurrence_data'] = []
-
             taxa[model.taxonomy.class_name]['origin_data'].append(
                 model.category)
             iucn_category = model.taxonomy.iucn_status.category
@@ -361,7 +359,6 @@ class LocationSitesSummary(APIView):
 
             taxa[model.taxonomy.class_name]['endemism_data'].append(
                 endemism_title)
-
             if str(model.taxonomy.scientific_name) == 'null':
                 scientific_name = 'Unknown'
             else:
