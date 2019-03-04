@@ -170,7 +170,7 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.createOccurrencesBarChart(data);
+                    self.createTaxaStackedBarChart(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -446,67 +446,85 @@ define([
             button.prop("disabled", true);
             this.downloadingCSV(this.csvDownloadUrl, button);
         },
-        renderBarChart: function(data_in, chartName, chartCanvas) {
+        renderStackedBarChart: function (dataIn, chartName, chartCanvas) {
 
-             if (!(data_in.hasOwnProperty(chartName + '_chart')))
+            if (!(dataIn.hasOwnProperty('data'))) {
+                return false;
+            }
+            var datasets = [];
+            var barChartData = {};
+            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D','#B77282', '#E6E188','#6BC0B5', '#859FAC']
+            var myDataset = {}
+            var count = dataIn['dataset_labels'].length;
+            for (let i = 0; i < count; i++)
             {
-               return false;
-            };
-
-             var chartConfig = {
+                myDataset = {};
+                var nextKey = dataIn['dataset_labels'][i];
+                var nextColour = colours[i];
+                var nextData = dataIn['data'][nextKey];
+                myDataset = {
+                    'label': nextKey,
+                    'backgroundColor': nextColour,
+                    'data' : nextData
+                }
+                datasets.push(myDataset);
+            }
+            barChartData = {
+                'labels': dataIn['labels'],
+                'datasets': datasets,
+            }
+            barChartData = barChartData;
+            var chartConfig = {
                 type: 'bar',
-                data: {
-                    datasets: [{
-                        data: data_in[chartName + '_chart']['values'],
-                        backgroundColor: '#D7CD47',
-                        borderColor: '#D7CD47',
-                        fill: false
-                    }],
-                    labels: data_in[chartName + '_chart']['keys']
-                },
+                data: barChartData,
                 options: {
                     responsive: true,
-                    legend:{ display: false },
-                    title: { display: false },
-                    hover: { mode: 'point', intersect: false},
+                    legend: {display: true},
+                    title: {display: false},
+                    hover: {mode: 'point', intersect: false},
                     tooltips: {
                         mode: 'point',
+                        position: 'average',
                     },
                     borderWidth: 0,
                     scales: {
-					xAxes: [{
-						display: true,
-						scaleLabel: {
-							display: false,
-							labelString: ''
-						}
-					}],
-
-					yAxes: [{
-						display: true,
-						scaleLabel: {
-							display: true,
-							labelString: data_in[chartName + '_chart']['title']
-						},
-						ticks: {
-                          beginAtZero: true,
-                          callback: function(value) {if (value % 1 === 0) {return value;}}
-                        }
-					}]
-				}
+						xAxes: [{
+							stacked: true,
+						}],
+						yAxes: [{
+							stacked: true,
+                            ticks: {
+                                beginAtZero: true,
+                                callback: function (value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                },
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Occurrences',
+                            },
+						}]
+					}
                 }
+
             };
+
+
             //var chartCanvas = document.getElementById(chartName + '_chart');
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
         },
-        createOccurrencesBarChart: function (data) {
+        createTaxaStackedBarChart: function (data) {
             var locationContext = {}
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
 
              if (data.hasOwnProperty('records_occurrence')) {
-                this.renderBarChart(data['records_occurrence'], 'occurrences_line', chartCanvas);
+                this.renderStackedBarChart(data['records_occurrence'], 'occurrences_line', chartCanvas);
              }
+
+
          },
     })
 });

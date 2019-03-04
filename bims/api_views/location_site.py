@@ -235,7 +235,7 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
-        records_occurrence = self.get_site_occurrences_per_year(
+        records_occurrence = self.get_taxa_per_year(
             collection_results)
 
         records_graph_data = collection_results.annotate(
@@ -270,43 +270,55 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+    def get_taxa_per_year(self, collection_records):
+        taxa_data = {}
+        unique_year_list = []
 
-    def get_site_occurrences_per_year(self, collection_records):
+        for each_record in collection_records:  #type: BiologicalCollectionRecord
+            scientific_name = str(each_record.taxonomy.scientific_name)
+            collection_year = str(each_record.collection_date.year)
+            if collection_year not in unique_year_list:
+                unique_year_list.append(collection_year)
+            if scientific_name not in taxa_data:
+                taxa_data[scientific_name] = {}
+            if collection_year not in taxa_data[scientific_name]:
+                taxa_data[scientific_name][collection_year] = 0
+            taxa_data[scientific_name][collection_year] += 1
+
+        unique_fish_list = list(taxa_data.keys())
+        unique_fish_list.sort()
+
+        unique_year_list.sort()
+        fish_data = {}
+        for fish_key in unique_fish_list:
+            if fish_key not in fish_data:
+                fish_data[fish_key] = []
+            for each_year in unique_year_list:
+                if each_year in taxa_data[fish_key]:
+                    fish_data[fish_key].append(str(
+                        taxa_data[fish_key][each_year]))
+                else:
+                    fish_data[fish_key].append(str(0))
+
         result = {}
-        occurrences_data = []
-        result['occurrences_line_chart'] = {}
-        result['occurrences_line_chart']['values'] = []
-        result['occurrences_line_chart']['keys'] = []
-        result['occurrences_line_chart']['title'] \
-            = 'Occurrences'
-
-        for each_record in collection_records:
-            occurrences_data.append(each_record.collection_date.year)
-
-        data_counter_occurrences = (
-            Counter(occurrences_data))
-
-        result['occurrences_line_chart']['values'].append(
-            data_counter_occurrences.values())
-        result['occurrences_line_chart']['keys'].append(
-            data_counter_occurrences.keys())
-        result['occurrences_line_chart']['values'] = (
-            result['occurrences_line_chart']['values'][0])
-        result['occurrences_line_chart']['keys'] = (
-            result['occurrences_line_chart']['keys'][0])
+        result['data'] = fish_data
+        result['labels'] = unique_year_list
+        result['dataset_labels'] = unique_fish_list
 
         return result
+
 
 
 
