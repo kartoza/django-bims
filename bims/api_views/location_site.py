@@ -1,7 +1,6 @@
 # coding=utf8
 import json
 import os
-from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
@@ -29,7 +28,6 @@ from bims.utils.cluster_point import (
 from bims.api_views.collection import GetCollectionAbstract
 from bims.utils.search_process import (
     get_or_create_search_process,
-    create_search_process_file
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
@@ -286,7 +284,7 @@ class LocationSitesSummary(APIView):
         taxa_data = {}
         unique_year_list = []
 
-        for each_record in collection_records:  #type: BiologicalCollectionRecord
+        for each_record in collection_records:
             scientific_name = str(each_record.taxonomy.scientific_name)
             collection_year = str(each_record.collection_date.year)
             if collection_year not in unique_year_list:
