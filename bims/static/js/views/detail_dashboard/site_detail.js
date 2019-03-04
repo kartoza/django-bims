@@ -493,12 +493,13 @@ define([
                           callback: function(value) {if (value % 1 === 0) {return value;}}
                         }
 					}]
-				}
+                    }
                 }
-            };
-            var ctx = chartCanvas.getContext('2d');
-            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-            new ChartJs(ctx, chartConfig);
+             };
+             chartCanvas = this.resetCanvas(chartCanvas);
+             var ctx = chartCanvas.getContext('2d');
+             ctx.height = '200px';
+             new ChartJs(ctx, chartConfig);
         },
         createOccurrencesBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
@@ -506,6 +507,16 @@ define([
              if (data.hasOwnProperty('records_occurrence')) {
                 this.renderBarChart(data['records_occurrence'], 'occurrences_line', chartCanvas);
              }
+
          },
+        resetCanvas: function (chartCanvas) {
+            var chartParent = chartCanvas.parentElement;
+            var newCanvas = document.createElement("CANVAS");
+            var chartId = chartCanvas.id;
+            newCanvas.id = chartId;
+            chartCanvas.remove();
+            chartParent.append(newCanvas);
+            return document.getElementById(chartId);
+        }
     })
 });
