@@ -172,6 +172,8 @@ class SearchVersion2(object):
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filters_ids = []
+        if not spatial_filters:
+            return []
         for spatial_filter in spatial_filters:
             if 'group' not in spatial_filter:
                 spatial_filters_ids.append(spatial_filter)
@@ -181,6 +183,8 @@ class SearchVersion2(object):
     def spatial_filter_group_query(self):
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filter_group_ids = []
+        if not spatial_filters:
+            return []
         for spatial_filter in spatial_filters:
             if 'group-' in spatial_filter:
                 spatial_filter = spatial_filter.replace(
