@@ -215,6 +215,7 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
+    CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
 
     def get(self, request):
         filters = request.GET
@@ -261,6 +262,8 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
 
+        cons_status_occurrence = self.get_cons_status_occurrence_data(
+            collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -271,6 +274,7 @@ class LocationSitesSummary(APIView):
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.CONS_STATUS_OCCURRENCE: dict(cons_status_occurrence),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
