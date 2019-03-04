@@ -510,17 +510,25 @@ define([
                 }
 
             };
+            chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
-            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
             new ChartJs(ctx, chartConfig);
         },
         createOriginStackedBarChart: function (data) {
-            var locationContext = {}
             var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
 
              if (data.hasOwnProperty('origin_occurrence')) {
                 this.renderStackedBarChart(data['origin_occurrence'], 'origin_bar', chartCanvas);
              }
          },
+        resetCanvas: function (chartCanvas) {
+            var chartParent = chartCanvas.parentElement;
+            var newCanvas = document.createElement("CANVAS");
+            var chartId = chartCanvas.id;
+            newCanvas.id = chartId;
+            chartCanvas.remove();
+            chartParent.append(newCanvas);
+            return document.getElementById(chartId);
+        }
     })
 });
