@@ -296,14 +296,12 @@ class LocationSitesSummary(APIView):
         occurrence_data = {}
         occurrence_data['data'] = {}
         occurrence_data['keys'] = keys
-        taxon_count = 0
         try:
             for each_record in records_collection: \
                     # type: BiologicalCollectionRecord
                 taxonomy_id = '"{taxon_id}"'.format(
                         taxon_id=each_record.taxonomy.id)
                 if taxonomy_id not in occurrence_data:
-                    taxon_count += 1
                     occurrence_data['data'][taxonomy_id] = {}
                     occurrence_data['data'][taxonomy_id]['values'] = []
                     occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
@@ -339,7 +337,7 @@ class LocationSitesSummary(APIView):
                 occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
         except KeyError:
             pass
-        occurrence_data['taxon_count'] = taxon_count
+        occurrence_data['taxon_count'] = len(occurrence_data['data'])
         return occurrence_data
 
 

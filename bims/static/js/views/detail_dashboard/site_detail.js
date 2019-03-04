@@ -583,6 +583,10 @@ define([
         },
         renderOccurrenceData(data_in) {
             var result = '<div>';
+            if (typeof data_in == 'undefined')
+            {
+                return result + '</div>'
+            }
             var count = 0;
             var column_count = 0;
             var column_class = '';
@@ -590,12 +594,25 @@ define([
             var next_col = '';
 
             // Render headings
-            count = data_in['keys'].length;
+            try {
+                count = data_in['keys'].length;
+            }
+            catch (e) {
+                count = 0;
+            }
             result += '<div class="row">'; //Open new row
             for (let i = 0; i < count; i++) {
 
                 column_class = 'col-2 title-column';
-                column_value = data_in['keys'][i];
+                if ('keys' in data_in) {
+                     column_value = data_in['keys'][i];
+                }
+                else
+                {
+                    column_class = 'Unknown';
+                }
+
+
                 // Make my first column wider
                 if (i == 0) {
                     column_class = 'col-4 title-column';
@@ -620,8 +637,15 @@ define([
                 var column_key = ''
                 for (let j = 0; j < column_count; j++) {
                     column_class = 'col-2';
-                    column_key = data_in['keys'][j]
-                    column_value = taxon_values[column_key];
+                    column_value = 'Unknown';
+                    if ('keys' in data_in) {
+                        column_key = data_in['keys'][j];
+                        if (typeof taxon_values != 'undefined') {
+                            if (column_key in taxon_values) {
+                                column_value = taxon_values[column_key];
+                            }
+                        }
+                    }
                     // Make my first column wider
                     if (j== 0) {
                         column_class = 'col-4';
