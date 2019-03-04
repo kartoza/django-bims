@@ -292,7 +292,7 @@ define([
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
 
-            var spatialFilters = this.spatialFilterView.selectedRiverCatchments;
+            var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
 
             var parameters = {
                 'search': searchValue,
@@ -599,7 +599,7 @@ define([
 
             // River catchment
             if (allFilters.hasOwnProperty('spatialFilter')) {
-                this.spatialFilterView.selectedRiverCatchments = JSON.parse(allFilters['spatialFilter']);
+                this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
             }
 
             // Boundary
