@@ -3,8 +3,7 @@ import json
 import os
 from collections import Counter
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q, F, Count
-from django.db.models.functions import ExtractYear
+from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,6 +32,7 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
+from bims.enums.taxonomic_rank import TaxonomicRank
 
 
 class LocationSiteList(APIView):
@@ -236,33 +236,6 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
-        records_occurrence = collection_results.annotate(
-            name=F('taxonomy__scientific_name'),
-            taxon_id=F('taxonomy_id'),
-            origin=F('category')
-        ).values(
-            'taxon_id', 'name', 'origin'
-        ).annotate(
-            count=Count('taxonomy')
-        )
-
-        records_graph_data = collection_results.annotate(
-            year=ExtractYear('collection_date'),
-            origin=F('category')
-        ).values(
-            'year', 'origin'
-        ).annotate(
-            count=Count('year')
-        ).order_by('year')
-
-        category_summary = collection_results.annotate(
-            origin=F('category')
-        ).values_list(
-            'origin'
-        ).annotate(
-            count=Count('category')
-        )
-
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -272,9 +245,6 @@ class LocationSitesSummary(APIView):
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
-            self.RECORDS_GRAPH_DATA: list(records_graph_data),
-            self.RECORDS_OCCURRENCE: list(records_occurrence),
-            self.CATEGORY_SUMMARY: dict(category_summary),
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
@@ -296,10 +266,11 @@ class LocationSitesSummary(APIView):
 
     def get_biodiversity_data(self, collections):
         biodiversity_data = {}
+
         taxa = self.get_origin_cons_endemsim_data(collections)
         # If I found more than one class of animal
         if 'Actinopterygii' not in taxa:
-            print('Hey there, you are not a fish!')
+            pass
         else:
             biodiversity_data['fish'] = {}
             biodiversity_data['fish']['origin_chart'] = {}
@@ -318,15 +289,10 @@ class LocationSitesSummary(APIView):
             biodiversity_data['fish']['endemism_chart']['keys'] = (
                 taxa['Actinopterygii']['endemism_chart']['keys'])
         biodiversity_data['taxa'] = taxa
-
         biodiversity_data['occurrences'] = [0, 0, 0]
-
         biodiversity_data['occurrences'][0] = (
             sum(taxa['Actinopterygii']['occurrences']))
-
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
-
-
         biodiversity_data['number_of_taxa'][0] = (
             len(taxa['Actinopterygii']['number_of_taxa']))
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
@@ -336,20 +302,21 @@ class LocationSitesSummary(APIView):
     def get_origin_cons_endemsim_data(self, collections):
         taxa = {}
         for model in collections:
-            if not (model.taxonomy.class_name in taxa):
-                taxa[model.taxonomy.class_name] = {}
-                taxa[model.taxonomy.class_name]['origin_data'] = []
-                taxa[model.taxonomy.class_name]['cons_status_data'] = []
-                taxa[model.taxonomy.class_name]['endemism_data'] = []
-                taxa[model.taxonomy.class_name]['occurrence_data'] = []
-            taxa[model.taxonomy.class_name]['origin_data'].append(
+            taxonomy_class_name = model.taxonomy.class_name
+            if not (taxonomy_class_name in taxa):
+                taxa[taxonomy_class_name] = {}
+                taxa[taxonomy_class_name]['origin_data'] = []
+                taxa[taxonomy_class_name]['cons_status_data'] = []
+                taxa[taxonomy_class_name]['endemism_data'] = []
+                taxa[taxonomy_class_name]['occurrence_data'] = []
+            taxa[taxonomy_class_name]['origin_data'].append(
                 model.category)
             iucn_category = model.taxonomy.iucn_status.category
             iucn_name = model.taxonomy.iucn_status.get_status()
             iucn_title = ('({iucn_category}) {iucn_name}'.format(
                 iucn_category=iucn_category,
                 iucn_name=iucn_name))
-            taxa[model.taxonomy.class_name]['cons_status_data'].append(
+            taxa[taxonomy_class_name]['cons_status_data'].append(
                 iucn_title)
 
             if str(model.taxonomy.endemism) == 'None':
@@ -357,14 +324,14 @@ class LocationSitesSummary(APIView):
             else:
                 endemism_title = str(model.taxonomy.endemism)
 
-            taxa[model.taxonomy.class_name]['endemism_data'].append(
+            taxa[taxonomy_class_name]['endemism_data'].append(
                 endemism_title)
             if str(model.taxonomy.scientific_name) == 'null':
                 scientific_name = 'Unknown'
             else:
                 scientific_name = str(model.taxonomy.endemism)
 
-            taxa[model.taxonomy.class_name]['occurrence_data'].append(
+            taxa[taxonomy_class_name]['occurrence_data'].append(
                 scientific_name)
 
         for class_name in taxa:
