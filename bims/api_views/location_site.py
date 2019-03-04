@@ -2,8 +2,7 @@
 import json
 import os
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q, F, Count
-from django.db.models.functions import ExtractYear
+from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
