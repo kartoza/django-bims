@@ -510,21 +510,24 @@ define([
                 }
 
             };
-
-
-            //var chartCanvas = document.getElementById(chartName + '_chart');
+            chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
         },
         createTaxaStackedBarChart: function (data) {
-            var locationContext = {}
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
-
              if (data.hasOwnProperty('records_occurrence')) {
                 this.renderStackedBarChart(data['records_occurrence'], 'occurrences_line', chartCanvas);
              }
-
-
          },
+        resetCanvas: function (chartCanvas) {
+            var chartParent = chartCanvas.parentElement;
+            var newCanvas = document.createElement("CANVAS");
+            var chartId = chartCanvas.id;
+            newCanvas.id = chartId;
+            chartCanvas.remove();
+            chartParent.append(newCanvas);
+            return document.getElementById(chartId);
+        }
     })
 });
