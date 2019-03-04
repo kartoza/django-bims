@@ -4,14 +4,16 @@ define([
     'ol',
     'jquery',
     'shared',
-    'htmlToCanvas'
+    'htmlToCanvas',
+    'chartJs',
 ], function (
     Backbone,
     _,
     ol,
     $,
     Shared,
-    HtmlToCanvas
+    HtmlToCanvas,
+    ChartJs,
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
@@ -168,9 +170,7 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                    self.createOccurrenceTable(data);
-                    self.createCharts(data);
-
+                    self.createOriginStackedBarChart(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -446,137 +446,81 @@ define([
             button.prop("disabled", true);
             this.downloadingCSV(this.csvDownloadUrl, button);
         },
-        createCharts: function (data) {
-            var self = this;
-            var categorySummary = {};
+        renderStackedBarChart: function (dataIn, chartName, chartCanvas) {
 
-            var recordsByYearData = {};
-
-            var recordsGraphData = {};
-            var dataByOrigin = {};
-
-            if (data.hasOwnProperty('records_graph_data')) {
-                recordsGraphData = data['records_graph_data'];
-            }
-            if (data.hasOwnProperty('category_summary')) {
-                categorySummary = data['category_summary'];
+            if (!(dataIn.hasOwnProperty('data'))) {
+                return false;
             }
 
-            $.each(recordsGraphData, function (key, value) {
-                let year = value['year'];
-                if (!recordsByYearData.hasOwnProperty(value['year'])) {
-                    recordsByYearData[year] = value['count'];
-                } else {
-                    recordsByYearData[year] += value['count'];
+            var datasets = [];
+            var barChartData = {};
+            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D','#B77282', '#E6E188','#6BC0B5', '#859FAC']
+            var myDataset = {}
+            var count = dataIn['dataset_labels'].length;
+            for (let i = 0; i < count; i++)
+            {
+                myDataset = {};
+                var nextKey = dataIn['dataset_labels'][i];
+                var nextColour = colours[i];
+                var nextData = dataIn['data'][nextKey];
+                myDataset = {
+                    'label': nextKey,
+                    'backgroundColor': nextColour,
+                    'data' : nextData
                 }
-                if (!dataByOrigin.hasOwnProperty(self.categories[value['origin']])) {
-                    dataByOrigin[self.categories[value['origin']]] = {};
-                }
-                dataByOrigin[self.categories[value['origin']]][year] = value['count'];
-            });
-
-            let categorySummaryLabels = [];
-            let categorySummaryColors = [];
-
-            $.each(categorySummary, function (key, value) {
-                categorySummaryLabels.push(self.categories[key]);
-                categorySummaryColors.push(self.categoryColor[self.categories[key]]);
-            });
-
-            this.originCategoryChart = self.createPieChart(
-                self.originCategoryGraph.getContext('2d'),
-                Object.values(categorySummary),
-                categorySummaryLabels,
-                self.pieOptions,
-                categorySummaryColors);
-
-            var recordsByYearDatasets = [{
-                backgroundColor: '#48862b',
-                borderWidth: 1,
-                data: Object.values(recordsByYearData)
-            }];
-
-            var recordsByYearGraphOptions = {
-                maintainAspectRatio: false,
-                title: {display: true, text: 'Records'},
-                legend: {display: false},
-                scales: {
-                    xAxes: [{
-                        barPercentage: 0.2,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Collection date'
-                        }
-                    }],
-                    yAxes: [{
-                        stacked: false,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Number of records'
-                        },
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
-            };
-
-            this.recordsTimelineGraphCanvas = new Chart(self.recordsTimelineGraph.getContext('2d'), {
+                datasets.push(myDataset);
+            }
+            barChartData = {
+                'labels': dataIn['labels'],
+                'datasets': datasets,
+            }
+            var chartConfig = {
                 type: 'bar',
-                data: {
-                    labels: Object.keys(recordsByYearData),
-                    datasets: recordsByYearDatasets
-                },
-                options: recordsByYearGraphOptions
-            });
-
-            var originTimelineGraphOptions = {
-                maintainAspectRatio: false,
-                title: {display: true, text: 'Origin'},
-                legend: {display: true},
-                scales: {
-                    xAxes: [{
-                        stacked: true,
-                        barPercentage: 0.2,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Collection date'
-                        }
-                    }],
-                    yAxes: [{
-                        stacked: true,
-                        scaleLabel: {display: true, labelString: 'Records'}
-                    }]
+                data: barChartData,
+                options: {
+                    responsive: true,
+                    legend: {display: true},
+                    title: {display: false},
+                    hover: {mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                        position: 'average',
+                    },
+                    borderWidth: 0,
+                    scales: {
+						xAxes: [{
+							stacked: true,
+						}],
+						yAxes: [{
+							stacked: true,
+                            ticks: {
+                                beginAtZero: true,
+                                callback: function (value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                },
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Occurrences',
+                            },
+						}]
+					}
                 }
+
             };
+            var ctx = chartCanvas.getContext('2d');
+            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+            new ChartJs(ctx, chartConfig);
+        },
+        createOriginStackedBarChart: function (data) {
+            var locationContext = {}
+            var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
 
-            var originTimelineDatasets = [];
-
-            /*
-                Example Data :
-                dataByOrigin = {
-                    'Native': {2014: 3, 2016: 4},
-                    'Non-Native': {2014: 3, 2016: 1}
-                };
-            */
-            $.each(dataByOrigin, function (key, value) {
-                originTimelineDatasets.push({
-                    label: key,
-                    backgroundColor: self.categoryColor[key],
-                    borderWidth: 1,
-                    data: Object.values(value)
-                });
-            });
-
-            this.originTimelineGraphCanvas = new Chart(self.originTimelineGraph.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(recordsByYearData),
-                    datasets: originTimelineDatasets
-                },
-                options: originTimelineGraphOptions
-            })
-        }
-        ,
+             if (data.hasOwnProperty('origin_occurrence')) {
+                this.renderStackedBarChart(data['origin_occurrence'], 'origin_bar', chartCanvas);
+             }
+         },
     })
 });

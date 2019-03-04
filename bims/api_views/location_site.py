@@ -1,6 +1,7 @@
 # coding=utf8
 import json
 import os
+from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
@@ -213,6 +214,7 @@ class LocationSitesSummary(APIView):
     TOTAL_RECORDS = 'total_records'
     RECORDS_GRAPH_DATA = 'records_graph_data'
     RECORDS_OCCURRENCE = 'records_occurrence'
+    ORIGIN_OCCURRENCE = 'origin_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
 
@@ -261,6 +263,8 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
 
+        origin_occurrence = self.get_origin_occurrence_data(collection_results)
+
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -271,23 +275,63 @@ class LocationSitesSummary(APIView):
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.ORIGIN_OCCURRENCE: dict(origin_occurrence),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+    def get_origin_occurrence_data(self, collection_records):
+        origin_data = {}
+        unique_year_list = []
+        category_choices = {}
+        for each_record in collection_records:  #type: BiologicalCollectionRecord
+            if len(category_choices) == 0:
+                category_choices = dict(each_record.CATEGORY_CHOICES)
 
+            origin_category = category_choices[each_record.category]
+            collection_year = str(each_record.collection_date.year)
+            if collection_year not in unique_year_list:
+                unique_year_list.append(collection_year)
+            if origin_category not in origin_data:
+                origin_data[origin_category] = {}
+            if collection_year not in origin_data[origin_category]:
+                origin_data[origin_category][collection_year] = 0
+            origin_data[origin_category][collection_year] += 1
+
+        unique_origin_list = list(origin_data.keys())
+        unique_origin_list.sort()
+
+        unique_year_list.sort()
+        specific_origin_data = {}
+        for origin_key in unique_origin_list:
+            if origin_key not in specific_origin_data:
+                specific_origin_data[origin_key] = []
+            for each_year in unique_year_list:
+                if each_year in origin_data[origin_key]:
+                    specific_origin_data[origin_key].append(str(
+                        origin_data[origin_key][each_year]))
+                else:
+                    specific_origin_data[origin_key].append(str(0))
+
+        result = {}
+        result['data'] = specific_origin_data
+        result['labels'] = unique_year_list
+        result['dataset_labels'] = unique_origin_list
+
+        return result
 
 class LocationSitesCoordinate(ListAPIView):
     """
