@@ -1,7 +1,6 @@
 # coding=utf8
 import json
 import os
-from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
@@ -297,9 +296,8 @@ class LocationSitesSummary(APIView):
         origin_data = {}
         unique_year_list = []
         category_choices = {}
-        for each_record in collection_records:  #type: BiologicalCollectionRecord
-            if len(category_choices) == 0:
-                category_choices = dict(each_record.CATEGORY_CHOICES)
+        for each_record in collection_records:
+            category_choices = dict(each_record.CATEGORY_CHOICES)
 
             origin_category = category_choices[each_record.category]
             collection_year = str(each_record.collection_date.year)
@@ -332,6 +330,7 @@ class LocationSitesSummary(APIView):
         result['dataset_labels'] = unique_origin_list
 
         return result
+
 
 class LocationSitesCoordinate(ListAPIView):
     """
