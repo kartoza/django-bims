@@ -496,12 +496,11 @@ define([
 				}
                 }
             };
-            //var chartCanvas = document.getElementById(chartName + '_chart');
             var ctx = chartCanvas.getContext('2d');
+            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
             new ChartJs(ctx, chartConfig);
         },
         createOccurrencesBarChart: function (data) {
-            var locationContext = {}
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
 
              if (data.hasOwnProperty('records_occurrence')) {
