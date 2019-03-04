@@ -237,33 +237,8 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
-        records_occurrence = collection_results.annotate(
-            name=F('taxonomy__scientific_name'),
-            taxon_id=F('taxonomy_id'),
-            origin=F('category')
-        ).values(
-            'taxon_id', 'name', 'origin'
-        ).annotate(
-            count=Count('taxonomy')
-        )
-
-        records_graph_data = collection_results.annotate(
-            year=ExtractYear('collection_date'),
-            origin=F('category')
-        ).values(
-            'year', 'origin'
-        ).annotate(
-            count=Count('year')
-        ).order_by('year')
-
-        category_summary = collection_results.annotate(
-            origin=F('category')
-        ).values_list(
-            'origin'
-        ).annotate(
-            count=Count('category')
-        )
         site_details = self.get_site_details(site_id)
+
         site_details['records_and_sites'] = (
             self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
@@ -276,9 +251,6 @@ class LocationSitesSummary(APIView):
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
-            self.RECORDS_GRAPH_DATA: list(records_graph_data),
-            self.RECORDS_OCCURRENCE: list(records_occurrence),
-            self.CATEGORY_SUMMARY: dict(category_summary),
             self.SITE_DETAILS: dict(site_details),
 
             'process': search_process.process_id,
