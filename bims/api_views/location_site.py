@@ -288,6 +288,46 @@ class LocationSitesSummary(APIView):
         except ValueError:
             return Response(response_data)
 
+    def get_cons_status_occurrence_data(self, collection_records):
+        cons_status_data = {}
+        unique_year_list = []
+        for each_record in collection_records:  #type: BiologicalCollectionRecord
+            cons_status_category = each_record.taxonomy.iucn_status.category
+            cons_status_name = each_record.taxonomy.iucn_status.get_status()
+            cons_status_title = (
+                '({cons_status_category}) {cons_status_name}'.format(
+                    cons_status_category=cons_status_category,
+                    cons_status_name=cons_status_name))
+            collection_year = str(each_record.collection_date.year)
+            if collection_year not in unique_year_list:
+                unique_year_list.append(collection_year)
+            if cons_status_title not in cons_status_data:
+                cons_status_data[cons_status_title] = {}
+            if collection_year not in cons_status_data[cons_status_title]:
+                cons_status_data[cons_status_title][collection_year] = 0
+            cons_status_data[cons_status_title][collection_year] += 1
+
+        unique_cons_status_list = list(cons_status_data.keys())
+        unique_cons_status_list.sort()
+
+        unique_year_list.sort()
+        specific_cons_status_data = {}
+        for cons_status_key in unique_cons_status_list:
+            if cons_status_key not in specific_cons_status_data:
+                specific_cons_status_data[cons_status_key] = []
+            for each_year in unique_year_list:
+                if each_year in cons_status_data[cons_status_key]:
+                    specific_cons_status_data[cons_status_key].append(str(
+                        cons_status_data[cons_status_key][each_year]))
+                else:
+                    specific_cons_status_data[cons_status_key].append(str(0))
+
+        result = {}
+        result['data'] = specific_cons_status_data
+        result['labels'] = unique_year_list
+        result['dataset_labels'] = unique_cons_status_list
+
+        return result
 
 class LocationSitesCoordinate(ListAPIView):
     """
