@@ -296,7 +296,7 @@ class LocationSitesSummary(APIView):
         cons_status_data = {}
         unique_year_list = []
         for each_record in collection_records:
-            if each_record.taxonomy.iucn_status == None:
+            if each_record.taxonomy.iucn_status is None:
                 cons_status_title = 'Unknown'
             else:
                 cons_status_category = (
@@ -338,6 +338,7 @@ class LocationSitesSummary(APIView):
         result['dataset_labels'] = unique_cons_status_list
 
         return result
+
 
 class LocationSitesCoordinate(ListAPIView):
     """
