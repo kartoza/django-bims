@@ -280,28 +280,32 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
     def get_cons_status_occurrence_data(self, collection_records):
         cons_status_data = {}
         unique_year_list = []
         for each_record in collection_records:  #type: BiologicalCollectionRecord
-            cons_status_category = each_record.taxonomy.iucn_status.category
-            cons_status_name = each_record.taxonomy.iucn_status.get_status()
-            cons_status_title = (
-                '({cons_status_category}) {cons_status_name}'.format(
-                    cons_status_category=cons_status_category,
-                    cons_status_name=cons_status_name))
+            if each_record.taxonomy.iucn_status == None:
+                cons_status_title = 'Unknown'
+            else:
+                cons_status_category = each_record.taxonomy.iucn_status.category
+                cons_status_name = each_record.taxonomy.iucn_status.get_status()
+                cons_status_title = (
+                    '({cons_status_category}) {cons_status_name}'.format(
+                        cons_status_category=cons_status_category,
+                        cons_status_name=cons_status_name))
+
             collection_year = str(each_record.collection_date.year)
             if collection_year not in unique_year_list:
                 unique_year_list.append(collection_year)
