@@ -610,6 +610,9 @@ define([
          },
 
          renderPieChart: function(data, speciesType, chartName, chartCanvas) {
+            if (typeof data == 'undefined') {
+                return null;
+            }
             var backgroundColours = [
                             '#8D2641',
                             '#D7CD47',
