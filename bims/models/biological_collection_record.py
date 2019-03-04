@@ -3,6 +3,7 @@
 
 """
 import json
+import uuid
 from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
@@ -120,6 +121,19 @@ class BiologicalCollectionRecord(
         null=True,
     )
 
+    upstream_id = models.CharField(
+        help_text='Upstream id, e.g. Gbif key',
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    uuid = models.UUIDField(
+        help_text='Collection record uuid',
+        max_length=200,
+        null=True,
+    )
+
     additional_data = JSONField(
         blank=True,
         null=True
@@ -157,6 +171,15 @@ class BiologicalCollectionRecord(
             else:
                 self.additional_data = json.loads(self.additional_data)
                 attempt += 1
+
+        if not self.uuid:
+            collection_uuid = uuid.uuid4()
+            while BiologicalCollectionRecord.objects.filter(
+                uuid=collection_uuid
+            ).exist():
+                collection_uuid = uuid.uuid4()
+            self.uuid = collection_uuid
+
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 
     def get_children(self):
