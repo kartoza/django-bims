@@ -77,8 +77,7 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: absolute;
     height: 100%;
-    max-width: 35vw;
-    min-width: 422px;
+    width: 265px;
     pointer-events: none;
 }
 
@@ -87,8 +86,8 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: relative;
     height: 100%;
-    max-width: 35vw;
-    min-width: 422px;
+    width: 100%;
+    max-width: 400px;
     background: rgb(255, 255, 255);
     color: #4e4e4e;
     z-index: 2000;
@@ -115,17 +114,18 @@ html, body, .map, .map-wrapper, #map-container {
     padding-bottom: 10px;
     padding-left: 15px;
     padding-right: 10px;
-    min-height: 3rem;
-    background: transparent;
-    color: var(--c-grey-d);
+    min-height: 60px;
+    background: white;
+    color: #4e4e4e;
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
+    z-index: -1;
 }
 
 .right-panel-header .fa-map-marker {
-    color: var(--c-grey-d);
+    color: #AFC9FA;
 }
 
 .right-panel-title {
@@ -2403,74 +2403,3 @@ div:hover::-webkit-scrollbar {
     color: white;
 }
 
-
-#biodiversity-data-wrapper .col-3 {
-    padding: 0;
-    margin: 0;
-    max-height: 10vh;
-}
-
-.side-panel-grey-row {
-    background-color: #ebebeb;
-    padding: 0.25rem;
-    padding-right: 0rem;
-}
-
-.side-panel-white-row {
-    padding: 0.25rem;
-    padding-right: 0;
-    padding-bottom: 0;
-}
-
-.right-panel-chart {
-    position: relative;
-    align-self: center;
-}
-
-.biodiversity-data-images img {
-    max-height: 5vh;
-}
-
-#climate-data-wrapper .row .caption-column {
-    color: #4a4a4a;
-    text-align: left;
-    align-self: center;
-}
-
-#climate-data-wrapper .row .value-column {
-    color: #3D647D;
-    text-align: right;
-    align-self: center;
-}
-
-#climate-data-wrapper .row {
-    border: 1px solid #d3d4d1;
-    background-color: #ebebeb;
-    font-family: "Roboto Condensed";
-    color: #4a4a4a;
-    font-size: 0.75rem;
-    line-height: 2rem;
- }
-
-#site-details-wrapper .row {
-    border: 1px solid #d3d4d1;
-    background-color: #ebebeb;
-    font-family: "Roboto Condensed";
-    color: #4a4a4a;
-    font-size: 0.75rem;
-    line-height: 2rem;
-
- }
-
- #site-details-wrapper .row .value-column {
-    color: #3D647D;
-    text-align: right;
-    align-self: center;
-}
-
-
- #site-details-wrapper .row .caption-column {
-    color: #4a4a4a;
-    text-align: left;
-    align-self: center;
-}
