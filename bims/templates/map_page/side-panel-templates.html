@@ -20,3 +20,224 @@
         </div>
     </div>
 </script>
+
+
+<script type='text/html' id='biodiversity-data-template'>
+    <div class="container-fluid" id="biodiversity-data-wrapper">
+        <div class="container-fluid">
+            <div class="row side-panel-white-row" style="text-align: center;">
+                <div class="col-3" style="text-align: left;">
+
+                </div>
+                <div class="col-9 biodiversity-data-images" style="background-color: #b0b1ad">
+                    <div class="row">
+                        <div class="col-4"><img src="/static/img/fish-2.png"></div>
+                        <div class="col-4"><img src="/static/img/invertebras-2.png"></div>
+                        <div class="col-4"><img src="/static/img/algae-2.png"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="biodiversity-data-types row side-panel-white-row" style="text-align: center;">
+                <div class="col-3" style="text-align: left;">
+                    Occurrences
+                </div>
+                <div class="col-3">
+                    <%= occurrences[0] %>
+                </div>
+                <div class="col-3">
+                    <%= occurrences[1] %>
+                </div>
+                <div class="col-3">
+                    <%= occurrences[2] %>
+                </div>
+            </div>
+            <div class="row side-panel-grey-row" style="max-height: 10vh;">
+                <div class="col-3">
+                    <div>Origin</div>
+                    <div id="origin_chart_labels"></div>
+                </div>
+                <div class="col-3 right-panel-chart">
+                    <canvas id="fish_origin_chart"></canvas>
+                </div>
+                 <div class="col-3 right-panel-chart">
+                    <canvas id="invertebrate_origin_chart"></canvas>
+                </div>
+                <div class="col-3 right-panel-chart">
+                    <canvas id="algae_origin_chart"></canvas>
+                </div>
+            </div>
+            <div class="row side-panel-white-row" style="max-height: 10vh;">
+                <div class="col-3">
+                    <div>Endemism</div>
+                    <div id="endemism_chart_labels"></div>
+                </div>
+                 <div class="col-3 right-panel-chart">
+                    <canvas id="fish_endemism_chart"></canvas>
+                </div>
+                 <div class="col-3 right-panel-chart">
+                    <canvas id="invertebrate_endemism_chart"></canvas>
+                </div>
+                <div class="col-3 right-panel-chart">
+                    <canvas id="algae_endemism_chart"></canvas>
+                </div>
+            </div>
+            <div class="row side-panel-grey-row" style="max-height: 10vh;">
+                <div class="col-3">
+                    <div>Cons. Status</div>
+                    <div id="cons_status_chart_labels"></div>
+                </div>
+                <div class="col-3 right-panel-chart">
+                    <canvas id="fish_cons_status_chart"></canvas>
+                </div>
+                 <div class="col-3 right-panel-chart">
+                    <canvas id="invertebrate_cons_status_chart"></canvas>
+                </div>
+                <div class="col-3 right-panel-chart">
+                    <canvas id="algae_cons_status_chart"></canvas>
+                </div>
+            </div>
+           <div class="row side-panel-white-row" style="text-align: center;">
+                 <div class="col-3" style="text-align: left;">
+                    No. of taxa
+                </div>
+                <div class="col-3">
+                    <%= number_of_taxa[0] %>
+                </div>
+                <div class="col-3">
+                    <%= number_of_taxa[1] %>
+                </div>
+                <div class="col-3">
+                    <%= number_of_taxa[2] %>
+                </div>
+            </div>
+            <div class="row side-panel-grey-row" style="text-align: center;">
+                 <div class="col-3" style="text-align: left;">
+                    Ecological Condition
+                </div>
+                <div class="col-3">
+                    <%= ecological_condition[0] %>
+                </div>
+                <div class="col-3">
+                    <%= ecological_condition[1] %>
+                </div>
+                <div class="col-3">
+                    <%= ecological_condition[2] %>
+                </div>
+            </div>
+            <div class="row side-panel-white-row">
+                <div class="col-3" style="align-self: center">
+                    Dashboards
+                </div>
+                <div class="col-3">
+                    <div class="fbis-button-small"><span>FISH</span></div>
+                </div>
+                <div class="col-3">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="fbis-button-small" style="font-size: 80%"><span>SASS</span></div>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="fbis-button-small" style="font-size: 80%">
+                                <span>INVERTEBRATES</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="fbis-button-small">
+                        <span>ALGAE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row side-panel-white-row" style="padding-bottom: 0.25rem;">
+                <div class="col-3" style="align-self: center">
+                    Forms
+                </div>
+                <div class="col-3">
+                    <div class="fbis-button-small fbis-red">
+                        <span>ADD FISH</span>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="fbis-button-small fbis-red" style="font-size: 80%">
+                                <span>ADD SASS</span>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="fbis-button-small fbis-red" style="font-size: 80%">
+                                <span>ADD INVERTEBRATES</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="fbis-button-small fbis-red">
+                        <span>ADD ALGAE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</div>
+</script>
+
+<script type='text/html' id='climate-data-template'>
+    <div id="temperature-chart-wrapper" class="search-results-wrapper">
+        <div class="search-result-sub-title search-results-total"
+             data-search-result-id="">
+            Mean Annual Temperature
+        </div>
+        <div class="col-12 right-panel-chart">
+            <canvas id="temperature_chart"></canvas>
+        </div>
+    </div>
+    <div id="rainfall-chart-wrapper" class="search-results-wrapper">
+        <div class="search-result-sub-title search-results-total"
+         data-search-result-id="">
+            Mean Annual Rainfall
+        </div>
+        <div class="col-12 right-panel-chart">
+            <canvas id="rainfall_chart"></canvas>
+        </div>
+    </div>
+</script>
+
+
+<script type='text/html' id='site-details-template'>
+    <div class="container-fluid" id="site-details-wrapper">
+        <div class="row">
+            <div class="col-8 caption-column">FBIS Site Code</div>
+            <div class="col-4 value-column"><%= fbis_site_code %></div>
+        </div>
+        <div class="row">
+            <div class="col-8 caption-column">Site Coordinates</div>
+            <div class="col-4 value-column"><%= site_coordinates %></div>
+        </div>
+        <div class="row">
+            <div class="col-8 caption-column">Site Description</div>
+            <div class="col-4 value-column"><%= site_description %></div>
+        </div>
+        <div class="row">
+            <div class="col-8 caption-column">Geomorphological Zone</div>
+            <div class="col-4 value-column"><%= geomorphological_zone %></div>
+        </div>
+        <div class="row">
+            <div class="col-8 caption-column">River</div>
+            <div class="col-4 value-column"><%= river %></div>
+        </div>
+    </div>
+</script>
+
+<script type="text/template" id="site-detail-registry-values">
+    <div class="result-search" data-search-result-id="">
+        <p class="group-title"><%= name %></p>
+        <a class="group-description"><%= value %></a>
+    </div>
+</script>

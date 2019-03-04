@@ -85,6 +85,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                      }
 
                      // TODO : Change this to check graphable value
+                     var chartName = value['name'].toString().toLowerCase();
+                     var service_registry_key = value['service_registry_values'][0]['key'];
                      var isChart = false;
                      if (!((typeof chartName == 'undefined') | (typeof chartName == null))) {
                           isChart = chartName.includes('monthly')
@@ -190,6 +192,134 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             return $detailWrapper;
         },
+
+        renderSiteDetailInfo: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('site_detail_info')) {
+                var siteDetailsTemplate = _.template($('#site-details-template').html());
+                $detailWrapper.append(siteDetailsTemplate({
+                    'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
+                    'site_coordinates' : data['site_detail_info']['site_coordinates'],
+                    'site_description' : data['site_detail_info']['site_description'],
+                    'geomorphological_zone' : data['site_detail_info']['geomorphological_zone'],
+                    'river' : data['site_detail_info']['river'],
+                }));
+            }
+            return $detailWrapper;
+        },
+
+        renderClimateData: function (data) {
+            var locationContext = {}
+            var $detailWrapper = $('<div></div>');
+
+            if (data.hasOwnProperty('climate_data'))  {
+                var climateDataTemplate = _.template($('#climate-data-template').html());
+                $detailWrapper.append(climateDataTemplate({
+                    'mean_annual_temperature' : data['climate_data']['mean_annual_temperature'],
+                    'mean_annual_rainfall' : data['climate_data']['mean_annual_rainfall']
+                }));
+            };
+            return $detailWrapper;
+
+
+        },
+
+
+
+        renderMonthlyLineChart: function(data_in, chartName) {
+
+            if (!(data_in.hasOwnProperty(chartName + '_chart')))
+            {
+               return false;
+            };
+
+            var chartConfig = {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        data: data_in[chartName + '_chart']['values'],
+                        backgroundColor: '#D7CD47',
+                        borderColor: '#D7CD47',
+                        fill: false
+                    }],
+                    labels: data_in[chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: true,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                    },
+                    borderWidth: 0,
+                    scales: {
+					xAxes: [{
+						display: true,
+						scaleLabel: {
+							display: false,
+							labelString: ''
+						}
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: false,
+							labelString: ''
+						}
+					}]
+				}
+                }
+            };
+            var chartCanvas = document.getElementById(chartName + '_chart');
+            var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, chartConfig);
+        },
+
+        renderSidePanelPieChart: function(data, speciesType, chartName) {
+            var backgroundColours = [
+                            '#8D2641',
+                            '#D7CD47',
+                            '#18A090',
+                            '#A2CE89',
+                            '#4E6440',
+                            '#525351']
+            var originChartConfig = {
+                type: 'pie',
+                data: {
+                    datasets: [{
+                        data: data['biodiversity_data'][speciesType][chartName + '_chart']['data'],
+                        backgroundColor: backgroundColours
+                    }],
+                    labels: data['biodiversity_data'][speciesType][chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: true,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'nearest', intersect: false},
+                    borderWidth: 0,
+                }
+            };
+            var chartCanvas = document.getElementById(speciesType + '_' + chartName + '_chart');
+            var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, originChartConfig);
+
+            // Render chart labels
+            var dataKeys = data['biodiversity_data'][speciesType][chartName + '_chart']['keys'];
+            var dataLength = dataKeys.length;
+            var chart_labels = {};
+            chart_labels[chartName] = ''
+            for (var i = 0; i < dataLength; i++)
+            {
+                chart_labels[chartName] += '<div><span style="color:' +
+                    backgroundColours[i] + ';">■</span>' +
+                    '<span style="font-style: italic;">' +
+                    dataKeys[i] + '</span></div>'
+            }
+            $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
+        },
+
         renderDashboardDetail: function (data) {
             var $detailWrapper = $('<div></div>');
 
@@ -200,12 +330,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 return $detailWrapper;
             }
 
-            var recordsOccurence = data['records_occurrence'];
+            var recordsOccurrence = data['records_occurrence'];
             var originTemplate = _.template($('#search-result-dashboard-origin-template').html());
             var richnessIndexTemplate = _.template($('#search-result-dashboard-richness-index-template').html());
-            var classes = Object.keys(recordsOccurence).sort();
+            var classes = Object.keys(recordsOccurrence).sort();
 
-            if (recordsOccurence.length === 0) {
+            if (recordsOccurrence.length === 0) {
                  $detailWrapper.append('<div class="side-panel-content">' +
                     'No detail for this site.' +
                     '</div>');
@@ -215,7 +345,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             var totalSpeciesRichness = 0;
 
             $.each(classes, function (index, className) {
-                var record = recordsOccurence[className];
+                var record = recordsOccurrence[className];
                 if (!className) {
                     className = 'Unknown Class';
                 }
@@ -367,26 +497,42 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $('.species-list-count').html(speciesListCount);
             return $specialListWrapper;
         },
+
+        renderBiodiversityData: function (data) {
+            var $detailWrapper = $('<div></div>');
+            if (data.hasOwnProperty('biodiversity_data'))  {
+                var biodiversityDataWrapper = _.template($('#biodiversity-data-template').html());
+                $detailWrapper.append(biodiversityDataWrapper({
+                    'occurrences' : data['biodiversity_data']['occurrences'],
+                    'origin_data' : data['biodiversity_data']['taxa'],
+                    'number_of_taxa' : data['biodiversity_data']['number_of_taxa'],
+                    'ecological_condition' : data['biodiversity_data']['ecological_condition'],
+                }));
+            };
+            return $detailWrapper;
+        },
+
         showDetail: function (name, zoomToObject) {
             var self = this;
             // Render basic information
             var $siteDetailWrapper = $('<div></div>');
             $siteDetailWrapper.append(
-                '<div id="dashboard-detail" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> DASHBOARD </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-            $siteDetailWrapper.append(
                 '<div id="site-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> SITE DETAILS </span> ' +
+                '<span class="search-result-title"> Site Details </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             $siteDetailWrapper.append(
-                '<div id="species-list" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> ' +
-                '<span class="search-result-title"> SPECIES LIST (<span class="species-list-count"><i>loading</i></span>) ' +
-                '</span> <i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+                '<div id="biodiversity-data" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> Biodiversity Data </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+
+            $siteDetailWrapper.append(
+                '<div id="climate-data" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false"> ' +
+                '<span class="search-result-title"> Climate Data </span> ' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
@@ -422,7 +568,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         }
                     }
                     // render site detail
-                    $('#site-detail').append(self.renderSiteDetail(data));
+                    $('#site-detail').append(self.renderSiteDetailInfo(data));
                     $.each(self.siteChartData, function (key, value) {
                         var chartConfig = {
                             type: 'line',
@@ -478,11 +624,23 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         $('#dashboard-detail').append(renderDashboard(data));
                         calculateChart($('#dashboard-detail'), data);
                     } catch (err) {
-                        $('#dashboard-detail').append(self.renderDashboardDetail(data));
+                        $('#dashboard-detail').append(
+                            self.renderDashboardDetail(data));
                     }
 
                     // render species list
-                    $('#species-list').append(self.renderSpeciesList(data));
+                    //$('#species-list').append(self.renderSpeciesList(data));
+
+                    $('#biodiversity-data').append(self.renderBiodiversityData(data));
+                    self.renderSidePanelPieChart(data, 'fish', 'origin');
+                    self.renderSidePanelPieChart(data, 'fish', 'cons_status');
+                    self.renderSidePanelPieChart(data, 'fish', 'endemism');
+
+                    var climateDataHTML = self.renderClimateData(data);
+                    $('#climate-data').append(climateDataHTML)
+                    self.renderMonthlyLineChart(data['climate_data'], 'temperature');
+                    self.renderMonthlyLineChart(data['climate_data'], 'rainfall');
+
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {
