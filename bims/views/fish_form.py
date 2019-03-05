@@ -1,10 +1,15 @@
 import json
+from dateutil.parser import parse
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
-from bims.models import LocationSite, Biotope, SamplingMethod
+from bims.models import (
+    LocationSite, Biotope, SamplingMethod,
+    BiologicalCollectionRecord,
+    Taxonomy
+)
 
 RIVER_CATCHMENT_ORDER = [
     'quinary_catchment_area',
@@ -100,19 +105,38 @@ class FishFormView(TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         date_string = request.POST.get('date', None)
+        collector = request.POST.get('collector', '')
+        collection_date = parse(date_string)
         post_data = request.POST.dict()
-        location_site = LocationSite.objects.get(
-            post_data.get('site-id', None)
+        self.location_site = LocationSite.objects.get(
+            id=post_data.get('site-id', None)
         )
         taxa_list = self.taxa_from_river_catchment()
         for taxon in taxa_list:
-            observed_key = '{}-observed'.format(taxon.taxon_id)
-            abundance_key = '{}-abundance'.format(taxon.taxon_id)
+            observed_key = '{}-observed'.format(taxon['taxon_id'])
+            abundance_key = '{}-abundance'.format(taxon['taxon_id'])
             sampling_method_key = '{}-sampling-method'.format(
-                taxon.taxon_id
+                taxon['taxon_id']
             )
             try:
-                if post_data[observed_key]:
-                    pass
+                if post_data[observed_key] == 'True':
+                    sampling_method = SamplingMethod.objects.get(
+                        id=post_data[sampling_method_key]
+                    )
+                    abundance = post_data[abundance_key]
+                    collection_record, status = (
+                        BiologicalCollectionRecord.objects.get_or_create(
+                            collection_date=collection_date,
+                            taxonomy=Taxonomy.objects.get(
+                                taxon['taxon_id']
+                            ),
+                            collector=collector,
+                            sampling_method=sampling_method,
+                            abundance_number=abundance,
+                            validated=True,
+                            owner=self.request.user
+                        )
+                    )
+
             except KeyError:
                 continue
