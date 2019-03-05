@@ -4,8 +4,14 @@ import datetime
 from dateutil.parser import parse
 from requests.exceptions import HTTPError
 from django.contrib.gis.geos import Point
+from django.conf import settings
 from django.contrib.gis.measure import D
-from bims.models import LocationSite, LocationType, BiologicalCollectionRecord
+from geonode.people.models import Profile
+from bims.models import (
+    LocationSite,
+    LocationType,
+    BiologicalCollectionRecord
+)
 
 logger = logging.getLogger('bims')
 
@@ -54,6 +60,19 @@ def import_gbif_occurrences(
         return
 
     source_collection = 'gbif'
+
+    admins = settings.ADMINS
+    superusers = Profile.objects.filter(is_superuser=True)
+    if admins:
+        for admin in admins:
+            superuser_list = superusers.filter(email=admin[1])
+            if superuser_list.exists():
+                superusers = superuser_list
+                break
+    if superusers.exists():
+        user = superusers[0]
+    else:
+        user = None
 
     for result in json_result['results']:
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
@@ -114,12 +133,19 @@ def import_gbif_occurrences(
         else:
             pass
         collection_record.taxonomy = taxonomy
+        collection_record.owner = user
         collection_record.original_species_name = species
         collection_record.collector = collector
         collection_record.source_collection = source_collection
         collection_record.institution_id = institution_code
         collection_record.reference = reference
-        collection_record.collection_habitat = habitat
+        collection_record.collection_habitat = habitat.lower()
+
+        for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+            if origin.lower() == category[1].lower():
+                origin = category[0]
+                break
+
         collection_record.category = origin
         collection_record.validated = True
         collection_record.additional_data = {

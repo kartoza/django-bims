@@ -47,7 +47,7 @@ def import_fish_species_from_file(
                 fish_data.setdefault(col_header, []).append(
                     data_column)
 
-    for i in range(data_length):
+    for i in range(1):
         canonical_name = fish_data[CANONICAL_NAME_KEY][i]
         endemism_value = fish_data[ENDEMISM_KEY][i]
 
