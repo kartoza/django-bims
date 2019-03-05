@@ -63,7 +63,7 @@ def import_gbif_occurrences(
         event_date = result.get(EVENT_DATE_KEY,
                                 result.get(MODIFIED_DATE_KEY, None))
         collector = result.get(COLLECTOR_KEY, '')
-        institution_code = result.get(INSTITUTION_CODE_KEY, None)
+        institution_code = result.get(INSTITUTION_CODE_KEY, source_collection)
         reference = result.get(REFERENCE_KEY, '')
         species = result.get(SPECIES_KEY, None)
 
