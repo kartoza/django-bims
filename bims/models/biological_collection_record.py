@@ -176,7 +176,7 @@ class BiologicalCollectionRecord(
             collection_uuid = uuid.uuid4()
             while BiologicalCollectionRecord.objects.filter(
                 uuid=collection_uuid
-            ).exist():
+            ).exists():
                 collection_uuid = uuid.uuid4()
             self.uuid = collection_uuid
 
