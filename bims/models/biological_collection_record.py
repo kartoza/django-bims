@@ -90,10 +90,17 @@ class BiologicalCollectionRecord(
         verbose_name='Custodian',
     )
 
-    sampling_method = models.CharField(
+    sampling_method_string = models.CharField(
         max_length=50,
         blank=True,
         default=''
+    )
+
+    sampling_method = models.ForeignKey(
+        'bims.SamplingMethod',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     sampling_effort = models.CharField(

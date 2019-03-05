@@ -4,8 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
-from bims.models import LocationSite, Biotope
-from sass.models import SamplingMethod
+from bims.models import LocationSite, Biotope, SamplingMethod
 
 RIVER_CATCHMENT_ORDER = [
     'quinary_catchment_area',

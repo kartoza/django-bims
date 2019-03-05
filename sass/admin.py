@@ -15,7 +15,6 @@ from sass.models import (
     SiteVisitTaxon,
     Chem,
     SiteVisitChem,
-    SamplingMethod,
     SassEcologicalCategory,
     SassEcologicalCondition,
 )
@@ -164,13 +163,6 @@ class SassEcologicalConditionAdmin(admin.ModelAdmin):
     )
 
 
-class SamplingMethodAdmin(admin.ModelAdmin):
-    list_display = (
-        'sampling_method',
-        'effort_measure'
-    )
-
-
 # Register your models here.
 admin.site.register(River, RiverAdmin)
 admin.site.register(SiteVisit, SiteVisitAdmin)
@@ -183,6 +175,5 @@ admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
 admin.site.register(SiteVisitTaxon, SiteVisitTaxonAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(SiteVisitChem, SiteVisitChemAdmin)
-admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SassEcologicalCategory, SassEcologicalCategoryAdmin)
 admin.site.register(SassEcologicalCondition, SassEcologicalConditionAdmin)
