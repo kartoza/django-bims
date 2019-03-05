@@ -99,11 +99,11 @@ def import_gbif_occurrences(
             )
             logger.info(
                 'Update existing collection record with upstream ID : {}'.
-                    format(upstream_id))
+                format(upstream_id))
         except BiologicalCollectionRecord.DoesNotExist:
             logger.info(
                 'Collection record created with upstream ID : {}'.
-                    format(upstream_id))
+                format(upstream_id))
             collection_record = BiologicalCollectionRecord.objects.create(
                 upstream_id=upstream_id,
                 site=location_site,
@@ -123,7 +123,7 @@ def import_gbif_occurrences(
         collection_record.category = origin
         collection_record.validated = True
         collection_record.additional_data = {
-            'fetch_from_gbif' : True,
+            'fetch_from_gbif': True,
             'date_fetched': datetime.datetime.now().strftime(
                 '%Y-%m-%d %H:%M:%S'
             )
