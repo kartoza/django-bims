@@ -8,11 +8,11 @@ from bims.models import LocationSite, Biotope
 from sass.models import SamplingMethod
 
 RIVER_CATCHMENT_ORDER = [
-    'primary_catchment_area',
-    'secondary_catchment_area',
-    'tertiary_catchment_area',
+    'quinary_catchment_area',
     'quaternary_catchment_area',
-    'quinary_catchment_area'
+    'tertiary_catchment_area',
+    'secondary_catchment_area',
+    'primary_catchment_area',
 ]
 
 
@@ -21,7 +21,11 @@ class FishFormView(TemplateView):
     template_name = 'fish_form_page.html'
     location_site = None
 
-    def get_taxa_from_river_catchment(self):
+    def taxa_from_river_catchment(self):
+        """
+        Get taxa from river_catchment
+        :return: list of taxa
+        """
         river_catchment_value = None
         river_catchment_query = None
         location_site_context = json.loads(self.location_site.location_context)
@@ -30,9 +34,7 @@ class FishFormView(TemplateView):
                 location_site_context['context_group_values']['water_group']
                 ['service_registry_values']
             )
-            river_catchment_order = RIVER_CATCHMENT_ORDER
-            river_catchment_order.reverse()
-            for river_catchment in river_catchment_order:
+            for river_catchment in RIVER_CATCHMENT_ORDER:
                 if river_catchment in water_group:
                     river_catchment_value = (
                         water_group[river_catchment]['value']
@@ -57,7 +59,9 @@ class FishFormView(TemplateView):
                         'biological_collection_record__taxonomy__'
                         'canonical_name'),
                     rank=F('biological_collection_record__taxonomy__rank')
-                ).distinct('biological_collection_record__taxonomy')
+                ).distinct('biological_collection_record__taxonomy').filter(
+                    taxon_id__isnull=False
+                )
             )
         return taxa_list
 
@@ -70,15 +74,7 @@ class FishFormView(TemplateView):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
-        context['taxa'] = list(
-            self.location_site.biological_collection_record.values(
-                taxon_id=F('taxonomy'),
-                taxon_name=F(
-                    'taxonomy__'
-                    'canonical_name'),
-                rank=F('taxonomy__rank')
-            ).distinct('taxonomy')
-        )
+        context['taxa'] = self.taxa_from_river_catchment()
         context['biotope_list'] = list(
             Biotope.objects.all().values(
                 'name', 'description', 'display_order'
@@ -109,15 +105,7 @@ class FishFormView(TemplateView):
         location_site = LocationSite.objects.get(
             post_data.get('site-id', None)
         )
-        taxa_list = list(
-            location_site.biological_collection_record.values(
-                taxon_id=F('taxonomy'),
-                taxon_name=F(
-                    'taxonomy__'
-                    'canonical_name'),
-                rank=F('taxonomy__rank')
-            ).distinct('taxonomy')
-        )
+        taxa_list = self.taxa_from_river_catchment()
         for taxon in taxa_list:
             observed_key = '{}-observed'.format(taxon.taxon_id)
             abundance_key = '{}-abundance'.format(taxon.taxon_id)
