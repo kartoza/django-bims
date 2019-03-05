@@ -95,6 +95,11 @@ class SearchProcess(models.Model):
             'BETWEEN \'' + r'\3' + '\' AND \'' + r'\7' + '\'',
             raw_query
         )
+        raw_query = raw_query.replace('[u\'', '\'{"')
+        raw_query = raw_query.replace('\',', '",')
+        raw_query = raw_query.replace(' u\'', ' "')
+        raw_query = raw_query.replace('\'])', '"}\')')
+
         self.search_raw_query = raw_query
         self.save()
 
