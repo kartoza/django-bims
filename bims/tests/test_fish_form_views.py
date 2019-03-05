@@ -2,11 +2,10 @@
 """Tests for models."""
 
 from django.test import TestCase, Client
+from allauth.utils import get_user_model
 from bims.tests.model_factories import (
     LocationSiteF,
-    UserF
 )
-from geonode.people.models import Profile
 
 
 class TestFishFormView(TestCase):
@@ -18,13 +17,6 @@ class TestFishFormView(TestCase):
         Sets up before each test
         """
         self.client = Client()
-        self.admin_user = UserF.create(
-            is_superuser=True,
-            is_staff=True,
-            username='test',
-        )
-        self.admin_user.set_password('test')
-        self.admin_user.save()
         self.location_site = LocationSiteF.create()
 
     def test_get_fish_form(self):
@@ -32,12 +24,21 @@ class TestFishFormView(TestCase):
         Test fish form get method
         """
         # Login
-        login_response = self.client.post(
-            '/login/', {'username': 'test', 'password': 'test'})
-        self.assertTrue(login_response, 200)
+        user = get_user_model().objects.create(
+            is_staff=True,
+            is_active=True,
+            is_superuser=True,
+            username='@.test')
+        user.set_password('psst')
+        user.save()
+        resp = self.client.login(
+            username='@.test',
+            password='psst'
+        )
+        self.assertTrue(resp)
 
         response = self.client.get(
-            '/fish-form/?siteId={}'.format(
+            'fish-form/?siteId={}'.format(
                 self.location_site.id
             )
         )
