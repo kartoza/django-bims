@@ -53,6 +53,8 @@ def import_gbif_occurrences(
     api_url += '&hasCoordinate=true'
     # We don't need data with geospatial issue
     api_url += '&hasGeospatialIssue=false'
+    # Only fetch South Africa
+    api_url += '&country=ZA'
 
     try:
         response = requests.get(api_url)
