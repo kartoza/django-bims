@@ -144,6 +144,12 @@ class FishFormView(TemplateView):
                 id=taxon['taxon_id']
             )
             sampling_method_id = post_data[sampling_method_key]
+            sampling_effort = '{effort} {type}'.format(
+                effort=post_data[
+                    '{}-sampling-effort'.format(taxon['taxon_id'])],
+                type=post_data[
+                    '{}-sampling-effort-type'.format(taxon['taxon_id'])]
+            )
             try:
                 if post_data[observed_key] == 'True':
                     sampling_method = None
@@ -164,7 +170,8 @@ class FishFormView(TemplateView):
                             owner=self.request.user,
                             biotope=biotope,
                             reference=reference,
-                            reference_category=reference_category
+                            reference_category=reference_category,
+                            sampling_effort=sampling_effort
                         )
                     )
                     if status:

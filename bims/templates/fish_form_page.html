@@ -104,6 +104,7 @@
                     <th scope="col">Observed</th>
                     <th scope="col" width="200">Abundance</th>
                     <th scope="col">Sampling Method</th>
+                    <th scope="col" width="320">Sampling Effort</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -139,6 +140,15 @@
                                 {% for sampling_method in sampling_method_list %}
                                     <option value="{{ sampling_method.id }}"> {{ sampling_method.sampling_method }} </option>
                                 {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" min="0" name="{{ taxon.taxon_id }}-sampling-effort" class="form-control pull-left" style="width: 100px">
+                            <select class="form-control pull-right"
+                                    name="{{ taxon.taxon_id }}-sampling-effort-type" style="width: 200px">
+                                <option value=""> Not specified</option>
+                                <option value="min"> Time (min) </option>
+                                <option value="meter"> Area (m) </option>
                             </select>
                         </td>
                     </tr>
