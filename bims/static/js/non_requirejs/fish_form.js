@@ -91,7 +91,6 @@ $(function () {
     });
 
     $('#submitBtn').click((e) => {
-        e.preventDefault();
     });
 
     let form = $('#fish-form');
@@ -134,6 +133,9 @@ $(function () {
             event.preventDefault();
             event.stopPropagation();
             $('#confirm-submit').modal('hide');
+            setTimeout(function () {
+                window.scrollTo(0, 0);
+            }, 500);
             return;
         }
         form.submit();
