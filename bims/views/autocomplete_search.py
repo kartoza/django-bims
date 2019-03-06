@@ -21,8 +21,8 @@ def autocomplete(request):
             biologicalcollectionrecord__validated=True
         ).distinct('id').
         annotate(taxon_id=F('id'), suggested_name=F('canonical_name')).
-        values('taxon_id', 'suggested_name')
-    )[:10]
+        values('taxon_id', 'suggested_name')[:10]
+    )
 
     if len(suggestions) < 10:
         vernacular_names = list(
@@ -31,8 +31,8 @@ def autocomplete(request):
                 taxonomy__biologicalcollectionrecord__validated=True
             ).distinct('id').
             annotate(taxon_id=F('taxonomy__id'), suggested_name=F('name')).
-            values('taxon_id', 'suggested_name')
-        )[:10]
+            values('taxon_id', 'suggested_name')[:10]
+        )
 
         suggestions.extend(vernacular_names)
 
@@ -44,8 +44,8 @@ def autocomplete(request):
                 biological_collection_record__validated=True
             ).distinct('id').
             annotate(site_id=F('id'), suggested_name=F('site_code')).
-            values('site_id', 'suggested_name')
-        )[:10]
+            values('site_id', 'suggested_name')[:10]
+        )
         suggestions.extend(sites)
 
     the_data = json.dumps({
