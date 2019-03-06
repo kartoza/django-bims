@@ -52,7 +52,8 @@ class FishFormView(TemplateView):
                     river_catchment_query = (
                             'location_context__'
                             'context_group_values__water_group__'
-                            'service_registry_values__%s__value' % river_catchment
+                            'service_registry_values__%s__value' %
+                            river_catchment
                     )
                     break
         except (KeyError, TypeError) as e:
