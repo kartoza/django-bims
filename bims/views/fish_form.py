@@ -86,6 +86,13 @@ class FishFormView(TemplateView):
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
         context['taxa'] = self.taxa_from_river_catchment()
+        context['reference_category'] = list(
+            BiologicalCollectionRecord.objects.filter(
+                reference_category__isnull=False).exclude(
+                reference_category='').distinct(
+                'reference_category').values(
+                name=F('reference_category'))
+        )
         context['biotope_list'] = list(
             Biotope.objects.all().values(
                 'name', 'description', 'display_order'
@@ -115,6 +122,7 @@ class FishFormView(TemplateView):
         collector = request.POST.get('collector', '')
         biotope_id = request.POST.get('biotope', None)
         reference = request.POST.get('study_reference', '')
+        reference_category = request.POST.get('reference_category', '')
         biotope = None
         if biotope_id:
             biotope = Biotope.objects.get(
@@ -155,7 +163,8 @@ class FishFormView(TemplateView):
                             abundance_number=abundance,
                             owner=self.request.user,
                             biotope=biotope,
-                            reference=reference
+                            reference=reference,
+                            reference_category=reference_category
                         )
                     )
                     if status:
