@@ -114,6 +114,7 @@ class FishFormView(TemplateView):
         date_string = request.POST.get('date', None)
         collector = request.POST.get('collector', '')
         biotope_id = request.POST.get('biotope', None)
+        reference = request.POST.get('study_reference', '')
         biotope = None
         if biotope_id:
             biotope = Biotope.objects.get(
@@ -134,11 +135,14 @@ class FishFormView(TemplateView):
             taxonomy = Taxonomy.objects.get(
                 id=taxon['taxon_id']
             )
+            sampling_method_id = post_data[sampling_method_key]
             try:
                 if post_data[observed_key] == 'True':
-                    sampling_method = SamplingMethod.objects.get(
-                        id=post_data[sampling_method_key]
-                    )
+                    sampling_method = None
+                    if sampling_method_id:
+                        sampling_method = SamplingMethod.objects.get(
+                            id=sampling_method_id
+                        )
                     abundance = post_data[abundance_key]
                     collection_record, status = (
                         BiologicalCollectionRecord.objects.get_or_create(
@@ -150,7 +154,8 @@ class FishFormView(TemplateView):
                             sampling_method=sampling_method,
                             abundance_number=abundance,
                             owner=self.request.user,
-                            biotope=biotope
+                            biotope=biotope,
+                            reference=reference
                         )
                     )
                     if status:
