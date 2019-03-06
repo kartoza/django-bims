@@ -39,7 +39,15 @@ $(function () {
 
     $("#date").datepicker({
         changeMonth: true,
-        changeYear: true
+        changeYear: true,
+        onSelect: function (dateText) {
+            let $target = $(this);
+            if ($target.val()) {
+                $target.removeClass('error');
+                $target.next().hide();
+                $target.unbind();
+            }
+        }
     });
 
     let $taxonAbundance = $('.taxon-abundance');
