@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 from bims.models import (
     LocationSite, Biotope, SamplingMethod,
     BiologicalCollectionRecord,
@@ -48,9 +50,9 @@ class FishFormView(TemplateView):
                         water_group[river_catchment]['value']
                     )
                     river_catchment_query = (
-                        'location_context__'
-                        'context_group_values__water_group__'
-                        'service_registry_values__%s__value' % river_catchment
+                            'location_context__'
+                            'context_group_values__water_group__'
+                            'service_registry_values__%s__value' % river_catchment
                     )
                     break
         except (KeyError, TypeError) as e:
@@ -129,6 +131,9 @@ class FishFormView(TemplateView):
             sampling_method_key = '{}-sampling-method'.format(
                 taxon['taxon_id']
             )
+            taxonomy = Taxonomy.objects.get(
+                id=taxon['taxon_id']
+            )
             try:
                 if post_data[observed_key] == 'True':
                     sampling_method = SamplingMethod.objects.get(
@@ -138,13 +143,12 @@ class FishFormView(TemplateView):
                     collection_record, status = (
                         BiologicalCollectionRecord.objects.get_or_create(
                             collection_date=collection_date,
-                            taxonomy=Taxonomy.objects.get(
-                                taxon['taxon_id']
-                            ),
+                            taxonomy=taxonomy,
+                            original_species_name=taxonomy.canonical_name,
+                            site=self.location_site,
                             collector=collector,
                             sampling_method=sampling_method,
                             abundance_number=abundance,
-                            validated=True,
                             owner=self.request.user,
                             biotope=biotope
                         )
@@ -155,6 +159,7 @@ class FishFormView(TemplateView):
                                 collection_record.id
                             )
                         )
-
             except KeyError:
                 continue
+
+        return HttpResponseRedirect(reverse('nonvalidated-user-list'))
