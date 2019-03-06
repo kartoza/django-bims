@@ -28,3 +28,4 @@ from bims.models.biotope import *  # noqa
 from bims.models.data_source import *  # noqa
 from bims.models.spatial_scale import *  # noqa
 from bims.models.spatial_scale_group import *  # noqa
+from bims.models.sampling_method import *  # noqa

@@ -83,3 +83,26 @@ def data_source_autocomplete(request):
         data = json.dumps(results)
     mime_type = 'application/json'
     return HttpResponse(data, mime_type)
+
+
+def species_autocomplete(request):
+    """
+    Autocomplete request for species
+    :return: dict of species with id and name
+    """
+    q = request.GET.get('term', '').capitalize()
+    if not request.is_ajax() and len(q) < 2:
+        data = 'fail'
+    else:
+        search_qs = Taxonomy.objects.filter(
+            Q(canonical_name__icontains=q) |
+            Q(scientific_name__icontains=q))
+        results = []
+        for r in search_qs:
+            results.append({
+                'id': r.id,
+                'species': r.canonical_name,
+            })
+        data = json.dumps(results)
+    mime_type = 'application/json'
+    return HttpResponse(data, mime_type)
