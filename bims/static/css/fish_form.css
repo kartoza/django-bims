@@ -30,7 +30,7 @@ table td {
 .submit-wrapper {
     text-align: center;
 }
-.submit-wrapper .btn {
+.submit-wrapper .btn , #add-taxon{
     text-transform: capitalize;
     border-radius: 5px;
     padding-left: 50px;

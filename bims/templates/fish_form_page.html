@@ -97,6 +97,9 @@
                     </select>
                 </div>
             </div>
+            <div class="add-taxon-container">
+                <button id="add-taxon" type="button" class="btn btn-default">Add taxon</button>
+            </div>
             <table class="table table-sm">
                 <thead>
                 <tr>
@@ -107,13 +110,17 @@
                     <th scope="col" width="320">Sampling Effort</th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody class="taxon-table-body">
+                <tr class="find-taxon-container" style="display: none">
+                    <td scope="row">
+                        <input type="text" class="form-control taxon-input-name">
+                    </td>
+                </tr>
                 {% for taxon in taxa %}
                     <tr>
                         <td scope="row"
                             class="taxon-name">
-                            {{ taxon.taxon_name }} <span
-                                class="badge badge-secondary">{{ taxon.rank }}</span>
+                            {{ taxon.taxon_name }}
                             <input type="hidden" value="{{ taxon.taxon_id }}">
                         </td>
                         <td>
@@ -127,13 +134,12 @@
                             </div>
                         </td>
                         <td>
-
                             <input type="number" min="0"
                                    name="{{ taxon.taxon_id }}-abundance"
                                    class="form-control taxon-abundance"
                                    placeholder="0">
                         </td>
-                        <td>
+                        <td class="sampling-method-container">
                             <select class="form-control"
                                     name="{{ taxon.taxon_id }}-sampling-method">
                                 <option value=""> Not specified</option>
@@ -142,7 +148,7 @@
                                 {% endfor %}
                             </select>
                         </td>
-                        <td>
+                        <td class="sampling-effort-container">
                             <input type="number" min="0" name="{{ taxon.taxon_id }}-sampling-effort" class="form-control pull-left" style="width: 100px">
                             <select class="form-control pull-right"
                                     name="{{ taxon.taxon_id }}-sampling-effort-type" style="width: 200px">

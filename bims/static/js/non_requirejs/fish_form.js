@@ -1,5 +1,80 @@
+let collectionsWithAbundace = 0;
+let taxonAbundanceOnChange = function (e) {
+    let value = parseInt(e.target.value);
+    if (value) {
+        if (value > 0) {
+            $(e.target).parent().parent().find('.observed').prop('checked', true);
+            collectionsWithAbundace += 1;
+            return true;
+        }
+    }
+    $(e.target).parent().parent().find('.observed').prop('checked', false);
+    collectionsWithAbundace -= 1;
+};
+
+let taxonAutocompleteHandler = {
+    source: function (request, response) {
+        $.ajax({
+            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term),
+            type: 'get',
+            dataType: 'json',
+            success: function (data) {
+                response($.map(data, function (item) {
+                    return {
+                        label: item.species,
+                        value: item.id
+                    }
+                }));
+            }
+        });
+    },
+    minLength: 3,
+    open: function (event, ui) {
+        setTimeout(function () {
+            $('.ui-autocomplete').css('z-index', 99);
+        }, 0);
+    },
+    select: function (e, u) {
+        e.preventDefault();
+        let $target = $(e.target);
+        let $parent = $target.parent().parent();
+        $parent.html(
+            '<td scope="row" class="taxon-name">' +
+            u.item.label +
+            '<input type="hidden" value="' + u.item.value + '">' +
+            '</td>');
+        $parent.append(
+            '<td>' +
+            '<div class="form-check">' +
+            '<input class="form-check-input observed" type="checkbox"' +
+            ' value="True"' +
+            ' name="' + u.item.value + '-observed">' +
+            ' <label class="form-check-label">' +
+            ' </label>' +
+            '</div>' +
+            '</td>');
+
+        let taxonAbundanceInput = $('<input type="number" min="0"' +
+            ' name="' + u.item.value + '-abundance"' +
+            ' class="form-control taxon-abundance"' +
+            ' placeholder="0">');
+        let tdTaxonAbundance = $('<td>');
+        tdTaxonAbundance.append(taxonAbundanceInput);
+        $parent.append(tdTaxonAbundance);
+        taxonAbundanceInput.change(taxonAbundanceOnChange);
+
+        let samplingMethodContainer = $parent.next().find('.sampling-method-container').clone();
+        samplingMethodContainer.children().attr('name', u.item.value + '-sampling-method');
+        samplingMethodContainer.appendTo($parent);
+
+        let samplingEffortContainer = $parent.next().find('.sampling-effort-container').clone();
+        $(samplingEffortContainer.children()[0]).attr('name', u.item.value + '-sampling-effort');
+        $(samplingEffortContainer.children()[1]).attr('name', u.item.value + '-sampling-effort-type');
+        samplingEffortContainer.appendTo($parent);
+    }
+};
+
 $(function () {
-    let collectionsWithAbundace = 0;
     let locationSiteCoordinate = ol.proj.transform([
             parseFloat(location_site_long),
             parseFloat(location_site_lat)],
@@ -56,18 +131,7 @@ $(function () {
         this.value = this.value.replace(/[^0-9\.]/g, '');
     });
 
-    $taxonAbundance.change(e => {
-        let value = parseInt(e.target.value);
-        if (value) {
-            if (value > 0) {
-                $(e.target).parent().parent().find('.observed').prop('checked', true);
-                collectionsWithAbundace += 1;
-                return true;
-            }
-        }
-        $(e.target).parent().parent().find('.observed').prop('checked', false);
-        collectionsWithAbundace -= 1;
-    });
+    $taxonAbundance.change(taxonAbundanceOnChange);
 
     $('#collector').autocomplete({
         source: function (request, response) {
@@ -85,7 +149,7 @@ $(function () {
                 }
             });
         },
-        minLength: 2,
+        minLength: 3,
         open: function (event, ui) {
             setTimeout(function () {
                 $('.ui-autocomplete').css('z-index', 99);
@@ -149,5 +213,14 @@ $(function () {
         form.submit();
     });
 
+    $('#add-taxon').click((e) => {
+        let $findTaxonContainer = $('.find-taxon-container');
+        let $findTaxonContainerClone = $findTaxonContainer.clone();
+        $findTaxonContainerClone.removeClass('find-taxon-container');
+        $findTaxonContainerClone.find('.taxon-input-name').autocomplete(taxonAutocompleteHandler);
+        $findTaxonContainer.after($findTaxonContainerClone.show());
+    });
+
+    $('.taxon-input-name').autocomplete(taxonAutocompleteHandler);
 
 });
