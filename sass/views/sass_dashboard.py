@@ -181,8 +181,9 @@ class SassDashboardView(TemplateView):
         ).annotate(
             date=F('site_visit__site_visit_date'),
             rate=F('site_visit__sass_biotope_fraction__rate__rate'),
-            biotope=F('site_visit__sass_biotope_fraction__sass_biotope__name')
-        ).values('date', 'rate', 'biotope').order_by(
+            biotope_name=F(
+                'site_visit__sass_biotope_fraction__sass_biotope__name')
+        ).values('date', 'rate', 'biotope_name').order_by(
             'site_visit__site_visit_date',
             'site_visit__sass_biotope_fraction__sass_biotope__display_order'
         ).distinct()
@@ -194,7 +195,7 @@ class SassDashboardView(TemplateView):
             if date not in data:
                 data[date] = {}
             rate = rating_data['rate']
-            biotope = rating_data['biotope'].encode('utf-8')
+            biotope = rating_data['biotope_name'].encode('utf-8')
             if not rate:
                 rate = 0
             data[date][biotope] = rate
