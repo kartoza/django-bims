@@ -4,13 +4,16 @@ import datetime
 from dateutil.parser import parse
 from requests.exceptions import HTTPError
 from django.contrib.gis.geos import Point
+from django.contrib.gis.db import models
 from django.conf import settings
 from django.contrib.gis.measure import D
 from geonode.people.models import Profile
 from bims.models import (
     LocationSite,
     LocationType,
-    BiologicalCollectionRecord
+    BiologicalCollectionRecord,
+    location_site_post_save_handler,
+    collection_post_save_handler
 )
 
 logger = logging.getLogger('bims')
@@ -73,6 +76,13 @@ def import_gbif_occurrences(
         user = superusers[0]
     else:
         user = None
+
+    models.signals.post_save.disconnect(
+        location_site_post_save_handler,
+    )
+    models.signals.post_save.disconnect(
+        collection_post_save_handler,
+    )
 
     for result in json_result['results']:
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
@@ -159,6 +169,14 @@ def import_gbif_occurrences(
         logger.info('Collection record id {} has been updated'.format(
             collection_record.id
         ))
+
+    # reconnect post save handler
+    models.signals.post_save.connect(
+        location_site_post_save_handler,
+    )
+    models.signals.post_save.connect(
+        collection_post_save_handler,
+    )
 
     if data_count > offset:
         # Import more occurrences
