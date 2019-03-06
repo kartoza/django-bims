@@ -1,4 +1,5 @@
 import json
+import logging
 from dateutil.parser import parse
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
@@ -10,6 +11,8 @@ from bims.models import (
     BiologicalCollectionRecord,
     Taxonomy
 )
+
+logger = logging.getLogger('bims')
 
 RIVER_CATCHMENT_ORDER = [
     'quinary_catchment_area',
@@ -32,8 +35,9 @@ class FishFormView(TemplateView):
         """
         river_catchment_value = None
         river_catchment_query = None
-        location_site_context = json.loads(self.location_site.location_context)
         try:
+            location_site_context = json.loads(
+                self.location_site.location_context)
             water_group = (
                 location_site_context['context_group_values']['water_group']
                 ['service_registry_values']
@@ -49,7 +53,8 @@ class FishFormView(TemplateView):
                         'service_registry_values__%s__value' % river_catchment
                     )
                     break
-        except KeyError:
+        except (KeyError, TypeError) as e:
+            logger.error(e)
             pass
 
         taxa_list = []
@@ -106,6 +111,12 @@ class FishFormView(TemplateView):
     def post(self, request, *args, **kwargs):
         date_string = request.POST.get('date', None)
         collector = request.POST.get('collector', '')
+        biotope_id = request.POST.get('biotope', None)
+        biotope = None
+        if biotope_id:
+            biotope = Biotope.objects.get(
+                id=biotope_id
+            )
         collection_date = parse(date_string)
         post_data = request.POST.dict()
         self.location_site = LocationSite.objects.get(
@@ -134,9 +145,16 @@ class FishFormView(TemplateView):
                             sampling_method=sampling_method,
                             abundance_number=abundance,
                             validated=True,
-                            owner=self.request.user
+                            owner=self.request.user,
+                            biotope=biotope
                         )
                     )
+                    if status:
+                        logger.info(
+                            'Collection record added with id {}'.format(
+                                collection_record.id
+                            )
+                        )
 
             except KeyError:
                 continue

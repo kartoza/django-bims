@@ -38,3 +38,11 @@ table td {
     font-weight: normal;
     margin-bottom: 30px;
 }
+
+.required-text {
+    font-weight: bold;
+}
+
+.error {
+    border-color: #ff3531;
+}

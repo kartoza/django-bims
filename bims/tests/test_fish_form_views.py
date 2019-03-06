@@ -38,7 +38,7 @@ class TestFishFormView(TestCase):
         self.assertTrue(resp)
 
         response = self.client.get(
-            'fish-form/?siteId={}'.format(
+            '/fish-form/?siteId={}'.format(
                 self.location_site.id
             )
         )

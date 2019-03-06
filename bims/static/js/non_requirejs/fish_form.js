@@ -1,4 +1,5 @@
 $(function () {
+    let collectionsWithAbundace = 0;
     let locationSiteCoordinate = ol.proj.transform([
             parseFloat(location_site_long),
             parseFloat(location_site_lat)],
@@ -52,10 +53,12 @@ $(function () {
         if (value) {
             if (value > 0) {
                 $(e.target).parent().parent().find('.observed').prop('checked', true);
+                collectionsWithAbundace += 1;
                 return true;
             }
         }
         $(e.target).parent().parent().find('.observed').prop('checked', false);
+        collectionsWithAbundace -= 1;
     });
 
     $('#collector').autocomplete({
@@ -87,10 +90,54 @@ $(function () {
         }
     });
 
-    $('#submitBtn').click(function () {
+    $('#submitBtn').click((e) => {
+        e.preventDefault();
     });
 
-    $('#submit').click(function () {
-        $('#fish-form').submit();
+    let form = $('#fish-form');
+    $('#submit').click((event) => {
+        let required_inputs = $('input,textarea,select').filter('[required]:visible');
+        let isError = false;
+        let alertMessage = '';
+        $.each(required_inputs, (index, input) => {
+            let $input = $(input);
+            if (!$input.val()) {
+                isError = true;
+                $input.addClass('error');
+                $input.keyup((e) => {
+                    let $target = $(e.target);
+                    if ($target.val()) {
+                        $target.removeClass('error');
+                        $target.next().hide();
+                        $target.unbind();
+                    }
+                });
+                $input.next().show();
+            } else {
+                $input.unbind();
+            }
+        });
+        if (collectionsWithAbundace === 0) {
+            isError = true;
+            alertMessage = 'You must at least add one collection data';
+        } else {
+            let alertDiv = $('.alert-danger');
+            alertDiv.html('');
+            alertDiv.hide();
+        }
+        if (alertMessage) {
+            let alertDiv = $('.alert-danger');
+            alertDiv.html(alertMessage);
+            alertDiv.show();
+        }
+        if (isError) {
+            event.preventDefault();
+            event.stopPropagation();
+            $('#confirm-submit').modal('hide');
+            return;
+        }
+        form.submit();
     });
+
+
 });
