@@ -5,6 +5,7 @@ from django.db.models import Q, F
 from django.apps import apps
 from bims.models.vernacular_name import VernacularName
 from bims.models.taxonomy import Taxonomy
+from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
 
 
@@ -19,9 +20,9 @@ def autocomplete(request):
             canonical_name__icontains=q,
             biologicalcollectionrecord__validated=True
         ).distinct('id').
-        annotate(taxon_id=F('id'), name=F('canonical_name')).
-        values('taxon_id', 'name')
-    )[:10]
+        annotate(taxon_id=F('id'), suggested_name=F('canonical_name')).
+        values('taxon_id', 'suggested_name')[:10]
+    )
 
     if len(suggestions) < 10:
         vernacular_names = list(
@@ -29,11 +30,23 @@ def autocomplete(request):
                 name__icontains=q,
                 taxonomy__biologicalcollectionrecord__validated=True
             ).distinct('id').
-            annotate(taxon_id=F('taxonomy__id')).
-            values('taxon_id', 'name')
-        )[:10]
+            annotate(taxon_id=F('taxonomy__id'), suggested_name=F('name')).
+            values('taxon_id', 'suggested_name')[:10]
+        )
 
         suggestions.extend(vernacular_names)
+
+    if len(suggestions) < 10:
+        sites = list(
+            LocationSite.objects.filter(
+                site_code__icontains=q,
+                site_code__isnull=False,
+                biological_collection_record__validated=True
+            ).distinct('id').
+            annotate(site_id=F('id'), suggested_name=F('site_code')).
+            values('site_id', 'suggested_name')[:10]
+        )
+        suggestions.extend(sites)
 
     the_data = json.dumps({
         'results': suggestions

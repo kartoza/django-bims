@@ -203,7 +203,8 @@ class SearchVersion2(object):
                 Q(original_species_name__icontains=self.search_query) |
                 Q(taxonomy__scientific_name__icontains=self.search_query) |
                 Q(taxonomy__vernacular_names__name__icontains=
-                  self.search_query)
+                  self.search_query) |
+                Q(site__site_code__icontains=self.search_query)
             )
         else:
             bio = BiologicalCollectionRecord.objects.all()
