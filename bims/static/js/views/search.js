@@ -71,8 +71,8 @@ define([
                             if (requestResponse.hasOwnProperty('results')) {
                                 $.each(requestResponse['results'], function (index, value) {
                                     responseData.push({
-                                        'value': value['name'],
-                                        'label': value['name'],
+                                        'value': value['suggested_name'],
+                                        'label': value['suggested_name'],
                                         'id': value['id']
                                     })
                                 })
