@@ -37,7 +37,7 @@ class BiologicalCollectionRecord(
         related_name='biological_collection_record',
     )
     original_species_name = models.CharField(
-        max_length=100,
+        max_length=200,
         blank=True,
         default='',
     )
@@ -57,7 +57,7 @@ class BiologicalCollectionRecord(
         default=timezone.now
     )
     collector = models.CharField(
-        max_length=100,
+        max_length=300,
         blank=True,
         default='',
         verbose_name='collector or observer',
@@ -76,7 +76,7 @@ class BiologicalCollectionRecord(
     )
 
     collection_habitat = models.CharField(
-        max_length=100,
+        max_length=200,
         choices=HABITAT_CHOICES,
         blank=True,
         default=''
@@ -86,7 +86,7 @@ class BiologicalCollectionRecord(
         default=settings.INSTITUTION_ID_DEFAULT,
         help_text='An identifier for the institution having custody of the '
                   'object(s) or information referred to in the record.',
-        max_length=100,
+        max_length=200,
         verbose_name='Custodian',
     )
 
@@ -116,7 +116,7 @@ class BiologicalCollectionRecord(
     )
 
     reference_category = models.CharField(
-        max_length=100,
+        max_length=200,
         blank=True,
         default=''
     )
