@@ -8,6 +8,7 @@ from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from bims.utils.get_key import get_key
 from bims.models import (
     LocationSite, Biotope, SamplingMethod,
     BiologicalCollectionRecord,
@@ -81,6 +82,8 @@ class FishFormView(TemplateView):
         context = super(FishFormView, self).get_context_data(**kwargs)
         if not self.location_site:
             return context
+        context['geoserver_public_location'] = get_key(
+            'GEOSERVER_PUBLIC_LOCATION')
         context['location_site_name'] = self.location_site.name
         context['location_site_code'] = self.location_site.site_code
         context['location_site_lat'] = self.location_site.get_centroid().y

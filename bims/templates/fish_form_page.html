@@ -16,6 +16,9 @@
     <script type="text/javascript">
         const location_site_lat = '{{ location_site_lat }}';
         const location_site_long = '{{ location_site_long }}';
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
     </script>
 
 {% endblock %}
@@ -73,7 +76,8 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Reference Category</label>
+                       class="col-sm-2 col-form-label col-form-label">Reference
+                    Category</label>
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="reference_category">
@@ -98,7 +102,9 @@
                 </div>
             </div>
             <div class="add-taxon-container">
-                <button id="add-taxon" type="button" class="btn btn-default">Add taxon</button>
+                <button id="add-taxon" type="button" class="btn btn-default">
+                    Add taxon
+                </button>
             </div>
             <table class="table table-sm">
                 <thead>
@@ -113,7 +119,8 @@
                 <tbody class="taxon-table-body">
                 <tr class="find-taxon-container" style="display: none">
                     <td scope="row">
-                        <input type="text" class="form-control taxon-input-name">
+                        <input type="text"
+                               class="form-control taxon-input-name">
                     </td>
                 </tr>
                 {% for taxon in taxa %}
@@ -149,12 +156,16 @@
                             </select>
                         </td>
                         <td class="sampling-effort-container">
-                            <input type="number" min="0" name="{{ taxon.taxon_id }}-sampling-effort" class="form-control pull-left" style="width: 100px">
+                            <input type="number" min="0"
+                                   name="{{ taxon.taxon_id }}-sampling-effort"
+                                   class="form-control pull-left"
+                                   style="width: 100px">
                             <select class="form-control pull-right"
-                                    name="{{ taxon.taxon_id }}-sampling-effort-type" style="width: 200px">
+                                    name="{{ taxon.taxon_id }}-sampling-effort-type"
+                                    style="width: 200px">
                                 <option value=""> Not specified</option>
-                                <option value="min"> Time (min) </option>
-                                <option value="meter"> Area (m) </option>
+                                <option value="min"> Time (min)</option>
+                                <option value="meter"> Area (m)</option>
                             </select>
                         </td>
                     </tr>
