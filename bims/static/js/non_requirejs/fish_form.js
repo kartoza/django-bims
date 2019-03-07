@@ -79,17 +79,16 @@ let map = null;
 let updateCoordinateHandler = (e) => {
     let latitude = $('#latitude').val();
     let longitude = $('#longitude').val();
+    let tableBody = $('#closest-site-table-body');
 
     if (location_site_lat !== latitude || location_site_long !== longitude) {
-        location_site_lat = latitude;
-        location_site_long = longitude;
     } else {
         return false;
     }
-
+    let radius = 50;
     let locationSiteCoordinate = ol.proj.transform([
-            parseFloat(location_site_long),
-            parseFloat(location_site_lat)],
+            parseFloat(longitude),
+            parseFloat(latitude)],
         'EPSG:4326',
         'EPSG:3857');
     let iconFeature = new ol.Feature({
@@ -98,6 +97,19 @@ let updateCoordinateHandler = (e) => {
     markerSource.clear();
     markerSource.addFeature(iconFeature);
     map.getView().setCenter(locationSiteCoordinate);
+    $.ajax({
+        url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
+        success: function (all_data) {
+            $.each(all_data, function (index, data) {
+                tableBody.append('<tr>' +
+                    '<td>' + (data['site_code'] ? data['site_code'] : '-') + '</td>' +
+                    '<td>' + data['name'] + '</td>' +
+                    '<td>' + (data['distance_m'] / 1000).toFixed(2) + ' km </td>' +
+                    '<td> Choose </td>' +
+                    '</tr>')
+            });
+        }
+    });
 };
 
 $(function () {
