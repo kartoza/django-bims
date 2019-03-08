@@ -62,19 +62,24 @@ table td {
     margin-bottom: 10px;
 }
 
-#closest-sites-container {
+#closest-sites-container, #add-new-site-container {
     display: none;
 }
 
-.closest-sites-header .title {
+.sub-header .title {
     width: 200px;
     font-size: 15pt;
 }
 
-.closest-sites-header {
+.sub-header {
     margin-bottom: 10px;
 }
 
-.closest-sites-header button {
+.sub-header button {
     margin-top: -10px;
+}
+
+.add-new-site-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #c6c6c6;
 }

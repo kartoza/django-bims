@@ -3,16 +3,18 @@ import logging
 from dateutil.parser import parse
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
+from django.contrib.gis.geos import Point
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from bims.utils.get_key import get_key
 from bims.models import (
     LocationSite, Biotope, SamplingMethod,
     BiologicalCollectionRecord,
-    Taxonomy
+    Taxonomy,
+    LocationType
 )
 
 logger = logging.getLogger('bims')
@@ -117,6 +119,8 @@ class FishFormView(TemplateView):
                 LocationSite,
                 pk=site_id
             )
+        else:
+            raise Http404()
 
         return super(FishFormView, self).get(request, *args, **kwargs)
 
@@ -134,9 +138,34 @@ class FishFormView(TemplateView):
             )
         collection_date = parse(date_string)
         post_data = request.POST.dict()
-        self.location_site = LocationSite.objects.get(
-            id=post_data.get('site-id', None)
-        )
+
+        # Create or get location site
+        site_name = post_data.get('site_name', '')
+        site_code = post_data.get('site_code', '')
+        site_description = post_data.get('site_description', '')
+        latitude = post_data.get('latitude', 0.0)
+        longitude = post_data.get('longitude', 0.0)
+        site_point = Point(
+            float(longitude),
+            float(latitude))
+
+        if site_name or site_code:
+            location_type, created = LocationType.objects.get_or_create(
+                name='PointObservation',
+                allowed_geometry='POINT'
+            )
+            self.location_site, status = LocationSite.objects.get_or_create(
+                name=site_name,
+                site_code=site_code,
+                site_description=site_description,
+                location_type=location_type,
+                geometry_point=site_point
+            )
+        else:
+            self.location_site = LocationSite.objects.get(
+                id=post_data.get('site-id', None)
+            )
+
         taxa_list = self.taxa_from_river_catchment()
         for taxon in taxa_list:
             observed_key = '{}-observed'.format(taxon['taxon_id'])

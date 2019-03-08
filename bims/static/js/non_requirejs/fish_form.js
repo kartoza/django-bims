@@ -85,10 +85,13 @@ let updateCoordinateHandler = (e) => {
     } else {
         return false;
     }
+    moveMarkerOnTheMap(latitude, longitude);
+    if ($('#add-new-site-container').is(":visible")) {
+        return false;
+    }
     $('#closest-sites-container').show();
     tableBody.html('');
     let radius = 10;
-    moveMarkerOnTheMap(latitude, longitude);
     $.ajax({
         url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
         success: function (all_data) {
@@ -97,7 +100,7 @@ let updateCoordinateHandler = (e) => {
                     '<td>' + (data['site_code'] ? data['site_code'] : '-') + '</td>' +
                     '<td>' + data['name'] + '</td>' +
                     '<td>' + (data['distance_m'] / 1000).toFixed(2) + ' km </td>' +
-                    '<td> <button type="button" data-lat="' + data['latitude'] + '" data-lon="' + data['longitude'] + '" class="btn btn-info choose-site">' +
+                    '<td> <button type="button" data-id="' + data['id'] + '" data-lat="' + data['latitude'] + '" data-lon="' + data['longitude'] + '" class="btn btn-info choose-site">' +
                     '<i class="fa fa-search" aria-hidden="true"></i></button> </td>' +
                     '</tr>');
                 row.find('.choose-site').click(chooseSiteHandler);
@@ -120,11 +123,13 @@ let chooseSiteHandler = (e) => {
     }
     let latitude = parseFloat(target.data('lat'));
     let longitude = parseFloat(target.data('lon'));
+    let siteId = target.data('id');
     let siteCode = target.parent().parent().children().eq(0).html();
     let siteIdentifier = target.parent().parent().children().eq(1).html();
     if (siteCode !== '-') {
         siteIdentifier = siteCode
     }
+    $('#site-id').val(siteId);
     $('#site-identifier').html(siteIdentifier);
 
     $('#latitude').val(latitude);
@@ -146,6 +151,21 @@ let moveMarkerOnTheMap = (lat, long) => {
     markerSource.addFeature(iconFeature);
     map.getView().setCenter(locationSiteCoordinate);
 };
+
+let oldHeader = $('.header').html();
+$('.add-new-site').click((e) => {
+    $('#closest-sites-container').hide();
+    $('#add-new-site-container').show();
+    $('.header').html('Add fish data for new site');
+});
+
+$('.close-add-new-site').click((e) => {
+    $('#add-new-site-container').hide();
+    $('.header').html(oldHeader);
+    $('#latitude').val(location_site_lat);
+    $('#longitude').val(location_site_long);
+    moveMarkerOnTheMap(location_site_lat, location_site_long);
+});
 
 $(function () {
     let locationSiteCoordinate = ol.proj.transform([
