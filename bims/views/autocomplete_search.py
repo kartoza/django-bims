@@ -104,12 +104,18 @@ def species_autocomplete(request):
     :return: dict of species with id and name
     """
     q = request.GET.get('term', '').capitalize()
+    exclude = request.GET.get('exclude', '')
+    exclude_list = exclude.split(',')
+    exclude_list = filter(None, exclude_list)
+
     if not request.is_ajax() and len(q) < 2:
         data = 'fail'
     else:
         search_qs = Taxonomy.objects.filter(
             Q(canonical_name__icontains=q) |
-            Q(scientific_name__icontains=q))
+            Q(scientific_name__icontains=q)).exclude(
+            id__in=exclude_list
+        ).distinct('canonical_name')
         results = []
         for r in search_qs:
             results.append({

@@ -166,22 +166,23 @@ class FishFormView(TemplateView):
                 id=post_data.get('site-id', None)
             )
 
-        taxa_list = self.taxa_from_river_catchment()
-        for taxon in taxa_list:
-            observed_key = '{}-observed'.format(taxon['taxon_id'])
-            abundance_key = '{}-abundance'.format(taxon['taxon_id'])
+        taxa_id_list = post_data.get('taxa-id-list', '').split(',')
+        taxa_id_list = filter(None, taxa_id_list)
+        for taxon in taxa_id_list:
+            observed_key = '{}-observed'.format(taxon)
+            abundance_key = '{}-abundance'.format(taxon)
             sampling_method_key = '{}-sampling-method'.format(
-                taxon['taxon_id']
+                taxon
             )
             taxonomy = Taxonomy.objects.get(
-                id=taxon['taxon_id']
+                id=taxon
             )
             sampling_method_id = post_data[sampling_method_key]
             sampling_effort = '{effort} {type}'.format(
                 effort=post_data[
-                    '{}-sampling-effort'.format(taxon['taxon_id'])],
+                    '{}-sampling-effort'.format(taxon)],
                 type=post_data[
-                    '{}-sampling-effort-type'.format(taxon['taxon_id'])]
+                    '{}-sampling-effort-type'.format(taxon)]
             )
             try:
                 if post_data[observed_key] == 'True':

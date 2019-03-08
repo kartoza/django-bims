@@ -15,10 +15,12 @@ let taxonAbundanceOnChange = function (e) {
     collectionsWithAbundace -= 1;
 };
 
+let taxaIdList = [];
+
 let taxonAutocompleteHandler = {
     source: function (request, response) {
         $.ajax({
-            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term),
+            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term) + '&exclude=' + taxaIdList.join(),
             type: 'get',
             dataType: 'json',
             success: function (data) {
@@ -41,10 +43,11 @@ let taxonAutocompleteHandler = {
         e.preventDefault();
         let $target = $(e.target);
         let $parent = $target.parent().parent();
+        taxaIdList.push(u.item.value);
         $parent.html(
             '<td scope="row" class="taxon-name">' +
             u.item.label +
-            '<input type="hidden" value="' + u.item.value + '">' +
+            '<input type="hidden" class="taxon-id" value="' + u.item.value + '">' +
             '</td>');
         $parent.append(
             '<td>' +
@@ -193,10 +196,23 @@ $('.close-add-new-site').click((e) => {
     $('.header').html(oldHeader);
     $('#latitude').val(location_site_lat);
     $('#longitude').val(location_site_long);
+    oldLat = location_site_lat;
+    oldLon = location_site_long;
+    $('#location-site-name').val('');
+    $('#location-site-code').val('');
+    $('#location-site-description').val('');
     moveMarkerOnTheMap(location_site_lat, location_site_long);
 });
 
 $(function () {
+    // Get id list
+    $.each($('.taxon-table-body').children(), function (index, tr) {
+        let val = $(tr).children().eq(0).find('.taxon-id').val();
+        if (typeof val !== 'undefined') {
+            taxaIdList.push(val);
+        }
+    });
+
     let locationSiteCoordinate = ol.proj.transform([
             parseFloat(location_site_long),
             parseFloat(location_site_lat)],
@@ -347,6 +363,10 @@ $(function () {
             }, 500);
             return;
         }
+        // Get taxa list id
+        let $taxaIdList = $('#taxa-id-list');
+        $taxaIdList.val(taxaIdList.join());
+
         form.submit();
     });
 

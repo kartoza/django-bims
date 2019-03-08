@@ -98,7 +98,7 @@
                            class="col-sm-2 col-form-label col-form-label">Site
                         Name</label>
                     <div class="col-sm-10">
-                        <input type="text" name="site_name"
+                        <input type="text" name="site_name" id="location-site-name"
                                class="form-control form-control-sm"
                                placeholder="">
                     </div>
@@ -108,7 +108,7 @@
                            class="col-sm-2 col-form-label col-form-label">Site
                         Code</label>
                     <div class="col-sm-10">
-                        <input type="text" name="site_code"
+                        <input type="text" name="site_code" id="location-site-code"
                                class="form-control form-control-sm"
                                placeholder="">
                     </div>
@@ -118,7 +118,7 @@
                            class="col-sm-2 col-form-label col-form-label">Site
                         Description</label>
                     <div class="col-sm-10">
-                        <input type="text" name="site_description"
+                        <input type="text" name="site_description" id="location-site-description"
                                class="form-control form-control-sm"
                                placeholder="">
                     </div>
@@ -126,6 +126,7 @@
             </div>
 
             <div class="separator-line"></div>
+            <input type="hidden" value="" id="taxa-id-list" name="taxa-id-list">
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label required-text">Date</label>
@@ -215,7 +216,7 @@
                         <td scope="row"
                             class="taxon-name">
                             {{ taxon.taxon_name }}
-                            <input type="hidden" value="{{ taxon.taxon_id }}">
+                            <input class="taxon-id" type="hidden" value="{{ taxon.taxon_id }}">
                         </td>
                         <td>
                             <div class="form-check">
