@@ -87,34 +87,50 @@ function renderSASSSummaryChart() {
             'fill': 'false',
         }]
     };
-    let scalesOption = {
-        xAxes: [{
-            display: false
-        }],
-        yAxes: [{
-            ticks: {
-                beginAtZero: true
+
+    function scalesOptionFunction(label){
+        return {
+            xAxes: [{
+                display: false
+            }],
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: label
+                }
+            }]
+        };
+    }
+
+    function optionsFunction(label) {
+        return {
+            scales: scalesOptionFunction(label),
+            legend: {
+                display: false
             }
-        }]
-    };
-    let options = {
-        scales: scalesOption
-    };
+        };
+    }
+
     let sassScoreChart = new Chart($('#sass-score-chart'), {
         type: 'bar',
         data: data,
-        options: options
+        options: optionsFunction('SASS Scores')
     });
+
     let taxaNumberChart = new Chart($('#taxa-numbers-chart'), {
         type: 'bar',
         data: taxaNumberData,
-        options: options
+        options: optionsFunction('Number of Taxa')
     });
+
     let asptChart = new Chart($('#aspt-chart'), {
         type: 'bar',
         data: asptData,
         options: {
-            scales: scalesOption,
+            scales: scalesOptionFunction('ASPT'),
             tooltips: {
                 callbacks: {
                     label: function (tooltipItem, chart) {
@@ -122,6 +138,9 @@ function renderSASSSummaryChart() {
                         return 'ASPT : ' + tooltipItem.yLabel.toFixed(2);
                     }
                 }
+            },
+            legend: {
+                display: false
             }
         }
     });
