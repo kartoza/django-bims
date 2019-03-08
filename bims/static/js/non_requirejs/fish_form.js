@@ -1,4 +1,7 @@
 let collectionsWithAbundace = 0;
+let oldLat = location_site_lat;
+let oldLon = location_site_long;
+
 let taxonAbundanceOnChange = function (e) {
     let value = parseInt(e.target.value);
     if (value) {
@@ -74,6 +77,25 @@ let taxonAutocompleteHandler = {
     }
 };
 
+$('#latitude').keyup((e) => {
+    let $target = $(e.target);
+    if (!document.getElementById('update-coordinate').disabled) {
+        return;
+    }
+    if ($target.val() !== oldLat) {
+        document.getElementById('update-coordinate').disabled = false;
+    }
+});
+$('#longitude').keyup((e) => {
+    let $target = $(e.target);
+    if (!document.getElementById('update-coordinate').disabled) {
+        return;
+    }
+    if ($target.val() !== oldLon) {
+        document.getElementById('update-coordinate').disabled = false;
+    }
+});
+
 let markerSource = new ol.source.Vector();
 let map = null;
 let updateCoordinateHandler = (e) => {
@@ -81,10 +103,14 @@ let updateCoordinateHandler = (e) => {
     let longitude = $('#longitude').val();
     let tableBody = $('#closest-site-table-body');
 
-    if (location_site_lat !== latitude || location_site_long !== longitude) {
+    if (oldLat !== latitude || oldLon !== longitude) {
     } else {
         return false;
     }
+
+    oldLat = latitude;
+    oldLon = longitude;
+    document.getElementById('update-coordinate').disabled = true;
     moveMarkerOnTheMap(latitude, longitude);
     if ($('#add-new-site-container').is(":visible")) {
         return false;
@@ -123,6 +149,9 @@ let chooseSiteHandler = (e) => {
     }
     let latitude = parseFloat(target.data('lat'));
     let longitude = parseFloat(target.data('lon'));
+    oldLat = latitude.toString();
+    oldLon = longitude.toString();
+    document.getElementById('update-coordinate').disabled = true;
     let siteId = target.data('id');
     let siteCode = target.parent().parent().children().eq(0).html();
     let siteIdentifier = target.parent().parent().children().eq(1).html();
