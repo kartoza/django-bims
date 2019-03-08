@@ -85,11 +85,58 @@ let updateCoordinateHandler = (e) => {
     } else {
         return false;
     }
+    $('#closest-sites-container').show();
     tableBody.html('');
-    let radius = 50;
+    let radius = 10;
+    moveMarkerOnTheMap(latitude, longitude);
+    $.ajax({
+        url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
+        success: function (all_data) {
+            $.each(all_data, function (index, data) {
+                let row = $('<tr>' +
+                    '<td>' + (data['site_code'] ? data['site_code'] : '-') + '</td>' +
+                    '<td>' + data['name'] + '</td>' +
+                    '<td>' + (data['distance_m'] / 1000).toFixed(2) + ' km </td>' +
+                    '<td> <button type="button" data-lat="' + data['latitude'] + '" data-lon="' + data['longitude'] + '" class="btn btn-info choose-site">' +
+                    '<i class="fa fa-search" aria-hidden="true"></i></button> </td>' +
+                    '</tr>');
+                row.find('.choose-site').click(chooseSiteHandler);
+                tableBody.append(row);
+            });
+        }
+    });
+};
+
+$('.close-nearest-list-table').click(() => {
+    $('#closest-site-table-body').html('');
+    $('#closest-sites-container').hide();
+});
+
+let chooseSiteHandler = (e) => {
+    e.preventDefault();
+    let target = $(e.target);
+    if (!target.hasClass('choose-site')) {
+        target = target.parent();
+    }
+    let latitude = parseFloat(target.data('lat'));
+    let longitude = parseFloat(target.data('lon'));
+    let siteCode = target.parent().parent().children().eq(0).html();
+    let siteIdentifier = target.parent().parent().children().eq(1).html();
+    if (siteCode !== '-') {
+        siteIdentifier = siteCode
+    }
+    $('#site-identifier').html(siteIdentifier);
+
+    $('#latitude').val(latitude);
+    $('#longitude').val(longitude);
+
+    moveMarkerOnTheMap(latitude, longitude);
+};
+
+let moveMarkerOnTheMap = (lat, long) => {
     let locationSiteCoordinate = ol.proj.transform([
-            parseFloat(longitude),
-            parseFloat(latitude)],
+            parseFloat(long),
+            parseFloat(lat)],
         'EPSG:4326',
         'EPSG:3857');
     let iconFeature = new ol.Feature({
@@ -98,19 +145,6 @@ let updateCoordinateHandler = (e) => {
     markerSource.clear();
     markerSource.addFeature(iconFeature);
     map.getView().setCenter(locationSiteCoordinate);
-    $.ajax({
-        url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
-        success: function (all_data) {
-            $.each(all_data, function (index, data) {
-                tableBody.append('<tr>' +
-                    '<td>' + (data['site_code'] ? data['site_code'] : '-') + '</td>' +
-                    '<td>' + data['name'] + '</td>' +
-                    '<td>' + (data['distance_m'] / 1000).toFixed(2) + ' km </td>' +
-                    '<td> Choose </td>' +
-                    '</tr>')
-            });
-        }
-    });
 };
 
 $(function () {

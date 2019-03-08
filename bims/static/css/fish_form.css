@@ -40,8 +40,8 @@ table td {
 .btn {
     text-transform: capitalize;
     border-radius: 5px;
-    padding-left: 50px;
-    padding-right: 50px;
+    padding-left: 25px;
+    padding-right: 25px;
     font-weight: normal;
 }
 
@@ -60,4 +60,21 @@ table td {
 .separator-line {
     border-bottom: 1px solid #b0b0b0;
     margin-bottom: 10px;
+}
+
+#closest-sites-container {
+    display: none;
+}
+
+.closest-sites-header .title {
+    width: 200px;
+    font-size: 15pt;
+}
+
+.closest-sites-header {
+    margin-bottom: 10px;
+}
+
+.closest-sites-header button {
+    margin-top: -10px;
 }
