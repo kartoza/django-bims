@@ -34,7 +34,8 @@ from bims.views.autocomplete_search import (
     autocomplete,
     user_autocomplete,
     data_source_autocomplete,
-    species_autocomplete
+    species_autocomplete,
+    site_autocomplete
 )
 from bims.views.proxy import proxy_request
 from bims.views.fish_form import FishFormView
@@ -89,6 +90,9 @@ urlpatterns = [
     url(r'^data-source-autocomplete/$',
         data_source_autocomplete,
         name='data-source-autocomplete-search'),
+    url(r'^location-site-autocomplete/$',
+        site_autocomplete,
+        name='location-site-autocomplete-search'),
     url(r'^bims_proxy/(?P<path>.*)', proxy_request),
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
 ]

@@ -119,3 +119,19 @@ def species_autocomplete(request):
         data = json.dumps(results)
     mime_type = 'application/json'
     return HttpResponse(data, mime_type)
+
+
+def site_autocomplete(request):
+    q = request.GET.get('q', '').capitalize()
+    if len(q) > 2:
+        search_qs = LocationSite.objects.filter(
+            name__icontains=q)
+        results = []
+        for r in search_qs:
+            results.append({
+                'value': r.id,
+                'text': r.name,
+            })
+        data = json.dumps(results)
+        mime_type = 'application/json'
+        return HttpResponse(data, mime_type)
