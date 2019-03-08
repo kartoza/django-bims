@@ -85,6 +85,7 @@ let updateCoordinateHandler = (e) => {
     } else {
         return false;
     }
+    tableBody.html('');
     let radius = 50;
     let locationSiteCoordinate = ol.proj.transform([
             parseFloat(longitude),
