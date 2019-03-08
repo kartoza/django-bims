@@ -160,7 +160,7 @@ function renderSASSTaxonPerBiotope() {
 
         $tr.append('<td>' +
             taxonGroupName +
-        '</td>');
+            '</td>');
         table.append($tr);
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
         if (value['sass_taxon_name']) {
@@ -276,6 +276,8 @@ function renderSensitivityChart() {
         data: data,
         options: options
     });
+    let latestIndex = dateLabels.length - 1;
+    $('#sc-latest-sass-record').html('(<a href="/sass/view/' + sassIds[latestIndex] + '">' + dateLabels[latestIndex] + '</a>)');
 }
 
 function renderBiotopeRatingsChart() {

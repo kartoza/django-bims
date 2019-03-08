@@ -119,13 +119,29 @@ class SassDashboardView(TemplateView):
         return data
 
     def get_sensitivity_chart_data(self):
-        # Ordered by
-        # Highly tolerant = 1 - 3
-        # Tolerant = 4 - 7
-        # Sensitive = 8 - 11
-        # Highly Sensitive 12 - 15
+        """
+        Get data for sensitivity chart, only for latest data
+        Ordered by :
+        Highly tolerant = 1 - 3
+        Tolerant = 4 - 7
+        Sensitive = 8 - 11
+        Highly Sensitive 12 - 15
+        :return: dict of sensitivity chart data
+        {
+            'highly_tolerant': 1,
+            'tolerant': 1,
+            'sensitive': 1,
+            'highly_sensitive': 1
+        }
+        """
+        latest_site_visit = (
+            self.site_visit_taxa.order_by(
+                '-site_visit__site_visit_date')[0].site_visit
+        )
         sensitivity_data = (
-            self.site_visit_taxa.annotate(
+            self.site_visit_taxa.filter(
+                site_visit=latest_site_visit
+            ).annotate(
                 sass_score=Case(
                     When(site_visit__sass_version=5,
                          then='sass_taxon__sass_5_score'),
@@ -174,6 +190,10 @@ class SassDashboardView(TemplateView):
         return sensitivity_data
 
     def get_biotope_ratings_chart_data(self):
+        """
+        Get data for biotope ratings chart
+        :return: dict of biotope ratings
+        """
         data = {}
 
         biotope_ratings = self.site_visit_taxa.filter(
