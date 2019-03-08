@@ -25,7 +25,8 @@ function drawMap(data) {
     let graticule = new ol.Graticule({
         strokeStyle: new ol.style.Stroke({
             color: 'rgba(0,0,0,1)',
-            width: 1
+            width: 1,
+            lineDash: [2.5, 4]
         }),
         showLabels: true
     });
