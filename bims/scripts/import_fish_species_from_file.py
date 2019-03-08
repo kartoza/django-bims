@@ -56,6 +56,9 @@ def import_fish_species_from_file(
             should_get_children=True
         )
 
+        if not taxonomy:
+            continue
+
         endemism, endemism_created = Endemism.objects.get_or_create(
             name__icontains=endemism_value
         )
