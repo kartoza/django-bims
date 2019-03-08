@@ -135,8 +135,8 @@ class SassDashboardView(TemplateView):
         }
         """
         latest_site_visit = (
-            self.site_visit_taxa.
-                order_by('-site_visit__site_visit_date')[0].site_visit
+            self.site_visit_taxa.order_by(
+                '-site_visit__site_visit_date')[0].site_visit
         )
         sensitivity_data = (
             self.site_visit_taxa.filter(
