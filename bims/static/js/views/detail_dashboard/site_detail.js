@@ -504,8 +504,8 @@ define([
         createOccurrencesBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
 
-             if (data.hasOwnProperty('records_occurrence')) {
-                this.renderBarChart(data['records_occurrence'], 'occurrences_line', chartCanvas);
+             if (data.hasOwnProperty('taxa_occurrence')) {
+                this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
              }
 
          },

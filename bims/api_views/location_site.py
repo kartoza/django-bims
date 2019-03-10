@@ -214,6 +214,7 @@ class LocationSitesSummary(APIView):
     TOTAL_RECORDS = 'total_records'
     RECORDS_GRAPH_DATA = 'records_graph_data'
     RECORDS_OCCURRENCE = 'records_occurrence'
+    TAXA_OCCURRENCE = 'taxa_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
 
@@ -235,8 +236,18 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
-        records_occurrence = self.get_site_occurrences_per_year(
+        taxa_occurrence = self.get_site_taxa_occurrences_per_year(
             collection_results)
+
+        records_occurrence = collection_results.annotate(
+            name=F('taxonomy__scientific_name'),
+            taxon_id=F('taxonomy_id'),
+            origin=F('category')
+        ).values(
+            'taxon_id', 'name', 'origin'
+        ).annotate(
+            count=Count('taxonomy')
+        )
 
         records_graph_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
@@ -263,7 +274,7 @@ class LocationSitesSummary(APIView):
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
-            self.RECORDS_OCCURRENCE: dict(records_occurrence),
+            self.TAXA_OCCURRENCE: dict(taxa_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
             'process': search_process.process_id,
             'extent': search.extent(),
@@ -282,7 +293,7 @@ class LocationSitesSummary(APIView):
         except ValueError:
             return Response(response_data)
 
-    def get_site_occurrences_per_year(self, collection_records):
+    def get_site_taxa_occurrences_per_year(self, collection_records):
         result = {}
         occurrences_data = []
         result['occurrences_line_chart'] = {}
