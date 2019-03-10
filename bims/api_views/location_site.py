@@ -1,10 +1,9 @@
 # coding=utf8
 import json
 import os
-from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
-from django.db.models.functions import ExtractYear, Concat
+from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,8 +27,7 @@ from bims.utils.cluster_point import (
 )
 from bims.api_views.collection import GetCollectionAbstract
 from bims.utils.search_process import (
-    get_or_create_search_process,
-    create_search_process_file
+    get_or_create_search_process
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
@@ -303,17 +301,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
 
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
     def get_site_taxa_occurrences_per_year(self, collection_results):
         taxa_occurrence_data = collection_results.annotate(
@@ -322,7 +320,6 @@ class LocationSitesSummary(APIView):
                  ).annotate(count=Count('year')
                  ).values('year', 'count'
                  ).order_by('year')
-
         result = {}
         result['occurrences_line_chart'] = {}
         result['occurrences_line_chart']['values'] = []
@@ -334,7 +331,6 @@ class LocationSitesSummary(APIView):
                 each_record['year'])
             result['occurrences_line_chart']['values'].append(
                 each_record['count'])
-
         return result
 
     def get_data_per_year(self, data_in):
