@@ -393,11 +393,11 @@ class LocationSitesSummary(APIView):
             tertiary_catchment_area = 'Unknown'
         try:
             water_management_area = (context_document
-                                      ['context_group_values']
-                                      ['water_group']
-                                      ['service_registry_values']
-                                      ['water_management_area']
-                                      ['value'])
+                                     ['context_group_values']
+                                     ['water_group']
+                                     ['service_registry_values']
+                                     ['water_management_area']
+                                     ['value'])
         except KeyError:
             water_management_area = 'Unknown'
 
