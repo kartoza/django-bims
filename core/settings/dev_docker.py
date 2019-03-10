@@ -6,7 +6,7 @@ ALLOWED_HOSTS = ['*',
                  u'0.0.0.0']
 
 ADMINS = (
-    ('Anita Hapsari', 'anita@kartoza.com'),
+    ('Dimas', 'dimas@kartoza.com'),
 )
 
 # Set debug to True for development

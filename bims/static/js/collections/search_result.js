@@ -41,7 +41,7 @@ define([
             this.endemic = parameters['endemic'];
             this.reference = parameters['reference'];
             this.conservationStatus = parameters['conservationStatus'];
-            this.riverCatchment = parameters['riverCatchment'];
+            this.riverCatchment = parameters['spatialFilter'];
             parameters['taxon'] = '';
             parameters['siteId'] = '';
 

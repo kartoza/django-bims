@@ -3,6 +3,7 @@
 
 """
 import json
+import uuid
 from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
@@ -36,7 +37,7 @@ class BiologicalCollectionRecord(
         related_name='biological_collection_record',
     )
     original_species_name = models.CharField(
-        max_length=100,
+        max_length=200,
         blank=True,
         default='',
     )
@@ -56,7 +57,7 @@ class BiologicalCollectionRecord(
         default=timezone.now
     )
     collector = models.CharField(
-        max_length=100,
+        max_length=300,
         blank=True,
         default='',
         verbose_name='collector or observer',
@@ -75,7 +76,7 @@ class BiologicalCollectionRecord(
     )
 
     collection_habitat = models.CharField(
-        max_length=100,
+        max_length=200,
         choices=HABITAT_CHOICES,
         blank=True,
         default=''
@@ -85,14 +86,21 @@ class BiologicalCollectionRecord(
         default=settings.INSTITUTION_ID_DEFAULT,
         help_text='An identifier for the institution having custody of the '
                   'object(s) or information referred to in the record.',
-        max_length=100,
+        max_length=200,
         verbose_name='Custodian',
     )
 
-    sampling_method = models.CharField(
+    sampling_method_string = models.CharField(
         max_length=50,
         blank=True,
         default=''
+    )
+
+    sampling_method = models.ForeignKey(
+        'bims.SamplingMethod',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     sampling_effort = models.CharField(
@@ -108,7 +116,7 @@ class BiologicalCollectionRecord(
     )
 
     reference_category = models.CharField(
-        max_length=100,
+        max_length=200,
         blank=True,
         default=''
     )
@@ -120,9 +128,34 @@ class BiologicalCollectionRecord(
         null=True,
     )
 
+    upstream_id = models.CharField(
+        help_text='Upstream id, e.g. Gbif key',
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    uuid = models.UUIDField(
+        help_text='Collection record uuid',
+        max_length=200,
+        null=True,
+    )
+
     additional_data = JSONField(
         blank=True,
         null=True
+    )
+
+    abundance_number = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    biotope = models.ForeignKey(
+        'bims.Biotope',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     @property
@@ -157,6 +190,15 @@ class BiologicalCollectionRecord(
             else:
                 self.additional_data = json.loads(self.additional_data)
                 attempt += 1
+
+        if not self.uuid:
+            collection_uuid = uuid.uuid4()
+            while BiologicalCollectionRecord.objects.filter(
+                uuid=collection_uuid
+            ).exists():
+                collection_uuid = uuid.uuid4()
+            self.uuid = collection_uuid
+
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 
     def get_children(self):

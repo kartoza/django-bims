@@ -83,6 +83,8 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
             context['documents_selected'] = DocumentSerializer(
                 documents, many=True).data
 
+        context['location_site_selected'] = self.object.site
+
         return context
 
 
@@ -93,7 +95,9 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
         references = self.request.POST.get('references', None)
         documents = self.request.POST.get('documents', None)
         features = json.loads(geojson)
-        location_site_name = self.object.site.name
+        site_id = self.request.POST.get('location_site', None)
+        site = LocationSite.objects.get(id=site_id)
+        location_site_name = site.name
         if len(features['features']) > 0:
             signals.post_save.disconnect(
                 location_site_post_save_handler,
