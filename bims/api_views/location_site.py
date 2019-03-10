@@ -264,11 +264,13 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('year')
         ).values(
-            'year', 'name'
+            'year', 'name', 'count'
         ).order_by('year')
 
         taxa_graph = self.get_taxa_per_year(
-            taxa_graph_data)
+            collection_results)
+
+        taxa_graph = self.get_data_per_year(taxa_graph_data)
 
         records_occurrence = collection_results.annotate(
             name=F('taxonomy__scientific_name'),
@@ -354,25 +356,40 @@ class LocationSitesSummary(APIView):
 
 
     def get_data_per_year(self, data_in):
-        taxa_data = {}
+        yearly_data  = {}
         unique_year_list = []
-        previous_year = 0;
+        unique_name_list = []
         for each_record in data_in:
-            if 'year' in data_in:
-                collection_year = data_in['year']
+            record_count = 0
+            record_year = 0
+            record_name = 'Unknown'
+            if 'count' in each_record:
+                record_count = each_record['count']
+            if 'year' in each_record:
+                record_year = each_record['year']
+            if 'name' in each_record:
+                record_name = each_record['name']
+            if record_year not in unique_year_list and record_year > 0:
+                unique_year_list.append(record_year)
+            if record_name not in yearly_data:
+                yearly_data[record_name] = []
+                unique_name_list.append(record_name)
+            if record_year not in yearly_data[record_name]:
+                yearly_data[record_name].append(record_count)
+        result = {}
+        result['data'] = yearly_data
+        result['labels'] = unique_year_list
+        result['dataset_labels'] = unique_name_list
+        return result
 
-                if collection_year not in unique_year_list:
-                        unique_year_list.append(collection_year)
 
 
-
-
-    def get_taxa_per_year(self, taxa_graph_data):
+    def get_taxa_per_year(self, collection_records):
         taxa_data = {}
         unique_year_list = []
 
-        for each_record in taxa_graph_data:
-            scientific_name = str(each_record.name)
+        for each_record in collection_records:
+            scientific_name = str(each_record.taxonomy.scientific_name)
             collection_year = str(each_record.collection_date.year)
             if collection_year not in unique_year_list:
                 unique_year_list.append(collection_year)
