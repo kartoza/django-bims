@@ -257,36 +257,51 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
         location_sites = LocationSite.objects.filter(id=site_id).all()
-        site_longitude = self.parse_string(
-            str(location_sites.values('longitude')[0]['longitude']))
-        site_latitude = self.parse_string(
-            str(location_sites.values('latitude')[0]['latitude']))
-        site_description = self.parse_string(str(location_sites.values(
-                'site_description')[0]['site_description']))
+        try:
+            site_longitude = self.parse_string(
+                str(location_sites.values('longitude')[0]['longitude']))
+        except IndexError:
+            site_longitude = 'Unknown'
+        try:
+            site_latitude = self.parse_string(
+                str(location_sites.values('latitude')[0]['latitude']))
+        except IndexError:
+            site_latitude = 'Unknown'
+        try:
+            site_description = self.parse_string(str(location_sites.values(
+                    'site_description')[0]['site_description']))
+        except IndexError:
+            site_description = 'Unknown'
         try:
             context_document = dict(json.loads(str(location_sites.values(
                 'location_context')[0]['location_context'])))
-        except ValueError:
-            context_document = ''
-        site_river_id = location_sites.values('river_id')[0]['river_id']
+        except IndexError:
+            context_document = {}
         try:
-            site_river = River.objects.filter(
-                id=site_river_id).values('name')[0]['name']
+            site_river_id = location_sites.values('river_id')[0]['river_id']
+        except IndexError:
+            site_river_id = 0
+        try:
+            if site_river_id > 0:
+                site_river = River.objects.filter(
+                    id=site_river_id).values('name')[0]['name']
+            else:
+                site_river = 'Unknown'
         except IndexError:
             site_river = 'Unknown'
         overview = {}
