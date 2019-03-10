@@ -172,6 +172,8 @@ define([
                 success: function (data) {
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
+                    self.createOriginStackedBarChart(data);
+                    self.createConsStatusStackedBarChart(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -474,7 +476,6 @@ define([
                 'labels': dataIn['labels'],
                 'datasets': datasets,
             }
-            barChartData = barChartData;
             var chartConfig = {
                 type: 'bar',
                 data: barChartData,
@@ -516,10 +517,26 @@ define([
             new ChartJs(ctx, chartConfig);
         },
 
+        createOriginStackedBarChart: function (data) {
+            var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
+
+             if (data.hasOwnProperty('origin_occurrence')) {
+                this.renderStackedBarChart(data['origin_occurrence'], 'origin_bar', chartCanvas);
+             }
+         },
+
         createTaxaStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
              if (data.hasOwnProperty('taxa_graph')) {
                 this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas);
+             }
+         },
+
+        createConsStatusStackedBarChart: function (data) {
+            var locationContext = {}
+            var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
+             if (data.hasOwnProperty('cons_status_occurrence')) {
+                this.renderStackedBarChart(data['cons_status_occurrence'], 'cons_status_bar', chartCanvas);
              }
          },
 

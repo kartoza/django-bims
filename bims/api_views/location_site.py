@@ -218,6 +218,8 @@ class LocationSitesSummary(APIView):
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
     TAXA_GRAPH = 'taxa_graph'
+    ORIGIN_OCCURRENCE = 'origin_occurrence'
+    CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
 
     def get(self, request):
         filters = request.GET
@@ -278,9 +280,13 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
 
+        origin_occurrence = self.get_origin_occurrence_data(collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
+        cons_status_occurrence = self.get_cons_status_occurrence_data(
+            collection_results)
+
         search_process.create_view()
 
         response_data = {
@@ -290,6 +296,8 @@ class LocationSitesSummary(APIView):
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
             self.TAXA_GRAPH: dict(taxa_graph),
+            self.ORIGIN_OCCURRENCE: dict(origin_occurrence),
+            self.CONS_STATUS_OCCURRENCE: dict(cons_status_occurrence),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
@@ -329,9 +337,7 @@ class LocationSitesSummary(APIView):
 
         return result
 
-
     def get_data_per_year(self, data_in):
-        yearly_data  = {}
         unique_name_list = []
         unique_year_list = []
         unparsed_data = {}
@@ -374,6 +380,38 @@ class LocationSitesSummary(APIView):
         result['labels'] = unique_year_list
         result['dataset_labels'] = unique_name_list
         return result
+
+    def get_origin_occurrence_data(self, collection_records):
+        origin_graph_data = collection_records.annotate(
+            year=ExtractYear('collection_date'),
+            name=F('category'),
+        ).values(
+            'year', 'name'
+        ).annotate(
+            count=Count('year'),
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
+
+        result = self.get_data_per_year(origin_graph_data)
+        return result
+
+    def get_cons_status_occurrence_data(self, collection_records):
+        origin_graph_data = collection_records.annotate(
+            year=ExtractYear('collection_date'),
+            name=F('taxonomy__iucn_status__category'),
+        ).values(
+            'year', 'name'
+        ).annotate(
+            count=Count('year'),
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
+
+        result = self.get_data_per_year(origin_graph_data)
+
+        return result
+
 
 
 
