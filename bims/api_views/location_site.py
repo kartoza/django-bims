@@ -319,24 +319,29 @@ class LocationSitesSummary(APIView):
         overview['value'].append(site_river)
         if 'context_group_values' in context_document:
             if 'eco_geo_group' in context_document:
-                eco_region = (context_document
-                              ['context_group_values']
-                              ['eco_geo_group']
-                              ['service_registry_values']
-                              ['eco_region']
-                              ['value'])
-                geo_class = (context_document
-                             ['context_group_values']
-                             ['eco_geo_group']
-                             ['service_registry_values']
-                             ['geo_class']
-                             ['value'])
-                geo_zone = ('{geo_class} {eco_region}'.format(
-                    geo_class=geo_class,
-                    eco_region=eco_region))
-            else:
-                geo_zone = 'Unknown'
-        else:
+        try:
+            eco_region = (context_document
+                          ['context_group_values']
+                          ['eco_geo_group']
+                          ['service_registry_values']
+                          ['eco_region']
+                          ['value'])
+        except KeyError:
+            eco_region = 'Unknown'
+        try:
+            geo_class = (context_document
+                         ['context_group_values']
+                         ['eco_geo_group']
+                         ['service_registry_values']
+                         ['geo_class']
+                         ['value'])
+        except KeyError:
+            geo_class = 'Unknown'
+        try:
+            geo_zone = ('{geo_class} {eco_region}'.format(
+                geo_class=geo_class,
+                eco_region=eco_region))
+        except KeyError:
             geo_zone = 'Unknown'
 
         overview['title'].append('Geomorphological zone')
@@ -346,42 +351,42 @@ class LocationSitesSummary(APIView):
         overview['value'].append('???')
 
         # Catchments
-        if 'context_group_values' in context_document:
-            if 'water_group' in context_document:
-                primary_catchment = (context_document
-                                     ['context_group_values']
-                                     ['water_group']
-                                     ['service_registry_values']
-                                     ['primary_catchment_area']
-                                     ['value'])
-                secondary_catchment = (context_document
+        try:
+            primary_catchment = (context_document
+                                 ['context_group_values']
+                                 ['water_group']
+                                 ['service_registry_values']
+                                 ['primary_catchment_area']
+                                 ['value'])
+        except KeyError:
+            primary_catchment = 'Unknown'
+        try:
+            secondary_catchment = (context_document
+                                   ['context_group_values']
+                                   ['water_group']
+                                   ['service_registry_values']
+                                   ['secondary_catchment_area']
+                                   ['value'])
+        except KeyError:
+            secondary_catchment = 'Unknown'
+        try:
+            tertiary_catchment_area = (context_document
                                        ['context_group_values']
                                        ['water_group']
                                        ['service_registry_values']
-                                       ['secondary_catchment_area']
+                                       ['tertiary_catchment_area']
                                        ['value'])
-                tertiary_catchment_area = (context_document
-                                           ['context_group_values']
-                                           ['water_group']
-                                           ['service_registry_values']
-                                           ['tertiary_catchment_area']
-                                           ['value'])
-                water_management_areas = (context_document
-                                          ['context_group_values']
-                                          ['water_group']
-                                          ['service_registry_values']
-                                          ['water_management_area']
-                                          ['value'])
-            else:
-                primary_catchment = 'Unknown'
-                secondary_catchment = 'Unknown'
-                tertiary_catchment_area = 'Unknown'
-                water_management_areas = 'Unknown'
-        else:
-            primary_catchment = 'Unknown'
-            secondary_catchment = 'Unknown'
+        except KeyError:
             tertiary_catchment_area = 'Unknown'
-            water_management_areas = 'Unknown'
+        try:
+            water_management_area = (context_document
+                                      ['context_group_values']
+                                      ['water_group']
+                                      ['service_registry_values']
+                                      ['water_management_area']
+                                      ['value'])
+        except KeyError:
+            water_management_area = 'Unknown'
 
         catchments['title'].append('Primary')
         catchments['value'].append(primary_catchment)
@@ -406,20 +411,18 @@ class LocationSitesSummary(APIView):
 
         sub_water_management_areas['title'].append(
             'Water Management Areas (WMA)')
-        sub_water_management_areas['value'].append(water_management_areas)
+        sub_water_management_areas['value'].append(water_management_area)
 
-        # Catchments
-        if 'context_group_values' in context_document:
-            if 'political_boundary_group' in context_document:
-                province = self.parse_string(str(context_document
-                                                 ['context_group_values']
-                                                 ['political_boundary_group']
-                                                 ['service_registry_values']
-                                                 ['sa_provinces']
-                                                 ['value']))
-            else:
-                province = 'Unknown'
-        else:
+        # Politcal Boundary Group
+
+        try:
+            province = self.parse_string(str(context_document
+                                             ['context_group_values']
+                                             ['political_boundary_group']
+                                             ['service_registry_values']
+                                             ['sa_provinces']
+                                             ['value']))
+        except KeyError:
             province = 'Unknown'
 
         sa_ecoregions['title'].append('Ecoregion Level 1')
@@ -552,7 +555,6 @@ class LocationSitesSummary(APIView):
             return str(data[key]['value'])
         except KeyError:
             return str(0)
-
 
 
 class LocationSitesCoordinate(ListAPIView):
