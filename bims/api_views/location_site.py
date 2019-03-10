@@ -4,7 +4,7 @@ import os
 from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
-from django.db.models.functions import ExtractYear
+from django.db.models.functions import ExtractYear, Concat
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -235,6 +235,24 @@ class LocationSitesSummary(APIView):
                     return Response(json.load(raw_data))
                 except ValueError:
                     pass
+
+        taxa_occurrence = collection_results.annotate(
+            name=F('taxonomy__scientific_name'),
+            year=ExtractYear('collection_date'),
+            taxon_id=F('taxonomy_id'),
+            # year_taxon_id=Concat('year', 'taxon_id')
+        ).values(
+            'taxon_id', 'name', 'year'
+        ).annotate(
+            taxon_count=Count('year')
+        )
+
+        # taxa_occurrence = collection_results.annotate(
+        #     year=ExtractYear('collection_date'),
+        #     name=F('taxonomy__scientific_name')
+        # ).values(
+        #     'name', 'year'
+        # ).annotate(Count('taxonomy'))
 
         taxa_occurrence = self.get_site_taxa_occurrences_per_year(
             collection_results)
