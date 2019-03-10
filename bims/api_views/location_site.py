@@ -27,7 +27,8 @@ from bims.utils.cluster_point import (
 )
 from bims.api_views.collection import GetCollectionAbstract
 from bims.utils.search_process import (
-    get_or_create_search_process
+    get_or_create_search_process,
+    create_search_process_file
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
@@ -316,10 +317,10 @@ class LocationSitesSummary(APIView):
     def get_site_taxa_occurrences_per_year(self, collection_results):
         taxa_occurrence_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
-                 ).values('year'
-                 ).annotate(count=Count('year')
-                 ).values('year', 'count'
-                 ).order_by('year')
+            ).values('year'
+            ).annotate(count=Count('year')
+            ).values('year', 'count'
+            ).order_by('year')
         result = {}
         result['occurrences_line_chart'] = {}
         result['occurrences_line_chart']['values'] = []
@@ -388,7 +389,6 @@ class LocationSitesSummary(APIView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
-
         result = self.get_data_per_year(origin_graph_data)
         return result
 
@@ -403,12 +403,8 @@ class LocationSitesSummary(APIView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
-
         result = self.get_data_per_year(origin_graph_data)
-
         return result
-
-
 
 
 class LocationSitesCoordinate(ListAPIView):
