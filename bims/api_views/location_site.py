@@ -317,8 +317,6 @@ class LocationSitesSummary(APIView):
 
         overview['title'].append('River')
         overview['value'].append(site_river)
-        if 'context_group_values' in context_document:
-            if 'eco_geo_group' in context_document:
         try:
             eco_region = (context_document
                           ['context_group_values']
