@@ -317,10 +317,10 @@ class LocationSitesSummary(APIView):
     def get_site_taxa_occurrences_per_year(self, collection_results):
         taxa_occurrence_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
-            ).values('year'
-            ).annotate(count=Count('year')
-            ).values('year', 'count'
-            ).order_by('year')
+        ).values('year'
+                 ).annotate(count=Count('year')
+                            ).values('year', 'count'
+                                     ).order_by('year')
         result = {}
         result['occurrences_line_chart'] = {}
         result['occurrences_line_chart']['values'] = []
