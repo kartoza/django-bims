@@ -133,6 +133,11 @@ def fetch_all_species_from_gbif(
         ))
         species_data = find_species(species, taxonomic_rank)
 
+    # if species not found then return nothing
+    if not species_data:
+        logger.error('Species not found')
+        return None
+
     # Check if nubKey same with the key
     # if not then fetch the species with the nubKey to get better data
     if 'nubKey' in species_data:

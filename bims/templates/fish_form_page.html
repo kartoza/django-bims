@@ -1,0 +1,205 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Fish Form
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        const location_site_lat = '{{ location_site_lat }}';
+        const location_site_long = '{{ location_site_long }}';
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    <form action="{{ request.path }}" method="post" id="fish-form"
+          class="needs-validation" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="site-id" value="{{ site_id }}">
+        <div class="body-form container">
+            <div class="header">
+                Add fish data for site
+                {% if location_site_code %}{{ location_site_code }} {% else %}
+                    {{ location_site_name }}{% endif %}
+            </div>
+            <div class="alert alert-danger" role="alert"
+                 style="display: none;">
+
+            </div>
+            <div id="fish-map"></div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label required-text">Date</label>
+                <div class="col-sm-10">
+                    <input type="text" name="date"
+                           class="form-control form-control-sm"
+                           id="date" placeholder="" required>
+                    <div class="invalid-feedback">
+                        Please provide a valid date
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row even-row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label required-text">Collector</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control form-control-sm"
+                           id="collector" placeholder="" name="collector"
+                           required>
+                    <div class="invalid-feedback">
+                        Please provide a collector
+                    </div>
+                    <input type="hidden" name="collector_id" id="collector_id">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Study
+                    Reference</label>
+                <div class="col-sm-10">
+                    <input type="text" name="study_reference"
+                           class="form-control form-control-sm"
+                           placeholder="">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Reference Category</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="reference_category">
+                        <option value=""> Not specified</option>
+                        {% for category in reference_category %}
+                            <option value="{{ category.name }}"> {{ category.name }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Biotope</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="biotope" id="biotope">
+                        <option value=""> Not specified</option>
+                        {% for biotope in biotope_list %}
+                            <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="add-taxon-container">
+                <button id="add-taxon" type="button" class="btn btn-default">Add taxon</button>
+            </div>
+            <table class="table table-sm">
+                <thead>
+                <tr>
+                    <th scope="col" width="300">Taxa</th>
+                    <th scope="col">Observed</th>
+                    <th scope="col" width="200">Abundance</th>
+                    <th scope="col">Sampling Method</th>
+                    <th scope="col" width="320">Sampling Effort</th>
+                </tr>
+                </thead>
+                <tbody class="taxon-table-body">
+                <tr class="find-taxon-container" style="display: none">
+                    <td scope="row">
+                        <input type="text" class="form-control taxon-input-name">
+                    </td>
+                </tr>
+                {% for taxon in taxa %}
+                    <tr>
+                        <td scope="row"
+                            class="taxon-name">
+                            {{ taxon.taxon_name }}
+                            <input type="hidden" value="{{ taxon.taxon_id }}">
+                        </td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input observed"
+                                       type="checkbox"
+                                       value="True"
+                                       name="{{ taxon.taxon_id }}-observed">
+                                <label class="form-check-label">
+                                </label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" min="0"
+                                   name="{{ taxon.taxon_id }}-abundance"
+                                   class="form-control taxon-abundance"
+                                   placeholder="0">
+                        </td>
+                        <td class="sampling-method-container">
+                            <select class="form-control"
+                                    name="{{ taxon.taxon_id }}-sampling-method">
+                                <option value=""> Not specified</option>
+                                {% for sampling_method in sampling_method_list %}
+                                    <option value="{{ sampling_method.id }}"> {{ sampling_method.sampling_method }} </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="sampling-effort-container">
+                            <input type="number" min="0" name="{{ taxon.taxon_id }}-sampling-effort" class="form-control pull-left" style="width: 100px">
+                            <select class="form-control pull-right"
+                                    name="{{ taxon.taxon_id }}-sampling-effort-type" style="width: 200px">
+                                <option value=""> Not specified</option>
+                                <option value="min"> Time (min) </option>
+                                <option value="meter"> Area (m) </option>
+                            </select>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+        <div class="submit-wrapper">
+            <input type="button" name="btn" id="submitBtn" data-toggle="modal"
+                   data-target="#confirm-submit" class="btn btn-info"
+                   value="Submit">
+        </div>
+
+        <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
+             aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        Confirm Submit
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to submit the Fish form?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default"
+                                data-dismiss="modal">Cancel
+                        </button>
+                        <a href="#" id="submit"
+                           class="btn btn-success success">Submit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </form>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/fish_form.js" %}"></script>
+
+{% endblock %}

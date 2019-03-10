@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from .test import *  # noqa
 
-
 ALLOWED_HOSTS = ['*',
                  u'0.0.0.0']
 
@@ -39,3 +38,7 @@ DJANGO_EASY_AUDIT_WATCH_MODEL_EVENTS = False
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'layers.Layer',
 ]
+
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+STATICFILES_STORAGE = 'pipeline.storage.NonPackagingPipelineStorage'
+PIPELINE_ENABLED = False

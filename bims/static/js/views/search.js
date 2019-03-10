@@ -71,8 +71,8 @@ define([
                             if (requestResponse.hasOwnProperty('results')) {
                                 $.each(requestResponse['results'], function (index, value) {
                                     responseData.push({
-                                        'value': value['name'],
-                                        'label': value['name'],
+                                        'value': value['suggested_name'],
+                                        'label': value['suggested_name'],
                                         'id': value['id']
                                     })
                                 })
@@ -292,7 +292,7 @@ define([
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
 
-            var riverCatchments = this.spatialFilterView.selectedRiverCatchments;
+            var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
 
             var parameters = {
                 'search': searchValue,
@@ -308,7 +308,7 @@ define([
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
                 'conservationStatus': conservationStatusValue,
-                'riverCatchment': riverCatchments.length === 0 ? '' : JSON.stringify(riverCatchments)
+                'spatialFilter': spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters)
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -335,7 +335,7 @@ define([
                 && !parameters['reference']
                 && !parameters['endemic']
                 && !parameters['conservationStatus']
-                && !parameters['riverCatchment']
+                && !parameters['spatialFilter']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -598,8 +598,8 @@ define([
             }
 
             // River catchment
-            if (allFilters.hasOwnProperty('riverCatchment')) {
-                this.spatialFilterView.selectedRiverCatchments = JSON.parse(allFilters['riverCatchment']);
+            if (allFilters.hasOwnProperty('spatialFilter')) {
+                this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
             }
 
             // Boundary
