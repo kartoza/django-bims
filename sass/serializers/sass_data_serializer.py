@@ -158,9 +158,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
                     context_group['service_registry_values'][registry_value]
                 )
                 if registry_data['value']:
-                    key_name = \
-                        '{} ({})'.format(registry_data['name'], context_key)
-                    result[key_name] = registry_data['value']
+                    result[registry_data['name']] = registry_data['value']
             return result
         except KeyError:
             return ''
