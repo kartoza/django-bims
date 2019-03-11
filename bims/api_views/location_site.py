@@ -32,7 +32,7 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
-
+from bims.models.iucn_status import IUCNStatus
 
 class LocationSiteList(APIView):
     """
@@ -279,66 +279,147 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+    def get_occurence_data(self, collection_results):
 
-    def get_occurence_data(self, records_collection):
         keys = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
+
+        occurrence_table_data = collection_results.annotate(
+            taxonomy_id=F('taxonomy__id'),
+            taxon=F('taxonomy__scientific_name'),
+            origin=F('category'),
+            cons_status=F('taxonomy__iucn_status__category'),
+            endemism=F('taxonomy__endemism__name'),
+        ).values(
+            'taxon', 'origin', 'cons_status', 'endemism', 'taxonomy_id'
+        ).annotate(
+            occurrences=Count('taxon')
+        ).order_by('taxon')
+
         occurrence_data = {}
         occurrence_data['data'] = {}
         occurrence_data['keys'] = keys
-        try:
-            for each_record in records_collection: \
-                    # type: BiologicalCollectionRecord
-                taxonomy_id = '"{taxon_id}"'.format(
-                        taxon_id=each_record.taxonomy.id)
-                if taxonomy_id not in occurrence_data:
-                    occurrence_data['data'][taxonomy_id] = {}
-                    occurrence_data['data'][taxonomy_id]['values'] = []
-                    occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
-                    try:
-                        this_taxon = (str(
-                            each_record.taxonomy.scientific_name))
-                        occurrence_data['data'][taxonomy_id]['Taxon'] = (
-                            this_taxon.capitalize())
-                    except AttributeError:
-                        occurrence_data['data'][taxonomy_id]['Taxon'] = (
-                            'Unknown')
-                    try:
-                        occurrence_data['data'][taxonomy_id]['Origin'] = (
-                            str(each_record.category).capitalize())
-                    except AttributeError:
-                        occurrence_data['data'][taxonomy_id]['Origin'] = (
-                            'Unknown')
-                    try:
-                        # I kept on getting flake8 here hence the \
-                        this_endemism_name = \
-                            str(each_record.taxonomy.endemism.name)
-                        occurrence_data['data'][taxonomy_id]['Endemism'] = (
-                            this_endemism_name.capitalize())
-                    except:
-                        occurrence_data['data'][taxonomy_id]['Endemism'] = (
-                            'Unknown')
-                    try:
-                        occurrence_data['data'][taxonomy_id]['Cons. Status'] \
-                            = each_record.taxonomy.iucn_status.get_status()
-                    except:
-                        occurrence_data['data'][taxonomy_id]['Cons. Status'] \
-                            = 'Unknown'
-                occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
-        except KeyError:
-            pass
+
+        for each_record in occurrence_table_data:
+            try:
+                taxonomy_id = each_record['taxonomy_id']
+            except KeyError:
+                return {}
+            if each_record['taxonomy_id'] not in occurrence_data:
+                occurrence_data['data'][taxonomy_id] = {}
+                occurrence_data['data'][taxonomy_id]['values'] = []
+                occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
+                try:
+                    this_taxon = each_record['taxon']
+                except AttributeError:
+                    this_taxon = 'Unknown'
+                try:
+                    this_origin = each_record['origin']
+                except AttributeError:
+                    this_origin = 'Unknown'
+                try:
+                    this_occurrences = each_record['occurrences']
+                except AttributeError:
+                    this_occurrences = 'Unknown'
+                try:
+                    this_endemism = each_record['endemism']
+                except AttributeError:
+                    this_endemism = 'Unknown'
+                try:
+                    this_cons_status = IUCNStatus.get_title(
+                        each_record['cons_status'])
+                except AttributeError:
+                    this_cons_status = 'Unknown'
+                try:
+                    occurrence_data['data'][taxonomy_id]['Taxon'] = (
+                        this_taxon.capitalize())
+                except AttributeError:
+                    occurrence_data['data'][taxonomy_id]['Taxon'] = (
+                        'Unknown')
+                try:
+                    occurrence_data['data'][taxonomy_id]['Origin'] = (
+                        this_origin.capitalize())
+                except:
+                    occurrence_data['data'][taxonomy_id]['Origin'] = (
+                        'Unknown')
+                try:
+                    occurrence_data['data'][taxonomy_id]['Occurrences'] = (
+                        str(this_occurrences))
+                except:
+                    occurrence_data['data'][taxonomy_id]['Occurrences'] = (
+                        'Unknown')
+                try:
+                    occurrence_data['data'][taxonomy_id]['Endemism'] = (
+                        this_endemism.capitalize())
+                except AttributeError:
+                    occurrence_data['data'][taxonomy_id]['Endemism'] = (
+                        'Unknown')
+                try:
+                    occurrence_data['data'][taxonomy_id]['Cons. Status'] = (
+                    this_cons_status)
+                except:
+                    occurrence_data['data'][taxonomy_id]['Cons. Status'] = (
+                        'Unknown')
         occurrence_data['taxon_count'] = len(occurrence_data['data'])
         return occurrence_data
+
+        # occurrence_data = {}
+        # occurrence_data['data'] = {}
+        # occurrence_data['keys'] = keys
+        # try:
+        #     for each_record in collection_results: \
+        #             # type: BiologicalCollectionRecord
+        #         taxonomy_id = '"{taxon_id}"'.format(
+        #                 taxon_id=each_record.taxonomy.id)
+        #         if taxonomy_id not in occurrence_data:
+        #             occurrence_data['data'][taxonomy_id] = {}
+        #             occurrence_data['data'][taxonomy_id]['values'] = []
+        #             occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
+        #             try:
+        #                 this_taxon = (str(
+        #                     each_record.taxonomy.scientific_name))
+        #                 occurrence_data['data'][taxonomy_id]['Taxon'] = (
+        #                     this_taxon.capitalize())
+        #             except AttributeError:
+        #                 occurrence_data['data'][taxonomy_id]['Taxon'] = (
+        #                     'Unknown')
+        #             try:
+        #                 occurrence_data['data'][taxonomy_id]['Origin'] = (
+        #                     str(each_record.category).capitalize())
+        #             except AttributeError:
+        #                 occurrence_data['data'][taxonomy_id]['Origin'] = (
+        #                     'Unknown')
+        #             try:
+        #                 # I kept on getting flake8 here hence the \
+        #                 this_endemism_name = \
+        #                     str(each_record.taxonomy.endemism.name)
+        #                 occurrence_data['data'][taxonomy_id]['Endemism'] = (
+        #                     this_endemism_name.capitalize())
+        #             except:
+        #                 occurrence_data['data'][taxonomy_id]['Endemism'] = (
+        #                     'Unknown')
+        #             try:
+        #                 occurrence_data['data'][taxonomy_id]['Cons. Status'] \
+        #                     = each_record.taxonomy.iucn_status.get_status()
+        #             except:
+        #                 occurrence_data['data'][taxonomy_id]['Cons. Status'] \
+        #                     = 'Unknown'
+        #         occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
+        # except KeyError:
+        #     pass
+        # occurrence_sdata['taxon_count'] = len(occurrence_data['data'])
+        # return occurrence_data
 
 
 class LocationSitesCoordinate(ListAPIView):
