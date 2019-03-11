@@ -2,7 +2,8 @@
 import json
 import os
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q
+from django.db.models import Q, F, Count
+from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -236,8 +237,35 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
-        site_details = self.get_site_details(site_id)
+        records_occurrence = collection_results.annotate(
+            name=F('taxonomy__scientific_name'),
+            taxon_id=F('taxonomy_id'),
+            origin=F('category')
+        ).values(
+            'taxon_id', 'name', 'origin'
+        ).annotate(
+            count=Count('taxonomy')
+        )
 
+        records_graph_data = collection_results.annotate(
+            year=ExtractYear('collection_date'),
+            origin=F('category')
+        ).values(
+            'year', 'origin'
+        ).annotate(
+            count=Count('year')
+        ).order_by('year')
+
+        category_summary = collection_results.annotate(
+            origin=F('category')
+        ).values_list(
+            'origin'
+        ).annotate(
+            count=Count('category')
+        )
+
+        # site_details = self.get_site_details(site_id)
+        site_details = {}
         site_details['records_and_sites'] = (
             self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
@@ -251,23 +279,25 @@ class LocationSitesSummary(APIView):
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
             self.SITE_DETAILS: dict(site_details),
-
+            self.RECORDS_GRAPH_DATA: list(records_graph_data),
+            self.RECORDS_OCCURRENCE: list(records_occurrence),
+            self.CATEGORY_SUMMARY: dict(category_summary),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
@@ -291,6 +321,8 @@ class LocationSitesSummary(APIView):
             context_document = dict(json.loads(str(location_sites.values(
                 'location_context')[0]['location_context'])))
         except IndexError:
+            context_document = {}
+        except ValueError:
             context_document = {}
         try:
             site_river_id = location_sites.values('river_id')[0]['river_id']
@@ -465,6 +497,7 @@ class LocationSitesSummary(APIView):
             return string_in
 
     def get_number_of_records_and_taxa(self, records_collection):
+        records_collection.annotate()
         result = {}
         result['title'] = []
         result['value'] = []
@@ -485,32 +518,38 @@ class LocationSitesSummary(APIView):
 
         return result
 
-    def get_origin_data(self, records_collection):
+    def get_origin_data(self, collection_results):
         result = {}
+        origin_data = collection_results.annotate(
+            origin=F('category')
+        ).values(
+           'origin'
+        ).annotate(
+            count=Count('origin')
+        ).order_by('origin')
+
         result['title'] = []
         result['value'] = []
 
         number_of_native = 0
         number_of_non_native = 0
         number_of_translocated = 0
-        for each_record in records_collection:
+        for each_record in origin_data:
             try:
-                if str(each_record.category) == 'indigenous':
-                    number_of_native += 1
-                if str(each_record.category) == 'alien':
-                    number_of_non_native += 1
-                if str(each_record.category) == 'translocated':
-                    number_of_translocated += 1
+                if each_record['origin'] == 'indigenous':
+                    number_of_native = each_record['count']
+                if each_record['origin'] == 'alien':
+                    number_of_non_native = each_record['count']
+                if each_record['origin'] == 'translocated':
+                    number_of_translocated = each_record['count']
             except KeyError:
                 pass
-
         result['title'].append('Native')
         result['value'].append(str(number_of_native))
         result['title'].append('Non-native')
         result['value'].append(str(number_of_non_native))
         result['title'].append('Translocated')
         result['value'].append(str(number_of_translocated))
-
         return result
 
     def get_conservation_status_data(self, records_collection):
