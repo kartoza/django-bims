@@ -10,7 +10,9 @@ from bims.models import (
     UserBoundary,
     SearchProcess,
     SEARCH_RESULTS,
-    SEARCH_PROCESSING
+    SEARCH_PROCESSING,
+    SpatialScale,
+    SpatialScaleGroup,
 )
 from bims.tasks.search_version_2 import search_task
 
@@ -78,6 +80,11 @@ class SearchVersion2(object):
         return self.parameters.get(field, default_value)
 
     def parse_request_json(self, field):
+        """
+        Parse request json data, from '[23,312]' to array
+        :param field: json data
+        :return: python object
+        """
         json_query = self.get_request_data(field=field)
         if json_query:
             return json.loads(json_query)
@@ -161,13 +168,43 @@ class SearchVersion2(object):
     def endemic(self):
         return self.parse_request_json('endemic')
 
+    @property
+    def spatial_filter(self):
+        spatial_filters = self.parse_request_json('spatialFilter')
+        spatial_filters_ids = []
+        if not spatial_filters:
+            return []
+        for spatial_filter in spatial_filters:
+            if 'group' not in spatial_filter:
+                spatial_filters_ids.append(spatial_filter)
+        return spatial_filters_ids
+
+    @property
+    def spatial_filter_group_query(self):
+        spatial_filters = self.parse_request_json('spatialFilter')
+        spatial_filter_group_ids = []
+        if not spatial_filters:
+            return []
+        for spatial_filter in spatial_filters:
+            if 'group-' in spatial_filter:
+                spatial_filter = spatial_filter.replace(
+                    'group-', ''
+                )
+                spatial_filter_group_ids.append(spatial_filter)
+        return spatial_filter_group_ids
+
     def process_search(self):
+        """
+        Do the search process.
+        :return: search results
+        """
         if self.search_query:
             bio = BiologicalCollectionRecord.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
                 Q(taxonomy__scientific_name__icontains=self.search_query) |
                 Q(taxonomy__vernacular_names__name__icontains=
-                  self.search_query)
+                  self.search_query) |
+                Q(site__site_code__icontains=self.search_query)
             )
         else:
             bio = BiologicalCollectionRecord.objects.all()
@@ -217,12 +254,59 @@ class SearchVersion2(object):
                 filters['site__boundary__in'] = boundary
         bio = bio.filter(**filters)
 
+        spatial_filters = SpatialScale.objects.none()
+        if self.spatial_filter_group_query:
+            spatial_filter_groups = SpatialScaleGroup.objects.filter(
+                Q(id__in=self.spatial_filter_group_query) |
+                Q(parent__in=self.spatial_filter_group_query)
+            )
+            lowest_spatial_filter_groups = SpatialScaleGroup.objects.filter(
+                Q(parent__in=spatial_filter_groups)
+            )
+            if not lowest_spatial_filter_groups:
+                lowest_spatial_filter_groups = spatial_filter_groups
+            spatial_filters = SpatialScale.objects.filter(
+                group__in=lowest_spatial_filter_groups
+            )
+        if self.spatial_filter:
+            spatial_filters = SpatialScale.objects.filter(
+                id__in=self.spatial_filter
+            ) | spatial_filters
+        if spatial_filters:
+            spatial_filters = spatial_filters.values(
+                'query', 'group__key', 'group__parent__key')
+            spatial_query_list = None
+            for spatial_filter in spatial_filters:
+                spatial_query = (
+                    'site__location_context__context_group_values__'
+                )
+                spatial_query_value = ''
+                if spatial_filter['group__parent__key']:
+                    spatial_query += (
+                        spatial_filter['group__parent__key'] + '__'
+                    )
+                if spatial_filter['group__key']:
+                    spatial_query += 'service_registry_values__'
+                    spatial_query += spatial_filter['group__key'] + '__'
+                if spatial_filter['query']:
+                    spatial_query += 'value'
+                    spatial_query_value = spatial_filter['query']
+                if spatial_query_list is None:
+                    spatial_query_list = Q(
+                        **{spatial_query: spatial_query_value}
+                    )
+                else:
+                    spatial_query_list = spatial_query_list | Q(
+                        **{spatial_query: spatial_query_value}
+                    )
+            bio = bio.filter(spatial_query_list)
+
         if self.user_boundary:
             user_boundaries = UserBoundary.objects.filter(
                 pk__in=self.user_boundary
             )
             if user_boundaries:
-                bio.filter(site__geometry_point__intersent=(
+                bio = bio.filter(site__geometry_point__intersent=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
         self.location_sites_raw_query = bio.distinct('site').values(
