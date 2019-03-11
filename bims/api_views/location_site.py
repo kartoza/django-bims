@@ -374,53 +374,6 @@ class LocationSitesSummary(APIView):
         occurrence_data['taxon_count'] = len(occurrence_data['data'])
         return occurrence_data
 
-        # occurrence_data = {}
-        # occurrence_data['data'] = {}
-        # occurrence_data['keys'] = keys
-        # try:
-        #     for each_record in collection_results: \
-        #             # type: BiologicalCollectionRecord
-        #         taxonomy_id = '"{taxon_id}"'.format(
-        #                 taxon_id=each_record.taxonomy.id)
-        #         if taxonomy_id not in occurrence_data:
-        #             occurrence_data['data'][taxonomy_id] = {}
-        #             occurrence_data['data'][taxonomy_id]['values'] = []
-        #             occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
-        #             try:
-        #                 this_taxon = (str(
-        #                     each_record.taxonomy.scientific_name))
-        #                 occurrence_data['data'][taxonomy_id]['Taxon'] = (
-        #                     this_taxon.capitalize())
-        #             except AttributeError:
-        #                 occurrence_data['data'][taxonomy_id]['Taxon'] = (
-        #                     'Unknown')
-        #             try:
-        #                 occurrence_data['data'][taxonomy_id]['Origin'] = (
-        #                     str(each_record.category).capitalize())
-        #             except AttributeError:
-        #                 occurrence_data['data'][taxonomy_id]['Origin'] = (
-        #                     'Unknown')
-        #             try:
-        #                 # I kept on getting flake8 here hence the \
-        #                 this_endemism_name = \
-        #                     str(each_record.taxonomy.endemism.name)
-        #                 occurrence_data['data'][taxonomy_id]['Endemism'] = (
-        #                     this_endemism_name.capitalize())
-        #             except:
-        #                 occurrence_data['data'][taxonomy_id]['Endemism'] = (
-        #                     'Unknown')
-        #             try:
-        #                 occurrence_data['data'][taxonomy_id]['Cons. Status'] \
-        #                     = each_record.taxonomy.iucn_status.get_status()
-        #             except:
-        #                 occurrence_data['data'][taxonomy_id]['Cons. Status'] \
-        #                     = 'Unknown'
-        #         occurrence_data['data'][taxonomy_id]['Occurrences'] += 1
-        # except KeyError:
-        #     pass
-        # occurrence_sdata['taxon_count'] = len(occurrence_data['data'])
-        # return occurrence_data
-
 
 class LocationSitesCoordinate(ListAPIView):
     """
