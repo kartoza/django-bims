@@ -32,6 +32,7 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
+from bims.models.iucn_status import IUCNStatus
 from sass.models.river import River
 
 
@@ -263,9 +264,9 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('category')
         )
-
-        # site_details = self.get_site_details(site_id)
         site_details = {}
+        site_details = self.get_site_details(site_id)
+
         site_details['records_and_sites'] = (
             self.get_number_of_records_and_taxa(collection_results))
         site_details['origins_data'] = self.get_origin_data(
@@ -552,21 +553,26 @@ class LocationSitesSummary(APIView):
         result['value'].append(str(number_of_translocated))
         return result
 
-    def get_conservation_status_data(self, records_collection):
+    def get_conservation_status_data(self, collection_results):
         result = {}
         result['title'] = []
         result['value'] = []
 
+        iucn_data = collection_results.annotate(
+            value=F('taxonomy__iucn_status__category')
+        ).values(
+            'value'
+        ).annotate(
+            count=Count('value'))
+
         iucn_status_count = {}
-        for each_record in records_collection:
+        for each_record in iucn_data:
             try:
-                iucn_status = each_record.taxonomy.iucn_status
-                if (str(iucn_status.category)
-                        not in iucn_status_count):
-                    iucn_status_count[iucn_status.category] = {}
-                    iucn_status_count[iucn_status.category]['value'] = 0
-                iucn_status_count[iucn_status.category]['value'] += 1
-                iucn_status_count[iucn_status.category]['title'] = iucn_status
+                iucn_status = each_record['value']
+                if iucn_status not in iucn_status_count:
+                    iucn_status_count[iucn_status] = {}
+                iucn_status_count[iucn_status]['value'] = each_record['count']
+                iucn_status_count[iucn_status]['title'] = iucn_status
             except KeyError:
                 pass
 
