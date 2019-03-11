@@ -162,6 +162,18 @@ class BiologicalCollectionRecord(
     def data_name(self):
         return self.original_species_name
 
+    @staticmethod
+    def retrieve_category_choice(category):
+        choices_dict = {}
+        CATEGORY_CHOICES = (
+            ('alien', 'Non-native'),
+            ('indigenous', 'Native'),
+            ('translocated', 'Translocated')
+        )
+        for choice, value in CATEGORY_CHOICES:
+            choices_dict[choice] = value
+        return choices_dict[category]
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""

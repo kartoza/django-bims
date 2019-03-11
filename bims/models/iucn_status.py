@@ -47,7 +47,7 @@ class IUCNStatus(models.Model):
         for choice, value in self.CATEGORY_CHOICES:
             choices_dict[choice] = value
         iucn_name = choices_dict[iucn_category]
-        iucn_title = '( {iucn_category} ) {iucn_name}'.format(
+        iucn_title = '({iucn_category}) {iucn_name}'.format(
             iucn_category=iucn_category,
             iucn_name=iucn_name)
         return iucn_title

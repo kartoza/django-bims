@@ -317,7 +317,9 @@ class LocationSitesSummary(APIView):
         values = []
         for each_record in origin_by_name_data:
             try:
-                keys.append(each_record['name'])
+                new_name = BiologicalCollectionRecord.retrieve_category_choice(
+                    each_record['name'])
+                keys.append(new_name)
             except KeyError:
                 keys.append('Unknown')
             try:
@@ -329,7 +331,6 @@ class LocationSitesSummary(APIView):
         biodiversity_data['fish']['origin_chart']['keys'] = keys
 
         IUCN_status_object = IUCNStatus.objects.create()
-
         cons_status_data = collection_results.annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
@@ -355,8 +356,6 @@ class LocationSitesSummary(APIView):
 
         biodiversity_data['fish']['cons_status_chart']['data'] = values
         biodiversity_data['fish']['cons_status_chart']['keys'] = keys
-
-
         endemism_status_data = collection_results.annotate(
             name=F('taxonomy__endemism__name')
         ).values(
@@ -371,7 +370,8 @@ class LocationSitesSummary(APIView):
         values = []
         for each_record in endemism_status_data:
             try:
-                keys.append(each_record['name'])
+                new_name = keys.append(each_record['name'])
+                keys.append(new_name)
             except KeyError:
                 keys.append('Unknown')
             try:
