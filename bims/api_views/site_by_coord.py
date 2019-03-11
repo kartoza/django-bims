@@ -7,9 +7,22 @@ from bims.models.location_site import LocationSite
 
 
 class SiteByCoord(APIView):
-    """ Get site by coordinates """
+    """ List closest sites by coordinates """
 
     def get(self, request):
+        """
+        Get closest sites by lat, long, and radius provided in request
+        parameter
+        :param request: get request object
+        :return: list of dict of site data e.g. {
+            'id': 1,
+            'name': 'site',
+            'site_code': '121',
+            'distance_m': 1,
+            'latitude': -12,
+            'longitude': 23
+        }
+        """
         lat = request.GET.get('lat', None)
         lon = request.GET.get('lon', None)
         radius = request.GET.get('radius', 0.0)
@@ -37,13 +50,15 @@ class SiteByCoord(APIView):
             geometry_point__distance_lte=(point, D(km=radius))
         ).annotate(
             distance=Distance('geometry_point', point)
-        ).order_by('distance')
+        ).order_by('distance')[:10]
 
         responses = []
         for site in location_sites:
             responses.append({
                 'id': site.id,
                 'name': site.name,
+                'site_code': site.site_code,
+                'distance_m': site.distance.m,
                 'latitude': site.get_centroid().y,
                 'longitude': site.get_centroid().x
             })
