@@ -3,7 +3,8 @@ import json
 import os
 from collections import Counter
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q
+from django.db.models import Q, F, Count
+from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -236,6 +237,34 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
+        records_occurrence = collection_results.annotate(
+            name=F('taxonomy__scientific_name'),
+            taxon_id=F('taxonomy_id'),
+            origin=F('category')
+        ).values(
+            'taxon_id', 'name', 'origin'
+        ).annotate(
+            count=Count('taxonomy')
+        )
+
+        records_graph_data = collection_results.annotate(
+            year=ExtractYear('collection_date'),
+            origin=F('category')
+        ).values(
+            'year', 'origin'
+        ).annotate(
+            count=Count('year')
+        ).order_by('year')
+
+        category_summary = collection_results.annotate(
+            origin=F('category')
+        ).values_list(
+            'origin'
+        ).annotate(
+            count=Count('category')
+        )
+
+
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -245,49 +274,112 @@ class LocationSitesSummary(APIView):
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
+            self.RECORDS_GRAPH_DATA: list(records_graph_data),
+            self.RECORDS_OCCURRENCE: list(records_occurrence),
+            self.CATEGORY_SUMMARY: dict(category_summary),
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
 
-
-    def get_biodiversity_data(self, collections):
+    def get_biodiversity_data(self, collection_results):
         biodiversity_data = {}
+        biodiversity_data['fish'] = {}
+        biodiversity_data['fish']['origin_chart'] = {}
+        biodiversity_data['fish']['cons_status_chart'] = {}
+        biodiversity_data['fish']['endemism_chart'] = {}
 
-        taxa = self.get_origin_cons_endemsim_data(collections)
-        # If I found more than one class of animal
-        if 'Actinopterygii' not in taxa:
-            pass
-        else:
-            biodiversity_data['fish'] = {}
-            biodiversity_data['fish']['origin_chart'] = {}
-            biodiversity_data['fish']['cons_status_chart'] = {}
-            biodiversity_data['fish']['endemism_chart'] = {}
-            biodiversity_data['fish']['origin_chart']['data'] = (
-                taxa['Actinopterygii']['origin_chart']['data'])
-            biodiversity_data['fish']['origin_chart']['keys'] = (
-                taxa['Actinopterygii']['origin_chart']['keys'])
-            biodiversity_data['fish']['cons_status_chart']['data'] = (
-                taxa['Actinopterygii']['cons_status_chart']['data'])
-            biodiversity_data['fish']['cons_status_chart']['keys'] = (
-                taxa['Actinopterygii']['cons_status_chart']['keys'])
-            biodiversity_data['fish']['endemism_chart']['data'] = (
-                taxa['Actinopterygii']['endemism_chart']['data'])
-            biodiversity_data['fish']['endemism_chart']['keys'] = (
-                taxa['Actinopterygii']['endemism_chart']['keys'])
+        origin_by_name_data = collection_results.annotate(
+            name=F('category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = []
+        values = []
+        for each_record in origin_by_name_data:
+            try:
+                keys.append(each_record['name'])
+            except KeyError:
+                keys.append('Unknown')
+            try:
+                values.append(each_record['count'])
+            except KeyError:
+                keys.append('Unknown')
+
+        biodiversity_data['fish']['origin_chart']['data'] = values
+        biodiversity_data['fish']['origin_chart']['keys'] = keys
+
+        cons_status_data = collection_results.annotate(
+            name=F('taxonomy__iucn_status__category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+
+        keys = []
+        values = []
+        for each_record in cons_status_data:
+            try:
+                keys.append(each_record['name'])
+            except KeyError:
+                keys.append('Unknown')
+            try:
+                values.append(each_record['count'])
+            except KeyError:
+                keys.append('Unknown')
+
+        biodiversity_data['fish']['cons_status_chart']['data'] = values
+        biodiversity_data['fish']['cons_status_chart']['keys'] = keys
+
+
+        endemism_status_data = collection_results.annotate(
+            name=F('taxonomy__iucn_status__category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+
+        keys = []
+        values = []
+        for each_record in endemism_status_data:
+            try:
+                keys.append(each_record['name'])
+            except KeyError:
+                keys.append('Unknown')
+            try:
+                values.append(each_record['count'])
+            except KeyError:
+                keys.append('Unknown')
+
+        biodiversity_data['fish']['endemism_chart']['data'] = values
+        biodiversity_data['fish']['endemism_chart']['keys'] = keys
+
+        taxa = self.get_origin_cons_endemsim_data(collection_results)
+
         biodiversity_data['taxa'] = taxa
         biodiversity_data['occurrences'] = [0, 0, 0]
         biodiversity_data['occurrences'][0] = (
@@ -311,14 +403,16 @@ class LocationSitesSummary(APIView):
                 taxa[taxonomy_class_name]['occurrence_data'] = []
             taxa[taxonomy_class_name]['origin_data'].append(
                 model.category)
-            iucn_category = model.taxonomy.iucn_status.category
-            iucn_name = model.taxonomy.iucn_status.get_status()
-            iucn_title = ('({iucn_category}) {iucn_name}'.format(
-                iucn_category=iucn_category,
-                iucn_name=iucn_name))
+            try:
+                iucn_category = model.taxonomy.iucn_status.category
+                iucn_name = model.taxonomy.iucn_status.get_status()
+                iucn_title = ('({iucn_category}) {iucn_name}'.format(
+                    iucn_category=iucn_category,
+                    iucn_name=iucn_name))
+            except AttributeError:
+                iucn_title = 'Unknown'
             taxa[taxonomy_class_name]['cons_status_data'].append(
                 iucn_title)
-
             if str(model.taxonomy.endemism) == 'None':
                 endemism_title = 'Unknown'
             else:
@@ -326,10 +420,10 @@ class LocationSitesSummary(APIView):
 
             taxa[taxonomy_class_name]['endemism_data'].append(
                 endemism_title)
-            if str(model.taxonomy.scientific_name) == 'null':
-                scientific_name = 'Unknown'
-            else:
+            try:
                 scientific_name = str(model.taxonomy.endemism)
+            except KeyError:
+                scientific_name = 'Unknown'
 
             taxa[taxonomy_class_name]['occurrence_data'].append(
                 scientific_name)
