@@ -41,6 +41,17 @@ class IUCNStatus(models.Model):
             choices_dict[choice] = value
         return choices_dict[self.category]
 
+
+    def get_title(self, iucn_category):
+        choices_dict = {}
+        for choice, value in self.CATEGORY_CHOICES:
+            choices_dict[choice] = value
+        iucn_name = choices_dict[iucn_category]
+        iucn_title = '( {iucn_category} ) {iucn_name}'.format(
+            iucn_category=iucn_category,
+            iucn_name=iucn_name)
+        return iucn_title
+
     def __str__(self):
         return u'%s' % self.category
 

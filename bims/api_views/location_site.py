@@ -32,6 +32,7 @@ from bims.utils.search_process import (
     create_search_process_file
 )
 from bims.models.search_process import SITES_SUMMARY
+from bims.models.iucn_status import IUCNStatus
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.enums.taxonomic_rank import TaxonomicRank
 
@@ -327,6 +328,8 @@ class LocationSitesSummary(APIView):
         biodiversity_data['fish']['origin_chart']['data'] = values
         biodiversity_data['fish']['origin_chart']['keys'] = keys
 
+        IUCN_status_object = IUCNStatus.objects.create()
+
         cons_status_data = collection_results.annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
@@ -341,7 +344,8 @@ class LocationSitesSummary(APIView):
         values = []
         for each_record in cons_status_data:
             try:
-                keys.append(each_record['name'])
+                next_name = IUCN_status_object.get_title(each_record['name'])
+                keys.append(next_name)
             except KeyError:
                 keys.append('Unknown')
             try:
@@ -354,7 +358,7 @@ class LocationSitesSummary(APIView):
 
 
         endemism_status_data = collection_results.annotate(
-            name=F('taxonomy__iucn_status__category')
+            name=F('taxonomy__endemism__name')
         ).values(
             'name'
         ).annotate(
