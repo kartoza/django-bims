@@ -279,17 +279,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
-        #
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
     def get_occurence_data(self, collection_results):
 
@@ -310,7 +310,6 @@ class LocationSitesSummary(APIView):
         occurrence_data = {}
         occurrence_data['data'] = {}
         occurrence_data['keys'] = keys
-
         for each_record in occurrence_table_data:
             try:
                 taxonomy_id = each_record['taxonomy_id']
@@ -367,7 +366,7 @@ class LocationSitesSummary(APIView):
                         'Unknown')
                 try:
                     occurrence_data['data'][taxonomy_id]['Cons. Status'] = (
-                    this_cons_status)
+                        this_cons_status)
                 except:
                     occurrence_data['data'][taxonomy_id]['Cons. Status'] = (
                         'Unknown')
