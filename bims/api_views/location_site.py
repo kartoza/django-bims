@@ -34,7 +34,6 @@ from bims.utils.search_process import (
 from bims.models.search_process import SITES_SUMMARY
 from bims.models.iucn_status import IUCNStatus
 from bims.api_views.search_version_2 import SearchVersion2
-from bims.enums.taxonomic_rank import TaxonomicRank
 
 
 class LocationSiteList(APIView):
@@ -284,17 +283,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
-        #
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
 
     def get_biodiversity_data(self, collection_results):
