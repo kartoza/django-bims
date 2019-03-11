@@ -32,7 +32,6 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
-from bims.models.iucn_status import IUCNStatus
 from sass.models.river import River
 
 
@@ -264,7 +263,6 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('category')
         )
-        site_details = {}
         site_details = self.get_site_details(site_id)
 
         site_details['records_and_sites'] = (
@@ -288,17 +286,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
-        #
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
@@ -503,13 +501,9 @@ class LocationSitesSummary(APIView):
         result['title'] = []
         result['value'] = []
 
-        number_of_occurrence_records = 0
-        taxonomy_list = []
-        for each_record in records_collection:
-            number_of_occurrence_records += 1
-            taxonomy_id = each_record.taxonomy.id
-            taxonomy_list.append(taxonomy_id)
-        number_of_unique_taxa = len(set(taxonomy_list))
+        number_of_occurrence_records = records_collection.count()
+        number_of_unique_taxa = records_collection.values(
+            'taxonomy_id').distinct().count()
 
         result['title'].append('Number of occurrence records')
         result['value'].append(str(self.parse_string(
