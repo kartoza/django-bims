@@ -518,7 +518,7 @@ class LocationSitesSummary(APIView):
         origin_data = collection_results.annotate(
             origin=F('category')
         ).values(
-           'origin'
+            'origin'
         ).annotate(
             count=Count('origin')
         ).order_by('origin')
