@@ -371,12 +371,15 @@ class LocationSitesSummary(APIView):
         for each_record in endemism_status_data:
             try:
                 new_name = keys.append(each_record['name'])
-                keys.append(new_name)
-            except KeyError:
+                if new_name != 'null':
+                    keys.append(new_name)
+                else:
+                    keys.append('Unknown')
+            except:
                 keys.append('Unknown')
             try:
                 values.append(each_record['count'])
-            except KeyError:
+            except:
                 keys.append('Unknown')
 
         biodiversity_data['fish']['endemism_chart']['data'] = values
