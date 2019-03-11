@@ -34,6 +34,7 @@ from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
 
+
 class LocationSiteList(APIView):
     """
     List all location site
