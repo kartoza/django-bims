@@ -280,17 +280,17 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
     def get_occurence_data(self, collection_results):
 
@@ -311,15 +311,17 @@ class LocationSitesSummary(APIView):
         occurrence_data = {}
         occurrence_data['data'] = {}
         occurrence_data['keys'] = keys
+        idx = 0
         for each_record in occurrence_table_data:
+            idx += 1
             try:
                 taxonomy_id = each_record['taxonomy_id']
             except KeyError:
                 return {}
             if each_record['taxonomy_id'] not in occurrence_data:
-                occurrence_data['data'][taxonomy_id] = {}
-                occurrence_data['data'][taxonomy_id]['values'] = []
-                occurrence_data['data'][taxonomy_id]['Occurrences'] = 0
+                occurrence_data['data'][idx] = {}
+                occurrence_data['data'][idx]['values'] = []
+                occurrence_data['data'][idx]['Occurrences'] = 0
                 try:
                     this_taxon = each_record['taxon']
                 except AttributeError:
@@ -342,34 +344,34 @@ class LocationSitesSummary(APIView):
                 except AttributeError:
                     this_cons_status = 'Unknown'
                 try:
-                    occurrence_data['data'][taxonomy_id]['Taxon'] = (
+                    occurrence_data['data'][idx]['Taxon'] = (
                         this_taxon.capitalize())
                 except AttributeError:
-                    occurrence_data['data'][taxonomy_id]['Taxon'] = (
+                    occurrence_data['data'][idx]['Taxon'] = (
                         'Unknown')
                 try:
-                    occurrence_data['data'][taxonomy_id]['Origin'] = (
+                    occurrence_data['data'][idx]['Origin'] = (
                         this_origin.capitalize())
                 except:
-                    occurrence_data['data'][taxonomy_id]['Origin'] = (
+                    occurrence_data['data'][idx]['Origin'] = (
                         'Unknown')
                 try:
-                    occurrence_data['data'][taxonomy_id]['Occurrences'] = (
+                    occurrence_data['data'][idx]['Occurrences'] = (
                         str(this_occurrences))
                 except:
-                    occurrence_data['data'][taxonomy_id]['Occurrences'] = (
+                    occurrence_data['data'][idx]['Occurrences'] = (
                         'Unknown')
                 try:
-                    occurrence_data['data'][taxonomy_id]['Endemism'] = (
+                    occurrence_data['data'][idx]['Endemism'] = (
                         this_endemism.capitalize())
                 except AttributeError:
-                    occurrence_data['data'][taxonomy_id]['Endemism'] = (
+                    occurrence_data['data'][idx]['Endemism'] = (
                         'Unknown')
                 try:
-                    occurrence_data['data'][taxonomy_id]['Cons. Status'] = (
+                    occurrence_data['data'][idx]['Cons. Status'] = (
                         this_cons_status)
                 except:
-                    occurrence_data['data'][taxonomy_id]['Cons. Status'] = (
+                    occurrence_data['data'][idx]['Cons. Status'] = (
                         'Unknown')
         occurrence_data['taxon_count'] = len(occurrence_data['data'])
         return occurrence_data

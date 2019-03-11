@@ -606,7 +606,7 @@ define([
                 column_class = 'col-2 title-column';
                 if ('keys' in data_in) {
                      column_value = data_in['keys'][i];
-                }
+[]                }
                 else
                 {
                     column_class = 'Unknown';
