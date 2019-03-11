@@ -139,34 +139,6 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         site_visit_date = obj['date']
         return site_visit_date.strftime('%d-%m-%Y')
 
-    def context_data(self, context_key, site_id):
-        try:
-            location_site = LocationSite.objects.get(
-                id=site_id
-            )
-        except LocationSite.DoesNotExist:
-            return ''
-        location_context = json.loads(
-            location_site.location_context
-        )
-        try:
-            context_group_data = ''
-            context_group = (
-                location_context['context_group_values'][context_key]
-            )
-            for registry_value in context_group['service_registry_values']:
-                registry_data = (
-                    context_group['service_registry_values'][registry_value]
-                )
-                if registry_data['value']:
-                    context_group_data += '{name}:{value}; '.format(
-                        name=registry_data['name'],
-                        value=registry_data['value']
-                    )
-            return context_group_data
-        except KeyError:
-            return ''
-
     def group_fields(self, context_key, site_id, result):
         try:
             location_site = LocationSite.objects.get(
