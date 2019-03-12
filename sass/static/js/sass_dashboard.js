@@ -683,6 +683,10 @@ $(function () {
     }
     $('.download-as-csv').click(onDownloadCSVClicked);
     $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
+    $('.download-latest-as-csv').on('click', function(){
+        var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
+        exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
+    });
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
