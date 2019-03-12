@@ -21,7 +21,7 @@ define([
         parameters: {
             taxon: '', zoom: 0, bbox: [], siteId: '',
             collector: '', category: '', yearFrom: '', yearTo: '', months: '',
-            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',  riverCatchment: '',
+            boundary: '', userBoundary: '', referenceCategory: '', reference: '', endemic: '',  spatialFilter: '',
             clusterSize: Shared.ClusterSize, conservationStatus: ''
         },
         initialize: function (parent) {
@@ -46,7 +46,7 @@ define([
             this.parameters['reference'] = '';
             this.parameters['endemic'] = '';
             this.parameters['conservationStatus'] = '';
-            this.parameters['riverCatchment'] = '';
+            this.parameters['spatialFilter'] = '';
             Shared.Dispatcher.trigger('cluster:updated', this.parameters);
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
@@ -145,7 +145,7 @@ define([
                 && !this.parameters['reference']
                 && !this.parameters['endemic']
                 && !this.parameters['conservationStatus']
-                && !this.parameters['riverCatchment']
+                && !this.parameters['spatialFilter']
                 && !this.parameters['boundary']) {
                 return false
             } else {

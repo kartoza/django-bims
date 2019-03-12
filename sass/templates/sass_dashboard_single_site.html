@@ -28,6 +28,7 @@
     {% if sass_exists %}
         <script type="text/javascript">
             const sassScores = {{ sass_score_chart_data.sass_scores }};
+            const sassIds = {{ sass_score_chart_data.sass_ids }};
             const dateLabels = {{ sass_score_chart_data.date_labels | safe }};
             const taxaNumbers = {{ sass_score_chart_data.taxa_numbers }};
             const asptList = {{ sass_score_chart_data.aspt_list }};
@@ -223,6 +224,9 @@
                                class="fa fa-download pull-right download-icon download-chart"></i>
                         </div>
                         <canvas id="sensitivity-chart"></canvas>
+                        <p style="padding-top: 15px; font-size: 11pt; margin-bottom: 0px; text-align: center">
+                            This chart shows the data for the latest SASS Record <span id="sc-latest-sass-record"></span>
+                        </p>
                     </div>
                     <div class="vertical-space"></div>
                     <div class="chart-container">

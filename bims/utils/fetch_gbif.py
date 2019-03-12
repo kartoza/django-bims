@@ -97,10 +97,16 @@ def create_or_update_taxonomy(gbif_data):
                 fields['language'] = result['language']
             if 'taxonKey' in result:
                 fields['taxon_key'] = int(result['taxonKey'])
-            vernacular_name, status = VernacularName.objects.get_or_create(
-                name=result['vernacularName'],
-                **fields
-            )
+            try:
+                vernacular_name, status = VernacularName.objects.get_or_create(
+                    name=result['vernacularName'],
+                    **fields
+                )
+            except VernacularName.MultipleObjectsReturned:
+                vernacular_name = VernacularName.objects.filter(
+                    name=result['vernacularName'],
+                    **fields
+                )[0]
             taxonomy.vernacular_names.add(vernacular_name)
     taxonomy.save()
     return taxonomy
@@ -132,6 +138,11 @@ def fetch_all_species_from_gbif(
             rank=taxonomic_rank
         ))
         species_data = find_species(species, taxonomic_rank)
+
+    # if species not found then return nothing
+    if not species_data:
+        logger.error('Species not found')
+        return None
 
     # Check if nubKey same with the key
     # if not then fetch the species with the nubKey to get better data

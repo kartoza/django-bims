@@ -22,9 +22,9 @@ function drawMap() {
 
     let graticule = new ol.Graticule({
         strokeStyle: new ol.style.Stroke({
-            color: 'rgba(255,120,0,0.9)',
-            width: 2,
-            lineDash: [0.5, 4]
+            color: 'rgba(0,0,0,1)',
+            width: 1,
+            lineDash: [2.5, 4]
         }),
         showLabels: true
     });
@@ -87,34 +87,50 @@ function renderSASSSummaryChart() {
             'fill': 'false',
         }]
     };
-    let scalesOption = {
-        xAxes: [{
-            display: false
-        }],
-        yAxes: [{
-            ticks: {
-                beginAtZero: true
+
+    function scalesOptionFunction(label){
+        return {
+            xAxes: [{
+                display: false
+            }],
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: label
+                }
+            }]
+        };
+    }
+
+    function optionsFunction(label) {
+        return {
+            scales: scalesOptionFunction(label),
+            legend: {
+                display: false
             }
-        }]
-    };
-    let options = {
-        scales: scalesOption
-    };
+        };
+    }
+
     let sassScoreChart = new Chart($('#sass-score-chart'), {
         type: 'bar',
         data: data,
-        options: options
+        options: optionsFunction('SASS Scores')
     });
+
     let taxaNumberChart = new Chart($('#taxa-numbers-chart'), {
         type: 'bar',
         data: taxaNumberData,
-        options: options
+        options: optionsFunction('Number of Taxa')
     });
+
     let asptChart = new Chart($('#aspt-chart'), {
         type: 'bar',
         data: asptData,
         options: {
-            scales: scalesOption,
+            scales: scalesOptionFunction('ASPT'),
             tooltips: {
                 callbacks: {
                     label: function (tooltipItem, chart) {
@@ -122,6 +138,9 @@ function renderSASSSummaryChart() {
                         return 'ASPT : ' + tooltipItem.yLabel.toFixed(2);
                     }
                 }
+            },
+            legend: {
+                display: false
             }
         }
     });
@@ -160,7 +179,7 @@ function renderSASSTaxonPerBiotope() {
 
         $tr.append('<td>' +
             taxonGroupName +
-        '</td>');
+            '</td>');
         table.append($tr);
         sassTaxon[value['taxonomy__canonical_name']] = $tr;
         if (value['sass_taxon_name']) {
@@ -276,6 +295,8 @@ function renderSensitivityChart() {
         data: data,
         options: options
     });
+    let latestIndex = dateLabels.length - 1;
+    $('#sc-latest-sass-record').html('(<a href="/sass/view/' + sassIds[latestIndex] + '">' + dateLabels[latestIndex] + '</a>)');
 }
 
 function renderBiotopeRatingsChart() {
@@ -409,6 +430,7 @@ function renderEcologicalCategoryChart() {
             intersect: true
         },
         legend: {
+            reverse: true,
             labels: {
                 filter: function (item, chart) {
                     return !item.text.includes('hide');
@@ -421,6 +443,10 @@ function renderEcologicalCategoryChart() {
                 ticks: {
                     suggestedMin: 0,
                     suggestedMax: 10
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: 'ASPT'
                 }
             }],
             xAxes: [{
@@ -430,6 +456,10 @@ function renderEcologicalCategoryChart() {
                 ticks: {
                     suggestedMin: 0,
                     suggestedMax: 200
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: 'SASS Score'
                 }
             }]
         },
@@ -449,7 +479,7 @@ function renderEcologicalCategoryChart() {
                     if (label) {
                         label += ': ';
                     }
-                    label += tooltipItem.xLabel + ', ' + tooltipItem.yLabel;
+                    label += 'SASS Score: ' + tooltipItem.xLabel + ', ASPT: ' + tooltipItem.yLabel;
                     return label;
                 }
             }

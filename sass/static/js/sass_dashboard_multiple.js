@@ -24,9 +24,9 @@ function drawMap(data) {
 
     let graticule = new ol.Graticule({
         strokeStyle: new ol.style.Stroke({
-            color: 'rgba(255,120,0,0.9)',
-            width: 2,
-            lineDash: [0.5, 4]
+            color: 'rgba(0,0,0,1)',
+            width: 1,
+            lineDash: [2.5, 4]
         }),
         showLabels: true
     });
@@ -117,7 +117,6 @@ function renderSassScoreChart(data) {
             }]
         },
         responsive: true,
-        maintainAspectRatio: false,
     };
     let hiddenYAxesLabelOptions = JSON.parse(JSON.stringify(options));
     hiddenYAxesLabelOptions['scales']['yAxes'] = [{
@@ -131,18 +130,22 @@ function renderSassScoreChart(data) {
         }
     };
 
-    $("#sass-score-chart").height(18 * sassScoreData['labels'].length);
-    let sassScoreChart = new Chart(document.getElementById('sass-score-chart'), {
+    var chartHeight = 20 * sassScoreData['labels'].length;
+    chartHeight = (chartHeight > 170)? chartHeight:170;
+    document.getElementById('sass-score-chart-multiple').height = chartHeight;
+    document.getElementById('taxa-numbers-chart-multiple').height = chartHeight;
+    document.getElementById('aspt-chart-multiple').height = chartHeight;
+    let sassScoreChart = new Chart(document.getElementById('sass-score-chart-multiple'), {
         type: 'horizontalBar',
         data: sassScoreData,
         options: options
     });
-    let taxaCountScoreChart = new Chart($('#taxa-numbers-chart'), {
+    let taxaCountScoreChart = new Chart(document.getElementById('taxa-numbers-chart-multiple'), {
         type: 'horizontalBar',
         data: taxaCountData,
         options: hiddenYAxesLabelOptions
     });
-    let asptScoreChart = new Chart($('#aspt-chart'), {
+    let asptScoreChart = new Chart(document.getElementById('aspt-chart-multiple'), {
         type: 'horizontalBar',
         data: asptScoreData,
         options: hiddenYAxesLabelOptions
