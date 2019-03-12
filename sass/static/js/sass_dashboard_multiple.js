@@ -116,6 +116,7 @@ function renderSassScoreChart(data) {
                 }
             }]
         },
+        responsive: true,
     };
     let hiddenYAxesLabelOptions = JSON.parse(JSON.stringify(options));
     hiddenYAxesLabelOptions['scales']['yAxes'] = [{
@@ -129,20 +130,25 @@ function renderSassScoreChart(data) {
         }
     };
 
-    let sassScoreChart = new Chart(document.getElementById('sass-score-chart'), {
+    var chartHeight = 20 * sassScoreData['labels'].length;
+    chartHeight = (chartHeight > 170)? chartHeight:170;
+    document.getElementById('sass-score-chart-multiple').height = chartHeight;
+    document.getElementById('taxa-numbers-chart-multiple').height = chartHeight;
+    document.getElementById('aspt-chart-multiple').height = chartHeight;
+    let sassScoreChart = new Chart(document.getElementById('sass-score-chart-multiple'), {
         type: 'horizontalBar',
         data: sassScoreData,
         options: options
     });
-    let taxaCountScoreChart = new Chart($('#taxa-numbers-chart'), {
+    let taxaCountScoreChart = new Chart(document.getElementById('taxa-numbers-chart-multiple'), {
         type: 'horizontalBar',
-        data: taxaCountData,
-        options: hiddenYAxesLabelOptions
+        data: sassScoreData,
+        options: options
     });
-    let asptScoreChart = new Chart($('#aspt-chart'), {
+    let asptScoreChart = new Chart(document.getElementById('aspt-chart-multiple'), {
         type: 'horizontalBar',
         data: asptScoreData,
-        options: hiddenYAxesLabelOptions
+        options: options
     });
 }
 
