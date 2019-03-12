@@ -56,7 +56,7 @@ class SearchVersion2APIView(APIView):
         search_process.set_status(SEARCH_PROCESSING)
 
         # call worker task
-        search_task(
+        search_task.delay(
             parameters,
             search_process.id,
         )
