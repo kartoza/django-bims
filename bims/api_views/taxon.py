@@ -101,14 +101,13 @@ class TaxonDetail(APIView):
             data.update(rank)
 
         # Common name
-        common_names = list(
-            taxon.vernacular_names.all().filter(language='eng').values())
-        if len(common_names) == 0:
+        if taxon.vernacular_names.filter(language='eng').exists():
+            common_names = list(
+                taxon.vernacular_names.all().filter(language='eng').values())
+        elif taxon.vernacular_names.all().values().exists():
             common_names = list(taxon.vernacular_names.all().values())
-            if len(common_names) == 0:
-                data['common_name'] = 'Unknown'
-            else:
-                data['common_name'] = str(common_names[0]['name']).capitalize()
+        if len(common_names) == 0:
+            data['common_name'] = 'Unknown'
         else:
             data['common_name'] = str(common_names[0]['name']).capitalize()
 
