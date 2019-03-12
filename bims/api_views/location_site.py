@@ -289,7 +289,7 @@ class LocationSitesSummary(APIView):
         search_process.create_view()
 
         response_data = {
-            self.TOTAL_RECORDS: len(collection_results),
+            self.TOTAL_RECORDS: collection_results.count(),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.TAXA_OCCURRENCE: dict(taxa_occurrence),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
@@ -379,6 +379,11 @@ class LocationSitesSummary(APIView):
         return result
 
     def get_origin_occurrence_data(self, collection_records):
+        """
+        Get occurrence data for charts
+        :param collection_records: collection record queryset
+        :return: dict of occurrence data
+        """
         origin_graph_data = collection_records.annotate(
             year=ExtractYear('collection_date'),
             name=F('category'),
@@ -389,7 +394,18 @@ class LocationSitesSummary(APIView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
-        result = self.get_data_per_year(origin_graph_data)
+        result = dict()
+        result['labels'] = list(origin_graph_data.values_list(
+            'year', flat=True
+        ))
+        result['dataset_labels'] = list(set(origin_graph_data.values_list(
+            'name', flat=True
+        )))
+        result['data'] = {}
+        for category in result['dataset_labels']:
+            result['data'][category] = list(origin_graph_data.filter(
+                category=category
+            ).values_list('count', flat=True))
         return result
 
     def get_cons_status_occurrence_data(self, collection_records):
