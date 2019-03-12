@@ -41,10 +41,20 @@ class IUCNStatus(models.Model):
             choices_dict[choice] = value
         return choices_dict[self.category]
 
-
-    def get_title(self, iucn_category):
+    @staticmethod
+    def get_title(iucn_category):
+        CATEGORY_CHOICES = (
+            ('LC', 'Least Concern'),
+            ('NT', 'Near Threatened'),
+            ('VU', 'Vulnerable'),
+            ('EN', 'Endangered'),
+            ('CR', 'Critically Endangered'),
+            ('EW', 'Extinct In The Wild'),
+            ('EX', 'Extinct'),
+            ('DD', 'Data Deficient'),
+        )
         choices_dict = {}
-        for choice, value in self.CATEGORY_CHOICES:
+        for choice, value in CATEGORY_CHOICES:
             choices_dict[choice] = value
         iucn_name = choices_dict[iucn_category]
         iucn_title = '({iucn_category}) {iucn_name}'.format(

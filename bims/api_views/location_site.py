@@ -328,8 +328,6 @@ class LocationSitesSummary(APIView):
 
         biodiversity_data['fish']['origin_chart']['data'] = values
         biodiversity_data['fish']['origin_chart']['keys'] = keys
-
-        IUCN_status_object = IUCNStatus.objects.create()
         cons_status_data = collection_results.annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
@@ -344,7 +342,7 @@ class LocationSitesSummary(APIView):
         values = []
         for each_record in cons_status_data:
             try:
-                next_name = IUCN_status_object.get_title(each_record['name'])
+                next_name = IUCNStatus.get_title(each_record['name'])
                 keys.append(next_name)
             except KeyError:
                 keys.append('Unknown')
