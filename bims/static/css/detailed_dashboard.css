@@ -147,6 +147,9 @@
     min-height: 100px;
 }
 
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
 /*.fish-ssdd-occurrences-line-chart {*/
     /*height: 200px;*/
 /*}*/
