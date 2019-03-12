@@ -116,8 +116,6 @@ function renderSassScoreChart(data) {
                 }
             }]
         },
-        responsive: true,
-        maintainAspectRatio: false,
     };
     let hiddenYAxesLabelOptions = JSON.parse(JSON.stringify(options));
     hiddenYAxesLabelOptions['scales']['yAxes'] = [{
@@ -131,7 +129,6 @@ function renderSassScoreChart(data) {
         }
     };
 
-    $("#sass-score-chart").height(18 * sassScoreData['labels'].length);
     let sassScoreChart = new Chart(document.getElementById('sass-score-chart'), {
         type: 'horizontalBar',
         data: sassScoreData,
