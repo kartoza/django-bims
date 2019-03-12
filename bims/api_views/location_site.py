@@ -31,7 +31,6 @@ from bims.utils.search_process import (
     create_search_process_file
 )
 from bims.models.search_process import SITES_SUMMARY
-from bims.models.iucn_status import IUCNStatus
 from bims.api_views.search_version_2 import SearchVersion2
 
 
@@ -295,13 +294,32 @@ class LocationSitesSummary(APIView):
             return Response(response_data)
 
 
+    def get_data_per_year(self, data_in):
+        """
+        Get occurrence data for charts
+        :param: library of records to be flattened for a stacked bar chart
+        :return: dict of occurrence data
+        """
+        result = dict()
+        result['labels'] = list(data_in.values_list(
+            'year', flat=True
+        ).distinct())
+        result['dataset_labels'] = list(set(data_in.values_list(
+            'name', flat=True
+        ).order_by('name')))
+        result['data'] = {}
+        for dataset_label in result['dataset_labels']:
+            result['data'][dataset_label] = list(data_in.filter(
+                name=dataset_label
+            ).values_list('count', flat=True).distinct())
+        return result
+
     def get_biodiversity_data(self, collection_results):
         biodiversity_data = {}
         biodiversity_data['fish'] = {}
         biodiversity_data['fish']['origin_chart'] = {}
         biodiversity_data['fish']['cons_status_chart'] = {}
         biodiversity_data['fish']['endemism_chart'] = {}
-
         origin_by_name_data = collection_results.annotate(
             name=F('category')
         ).values(
@@ -311,20 +329,8 @@ class LocationSitesSummary(APIView):
         ).order_by(
             'name'
         )
-        keys = []
-        values = []
-        for each_record in origin_by_name_data:
-            try:
-                new_name = BiologicalCollectionRecord.retrieve_category_choice(
-                    each_record['name'])
-                keys.append(new_name)
-            except KeyError:
-                keys.append('Unknown')
-            try:
-                values.append(each_record['count'])
-            except KeyError:
-                keys.append('Unknown')
-
+        keys = origin_by_name_data.values_list('name', flat=True)
+        values = origin_by_name_data.values_list('count', flat=True)
         biodiversity_data['fish']['origin_chart']['data'] = values
         biodiversity_data['fish']['origin_chart']['keys'] = keys
         cons_status_data = collection_results.annotate(
@@ -336,20 +342,8 @@ class LocationSitesSummary(APIView):
         ).order_by(
             'name'
         )
-
-        keys = []
-        values = []
-        for each_record in cons_status_data:
-            try:
-                next_name = IUCNStatus.get_title(each_record['name'])
-                keys.append(next_name)
-            except KeyError:
-                keys.append('Unknown')
-            try:
-                values.append(each_record['count'])
-            except KeyError:
-                keys.append('Unknown')
-
+        keys = cons_status_data.values_list('name', flat=True)
+        values = cons_status_data.values_list('count', flat=True)
         biodiversity_data['fish']['cons_status_chart']['data'] = values
         biodiversity_data['fish']['cons_status_chart']['keys'] = keys
         endemism_status_data = collection_results.annotate(
@@ -361,26 +355,10 @@ class LocationSitesSummary(APIView):
         ).order_by(
             'name'
         )
-
-        keys = []
-        values = []
-        for each_record in endemism_status_data:
-            try:
-                new_name = keys.append(each_record['name'])
-                if new_name != 'null':
-                    keys.append(new_name)
-                else:
-                    keys.append('Unknown')
-            except:
-                keys.append('Unknown')
-            try:
-                values.append(each_record['count'])
-            except:
-                keys.append('Unknown')
-
+        keys = endemism_status_data.values_list('name', flat=True)
+        values = endemism_status_data.values_list('count', flat=True)
         biodiversity_data['fish']['endemism_chart']['data'] = values
         biodiversity_data['fish']['endemism_chart']['keys'] = keys
-
         biodiversity_data['occurrences'] = [0, 0, 0]
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
