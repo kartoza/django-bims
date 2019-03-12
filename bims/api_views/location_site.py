@@ -315,6 +315,11 @@ class LocationSitesSummary(APIView):
             return Response(response_data)
 
     def get_site_taxa_occurrences_per_year(self, collection_results):
+        """
+        Get occurrence data for charts
+        :param: collection_records: collection record queryset
+        :return: dict of taxa occurrence data for stacked bar graph
+        """
         taxa_occurrence_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
         ).values('year'
@@ -323,66 +328,38 @@ class LocationSitesSummary(APIView):
                                      ).order_by('year')
         result = {}
         result['occurrences_line_chart'] = {}
-        result['occurrences_line_chart']['values'] = []
-        result['occurrences_line_chart']['keys'] = []
-        result['occurrences_line_chart']['title'] \
-            = 'Occurrences'
-        for each_record in taxa_occurrence_data:
-            result['occurrences_line_chart']['keys'].append(
-                each_record['year'])
-            result['occurrences_line_chart']['values'].append(
-                each_record['count'])
+        result['occurrences_line_chart']['values'] = list(
+            taxa_occurrence_data.values_list('count', flat=True))
+        result['occurrences_line_chart']['keys'] = list(
+            taxa_occurrence_data.values_list('values', flat=True))
+        result['occurrences_line_chart']['title'] = 'Occurrences'
         return result
 
     def get_data_per_year(self, data_in):
-        unique_name_list = []
-        unique_year_list = []
-        unparsed_data = {}
-
-        for each_record in data_in:
-            unparsed_count = 0
-            unparsed_year = 0
-            unparsed_name = 'Unknown'
-            if 'count' in each_record:
-                unparsed_count = each_record['count']
-            if 'year' in each_record:
-                unparsed_year = each_record['year']
-            if 'name' in each_record:
-                unparsed_name = each_record['name']
-            if unparsed_year not in unique_year_list:
-                unique_year_list.append(unparsed_year)
-            if unparsed_name not in unparsed_data:
-                unparsed_data[unparsed_name] = {}
-            if unparsed_year not in unparsed_data[unparsed_name]:
-                unparsed_data[unparsed_name][unparsed_year] = unparsed_count
-            if unparsed_name not in unique_name_list:
-                unique_name_list.append(unparsed_name)
-
-        parsed_data = {}
-        unique_name_list.sort()
-        unique_year_list.sort()
-        for each_name in unique_name_list:
-            if each_name not in parsed_data:
-                parsed_data[each_name] = []
-            for each_year in unique_year_list:
-                if each_year in unparsed_data[each_name]:
-                    parsed_data[each_name].append(str(
-                        unparsed_data[each_name][each_year]
-                    ))
-                else:
-                    parsed_data[each_name].append(str(0))
-
-        result = {}
-        result['data'] = parsed_data
-        result['labels'] = unique_year_list
-        result['dataset_labels'] = unique_name_list
+        """
+        Get occurrence data for charts
+        :param: library of records to be flattened for a stacked bar chart
+        :return: dict of occurrence data
+        """
+        result = dict()
+        result['labels'] = list(data_in.values_list(
+            'year', flat=True
+        ))
+        result['dataset_labels'] = list(set(data_in.values_list(
+            'name', flat=True
+        )))
+        result['data'] = {}
+        for category in result['dataset_labels']:
+            result['data'][category] = list(data_in.filter(
+                category=category
+            ).values_list('count', flat=True))
         return result
 
     def get_origin_occurrence_data(self, collection_records):
         """
         Get occurrence data for charts
-        :param collection_records: collection record queryset
-        :return: dict of occurrence data
+        :param: collection_records: collection record queryset
+        :return: dict of occurrence data for stacked bar graph
         """
         origin_graph_data = collection_records.annotate(
             year=ExtractYear('collection_date'),
@@ -394,21 +371,15 @@ class LocationSitesSummary(APIView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
-        result = dict()
-        result['labels'] = list(origin_graph_data.values_list(
-            'year', flat=True
-        ))
-        result['dataset_labels'] = list(set(origin_graph_data.values_list(
-            'name', flat=True
-        )))
-        result['data'] = {}
-        for category in result['dataset_labels']:
-            result['data'][category] = list(origin_graph_data.filter(
-                category=category
-            ).values_list('count', flat=True))
+        result = self.get_data_per_year(origin_graph_data)
         return result
 
     def get_cons_status_occurrence_data(self, collection_records):
+        """
+        Get occurrence data for charts
+        :param: collection_records: collection record queryset
+        :return: dict of origin data for stacked bar graph
+        """
         origin_graph_data = collection_records.annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__iucn_status__category'),
