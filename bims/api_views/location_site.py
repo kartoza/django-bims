@@ -293,27 +293,6 @@ class LocationSitesSummary(APIView):
         except ValueError:
             return Response(response_data)
 
-
-    def get_data_per_year(self, data_in):
-        """
-        Get occurrence data for charts
-        :param: library of records to be flattened for a stacked bar chart
-        :return: dict of occurrence data
-        """
-        result = dict()
-        result['labels'] = list(data_in.values_list(
-            'year', flat=True
-        ).distinct())
-        result['dataset_labels'] = list(set(data_in.values_list(
-            'name', flat=True
-        ).order_by('name')))
-        result['data'] = {}
-        for dataset_label in result['dataset_labels']:
-            result['data'][dataset_label] = list(data_in.filter(
-                name=dataset_label
-            ).values_list('count', flat=True).distinct())
-        return result
-
     def get_biodiversity_data(self, collection_results):
         biodiversity_data = {}
         biodiversity_data['fish'] = {}
