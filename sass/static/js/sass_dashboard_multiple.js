@@ -143,12 +143,12 @@ function renderSassScoreChart(data) {
     let taxaCountScoreChart = new Chart(document.getElementById('taxa-numbers-chart-multiple'), {
         type: 'horizontalBar',
         data: sassScoreData,
-        options: options
+        options: hiddenYAxesLabelOptions
     });
     let asptScoreChart = new Chart(document.getElementById('aspt-chart-multiple'), {
         type: 'horizontalBar',
         data: asptScoreData,
-        options: options
+        options: hiddenYAxesLabelOptions
     });
 }
 
