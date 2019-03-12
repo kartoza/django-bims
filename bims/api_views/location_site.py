@@ -352,7 +352,7 @@ class LocationSitesSummary(APIView):
         for dataset_label in result['dataset_labels']:
             result['data'][dataset_label] = list(data_in.filter(
                 name=dataset_label
-                ).values_list('count', flat=True).distinct())
+            ).values_list('count', flat=True).distinct())
         return result
 
     def get_origin_occurrence_data(self, collection_records):
