@@ -1,7 +1,6 @@
 # coding=utf8
 import json
 import os
-from collections import Counter
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count
 from django.db.models.functions import ExtractYear
