@@ -447,8 +447,6 @@ class LocationSitesSummary(APIView):
         catchments['title'].append('Quinary')
         catchments['value'].append('very soon...')
 
-
-
         sub_water_management_areas['title'].append(
             'Sub-Water Management Areas')
         sub_water_management_areas['value'].append('???')
@@ -559,44 +557,48 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('value'))
 
+        title_format = '({category}) {title}'
         iucn_status_count = {}
-        for each_record in iucn_data:
-            try:
-                iucn_status = each_record['value']
-                if iucn_status not in iucn_status_count:
-                    iucn_status_count[iucn_status] = {}
-                iucn_status_count[iucn_status]['value'] = each_record['count']
-                iucn_status_count[iucn_status]['title'] = iucn_status
-            except KeyError:
-                pass
+        result['title'] = list(iucn_data.values_list('value', flat=True))
+        result['value'] = list(iucn_data.values_list('count', flat=True))
+        #
+        # for each_record in iucn_data:
+        #     try:
+        #         iucn_status = each_record['value']
+        #         if iucn_status not in iucn_status_count:
+        #             iucn_status_count[iucn_status] = {}
+        #         iucn_status_count[iucn_status]['value'] = each_record['count']
+        #         iucn_status_count[iucn_status]['title'] = iucn_status
+        #     except KeyError:
+        #         pass
 
-        result['title'].append('Not Evaluated (NE)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'NE'))
-        result['title'].append('Data Deficient (DD)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'DD'))
-        result['title'].append('Least Concern (LC)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'LC'))
-        result['title'].append('Near Threatened (NT)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'NT'))
-        result['title'].append('Vulnerable (VU)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'VU'))
-        result['title'].append('Endangered (EN)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'EN'))
-        result['title'].append('Critically Endangered (CR)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'CR'))
-        result['title'].append('Extinct in the Wild (EW)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'EW'))
-        result['title'].append('Extinct (EX)')
-        result['value'].append(self.get_value_or_zero_from_key(
-            iucn_status_count, 'EX'))
+        # result['title'].append('Not Evaluated (NE)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'NE'))
+        # result['title'].append('Data Deficient (DD)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'DD'))
+        # result['title'].append('Least Concern (LC)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'LC'))
+        # result['title'].append('Near Threatened (NT)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'NT'))
+        # result['title'].append('Vulnerable (VU)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'VU'))
+        # result['title'].append('Endangered (EN)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'EN'))
+        # result['title'].append('Critically Endangered (CR)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'CR'))
+        # result['title'].append('Extinct in the Wild (EW)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'EW'))
+        # result['title'].append('Extinct (EX)')
+        # result['value'].append(self.get_value_or_zero_from_key(
+        #     iucn_status_count, 'EX'))
 
         return result
 
