@@ -331,7 +331,7 @@ class LocationSitesSummary(APIView):
         result['occurrences_line_chart']['values'] = list(
             taxa_occurrence_data.values_list('count', flat=True))
         result['occurrences_line_chart']['keys'] = list(
-            taxa_occurrence_data.values_list('values', flat=True))
+            taxa_occurrence_data.values_list('year', flat=True))
         result['occurrences_line_chart']['title'] = 'Occurrences'
         return result
 
@@ -344,15 +344,15 @@ class LocationSitesSummary(APIView):
         result = dict()
         result['labels'] = list(data_in.values_list(
             'year', flat=True
-        ))
+        ).distinct())
         result['dataset_labels'] = list(set(data_in.values_list(
             'name', flat=True
-        )))
+        ).order_by('name')))
         result['data'] = {}
-        for category in result['dataset_labels']:
-            result['data'][category] = list(data_in.filter(
-                category=category
-            ).values_list('count', flat=True))
+        for dataset_label in result['dataset_labels']:
+            result['data'][dataset_label] = list(data_in.filter(
+                name=dataset_label
+                ).values_list('count', flat=True).distinct())
         return result
 
     def get_origin_occurrence_data(self, collection_records):
