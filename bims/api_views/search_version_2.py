@@ -56,7 +56,7 @@ class SearchVersion2APIView(APIView):
         search_process.set_status(SEARCH_PROCESSING)
 
         # call worker task
-        search_task.delay(
+        search_task(
             parameters,
             search_process.id,
         )
@@ -111,6 +111,15 @@ class SearchVersion2(object):
     @property
     def search_query(self):
         return self.get_request_data('search')
+
+    @property
+    def validated(self):
+        validated_value = self.get_request_data('validated')
+        if not validated_value:
+            return True
+        if validated_value.lower() == 'false':
+            return False
+        return True
 
     @property
     def taxon_id(self):
@@ -210,7 +219,10 @@ class SearchVersion2(object):
             bio = BiologicalCollectionRecord.objects.all()
 
         filters = dict()
-        filters['validated'] = True
+        filters['validated'] = self.validated
+        if not self.validated:
+            # Only display data that ready to be validated
+            filters['ready_for_validation'] = True
         filters['taxonomy__isnull'] = False
         if self.site_ids:
             filters['site__in'] = self.site_ids
