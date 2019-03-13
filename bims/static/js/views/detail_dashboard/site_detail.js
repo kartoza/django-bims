@@ -575,13 +575,13 @@ define([
                 options: originTimelineGraphOptions
             })
         },
-        createOccurrenceDataTable(data) {
+        createOccurrenceDataTable: function(data) {
             var renderedOccurrenceData = this.renderOccurrenceData(data);
             var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
             var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
             occurrenceDataSub.append(renderedOccurrenceData);
         },
-        renderOccurrenceData(data) {
+        renderOccurrenceData: function (data) {
             data_in = data['occurrence_data'];
             var result = '<div>';
             if (typeof data_in == 'undefined')
@@ -593,7 +593,6 @@ define([
             var column_class = '';
             var column_value = '';
             var next_col = '';
-
             // Render headings
             try {
                 count = data_in['titles'].length;
@@ -620,7 +619,6 @@ define([
                             <div class="center-self">${column_value}
                             </div></div>`;
                 result += next_col ;
-
             }
             result += '</div>' //Close my row
             // Render rows
@@ -639,7 +637,10 @@ define([
                         column_key = data_in['data_keys'][j];
                         if (typeof taxon_values != 'undefined') {
                             if (column_key in taxon_values) {
-                                column_value = taxon_values[column_key];
+                                column_value = this.parseNameFromAliases(
+                                    taxon_values[column_key],
+                                    column_key,
+                                    data);
                             }
                         }
                     }
@@ -659,8 +660,23 @@ define([
 
             return $result
         },
-        parseIUCNTitleFromCategory(category) {
+        parseNameFromAliases: function (alias, alias_type, data) {
+            var name = alias;
+            var choices = [];
+            var index = 0;
+            if (alias_type == 'cons_status') {
+                choices = data['iucn_name_list'].flat(1);
+            }
+            if (alias_type == 'origin')
+            {
+                choices = data['origin_name_list'].flat(1);}
+            if (choices.length > 0) {
+                index = choices.indexOf(alias) + 1;
+                name = choices[index];
+            }
+            return name;
+        },
 
-        }
+
     })
 });
