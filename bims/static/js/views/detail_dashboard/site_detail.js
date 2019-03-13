@@ -576,12 +576,13 @@ define([
             })
         },
         createOccurrenceDataTable(data) {
-            var renderedOccurrenceData = this.renderOccurrenceData(data['occurrence_data']);
+            var renderedOccurrenceData = this.renderOccurrenceData(data);
             var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
             var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
             occurrenceDataSub.append(renderedOccurrenceData);
         },
-        renderOccurrenceData(data_in) {
+        renderOccurrenceData(data) {
+            data_in = data['occurrence_data'];
             var result = '<div>';
             if (typeof data_in == 'undefined')
             {
@@ -595,7 +596,7 @@ define([
 
             // Render headings
             try {
-                count = data_in['keys'].length;
+                count = data_in['titles'].length;
             }
             catch (e) {
                 count = 0;
@@ -604,15 +605,13 @@ define([
             for (let i = 0; i < count; i++) {
 
                 column_class = 'col-2 title-column';
-                if ('keys' in data_in) {
-                     column_value = data_in['keys'][i];
-[]                }
+                if ('titles' in data_in) {
+                     column_value = data_in['titles'][i];
+                }
                 else
                 {
                     column_class = 'Unknown';
                 }
-
-
                 // Make my first column wider
                 if (i == 0) {
                     column_class = 'col-4 title-column';
@@ -623,23 +622,21 @@ define([
                 result += next_col ;
 
             }
-            result += ' </div>' //Close my row
+            result += '</div>' //Close my row
             // Render rows
             column_count = count;
-            count = data_in['taxon_count'];
+            count = data_in['data'].length;
             var taxon_values = [];
-            var data_key = '';
 
             for (let i = 0; i < count; i++) {
                 result += '<div class="row">'; //Open new row
-                data_key = Object.keys(data_in['data'])[i];
-                taxon_values = data_in['data'][data_key];
+                taxon_values = data_in['data'][i];
                 var column_key = ''
                 for (let j = 0; j < column_count; j++) {
                     column_class = 'col-2';
                     column_value = 'Unknown';
-                    if ('keys' in data_in) {
-                        column_key = data_in['keys'][j];
+                    if ('data_keys' in data_in) {
+                        column_key = data_in['data_keys'][j];
                         if (typeof taxon_values != 'undefined') {
                             if (column_key in taxon_values) {
                                 column_value = taxon_values[column_key];
@@ -659,7 +656,11 @@ define([
             }
             result += '</div>'; //Close row
             var $result = $.parseHTML(result);
+
             return $result
         },
+        parseIUCNTitleFromCategory(category) {
+
+        }
     })
 });

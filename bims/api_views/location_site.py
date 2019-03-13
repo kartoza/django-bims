@@ -217,6 +217,7 @@ class LocationSitesSummary(APIView):
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
     OCCURRENCE_DATA = 'occurrence_data'
+    IUCN_NAMES_LIST = 'iucn_names_list'
 
     def get(self, request):
         filters = request.GET
@@ -274,7 +275,7 @@ class LocationSitesSummary(APIView):
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
             self.OCCURRENCE_DATA: dict(occurrence_data),
-
+            self.IUCN_NAMES_LIST: list(IUCNStatus.CATEGORY_CHOICES),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
@@ -294,87 +295,86 @@ class LocationSitesSummary(APIView):
 
     def get_occurence_data(self, collection_results):
 
-        keys = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
-
+        titles = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
+        data_keys = ['taxon', 'origin', 'count', 'endemism', 'cons_status']
         occurrence_table_data = collection_results.annotate(
-            taxonomy_id=F('taxonomy__id'),
             taxon=F('taxonomy__scientific_name'),
             origin=F('category'),
             cons_status=F('taxonomy__iucn_status__category'),
             endemism=F('taxonomy__endemism__name'),
         ).values(
-            'taxon', 'origin', 'cons_status', 'endemism', 'taxonomy_id'
+            'taxon', 'origin', 'cons_status', 'endemism'
         ).annotate(
-            occurrences=Count('taxon')
+            count=Count('taxon')
         ).order_by('taxon')
-
         occurrence_data = {}
-        occurrence_data['data'] = {}
-        occurrence_data['keys'] = keys
-        idx = 0
-        for each_record in occurrence_table_data:
-            idx += 1
-            try:
-                if each_record['taxonomy_id'] > 0:
-                    pass
-            except KeyError:
-                return {}
-            if each_record['taxonomy_id'] not in occurrence_data:
-                occurrence_data['data'][idx] = {}
-                occurrence_data['data'][idx]['values'] = []
-                occurrence_data['data'][idx]['Occurrences'] = 0
-                try:
-                    this_taxon = each_record['taxon']
-                except AttributeError:
-                    this_taxon = 'Unknown'
-                try:
-                    this_origin = each_record['origin']
-                except AttributeError:
-                    this_origin = 'Unknown'
-                try:
-                    this_occurrences = each_record['occurrences']
-                except AttributeError:
-                    this_occurrences = 'Unknown'
-                try:
-                    this_endemism = each_record['endemism']
-                except AttributeError:
-                    this_endemism = 'Unknown'
-                try:
-                    this_cons_status = IUCNStatus.get_title(
-                        each_record['cons_status'])
-                except AttributeError:
-                    this_cons_status = 'Unknown'
-                try:
-                    occurrence_data['data'][idx]['Taxon'] = (
-                        this_taxon.capitalize())
-                except AttributeError:
-                    occurrence_data['data'][idx]['Taxon'] = (
-                        'Unknown')
-                try:
-                    occurrence_data['data'][idx]['Origin'] = (
-                        this_origin.capitalize())
-                except:
-                    occurrence_data['data'][idx]['Origin'] = (
-                        'Unknown')
-                try:
-                    occurrence_data['data'][idx]['Occurrences'] = (
-                        str(this_occurrences))
-                except:
-                    occurrence_data['data'][idx]['Occurrences'] = (
-                        'Unknown')
-                try:
-                    occurrence_data['data'][idx]['Endemism'] = (
-                        this_endemism.capitalize())
-                except AttributeError:
-                    occurrence_data['data'][idx]['Endemism'] = (
-                        'Unknown')
-                try:
-                    occurrence_data['data'][idx]['Cons. Status'] = (
-                        this_cons_status)
-                except:
-                    occurrence_data['data'][idx]['Cons. Status'] = (
-                        'Unknown')
-        occurrence_data['taxon_count'] = len(occurrence_data['data'])
+        occurrence_data['data'] = list(occurrence_table_data)
+        occurrence_data['titles'] = titles
+        occurrence_data['data_keys'] = data_keys
+        # idx = 0
+        # for each_record in occurrence_table_data:
+        #     idx += 1
+        #     try:
+        #         if each_record['taxonomy_id'] > 0:
+        #             pass
+        #     except KeyError:
+        #         return {}
+        #     if each_record['taxonomy_id'] not in occurrence_data:
+        #         occurrence_data['data'][idx] = {}
+        #         occurrence_data['data'][idx]['values'] = []
+        #         occurrence_data['data'][idx]['Occurrences'] = 0
+        #         try:
+        #             this_taxon = each_record['taxon']
+        #         except AttributeError:
+        #             this_taxon = 'Unknown'
+        #         try:
+        #             this_origin = each_record['origin']
+        #         except AttributeError:
+        #             this_origin = 'Unknown'
+        #         try:
+        #             this_occurrences = each_record['occurrences']
+        #         except AttributeError:
+        #             this_occurrences = 'Unknown'
+        #         try:
+        #             this_endemism = each_record['endemism']
+        #         except AttributeError:
+        #             this_endemism = 'Unknown'
+        #         try:
+        #             this_cons_status = IUCNStatus.get_title(
+        #                 each_record['cons_status'])
+        #         except AttributeError:
+        #             this_cons_status = 'Unknown'
+        #         try:
+        #             occurrence_data['data'][idx]['Taxon'] = (
+        #                 this_taxon.capitalize())
+        #         except AttributeError:
+        #             occurrence_data['data'][idx]['Taxon'] = (
+        #                 'Unknown')
+        #         try:
+        #             occurrence_data['data'][idx]['Origin'] = (
+        #                 this_origin.capitalize())
+        #         except:
+        #             occurrence_data['data'][idx]['Origin'] = (
+        #                 'Unknown')
+        #         try:
+        #             occurrence_data['data'][idx]['Occurrences'] = (
+        #                 str(this_occurrences))
+        #         except:
+        #             occurrence_data['data'][idx]['Occurrences'] = (
+        #                 'Unknown')
+        #         try:
+        #             occurrence_data['data'][idx]['Endemism'] = (
+        #                 this_endemism.capitalize())
+        #         except AttributeError:
+        #             occurrence_data['data'][idx]['Endemism'] = (
+        #                 'Unknown')
+        #         try:
+        #             occurrence_data['data'][idx]['Cons. Status'] = (
+        #                 this_cons_status)
+        #         except:
+        #             occurrence_data['data'][idx]['Cons. Status'] = (
+        #                 'Unknown')
+        # occurrence_data['taxon_count'] = len(occurrence_data['data'])
         return occurrence_data
 
 
