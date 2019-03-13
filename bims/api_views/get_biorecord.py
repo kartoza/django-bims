@@ -133,15 +133,16 @@ class BioCollectionSummary(APIView):
 
         common_names = []
         # Common name
-        if taxon.vernacular_names.filter(language='eng').exists():
+        if taxonomy.vernacular_names.filter(language='eng').exists():
             common_names = list(
-                taxon.vernacular_names.all().filter(language='eng').values())
-        elif taxon.vernacular_names.all().values().exists():
-            common_names = list(taxon.vernacular_names.all().values())
+                taxonomy.vernacular_names.all().filter(language='eng').values())
+        elif taxonomy.vernacular_names.all().values().exists():
+            common_names = list(taxonomy.vernacular_names.all().values())
         if len(common_names) == 0:
-            data['common_name'] = 'Unknown'
+            response_data['common_name'] = 'Unknown'
         else:
-            data['common_name'] = str(common_names[0]['name']).capitalize()
+            response_data['common_name'] = str(
+                common_names[0]['name']).capitalize()
         # file_path = create_search_process_file(
         #     data=response_data,
         #     search_process=search_process,

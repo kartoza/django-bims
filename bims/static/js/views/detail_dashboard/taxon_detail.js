@@ -152,7 +152,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
                 csv_downloads_url: self.csvDownloadsUrl,
-                count: data.length,
+                count: data['total_records'],
                 taxon_class: data['taxon'],
                 gbif_id: gbif_key,
                 common_name: data['common_name']
