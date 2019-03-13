@@ -590,7 +590,7 @@ define([
             var count = specific_data['value'].length;
             for (let i = 0; i < count; i++)
             {
-                title = specific_data['title'][i];
+                title = this.parseNameFromAliases(specific_data['title'][i], alias_type, all_data);
                 value = this.parseNameFromAliases(specific_data['value'][i], alias_type,  all_data);
                 temp_result = `<div class="row">
                                <div class="col-6 ${title_class}">${title}</div>
@@ -630,7 +630,7 @@ define([
 
             var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
             var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
-            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'iucn_status', false));
+            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
 
         },
         parseNameFromAliases: function (alias, alias_type, data) {
