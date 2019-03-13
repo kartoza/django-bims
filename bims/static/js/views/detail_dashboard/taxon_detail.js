@@ -325,6 +325,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        }
+        },
     })
 });

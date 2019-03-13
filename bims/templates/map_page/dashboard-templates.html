@@ -1,5 +1,6 @@
 <script type="text/html" id="taxon-detail-dashboard-template">
-    <div class="loading-dashboard">
+    <div id="detailed-site-dashboard-wrapper" style="padding: 1rem;">
+	<div class="loading-dashboard">
         <img src="/static/img/small-loading.svg" width="250"
              alt="Loading view">
         <div class="loading-dashboard-subtitle">
@@ -11,6 +12,66 @@
             style="float: right"><i class="fa fa-times pull-right"></i>
     </button>
     <div class="container dashboard-wrapper">
+		<div class="row">
+			<div class="col-lg-4">
+					{# Distribution #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-distribution">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Distribution
+									</div>
+									<button id="export-locationsite-map"
+											class="btn btn-default pull-right">
+										<i
+												class="fa fa-download"></i>
+									</button>
+								</div>
+
+								<div class="card-body locationsite-map-wrapper">
+									 <div id="taxasite-map"
+										  class="map"
+										  style="height: 300px; width: 100%;">
+									 </div>
+
+								</div>
+							</div>
+						</div>
+					</div>
+					{# Overview #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-distribution">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Distribution
+									</div>
+									<button id="export-locationsite-map"
+											class="btn btn-default pull-right">
+										<i class="fa fa-download"></i>
+									</button>
+								</div>
+
+								<div class="card-body locationsite-map-wrapper">
+									 <div class="overview-taxa-table dashboard-table"
+										  style="margin-top: 10px; margin-bottom: 10px">
+									 </div>
+								</div>
+							</div>
+						</div>
+					</div>
+			</div>
+			<div class="col-lg-8 dashboard-graph-wrapper">
+				<div class="row">
+					<div class="col-lg-12">
+                        <h5 class="dd-title">Records per area</h5>
+                        <div class="dashboard-table records-area-table"></div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
         <div class="container row">
             <div class="col-lg-4">
                 <h5 class="dd-title" style="float: left">Distribution</h5>
