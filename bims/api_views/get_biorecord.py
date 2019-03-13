@@ -130,26 +130,25 @@ class BioCollectionSummary(APIView):
             )
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
-        common_names = list(taxonomy.vernacular_names.all().filter(
-            language='eng').values())
-        if len(common_names) == 0:
+        common_names = []
+        # Common name
+        if taxonomy.vernacular_names.filter(language='eng').exists():
+            common_names = list(
+                taxonomy.vernacular_names.all().filter(language='eng').values())
+        elif taxonomy.vernacular_names.all().values().exists():
             common_names = list(taxonomy.vernacular_names.all().values())
-            if len(common_names) == 0:
-                response_data['common_name'] = 'Unknown'
-            else:
-                response_data['common_name'] = str(
-                    common_names[0]['name']).capitalize()
+        if len(common_names) == 0:
+            response_data['common_name'] = 'Unknown'
         else:
-            response_data['common_name'] = str(
-                common_names[0]['name']).capitalize()
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+            response_data['common_name'] = str(common_names[0]['name']).capitalize()
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
