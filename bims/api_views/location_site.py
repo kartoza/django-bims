@@ -33,6 +33,7 @@ from bims.utils.search_process import (
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
 from sass.models.river import River
+from bims.models.iucn_status import IUCNStatus
 
 
 class LocationSiteList(APIView):
@@ -217,6 +218,8 @@ class LocationSitesSummary(APIView):
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
     SITE_DETAILS = 'site_details'
+    IUCN_NAME_LIST = 'iucn_name_list'
+    ORIGIN_NAME_LIST = 'origin_name_list'
 
     def get(self, request):
         filters = request.GET
@@ -281,6 +284,9 @@ class LocationSitesSummary(APIView):
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.IUCN_NAME_LIST: list(IUCNStatus.CATEGORY_CHOICES),
+            self.ORIGIN_NAME_LIST: list(
+                BiologicalCollectionRecord.CATEGORY_CHOICES),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
@@ -514,35 +520,16 @@ class LocationSitesSummary(APIView):
     def get_origin_data(self, collection_results):
         result = {}
         origin_data = collection_results.annotate(
-            origin=F('category')
+            value=F('category')
         ).values(
-            'origin'
+            'value'
         ).annotate(
-            count=Count('origin')
-        ).order_by('origin')
+            count=Count('value')
+        ).order_by('value')
 
-        result['title'] = []
-        result['value'] = []
+        result['title'] = list(origin_data.values_list('value', flat=True))
+        result['value'] = list(origin_data.values_list('count', flat=True))
 
-        number_of_native = 0
-        number_of_non_native = 0
-        number_of_translocated = 0
-        for each_record in origin_data:
-            try:
-                if each_record['origin'] == 'indigenous':
-                    number_of_native = each_record['count']
-                if each_record['origin'] == 'alien':
-                    number_of_non_native = each_record['count']
-                if each_record['origin'] == 'translocated':
-                    number_of_translocated = each_record['count']
-            except KeyError:
-                pass
-        result['title'].append('Native')
-        result['value'].append(str(number_of_native))
-        result['title'].append('Non-native')
-        result['value'].append(str(number_of_non_native))
-        result['title'].append('Translocated')
-        result['value'].append(str(number_of_translocated))
         return result
 
     def get_conservation_status_data(self, collection_results):
@@ -557,48 +544,8 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('value'))
 
-        title_format = '({category}) {title}'
-        iucn_status_count = {}
         result['title'] = list(iucn_data.values_list('value', flat=True))
         result['value'] = list(iucn_data.values_list('count', flat=True))
-        #
-        # for each_record in iucn_data:
-        #     try:
-        #         iucn_status = each_record['value']
-        #         if iucn_status not in iucn_status_count:
-        #             iucn_status_count[iucn_status] = {}
-        #         iucn_status_count[iucn_status]['value'] = each_record['count']
-        #         iucn_status_count[iucn_status]['title'] = iucn_status
-        #     except KeyError:
-        #         pass
-
-        # result['title'].append('Not Evaluated (NE)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'NE'))
-        # result['title'].append('Data Deficient (DD)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'DD'))
-        # result['title'].append('Least Concern (LC)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'LC'))
-        # result['title'].append('Near Threatened (NT)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'NT'))
-        # result['title'].append('Vulnerable (VU)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'VU'))
-        # result['title'].append('Endangered (EN)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'EN'))
-        # result['title'].append('Critically Endangered (CR)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'CR'))
-        # result['title'].append('Extinct in the Wild (EW)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'EW'))
-        # result['title'].append('Extinct (EX)')
-        # result['value'].append(self.get_value_or_zero_from_key(
-        #     iucn_status_count, 'EX'))
 
         return result
 

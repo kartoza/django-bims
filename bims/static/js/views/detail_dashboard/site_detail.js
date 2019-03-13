@@ -577,7 +577,7 @@ define([
                 options: originTimelineGraphOptions
             })
         },
-        renderTableFromTitlesValuesLists: function (data, bold_title=true) {
+        renderTableFromTitlesValuesLists: function (specific_data, all_data=[], alias_type='', bold_title=true) {
             var title = '';
             var value = '';
             var temp_result;
@@ -587,11 +587,11 @@ define([
             {
                 title_class = 'title_column';
             }
-            var count = data['value'].length;
+            var count = specific_data['value'].length;
             for (let i = 0; i < count; i++)
             {
-                title = data['title'][i];
-                value = data['value'][i];
+                title = specific_data['title'][i];
+                value = this.parseNameFromAliases(specific_data['value'][i], alias_type,  all_data);
                 temp_result = `<div class="row">
                                <div class="col-6 ${title_class}">${title}</div>
                                <div class="col-6">${value}</div>
@@ -610,7 +610,8 @@ define([
                 data['site_details']['overview']));
             var catchments = siteDetailsWrapper.find('#catchments');
             catchments.append(this.renderTableFromTitlesValuesLists(
-                data['site_details']['catchments']));
+                data['site_details']['catchments']),
+                data);
             var sub_water_management_areas = siteDetailsWrapper.find(
                 '#sub_water_management_areas');
             sub_water_management_areas.append(this.renderTableFromTitlesValuesLists(
@@ -625,12 +626,28 @@ define([
 
             var originsWrapper = $('#fish-ssdd-origins');
             var originsSub = originsWrapper.find('#origins');
-            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], false));
+            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data,  'origin', false));
 
             var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
             var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
-            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], false));
+            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'iucn_status', false));
 
-        }
+        },
+        parseNameFromAliases: function (alias, alias_type, data) {
+            var name = alias;
+            var choices = [];
+            var index = 0;
+            if (alias_type == 'cons_status')  {
+                choices = data['iucn_name_list'].flat(1);
+            }
+            if (alias_type == 'origin') {
+                choices = data['origin_name_list'].flat(1);
+            }
+            if (choices.length > 0) {
+                index = choices.indexOf(alias) + 1;
+                name = choices[index];
+            }
+            return name;
+        },
     })
 });
