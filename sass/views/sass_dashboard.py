@@ -301,7 +301,10 @@ class SassDashboardView(TemplateView):
             else:
                 value['display_order'] = display_order[value['key']]
 
-        ordered_dict = OrderedDict(sorted(river_catchment.items(), key=lambda (k, v): (v['display_order'], k)))
+        ordered_dict = OrderedDict(
+            sorted(
+                river_catchment.items(), 
+                key=lambda (k, v): (v['display_order'], k)))
         return ordered_dict
 
     def get_context_data(self, **kwargs):
