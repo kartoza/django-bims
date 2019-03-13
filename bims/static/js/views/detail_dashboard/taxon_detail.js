@@ -35,6 +35,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.taxaRecordsTimelineGraph = this.$el.find('#taxa-records-timeline-graph');
             this.taxaRecordsTimelineGraphChart = null;
             this.taxaRecordsTimelineGraphCanvas = this.taxaRecordsTimelineGraph[0].getContext('2d');
+            this.originBlockData = this.$el.find('#origin-block-data');
             this.recordsTable = this.$el.find('.records-table');
             this.recordsAreaTable = this.$el.find('.records-area-table');
             this.mapTaxaSite = null;
@@ -118,14 +119,22 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
             self.taxonName = canonicalName;
 
+            // // Set origin
+            // var category = data['origin'];
+            // $.each(self.originInfoList.children(), function (key, data) {
+            //     var $originInfoItem = $(data);
+            //     if ($originInfoItem.data('value') === category) {
+            //         $originInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
+            //     }
+            // });
             // Set origin
-            var category = data['origin'];
-            $.each(self.originInfoList.children(), function (key, data) {
-                var $originInfoItem = $(data);
-                if ($originInfoItem.data('value') === category) {
-                    $originInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                }
-            });
+            var origin_block_data = {};
+            origin_block_data['value'] = data['origin'];;
+            origin_block_data['keys'] = ['Native', 'Non-native', 'Translocated'];
+            origin_block_data['value_title'] = data['origin'];
+            this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
+
+
 
             // Set endemic
             var endemic = data['endemism'];
@@ -325,6 +334,41 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        }
+        },
+        renderFBISRPanelBlocks: function(data, stretch_selection = false) {
+            var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
+            $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
+            return $detailWrapper;
+        },
+        getHtmlForFBISBlocks: function (new_data_in, stretch_selection) {
+            var result_html = '<div class ="fbis-data-flex-block-row">'
+            var data_in = new_data_in;
+            var data_value = data_in.value;
+            var data_title = data_in.value_title;
+            var keys = data_in.keys;
+            var key = '';
+            var style_class = '';
+            var for_count = 0;
+            for (let key of keys) {
+                for_count += 1;
+                style_class = "fbis-rpanel-block";
+                var temp_key = key;
+                //Highlight my selected box with a different colour
+                if (key == data_value) {
+                    style_class += " fbis-rpanel-block-selected";
+                    temp_key = data_title;
+                    if (stretch_selection == true)
+                    {
+                        style_class += " flex-base-auto";
+                    }
+                }
+                result_html += (`<div class="${style_class}">
+                                 <div class="fbis-rpanel-block-text">
+                                 ${temp_key}</div></div>`)
+
+            };
+            result_html += '</div>';
+            return result_html;
+        },
     })
 });
