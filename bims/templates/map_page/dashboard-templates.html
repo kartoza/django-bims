@@ -44,8 +44,7 @@
 						<div class="col-lg-12" id="fsdd-overview">
 							<div class="card">
 								<div class="card-header">
-									<div class="card-header-title pull-left d-inline"
-										 style="margin-top: 10px; margin-bottom: 10px">
+									<div class="card-header-title pull-left d-inline">
 										Overview
 									</div>
 								</div>
@@ -56,17 +55,140 @@
 							</div>
 						</div>
 					</div>
+					{# Names and Taxonomy #}
+					<div class="row">
+						<div class="col-lg-12" id="fsdd-names-and-taxonomy">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Names and Taxonomy
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="overview-name-taxonomy-table dashboard-table"
+										 style="margin-top: 10px; margin-bottom: 10px"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
 				</div>
 				<div class="col-lg-8 dashboard-graph-wrapper">
 					<div class="row">
-						<div class="col-lg-12">
-							<h5 class="dd-title">Records per area</h5>
-							<div class="dashboard-table records-area-table"></div>
+						{# Records Per Area#}
+						<div class="col-lg-12" id="fsdd-records-per-area">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Occurrence Records
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="records-per-area-taxonomy-table dashboard-table"
+										 style="margin-top: 10px; margin-bottom: 10px"></div>
+									<div class="dashboard-table records-area-table"></div>
+								</div>
+							</div>
 						</div>
 					</div>
+					<div class="row">
+						{# Records-per-area chart #}
+						<div class="col-lg-12" id="fsdd-conservation-status">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Occurrences
+									</div>
+								</div>
+								<div class="card-body">
+									<canvas id="taxa-records-timeline-graph"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						{# orgin #}
+						<div class="col-lg-12" id="fsdd-orgin">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Origin
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="row dd-status-list origin-info-list">
+                    				<span class="dd-status-item"
+										  data-value="indigenous">Native</span>
+										<span class="dd-status-item"
+											  data-value="alien">Non-native</span>
+										<span class="dd-status-item"
+											  data-value="translocated">Translocated</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						{# endemism #}
+						<div class="col-lg-12" id="fsdd-endemism">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Endemism
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="row dd-status-list endemic-info-list">
+									<span class="dd-status-item"
+										  data-value="widespread">Widespread</span>
+										<span class="dd-status-item"
+											  data-value="regional endemic">Regional endemic</span>
+										<span class="dd-status-item"
+											  data-value="micro-endemic">Micro-endemic</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						{# conservation-status #}
+						<div class="col-lg-12" id="fsdd-conservation-status">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Conservation Status
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="row dd-status-list conservation-status-list">
+								<span class="dd-status-item"
+									  data-value="EX">Extinct (EX)</span>
+										<span class="dd-status-item"
+											  data-value="EW">Extinct in the wild (EW)</span>
+										<span class="dd-status-item"
+											  data-value="CR">Critically endangered (CR)</span>
+										<span class="dd-status-item"
+											  data-value="EN">Endangered (EN)</span>
+										<span class="dd-status-item"
+											  data-value="VU">Vulnerable (VU)</span>
+										<span class="dd-status-item"
+											  data-value="NT">Near threatened (NT)</span>
+										<span class="dd-status-item"
+											  data-value="LC">Least concern (LC)</span>
+										<span class="dd-status-item"
+											  data-value="DD">Data deficient (DD)</span>
+										<span class="dd-status-item"
+											  data-value="NE">Not evaluated (NE)</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
 				</div>
 			</div>
 		</div>
+
 	</div>
 </script>
 
