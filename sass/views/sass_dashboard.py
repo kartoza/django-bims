@@ -303,7 +303,7 @@ class SassDashboardView(TemplateView):
 
         ordered_dict = OrderedDict(
             sorted(
-                river_catchment.items(), 
+                river_catchment.items(),
                 key=lambda (k, v): (v['display_order'], k)))
         return ordered_dict
 
