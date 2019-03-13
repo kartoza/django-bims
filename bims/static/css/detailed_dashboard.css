@@ -146,3 +146,37 @@
     text-align: center;
     min-height: 100px;
 }
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
+
+
+.taxon-dashboard-detail .col-12.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.taxon-dashboard-detail .title_column {
+     font-weight: 700;
+}
+
+.taxon-dashboard-detail  .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+.taxon-dashboard-detail  .col-8 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+/*.taxon-dashboard-detail .row {*/
+    /*padding: 0;*/
+/*}*/

@@ -99,15 +99,16 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             })
         },
         displayTaxonomyRank: function (taxonomy_rank) {
-            let taxonomySystem = this.$el.find('.taxon-dashboard-detail');
-            $.each(taxonomy_rank, function (rank, name) {
-                taxonomySystem.append(
-                    '<tr>' +
-                    '<td>' + rank + '</td>' +
-                    '<td>' + name + '</td>' +
-                    '</tr>'
-                )
-            });
+            let taxononomyRankList = _.template($('#taxon-detail-table').html());
+            this.overviewNameTaxonTable.html(taxononomyRankList({
+                kingdom: taxonomy_rank['KINGDOM'],
+                phylum: taxonomy_rank['PHYLUM'],
+                my_class: taxonomy_rank['CLASS'],
+                order: taxonomy_rank['ORDER'],
+                family: taxonomy_rank['FAMILY'],
+                genus: taxonomy_rank['GENUS'],
+                species: taxonomy_rank['SPECIES'],
+            }));
         },
         generateDashboard: function (data) {
             var self = this;
@@ -155,9 +156,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 taxon_class: data['taxon'],
                 gbif_id: gbif_key
             }));
-
-            let taxonDetailTable = _.template($('#taxon-detail-table').html());
-            this.overviewNameTaxonTable.html(taxonDetailTable());
 
             let recordsOverTimeData = data['records_over_time_data'];
             let recordsOverTimeLabels = data['records_over_time_labels'];
