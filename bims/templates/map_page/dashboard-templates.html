@@ -41,11 +41,11 @@
 					</div>
 					{# Overview #}
 					<div class="row">
-						<div class="col-lg-12" id="fish-ssdd-distribution">
+						<div class="col-lg-12" id="fsdd-distribution">
 							<div class="card">
 								<div class="card-header">
 									<div class="card-header-title pull-left d-inline">
-										Distribution
+										Overview
 									</div>
 									<button id="export-locationsite-map"
 											class="btn btn-default pull-right">
@@ -142,6 +142,30 @@
 </script>
 
 <script type="text/template" id="taxon-overview-table">
+	<div class="row">
+		<div class="col-6 title_column">Taxon</div>
+		<div class="col-6"><%= taxon_class %></div>
+	</div>
+	<div class="row">
+		<div class="col-6 title_column">Common Name</div>
+		<div class="col-6"><%= common_name %></div>
+	</div>
+	<div class="row">
+		<div class="col-6 title_column">GBIF ID</div>
+		<div class="col-6"><%= gbif_id %></div>
+	</div>
+	<div class="row">
+		<div class="col-6 title_column">Records</div>
+		<div class="col-6"><%= count %></div>
+   </div>
+	<div class="row">
+		<div class="col-6 title_column">Sites</div>
+		<div class="col-6"><a href='<%= csv_downloads_url %>'
+							  style="text-decoration: underline; font-size: 11pt !important;">
+			Download as CSV</a>
+		</div>
+	</div>
+
     <table class="table">
         <tr>
             <td>Taxon</td>
