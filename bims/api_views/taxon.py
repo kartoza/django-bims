@@ -99,7 +99,7 @@ class TaxonDetail(APIView):
         taxonomic_rank = self.get_taxonomic_rank_values(taxon)
         for rank in taxonomic_rank:
             data.update(rank)
-
+        common_names = []
         # Common name
         if taxon.vernacular_names.filter(language='eng').exists():
             common_names = list(
