@@ -2406,6 +2406,12 @@ div:hover::-webkit-scrollbar {
     color: white;
 }
 
+#filter-validation-error {
+    font-size: 9pt;
+    color: red;
+    display: none;
+}
+
 .overview-taxa-table {
     margin-top: 10px;
     margin-bottom: 10px;
