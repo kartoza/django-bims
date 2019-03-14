@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -285,6 +286,27 @@ class SassDashboardView(TemplateView):
             pass
         return chart_data
 
+    def ordering_catchment_data(self, river_catchment):
+        display_order = {
+            'primary_catchment_area': 0,
+            'secondary_catchment_area': 1,
+            'tertiary_catchment_area': 2,
+            'quaternary_catchment_area': 3,
+            'quinary_catchment_area': 4,
+        }
+
+        for key, value in river_catchment.items():
+            if value['key'] not in display_order:
+                value['display_order'] = 5
+            else:
+                value['display_order'] = display_order[value['key']]
+
+        ordered_dict = OrderedDict(
+            sorted(
+                river_catchment.items(),
+                key=lambda (k, v): (v['display_order'], k)))
+        return ordered_dict
+
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
         self.get_site_visit_taxon()
@@ -319,12 +341,11 @@ class SassDashboardView(TemplateView):
 
         try:
             location_context = json.loads(self.location_site.location_context)
-            context['river_catchments'] = (
-                json.dumps(
-                    location_context['context_group_values'][
-                        'water_group']['service_registry_values']
-                )
-            )
+            river_catchments = location_context[
+                    'context_group_values'][
+                    'water_group']['service_registry_values']
+            river_catchments = self.ordering_catchment_data(river_catchments)
+            context['river_catchments'] = (json.dumps(river_catchments))
             context['eco_geo'] = (
                 json.dumps(
                     location_context['context_group_values'][

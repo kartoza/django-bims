@@ -51,6 +51,24 @@ class IUCNStatus(models.Model):
         verbose_name_plural = 'IUCN Status'
         verbose_name = 'IUCN Status'
 
+    @staticmethod
+    def get_title(category):
+        CATEGORY_CHOICES = (
+            ('LC', 'Least Concern'),
+            ('NT', 'Near Threatened'),
+            ('VU', 'Vulnerable'),
+            ('EN', 'Endangered'),
+            ('CR', 'Critically Endangered'),
+            ('EW', 'Extinct In The Wild'),
+            ('EX', 'Extinct'),
+            ('DD', 'Data Deficient'),
+        )
+        choices_dict = {}
+        for choice, value in CATEGORY_CHOICES:
+            choices_dict[choice] = value
+        return choices_dict[category]
+
+
 
 @receiver(models.signals.pre_save, sender=IUCNStatus)
 def iucn_status_pre_save_handler(sender, instance, **kwargs):
