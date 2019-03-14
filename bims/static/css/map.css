@@ -2415,3 +2415,8 @@ div:hover::-webkit-scrollbar {
     color: white;
 }
 
+#filter-validation-error {
+    font-size: 9pt;
+    color: red;
+    display: none;
+}
