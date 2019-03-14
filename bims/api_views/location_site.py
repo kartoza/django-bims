@@ -287,22 +287,21 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id
         }
 
-        file_path = create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        # file_path = create_search_process_file(
+        #     data=response_data,
+        #     search_process=search_process,
+        #     finished=True
+        # )
+        # file_data = open(file_path)
+        #
+        # try:
+        #     return Response(json.load(file_data))
+        # except ValueError:
+        return Response(response_data)
 
     def get_occurence_data(self, collection_results):
 
-        titles = ['Taxon', 'Origin', 'Occurrences', 'Endemism',
-                  'Cons. Status']
+        titles = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
         data_keys = ['taxon', 'origin', 'count', 'endemism', 'cons_status']
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
@@ -338,8 +337,8 @@ class LocationSitesSummary(APIView):
         )
         keys = origin_by_name_data.values_list('name', flat=True)
         values = origin_by_name_data.values_list('count', flat=True)
-        biodiversity_data['fish']['origin_chart']['data'] = values
-        biodiversity_data['fish']['origin_chart']['keys'] = keys
+        biodiversity_data['fish']['origin_chart']['data'] = list(values)
+        biodiversity_data['fish']['origin_chart']['keys'] = list(keys)
         cons_status_data = collection_results.annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
@@ -351,8 +350,8 @@ class LocationSitesSummary(APIView):
         )
         keys = cons_status_data.values_list('name', flat=True)
         values = cons_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['cons_status_chart']['data'] = values
-        biodiversity_data['fish']['cons_status_chart']['keys'] = keys
+        biodiversity_data['fish']['cons_status_chart']['data'] = list(values)
+        biodiversity_data['fish']['cons_status_chart']['keys'] = list(keys)
         endemism_status_data = collection_results.annotate(
             name=F('taxonomy__endemism__name')
         ).values(
@@ -364,8 +363,8 @@ class LocationSitesSummary(APIView):
         )
         keys = endemism_status_data.values_list('name', flat=True)
         values = endemism_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['endemism_chart']['data'] = values
-        biodiversity_data['fish']['endemism_chart']['keys'] = keys
+        biodiversity_data['fish']['endemism_chart']['data'] = list(values)
+        biodiversity_data['fish']['endemism_chart']['keys'] = list(keys)
         biodiversity_data['occurrences'] = [0, 0, 0]
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']

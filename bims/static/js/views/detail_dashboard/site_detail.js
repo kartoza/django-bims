@@ -595,7 +595,6 @@ define([
          },
 
          createDataSummary: function (data) {
-
             var bio_data = data['biodiversity_data'];
             var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
             this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
@@ -605,8 +604,6 @@ define([
 
             var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
             this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
-
-
          },
 
          renderPieChart: function(data, speciesType, chartName, chartCanvas) {
@@ -758,6 +755,7 @@ define([
             }
             return name;
         },
+
 
     })
 });
