@@ -222,3 +222,7 @@
    height: 0;
 }
 
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
