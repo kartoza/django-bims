@@ -44,55 +44,12 @@ class IUCNStatus(models.Model):
     def __str__(self):
         return u'%s' % self.category
 
-
-    @staticmethod
-    def get_title(category):
-        """
-        Get Title from Categories
-        :param Short Category as 2 letters eg. 'LN'
-        :return Full title as eg. 'Least Concern'
-        """
-        CATEGORY_CHOICES = (
-            ('LC', 'Least Concern'),
-            ('NT', 'Near Threatened'),
-            ('VU', 'Vulnerable'),
-            ('EN', 'Endangered'),
-            ('CR', 'Critically Endangered'),
-            ('EW', 'Extinct In The Wild'),
-            ('EX', 'Extinct'),
-            ('DD', 'Data Deficient'),
-        )
-        choices_dict = {}
-        for choice, value in CATEGORY_CHOICES:
-            choices_dict[choice] = value
-        return choices_dict[category]
-
-
-
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
         verbose_name_plural = 'IUCN Status'
         verbose_name = 'IUCN Status'
-
-    @staticmethod
-    def get_title(category):
-        CATEGORY_CHOICES = (
-            ('LC', 'Least Concern'),
-            ('NT', 'Near Threatened'),
-            ('VU', 'Vulnerable'),
-            ('EN', 'Endangered'),
-            ('CR', 'Critically Endangered'),
-            ('EW', 'Extinct In The Wild'),
-            ('EX', 'Extinct'),
-            ('DD', 'Data Deficient'),
-        )
-        choices_dict = {}
-        for choice, value in CATEGORY_CHOICES:
-            choices_dict[choice] = value
-        return choices_dict[category]
-
 
 
 @receiver(models.signals.pre_save, sender=IUCNStatus)
