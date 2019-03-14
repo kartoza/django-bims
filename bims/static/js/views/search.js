@@ -211,6 +211,7 @@ define([
             return this.$el.find("#conservation-status").val("").trigger('chosen:updated');
         },
         search: function (searchValue) {
+            $('#filter-validation-error').hide();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
                 return;
@@ -305,7 +306,8 @@ define([
             }else if(validationFilter.indexOf('true') !== -1 || validationFilter.indexOf('false') !== -1){
                 validated = validationFilter[0]
             }else if(validationFilter.length === 0){
-                validated = 'none'
+                $('#filter-validation-error').show();
+                return;
             }
 
             var parameters = {
@@ -393,6 +395,7 @@ define([
             this.searchPanel.clearSidePanel();
             this.clearClickedOriginButton();
             $('#filter-validation-validated').prop('checked', true);
+            $('#filter-validation-error').hide();
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
