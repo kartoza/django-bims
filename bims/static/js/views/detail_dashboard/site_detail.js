@@ -172,6 +172,7 @@ define([
                 success: function (data) {
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
+                    self.createFishSSDDSiteDetails(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -578,7 +579,6 @@ define([
                 options: originTimelineGraphOptions
             })
         },
-
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('site_detail_info')) {
@@ -653,7 +653,62 @@ define([
             var element_name = `#fish-ssdd-${chartName}-legend`;
             $(element_name).html(chart_labels[chartName]);
         },
+        renderTableFromTitlesValuesLists: function (specific_data, all_data=[], alias_type='', bold_title=true) {
+            var title = '';
+            var value = '';
+            var temp_result;
+            var title_class = ''
+            var $result = $('<div></div>');
+            if (bold_title == true)
+            {
+                title_class = 'title_column';
+            }
+            var count = specific_data['value'].length;
+            for (let i = 0; i < count; i++)
+            {
+                title = this.parseNameFromAliases(specific_data['title'][i], alias_type, all_data);
+                value = specific_data['value'][i];
+                temp_result = `<div class="row">
+                               <div class="col-6 ${title_class}">${title}</div>
+                               <div class="col-6">${value}</div>
+                               </div>`
+                $result.append(temp_result);
+            }
+            return $result;
+        },
 
+        createFishSSDDSiteDetails: function (data) {
+            var siteDetailsWrapper = $('#fish-ssdd-site-details');
+
+
+            var overview = siteDetailsWrapper.find('#overview');
+            overview.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['overview']));
+            var catchments = siteDetailsWrapper.find('#catchments');
+            catchments.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['catchments']),
+                data);
+            var sub_water_management_areas = siteDetailsWrapper.find(
+                '#sub_water_management_areas');
+            sub_water_management_areas.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['sub_water_management_areas']));
+            var sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
+            sa_ecoregions.append(this.renderTableFromTitlesValuesLists(
+                data['site_details']['sa_ecoregions']));
+
+            var recordSitesWrapper = $('#fish-ssdd-records-sites');
+            var recordSitesSub = recordSitesWrapper.find('#records-sites')
+            recordSitesSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
+
+            var originsWrapper = $('#fish-ssdd-origins');
+            var originsSub = originsWrapper.find('#origins');
+            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data,  'origin', false));
+
+            var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
+            var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
+            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
+
+        },
         createOccurrenceDataTable: function(data) {
             var renderedOccurrenceData = this.renderOccurrenceData(data);
             var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
@@ -744,18 +799,17 @@ define([
             var choices = [];
             var index = 0;
             if (alias_type == 'cons_status') {
-                choices = data['iucn_name_list'].flat(1);
+                choices = data['iucn_name_list'];
             }
             if (alias_type == 'origin')
             {
-                choices = data['origin_name_list'].flat(1);}
+                choices = data['origin_name_list'];}
             if (choices.length > 0) {
                 index = choices.indexOf(alias) + 1;
                 name = choices[index];
             }
             return name;
         },
-
 
     })
 });

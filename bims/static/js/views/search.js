@@ -212,6 +212,7 @@ define([
             return this.$el.find("#conservation-status").val("").trigger('chosen:updated');
         },
         search: function (searchValue) {
+            $('#filter-validation-error').hide();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
                 return;
@@ -295,6 +296,21 @@ define([
 
             var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
 
+            var validationFilter = [];
+            var validated = true;
+            $('[name=filter-validation]:checked').each(function() {
+                validationFilter.push($(this).attr('value'));
+            });
+
+            if(validationFilter.indexOf('true') !== -1 && validationFilter.indexOf('false') !== -1){
+                validated = 'all';
+            }else if(validationFilter.indexOf('true') !== -1 || validationFilter.indexOf('false') !== -1){
+                validated = validationFilter[0]
+            }else if(validationFilter.length === 0){
+                $('#filter-validation-error').show();
+                return;
+            }
+
             var parameters = {
                 'search': searchValue,
                 'collector': collectorValue,
@@ -309,7 +325,8 @@ define([
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
                 'conservationStatus': conservationStatusValue,
-                'spatialFilter': spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters)
+                'spatialFilter': spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters),
+                'validated': validated
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -378,6 +395,8 @@ define([
             $('.map-search-result').hide();
             this.searchPanel.clearSidePanel();
             this.clearClickedOriginButton();
+            $('#filter-validation-validated').prop('checked', true);
+            $('#filter-validation-error').hide();
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
