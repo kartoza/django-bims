@@ -14,7 +14,8 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'jquery'], f
             } else if (this.getResultType() === 'site') {
                 Shared.Dispatcher.trigger('searchResult:siteClicked', this.model.attributes);
             } else if (this.getResultType() === 'show-more-site') {
-                console.log('Show more site');
+                $(e.target).parent().remove();
+                Shared.Dispatcher.trigger('search:showMoreSites');
             }
         },
         getResultType: function () {

@@ -8,6 +8,7 @@ define([
         model: SearchModel,
         url: "",
         searchUrl: "/api/search-v2/",
+        siteResultUrl: "/api/site-search-result/",
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
@@ -21,6 +22,8 @@ define([
         totalRecords: 0,
         totalSites: 0,
         totalTaxa: 0,
+        processID: 0,
+        pageMoreSites: 2,
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -42,6 +45,7 @@ define([
             this.reference = parameters['reference'];
             this.conservationStatus = parameters['conservationStatus'];
             this.riverCatchment = parameters['spatialFilter'];
+            this.validated = parameters['validated'];
             parameters['taxon'] = '';
             parameters['siteId'] = '';
 
@@ -127,6 +131,9 @@ define([
             }
             if (response.hasOwnProperty('sites_raw_query')) {
                 this.sitesRawQuery = response['sites_raw_query'];
+            }
+            if (response.hasOwnProperty('process_id')) {
+                this.processID = response['process_id'];
             }
             this.renderCollection();
         },
@@ -247,6 +254,34 @@ define([
                 self.viewCollection.push(searchResultView);
             }
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
+        },
+        fetchMoreSites: function (page) {
+            var self = this;
+            var siteResultUrl = this.siteResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreSites;
+            $.ajax({
+                url: siteResultUrl,
+                success: function (data) {
+                    var siteData = data['data'];
+                    for(var i=0; i<siteData.length; i++){
+                        var searchModel = new SearchModel({
+                            id: siteData[i]['site_id'],
+                            count: siteData[i]['total'],
+                            name: siteData[i]['name'],
+                            record_type: 'site'
+                        });
+                        var searchResultView = new SearchResultView({
+                            model: searchModel
+                        });
+                        self.viewCollection.push(searchResultView);
+                    }
+                    if(data['has_next']){
+                        self.pageMoreSites += 1;
+                        self.fetchMoreSites()
+                    }else {
+                        self.pageMoreSites = 2
+                    }
+                }
+            })
         }
     })
 });
