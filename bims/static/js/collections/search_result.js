@@ -45,6 +45,7 @@ define([
             this.reference = parameters['reference'];
             this.conservationStatus = parameters['conservationStatus'];
             this.riverCatchment = parameters['spatialFilter'];
+            this.validated = parameters['validated'];
             parameters['taxon'] = '';
             parameters['siteId'] = '';
 

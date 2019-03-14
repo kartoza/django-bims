@@ -2405,3 +2405,9 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     color: white;
 }
+
+#filter-validation-error {
+    font-size: 9pt;
+    color: red;
+    display: none;
+}
