@@ -722,11 +722,11 @@ define([
             var choices = [];
             var index = 0;
             if (alias_type == 'cons_status') {
-                choices = data['iucn_name_list'].flat(1);
+                choices = data['iucn_name_list'];
             }
             if (alias_type == 'origin')
             {
-                choices = data['origin_name_list'].flat(1);}
+                choices = data['origin_name_list'];}
             if (choices.length > 0) {
                 index = choices.indexOf(alias) + 1;
                 name = choices[index];
