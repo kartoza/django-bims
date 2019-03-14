@@ -143,14 +143,14 @@ class BioCollectionSummary(APIView):
         else:
             response_data['common_name'] = str(
                 common_names[0]['name']).capitalize()
-        # file_path = create_search_process_file(
-        #     data=response_data,
-        #     search_process=search_process,
-        #     finished=True
-        # )
-        # file_data = open(file_path)
-        #
-        # try:
-        #     return Response(json.load(file_data))
-        # except ValueError:
-        return Response(response_data)
+        file_path = create_search_process_file(
+            data=response_data,
+            search_process=search_process,
+            finished=True
+        )
+        file_data = open(file_path)
+
+        try:
+            return Response(json.load(file_data))
+        except ValueError:
+            return Response(response_data)

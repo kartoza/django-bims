@@ -53,6 +53,7 @@ define([
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
             Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
+            Shared.Dispatcher.on('search:showMoreSites', this.showMoreSites, this);
         },
         render: function () {
             var self = this;
@@ -607,6 +608,9 @@ define([
                 this.spatialFilterView.selectedPoliticalRegions = JSON.parse(allFilters['boundary']);
             }
         },
+        showMoreSites: function () {
+            this.searchResultCollection.fetchMoreSites();
+        }
     })
 
 });
