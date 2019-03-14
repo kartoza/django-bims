@@ -329,12 +329,18 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     $classWrapper.hide();
 
                     var species = Object.keys(value).sort();
+                    console.log(species);
+                    console.log(that.currentSpeciesSearchResult);
                     $.each(species, function (index, speciesName) {
                         if (that.currentSpeciesSearchResult.length > 0) {
                             // check if species name is on search mode
-                            if ($.inArray(speciesName, that.currentSpeciesSearchResult) < 0) {
-                                return true;
-                            }
+                            var lowerSpeciesName = speciesName.toLowerCase();
+                            $.each(that.currentSpeciesSearchResult, function (currentIndex, currentSpecies) {
+                                currentSpecies = currentSpecies.toLowerCase();
+                                if (currentSpecies.includes(lowerSpeciesName)) {
+                                    return true;
+                                }
+                            });
                         }
                         var speciesValue = value[speciesName];
                         $classWrapper.append(
