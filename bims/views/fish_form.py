@@ -14,7 +14,8 @@ from bims.models import (
     LocationSite, Biotope, SamplingMethod,
     BiologicalCollectionRecord,
     Taxonomy,
-    LocationType
+    LocationType,
+    TaxonGroup
 )
 
 logger = logging.getLogger('bims')
@@ -33,6 +34,21 @@ class FishFormView(TemplateView):
     template_name = 'fish_form_page.html'
     location_site = None
 
+    def all_fishes(self, fish_parents):
+        """
+        Get all fishes
+        :param fish_parents: list of fish parent id
+        :return: array of taxa id
+        """
+        fish_list = []
+        fishes = Taxonomy.objects.filter(
+            parent__in=fish_parents
+        )
+        if fishes:
+            fish_list = list(fishes.values_list('id', flat=True))
+            fish_list.extend(self.all_fishes(fishes))
+        return fish_list
+
     def taxa_from_river_catchment(self):
         """
         Get taxa from river_catchment
@@ -40,6 +56,11 @@ class FishFormView(TemplateView):
         """
         river_catchment_value = None
         river_catchment_query = None
+        fish_group, created = TaxonGroup.objects.get_or_create(
+            name='Fish'
+        )
+        all_fishes = self.all_fishes(fish_group.taxonomies.all())
+
         try:
             location_site_context = json.loads(
                 self.location_site.location_context)
@@ -74,8 +95,11 @@ class FishFormView(TemplateView):
                         'biological_collection_record__taxonomy__'
                         'canonical_name'),
                     rank=F('biological_collection_record__taxonomy__rank')
-                ).distinct('biological_collection_record__taxonomy').filter(
-                    taxon_id__isnull=False
+                ).distinct('taxon_name').filter(
+                    taxon_id__isnull=False,
+                    taxon_id__in=all_fishes,
+                ).order_by(
+                    'taxon_name'
                 )
             )
         return taxa_list
