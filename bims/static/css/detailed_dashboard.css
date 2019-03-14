@@ -146,3 +146,18 @@
     text-align: center;
     min-height: 100px;
 }
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+    border-radius: 0px;
+}
+
+.dashboard-wrapper .card .card-header   {
+    padding: 0.25rem;
+    padding-left: 1rem;
+    line-height: 1.25rem;
+}
+
+.dashboard-wrapper .card .card-header-title {
+    height: auto;
+}

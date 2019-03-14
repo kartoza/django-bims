@@ -119,21 +119,16 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
             self.taxonName = canonicalName;
 
-            // // Set origin
-            // var category = data['origin'];
-            // $.each(self.originInfoList.children(), function (key, data) {
-            //     var $originInfoItem = $(data);
-            //     if ($originInfoItem.data('value') === category) {
-            //         $originInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-            //     }
-            // });
-            // Set origin
             var origin_block_data = {};
-            origin_block_data['value'] = data['origin'];;
             origin_block_data['keys'] = ['Native', 'Non-native', 'Translocated'];
-            origin_block_data['value_title'] = data['origin'];
+            origin_block_data['value'] = this.origin_title_from_choices(data['origin'], data);
+            // for (let i = 0; i < origin_block_data['keys'].length; i++) {
+            //     let next_key = origin_block_data['keys'][i];
+            //     origin_block_data['keys'][i] = this.origin_title_from_choices(next_key, data);
+            // };
+            origin_block_data['value_title'] = origin_block_data['value'];
             this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
-
+           
 
 
             // Set endemic
@@ -242,10 +237,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
         },
         clearDashboard: function () {
-            $.each(this.originInfoList.children(), function (key, data) {
-                var $originInfoItem = $(data);
-                $originInfoItem.css('background-color', '');
-            });
             $.each(this.conservationStatusList.children(), function (key, data) {
                 var $conservationStatusItem = $(data);
                 $conservationStatusItem.css('background-color', '');
@@ -256,7 +247,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
             this.overviewTaxaTable.html('');
             this.overviewNameTaxonTable.html('');
-
+            this.originBlockData.html('');
             // Clear canvas
             if (this.taxaRecordsTimelineGraphChart) {
                 this.taxaRecordsTimelineGraphChart.destroy();
@@ -336,7 +327,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             }
         },
         renderFBISRPanelBlocks: function(data, stretch_selection = false) {
-            var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
+            var $detailWrapper = $('<div style="padding-left: 0;"></div>');
             $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
             return $detailWrapper;
         },
@@ -351,7 +342,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var for_count = 0;
             for (let key of keys) {
                 for_count += 1;
-                style_class = "fbis-rpanel-block";
+                style_class = "fbis-rpanel-block fbis-rpanel-block-dd ";
                 var temp_key = key;
                 //Highlight my selected box with a different colour
                 if (key == data_value) {
@@ -370,5 +361,21 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             result_html += '</div>';
             return result_html;
         },
+        origin_title_from_choices: function (short_name, data) {
+            if ('origin_choices_list' in data) {
+                let origin_choice_list = data['origin_choices_list'].flat(1);
+                if (origin_choice_list.indexOf(short_name) >= 0) {
+                    let index = origin_choice_list.indexOf(short_name) + 1;
+                    let long_name = origin_choice_list[index];
+                    return `${long_name}`;
+                }
+                else {
+                    return short_name;
+                }
+            }
+            else {
+                return short_name;
+            }
+        }
     })
 });
