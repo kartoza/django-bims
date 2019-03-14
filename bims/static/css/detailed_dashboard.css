@@ -221,3 +221,7 @@
     padding-left: 0.5rem;
     font-size: 12px;
 }
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}

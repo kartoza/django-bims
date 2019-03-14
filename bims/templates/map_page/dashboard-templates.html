@@ -241,14 +241,15 @@
 </script>
 
 <script type="text/html" id="detailed-site-dashboard">
-	<div class="loading-dashboard">
-		<img src="/static/img/small-loading.svg" width="250"
-			 alt="Loading view">
-		<div class="loading-dashboard-subtitle">
-			Loading...
+	<div id="detailed-site-dashboard-wrapper" style="padding: 1rem;">
+		<div class="loading-dashboard">
+			<img src="/static/img/small-loading.svg" width="250"
+				 alt="Loading view">
+			<div class="loading-dashboard-subtitle">
+				Loading...
+			</div>
 		</div>
-	</div>
-	<button class="btn btn-primary btn-dashboard close-dashboard"
+		<button class="btn btn-primary btn-dashboard close-dashboard"
 			style="float: right; z-index: 10;"><i class="fa fa-times pull-right"></i>
 	</button>
 	<div class="container dashboard-wrapper">
@@ -373,14 +374,135 @@
 							<div class="card-body">
 								<div id="occurrence-data">
 
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+				<div class="col-lg-8 dashboard-graph-wrapper">
+					{# Data Summary #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-data-summary">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Occurence Data
+									</div>
+								</div>
+								<div class="card-body">
+									<div id="data-summary">
+										<div class="row fish-ssdd-legends">
+											<div class="col-3" class="fish-ssdd-legend" id="fish-ssdd-origin-legend"></div>
+											<div class="col-3" class="fish-ssdd-legend" id="fish-ssdd-endemism-legend"></div>
+											<div class="col-3" class="fish-ssdd-legend" id="fish-ssdd-cons_status-legend"></div>
+											<div class="col-3" class="fish-ssdd-legend" id="fish-ssdd-sampling-method-legend"></div>
+										</div>
+										<div class="row">
+											<div class="col-3 fish-ssdd-pie-chart">
+												<canvas id="fish-ssdd-origin-pie">
+												</canvas>
+											</div>
+											<div class="col-3 fish-ssdd-pie-chart">
+												<canvas id="fish-ssdd-endemism-pie">
+												</canvas>
+											</div>
+											<div class="col-3 fish-ssdd-pie-chart">
+												<canvas id="fish-ssdd-conservation-status-pie">
+												</canvas>
+											</div>
+											<div class="col-3 fish-ssdd-pie-chart">
+											</div>
+										</div>
+										<div class="row">
+											<div class="col-3 fish-ssdd-titles">Origin</div>
+											<div class="col-3 fish-ssdd-titles">Endemism</div>
+											<div class="col-3 fish-ssdd-titles">Conservation Status</div>
+											<div class="col-3 fish-ssdd-titles">Sampling Method</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+					{# Occurrences per year line chart #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-occurrences-line-chart">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Occurrences
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="col-12 fish-ssdd-occurrences-line-chart">
+										<canvas id="fish-ssdd-occurrences-line-chart-canvas">
+										</canvas>
+									</div>
+
 								</div>
 							</div>
 						</div>
 					</div>
+					{# Occurrences per year line chart #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-taxa-occurrences-line-chart">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inline">
+										Taxa
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="col-12 fish-ssdd-taxa-line-chart">
+										<canvas id="fish-ssdd-taxa-occurrences-line-chart-canvas">
+										</canvas>
+									</div>
 
+								</div>
+							</div>
+						</div>
+					</div>
+					{# origin per year bar chart #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-origin-bar-chart">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inbar">
+										Origin
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="col-12 fish-ssdd-origin-bar-chart">
+										<canvas id="fish-ssdd-origin-bar-chart-canvas">
+										</canvas>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					{# cons-status per year bar chart #}
+					<div class="row">
+						<div class="col-lg-12" id="fish-ssdd-cons-status-bar-chart">
+							<div class="card">
+								<div class="card-header">
+									<div class="card-header-title pull-left d-inbar">
+										Conservation Status
+									</div>
+								</div>
+								<div class="card-body">
+									<div class="col-12 fish-ssdd-cons-status-bar-chart">
+										<canvas id="fish-ssdd-cons-status-bar-chart-canvas">
+										</canvas>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
-			<div class="col-lg-8 dashboard-graph-wrapper"></div>
 		</div>
 	</div>
 </script>
