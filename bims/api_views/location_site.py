@@ -218,6 +218,7 @@ class LocationSitesSummary(APIView):
     TAXA_OCCURRENCE = 'taxa_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
+    BIODIVERSITY_DATA = 'biodiversity_data'
     SITE_DETAILS = 'site_details'
     OCCURRENCE_DATA = 'occurrence_data'
     IUCN_NAME_LIST = 'iucn_name_list'
@@ -301,6 +302,7 @@ class LocationSitesSummary(APIView):
 
         search_process.create_view()
         occurrence_data = self.get_occurence_data(collection_results)
+        biodiversity_data = self.get_biodiversity_data(collection_results)
 
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
@@ -316,6 +318,7 @@ class LocationSitesSummary(APIView):
             self.IUCN_NAME_LIST: list(IUCNStatus.CATEGORY_CHOICES),
             self.ORIGIN_NAME_LIST: list(
                 BiologicalCollectionRecord.CATEGORY_CHOICES),
+            self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id
@@ -433,6 +436,56 @@ class LocationSitesSummary(APIView):
         result = self.get_data_per_year(origin_graph_data)
         return result
 
+    def get_biodiversity_data(self, collection_results):
+        biodiversity_data = {}
+        biodiversity_data['fish'] = {}
+        biodiversity_data['fish']['origin_chart'] = {}
+        biodiversity_data['fish']['cons_status_chart'] = {}
+        biodiversity_data['fish']['endemism_chart'] = {}
+        origin_by_name_data = collection_results.annotate(
+            name=F('category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = origin_by_name_data.values_list('name', flat=True)
+        values = origin_by_name_data.values_list('count', flat=True)
+        biodiversity_data['fish']['origin_chart']['data'] = list(values)
+        biodiversity_data['fish']['origin_chart']['keys'] = list(keys)
+        cons_status_data = collection_results.annotate(
+            name=F('taxonomy__iucn_status__category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = cons_status_data.values_list('name', flat=True)
+        values = cons_status_data.values_list('count', flat=True)
+        biodiversity_data['fish']['cons_status_chart']['data'] = list(
+            values)
+        biodiversity_data['fish']['cons_status_chart']['keys'] = list(keys)
+        endemism_status_data = collection_results.annotate(
+            name=F('taxonomy__endemism__name')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = endemism_status_data.values_list('name', flat=True)
+        values = endemism_status_data.values_list('count', flat=True)
+        biodiversity_data['fish']['endemism_chart']['data'] = list(values)
+        biodiversity_data['fish']['endemism_chart']['keys'] = list(keys)
+        biodiversity_data['occurrences'] = [0, 0, 0]
+        biodiversity_data['number_of_taxa'] = [0, 0, 0]
+        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
+        return biodiversity_data
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
