@@ -8,7 +8,7 @@ from django.db.models import Count, F
 from django.db.models.functions import ExtractYear
 from rest_framework import status
 from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.models.iucn_status import  IUCNStatus
+from bims.models.iucn_status import IUCNStatus
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
     BioCollectionDetailSerializer,
