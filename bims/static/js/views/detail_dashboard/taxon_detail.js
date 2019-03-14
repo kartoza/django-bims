@@ -148,7 +148,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 cons_status_block_data['keys'][i] = this.iucn_title_from_choices(next_key, data);
             };
             cons_status_block_data['value_title'] = cons_status_block_data['value']
-            this.conservationStatusList.append(self.renderFBISBlocks(cons_status_block_data, true));
+            this.conservationStatusList.append(self.renderFBISBlocks(cons_status_block_data));
 
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
@@ -240,6 +240,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 $originInfoItem.css('background-color', '');
             });
 
+            this.conservationStatusList.html = null;
+
             $.each(this.endemicInfoList.children(), function (key, data) {
                 var $endemicInfoItem = $(data);
                 $endemicInfoItem.css('background-color', '');
@@ -326,7 +328,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             }
         },
         renderFBISBlocks: function(data, stretch_selection = false) {
-            var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
+            var $detailWrapper = $('<div style="padding-left: 0;"></div>');
             $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
             return $detailWrapper;
         },
@@ -341,7 +343,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var for_count = 0;
             for (let key of keys) {
                 for_count += 1;
-                style_class = "fbis-rpanel-block";
+                style_class = "fbis-rpanel-block fbis-rpanel-block-dd ";
                 var temp_key = key;
                 //Highlight my selected box with a different colour
                 if (key == data_value) {
