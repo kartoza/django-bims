@@ -371,20 +371,14 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             return result_html;
         },
         iucn_title_from_choices: function (short_name, data) {
-            if ('iucn_choice_list' in data) {
-                let iucn_choice_list = this.flatten_arr(['iucn_choice_list']);
-                if (iucn_choice_list.indexOf(short_name) >= 0) {
-                    let index = iucn_choice_list.indexOf(short_name) + 1;
-                    let long_name = iucn_choice_list[index];
-                    return `${long_name} (${short_name})`;
-                }
-                else {
-                    return short_name;
-                }
+            var name = short_name;
+            var choices = [];
+            choices = this.flatten_arr(data['iucn_choice_list']);
+            if (choices.length > 0) {
+                index = choices.indexOf(short_name) + 1;
+                name = choices[index];
             }
-            else {
-                return short_name;
-            }
+            return name;
         },
         flatten_arr: function (arr) {
             self = this;
