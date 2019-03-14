@@ -168,8 +168,7 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
-                 //   self.createOccurrenceTable(data);
-                 //   self.createCharts(data);
+                    self.createOccurrenceDataTable(data);
                     self.createFishSSDDSiteDetails(data);
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
@@ -633,21 +632,107 @@ define([
             conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
 
         },
+        createOccurrenceDataTable: function(data) {
+            var renderedOccurrenceData = this.renderOccurrenceData(data);
+            var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
+            var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
+            occurrenceDataSub.append(renderedOccurrenceData);
+        },
+        renderOccurrenceData: function (data) {
+            data_in = data['occurrence_data'];
+            var result = '<div>';
+            if (typeof data_in == 'undefined')
+            {
+                return result + '</div>'
+            }
+            var count = 0;
+            var column_count = 0;
+            var column_class = '';
+            var column_value = '';
+            var next_col = '';
+            // Render headings
+            try {
+                count = data_in['titles'].length;
+            }
+            catch (e) {
+                count = 0;
+            }
+            result += '<div class="row">'; //Open new row
+            for (let i = 0; i < count; i++) {
+
+                column_class = 'col-2 title-column';
+                if ('titles' in data_in) {
+                     column_value = data_in['titles'][i];
+                }
+                else
+                {
+                    column_class = 'Unknown';
+                }
+                // Make my first column wider
+                if (i == 0) {
+                    column_class = 'col-4 title-column';
+                }
+                next_col = `<div class="${column_class}">
+                            <div class="center-self">${column_value}
+                            </div></div>`;
+                result += next_col ;
+            }
+            result += '</div>' //Close my row
+            // Render rows
+            column_count = count;
+            count = data_in['data'].length;
+            var taxon_values = [];
+
+            for (let i = 0; i < count; i++) {
+                result += '<div class="row">'; //Open new row
+                taxon_values = data_in['data'][i];
+                var column_key = ''
+                for (let j = 0; j < column_count; j++) {
+                    column_class = 'col-2';
+                    column_value = 'Unknown';
+                    if ('data_keys' in data_in) {
+                        column_key = data_in['data_keys'][j];
+                        if (typeof taxon_values != 'undefined') {
+                            if (column_key in taxon_values) {
+                                column_value = this.parseNameFromAliases(
+                                    taxon_values[column_key],
+                                    column_key,
+                                    data);
+                            }
+                        }
+                    }
+                    // Make my first column wider
+                    if (j== 0) {
+                        column_class = 'col-4';
+                    }
+                    next_col = `<div class="${column_class}">
+                                <div class="center-self">${column_value}
+                                </div></div>`;
+                    result += next_col;
+                }
+                result += '</div>'; //Close row
+            }
+            result += '</div>'; //Close row
+            var $result = $.parseHTML(result);
+
+            return $result
+        },
         parseNameFromAliases: function (alias, alias_type, data) {
             var name = alias;
             var choices = [];
             var index = 0;
-            if (alias_type == 'cons_status')  {
+            if (alias_type == 'cons_status') {
                 choices = data['iucn_name_list'].flat(1);
             }
-            if (alias_type == 'origin') {
-                choices = data['origin_name_list'].flat(1);
-            }
+            if (alias_type == 'origin')
+            {
+                choices = data['origin_name_list'].flat(1);}
             if (choices.length > 0) {
                 index = choices.indexOf(alias) + 1;
                 name = choices[index];
             }
             return name;
         },
+
     })
 });

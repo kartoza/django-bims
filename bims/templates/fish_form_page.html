@@ -16,6 +16,9 @@
     <script type="text/javascript">
         const location_site_lat = '{{ location_site_lat }}';
         const location_site_long = '{{ location_site_long }}';
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
     </script>
 
 {% endblock %}
@@ -24,18 +27,106 @@
     <form action="{{ request.path }}" method="post" id="fish-form"
           class="needs-validation" novalidate>
         {% csrf_token %}
-        <input type="hidden" name="site-id" value="{{ site_id }}">
+        <input type="hidden" id="site-id" name="site-id" value="{{ site_id }}">
         <div class="body-form container">
             <div class="header">
                 Add fish data for site
+                <span id="site-identifier">
                 {% if location_site_code %}{{ location_site_code }} {% else %}
                     {{ location_site_name }}{% endif %}
+                </span>
             </div>
             <div class="alert alert-danger" role="alert"
                  style="display: none;">
 
             </div>
             <div id="fish-map"></div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-1 col-form-label col-form-label">Latitude</label>
+                <input type="text" id="latitude" name="latitude"
+                       class="col-sm-2 form-control form-control-sm"
+                       value="{{ location_site_lat }}">
+                <label for="date"
+                       class="col-sm-1 col-form-label col-form-label">Longitude</label>
+                <input type="text" id="longitude" name="longitude"
+                       class="col-sm-2 form-control form-control-sm"
+                       value="{{ location_site_long }}">
+                <div class="update-taxon-container col-sm-2">
+                    <button id="update-coordinate" type="button"
+                            class="btn btn-default" disabled>
+                        Update coordinate
+                    </button>
+                </div>
+            </div>
+            <div id="closest-sites-container">
+                <div class="sub-header closest-sites-header">
+                    <span class="title">List of nearest sites</span>
+                    <button type="button"
+                            class="btn btn-danger pull-right close-nearest-list-table">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th scope="col">Site Code</th>
+                        <th scope="col">Site Name</th>
+                        <th scope="col">Distance</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="closest-site-table-body">
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-success add-new-site"
+                        style="margin-bottom: 10px;">
+                    + Add new site
+                </button>
+            </div>
+
+            <div id="add-new-site-container">
+                <div class="sub-header add-new-site-header">
+                    <span class="title">Add a new site</span>
+                    <button type="button"
+                            class="btn btn-danger pull-right close-add-new-site">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="form-group row">
+                    <label for="site_name"
+                           class="col-sm-2 col-form-label col-form-label">Site
+                        Name</label>
+                    <div class="col-sm-10">
+                        <input type="text" name="site_name" id="location-site-name"
+                               class="form-control form-control-sm"
+                               placeholder="">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="site_code"
+                           class="col-sm-2 col-form-label col-form-label">Site
+                        Code</label>
+                    <div class="col-sm-10">
+                        <input type="text" name="site_code" id="location-site-code"
+                               class="form-control form-control-sm"
+                               placeholder="">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="site_description"
+                           class="col-sm-2 col-form-label col-form-label">Site
+                        Description</label>
+                    <div class="col-sm-10">
+                        <input type="text" name="site_description" id="location-site-description"
+                               class="form-control form-control-sm"
+                               placeholder="">
+                    </div>
+                </div>
+            </div>
+
+            <div class="separator-line"></div>
+            <input type="hidden" value="" id="taxa-id-list" name="taxa-id-list">
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label required-text">Date</label>
@@ -73,7 +164,8 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Reference Category</label>
+                       class="col-sm-2 col-form-label col-form-label">Reference
+                    Category</label>
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="reference_category">
@@ -98,7 +190,9 @@
                 </div>
             </div>
             <div class="add-taxon-container">
-                <button id="add-taxon" type="button" class="btn btn-default">Add taxon</button>
+                <button id="add-taxon" type="button" class="btn btn-default">
+                    Add taxon
+                </button>
             </div>
             <table class="table table-sm">
                 <thead>
@@ -113,7 +207,8 @@
                 <tbody class="taxon-table-body">
                 <tr class="find-taxon-container" style="display: none">
                     <td scope="row">
-                        <input type="text" class="form-control taxon-input-name">
+                        <input type="text"
+                               class="form-control taxon-input-name">
                     </td>
                 </tr>
                 {% for taxon in taxa %}
@@ -121,7 +216,7 @@
                         <td scope="row"
                             class="taxon-name">
                             {{ taxon.taxon_name }}
-                            <input type="hidden" value="{{ taxon.taxon_id }}">
+                            <input class="taxon-id" type="hidden" value="{{ taxon.taxon_id }}">
                         </td>
                         <td>
                             <div class="form-check">
@@ -149,12 +244,16 @@
                             </select>
                         </td>
                         <td class="sampling-effort-container">
-                            <input type="number" min="0" name="{{ taxon.taxon_id }}-sampling-effort" class="form-control pull-left" style="width: 100px">
+                            <input type="number" min="0"
+                                   name="{{ taxon.taxon_id }}-sampling-effort"
+                                   class="form-control pull-left"
+                                   style="width: 100px">
                             <select class="form-control pull-right"
-                                    name="{{ taxon.taxon_id }}-sampling-effort-type" style="width: 200px">
+                                    name="{{ taxon.taxon_id }}-sampling-effort-type"
+                                    style="width: 200px">
                                 <option value=""> Not specified</option>
-                                <option value="min"> Time (min) </option>
-                                <option value="meter"> Area (m) </option>
+                                <option value="min"> Time (min)</option>
+                                <option value="meter"> Area (m)</option>
                             </select>
                         </td>
                     </tr>
