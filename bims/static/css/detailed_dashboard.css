@@ -193,9 +193,26 @@
    height: 0;
 }
 
+.fish-ssdd-titles {
+    text-align: center;
+    font-size: 12px;
+    padding: 0.5rem;
+}
+
+.fish-ssdd-legends {
+    font-style: italic;
+    font-size: 9px;
+    letter-spacing: 0.2px;
+    color: #4a4a4a;
+    padding-bottom: 0.5rem;
+}
+
+.fish-ssdd-legends .col-3 {
+    padding-left:9%;
+}
+
 .dashboard-wrapper .card {
     margin-top: 0.5rem;
-    border-radius: 0px;
 }
 
 .dashboard-wrapper .card .card-header   {
