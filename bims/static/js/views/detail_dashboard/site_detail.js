@@ -692,7 +692,7 @@ define([
                     borderWidth: 0,
                 }
             };
-
+            chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
 
@@ -741,7 +741,7 @@ define([
 
             var overview = siteDetailsWrapper.find('#overview');
             overview.append(this.renderTableFromTitlesValuesLists(
-                data['site_details']['overview']));
+                    data['site_details']['overview']));
             var catchments = siteDetailsWrapper.find('#catchments');
             catchments.append(this.renderTableFromTitlesValuesLists(
                 data['site_details']['catchments']),
