@@ -37,6 +37,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     site_visit = SiteVisit.objects.none()
     sass_version = 5
     site_code = ''
+    read_only = False
 
     def test_func(self):
         if self.request.user.is_superuser:
@@ -248,8 +249,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         taxon_filters = dict()
         biotope_taxon_list = None
         site_visit_taxon_list = None
-        taxon_filters[
-            ('display_order_sass_%s__isnull' % self.sass_version)] = False
+        if self.sass_version == 4:
+            taxon_filters['score__isnull'] = False
+        else:
+            taxon_filters['sass_5_score__isnull'] = False
         sass_taxon_list = SassTaxon.objects.filter(**taxon_filters).order_by(
             'display_order_sass_%s' % self.sass_version
         )
@@ -288,31 +291,57 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 taxon_list_form.append(taxon_dict)
                 continue
 
-            sass_taxon_biotope = dict(biotope_taxon_list.filter(
+            sass_taxon_biotope_list = biotope_taxon_list.filter(
                 sass_taxon=sass_taxon).values_list(
                 'biotope__name',
-                'taxon_abundance__abc'))
+                'taxon_abundance__abc')
 
-            if sass_taxon_biotope:
-                if BIOTOPE_STONES in sass_taxon_biotope:
-                    taxon_dict['s_value'] = (
-                        sass_taxon_biotope[BIOTOPE_STONES]
+            empty_taxon_biotope_value = True
+            if sass_taxon_biotope_list:
+                empty_taxon_biotope_value = False
+                for sass_taxon_biotope in sass_taxon_biotope_list:
+                    biotope_name = sass_taxon_biotope[0].lower()
+                    biotope_value = sass_taxon_biotope[1]
+                    biotope_identifier = self.check_biotope(
+                        biotope_name
                     )
-                if BIOTOPE_VEGETATION in sass_taxon_biotope:
-                    taxon_dict['veg_value'] = (
-                        sass_taxon_biotope[BIOTOPE_VEGETATION]
-                    )
-                if BIOTOPE_GSM in sass_taxon_biotope:
-                    taxon_dict['gsm_value'] = (
-                        sass_taxon_biotope[BIOTOPE_GSM]
-                    )
+                    if biotope_identifier == BIOTOPE_STONES:
+                        taxon_dict['s_value'] = biotope_value
+                    elif biotope_identifier == BIOTOPE_GSM:
+                        taxon_dict['gsm_value'] = biotope_value
+                    elif biotope_identifier == BIOTOPE_VEGETATION:
+                        taxon_dict['veg_value'] = biotope_value
             if sass_taxon.id in site_visit_taxon_list:
+                empty_taxon_biotope_value = False
                 taxon_dict['tot_value'] = (
                     site_visit_taxon_list[sass_taxon.id]
                 )
-
+            # If read only, don't show empty taxon row
+            if self.read_only and empty_taxon_biotope_value:
+                continue
             taxon_list_form.append(taxon_dict)
         return taxon_list_form
+
+    def check_biotope(self, biotope_name):
+        """
+        Check which biotope this data belongs to
+        :param biotope_name: biotope name, e.g. 'vegetation'
+        :return: general biotope name
+        """
+        stones_identifier = ['sic', 'sooc', 'stones']
+        veg_identifier = ['vegetation', 'mv', 'aqv', 'mvic', 'mvoc']
+        gsm_identifier = ['g/s/m', 'gravel', 'sand', 'silt/mud/clay']
+        biotope_name = biotope_name.lower()
+
+        for stone in stones_identifier:
+            if stone in biotope_name:
+                return BIOTOPE_STONES
+        for veg in veg_identifier:
+            if veg in biotope_name:
+                return BIOTOPE_VEGETATION
+        for gsm in gsm_identifier:
+            if gsm in biotope_name:
+                return BIOTOPE_GSM
 
     def get_context_data(self, **kwargs):
         context = super(SassFormView, self).get_context_data(**kwargs)
@@ -367,6 +396,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
 class SassReadFormView(SassFormView):
     template_name = 'form_only_read_page.html'
+    read_only = True
 
     def test_func(self):
         return True
