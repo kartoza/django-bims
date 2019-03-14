@@ -72,7 +72,7 @@ body {
     font-weight: bold;
 }
 
-.download-as-csv, .download-summary-as-csv {
+.download-as-csv, .download-summary-as-csv, .download-latest-as-csv {
     font-size: 10pt;
     text-transform: none;
     border-radius: 5px;

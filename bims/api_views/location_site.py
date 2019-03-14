@@ -32,6 +32,7 @@ from bims.utils.search_process import (
 )
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
+from bims.models.iucn_status import IUCNStatus
 
 
 class LocationSiteList(APIView):
@@ -216,12 +217,14 @@ class LocationSitesSummary(APIView):
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
     BIODIVERSITY_DATA = 'biodiversity_data'
+    OCCURRENCE_DATA = 'occurrence_data'
+    IUCN_NAME_LIST = 'iucn_name_list'
+    ORIGIN_NAME_LIST = 'origin_name_list'
 
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
         collection_results = search.process_search()
-
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
             query=request.build_absolute_uri()
@@ -262,12 +265,11 @@ class LocationSitesSummary(APIView):
             count=Count('category')
         )
 
-
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
         search_process.create_view()
-
+        occurrence_data = self.get_occurence_data(collection_results)
         biodiversity_data = self.get_biodiversity_data(collection_results)
 
         response_data = {
@@ -275,6 +277,10 @@ class LocationSitesSummary(APIView):
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
+            self.OCCURRENCE_DATA: dict(occurrence_data),
+            self.IUCN_NAME_LIST: list(IUCNStatus.CATEGORY_CHOICES),
+            self.ORIGIN_NAME_LIST: list(
+                BiologicalCollectionRecord.CATEGORY_CHOICES),
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
@@ -292,6 +298,28 @@ class LocationSitesSummary(APIView):
             return Response(json.load(file_data))
         except ValueError:
             return Response(response_data)
+
+    def get_occurence_data(self, collection_results):
+
+        titles = ['Taxon', 'Origin', 'Occurrences', 'Endemism',
+                  'Cons. Status']
+        data_keys = ['taxon', 'origin', 'count', 'endemism', 'cons_status']
+        occurrence_table_data = collection_results.annotate(
+            taxon=F('taxonomy__scientific_name'),
+            origin=F('category'),
+            cons_status=F('taxonomy__iucn_status__category'),
+            endemism=F('taxonomy__endemism__name'),
+        ).values(
+            'taxon', 'origin', 'cons_status', 'endemism'
+        ).annotate(
+            count=Count('taxon')
+        ).order_by('taxon')
+        occurrence_data = {}
+        occurrence_data['data'] = list(occurrence_table_data)
+        occurrence_data['titles'] = titles
+        occurrence_data['data_keys'] = data_keys
+
+        return occurrence_data
 
     def get_biodiversity_data(self, collection_results):
         biodiversity_data = {}

@@ -113,6 +113,15 @@ class SearchVersion2(object):
         return self.get_request_data('search')
 
     @property
+    def validated(self):
+        validated_value = self.get_request_data('validated')
+        if not validated_value:
+            return True
+        if validated_value.lower() == 'false':
+            return False
+        return True
+
+    @property
     def taxon_id(self):
         taxon_id_query = self.get_request_data('taxon')
         if taxon_id_query:
@@ -210,7 +219,10 @@ class SearchVersion2(object):
             bio = BiologicalCollectionRecord.objects.all()
 
         filters = dict()
-        filters['validated'] = True
+        filters['validated'] = self.validated
+        if not self.validated:
+            # Only display data that ready to be validated
+            filters['ready_for_validation'] = True
         filters['taxonomy__isnull'] = False
         if self.site_ids:
             filters['site__in'] = self.site_ids
