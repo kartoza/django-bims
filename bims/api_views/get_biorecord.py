@@ -134,7 +134,8 @@ class BioCollectionSummary(APIView):
         # Common name
         if taxonomy.vernacular_names.filter(language='eng').exists():
             common_names = list(
-                taxonomy.vernacular_names.all().filter(language='eng').values())
+                taxonomy.vernacular_names.all().filter(language='eng').values()
+            )
         elif taxonomy.vernacular_names.all().values().exists():
             common_names = list(taxonomy.vernacular_names.all().values())
         if len(common_names) == 0:
