@@ -33,6 +33,7 @@
             const taxaNumbers = {{ sass_score_chart_data.taxa_numbers }};
             const asptList = {{ sass_score_chart_data.aspt_list }};
             const sassTaxonData = {{ sass_taxon_table_data.sass_taxon_data | safe }};
+            const sassLatestData = '{{ sass_taxon_table_data.site_visit_date }}';
             const biotopeData = {{ sass_taxon_table_data.biotope_data | safe }};
             const sensitivityChartData = {{ sensitivity_chart_data | safe }};
             const ecologicalChartData = {{ ecological_chart_data | safe }};
@@ -133,7 +134,7 @@
                             {{ sass_taxon_table_data.site_visit_date }}
                         </span>
                         </div>
-                        <table class="table table-condensed table-striped sass-taxon-per-biotope-table">
+                        <table id="sass-taxon-per-biotope-table" class="table table-condensed table-striped sass-taxon-per-biotope-table">
                             <thead>
                             <tr>
                                 <th>
@@ -153,8 +154,8 @@
                             </tbody>
                         </table>
                         <div class="download-container">
-                            Download all SASS data for this site :
-                            <button class="btn btn-info download-as-csv">
+                            Download latest SASS data for this site :
+                            <button class="btn btn-info download-latest-as-csv">
                                 Download as CSV
                             </button>
                         </div>
@@ -192,6 +193,12 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                        <div class="download-container">
+                            Download all SASS data for this site :
+                            <button class="btn btn-info download-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
                     </div>
 
                 </div>

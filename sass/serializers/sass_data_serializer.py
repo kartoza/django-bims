@@ -116,8 +116,6 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     assessor = serializers.SerializerMethodField()
     sass_version = serializers.SerializerMethodField()
-    water_group = serializers.SerializerMethodField()
-    eco_geo_group = serializers.SerializerMethodField()
 
     def get_site_code(self, obj):
         return obj['site_code']
@@ -141,7 +139,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         site_visit_date = obj['date']
         return site_visit_date.strftime('%d-%m-%Y')
 
-    def context_data(self, context_key, site_id):
+    def group_fields(self, context_key, site_id, result):
         try:
             location_site = LocationSite.objects.get(
                 id=site_id
@@ -152,7 +150,6 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
             location_site.location_context
         )
         try:
-            context_group_data = ''
             context_group = (
                 location_context['context_group_values'][context_key]
             )
@@ -161,21 +158,10 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
                     context_group['service_registry_values'][registry_value]
                 )
                 if registry_data['value']:
-                    context_group_data += '{name}:{value}; '.format(
-                        name=registry_data['name'],
-                        value=registry_data['value']
-                    )
-            return context_group_data
+                    result[registry_data['name']] = registry_data['value']
+            return result
         except KeyError:
             return ''
-
-    def get_water_group(self, obj):
-        site_id = obj['site_id']
-        return self.context_data('water_group', site_id)
-
-    def get_eco_geo_group(self, obj):
-        site_id = obj['site_id']
-        return self.context_data('eco_geo_group', site_id)
 
     class Meta:
         model = SiteVisitTaxon
@@ -187,6 +173,11 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
             'aspt',
             'assessor',
             'sass_version',
-            'water_group',
-            'eco_geo_group'
         ]
+
+    def to_representation(self, obj):
+        result = super(SassSummaryDataSerializer, self).to_representation(obj)
+        site_id = obj['site_id']
+        result = self.group_fields('water_group', site_id, result)
+        result = self.group_fields('eco_geo_group', site_id, result)
+        return result

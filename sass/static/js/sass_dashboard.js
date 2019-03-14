@@ -60,12 +60,30 @@ function drawMap() {
 }
 
 function renderSASSSummaryChart() {
+    // Process data by ecological
+    let sassChartBackgroundColor = [];
+    let defaultColor = '#c6c6c6';
+
+    $.each(sassScores, function (sasScoreIndex, sassScore) {
+        let foundColor = false;
+        $.each(ecologicalChartData, function (index, ecologicalData) {
+            if (sassScore > ecologicalData['sass_score_precentile'] || asptList[sasScoreIndex] > ecologicalData['aspt_score_precentile']) {
+                sassChartBackgroundColor.push(ecologicalData['ecological_colour']);
+                foundColor = true;
+                return false;
+            }
+        });
+        if (!foundColor) {
+            sassChartBackgroundColor.push(defaultColor);
+        }
+    });
+
     let data = {
         'labels': dateLabels,
         'datasets': [{
             'label': 'SASS Scores',
             'data': sassScores,
-            'backgroundColor': '#589f48',
+            'backgroundColor': sassChartBackgroundColor,
             'fill': 'false',
         }]
     };
@@ -74,7 +92,7 @@ function renderSASSSummaryChart() {
         'datasets': [{
             'label': 'Number of Taxa',
             'data': taxaNumbers,
-            'backgroundColor': '#589f48',
+            'backgroundColor': sassChartBackgroundColor,
             'fill': 'false',
         }]
     };
@@ -83,38 +101,54 @@ function renderSASSSummaryChart() {
         'datasets': [{
             'label': 'ASPT',
             'data': asptList,
-            'backgroundColor': '#589f48',
+            'backgroundColor': sassChartBackgroundColor,
             'fill': 'false',
         }]
     };
-    let scalesOption = {
-        xAxes: [{
-            display: false
-        }],
-        yAxes: [{
-            ticks: {
-                beginAtZero: true
+
+    function scalesOptionFunction(label) {
+        return {
+            xAxes: [{
+                display: false
+            }],
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: label
+                }
+            }]
+        };
+    }
+
+    function optionsFunction(label) {
+        return {
+            scales: scalesOptionFunction(label),
+            legend: {
+                display: false
             }
-        }]
-    };
-    let options = {
-        scales: scalesOption
-    };
+        };
+    }
+
     let sassScoreChart = new Chart($('#sass-score-chart'), {
         type: 'bar',
         data: data,
-        options: options
+        options: optionsFunction('SASS Scores')
     });
+
     let taxaNumberChart = new Chart($('#taxa-numbers-chart'), {
         type: 'bar',
         data: taxaNumberData,
-        options: options
+        options: optionsFunction('Number of Taxa')
     });
+
     let asptChart = new Chart($('#aspt-chart'), {
         type: 'bar',
         data: asptData,
         options: {
-            scales: scalesOption,
+            scales: scalesOptionFunction('ASPT'),
             tooltips: {
                 callbacks: {
                     label: function (tooltipItem, chart) {
@@ -122,6 +156,9 @@ function renderSASSSummaryChart() {
                         return 'ASPT : ' + tooltipItem.yLabel.toFixed(2);
                     }
                 }
+            },
+            legend: {
+                display: false
             }
         }
     });
@@ -447,7 +484,6 @@ function renderEcologicalCategoryChart() {
         tooltips: {
             callbacks: {
                 title: function (tooltipItems, data) {
-                    console.log(ecoregionChartDotsLabel);
                     let label = '-';
                     let dotIdentifier = tooltipItems[0]['xLabel'] + '-' + parseFloat(tooltipItems[0]['yLabel']).toFixed(2);
                     if (ecoregionChartDotsLabel.hasOwnProperty(dotIdentifier)) {
@@ -664,6 +700,10 @@ $(function () {
     }
     $('.download-as-csv').click(onDownloadCSVClicked);
     $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
+    $('.download-latest-as-csv').on('click', function () {
+        var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
+        exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
+    });
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);

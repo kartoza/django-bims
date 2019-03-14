@@ -1,4 +1,7 @@
 let collectionsWithAbundace = 0;
+let oldLat = location_site_lat;
+let oldLon = location_site_long;
+
 let taxonAbundanceOnChange = function (e) {
     let value = parseInt(e.target.value);
     if (value) {
@@ -12,10 +15,12 @@ let taxonAbundanceOnChange = function (e) {
     collectionsWithAbundace -= 1;
 };
 
+let taxaIdList = [];
+
 let taxonAutocompleteHandler = {
     source: function (request, response) {
         $.ajax({
-            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term),
+            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term) + '&exclude=' + taxaIdList.join(),
             type: 'get',
             dataType: 'json',
             success: function (data) {
@@ -38,10 +43,11 @@ let taxonAutocompleteHandler = {
         e.preventDefault();
         let $target = $(e.target);
         let $parent = $target.parent().parent();
+        taxaIdList.push(u.item.value);
         $parent.html(
             '<td scope="row" class="taxon-name">' +
             u.item.label +
-            '<input type="hidden" value="' + u.item.value + '">' +
+            '<input type="hidden" class="taxon-id" value="' + u.item.value + '">' +
             '</td>');
         $parent.append(
             '<td>' +
@@ -74,7 +80,139 @@ let taxonAutocompleteHandler = {
     }
 };
 
+$('#latitude').keyup((e) => {
+    let $target = $(e.target);
+    if (!document.getElementById('update-coordinate').disabled) {
+        return;
+    }
+    if ($target.val() !== oldLat) {
+        document.getElementById('update-coordinate').disabled = false;
+    }
+});
+$('#longitude').keyup((e) => {
+    let $target = $(e.target);
+    if (!document.getElementById('update-coordinate').disabled) {
+        return;
+    }
+    if ($target.val() !== oldLon) {
+        document.getElementById('update-coordinate').disabled = false;
+    }
+});
+
+let markerSource = new ol.source.Vector();
+let map = null;
+let updateCoordinateHandler = (e) => {
+    let latitude = $('#latitude').val();
+    let longitude = $('#longitude').val();
+    let tableBody = $('#closest-site-table-body');
+
+    if (oldLat !== latitude || oldLon !== longitude) {
+    } else {
+        return false;
+    }
+
+    oldLat = latitude;
+    oldLon = longitude;
+    document.getElementById('update-coordinate').disabled = true;
+    moveMarkerOnTheMap(latitude, longitude);
+    if ($('#add-new-site-container').is(":visible")) {
+        return false;
+    }
+    $('#closest-sites-container').show();
+    tableBody.html('');
+    let radius = 10;
+    $.ajax({
+        url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
+        success: function (all_data) {
+            $.each(all_data, function (index, data) {
+                let row = $('<tr>' +
+                    '<td>' + (data['site_code'] ? data['site_code'] : '-') + '</td>' +
+                    '<td>' + data['name'] + '</td>' +
+                    '<td>' + (data['distance_m'] / 1000).toFixed(2) + ' km </td>' +
+                    '<td> <button type="button" data-id="' + data['id'] + '" data-lat="' + data['latitude'] + '" data-lon="' + data['longitude'] + '" class="btn btn-info choose-site">' +
+                    '<i class="fa fa-search" aria-hidden="true"></i></button> </td>' +
+                    '</tr>');
+                row.find('.choose-site').click(chooseSiteHandler);
+                tableBody.append(row);
+            });
+        }
+    });
+};
+
+$('.close-nearest-list-table').click(() => {
+    $('#closest-site-table-body').html('');
+    $('#closest-sites-container').hide();
+});
+
+let chooseSiteHandler = (e) => {
+    e.preventDefault();
+    let target = $(e.target);
+    if (!target.hasClass('choose-site')) {
+        target = target.parent();
+    }
+    let latitude = parseFloat(target.data('lat'));
+    let longitude = parseFloat(target.data('lon'));
+    oldLat = latitude.toString();
+    oldLon = longitude.toString();
+    document.getElementById('update-coordinate').disabled = true;
+    let siteId = target.data('id');
+    let siteCode = target.parent().parent().children().eq(0).html();
+    let siteIdentifier = target.parent().parent().children().eq(1).html();
+    if (siteCode !== '-') {
+        siteIdentifier = siteCode
+    }
+    $('#site-id').val(siteId);
+    $('#site-identifier').html(siteIdentifier);
+
+    $('#latitude').val(latitude);
+    $('#longitude').val(longitude);
+
+    moveMarkerOnTheMap(latitude, longitude);
+};
+
+let moveMarkerOnTheMap = (lat, long) => {
+    let locationSiteCoordinate = ol.proj.transform([
+            parseFloat(long),
+            parseFloat(lat)],
+        'EPSG:4326',
+        'EPSG:3857');
+    let iconFeature = new ol.Feature({
+        geometry: new ol.geom.Point(locationSiteCoordinate),
+    });
+    markerSource.clear();
+    markerSource.addFeature(iconFeature);
+    map.getView().setCenter(locationSiteCoordinate);
+};
+
+let oldHeader = $('.header').html();
+$('.add-new-site').click((e) => {
+    $('#closest-sites-container').hide();
+    $('#add-new-site-container').show();
+    $('.header').html('Add fish data for new site');
+});
+
+$('.close-add-new-site').click((e) => {
+    $('#add-new-site-container').hide();
+    $('.header').html(oldHeader);
+    $('#latitude').val(location_site_lat);
+    $('#longitude').val(location_site_long);
+    oldLat = location_site_lat;
+    oldLon = location_site_long;
+    $('#location-site-name').val('');
+    $('#location-site-code').val('');
+    $('#location-site-description').val('');
+    moveMarkerOnTheMap(location_site_lat, location_site_long);
+});
+
 $(function () {
+    // Get id list
+    $.each($('.taxon-table-body').children(), function (index, tr) {
+        let val = $(tr).children().eq(0).find('.taxon-id').val();
+        if (typeof val !== 'undefined') {
+            taxaIdList.push(val);
+        }
+    });
+
     let locationSiteCoordinate = ol.proj.transform([
             parseFloat(location_site_long),
             parseFloat(location_site_lat)],
@@ -89,13 +227,12 @@ $(function () {
             src: '/static/img/map-marker.png'
         }))
     });
-    let markerSource = new ol.source.Vector();
     let iconFeature = new ol.Feature({
         geometry: new ol.geom.Point(locationSiteCoordinate),
     });
     markerSource.addFeature(iconFeature);
 
-    let map = new ol.Map({
+    map = new ol.Map({
         target: 'fish-map',
         layers: [
             new ol.layer.Tile({
@@ -108,9 +245,25 @@ $(function () {
         ],
         view: new ol.View({
             center: locationSiteCoordinate,
-            zoom: 11
+            zoom: 10
         })
     });
+
+    let biodiversityLayersOptions = {
+        url: geoserverPublicUrl + 'wms',
+        params: {
+            LAYERS: locationSiteGeoserverLayer,
+            FORMAT: 'image/png8',
+            viewparams: 'where:' + defaultWMSSiteParameters
+        },
+        ratio: 1,
+        serverType: 'geoserver'
+    };
+    let biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
+    let biodiversityTileLayer = new ol.layer.Image({
+        source: biodiversitySource
+    });
+    map.addLayer(biodiversityTileLayer);
 
     $("#date").datepicker({
         changeMonth: true,
@@ -210,6 +363,10 @@ $(function () {
             }, 500);
             return;
         }
+        // Get taxa list id
+        let $taxaIdList = $('#taxa-id-list');
+        $taxaIdList.val(taxaIdList.join());
+
         form.submit();
     });
 
@@ -222,5 +379,6 @@ $(function () {
     });
 
     $('.taxon-input-name').autocomplete(taxonAutocompleteHandler);
+    $('#update-coordinate').click(updateCoordinateHandler);
 
 });

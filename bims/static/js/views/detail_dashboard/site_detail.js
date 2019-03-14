@@ -170,10 +170,13 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
+                    self.createOccurrenceDataTable(data);
+                    self.createCharts(data);
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
                     self.createOriginStackedBarChart(data);
-                    self.createConsStatusStackedBarChart(data);
+                    self.createConsStatusStackedBarChart(data)
+
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -611,6 +614,242 @@ define([
             chartCanvas.remove();
             chartParent.append(newCanvas);
             return document.getElementById(chartId);
-        }
+        },
+
+
+        createCharts: function (data) {
+            var self = this;
+            var categorySummary = {};
+
+            var recordsByYearData = {};
+
+            var recordsGraphData = {};
+            var dataByOrigin = {};
+
+            if (data.hasOwnProperty('records_graph_data')) {
+                recordsGraphData = data['records_graph_data'];
+            }
+            if (data.hasOwnProperty('category_summary')) {
+                categorySummary = data['category_summary'];
+            }
+
+            $.each(recordsGraphData, function (key, value) {
+                let year = value['year'];
+                if (!recordsByYearData.hasOwnProperty(value['year'])) {
+                    recordsByYearData[year] = value['count'];
+                } else {
+                    recordsByYearData[year] += value['count'];
+                }
+                if (!dataByOrigin.hasOwnProperty(self.categories[value['origin']])) {
+                    dataByOrigin[self.categories[value['origin']]] = {};
+                }
+                dataByOrigin[self.categories[value['origin']]][year] = value['count'];
+            });
+
+            let categorySummaryLabels = [];
+            let categorySummaryColors = [];
+
+            $.each(categorySummary, function (key, value) {
+                categorySummaryLabels.push(self.categories[key]);
+                categorySummaryColors.push(self.categoryColor[self.categories[key]]);
+            });
+
+            this.originCategoryChart = self.createPieChart(
+                self.originCategoryGraph.getContext('2d'),
+                Object.values(categorySummary),
+                categorySummaryLabels,
+                self.pieOptions,
+                categorySummaryColors);
+
+            var recordsByYearDatasets = [{
+                backgroundColor: '#48862b',
+                borderWidth: 1,
+                data: Object.values(recordsByYearData)
+            }];
+
+            var recordsByYearGraphOptions = {
+                maintainAspectRatio: false,
+                title: {display: true, text: 'Records'},
+                legend: {display: false},
+                scales: {
+                    xAxes: [{
+                        barPercentage: 0.2,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Collection date'
+                        }
+                    }],
+                    yAxes: [{
+                        stacked: false,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Number of records'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            };
+
+            this.recordsTimelineGraphCanvas = new Chart(self.recordsTimelineGraph.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(recordsByYearData),
+                    datasets: recordsByYearDatasets
+                },
+                options: recordsByYearGraphOptions
+            });
+
+            var originTimelineGraphOptions = {
+                maintainAspectRatio: false,
+                title: {display: true, text: 'Origin'},
+                legend: {display: true},
+                scales: {
+                    xAxes: [{
+                        stacked: true,
+                        barPercentage: 0.2,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Collection date'
+                        }
+                    }],
+                    yAxes: [{
+                        stacked: true,
+                        scaleLabel: {display: true, labelString: 'Records'}
+                    }]
+                }
+            };
+
+            var originTimelineDatasets = [];
+
+            /*
+                Example Data :
+                dataByOrigin = {
+                    'Native': {2014: 3, 2016: 4},
+                    'Non-Native': {2014: 3, 2016: 1}
+                };
+            */
+            $.each(dataByOrigin, function (key, value) {
+                originTimelineDatasets.push({
+                    label: key,
+                    backgroundColor: self.categoryColor[key],
+                    borderWidth: 1,
+                    data: Object.values(value)
+                });
+            });
+
+            this.originTimelineGraphCanvas = new Chart(self.originTimelineGraph.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(recordsByYearData),
+                    datasets: originTimelineDatasets
+                },
+                options: originTimelineGraphOptions
+            })
+        },
+        createOccurrenceDataTable: function(data) {
+            var renderedOccurrenceData = this.renderOccurrenceData(data);
+            var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
+            var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
+            occurrenceDataSub.append(renderedOccurrenceData);
+        },
+        renderOccurrenceData: function (data) {
+            data_in = data['occurrence_data'];
+            var result = '<div>';
+            if (typeof data_in == 'undefined')
+            {
+                return result + '</div>'
+            }
+            var count = 0;
+            var column_count = 0;
+            var column_class = '';
+            var column_value = '';
+            var next_col = '';
+            // Render headings
+            try {
+                count = data_in['titles'].length;
+            }
+            catch (e) {
+                count = 0;
+            }
+            result += '<div class="row">'; //Open new row
+            for (let i = 0; i < count; i++) {
+
+                column_class = 'col-2 title-column';
+                if ('titles' in data_in) {
+                     column_value = data_in['titles'][i];
+                }
+                else
+                {
+                    column_class = 'Unknown';
+                }
+                // Make my first column wider
+                if (i == 0) {
+                    column_class = 'col-4 title-column';
+                }
+                next_col = `<div class="${column_class}">
+                            <div class="center-self">${column_value}
+                            </div></div>`;
+                result += next_col ;
+            }
+            result += '</div>' //Close my row
+            // Render rows
+            column_count = count;
+            count = data_in['data'].length;
+            var taxon_values = [];
+
+            for (let i = 0; i < count; i++) {
+                result += '<div class="row">'; //Open new row
+                taxon_values = data_in['data'][i];
+                var column_key = ''
+                for (let j = 0; j < column_count; j++) {
+                    column_class = 'col-2';
+                    column_value = 'Unknown';
+                    if ('data_keys' in data_in) {
+                        column_key = data_in['data_keys'][j];
+                        if (typeof taxon_values != 'undefined') {
+                            if (column_key in taxon_values) {
+                                column_value = this.parseNameFromAliases(
+                                    taxon_values[column_key],
+                                    column_key,
+                                    data);
+                            }
+                        }
+                    }
+                    // Make my first column wider
+                    if (j== 0) {
+                        column_class = 'col-4';
+                    }
+                    next_col = `<div class="${column_class}">
+                                <div class="center-self">${column_value}
+                                </div></div>`;
+                    result += next_col;
+                }
+                result += '</div>'; //Close row
+            }
+            result += '</div>'; //Close row
+            var $result = $.parseHTML(result);
+
+            return $result
+        },
+        parseNameFromAliases: function (alias, alias_type, data) {
+            var name = alias;
+            var choices = [];
+            var index = 0;
+            if (alias_type == 'cons_status') {
+                choices = data['iucn_name_list'].flat(1);
+            }
+            if (alias_type == 'origin')
+            {
+                choices = data['origin_name_list'].flat(1);}
+            if (choices.length > 0) {
+                index = choices.indexOf(alias) + 1;
+                name = choices[index];
+            }
+            return name;
+        },
+
+
     })
 });

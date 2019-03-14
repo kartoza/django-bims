@@ -108,9 +108,12 @@ html, body, .map, .map-wrapper, #map-container {
     font-size: 10pt;
 }
 
+.side-panel-info {
+    padding-top: 70px !important;
+}
+
 .right-panel-header {
     font-size: 21px;
-    padding-top: 10px;
     padding-bottom: 10px;
     padding-left: 15px;
     padding-right: 10px;
@@ -121,7 +124,7 @@ html, body, .map, .map-wrapper, #map-container {
     top: 0;
     left: 0;
     width: 100%;
-    z-index: -1;
+    z-index: 1000;
 }
 
 .right-panel-header .fa-map-marker {
@@ -2402,4 +2405,3 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     color: white;
 }
-

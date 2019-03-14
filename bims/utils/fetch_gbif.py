@@ -97,10 +97,16 @@ def create_or_update_taxonomy(gbif_data):
                 fields['language'] = result['language']
             if 'taxonKey' in result:
                 fields['taxon_key'] = int(result['taxonKey'])
-            vernacular_name, status = VernacularName.objects.get_or_create(
-                name=result['vernacularName'],
-                **fields
-            )
+            try:
+                vernacular_name, status = VernacularName.objects.get_or_create(
+                    name=result['vernacularName'],
+                    **fields
+                )
+            except VernacularName.MultipleObjectsReturned:
+                vernacular_name = VernacularName.objects.filter(
+                    name=result['vernacularName'],
+                    **fields
+                )[0]
             taxonomy.vernacular_names.add(vernacular_name)
     taxonomy.save()
     return taxonomy
