@@ -33,6 +33,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.overviewTaxaTable = this.$el.find('.overview-taxa-table');
             this.overviewNameTaxonTable = this.$el.find('.overview-name-taxonomy-table');
             this.taxaRecordsTimelineGraph = this.$el.find('#taxa-records-timeline-graph');
+            this.endemismBlockData = this.$el.find('#endemism-block-data');
             this.taxaRecordsTimelineGraphChart = null;
             this.taxaRecordsTimelineGraphCanvas = this.taxaRecordsTimelineGraph[0].getContext('2d');
             this.recordsTable = this.$el.find('.records-table');
@@ -127,17 +128,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 }
             });
 
-            // Set endemic
-            var endemic = data['endemism'];
-            $.each(this.endemicInfoList.children(), function (key, data) {
-                var $endemicInfoItem = $(data);
-                if (!endemic) {
-                    return true;
-                }
-                if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
-                    $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                }
-            });
+            var endemism_block_data = {};
+            endemism_block_data['value'] = data['endemism'];;
+            endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
+            endemism_block_data['value_title'] = data['endemism'];
+            this.endemismBlockData.append(self.renderFBISBlocks(endemism_block_data));
 
             // Set con status
             var conservation = data['conservation_status'];
@@ -247,6 +242,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
             this.overviewTaxaTable.html('');
             this.overviewNameTaxonTable.html('');
+            this.endemismBlockData.html('');
 
             // Clear canvas
             if (this.taxaRecordsTimelineGraphChart) {
@@ -325,6 +321,42 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        }
+        },
+        renderFBISBlocks: function(data, stretch_selection = false) {
+            var $detailWrapper = $('<div style="padding-left: 0;"></div>');
+            $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
+            return $detailWrapper;
+        },
+        getHtmlForFBISBlocks: function (new_data_in, stretch_selection) {
+            var result_html = '<div class ="fbis-data-flex-block-row">'
+            var data_in = new_data_in;
+            var data_value = data_in.value;
+            var data_title = data_in.value_title;
+            var keys = data_in.keys;
+            var key = '';
+            var style_class = '';
+            var for_count = 0;
+            for (let key of keys) {
+                for_count += 1;
+                style_class = "fbis-rpanel-block fbis-rpanel-block-dd ";
+                var temp_key = key;
+                //Highlight my selected box with a different colour
+                if (key == data_value) {
+                    style_class += " fbis-rpanel-block-selected";
+                    temp_key = data_title;
+                    if (stretch_selection == true)
+                    {
+                        style_class += " flex-base-auto";
+                    }
+                }
+                result_html += (`<div class="${style_class}">
+                                 <div class="fbis-rpanel-block-text">
+                                 ${temp_key}</div></div>`)
+
+            };
+            result_html += '</div>';
+            return result_html;
+        },
+
     })
 });

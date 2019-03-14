@@ -2370,8 +2370,17 @@ div:hover::-webkit-scrollbar {
     color: white;
     font-family: "Roboto Condensed";
     font-weight: 400;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
+
+.fbis-rpanel-block-dd .fbis-rpanel-block-text {
+    padding: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.5rem;
+}
 
 .flex-base-auto {
     flex-basis: auto !important;
