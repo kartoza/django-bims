@@ -857,17 +857,22 @@ define([
             var choices = [];
             var index = 0;
             if (alias_type == 'cons_status') {
-                choices = data['iucn_name_list'].flat(1);
+                choices = this.flatten_arr(data['iucn_name_list']);
             }
             if (alias_type == 'origin')
             {
-                choices = data['origin_name_list'].flat(1);}
+                choices = this.flatten_arr(data['origin_name_list']);}
             if (choices.length > 0) {
                 index = choices.indexOf(alias) + 1;
                 name = choices[index];
             }
             return name;
         },
-
+        flatten_arr: function (arr) {
+            self = this;
+            return arr.reduce(function (flat, toFlatten) {
+                return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
+            }, []);
+        }
     })
 });
