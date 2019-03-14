@@ -20,10 +20,12 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline'
         },
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
+
         initialize: function () {
             this.$el.hide();
         },
         render: function () {
+            this.gbifId = null;
             this.$el.html(this.template());
             this.loadingDashboard = this.$el.find('.loading-dashboard');
             this.dashboardTitleContainer = this.$el.find('.detailed-dashboard-title');
@@ -39,6 +41,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.recordsAreaTable = this.$el.find('.records-area-table');
             this.mapTaxaSite = null;
             this.csvDownloadsUrl = '/download-csv-taxa-records/';
+            this.imagesCard = this.$el.find('#fsdd-images-card-body');
             let biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
                 params: {
@@ -238,7 +241,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 $tableArea.append('<tr><td>' + areaRecord['site_name'] + '</td><td>' + areaRecord['count'] + '</td></tr>')
             });
             self.recordsAreaTable.html($tableArea);
-
+            var thirdPartyData = this.renderThirdPartyData(data);
+            this.imagesCard.append(thirdPartyData);
         },
         clearDashboard: function () {
             $.each(this.originInfoList.children(), function (key, data) {
@@ -255,12 +259,15 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
             this.overviewTaxaTable.html('');
             this.overviewNameTaxonTable.html('');
-
+            this.imagesCard.html('');
             // Clear canvas
             if (this.taxaRecordsTimelineGraphChart) {
                 this.taxaRecordsTimelineGraphChart.destroy();
                 this.taxaRecordsTimelineGraphChart = null;
             }
+
+
+
             if (this.mapTaxaSite) {
                 let newParams = {
                     layers: locationSiteGeoserverLayer,
@@ -333,6 +340,57 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        }
+        },
+        renderThirdPartyData: function (data) {
+
+            var $thirdPartyData = $('<div>');
+
+            var template = _.template($('#third-party-template').html());
+            $thirdPartyData.append(template({}));
+
+            var $wrapper = $thirdPartyData.find('.third-party-wrapper');
+            var mediaFound = false;
+            var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
+            var this_GBIF_ID = data['gbif_id'];
+            $.get({
+                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this_GBIF_ID+'&limit=4',
+                dataType: 'json',
+                success: function (data) {
+                    var results = data['results'];
+
+                    var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row row gbif-images-row-fsdd"></div>');
+
+                    var result = {};
+                    for (let result_id in results)
+                    {
+                        var $firstColumnDiv = $('<div class="col-6" "></div>');
+                        result = results[result_id];
+                        if(!result.hasOwnProperty('media')) {
+                            continue;
+                        }
+                        if(result['media'].length === 0) {
+                            continue;
+                        }
+                        var media = result['media'][0];
+                        if(!media.hasOwnProperty('identifier')) {
+                            continue;
+                        }
+                        mediaFound = true;
+                        if(mediaFound) {
+                            $fetchingInfoDiv.hide();
+                        }
+                        $firstColumnDiv.append('<a target="_blank" href="'+media['references']+'">' +
+                            '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
+                        $rowWrapper.append($firstColumnDiv);
+                    }
+                    $wrapper.append($rowWrapper);
+                    if(!mediaFound) {
+                        $fetchingInfoDiv.html('Media not found');
+                    }
+                }
+            });
+
+            return $thirdPartyData;
+        },
     })
 });
