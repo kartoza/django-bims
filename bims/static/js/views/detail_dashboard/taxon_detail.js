@@ -370,20 +370,21 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             return result_html;
         },
         origin_title_from_choices: function (short_name, data) {
-            if ('origin_choices_list' in data) {
-                let origin_choice_list = data['origin_choices_list'].flat(1);
-                if (origin_choice_list.indexOf(short_name) >= 0) {
-                    let index = origin_choice_list.indexOf(short_name) + 1;
-                    let long_name = origin_choice_list[index];
-                    return `${long_name}`;
-                }
-                else {
-                    return short_name;
-                }
+            var name = short_name;
+            var choices = [];
+            choices = this.flatten_arr(data['origin_choices_list']);
+            if (choices.length > 0) {
+                let index = choices.indexOf(short_name) + 1;
+                let long_name = choices[index];
+                name = long_name;
             }
-            else {
-                return short_name;
-            }
-        }
+            return name;
+        },
+        flatten_arr: function (arr) {
+            self = this;
+            return arr.reduce(function (flat, toFlatten) {
+                return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
+            }, []);
+        },
     })
 });
