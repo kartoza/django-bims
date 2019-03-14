@@ -217,12 +217,12 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
+    BIODIVERSITY_DATA = 'biodiversity_data'
     SITE_DETAILS = 'site_details'
     OCCURRENCE_DATA = 'occurrence_data'
     BIODIVERSITY_DATA = 'biodiversity_data'
     IUCN_NAME_LIST = 'iucn_name_list'
     ORIGIN_NAME_LIST = 'origin_name_list'
-    OCCURRENCE_DATA = 'occurrence_data'
 
     def get(self, request):
         filters = request.GET
