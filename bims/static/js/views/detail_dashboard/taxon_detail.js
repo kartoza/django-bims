@@ -375,8 +375,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var choices = [];
             choices = this.flatten_arr(data['iucn_choice_list']);
             if (choices.length > 0) {
-                index = choices.indexOf(short_name) + 1;
-                name = choices[index];
+                let index = choices.indexOf(short_name) + 1;
+                let long_name = choices[index];
+                name = `${long_name} (${short_name})`;
             }
             return name;
         },
