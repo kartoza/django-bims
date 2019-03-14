@@ -692,7 +692,7 @@ define([
                     borderWidth: 0,
                 }
             };
-            // var chartCanvas = document.getElementById(speciesType + '_' + chartName + '_chart');
+
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
 
@@ -873,6 +873,15 @@ define([
             return arr.reduce(function (flat, toFlatten) {
                 return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
             }, []);
-        }
+        },
+        resetCanvas: function (chartCanvas) {
+            var chartParent = chartCanvas.parentElement;
+            var newCanvas = document.createElement("CANVAS");
+            var chartId = chartCanvas.id;
+            newCanvas.id = chartId;
+            chartCanvas.remove();
+            chartParent.append(newCanvas);
+            return document.getElementById(chartId);
+        },
     })
 });
