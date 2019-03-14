@@ -329,8 +329,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     $classWrapper.hide();
 
                     var species = Object.keys(value).sort();
-                    console.log(species);
-                    console.log(that.currentSpeciesSearchResult);
                     $.each(species, function (index, speciesName) {
                         if (that.currentSpeciesSearchResult.length > 0) {
                             // check if species name is on search mode
