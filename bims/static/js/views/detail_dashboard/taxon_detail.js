@@ -372,7 +372,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         iucn_title_from_choices: function (short_name, data) {
             if ('iucn_choice_list' in data) {
-                let iucn_choice_list = data['iucn_choice_list'].flat(1);
+                let iucn_choice_list = this.flatten_arr(['iucn_choice_list']);
                 if (iucn_choice_list.indexOf(short_name) >= 0) {
                     let index = iucn_choice_list.indexOf(short_name) + 1;
                     let long_name = iucn_choice_list[index];
@@ -385,6 +385,12 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             else {
                 return short_name;
             }
-        }
+        },
+        flatten_arr: function (arr) {
+            self = this;
+            return arr.reduce(function (flat, toFlatten) {
+                return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
+            }, []);
+        },
     })
 });
