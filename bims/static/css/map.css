@@ -2409,7 +2409,9 @@ div:hover::-webkit-scrollbar {
 .gbif-images-row {
     padding: 0;
     margin: 0;
-    z-index: -1;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    z-index: 0 !important;
 }
 
 .gbif-images-row .col-6 {
@@ -2426,9 +2428,12 @@ div:hover::-webkit-scrollbar {
 }
 
 .gbif-images-row-fsdd .col-6 {
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
+
+
+
 
 #filter-validation-error {
     font-size: 9pt;
