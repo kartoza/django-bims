@@ -591,7 +591,7 @@ define([
             for (let i = 0; i < count; i++)
             {
                 title = this.parseNameFromAliases(specific_data['title'][i], alias_type, all_data);
-                value = this.parseNameFromAliases(specific_data['value'][i], alias_type,  all_data);
+                value = specific_data['value'][i];
                 temp_result = `<div class="row">
                                <div class="col-6 ${title_class}">${title}</div>
                                <div class="col-6">${value}</div>
