@@ -41,8 +41,8 @@
 }
 
 .dashboard-wrapper {
-    margin-top: 25px;
-    margin-bottom: 50px;
+    width: 100%;
+    margin: 15px;
 }
 
 .dashboard-table table {
@@ -147,6 +147,52 @@
     min-height: 100px;
 }
 
+
+#fish-ssdd-occurrence-data .col-6.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fish-ssdd-occurrence-data .title-column {
+     font-weight: 700;
+
+}
+
+#fish-ssdd-occurrence-data .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+    color: #4a4a4a;
+}
+
+#fish-ssdd-occurrence-data .col-2 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+    color: #4a4a4a;
+}
+
+.center-self {
+    align-self: center;
+    height: 100%;
+    align-items: center;
+    display: inline-flex;
+    overflow-x:auto;
+
+}
+
+.center-self::-webkit-scrollbar {
+    display: none;
+}
+
+.center-self::-webkit-scrollbar {
+   height: 0;
+}
+
 .dashboard-wrapper .card {
     margin-top: 0.5rem;
     border-radius: 0px;
@@ -161,3 +207,5 @@
 .dashboard-wrapper .card .card-header-title {
     height: auto;
 }
+
+
