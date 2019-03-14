@@ -33,6 +33,7 @@ from bims.utils.search_process import (
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
+from sass.models.river import River
 
 
 class LocationSiteList(APIView):
@@ -216,15 +217,18 @@ class LocationSitesSummary(APIView):
     RECORDS_OCCURRENCE = 'records_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
-    BIODIVERSITY_DATA = 'biodiversity_data'
+    SITE_DETAILS = 'site_details'
     OCCURRENCE_DATA = 'occurrence_data'
+    BIODIVERSITY_DATA = 'biodiversity_data'
     IUCN_NAME_LIST = 'iucn_name_list'
     ORIGIN_NAME_LIST = 'origin_name_list'
+    OCCURRENCE_DATA = 'occurrence_data'
 
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
         collection_results = search.process_search()
+        site_id = filters['siteId']
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
             query=request.build_absolute_uri()
@@ -264,7 +268,14 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('category')
         )
+        site_details = self.get_site_details(site_id)
 
+        site_details['records_and_sites'] = (
+            self.get_number_of_records_and_taxa(collection_results))
+        site_details['origins_data'] = self.get_origin_data(
+            collection_results)
+        site_details['conservation_status_data'] = (
+            self.get_conservation_status_data(collection_results))
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -274,6 +285,7 @@ class LocationSitesSummary(APIView):
 
         response_data = {
             self.TOTAL_RECORDS: len(collection_results),
+            self.SITE_DETAILS: dict(site_details),
             self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
@@ -369,6 +381,260 @@ class LocationSitesSummary(APIView):
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         return biodiversity_data
+
+
+    def get_site_details(self, site_id):
+        # get single site detailed dashboard overview data
+        location_sites = LocationSite.objects.filter(id=site_id).all()
+        try:
+            site_longitude = self.parse_string(
+                str(location_sites.values('longitude')[0]['longitude']))
+        except IndexError:
+            site_longitude = 'Unknown'
+        try:
+            site_latitude = self.parse_string(
+                str(location_sites.values('latitude')[0]['latitude']))
+        except IndexError:
+            site_latitude = 'Unknown'
+        try:
+            site_description = self.parse_string(str(location_sites.values(
+                    'site_description')[0]['site_description']))
+        except IndexError:
+            site_description = 'Unknown'
+        try:
+            context_document = dict(json.loads(str(location_sites.values(
+                'location_context')[0]['location_context'])))
+        except IndexError:
+            context_document = {}
+        except ValueError:
+            context_document = {}
+        try:
+            site_river_id = location_sites.values('river_id')[0]['river_id']
+        except IndexError:
+            site_river_id = 0
+        try:
+            if site_river_id > 0:
+                site_river = River.objects.filter(
+                    id=site_river_id).values('name')[0]['name']
+            else:
+                site_river = 'Unknown'
+        except IndexError:
+            site_river = 'Unknown'
+        overview = {}
+        overview['title'] = []
+        overview['value'] = []
+        catchments = {}
+        catchments['title'] = []
+        catchments['value'] = []
+        sa_ecoregions = {}
+        sa_ecoregions['title'] = []
+        sa_ecoregions['value'] = []
+        sub_water_management_areas = {}
+        sub_water_management_areas['title'] = []
+        sub_water_management_areas['value'] = []
+
+        overview['title'].append('FBIS Site Code')
+        overview['value'].append(str(site_id))
+
+        overview['title'].append('Site coordinates')
+        overview['value'].append(
+            str('Longitude: {site_longitude}, '
+                'Latitude: {site_latitude}').format(
+                site_longitude = site_longitude,
+                site_latitude = site_latitude))
+
+        overview['title'].append('Site description')
+        overview['value'].append(site_description)
+
+        overview['title'].append('River')
+        overview['value'].append(site_river)
+        try:
+            eco_region = (context_document
+                          ['context_group_values']
+                          ['eco_geo_group']
+                          ['service_registry_values']
+                          ['eco_region']
+                          ['value'])
+        except KeyError:
+            eco_region = 'Unknown'
+        try:
+            geo_class = (context_document
+                         ['context_group_values']
+                         ['eco_geo_group']
+                         ['service_registry_values']
+                         ['geo_class']
+                         ['value'])
+        except KeyError:
+            geo_class = 'Unknown'
+        try:
+            geo_zone = ('{geo_class} {eco_region}'.format(
+                geo_class=geo_class,
+                eco_region=eco_region))
+        except KeyError:
+            geo_zone = 'Unknown'
+
+        overview['title'].append('Geomorphological zone')
+        overview['value'].append(geo_zone)
+
+        overview['title'].append('River Management Units')
+        overview['value'].append('???')
+
+        # Catchments
+        try:
+            primary_catchment = (context_document
+                                 ['context_group_values']
+                                 ['water_group']
+                                 ['service_registry_values']
+                                 ['primary_catchment_area']
+                                 ['value'])
+        except KeyError:
+            primary_catchment = 'Unknown'
+        try:
+            secondary_catchment = (context_document
+                                   ['context_group_values']
+                                   ['water_group']
+                                   ['service_registry_values']
+                                   ['secondary_catchment_area']
+                                   ['value'])
+        except KeyError:
+            secondary_catchment = 'Unknown'
+        try:
+            tertiary_catchment_area = (context_document
+                                       ['context_group_values']
+                                       ['water_group']
+                                       ['service_registry_values']
+                                       ['tertiary_catchment_area']
+                                       ['value'])
+        except KeyError:
+            tertiary_catchment_area = 'Unknown'
+        try:
+            water_management_area = (context_document
+                                     ['context_group_values']
+                                     ['water_group']
+                                     ['service_registry_values']
+                                     ['water_management_area']
+                                     ['value'])
+        except KeyError:
+            water_management_area = 'Unknown'
+
+        catchments['title'].append('Primary')
+        catchments['value'].append(primary_catchment)
+
+        catchments['title'].append('Secondary')
+        catchments['value'].append(secondary_catchment)
+
+        catchments['title'].append('Tertiary')
+        catchments['value'].append(tertiary_catchment_area)
+
+        catchments['title'].append('Quaternary')
+        catchments['value'].append('Coming Soon')
+
+        catchments['title'].append('Quinary')
+        catchments['value'].append('very soon...')
+
+        sub_water_management_areas['title'].append(
+            'Sub-Water Management Areas')
+        sub_water_management_areas['value'].append('???')
+
+        sub_water_management_areas['title'].append(
+            'Water Management Areas (WMA)')
+        sub_water_management_areas['value'].append(water_management_area)
+
+        # Politcal Boundary Group
+
+        try:
+            province = self.parse_string(str(context_document
+                                             ['context_group_values']
+                                             ['political_boundary_group']
+                                             ['service_registry_values']
+                                             ['sa_provinces']
+                                             ['value']))
+        except KeyError:
+            province = 'Unknown'
+
+        sa_ecoregions['title'].append('Ecoregion Level 1')
+        sa_ecoregions['value'].append('???')
+
+        sa_ecoregions['title'].append('Ecoregion Level 2')
+        sa_ecoregions['value'].append('???')
+
+        sa_ecoregions['title'].append('Freshwater Ecoregion')
+        sa_ecoregions['value'].append('???')
+
+        sa_ecoregions['title'].append('Province')
+        sa_ecoregions['value'].append(province)
+
+        result = {}
+        result['overview'] = overview
+        result['catchments'] = catchments
+        result['sub_water_management_areas'] = sub_water_management_areas
+        result['sa_ecoregions'] = sa_ecoregions
+
+        return result
+
+    def parse_string(self, string_in):
+        if not string_in:
+            return 'Unknown'
+        else:
+            return string_in
+
+    def get_number_of_records_and_taxa(self, records_collection):
+        records_collection.annotate()
+        result = {}
+        result['title'] = []
+        result['value'] = []
+
+        number_of_occurrence_records = records_collection.count()
+        number_of_unique_taxa = records_collection.values(
+            'taxonomy_id').distinct().count()
+
+        result['title'].append('Number of occurrence records')
+        result['value'].append(str(self.parse_string(
+            number_of_occurrence_records)))
+        result['title'].append('Number of species')
+        result['value'].append(str(self.parse_string(number_of_unique_taxa)))
+
+        return result
+
+    def get_origin_data(self, collection_results):
+        result = {}
+        origin_data = collection_results.annotate(
+            value=F('category')
+        ).values(
+            'value'
+        ).annotate(
+            count=Count('value')
+        ).order_by('value')
+
+        result['title'] = list(origin_data.values_list('value', flat=True))
+        result['value'] = list(origin_data.values_list('count', flat=True))
+
+        return result
+
+    def get_conservation_status_data(self, collection_results):
+        result = {}
+        result['title'] = []
+        result['value'] = []
+
+        iucn_data = collection_results.annotate(
+            value=F('taxonomy__iucn_status__category')
+        ).values(
+            'value'
+        ).annotate(
+            count=Count('value'))
+
+        result['title'] = list(iucn_data.values_list('value', flat=True))
+        result['value'] = list(iucn_data.values_list('count', flat=True))
+
+        return result
+
+    def get_value_or_zero_from_key(self, data, key):
+        result = {}
+        result['value'] = 0
+        try:
+            return str(data[key]['value'])
+        except KeyError:
+            return str(0)
 
 
 class LocationSitesCoordinate(ListAPIView):
