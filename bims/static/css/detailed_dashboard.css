@@ -210,3 +210,7 @@
 .fish-ssdd-legends .col-3 {
     padding-left:9%;
 }
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}

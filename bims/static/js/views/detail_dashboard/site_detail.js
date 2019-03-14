@@ -13,7 +13,7 @@ define([
     $,
     Shared,
     HtmlToCanvas,
-    ChartJs
+    ChartJs,
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
@@ -173,7 +173,11 @@ define([
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
                     self.createFishSSDDSiteDetails(data);
-                    self.createDataSummary(data);
+                    self.createOccurrencesBarChart(data);
+                    self.createTaxaStackedBarChart(data);
+                    self.createOriginStackedBarChart(data);
+                    self.createConsStatusStackedBarChart(data)
+
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
                     self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
@@ -449,6 +453,171 @@ define([
             button.prop("disabled", true);
             this.downloadingCSV(this.csvDownloadUrl, button);
         },
+        renderStackedBarChart: function (dataIn, chartName, chartCanvas) {
+
+            if (!(dataIn.hasOwnProperty('data'))) {
+                return false;
+            }
+            var datasets = [];
+            var barChartData = {};
+            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D','#B77282', '#E6E188','#6BC0B5', '#859FAC']
+            var myDataset = {}
+            var count = dataIn['dataset_labels'].length;
+            for (let i = 0; i < count; i++)
+            {
+                myDataset = {};
+                var nextKey = dataIn['dataset_labels'][i];
+                var nextColour = colours[i];
+                var nextData = dataIn['data'][nextKey];
+                myDataset = {
+                    'label': nextKey,
+                    'backgroundColor': nextColour,
+                    'data' : nextData
+                }
+                datasets.push(myDataset);
+            }
+            barChartData = {
+                'labels': dataIn['labels'],
+                'datasets': datasets,
+            }
+            var chartConfig = {
+                type: 'bar',
+                data: barChartData,
+                options: {
+                    responsive: true,
+                    legend: {display: true},
+                    title: {display: false},
+                    hover: {mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                        position: 'average',
+                    },
+                    borderWidth: 0,
+                    scales: {
+						xAxes: [{
+							stacked: true,
+						}],
+						yAxes: [{
+							stacked: true,
+                            ticks: {
+                                beginAtZero: true,
+                                callback: function (value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                },
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Occurrences',
+                            },
+						}]
+					}
+                }
+
+            };
+            chartCanvas = this.resetCanvas(chartCanvas);
+            var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, chartConfig);
+        },
+
+        createOriginStackedBarChart: function (data) {
+            var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
+
+            if (data.hasOwnProperty('origin_occurrence')) {
+                this.renderStackedBarChart(data['origin_occurrence'], 'origin_bar', chartCanvas);
+            }
+        },
+
+        createTaxaStackedBarChart: function (data) {
+            var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
+            if (data.hasOwnProperty('taxa_graph')) {
+                this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas);
+            }
+        },
+
+        createConsStatusStackedBarChart: function (data) {
+            var locationContext = {}
+            var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
+             if (data.hasOwnProperty('cons_status_occurrence')) {
+                this.renderStackedBarChart(data['cons_status_occurrence'], 'cons_status_bar', chartCanvas);
+             }
+         },
+
+        renderBarChart: function(data_in, chartName, chartCanvas) {
+
+             if (!(data_in.hasOwnProperty(chartName + '_chart')))
+            {
+               return false;
+            };
+
+             var chartConfig = {
+                type: 'bar',
+                data: {
+                    datasets: [{
+                        data: data_in[chartName + '_chart']['values'],
+                        backgroundColor: '#D7CD47',
+                        borderColor: '#D7CD47',
+                        fill: false
+                    }],
+                    labels: data_in[chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: true,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                    },
+                    borderWidth: 0,
+                    scales: {
+					xAxes: [{
+						display: true,
+						scaleLabel: {
+							display: false,
+							labelString: ''
+						}
+					}],
+
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: data_in[chartName + '_chart']['title']
+						},
+						ticks: {
+                          beginAtZero: true,
+                          callback: function(value) {if (value % 1 === 0) {return value;}}
+                        }
+					}]
+                    }
+                }
+             };
+             chartCanvas = this.resetCanvas(chartCanvas);
+             var ctx = chartCanvas.getContext('2d');
+             ctx.height = '200px';
+             new ChartJs(ctx, chartConfig);
+        },
+        createOccurrencesBarChart: function (data) {
+            var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
+
+             if (data.hasOwnProperty('taxa_occurrence')) {
+                this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
+             }
+
+         },
+        resetCanvas: function (chartCanvas) {
+            var chartParent = chartCanvas.parentElement;
+            var newCanvas = document.createElement("CANVAS");
+            var chartId = chartCanvas.id;
+            newCanvas.id = chartId;
+            chartCanvas.remove();
+            chartParent.append(newCanvas);
+            return document.getElementById(chartId);
+        },
+
+
         createCharts: function (data) {
             var self = this;
             var categorySummary = {};
@@ -861,7 +1030,8 @@ define([
             }
             if (alias_type == 'origin')
             {
-                choices = this.flatten_arr(data['origin_name_list']);}
+                choices = this.flatten_arr(data['origin_name_list']);
+            }
             if (choices.length > 0) {
                 index = choices.indexOf(alias) + 1;
                 name = choices[index];
@@ -882,6 +1052,6 @@ define([
             chartCanvas.remove();
             chartParent.append(newCanvas);
             return document.getElementById(chartId);
-        },
+        }
     })
 });
