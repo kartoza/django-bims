@@ -51,6 +51,7 @@ class IUCNStatus(models.Model):
         verbose_name_plural = 'IUCN Status'
         verbose_name = 'IUCN Status'
 
+
 @receiver(models.signals.pre_save, sender=IUCNStatus)
 def iucn_status_pre_save_handler(sender, instance, **kwargs):
     if instance.category:
