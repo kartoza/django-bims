@@ -8,6 +8,7 @@ from django.db.models import Count, F
 from django.db.models.functions import ExtractYear
 from rest_framework import status
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.iucn_status import  IUCNStatus
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
     BioCollectionDetailSerializer,
@@ -119,6 +120,7 @@ class BioCollectionSummary(APIView):
         response_data['sites_raw_query'] = search_process.process_id
         response_data['process_id'] = search_process.process_id
         response_data['extent'] = search.extent()
+        response_data['iucn_choice_list'] = IUCNStatus.CATEGORY_CHOICES
 
         taxonomy_rank = {
             taxonomy.rank: taxonomy.scientific_name
