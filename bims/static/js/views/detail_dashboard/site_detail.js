@@ -171,7 +171,7 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     self.createOccurrenceDataTable(data);
-                    self.createCharts(data);
+                    // self.createCharts(data);
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
                     self.createOriginStackedBarChart(data);
@@ -523,17 +523,17 @@ define([
         createOriginStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
 
-             if (data.hasOwnProperty('origin_occurrence')) {
+            if (data.hasOwnProperty('origin_occurrence')) {
                 this.renderStackedBarChart(data['origin_occurrence'], 'origin_bar', chartCanvas);
-             }
-         },
+            }
+        },
 
         createTaxaStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
-             if (data.hasOwnProperty('taxa_graph')) {
+            if (data.hasOwnProperty('taxa_graph')) {
                 this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas);
-             }
-         },
+            }
+        },
 
         createConsStatusStackedBarChart: function (data) {
             var locationContext = {}
