@@ -171,7 +171,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             let recordsOverTimeLabels = data['records_over_time_labels'];
             var recordsOptions = {
                 maintainAspectRatio: false,
-                title: {display: true, text: 'Records'},
+                title: {display: false, text: 'Records'},
                 legend: {display: false},
                 scales: {
                     xAxes: [{
@@ -181,14 +181,23 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                             maxRotation: 90,
                             minRotation: 90
                         },
-                        scaleLabel: {display: true, labelString: 'Year'}
+                        scaleLabel: {display: false, labelString: 'Year'}
                     }],
                     yAxes: [{
                         stacked: true,
-                        scaleLabel: {display: true, labelString: 'Occurrence'}
+                        scaleLabel: {display: true, labelString: 'Occurrence'},
+                        ticks: {
+                            beginAtZero: true,
+                            callback: function (value) {
+                                if (value % 1 === 0) {
+                                    return value;
+                                }
+                            },
+                        },
                     }]
                 }
             };
+
 
             var objectDatasets = [{
                 data: recordsOverTimeData,
@@ -309,6 +318,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 },
                 options: options
             });
+
+
             return chart;
         },
         exportTaxasiteMap: function () {
