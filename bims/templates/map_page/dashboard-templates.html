@@ -65,13 +65,11 @@
 									</div>
 								</div>
 								<div class="card-body">
-									<div class="overview-name-taxonomy-table dashboard-table"
-										 style="margin-top: 10px; margin-bottom: 10px"></div>
+									<div id="overview-name-taxonomy-table" class="overview-name-taxonomy-table dashboard-table"></div>
 								</div>
 							</div>
 						</div>
 					</div>
-
 				</div>
 				<div class="col-lg-8 dashboard-graph-wrapper">
 					<div class="row">
@@ -184,11 +182,9 @@
 							</div>
 						</div>
 					</div>
-
 				</div>
 			</div>
 		</div>
-
 	</div>
 </script>
 
@@ -219,8 +215,36 @@
 </script>
 
 <script type="text/template" id="taxon-detail-table">
-    <table class="taxon-dashboard-detail table">
-    </table>
+	<div class="container taxon-dashboard-detail table">
+		<div class="row">
+			<div class="col-4 title_column">Kingdom</div>
+			<div class="col-8"><%= kingdom %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Phylum</div>
+			<div class="col-8"><%= phylum %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Class</div>
+			<div class="col-8"><%= my_class %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Order</div>
+			<div class="col-8"><%= order %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Family</div>
+			<div class="col-8"><%= family %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Genus</div>
+			<div class="col-8"><%= genus %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Species</div>
+			<div class="col-8"><%= species %></div>
+		</div>
+	</div>
 </script>
 
 <script type="text/html" id="detailed-site-dashboard">
