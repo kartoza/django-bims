@@ -285,14 +285,18 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('category')
         )
-        site_details = self.get_site_details(site_id)
 
-        site_details['records_and_sites'] = (
-            self.get_number_of_records_and_taxa(collection_results))
-        site_details['origins_data'] = self.get_origin_data(
-            collection_results)
-        site_details['conservation_status_data'] = (
-            self.get_conservation_status_data(collection_results))
+        if site_id:
+            site_details = self.get_site_details(site_id)
+
+            site_details['records_and_sites'] = (
+                self.get_number_of_records_and_taxa(collection_results))
+            site_details['origins_data'] = self.get_origin_data(
+                collection_results)
+            site_details['conservation_status_data'] = (
+                self.get_conservation_status_data(collection_results))
+        else:
+            site_details = {}
         origin_occurrence = self.get_origin_occurrence_data(collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query

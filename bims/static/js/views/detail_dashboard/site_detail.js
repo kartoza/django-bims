@@ -173,7 +173,12 @@ define([
                 success: function (data) {
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
-                    self.createFishSSDDSiteDetails(data);
+                    if(Object.keys(data['site_details']).length !== 0) {
+                        $('#fish-ssdd-site-details').show();
+                        self.createFishSSDDSiteDetails(data);
+                    }else {
+                        $('#fish-ssdd-site-details').hide();
+                    }
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
                     self.createOriginStackedBarChart(data);
