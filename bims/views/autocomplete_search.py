@@ -7,6 +7,7 @@ from bims.models.vernacular_name import VernacularName
 from bims.models.taxonomy import Taxonomy
 from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
+from bims.models.taxon_group import TaxonGroup
 
 
 def autocomplete(request):
@@ -107,13 +108,29 @@ def species_autocomplete(request):
     exclude = request.GET.get('exclude', '')
     exclude_list = exclude.split(',')
     exclude_list = filter(None, exclude_list)
+    taxon_group_request = request.GET.get('taxonGroup', '')
+    taxon_group_species = []
+    if taxon_group_request:
+        taxon_group, created = TaxonGroup.objects.get_or_create(
+            name=taxon_group_request
+        )
+        taxon_group_species = taxon_group.taxonomies.values_list(
+            'id', flat=True
+        )
 
     if not request.is_ajax() and len(q) < 2:
         data = 'fail'
     else:
         search_qs = Taxonomy.objects.filter(
             Q(canonical_name__icontains=q) |
-            Q(scientific_name__icontains=q)).exclude(
+            Q(scientific_name__icontains=q)
+        ).filter(
+            Q(parent__in=taxon_group_species) |
+            Q(parent__parent__in=taxon_group_species) |
+            Q(parent__parent__parent__in=taxon_group_species) |
+            Q(parent__parent__parent__parent__in=taxon_group_species) |
+            Q(parent__parent__parent__parent__parent__in=taxon_group_species)
+        ).exclude(
             id__in=exclude_list
         ).distinct('canonical_name')
         results = []
