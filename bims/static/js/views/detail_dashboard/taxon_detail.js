@@ -35,6 +35,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.overviewTaxaTable = this.$el.find('.overview-taxa-table');
             this.overviewNameTaxonTable = this.$el.find('.overview-name-taxonomy-table');
             this.taxaRecordsTimelineGraph = this.$el.find('#taxa-records-timeline-graph');
+            this.endemismBlockData = this.$el.find('#endemism-block-data');
             this.taxaRecordsTimelineGraphChart = null;
             this.taxaRecordsTimelineGraphCanvas = this.taxaRecordsTimelineGraph[0].getContext('2d');
             this.originBlockData = this.$el.find('#origin-block-data');
@@ -144,17 +145,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
            
 
 
-            // Set endemic
-            var endemic = data['endemism'];
-            $.each(this.endemicInfoList.children(), function (key, data) {
-                var $endemicInfoItem = $(data);
-                if (!endemic) {
-                    return true;
-                }
-                if ($endemicInfoItem.data('value') === endemic.toLowerCase()) {
-                    $endemicInfoItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                }
-            });
+            var endemism_block_data = {};
+            endemism_block_data['value'] = data['endemism'];;
+            endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
+            endemism_block_data['value_title'] = data['endemism'];
+            this.endemismBlockData.append(self.renderFBISBlocks(endemism_block_data));
 
            //Set conservation status
             var cons_status_block_data = {};
@@ -290,6 +285,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
             this.overviewTaxaTable.html('');
             this.overviewNameTaxonTable.html('');
+            this.endemismBlockData.html('');
             this.imagesCard.html('');
             this.originBlockData.html('');
             // Clear canvas
