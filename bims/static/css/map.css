@@ -2379,7 +2379,7 @@ div:hover::-webkit-scrollbar {
     padding: 0.25rem;
     padding-bottom: 0.25rem;
     font-size: 0.75rem;
-    line-height: 1.1rem;
+    line-height: 1.5rem;
 }
 
 .flex-base-auto {
