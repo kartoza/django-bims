@@ -804,31 +804,31 @@ define([
 
 
             var overview = siteDetailsWrapper.find('#overview');
-            overview.append(this.renderTableFromTitlesValuesLists(
+            overview.html(this.renderTableFromTitlesValuesLists(
                 data['site_details']['overview']));
             var catchments = siteDetailsWrapper.find('#catchments');
-            catchments.append(this.renderTableFromTitlesValuesLists(
+            catchments.html(this.renderTableFromTitlesValuesLists(
                 data['site_details']['catchments']),
                 data);
             var sub_water_management_areas = siteDetailsWrapper.find(
                 '#sub_water_management_areas');
-            sub_water_management_areas.append(this.renderTableFromTitlesValuesLists(
+            sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(
                 data['site_details']['sub_water_management_areas']));
             var sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
-            sa_ecoregions.append(this.renderTableFromTitlesValuesLists(
+            sa_ecoregions.html(this.renderTableFromTitlesValuesLists(
                 data['site_details']['sa_ecoregions']));
 
-            var recordSitesWrapper = $('#fish-ssdd-records-sites');
-            var recordSitesSub = recordSitesWrapper.find('#records-sites')
-            recordSitesSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
+            var recordSitesWrapper = $('#fish-ssdd-records-sites')
+            var recordSitesSub = recordSitesWrapper.find('#records-sites');
+            recordSitesSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
 
             var originsWrapper = $('#fish-ssdd-origins');
             var originsSub = originsWrapper.find('#origins');
-            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data,  'origin', false));
+            originsSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data,  'origin', false));
 
             var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
             var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
-            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
+            conservation_statusSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
 
         },
 
@@ -836,7 +836,7 @@ define([
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('site_detail_info')) {
                 var siteDetailsTemplate = _.template($('#site-details-template').html());
-                $detailWrapper.append(siteDetailsTemplate({
+                $detailWrapper.html(siteDetailsTemplate({
                     'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
                     'site_coordinates' : data['site_detail_info']['site_coordinates'],
                     'site_description' : data['site_detail_info']['site_description'],
@@ -929,44 +929,11 @@ define([
             }
             return $result;
         },
-
-        createFishSSDDSiteDetails: function (data) {
-            var siteDetailsWrapper = $('#fish-ssdd-site-details');
-
-
-            var overview = siteDetailsWrapper.find('#overview');
-            overview.append(this.renderTableFromTitlesValuesLists(
-                    data['site_details']['overview']));
-            var catchments = siteDetailsWrapper.find('#catchments');
-            catchments.append(this.renderTableFromTitlesValuesLists(
-                data['site_details']['catchments']),
-                data);
-            var sub_water_management_areas = siteDetailsWrapper.find(
-                '#sub_water_management_areas');
-            sub_water_management_areas.append(this.renderTableFromTitlesValuesLists(
-                data['site_details']['sub_water_management_areas']));
-            var sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
-            sa_ecoregions.append(this.renderTableFromTitlesValuesLists(
-                data['site_details']['sa_ecoregions']));
-
-            var recordSitesWrapper = $('#fish-ssdd-records-sites');
-            var recordSitesSub = recordSitesWrapper.find('#records-sites')
-            recordSitesSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
-
-            var originsWrapper = $('#fish-ssdd-origins');
-            var originsSub = originsWrapper.find('#origins');
-            originsSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data,  'origin', false));
-
-            var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
-            var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
-            conservation_statusSub.append(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
-
-        },
         createOccurrenceDataTable: function(data) {
             var renderedOccurrenceData = this.renderOccurrenceData(data);
             var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
             var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
-            occurrenceDataSub.append(renderedOccurrenceData);
+            occurrenceDataSub.html(renderedOccurrenceData);
         },
         renderOccurrenceData: function (data) {
             data_in = data['occurrence_data'];
