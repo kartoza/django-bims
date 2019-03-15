@@ -31,7 +31,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.dashboardTitleContainer = this.$el.find('.detailed-dashboard-title');
             this.originInfoList = this.$el.find('.origin-info-list');
             this.endemicInfoList = this.$el.find('.endemic-info-list');
-            this.conservationStatusList = this.$el.find('.conservation-status-list');
+            this.conservationStatusList = this.$el.find('#fsdd-conservation-status-card');
             this.overviewTaxaTable = this.$el.find('.overview-taxa-table');
             this.overviewNameTaxonTable = this.$el.find('.overview-name-taxonomy-table');
             this.taxaRecordsTimelineGraph = this.$el.find('#taxa-records-timeline-graph');
@@ -152,14 +152,16 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 }
             });
 
-            // Set con status
-            var conservation = data['conservation_status'];
-            $.each(this.conservationStatusList.children(), function (key, data) {
-                var $conservationStatusItem = $(data);
-                if ($conservationStatusItem.data('value') === conservation) {
-                    $conservationStatusItem.css('background-color', 'rgba(5, 255, 103, 0.28)');
-                }
-            });
+           //Set conservation status
+            var cons_status_block_data = {};
+            cons_status_block_data['value'] = this.iucn_title_from_choices(data['conservation_status'], data);
+            cons_status_block_data['keys'] = ['NE', 'DD', 'LC' ,'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
+            for (let i = 0; i < cons_status_block_data['keys'].length; i++) {
+                let next_key = cons_status_block_data['keys'][i];
+                cons_status_block_data['keys'][i] = this.iucn_title_from_choices(next_key, data);
+            };
+            cons_status_block_data['value_title'] = cons_status_block_data['value']
+            this.conservationStatusList.append(self.renderFBISBlocks(cons_status_block_data));
 
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
@@ -271,10 +273,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 var $originInfoItem = $(data);
                 $originInfoItem.css('background-color', '');
             });
-            $.each(this.conservationStatusList.children(), function (key, data) {
-                var $conservationStatusItem = $(data);
-                $conservationStatusItem.css('background-color', '');
-            });
+
+            this.conservationStatusList.html = null;
+
             $.each(this.endemicInfoList.children(), function (key, data) {
                 var $endemicInfoItem = $(data);
                 $endemicInfoItem.css('background-color', '');
@@ -415,6 +416,58 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
 
             return $thirdPartyData;
+        },
+        renderFBISBlocks: function(data, stretch_selection = false) {
+            var $detailWrapper = $('<div style="padding-left: 0;"></div>');
+            $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
+            return $detailWrapper;
+        },
+        getHtmlForFBISBlocks: function (new_data_in, stretch_selection) {
+            var result_html = '<div class ="fbis-data-flex-block-row">'
+            var data_in = new_data_in;
+            var data_value = data_in.value;
+            var data_title = data_in.value_title;
+            var keys = data_in.keys;
+            var key = '';
+            var style_class = '';
+            var for_count = 0;
+            for (let key of keys) {
+                for_count += 1;
+                style_class = "fbis-rpanel-block fbis-rpanel-block-dd ";
+                var temp_key = key;
+                //Highlight my selected box with a different colour
+                if (key == data_value) {
+                    style_class += " fbis-rpanel-block-selected";
+                    temp_key = data_title;
+                    if (stretch_selection == true)
+                    {
+                        style_class += " flex-base-auto";
+                    }
+                }
+                result_html += (`<div class="${style_class}">
+                                 <div class="fbis-rpanel-block-text">
+                                 ${temp_key}</div></div>`)
+
+            };
+            result_html += '</div>';
+            return result_html;
+        },
+        iucn_title_from_choices: function (short_name, data) {
+            var name = short_name;
+            var choices = [];
+            choices = this.flatten_arr(data['iucn_choice_list']);
+            if (choices.length > 0) {
+                let index = choices.indexOf(short_name) + 1;
+                let long_name = choices[index];
+                name = `${long_name} (${short_name})`;
+            }
+            return name;
+        },
+        flatten_arr: function (arr) {
+            self = this;
+            return arr.reduce(function (flat, toFlatten) {
+                return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
+            }, []);
         },
     })
 });
