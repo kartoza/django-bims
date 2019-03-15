@@ -58,7 +58,8 @@ define([
             'click .download-origin-chart': 'downloadOriginChart',
             'click .download-record-timeline': 'downloadRecordTimeline',
             'click .download-collection-timeline': 'downloadCollectionTimeline',
-            'click .download-as-csv': 'downloadAsCSV'
+            'click .download-as-csv': 'downloadAsCSV',
+            'click .ssdd-export': 'downloadElementEvent'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -408,6 +409,26 @@ define([
                     }
                 })
             }
+        },
+        downloadElementEvent: function(button_el) {
+            let target = button_el.target.dataset.datac;
+            let element = this.$el.find('#' + target);
+            let random_number = Math.random() * 1000000;
+            let this_title = `FWBD-Dashboard-Export-{${random_number}}`
+            if (element.length > 0)
+                 this.downloadElement(this_title,element);
+
+        },
+        downloadElement: function(title, element){
+            element[0].scrollIntoView();
+            html2canvas(element, {
+                onrendered: function (canvas) {
+                    var link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                    link.download = title + '.png';
+                    link.click();
+                }
+            })
         },
         downloadingCSV: function (url, downloadButton) {
             var self = this;

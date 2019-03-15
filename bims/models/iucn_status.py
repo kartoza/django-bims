@@ -13,14 +13,15 @@ SENSITIVE_STATUS = ['CR', 'EN', 'VU']
 class IUCNStatus(models.Model):
     """IUCN status model."""
     CATEGORY_CHOICES = (
-        ('LC', 'Least Concern'),
-        ('NT', 'Near Threatened'),
+        ('LC', 'Least concern'),
+        ('NT', 'Near threatened'),
         ('VU', 'Vulnerable'),
         ('EN', 'Endangered'),
-        ('CR', 'Critically Endangered'),
-        ('EW', 'Extinct In The Wild'),
+        ('CR', 'Critically endangered'),
+        ('EW', 'Extinct in the wild'),
         ('EX', 'Extinct'),
-        ('DD', 'Data Deficient'),
+        ('DD', 'Data deficient'),
+        ('NE', 'Not evaluated')
     )
 
     category = models.CharField(
