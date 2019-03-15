@@ -2415,6 +2415,35 @@ div:hover::-webkit-scrollbar {
     color: white;
 }
 
+.gbif-images-row {
+    padding: 0;
+    margin: 0;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    z-index: 0 !important;
+}
+
+.gbif-images-row .col-6 {
+    padding: 0;
+    margin: 0;
+}
+
+.gbif-images-row .col-6 img {
+    height: 100%;
+    border-radius: 5px;
+    border: solid;
+    width: 100%;
+    color: white;
+}
+
+.gbif-images-row-fsdd .col-6 {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+
+
+
 #filter-validation-error {
     font-size: 9pt;
     color: red;
