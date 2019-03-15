@@ -244,6 +244,16 @@
     margin-top: 0.5rem;
 }
 
+.dashboard-wrapper .card .card-header   {
+    padding: 0.25rem;
+    padding-left: 1rem;
+    line-height: 1.25rem;
+}
+
+.dashboard-wrapper .card .card-header-title {
+    height: auto;
+}
+
 .dashboard-wrapper .card {
     margin-top: 0.5rem;
 }
@@ -271,8 +281,4 @@
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
     font-size: 12px;
-}
-
-.dashboard-wrapper .card {
-    margin-top: 0.5rem;
 }

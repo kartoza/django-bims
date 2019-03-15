@@ -120,6 +120,8 @@ class BioCollectionSummary(APIView):
         response_data['sites_raw_query'] = search_process.process_id
         response_data['process_id'] = search_process.process_id
         response_data['extent'] = search.extent()
+        response_data['origin_choices_list'] = (
+            BiologicalCollectionRecord.CATEGORY_CHOICES)
         response_data['iucn_choice_list'] = IUCNStatus.CATEGORY_CHOICES
 
         taxonomy_rank = {
