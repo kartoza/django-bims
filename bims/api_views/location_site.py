@@ -295,6 +295,7 @@ class LocationSitesSummary(APIView):
                 collection_results)
             site_details['conservation_status_data'] = (
                 self.get_conservation_status_data(collection_results))
+            print(site_details)
         else:
             site_details = {}
         origin_occurrence = self.get_origin_occurrence_data(collection_results)
@@ -724,7 +725,8 @@ class LocationSitesSummary(APIView):
         result['title'] = []
         result['value'] = []
 
-        iucn_data = collection_results.annotate(
+        iucn_data = collection_results.exclude(
+            taxonomy__iucn_status__category=None).annotate(
             value=F('taxonomy__iucn_status__category')
         ).values(
             'value'
