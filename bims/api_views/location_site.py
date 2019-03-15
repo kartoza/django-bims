@@ -295,7 +295,6 @@ class LocationSitesSummary(APIView):
                 collection_results)
             site_details['conservation_status_data'] = (
                 self.get_conservation_status_data(collection_results))
-            print(site_details)
         else:
             site_details = {}
         origin_occurrence = self.get_origin_occurrence_data(collection_results)
