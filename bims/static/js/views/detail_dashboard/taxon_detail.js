@@ -143,13 +143,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             origin_block_data['value_title'] = origin_block_data['value'];
             this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
            
-
-
             var endemism_block_data = {};
             endemism_block_data['value'] = data['endemism'];;
             endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
             endemism_block_data['value_title'] = data['endemism'];
-            this.endemismBlockData.append(self.renderFBISBlocks(endemism_block_data));
+            this.endemismBlockData.append(self.renderFBISRPanelBlocks(endemism_block_data));
 
            //Set conservation status
             var cons_status_block_data = {};
@@ -159,8 +157,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 let next_key = cons_status_block_data['keys'][i];
                 cons_status_block_data['keys'][i] = this.iucn_title_from_choices(next_key, data);
             };
-            cons_status_block_data['value_title'] = cons_status_block_data['value']
-            this.conservationStatusList.append(self.renderFBISBlocks(cons_status_block_data));
+            cons_status_block_data['value_title'] = cons_status_block_data['value'];
+            this.conservationStatusList.append(self.renderFBISRPanelBlocks(cons_status_block_data));
 
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
