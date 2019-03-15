@@ -270,8 +270,10 @@
 								<div class="card-header-title pull-left d-inline">
 									Distribution
 								</div>
-								<button id="export-locationsite-map"
-										class="btn btn-default pull-right">
+								<button
+										id="export-locationsite-map"
+										class="btn btn-default pull-right"
+										data-datac="locationsite-map">
 									<i
 											class="fa fa-download"></i>
 								</button>
@@ -294,78 +296,85 @@
 								<div class="card-header-title pull-left d-inline">
 									Overview
 								</div>
+								<button class="ssdd-export btn btn-default pull-right"
+								        data-datac="ssdd-overview-wrapper">
+										<i class="fa fa-download"></i>
+								</button>
 							</div>
-							{# Overview Site details #}
-							<div class="card-body"
-								 id="fish-ssdd-site-details">
-								<div class="col-12"
-									 id="overview"></div>
-								<div class="col-12 sub-title site-details-header">
-									Catchments
-								</div>
-								<div class="col-12"
-									 id="catchments"></div>
-								<div class="col-12 sub-title"
-									 class="site-details-header">
-									Water Management Areas
-								</div>
-								<div class="col-12"
-									 id="sub_water_management_areas"></div>
-								<div class="col-12 sub-title"
-									 class="site-details-header">
-									SA Ecoregion
-								</div>
-								<div class="col-12"
-									 id="sa-ecoregions"></div>
-
-							</div>
-							<div class="card-body"
-								 id="fish-ssdd-records-sites">
-								<div class="col-12 sub-title site-details-header">
-									Records and Sites
-								</div>
-								<div class="col-12" id="records-sites">
+							<div id="ssdd-overview-wrapper">
+								{# Overview Site details #}
+								<div class="card-body"
+								     id="fish-ssdd-site-details">
+									<div class="col-12"
+									     id="overview"></div>
+									<div class="col-12 sub-title site-details-header">
+										Catchments
+									</div>
+									<div class="col-12"
+									     id="catchments"></div>
+									<div class="col-12 sub-title"
+									     class="site-details-header">
+										Water Management Areas
+									</div>
+									<div class="col-12"
+									     id="sub_water_management_areas"></div>
+									<div class="col-12 sub-title"
+									     class="site-details-header">
+										SA Ecoregion
+									</div>
+									<div class="col-12"
+									     id="sa-ecoregions"></div>
 
 								</div>
-							</div>
-							<div class="card-body"
-								 id="fish-ssdd-origins">
-								<div class="col-12">
-									<div class="row">
-										<div class="col-6 sub-title site-details-header">
-											Origin
-										</div>
-										<div class="col-6 sub-title site-details-header">
-											Number of occurrence
-											records
-										</div>
-										<div class="col-12"
-											 id="origins">
-										</div>
+								<div class="card-body"
+								     id="fish-ssdd-records-sites">
+									<div class="col-12 sub-title site-details-header">
+										Records and Sites
+									</div>
+									<div class="col-12" id="records-sites">
 
 									</div>
 								</div>
-							</div>
-							<div class="card-body"
-								 id="fish-ssdd-conservation-status">
-								<div class="col-12">
-									<div class="row">
-										<div class="col-6 sub-title site-details-header">
-											Conservation Status
-										</div>
-										<div class="col-6 sub-title site-details-header">
-											Number of occurrence records
-										</div>
-										<div class="col-12"
-											 id="ssdd-conservation-status">
+								<div class="card-body"
+								     id="fish-ssdd-origins">
+									<div class="col-12">
+										<div class="row">
+											<div class="col-6 sub-title site-details-header">
+												Origin
+											</div>
+											<div class="col-6 sub-title site-details-header">
+												Number of occurrence
+												records
+											</div>
+											<div class="col-12"
+											     id="origins">
+											</div>
 
 										</div>
 									</div>
 								</div>
-							</div>
-						</div>
-						<div class="row">
+								<div class="card-body"
+								     id="fish-ssdd-conservation-status">
+									<div class="col-12">
+										<div class="row">
+											<div class="col-6 sub-title site-details-header">
+												Conservation Status
+											</div>
+											<div class="col-6 sub-title site-details-header">
+												Number of occurrence records
+											</div>
+											<div class="col-12"
+											     id="ssdd-conservation-status">
 
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="row">
+
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -377,9 +386,14 @@
 								<div class="card-header-title pull-left d-inline">
 									Occurence Data
 								</div>
+								<button class="ssdd-export btn btn-default pull-right"
+							        data-datac="occurrence-data">
+								<i class="fa fa-download"></i>
+							</button>
 							</div>
+
 							<div class="card-body">
-								<div id="occurrence-data">
+								<div class="container" id="occurrence-data">
 
 									</div>
 								</div>
@@ -397,6 +411,10 @@
 									<div class="card-header-title pull-left d-inline">
 										Occurence Data
 									</div>
+									<button class="ssdd-export btn btn-default pull-right"
+									        data-datac="data-summary">
+										<i class="fa fa-download"></i>
+									</button>
 								</div>
 								<div class="card-body">
 									<div id="data-summary">
@@ -442,13 +460,16 @@
 									<div class="card-header-title pull-left d-inline">
 										Occurrences
 									</div>
+									<button class="ssdd-export btn btn-default pull-right"
+									        data-datac="fish-ssdd-occurrences-line-chart-canvas">
+										<i class="fa fa-download"></i>
+									</button>
 								</div>
 								<div class="card-body">
 									<div class="col-12 fish-ssdd-occurrences-line-chart">
 										<canvas id="fish-ssdd-occurrences-line-chart-canvas">
 										</canvas>
 									</div>
-
 								</div>
 							</div>
 						</div>
@@ -461,6 +482,10 @@
 									<div class="card-header-title pull-left d-inline">
 										Taxa
 									</div>
+									<button class="ssdd-export btn btn-default pull-right"
+									        data-datac="fish-ssdd-taxa-occurrences-line-chart-canvas">
+										<i class="fa fa-download"></i>
+									</button>
 								</div>
 								<div class="card-body">
 									<div class="col-12 fish-ssdd-taxa-line-chart">
@@ -480,6 +505,10 @@
 									<div class="card-header-title pull-left d-inbar">
 										Origin
 									</div>
+									<button class="ssdd-export btn btn-default pull-right"
+									        data-datac="fish-ssdd-origin-bar-chart-canvas">
+										<i class="fa fa-download"></i>
+									</button>
 								</div>
 								<div class="card-body">
 									<div class="col-12 fish-ssdd-origin-bar-chart">
@@ -498,6 +527,10 @@
 									<div class="card-header-title pull-left d-inbar">
 										Conservation Status
 									</div>
+									<button class="ssdd-export btn btn-default pull-right"
+									        data-datac="fish-ssdd-cons-status-bar-chart-canvas">
+										<i class="fa fa-download"></i>
+									</button>
 								</div>
 								<div class="card-body">
 									<div class="col-12 fish-ssdd-cons-status-bar-chart">
