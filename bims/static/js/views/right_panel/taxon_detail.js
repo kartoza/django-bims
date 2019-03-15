@@ -102,7 +102,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             return $thirdPartyData;
         },
 
-        renderFBISRPanelBlocks: function(data, stretch_selection = false) {
+        renderFBISBlocks: function(data, stretch_selection = false) {
             var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
             $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
             return $detailWrapper;
@@ -223,21 +223,21 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     origin_block_data['value'] = data['origin'];;
                     origin_block_data['keys'] = ['Native', 'Non-native', 'Translocated'];
                     origin_block_data['value_title'] = data['origin'];
-                    this.OriginInfoList.append(self.renderFBISRPanelBlocks(origin_block_data));
+                    this.OriginInfoList.append(self.renderFBISBlocks(origin_block_data));
 
                     // Set endemic
                     var endemism_block_data = {};
                     endemism_block_data['value'] = data['endemism'];;
                     endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
                     endemism_block_data['value_title'] = data['endemism'];
-                    this.endemicInfoList.append(self.renderFBISRPanelBlocks(endemism_block_data));
+                    this.endemicInfoList.append(self.renderFBISBlocks(endemism_block_data));
 
                     //Set conservation status
                     var cons_status_block_data = {};
                     cons_status_block_data['value'] = data['iucn_status_name'];;
                     cons_status_block_data['keys'] = ['NE', 'DD', 'LC' ,'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
                     cons_status_block_data['value_title'] = data['iucn_status_name'] + ' (' + data['iucn_status_full_name'] + ')';
-                    this.conservationStatusList.append(self.renderFBISRPanelBlocks(cons_status_block_data, true));
+                    this.conservationStatusList.append(self.renderFBISBlocks(cons_status_block_data, true));
 
                 },
                 error: function (req, err) {
