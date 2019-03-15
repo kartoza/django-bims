@@ -95,6 +95,7 @@ class TaxonDetail(APIView):
 
         data['count'] = records.count()
 
+
         # Taxonomic rank tree
         taxonomic_rank = self.get_taxonomic_rank_values(taxon)
         for rank in taxonomic_rank:
