@@ -147,6 +147,35 @@
     min-height: 100px;
 }
 
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
+
+
+#fsdd-overview .col-12.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fsdd-overview .title_column {
+     font-weight: 700;
+}
+
+#fsdd-overview  .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+#fsdd-overview  .col-8 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
 
 #fish-ssdd-occurrence-data .col-6.sub-title {
     padding: 0.25rem;
@@ -219,7 +248,6 @@
     margin-top: 0.5rem;
 }
 
-
 .records-area-table .col-4.sub-title {
     padding: 0.25rem;
     border: 1px solid #d3d4d1;
@@ -243,4 +271,8 @@
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
     font-size: 12px;
+}
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
 }

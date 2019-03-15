@@ -99,15 +99,16 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             })
         },
         displayTaxonomyRank: function (taxonomy_rank) {
-            let taxonomySystem = this.$el.find('.taxon-dashboard-detail');
-            $.each(taxonomy_rank, function (rank, name) {
-                taxonomySystem.append(
-                    '<tr>' +
-                    '<td>' + rank + '</td>' +
-                    '<td>' + name + '</td>' +
-                    '</tr>'
-                )
-            });
+            let taxononomyRankList = _.template($('#taxon-detail-table').html());
+            this.overviewNameTaxonTable.html(taxononomyRankList({
+                kingdom: taxonomy_rank['KINGDOM'],
+                phylum: taxonomy_rank['PHYLUM'],
+                my_class: taxonomy_rank['CLASS'],
+                order: taxonomy_rank['ORDER'],
+                family: taxonomy_rank['FAMILY'],
+                genus: taxonomy_rank['GENUS'],
+                species: taxonomy_rank['SPECIES'],
+            }));
         },
         generateDashboard: function (data) {
             var self = this;
@@ -123,6 +124,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
             var canonicalName = data['taxon'];
+            var common_name = data['common_name']
 
             self.taxonName = canonicalName;
 
@@ -159,13 +161,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
                 csv_downloads_url: self.csvDownloadsUrl,
-                count: data.length,
+                count: data['total_records'],
                 taxon_class: data['taxon'],
-                gbif_id: gbif_key
+                gbif_id: gbif_key,
+                common_name: data['common_name']
             }));
-
-            let taxonDetailTable = _.template($('#taxon-detail-table').html());
-            this.overviewNameTaxonTable.html(taxonDetailTable());
 
             let recordsOverTimeData = data['records_over_time_data'];
             let recordsOverTimeLabels = data['records_over_time_labels'];
@@ -346,6 +346,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        }
+        },
+
     })
 });

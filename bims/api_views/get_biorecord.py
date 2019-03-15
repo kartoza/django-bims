@@ -130,6 +130,7 @@ class BioCollectionSummary(APIView):
             )
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
+
         common_names = []
         # Common name
         if taxonomy.vernacular_names.filter(language='eng').exists():
