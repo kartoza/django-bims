@@ -19,9 +19,9 @@
 }
 
 .loading-dashboard {
-    margin-top: 60px;
     text-align: center;
     border: 0;
+    z-index: 9;
 }
 
 .loading-dashboard img {
@@ -282,4 +282,12 @@
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
     font-size: 12px;
+}
+
+table#filter-history-table {
+    width: 100%;
+}
+
+#filter-history-table tr {
+    border-bottom: 1px solid #ccc;
 }
