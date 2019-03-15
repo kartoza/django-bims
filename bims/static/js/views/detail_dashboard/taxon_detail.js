@@ -124,6 +124,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
             var canonicalName = data['taxon'];
+            var common_name = data['common_name']
 
             self.taxonName = canonicalName;
 
@@ -160,9 +161,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
                 csv_downloads_url: self.csvDownloadsUrl,
-                count: data.length,
+                count: data['total_records'],
                 taxon_class: data['taxon'],
-                gbif_id: gbif_key
+                gbif_id: gbif_key,
+                common_name: data['common_name']
             }));
 
             let recordsOverTimeData = data['records_over_time_data'];
@@ -331,6 +333,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        }
+        },
+
     })
 });

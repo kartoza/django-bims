@@ -189,22 +189,29 @@
 </script>
 
 <script type="text/template" id="taxon-overview-table">
-    <table class="table">
-        <tr>
-            <td>Taxon</td>
-            <td><%= taxon_class %></td>
-        </tr>
-        <tr>
-            <td>GBIF ID</td>
-            <td><%= gbif_id %></td>
-        </tr>
-        <tr>
-            <td>Records</td>
-            <td><%= count %> <a href='<%= csv_downloads_url %>'
-                                style="text-decoration: underline; font-size: 11pt !important;">Download
-                as CSV</a></td>
-        </tr>
-    </table>
+	<div class="row">
+		<div class="col-4 title_column">Taxon</div>
+		<div class="col-8"><%= taxon_class %></div>
+	</div>
+	<div class="row">
+		<div class="col-4 title_column">Common Name</div>
+		<div class="col-8"><%= common_name %></div>
+	</div>
+	<div class="row">
+		<div class="col-4 title_column">GBIF ID</div>
+		<div class="col-8"><%= gbif_id %></div>
+	</div>
+	<div class="row">
+		<div class="col-4 title_column">Records</div>
+		<div class="col-8"><%= count %></div>
+   </div>
+	<div class="row">
+		<div class="col-4 title_column">Sites</div>
+		<div class="col-8"><a href='<%= csv_downloads_url %>'
+							  style="text-decoration: underline; font-size: 11pt !important;">
+			Download as CSV</a>
+		</div>
+	</div>
 </script>
 
 <script type="text/template" id="taxon-detail-table">
