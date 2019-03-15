@@ -232,10 +232,23 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 this.mapTaxaSite.getView().setZoom(8);
             }
 
-            var $tableArea = $('<table class="table"></table>');
-            $tableArea.append('<tr><th>Site name</th><th>Records</th></tr>');
+            var $tableArea = $('<div class="container"></div>');
+            $tableArea.append(`
+                    <div class="row">
+                    <div class="col-4 title_column">Site name</div>
+                    <div class="col-4 title_column">River Name</div>
+                    <div class="col-4 title_column">Records</div>
+                    </div>`);
             $.each(data['records_per_area'], function (index, areaRecord) {
-                $tableArea.append('<tr><td>' + areaRecord['site_name'] + '</td><td>' + areaRecord['count'] + '</td></tr>')
+                let site_name = areaRecord['site_name'];
+                let count = areaRecord['count']
+                let river_name = 'Unknown'
+                $tableArea.append(`
+                    <div class="row">
+                    <div class="col-4">${site_name}</div>
+                    <div class="col-4">${river_name}</div>
+                    <div class="col-4">${count}</div>
+                    </div>`)
             });
             self.recordsAreaTable.html($tableArea);
 
