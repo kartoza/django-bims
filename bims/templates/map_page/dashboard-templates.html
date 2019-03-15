@@ -1,5 +1,5 @@
 <script type="text/html" id="taxon-detail-dashboard-template">
-    <div id="detailed-site-dashboard-wrapper" style="padding: 1rem;">
+	<div id="detailed-site-dashboard-wrapper" style="padding: 1rem;">
 		<div class="loading-dashboard">
 			<img src="/static/img/small-loading.svg" width="250"
 				 alt="Loading view">
@@ -171,27 +171,62 @@
 </script>
 
 <script type="text/template" id="taxon-overview-table">
-    <table class="table">
-        <tr>
-            <td>Taxon</td>
-            <td><%= taxon_class %></td>
-        </tr>
-        <tr>
-            <td>GBIF ID</td>
-            <td><%= gbif_id %></td>
-        </tr>
-        <tr>
-            <td>Records</td>
-            <td><%= count %> <a href='<%= csv_downloads_url %>'
-                                style="text-decoration: underline; font-size: 11pt !important;">Download
-                as CSV</a></td>
-        </tr>
-    </table>
+	<div class="row">
+		<div class="col-4 title_column">Taxon</div>
+		<div class="col-8"><%= taxon_class %></div>
+	</div>
+	<div class="row">
+		<div class="col-4 title_column">Common Name</div>
+		<div class="col-8"><%= common_name %></div>
+	</div>
+	<div class="row">
+		<div class="col-4 title_column">GBIF ID</div>
+		<div class="col-8"><%= gbif_id %></div>
+	</div>
+	<div class="row">
+		<div class="col-4 title_column">Records</div>
+		<div class="col-8"><%= count %></div>
+   </div>
+	<div class="row">
+		<div class="col-4 title_column">Sites</div>
+		<div class="col-8"><a href='<%= csv_downloads_url %>'
+							  style="text-decoration: underline; font-size: 11pt !important;">
+			Download as CSV</a>
+		</div>
+	</div>
 </script>
 
 <script type="text/template" id="taxon-detail-table">
-    <table class="taxon-dashboard-detail table">
-    </table>
+	<div class="container taxon-dashboard-detail table">
+		<div class="row">
+			<div class="col-4 title_column">Kingdom</div>
+			<div class="col-8"><%= kingdom %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Phylum</div>
+			<div class="col-8"><%= phylum %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Class</div>
+			<div class="col-8"><%= my_class %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Order</div>
+			<div class="col-8"><%= order %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Family</div>
+			<div class="col-8"><%= family %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Genus</div>
+			<div class="col-8"><%= genus %></div>
+		</div>
+		<div class="row">
+			<div class="col-4 title_column">Species</div>
+			<div class="col-8"><%= species %></div>
+		</div>
+	</div>
 </script>
 
 <script type="text/html" id="detailed-site-dashboard">
