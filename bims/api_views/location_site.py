@@ -724,7 +724,8 @@ class LocationSitesSummary(APIView):
         result['title'] = []
         result['value'] = []
 
-        iucn_data = collection_results.annotate(
+        iucn_data = collection_results.exclude(
+            taxonomy__iucn_status__category=None).annotate(
             value=F('taxonomy__iucn_status__category')
         ).values(
             'value'
