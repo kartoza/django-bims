@@ -5,7 +5,8 @@ define([
     'jquery',
     'shared',
     'htmlToCanvas',
-    'chartJs'
+    'chartJs',
+    'utils/filter_list'
 ], function (
     Backbone,
     _,
@@ -14,6 +15,7 @@ define([
     Shared,
     HtmlToCanvas,
     ChartJs,
+    filterList
 ) {
     return Backbone.View.extend({
         id: 'detailed-site-dashboard',
@@ -182,7 +184,8 @@ define([
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
                     self.createOriginStackedBarChart(data);
-                    self.createConsStatusStackedBarChart(data)
+                    self.createConsStatusStackedBarChart(data);
+                    renderFilterList($('#filter-history-table'));
 
                     // Zoom to extent
                     let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));

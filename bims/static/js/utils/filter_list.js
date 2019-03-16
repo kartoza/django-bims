@@ -1,4 +1,4 @@
-let filterParameters = {
+let filterParametersJSON = {
     'taxon': {
         'label': 'Taxon',
         'type': 'comma'
@@ -71,9 +71,9 @@ function getUrlVars() {
 function renderFilterList($table) {
     let urlParams = getUrlVars();
     let tableData = {};
-    $table.append('<tr><th>Name</th><th>Value</th></tr>');
+    $table.html('<tr><th>Name</th><th>Value</th></tr>');
 
-    $.each(filterParameters, function (key, data) {
+    $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
             if (data['type'] === 'comma') {
                 tableData[data['label']] = urlParams[key].split(',');
