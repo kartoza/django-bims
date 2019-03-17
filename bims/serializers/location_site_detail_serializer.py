@@ -1,10 +1,10 @@
 import json
 from django.db.models import Count, F
-from collections import defaultdict, Counter
+from collections import defaultdict
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.models.iucn_status import  IUCNStatus
+from bims.models.iucn_status import IUCNStatus
 from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.enums.taxonomic_rank import TaxonomicRank
 
@@ -56,6 +56,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                                      ['value'])
         except KeyError:
             geomorphological_zone = 'Unknown'
+
         def parse_string(string_in):
             return "Unknown" if not string_in else string_in
         site_detail_info = {
@@ -213,4 +214,3 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         result['site_detail_info'] = site_detail_info
 
         return result
-
