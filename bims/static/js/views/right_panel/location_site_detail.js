@@ -383,9 +383,9 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             if (is_sass_enabled) {
                 var sassDetailedDashboardButton = `<span><a 
-                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}">View SASS</a></span>`;
+                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}">VIEW SASS</a></span>`;
                 var sassButton = `<span><a 
-                    href="/sass/${this.parameters['siteId']}">SASS +</a></span>`;
+                    href="/sass/${this.parameters['siteId']}">ADD SASS</a></span>`;
                 var rp_view_sass_container = document.getElementById('rp-view-sass');
                 rp_view_sass_container.innerHTML = sassDetailedDashboardButton;
                 var rp_add_sass_container = document.getElementById('rp-add-sass')
