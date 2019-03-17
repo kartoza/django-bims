@@ -44,6 +44,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.mapTaxaSite = null;
             this.csvDownloadsUrl = '/download-csv-taxa-records/';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
+            this.iucnLink = this.$el.find('#fsdd-iucn-link');
+
             let biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
                 params: {
@@ -129,9 +131,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
             var canonicalName = data['taxon'];
-            var common_name = data['common_name']
-
+            var common_name = data['common_name'];
+            var iucn_redlist_id = data['iucn_id'];
             self.taxonName = canonicalName;
+
+            this.iucnLink.attr('href', `https://apiv3.iucnredlist.org/api/v3/taxonredirect/${iucn_redlist_id}/`);
 
             var origin_block_data = {};
             origin_block_data['keys'] = ['Native', 'Non-native', 'Translocated'];
