@@ -56,149 +56,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 target.data('visibility', true)
             }
         },
-        renderSiteDetail: function (data) {
-            var $detailWrapper = $('<div></div>');
-            var locationContext = {};
-            var maxPanelThatShouldBeOpen = 1;
-            var self = this;
-
-            if (data.hasOwnProperty('location_context_document_json')) {
-                locationContext = data['location_context_document_json'];
-            }
-            if (locationContext.hasOwnProperty('context_group_values')) {
-                var contextGroups = locationContext['context_group_values'];
-                $.each(contextGroups, function (index, value) {
-                    var $classWrapper = $('<div class="sub-species-wrapper"></div>');
-
-                    var subPanel = _.template($('#site-detail-sub-title').html());
-                    var siteDetailTemplate = _.template($('#site-detail-registry-values').html());
-                    $classWrapper.append(subPanel({
-                        name: value['name']
-                    }));
-
-                    if (!value.hasOwnProperty('service_registry_values')) {
-                        return true;
-                    }
-
-                    if (value['service_registry_values'].length === 0) {
-                        return true;
-                    }
-
-                    // TODO : Change this to check graphable value
-                    var isChart = false;
-                    if (!((typeof chartName == 'undefined') | (typeof chartName == null))) {
-                        isChart = chartName.includes('monthly')
-                    }
-                    ;
-                    if (!((typeof service_registry_key == 'undefined') | (typeof service_registry_key == null)) & (isChart == false)) {
-                        isChart = service_registry_key.toString().toLowerCase().includes('monthly');
-                    }
-                    ;
-                    var chartData = [];
-
-                    $.each(value['service_registry_values'], function (service_index, service_value) {
-                        if (!service_value.hasOwnProperty('name') ||
-                            !service_value.hasOwnProperty('value')) {
-                            return true;
-                        }
-
-                        var service_value_name = service_value['name'];
-                        var service_value_value = service_value['value'];
-
-                        if (!service_value_name || !service_value_value) {
-                            return true;
-                        }
-
-                        // If this is chart data, put the data to dictionary
-                        if (isChart) {
-                            var date = '';
-                            $.each(self.months, function (key, value) {
-                                if (service_value_name.toLowerCase().includes(key)) {
-                                    date = value;
-                                }
-                            });
-                            if (!date) {
-                                return true;
-                            }
-                            chartData.push(
-                                {
-                                    'name': date,
-                                    'value': service_value_value
-                                }
-                            );
-                            return true;
-                        }
-
-                        $classWrapper.append(
-                            siteDetailTemplate({
-                                name: service_value_name,
-                                value: service_value_value
-                            })
-                        );
-                    });
-
-                    $detailWrapper.append($classWrapper);
-                    var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
-                    $wrapperTitleDiv.click(function (e) {
-                        $(this).parent().find('.result-search').toggle();
-                    });
-
-                    // Create canvas for chart, will create chart later after div ready
-                    if (chartData.length > 0) {
-                        var canvasKey = value['key'];
-
-                        var resultSarch = $('<div class="result-search result-chart"></div>');
-                        $('<canvas>').attr({
-                            id: canvasKey
-                        }).css({
-                            width: '250px',
-                            height: '145px'
-                        }).appendTo(resultSarch);
-
-                        $classWrapper.append(resultSarch);
-                        self.siteChartData[canvasKey] = chartData;
-                    }
-
-                    if (index > maxPanelThatShouldBeOpen - 1) {
-                        $classWrapper.find('.result-search').hide();
-                    }
-
-                })
-            } else {
-                $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
-            }
-
-            // Add detail dashboard button
-            var button = `
-                <div class="container-fluid">
-                <button class="btn fbis-button right-panel-button 
-                               open-detailed-site-button">Dashboard</button>`;
-            $detailWrapper.append(button);
-
-            if (is_sass_enabled) {
-                var sassDetailedDashboardButton = `
-                    <div class="container-fluid"><a 
-                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}
-                    " class="btn right-panel-button right-panel-last-button 
-                             fbis-button sass-button">SASS Dashboard</a></div>`;
-                var sassButton = `
-                    <div class="container-fluid"><a 
-                    href="/sass/${this.parameters['siteId']}
-                    " class="btn right-panel-button right-panel-last-button 
-                             fbis-button sass-button">SASS +</a></div>`;
-                $detailWrapper.append(sassDetailedDashboardButton);
-                $detailWrapper.append(sassButton);
-            }
-
-            var fishFormButton = `
-                <div class="container-fluid"><a 
-                href="/fish-form/?siteId=${this.parameters['siteId']}
-                " class="btn right-panel-button right-panel-last-button 
-                         fbis-button sass-button">Fish Form</a></div>`;
-            $detailWrapper.append(fishFormButton);
-
-            return $detailWrapper;
-        },
 
         renderPieChart: function(data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
@@ -275,10 +132,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 }));
             };
             return $detailWrapper;
-
-
         },
-
         createDataSummary: function (data) {
             var bio_data = data['biodiversity_data'];
             var origin_pie_canvas = document.getElementById('fish-rp-origin-pie');
@@ -509,82 +363,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     self.renderMonthlyLineChart(data['climate_data'], 'temperature');
                     self.renderMonthlyLineChart(data['climate_data'], 'rainfall');
 
+                    self.insertDashboardButtons();
+
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
                 },
-                renderBarChart: function (data_in, chartName, chartCanvas) {
-
-                    if (!(data_in.hasOwnProperty(chartName + '_chart'))) {
-                        return false;
-                    }
-                    ;
-
-                    var chartConfig = {
-                        type: 'bar',
-                        data: {
-                            datasets: [{
-                                data: data_in[chartName + '_chart']['values'],
-                                backgroundColor: '#D7CD47',
-                                borderColor: '#D7CD47',
-                                fill: false
-                            }],
-                            labels: data_in[chartName + '_chart']['keys']
-                        },
-                        options: {
-                            responsive: true,
-                            legend: {display: false},
-                            title: {display: false},
-                            hover: {mode: 'point', intersect: false},
-                            tooltips: {
-                                mode: 'point',
-                            },
-                            borderWidth: 0,
-                            scales: {
-                                xAxes: [{
-                                    display: true,
-                                    scaleLabel: {
-                                        display: false,
-                                        labelString: ''
-                                    }
-                                }],
-
-                                yAxes: [{
-                                    display: true,
-                                    scaleLabel: {
-                                        display: true,
-                                        labelString: data_in[chartName + '_chart']['title']
-                                    },
-                                    ticks: {
-                                        beginAtZero: true,
-                                        callback: function (value) {
-                                            if (value % 1 === 0) {
-                                                return value;
-                                            }
-                                        }
-                                    }
-                                }]
-                            }
-                        }
-                    };
-                    chartCanvas = this.resetCanvas(chartCanvas);
-                    var ctx = chartCanvas.getContext('2d');
-                    ctx.height = '200px';
-                    new ChartJs(ctx, chartConfig);
-                },
-                createDataSummary: function (data) {
-                    var bio_data = data['biodiversity_data'];
-                    var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
-                    this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
-
-                    var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
-                    this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
-
-                    var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
-                    this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
-                },
-
             });
         },
         flatten_arr: function (arr) {
@@ -592,6 +377,24 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             return arr.reduce(function (flat, toFlatten) {
                 return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
             }, []);
+        },
+        insertDashboardButtons: function () {
+            // Add detail dashboard buttons
+
+            if (is_sass_enabled) {
+                var sassDetailedDashboardButton = `<span><a 
+                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}">View SASS</a></span>`;
+                var sassButton = `<span><a 
+                    href="/sass/${this.parameters['siteId']}">SASS +</a></span>`;
+                var rp_view_sass_container = document.getElementById('rp-view-sass');
+                rp_view_sass_container.innerHTML = sassDetailedDashboardButton;
+                var rp_add_sass_container = document.getElementById('rp-add-sass')
+                rp_add_sass_container.innerHTML = sassButton;
+            }
+
+            var fishFormButton = `<span><a href="/fish-form/?siteId=${this.parameters['siteId']}">ADD FISH</a></span>`;
+            var rp_view_fish_form_container = document.getElementById('rp-view-fish-form');
+            rp_view_fish_form_container.innerHTML = fishFormButton;
         },
     })
 });

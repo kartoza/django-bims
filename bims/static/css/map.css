@@ -2617,3 +2617,7 @@ div:hover::-webkit-scrollbar {
     text-align: left;
     align-self: center;
 }
+
+ .fbis-button-small a { color: inherit; }
+
+ .fbis-button-small a:hover {color: inherit; text-decoration: inherit;}
