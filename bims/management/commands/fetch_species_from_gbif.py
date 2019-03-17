@@ -10,4 +10,4 @@ class Command(BaseCommand):
     help = 'Fetch all species from gbif'
 
     def handle(self, *args, **options):
-        import_fish_species_from_file()
+        import_fish_species_from_file(import_occurrences=True)

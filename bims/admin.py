@@ -54,6 +54,9 @@ from bims.models import (
     FbisUUID,
     Biotope,
     DataSource,
+    SpatialScale,
+    SpatialScaleGroup,
+    SamplingMethod
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -509,6 +512,29 @@ class DataSourceAdmin(admin.ModelAdmin):
     )
 
 
+class SpatialScaleAdmin(admin.ModelAdmin):
+    list_display = (
+        'query',
+        'name',
+        'type',
+        'group'
+    )
+
+
+class SpatialScaleGroupAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'parent'
+    )
+
+
+class SamplingMethodAdmin(admin.ModelAdmin):
+    list_display = (
+        'sampling_method',
+        'effort_measure'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -547,6 +573,9 @@ admin.site.register(VernacularName, VernacularNameAdmin)
 admin.site.register(RiverCatchment, RiverCatchmentAdmin)
 admin.site.register(FbisUUID, FbisUUIDAdmin)
 admin.site.register(Biotope, SassBiotopeAdmin)
+admin.site.register(SpatialScale, SpatialScaleAdmin)
+admin.site.register(SpatialScaleGroup, SpatialScaleGroupAdmin)
+admin.site.register(SamplingMethod, SamplingMethodAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

@@ -109,9 +109,12 @@ html, body, .map, .map-wrapper, #map-container {
     font-size: 10pt;
 }
 
+.side-panel-info {
+    padding-top: 70px !important;
+}
+
 .right-panel-header {
     font-size: 21px;
-    padding-top: 10px;
     padding-bottom: 10px;
     padding-left: 15px;
     padding-right: 10px;
@@ -122,6 +125,7 @@ html, body, .map, .map-wrapper, #map-container {
     top: 0;
     left: 0;
     width: 100%;
+    z-index: 1000;
 }
 
 .right-panel-header .fa-map-marker {
@@ -2367,8 +2371,17 @@ div:hover::-webkit-scrollbar {
     color: white;
     font-family: "Roboto Condensed";
     font-weight: 400;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
+
+.fbis-rpanel-block-dd .fbis-rpanel-block-text {
+    padding: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.5rem;
+}
 
 .flex-base-auto {
     flex-basis: auto !important;
@@ -2403,6 +2416,136 @@ div:hover::-webkit-scrollbar {
     color: white;
 }
 
+.gbif-images-row {
+    padding: 0;
+    margin: 0;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    z-index: 0 !important;
+}
+
+.gbif-images-row .col-6 {
+    padding: 0;
+    margin: 0;
+}
+
+.gbif-images-row .col-6 img {
+    height: 100%;
+    border-radius: 5px;
+    border: solid;
+    width: 100%;
+    color: white;
+}
+
+.gbif-images-row-fsdd .col-6 {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+
+
+
+#filter-validation-error {
+    font-size: 9pt;
+    color: red;
+    display: none;
+}
+
+.overview-taxa-table {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+#fish-ssdd-site-details .col-6 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+#fish-ssdd-site-details .col-12.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fish-ssdd-distribution {
+    padding-bottom: 15px;
+}
+
+#fish-ssdd-site-details .title_column {
+    font-weight: 700;
+
+}
+
+
+#fish-ssdd-records-sites .col-6 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+#fish-ssdd-records-sites .col-12.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fish-ssdd-records-sites .title_column {
+     font-weight: 700;
+}
+
+#fish-ssdd-records-sites .col-6 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+#fish-ssdd-origins .col-6.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fish-ssdd-origins .title_column {
+     font-weight: 700;
+}
+
+#fish-ssdd-origins .col-6 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+
+#fish-ssdd-conservation-status .col-6.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fish-ssdd-conservation-status .title-column {
+     font-weight: 700;
+}
+
+#fish-ssdd-conservation-status .col-6 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+.html2canvas-container {
+    width: 3000px !important; height: 3000px !important;
+}
 
 #biodiversity-data-wrapper .col-3 {
     padding: 0;

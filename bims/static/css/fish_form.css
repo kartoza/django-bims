@@ -1,0 +1,85 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box;
+/ / to account for the border on top -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+
+.body-form {
+    padding-top: 100px;
+    padding-bottom: 50px;
+}
+
+.header {
+    font-size: 15pt;
+    padding-bottom: 10px;
+}
+
+#fish-map {
+    width: 100%;
+    max-height: 425px;
+    padding-bottom: 15px;
+}
+
+table td {
+    vertical-align: middle !important;
+}
+
+.form-check {
+    padding-left: 45px;
+}
+
+.submit-wrapper {
+    text-align: center;
+}
+
+.btn {
+    text-transform: capitalize;
+    border-radius: 5px;
+    padding-left: 25px;
+    padding-right: 25px;
+    font-weight: normal;
+}
+
+.add-taxon-container, .submit-wrapper {
+    margin-bottom: 20px;
+}
+
+.required-text {
+    font-weight: bold;
+}
+
+.error {
+    border-color: #ff3531;
+}
+
+.separator-line {
+    border-bottom: 1px solid #b0b0b0;
+    margin-bottom: 10px;
+}
+
+#closest-sites-container, #add-new-site-container {
+    display: none;
+}
+
+.sub-header .title {
+    width: 200px;
+    font-size: 15pt;
+}
+
+.sub-header {
+    margin-bottom: 10px;
+}
+
+.sub-header button {
+    margin-top: -10px;
+}
+
+.add-new-site-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #c6c6c6;
+}

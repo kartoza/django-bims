@@ -13,15 +13,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="{% static "js/libs/chosen/chosen.min.css" %}">
 
-    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
 
     <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
     <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
 
     <script src="{% static "js/libs/ol-layerswitcher/ol-layerswitcher.js" %}"></script>
     <script src="{% static "js/libs/chosen/chosen.jquery.min.js" %}"></script>
+
+    <script src="https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.1.0/dist/latest/bootstrap-autocomplete.min.js"></script>
+
     <script>
         const bingMapKey = '{{ bing_map_key }}';
         const mapTilerKey = '{{ map_tiler_key }}';
@@ -37,6 +40,11 @@
         <form id="form" method="post">
             {% csrf_token %}
             {% crispy form %}
+            <div id="div_id_location_site" class="form-group">
+                <label for="location_site" class="control-label">Site</label>
+                <select class="form-control basicAutoComplete" placeholder="type to search location site..." autocomplete="off" name="location_site"
+                    data-default-text="{{ location_site_selected.name }}" data-default-value="{{ location_site_selected.id }}"></select>
+            </div>
             <input name="geometry_type" type="hidden">
             <input name="geometry" type="hidden">
             <input name="references" type="hidden">
@@ -85,6 +93,21 @@
 
 
         $(document).ready(function () {
+            // Prevent submission when pressing enter keyboard.
+            $(window).keydown(function(event){
+                if(event.keyCode === 13) {
+                  event.preventDefault();
+                  return false;
+                }
+              });
+
+            $('.basicAutoComplete').autoComplete({
+                minLength: 3,
+                resolverSettings: {
+                    url: '/location-site-autocomplete/'
+                }
+            });
+
             $('#id_taxon_gbif_id').chosen();
             $('#id_site').chosen();
 
@@ -128,36 +151,41 @@
             $('#custom-lat').val(geometry_json['coordinates'][0]);
             $('#custom-long').val(geometry_json['coordinates'][1]);
 
-            $('#id_site').on('change', function () {
-                var location_pk = $(this).val();
-                $.ajax({
-                    type: 'GET',
-                    url: '/api/location-site-detail/?siteId='+ location_pk,
-                    success: function (data) {
-                        source.clear();
-                        var geometry_location = JSON.parse(data['geometry']);
-                        $('#type').val(geometry_location['type']).change();
-                        var geojsonObject2 = {
-                            'type': 'FeatureCollection',
-                            'features': [{
-                              'type': 'Feature',
-                              'geometry': {
-                                'type': geometry_location['type'],
-                                'coordinates': geometry_location['coordinates']
-                              }
-                            }]
-                        };
-                        var geojson_feature2 = geojson.readFeatures(geojsonObject2, {
-                            dataProjection: 'EPSG:4326',
-                            featureProjection: 'EPSG:3857'
-                        });
-                        source.addFeatures(geojson_feature2);
-                        map.getView().setCenter(ol.proj.transform([geometry_location['coordinates'][0], geometry_location['coordinates'][1]], 'EPSG:4326', 'EPSG:3857'));
-                        map.getView().setZoom(10);
-                        $('#custom-lat').val(geometry_location['coordinates'][0]);
-                        $('#custom-long').val(geometry_location['coordinates'][1]);
-                    }
-                })
+            $('.basicAutoComplete').on('change', function () {
+                $(this).css('border', '1px solid #ced4da');
+                $('.error-location-site').remove();
+
+                setTimeout(function () {
+                    var location_pk = $('[name=location_site]').val();
+                    $.ajax({
+                        type: 'GET',
+                        url: '/api/location-site-detail/?siteId='+ location_pk,
+                        success: function (data) {
+                            source.clear();
+                            var geometry_location = JSON.parse(data['geometry']);
+                            $('#type').val(geometry_location['type']).change();
+                            var geojsonObject2 = {
+                                'type': 'FeatureCollection',
+                                'features': [{
+                                  'type': 'Feature',
+                                  'geometry': {
+                                    'type': geometry_location['type'],
+                                    'coordinates': geometry_location['coordinates']
+                                  }
+                                }]
+                            };
+                            var geojson_feature2 = geojson.readFeatures(geojsonObject2, {
+                                dataProjection: 'EPSG:4326',
+                                featureProjection: 'EPSG:3857'
+                            });
+                            source.addFeatures(geojson_feature2);
+                            map.getView().setCenter(ol.proj.transform([geometry_location['coordinates'][0], geometry_location['coordinates'][1]], 'EPSG:4326', 'EPSG:3857'));
+                            map.getView().setZoom(10);
+                            $('#custom-lat').val(geometry_location['coordinates'][0]);
+                            $('#custom-long').val(geometry_location['coordinates'][1]);
+                        }
+                    })
+                }, 250);
             });
 
             if($('#type').val() !== 'Point'){
@@ -202,14 +230,19 @@
         }
 
         $('#form').on('submit', function () {
-            var features = source.getFeatures();
-            var json = geojson.writeFeatures(features, {
-                featureProjection: 'EPSG:3857'
-            });
-            $('input[name=geometry_type]').val(typeSelect.value);
-            $('input[name=geometry]').val(json);
-            $('input[name=references]').val($references.chosen().val().join());
-            $('input[name=documents]').val($documents.chosen().val().join());
+            if($('[name=location_site]').val() !== ''){
+                var features = source.getFeatures();
+                var json = geojson.writeFeatures(features, {
+                    featureProjection: 'EPSG:3857'
+                });
+                $('input[name=geometry_type]').val(typeSelect.value);
+                $('input[name=geometry]').val(json);
+                $('input[name=references]').val($references.chosen().val().join());
+                $('input[name=documents]').val($documents.chosen().val().join());
+            }else {
+                $('input[name=location_site_text]').css('border', '1px solid red').after('<span class="error-location-site" style="color: red">Location site is empty, please type to search location site</span>');
+                return false;
+            }
         });
 
         function updateLocationPoint() {

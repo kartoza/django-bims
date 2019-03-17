@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -119,13 +120,29 @@ class SassDashboardView(TemplateView):
         return data
 
     def get_sensitivity_chart_data(self):
-        # Ordered by
-        # Highly tolerant = 1 - 3
-        # Tolerant = 4 - 7
-        # Sensitive = 8 - 11
-        # Highly Sensitive 12 - 15
+        """
+        Get data for sensitivity chart, only for latest data
+        Ordered by :
+        Highly tolerant = 1 - 3
+        Tolerant = 4 - 7
+        Sensitive = 8 - 11
+        Highly Sensitive 12 - 15
+        :return: dict of sensitivity chart data
+        {
+            'highly_tolerant': 1,
+            'tolerant': 1,
+            'sensitive': 1,
+            'highly_sensitive': 1
+        }
+        """
+        latest_site_visit = (
+            self.site_visit_taxa.order_by(
+                '-site_visit__site_visit_date')[0].site_visit
+        )
         sensitivity_data = (
-            self.site_visit_taxa.annotate(
+            self.site_visit_taxa.filter(
+                site_visit=latest_site_visit
+            ).annotate(
                 sass_score=Case(
                     When(site_visit__sass_version=5,
                          then='sass_taxon__sass_5_score'),
@@ -174,6 +191,10 @@ class SassDashboardView(TemplateView):
         return sensitivity_data
 
     def get_biotope_ratings_chart_data(self):
+        """
+        Get data for biotope ratings chart
+        :return: dict of biotope ratings
+        """
         data = {}
 
         biotope_ratings = self.site_visit_taxa.filter(
@@ -181,8 +202,9 @@ class SassDashboardView(TemplateView):
         ).annotate(
             date=F('site_visit__site_visit_date'),
             rate=F('site_visit__sass_biotope_fraction__rate__rate'),
-            biotope=F('site_visit__sass_biotope_fraction__sass_biotope__name')
-        ).values('date', 'rate', 'biotope').order_by(
+            biotope_name=F(
+                'site_visit__sass_biotope_fraction__sass_biotope__name')
+        ).values('date', 'rate', 'biotope_name').order_by(
             'site_visit__site_visit_date',
             'site_visit__sass_biotope_fraction__sass_biotope__display_order'
         ).distinct()
@@ -194,7 +216,7 @@ class SassDashboardView(TemplateView):
             if date not in data:
                 data[date] = {}
             rate = rating_data['rate']
-            biotope = rating_data['biotope'].encode('utf-8')
+            biotope = rating_data['biotope_name'].encode('utf-8')
             if not rate:
                 rate = 0
             data[date][biotope] = rate
@@ -264,6 +286,27 @@ class SassDashboardView(TemplateView):
             pass
         return chart_data
 
+    def ordering_catchment_data(self, river_catchment):
+        display_order = {
+            'primary_catchment_area': 0,
+            'secondary_catchment_area': 1,
+            'tertiary_catchment_area': 2,
+            'quaternary_catchment_area': 3,
+            'quinary_catchment_area': 4,
+        }
+
+        for key, value in river_catchment.items():
+            if value['key'] not in display_order:
+                value['display_order'] = 5
+            else:
+                value['display_order'] = display_order[value['key']]
+
+        ordered_dict = OrderedDict(
+            sorted(
+                river_catchment.items(),
+                key=lambda (k, v): (v['display_order'], k)))
+        return ordered_dict
+
     def get_context_data(self, **kwargs):
         context = super(SassDashboardView, self).get_context_data(**kwargs)
         self.get_site_visit_taxon()
@@ -298,12 +341,11 @@ class SassDashboardView(TemplateView):
 
         try:
             location_context = json.loads(self.location_site.location_context)
-            context['river_catchments'] = (
-                json.dumps(
-                    location_context['context_group_values'][
-                        'water_group']['service_registry_values']
-                )
-            )
+            river_catchments = location_context[
+                    'context_group_values'][
+                    'water_group']['service_registry_values']
+            river_catchments = self.ordering_catchment_data(river_catchments)
+            context['river_catchments'] = (json.dumps(river_catchments))
             context['eco_geo'] = (
                 json.dumps(
                     location_context['context_group_values'][

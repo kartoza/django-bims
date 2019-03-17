@@ -19,9 +19,9 @@
 }
 
 .loading-dashboard {
-    margin-top: 60px;
     text-align: center;
     border: 0;
+    z-index: 9;
 }
 
 .loading-dashboard img {
@@ -41,8 +41,8 @@
 }
 
 .dashboard-wrapper {
-    margin-top: 25px;
-    margin-bottom: 50px;
+    width: 100%;
+    margin: 15px;
 }
 
 .dashboard-table table {
@@ -145,4 +145,149 @@
     width: 100%;
     text-align: center;
     min-height: 100px;
+}
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
+
+
+#fsdd-overview .col-12.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fsdd-overview .title_column {
+     font-weight: 700;
+}
+
+#fsdd-overview  .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+#fsdd-overview  .col-8 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+#fish-ssdd-occurrence-data .col-6.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#fish-ssdd-occurrence-data .title-column {
+     font-weight: 700;
+    overflow-x: hidden;
+}
+
+#fish-ssdd-occurrence-data .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+    color: #4a4a4a;
+}
+
+#fish-ssdd-occurrence-data .col-2 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+    color: #4a4a4a;
+    overflow-x: hidden;
+}
+
+.center-self {
+    align-self: center;
+    height: 100%;
+    align-items: center;
+    display: inline-flex;
+    overflow-x:auto;
+
+}
+
+.center-self::-webkit-scrollbar {
+    display: none;
+}
+
+.center-self::-webkit-scrollbar {
+   height: 0;
+}
+
+.fish-ssdd-titles {
+    text-align: center;
+    font-size: 12px;
+    padding: 0.5rem;
+}
+
+.fish-ssdd-legends {
+    font-style: italic;
+    font-size: 9px;
+    letter-spacing: 0.2px;
+    color: #4a4a4a;
+    padding-bottom: 0.5rem;
+}
+
+.fish-ssdd-legends .col-3 {
+    padding-left:9%;
+}
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
+
+.dashboard-wrapper .card .card-header   {
+    padding: 0.25rem;
+    padding-left: 1rem;
+    line-height: 1.25rem;
+}
+
+.dashboard-wrapper .card .card-header-title {
+    height: auto;
+}
+
+.dashboard-wrapper .card {
+    margin-top: 0.5rem;
+}
+
+.records-area-table .col-4.sub-title {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.records-area-table .title_column {
+     font-weight: 700;
+}
+
+.records-area-table  .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+.records-area-table  .col-4 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+}
+
+table#filter-history-table {
+    width: 100%;
+}
+
+#filter-history-table tr {
+    border-bottom: 1px solid #ccc;
 }

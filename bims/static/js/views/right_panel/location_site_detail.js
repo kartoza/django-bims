@@ -66,68 +66,68 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 locationContext = data['location_context_document_json'];
             }
             if (locationContext.hasOwnProperty('context_group_values')) {
-                 var contextGroups = locationContext['context_group_values'];
-                 $.each(contextGroups, function (index, value) {
-                     var $classWrapper = $('<div class="sub-species-wrapper"></div>');
+                var contextGroups = locationContext['context_group_values'];
+                $.each(contextGroups, function (index, value) {
+                    var $classWrapper = $('<div class="sub-species-wrapper"></div>');
 
-                     var subPanel = _.template($('#site-detail-sub-title').html());
-                     var siteDetailTemplate = _.template($('#site-detail-registry-values').html());
-                     $classWrapper.append(subPanel({
-                         name: value['name']
-                     }));
+                    var subPanel = _.template($('#site-detail-sub-title').html());
+                    var siteDetailTemplate = _.template($('#site-detail-registry-values').html());
+                    $classWrapper.append(subPanel({
+                        name: value['name']
+                    }));
 
-                     if (!value.hasOwnProperty('service_registry_values')) {
-                         return true;
-                     }
+                    if (!value.hasOwnProperty('service_registry_values')) {
+                        return true;
+                    }
 
-                     if (value['service_registry_values'].length === 0) {
-                         return true;
-                     }
+                    if (value['service_registry_values'].length === 0) {
+                        return true;
+                    }
 
-                     // TODO : Change this to check graphable value
-                     var chartName = value['name'].toString().toLowerCase();
-                     var service_registry_key = value['service_registry_values'][0]['key'];
-                     var isChart = false;
-                     if (!((typeof chartName == 'undefined') | (typeof chartName == null))) {
-                          isChart = chartName.includes('monthly')
-                     };
-                     if (!((typeof service_registry_key == 'undefined') | (typeof service_registry_key == null)) & (isChart == false)) {
+                    // TODO : Change this to check graphable value
+                    var isChart = false;
+                    if (!((typeof chartName == 'undefined') | (typeof chartName == null))) {
+                        isChart = chartName.includes('monthly')
+                    }
+                    ;
+                    if (!((typeof service_registry_key == 'undefined') | (typeof service_registry_key == null)) & (isChart == false)) {
                         isChart = service_registry_key.toString().toLowerCase().includes('monthly');
-                     };
-                     var chartData = [];
+                    }
+                    ;
+                    var chartData = [];
 
-                     $.each(value['service_registry_values'], function (service_index, service_value) {
-                         if (!service_value.hasOwnProperty('name') ||
-                             !service_value.hasOwnProperty('value')) {
-                                return true;
-                         }
+                    $.each(value['service_registry_values'], function (service_index, service_value) {
+                        if (!service_value.hasOwnProperty('name') ||
+                            !service_value.hasOwnProperty('value')) {
+                            return true;
+                        }
 
-                         var service_value_name = service_value['name'];
-                         var service_value_value = service_value['value'];
+                        var service_value_name = service_value['name'];
+                        var service_value_value = service_value['value'];
 
-                         if (!service_value_name || !service_value_value) {
-                             return true;
-                         }
+                        if (!service_value_name || !service_value_value) {
+                            return true;
+                        }
 
-                         // If this is chart data, put the data to dictionary
-                         if (isChart) {
-                             var date = '';
-                             $.each(self.months, function (key, value) {
+                        // If this is chart data, put the data to dictionary
+                        if (isChart) {
+                            var date = '';
+                            $.each(self.months, function (key, value) {
                                 if (service_value_name.toLowerCase().includes(key)) {
                                     date = value;
                                 }
-                             });
-                             if (!date) {
-                                 return true;
-                             }
-                             chartData.push(
-                                 {
-                                     'name': date,
-                                     'value': service_value_value
-                                 }
-                             );
-                             return true;
-                         }
+                            });
+                            if (!date) {
+                                return true;
+                            }
+                            chartData.push(
+                                {
+                                    'name': date,
+                                    'value': service_value_value
+                                }
+                            );
+                            return true;
+                        }
 
                         $classWrapper.append(
                             siteDetailTemplate({
@@ -135,35 +135,35 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                                 value: service_value_value
                             })
                         );
-                     });
+                    });
 
-                     $detailWrapper.append($classWrapper);
-                     var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
-                     $wrapperTitleDiv.click(function (e) {
+                    $detailWrapper.append($classWrapper);
+                    var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
+                    $wrapperTitleDiv.click(function (e) {
                         $(this).parent().find('.result-search').toggle();
-                     });
+                    });
 
-                     // Create canvas for chart, will create chart later after div ready
-                     if (chartData.length > 0) {
-                         var canvasKey = value['key'];
+                    // Create canvas for chart, will create chart later after div ready
+                    if (chartData.length > 0) {
+                        var canvasKey = value['key'];
 
-                         var resultSarch = $('<div class="result-search result-chart"></div>');
-                         $('<canvas>').attr({
-                             id: canvasKey
-                         }).css({
-                             width: '250px',
-                             height: '145px'
-                         }).appendTo(resultSarch);
+                        var resultSarch = $('<div class="result-search result-chart"></div>');
+                        $('<canvas>').attr({
+                            id: canvasKey
+                        }).css({
+                            width: '250px',
+                            height: '145px'
+                        }).appendTo(resultSarch);
 
-                         $classWrapper.append(resultSarch);
-                         self.siteChartData[canvasKey] = chartData;
-                     }
+                        $classWrapper.append(resultSarch);
+                        self.siteChartData[canvasKey] = chartData;
+                    }
 
-                     if (index > maxPanelThatShouldBeOpen - 1) {
-                         $classWrapper.find('.result-search').hide();
-                     }
+                    if (index > maxPanelThatShouldBeOpen - 1) {
+                        $classWrapper.find('.result-search').hide();
+                    }
 
-                 })
+                })
             } else {
                 $detailWrapper.append('<div class="side-panel-content">No detail for this site.</div>');
             }
@@ -189,6 +189,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 $detailWrapper.append(sassDetailedDashboardButton);
                 $detailWrapper.append(sassButton);
             }
+
+            var fishFormButton = `
+                <div class="container-fluid"><a 
+                href="/fish-form/?siteId=${this.parameters['siteId']}
+                " class="btn right-panel-button right-panel-last-button 
+                         fbis-button sass-button">Fish Form</a></div>`;
+            $detailWrapper.append(fishFormButton);
 
             return $detailWrapper;
         },
@@ -330,13 +337,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 return $detailWrapper;
             }
 
-            var recordsOccurrence = data['records_occurrence'];
+            var recordsOccurence = data['records_occurrence'];
             var originTemplate = _.template($('#search-result-dashboard-origin-template').html());
             var richnessIndexTemplate = _.template($('#search-result-dashboard-richness-index-template').html());
-            var classes = Object.keys(recordsOccurrence).sort();
+            var classes = Object.keys(recordsOccurence).sort();
 
-            if (recordsOccurrence.length === 0) {
-                 $detailWrapper.append('<div class="side-panel-content">' +
+            if (recordsOccurence.length === 0) {
+                $detailWrapper.append('<div class="side-panel-content">' +
                     'No detail for this site.' +
                     '</div>');
                 return $detailWrapper;
@@ -345,7 +352,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             var totalSpeciesRichness = 0;
 
             $.each(classes, function (index, className) {
-                var record = recordsOccurrence[className];
+                var record = recordsOccurence[className];
                 if (!className) {
                     className = 'Unknown Class';
                 }
@@ -402,7 +409,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     totalNSimpsonDiversity += speciesValue.count * (speciesValue.count - 1);
                 });
 
-                var simpsonDiversityIndex = 1 - (totalNSimpsonDiversity / (totalRecords * (totalRecords-1)));
+                var simpsonDiversityIndex = 1 - (totalNSimpsonDiversity / (totalRecords * (totalRecords - 1)));
                 if (isNaN(simpsonDiversityIndex)) {
                     simpsonDiversityIndex = 0;
                 }
@@ -453,9 +460,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     $.each(species, function (index, speciesName) {
                         if (that.currentSpeciesSearchResult.length > 0) {
                             // check if species name is on search mode
-                            if ($.inArray(speciesName, that.currentSpeciesSearchResult) < 0) {
-                                return true;
-                            }
+                            var lowerSpeciesName = speciesName.toLowerCase();
+                            $.each(that.currentSpeciesSearchResult, function (currentIndex, currentSpecies) {
+                                currentSpecies = currentSpecies.toLowerCase();
+                                if (currentSpecies.includes(lowerSpeciesName)) {
+                                    return true;
+                                }
+                            });
                         }
                         var speciesValue = value[speciesName];
                         $classWrapper.append(
@@ -467,7 +478,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         );
 
                         // Species clicked
-                        $classWrapper.find('#'+speciesValue.taxon_id).click(function (e) {
+                        $classWrapper.find('#' + speciesValue.taxon_id).click(function (e) {
                             e.preventDefault();
                             Shared.Dispatcher.trigger('taxonDetail:show',
                                 speciesValue.taxon_id,
@@ -521,7 +532,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> Site Details </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
-
             $siteDetailWrapper.append(
                 '<div id="biodiversity-data" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
@@ -550,7 +560,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 dataType: 'json',
                 success: function (data) {
                     self.siteDetailData = data;
-                     Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
+                    Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
                     if (data['geometry']) {
                         var feature = {
                             id: data['id'],
@@ -583,9 +593,9 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                             },
                             options: {
                                 responsive: true,
-                                legend: { display: false },
-                                title: { display: false },
-                                hover: { mode: 'nearest', intersect: false},
+                                legend: {display: false},
+                                title: {display: false},
+                                hover: {mode: 'nearest', intersect: false},
                                 scales: {
                                     xAxes: [{
                                         display: true,
@@ -608,8 +618,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         var labels = [];
                         var chartData = [];
                         $.each(value, function (index, record_value) {
-                           labels.push(record_value['name']);
-                           chartData.push(Number(record_value['value']).toFixed(2));
+                            labels.push(record_value['name']);
+                            chartData.push(Number(record_value['value']).toFixed(2));
                         });
                         chartConfig['data']['labels'] = labels;
                         chartConfig['data']['datasets'][0]['data'] = chartData;

@@ -8,6 +8,7 @@ from django.db.models import Count, F
 from django.db.models.functions import ExtractYear
 from rest_framework import status
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.iucn_status import IUCNStatus
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
     BioCollectionDetailSerializer,
@@ -119,6 +120,9 @@ class BioCollectionSummary(APIView):
         response_data['sites_raw_query'] = search_process.process_id
         response_data['process_id'] = search_process.process_id
         response_data['extent'] = search.extent()
+        response_data['origin_choices_list'] = (
+            BiologicalCollectionRecord.CATEGORY_CHOICES)
+        response_data['iucn_choice_list'] = IUCNStatus.CATEGORY_CHOICES
 
         taxonomy_rank = {
             taxonomy.rank: taxonomy.scientific_name
@@ -131,6 +135,19 @@ class BioCollectionSummary(APIView):
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
 
+        common_names = []
+        # Common name
+        if taxonomy.vernacular_names.filter(language='eng').exists():
+            common_names = list(
+                taxonomy.vernacular_names.all().filter(language='eng').values()
+            )
+        elif taxonomy.vernacular_names.all().values().exists():
+            common_names = list(taxonomy.vernacular_names.all().values())
+        if len(common_names) == 0:
+            response_data['common_name'] = 'Unknown'
+        else:
+            response_data['common_name'] = str(
+                common_names[0]['name']).capitalize()
         file_path = create_search_process_file(
             data=response_data,
             search_process=search_process,

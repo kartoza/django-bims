@@ -22,6 +22,11 @@ body {
 #sass-score-chart {
     display: block;
     width: 100%;
+    margin-top: 7px
+}
+
+#taxa-numbers-chart, #aspt-chart {
+    margin-top: 15px
 }
 
 .vertical-space {
@@ -67,7 +72,7 @@ body {
     font-weight: bold;
 }
 
-.download-as-csv, .download-summary-as-csv {
+.download-as-csv, .download-summary-as-csv, .download-latest-as-csv {
     font-size: 10pt;
     text-transform: none;
     border-radius: 5px;

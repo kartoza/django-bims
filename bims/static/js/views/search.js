@@ -53,6 +53,7 @@ define([
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
             Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
+            Shared.Dispatcher.on('search:showMoreSites', this.showMoreSites, this);
         },
         render: function () {
             var self = this;
@@ -71,8 +72,8 @@ define([
                             if (requestResponse.hasOwnProperty('results')) {
                                 $.each(requestResponse['results'], function (index, value) {
                                     responseData.push({
-                                        'value': value['name'],
-                                        'label': value['name'],
+                                        'value': value['suggested_name'],
+                                        'label': value['suggested_name'],
                                         'id': value['id']
                                     })
                                 })
@@ -211,6 +212,7 @@ define([
             return this.$el.find("#conservation-status").val("").trigger('chosen:updated');
         },
         search: function (searchValue) {
+            $('#filter-validation-error').hide();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
                 return;
@@ -292,7 +294,22 @@ define([
                 Shared.Dispatcher.trigger('catchmentArea:show-administrative', boundaryValue);
             }
 
-            var riverCatchments = this.spatialFilterView.selectedRiverCatchments;
+            var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
+
+            var validationFilter = [];
+            var validated = true;
+            $('[name=filter-validation]:checked').each(function() {
+                validationFilter.push($(this).attr('value'));
+            });
+
+            if(validationFilter.indexOf('true') !== -1 && validationFilter.indexOf('false') !== -1){
+                validated = 'all';
+            }else if(validationFilter.indexOf('true') !== -1 || validationFilter.indexOf('false') !== -1){
+                validated = validationFilter[0]
+            }else if(validationFilter.length === 0){
+                $('#filter-validation-error').show();
+                return;
+            }
 
             var parameters = {
                 'search': searchValue,
@@ -308,7 +325,8 @@ define([
                 'referenceCategory': referenceCategory,
                 'endemic': endemicValue,
                 'conservationStatus': conservationStatusValue,
-                'riverCatchment': riverCatchments.length === 0 ? '' : JSON.stringify(riverCatchments)
+                'spatialFilter': spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters),
+                'validated': validated
             };
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -335,7 +353,7 @@ define([
                 && !parameters['reference']
                 && !parameters['endemic']
                 && !parameters['conservationStatus']
-                && !parameters['riverCatchment']
+                && !parameters['spatialFilter']
                 && !parameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -377,6 +395,8 @@ define([
             $('.map-search-result').hide();
             this.searchPanel.clearSidePanel();
             this.clearClickedOriginButton();
+            $('#filter-validation-validated').prop('checked', true);
+            $('#filter-validation-error').hide();
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
@@ -598,8 +618,8 @@ define([
             }
 
             // River catchment
-            if (allFilters.hasOwnProperty('riverCatchment')) {
-                this.spatialFilterView.selectedRiverCatchments = JSON.parse(allFilters['riverCatchment']);
+            if (allFilters.hasOwnProperty('spatialFilter')) {
+                this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
             }
 
             // Boundary
@@ -607,6 +627,9 @@ define([
                 this.spatialFilterView.selectedPoliticalRegions = JSON.parse(allFilters['boundary']);
             }
         },
+        showMoreSites: function () {
+            this.searchResultCollection.fetchMoreSites();
+        }
     })
 
 });
