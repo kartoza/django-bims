@@ -393,187 +393,22 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             }
             $('#' + chartName + '_chart_labels').html(chart_labels[chartName]);
         },
-
-        renderDashboardDetail: function (data) {
-            var $detailWrapper = $('<div></div>');
-
-            if (!data.hasOwnProperty('records_occurrence')) {
-                $detailWrapper.append('<div class="side-panel-content">' +
-                    'No detail for this site.' +
-                    '</div>');
-                return $detailWrapper;
+        parseNameFromAliases: function (alias, alias_type, data) {
+            var name = alias;
+            var choices = [];
+            var index = 0;
+            if (alias_type == 'cons_status') {
+                choices = this.flatten_arr(data['iucn_name_list']);
             }
-
-            var recordsOccurence = data['records_occurrence'];
-            var originTemplate = _.template($('#search-result-dashboard-origin-template').html());
-            var richnessIndexTemplate = _.template($('#search-result-dashboard-richness-index-template').html());
-            var classes = Object.keys(recordsOccurence).sort();
-
-            if (recordsOccurence.length === 0) {
-                $detailWrapper.append('<div class="side-panel-content">' +
-                    'No detail for this site.' +
-                    '</div>');
-                return $detailWrapper;
+            if (alias_type == 'origin')
+            {
+                choices = this.flatten_arr(data['origin_name_list']);
             }
-
-            var totalSpeciesRichness = 0;
-
-            $.each(classes, function (index, className) {
-                var record = recordsOccurence[className];
-                if (!className) {
-                    className = 'Unknown Class';
-                }
-                var $classWrapper = $('<div class="sub-species-wrapper"></div>');
-
-                var classTemplate = _.template($('#search-result-sub-title').html());
-                $classWrapper.append(classTemplate({
-                    name: className,
-                    count: 0,
-                }));
-
-                var species = Object.keys(record).sort();
-                var totalRecords = 0;
-                var category = {
-                    'alien': 0,
-                    'indigenous': 0,
-                    'translocated': 0
-                };
-
-                $.each(species, function (index, speciesName) {
-                    var speciesValue = record[speciesName];
-                    var $occurencesIndicator = $classWrapper.find('.total-occurences');
-                    totalRecords += speciesValue.count;
-                    $occurencesIndicator.html(
-                        parseInt($occurencesIndicator.html()) + speciesValue.count);
-                    category[speciesValue['category']] += 1;
-                });
-
-                // Origin
-                $classWrapper.append(originTemplate({
-                    name: 'Origin',
-                    nativeValue: category['indigenous'] / totalRecords * 100,
-                    nonNativeValue: category['alien'] / totalRecords * 100,
-                    translocatedValue: category['translocated'] / totalRecords * 100
-                }));
-
-                // Calculate species richness
-                var speciesRichness = species.length / Math.sqrt(totalRecords);
-                totalSpeciesRichness += speciesRichness;
-
-                // Calculate shanon diversity and simpson diversity
-                var totalShanonDiversity = 0;
-                var totalNSimpsonDiversity = 0;
-
-                $.each(species, function (index, speciesName) {
-
-                    // Shanon diversity
-                    var speciesValue = record[speciesName];
-                    var p = speciesValue.count / totalRecords;
-                    var logP = Math.log(p);
-                    totalShanonDiversity += -(p * logP);
-
-                    // Simpson diversity
-                    totalNSimpsonDiversity += speciesValue.count * (speciesValue.count - 1);
-                });
-
-                var simpsonDiversityIndex = 1 - (totalNSimpsonDiversity / (totalRecords * (totalRecords - 1)));
-                if (isNaN(simpsonDiversityIndex)) {
-                    simpsonDiversityIndex = 0;
-                }
-
-                // Richness Index
-                $classWrapper.append(richnessIndexTemplate({
-                    name: 'Richness Index',
-                    className: className,
-                    speciesRichness: speciesRichness.toFixed(2),
-                    shanonDiversity: totalShanonDiversity.toFixed(2),
-                    simpsonDiversity: simpsonDiversityIndex.toFixed(2)
-                }));
-
-                $detailWrapper.append($classWrapper);
-
-                // Add click event
-                var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
-
-                $wrapperTitleDiv.click(function (e) {
-                    $(this).parent().find('.result-search').toggle();
-                });
-            });
-
-            return $detailWrapper;
-        },
-        renderSpeciesList: function (data) {
-            var that = this;
-            var $specialListWrapper = $('<div style="display: none"></div>');
-            var speciesListCount = 0;
-            if (data.hasOwnProperty('records_occurrence')) {
-                var records_occurrence = data['records_occurrence'];
-                var template = _.template($('#search-result-record-template').html());
-                var classes = Object.keys(records_occurrence).sort();
-                $.each(classes, function (index, className) {
-                    var value = records_occurrence[className];
-                    if (!className) {
-                        className = 'Unknown';
-                    }
-                    var $classWrapper = $('<div class="sub-species-wrapper"></div>');
-                    var classTemplate = _.template($('#search-result-sub-title').html());
-                    $classWrapper.append(classTemplate({
-                        name: className,
-                        count: 0
-                    }));
-                    $classWrapper.hide();
-
-                    var species = Object.keys(value).sort();
-                    $.each(species, function (index, speciesName) {
-                        if (that.currentSpeciesSearchResult.length > 0) {
-                            // check if species name is on search mode
-                            var lowerSpeciesName = speciesName.toLowerCase();
-                            $.each(that.currentSpeciesSearchResult, function (currentIndex, currentSpecies) {
-                                currentSpecies = currentSpecies.toLowerCase();
-                                if (currentSpecies.includes(lowerSpeciesName)) {
-                                    return true;
-                                }
-                            });
-                        }
-                        var speciesValue = value[speciesName];
-                        $classWrapper.append(
-                            template({
-                                common_name: speciesName,
-                                count: speciesValue.count,
-                                taxon_gbif_id: speciesValue.taxon_id
-                            })
-                        );
-
-                        // Species clicked
-                        $classWrapper.find('#' + speciesValue.taxon_id).click(function (e) {
-                            e.preventDefault();
-                            Shared.Dispatcher.trigger('taxonDetail:show',
-                                speciesValue.taxon_id,
-                                speciesName,
-                                {
-                                    'id': that.siteId,
-                                    'name': that.siteName
-                                },
-                                speciesValue.count
-                            );
-                        });
-
-                        var $occurencesIndicator = $classWrapper.find('.total-occurences');
-                        $occurencesIndicator.html(parseInt($occurencesIndicator.html()) + speciesValue.count);
-                        $classWrapper.show();
-                        speciesListCount += 1;
-                    });
-                    $specialListWrapper.append($classWrapper);
-                    var $wrapperTitleDiv = $classWrapper.find('.search-result-sub-title');
-                    $wrapperTitleDiv.click(function (e) {
-                        $(this).parent().find('.result-search').toggle();
-                    });
-                });
-            } else {
-                $specialListWrapper.append('<div class="side-panel-content">No species found on this site.</div>');
+            if (choices.length > 0) {
+                index = choices.indexOf(alias) + 1;
+                name = choices[index];
             }
-            $('.species-list-count').html(speciesListCount);
-            return $specialListWrapper;
+            return name;
         },
 
         renderBiodiversityData: function (data) {
@@ -646,67 +481,21 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     }
                     // render site detail
                     $('#site-detail').append(self.renderSiteDetailInfo(data));
-                    $.each(self.siteChartData, function (key, value) {
-                        var chartConfig = {
-                            type: 'line',
-                            data: {
-                                labels: [],
-                                datasets: [{
-                                    backgroundColor: '#ddd14e',
-                                    borderColor: '#ddd14e',
-                                    data: [],
-                                    fill: false
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                legend: {display: false},
-                                title: {display: false},
-                                hover: {mode: 'nearest', intersect: false},
-                                scales: {
-                                    xAxes: [{
-                                        display: true,
-                                        scaleLabel: {
-                                            display: true,
-                                            labelString: 'Month'
-                                        }
-                                    }],
-                                    yAxes: [{
-                                        display: true,
-                                        scaleLabel: {
-                                            display: false
-                                        }
-                                    }]
-                                }
-                            }
-                        };
-                        var canvas = document.getElementById(key);
-                        var ctx = canvas.getContext('2d');
-                        var labels = [];
-                        var chartData = [];
-                        $.each(value, function (index, record_value) {
-                            labels.push(record_value['name']);
-                            chartData.push(Number(record_value['value']).toFixed(2));
-                        });
-                        chartConfig['data']['labels'] = labels;
-                        chartConfig['data']['datasets'][0]['data'] = chartData;
-                        new ChartJs(ctx, chartConfig);
-                    });
-
-                    self.siteChartData = {};
-
-                    // dashboard detail
-                    try {
-                        // Custom dashboard
-                        $('#dashboard-detail').append(renderDashboard(data));
-                        // calculateChart($('#dashboard-detail'), data);
-                    } catch (err) {
-                        $('#dashboard-detail').append(
-                            self.renderDashboardDetail(data));
+                    var biodiversity_fish_data = data['biodiversity_data']['fish'];
+                    var origin_length = biodiversity_fish_data['origin_chart']['keys'].length;
+                    for (let i = 0; i < origin_length; i++)
+                    {
+                        let next_name = biodiversity_fish_data['origin_chart']['keys'][i];
+                        biodiversity_fish_data['origin_chart']['keys'][i] =
+                            self.parseNameFromAliases(next_name, 'origin',  data);
                     }
-
-                    // render species list
-                    //$('#species-list').append(self.renderSpeciesList(data));
+                    
+                    var cons_status_length = biodiversity_fish_data['cons_status_chart']['keys'].length;
+                    for (let i = 0; i < cons_status_length; i++) {
+                        let next_name = biodiversity_fish_data['cons_status_chart']['keys'][i];
+                        biodiversity_fish_data['cons_status_chart']['keys'][i] =
+                            self.parseNameFromAliases(next_name, 'cons_status', data);
+                    }
 
                     $('#biodiversity-data').append(self.renderBiodiversityData(data));
                     self.renderSidePanelPieChart(data, 'fish', 'origin');
@@ -724,73 +513,84 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 error: function (req, err) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
                 },
-                renderBarChart: function(data_in, chartName, chartCanvas) {
+                renderBarChart: function (data_in, chartName, chartCanvas) {
 
-             if (!(data_in.hasOwnProperty(chartName + '_chart')))
-            {
-               return false;
-            };
-
-             var chartConfig = {
-                type: 'bar',
-                data: {
-                    datasets: [{
-                        data: data_in[chartName + '_chart']['values'],
-                        backgroundColor: '#D7CD47',
-                        borderColor: '#D7CD47',
-                        fill: false
-                    }],
-                    labels: data_in[chartName + '_chart']['keys']
-                },
-                options: {
-                    responsive: true,
-                    legend:{ display: false },
-                    title: { display: false },
-                    hover: { mode: 'point', intersect: false},
-                    tooltips: {
-                        mode: 'point',
-                    },
-                    borderWidth: 0,
-                    scales: {
-					xAxes: [{
-						display: true,
-						scaleLabel: {
-							display: false,
-							labelString: ''
-						}
-					}],
-
-					yAxes: [{
-						display: true,
-						scaleLabel: {
-							display: true,
-							labelString: data_in[chartName + '_chart']['title']
-						},
-						ticks: {
-                          beginAtZero: true,
-                          callback: function(value) {if (value % 1 === 0) {return value;}}
-                        }
-					}]
+                    if (!(data_in.hasOwnProperty(chartName + '_chart'))) {
+                        return false;
                     }
-                }
-             };
-             chartCanvas = this.resetCanvas(chartCanvas);
-             var ctx = chartCanvas.getContext('2d');
-             ctx.height = '200px';
-             new ChartJs(ctx, chartConfig);
-        },
-        createDataSummary: function (data) {
-            var bio_data = data['biodiversity_data'];
-            var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
-            this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
+                    ;
 
-            var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
-            this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
+                    var chartConfig = {
+                        type: 'bar',
+                        data: {
+                            datasets: [{
+                                data: data_in[chartName + '_chart']['values'],
+                                backgroundColor: '#D7CD47',
+                                borderColor: '#D7CD47',
+                                fill: false
+                            }],
+                            labels: data_in[chartName + '_chart']['keys']
+                        },
+                        options: {
+                            responsive: true,
+                            legend: {display: false},
+                            title: {display: false},
+                            hover: {mode: 'point', intersect: false},
+                            tooltips: {
+                                mode: 'point',
+                            },
+                            borderWidth: 0,
+                            scales: {
+                                xAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: false,
+                                        labelString: ''
+                                    }
+                                }],
 
-            var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
-            this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
-         },
+                                yAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: data_in[chartName + '_chart']['title']
+                                    },
+                                    ticks: {
+                                        beginAtZero: true,
+                                        callback: function (value) {
+                                            if (value % 1 === 0) {
+                                                return value;
+                                            }
+                                        }
+                                    }
+                                }]
+                            }
+                        }
+                    };
+                    chartCanvas = this.resetCanvas(chartCanvas);
+                    var ctx = chartCanvas.getContext('2d');
+                    ctx.height = '200px';
+                    new ChartJs(ctx, chartConfig);
+                },
+                createDataSummary: function (data) {
+                    var bio_data = data['biodiversity_data'];
+                    var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
+                    this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
+
+                    var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
+                    this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
+
+                    var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
+                    this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
+                },
+
             });
-        }
+        },
+        flatten_arr: function (arr) {
+            self = this;
+            return arr.reduce(function (flat, toFlatten) {
+                return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
+            }, []);
+        },
     })
 });

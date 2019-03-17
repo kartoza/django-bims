@@ -4,6 +4,7 @@ from collections import defaultdict, Counter
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.iucn_status import  IUCNStatus
 from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.enums.taxonomic_rank import TaxonomicRank
 
@@ -182,84 +183,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 site=instance,
                 validated=True
             )
-
-        # biodiversity_data = self.get_biodiversity_data(collections)
-        # result['biodiversity_data'] = biodiversity_data
         records_occurrence = {}
-        module_info = {}
-        for model in collections:
-            taxonomy = model.taxonomy
-            category = model.category
-            year_collected = model.collection_date.year
-            if taxonomy:
-                taxon_id = taxonomy.gbif_key
-                taxon_class = self.get_class_from_taxonomy(taxonomy)
-                if not taxon_class:
-                    taxon_class = 'No Class'
 
-                try:
-                    records_occurrence[taxon_class]
-                except KeyError:
-                    records_occurrence[taxon_class] = {}
-
-                species_list = records_occurrence[taxon_class]
-                try:
-                    species_list[taxonomy.canonical_name]
-                except KeyError:
-                    species_list[taxonomy.canonical_name] = {
-                        'taxon_id': taxonomy.id,
-                        'taxonomy': taxon_id,
-                        'category': category,
-                        'count': 0,
-                        'data_by_year': {}
-                    }
-                species_list[taxonomy.canonical_name]['count'] += 1
-
-                if year_collected not in \
-                        species_list[taxonomy.canonical_name][
-                            'data_by_year']:
-                    species_list[taxonomy.canonical_name]['data_by_year'][
-                        year_collected] = 1
-                else:
-                    species_list[taxonomy.canonical_name]['data_by_year'][
-                        year_collected] += 1
-
-            # get per module info
-            module = model.get_children()
-            try:
-                module = module._meta.verbose_name
-            except AttributeError:
-                module = 'base'
-
-            try:
-                module_info[module]
-            except KeyError:
-                module_info[module] = {
-                    'count': 0,
-                    'categories': {},
-                    'iucn_status': {
-                        'sensitive': 0,
-                        'non-sensitive': 0
-                    }
-                }
-            module_info[module]['count'] += 1
-
-            # get per category info
-            if model.category:
-                category = model.category
-                try:
-                    module_info[module]['categories'][category]
-                except KeyError:
-                    module_info[module]['categories'][category] = 0
-                module_info[module]['categories'][category] += 1
-
-            # get per iucn_status info
-            if model.taxonomy and model.taxonomy.iucn_status:
-                sensitive = model.taxonomy.iucn_status.sensitive
-                if sensitive:
-                    module_info[module]['iucn_status']['sensitive'] += 1
-                else:
-                    module_info[module]['iucn_status']['non-sensitive'] += 1
         try:
             biodiversity_data = self.get_biodiversity_data(collections)
         except:
@@ -274,9 +199,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         except:
             site_detail_info = {}
 
+        result['iucn_name_list'] = IUCNStatus.CATEGORY_CHOICES
+        result['origin_name_list'] = (
+            BiologicalCollectionRecord.CATEGORY_CHOICES)
         result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
-        result['modules_info'] = module_info
         result['biodiversity_data'] = biodiversity_data
         result['site_detail_info'] = site_detail_info
 
