@@ -43,14 +43,19 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_coordinates = "{latitude}, {longitude}".format(
             latitude=round(obj.geometry_point.x, 3),
             longitude=round(obj.geometry_point.y, 3))
-        context_data = json.loads(str(obj.location_context))
-        geomorphological_zone = (context_data
-                                 ['context_group_values']
-                                 ['eco_geo_group']
-                                 ['service_registry_values']
-                                 ['geoclass']
-                                 ['value'])
-
+        try:
+            context_data = json.loads(str(obj.location_context))
+        except ValueError:
+            context_data = {}
+        try:
+            geomorphological_zone = (context_data
+                                     ['context_group_values']
+                                     ['eco_geo_group']
+                                     ['service_registry_values']
+                                     ['geoclass']
+                                     ['value'])
+        except KeyError:
+            geomorphological_zone = 'Unknown'
         def parse_string(string_in):
             return "Unknown" if not string_in else string_in
         site_detail_info = {
@@ -58,7 +63,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'site_coordinates': parse_string(site_coordinates),
             'site_description': parse_string(obj.site_description),
             'geomorphological_zone': parse_string(geomorphological_zone),
-            'river': parse_string(obj.river)}
+            'river': parse_string(obj.river.name)}
         return site_detail_info
 
     def get_class_from_taxonomy(self, taxonomy):
@@ -187,16 +192,16 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
         try:
             biodiversity_data = self.get_biodiversity_data(collections)
-        except:
+        except KeyError:
             biodiversity_data = {}
         try:
             climate_data = self.get_site_climate_data(
                 instance.location_context)
-        except:
+        except KeyError:
             climate_data = {}
         try:
             site_detail_info = self.get_site_detail_info(instance)
-        except:
+        except KeyError:
             site_detail_info = {}
 
         result['iucn_name_list'] = IUCNStatus.CATEGORY_CHOICES

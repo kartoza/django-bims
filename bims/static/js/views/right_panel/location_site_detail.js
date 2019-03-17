@@ -346,6 +346,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 }
             };
             var chartCanvas = document.getElementById(chartName + '_chart');
+            chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
         },
