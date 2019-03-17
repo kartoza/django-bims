@@ -1,4 +1,5 @@
 import json
+from django.db.models import Count, F
 from collections import defaultdict, Counter
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
@@ -41,10 +42,6 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_coordinates = "{latitude}, {longitude}".format(
             latitude=round(obj.geometry_point.x, 3),
             longitude=round(obj.geometry_point.y, 3))
-        try:
-            print "Hello World"
-        except:
-            print "This is an error message!"
         context_data = json.loads(str(obj.location_context))
         geomorphological_zone = (context_data
                                  ['context_group_values']
@@ -115,117 +112,61 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
 
-
-    def get_biodiversity_data(self, instance):
+    def get_biodiversity_data(self, collection_results):
         biodiversity_data = defaultdict(dict)
-        collection_ids = self.context.get("collection_ids")
-        if collection_ids:
-            collections = BiologicalCollectionRecord.objects.filter(
-                id__in=collection_ids
-            )
-        else:
-            collections = BiologicalCollectionRecord.objects.filter(
-                site=instance,
-                validated=True
-            )
-        taxa = self.get_origin_cons_endemsim_data(collections)
-        # If I found more than one class of animal
-        if 'Actinopterygii' not in taxa:
-            print('Hey there, you are not a fish!')
-        else:
-            biodiversity_data['fish'] = {}
-            biodiversity_data['fish']['origin_chart'] = {}
-            biodiversity_data['fish']['cons_status_chart'] = {}
-            biodiversity_data['fish']['endemism_chart'] = {}
-            biodiversity_data['fish']['origin_chart']['data'] = (
-                taxa['Actinopterygii']['origin_chart']['data'])
-            biodiversity_data['fish']['origin_chart']['keys'] = (
-                taxa['Actinopterygii']['origin_chart']['keys'])
-            biodiversity_data['fish']['cons_status_chart']['data'] = (
-                taxa['Actinopterygii']['cons_status_chart']['data'])
-            biodiversity_data['fish']['cons_status_chart']['keys'] = (
-                taxa['Actinopterygii']['cons_status_chart']['keys'])
-            biodiversity_data['fish']['endemism_chart']['data'] = (
-                taxa['Actinopterygii']['endemism_chart']['data'])
-            biodiversity_data['fish']['endemism_chart']['keys'] = (
-                taxa['Actinopterygii']['endemism_chart']['keys'])
-        biodiversity_data['taxa'] = taxa
+
+        biodiversity_data['fish'] = {}
+        biodiversity_data['fish']['origin_chart'] = {}
+        biodiversity_data['fish']['cons_status_chart'] = {}
+        biodiversity_data['fish']['endemism_chart'] = {}
+        origin_by_name_data = collection_results.annotate(
+            name=F('category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = origin_by_name_data.values_list('name', flat=True)
+        values = origin_by_name_data.values_list('count', flat=True)
+        biodiversity_data['fish']['origin_chart']['data'] = list(values)
+        biodiversity_data['fish']['origin_chart']['keys'] = list(keys)
+        cons_status_data = collection_results.annotate(
+            name=F('taxonomy__iucn_status__category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = cons_status_data.values_list('name', flat=True)
+        values = cons_status_data.values_list('count', flat=True)
+        biodiversity_data['fish']['cons_status_chart']['data'] = list(
+            values)
+        biodiversity_data['fish']['cons_status_chart']['keys'] = list(keys)
+        endemism_status_data = collection_results.annotate(
+            name=F('taxonomy__endemism__name')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        keys = endemism_status_data.values_list('name', flat=True)
+        values = endemism_status_data.values_list('count', flat=True)
+        biodiversity_data['fish']['endemism_chart']['data'] = list(values)
+        biodiversity_data['fish']['endemism_chart']['keys'] = list(keys)
 
         biodiversity_data['occurrences'] = [0, 0, 0]
-        biodiversity_data['occurrences'][0] = (
-            sum(taxa['Actinopterygii']['occurrences']))
+        biodiversity_data['occurrences'][0] = collection_results.count()
 
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
-        biodiversity_data['number_of_taxa'][0] = (
-            len(taxa['Actinopterygii']['number_of_taxa']))
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         return biodiversity_data
 
-    def get_origin_cons_endemsim_data(self, collections):
-        taxa = defaultdict(dict)
-
-        for model in collections:
-            if not (model.taxonomy.class_name in taxa):
-                taxa[model.taxonomy.class_name]['origin_data'] = []
-                taxa[model.taxonomy.class_name]['cons_status_data'] = []
-                taxa[model.taxonomy.class_name]['endemism_data'] = []
-                taxa[model.taxonomy.class_name]['occurrence_data'] = []
-
-            taxa[model.taxonomy.class_name]['origin_data'].append(
-                model.category)
-            taxa[model.taxonomy.class_name]['cons_status_data'].append(
-                model.taxonomy.iucn_status.category)
-            taxa[model.taxonomy.class_name]['endemism_data'].append(
-                model.taxonomy.endemism)
-            taxa[model.taxonomy.class_name]['occurrence_data'].append(
-                model.taxonomy.scientific_name)
-
-        for class_name in taxa:
-            if 'origin_chart' not in taxa[class_name]:
-                taxa[class_name]['origin_chart'] = {}
-                taxa[class_name]['origin_chart']['data'] = []
-                taxa[class_name]['origin_chart']['keys'] = []
-                taxa[class_name]['cons_status_chart'] = {}
-                taxa[class_name]['cons_status_chart']['data'] = []
-                taxa[class_name]['cons_status_chart']['keys'] = []
-                taxa[class_name]['endemism_chart'] = {}
-                taxa[class_name]['endemism_chart']['data'] = []
-                taxa[class_name]['endemism_chart']['keys'] = []
-                taxa[class_name]['occurrences'] = []
-                taxa[class_name]['number_of_taxa'] = []
-
-            data_counter_origin = (
-                Counter(taxa[class_name]['origin_data']))
-            data_counter_cons_status = (
-                Counter(taxa[class_name]['cons_status_data']))
-            data_counter_endemism = (
-                Counter(taxa[class_name]['endemism_data']))
-            data_counter_occurrence = (
-                Counter(taxa[class_name]['occurrence_data']))
-
-            taxa[class_name]['origin_chart']['data'].append(
-                data_counter_origin.values()[0])
-            taxa[class_name]['origin_chart']['keys'].append(
-                data_counter_origin.keys()[0])
-
-            taxa[class_name]['cons_status_chart']['data'].append(
-                data_counter_cons_status.values())
-            taxa[class_name]['cons_status_chart']['data'] = (
-                taxa[class_name]['cons_status_chart']['data'][0])
-            taxa[class_name]['cons_status_chart']['keys'].append(
-                data_counter_cons_status.keys())
-            taxa[class_name]['cons_status_chart']['keys'] = (
-                taxa[class_name]['cons_status_chart']['keys'][0])
-
-            taxa[class_name]['endemism_chart']['data'].append(
-                data_counter_endemism.values()[0])
-            taxa[class_name]['endemism_chart']['keys'].append(
-                data_counter_endemism.keys()[0])
-            taxa[class_name]['occurrences'].append(
-                data_counter_occurrence.values()[0])
-            taxa[class_name]['number_of_taxa'].append(
-                data_counter_occurrence.keys()[0])
-        return taxa
 
     def to_representation(self, instance):
         collection_ids = self.context.get("collection_ids")
@@ -241,6 +182,9 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 site=instance,
                 validated=True
             )
+
+        # biodiversity_data = self.get_biodiversity_data(collections)
+        # result['biodiversity_data'] = biodiversity_data
         records_occurrence = {}
         module_info = {}
         for model in collections:
@@ -317,7 +261,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                 else:
                     module_info[module]['iucn_status']['non-sensitive'] += 1
         try:
-            biodiversity_data = self.get_biodiversity_data(instance)
+            biodiversity_data = self.get_biodiversity_data(collections)
         except:
             biodiversity_data = {}
         try:
@@ -337,3 +281,4 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         result['site_detail_info'] = site_detail_info
 
         return result
+

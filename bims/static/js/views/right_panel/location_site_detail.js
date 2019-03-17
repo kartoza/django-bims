@@ -200,6 +200,54 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             return $detailWrapper;
         },
 
+        renderPieChart: function(data, speciesType, chartName, chartCanvas) {
+            if (typeof data == 'undefined') {
+                return null;
+            }
+            var backgroundColours = [
+                            '#8D2641',
+                            '#D7CD47',
+                            '#18A090',
+                            '#A2CE89',
+                            '#4E6440',
+                            '#525351']
+            var chartConfig = {
+                type: 'pie',
+                data: {
+                    datasets: [{
+                        data: data[speciesType][chartName + '_chart']['data'],
+                        backgroundColor: backgroundColours
+                    }],
+                    labels: data[speciesType][chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: false,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'nearest', intersect: false},
+                    borderWidth: 0,
+                }
+            };
+            chartCanvas = this.resetCanvas(chartCanvas);
+            var ctx = chartCanvas.getContext('2d');
+            new ChartJs(ctx, chartConfig);
+
+             // Render chart labels
+            var dataKeys = data[speciesType][chartName + '_chart']['keys'];
+            var dataLength = dataKeys.length;
+            var chart_labels = {};
+            chart_labels[chartName] = ''
+            for (var i = 0; i < dataLength; i++)
+            {
+                chart_labels[chartName] += '<div><span style="color:' +
+                    backgroundColours[i] + ';">■</span>' +
+                    '<span class="fish-ssdd-legend-title">&nbsp;' +
+                    dataKeys[i] + '</span></div>'
+            }
+            var element_name = `#rp-${chartName}-legend`;
+            $(element_name).html(chart_labels[chartName]);
+        },
+
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('site_detail_info')) {
@@ -231,7 +279,26 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
         },
 
+        createDataSummary: function (data) {
+            var bio_data = data['biodiversity_data'];
+            var origin_pie_canvas = document.getElementById('fish-rp-origin-pie');
+            this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
 
+            var endemism_pie_canvas = document.getElementById('fish-rp-endemism-pie');
+            this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
+
+            var conservation_status_pie_canvas = document.getElementById('fish-rp-conservation-status-pie');
+            this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
+        },
+        resetCanvas: function (chartCanvas) {
+            var chartParent = chartCanvas.parentElement;
+            var newCanvas = document.createElement("CANVAS");
+            var chartId = chartCanvas.id;
+            newCanvas.id = chartId;
+            chartCanvas.remove();
+            chartParent.append(newCanvas);
+            return document.getElementById(chartId);
+        },
 
         renderMonthlyLineChart: function(data_in, chartName) {
 
@@ -632,7 +699,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     try {
                         // Custom dashboard
                         $('#dashboard-detail').append(renderDashboard(data));
-                        calculateChart($('#dashboard-detail'), data);
+                        // calculateChart($('#dashboard-detail'), data);
                     } catch (err) {
                         $('#dashboard-detail').append(
                             self.renderDashboardDetail(data));
@@ -646,6 +713,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     self.renderSidePanelPieChart(data, 'fish', 'cons_status');
                     self.renderSidePanelPieChart(data, 'fish', 'endemism');
 
+
                     var climateDataHTML = self.renderClimateData(data);
                     $('#climate-data').append(climateDataHTML)
                     self.renderMonthlyLineChart(data['climate_data'], 'temperature');
@@ -655,7 +723,73 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 },
                 error: function (req, err) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});
+                },
+                renderBarChart: function(data_in, chartName, chartCanvas) {
+
+             if (!(data_in.hasOwnProperty(chartName + '_chart')))
+            {
+               return false;
+            };
+
+             var chartConfig = {
+                type: 'bar',
+                data: {
+                    datasets: [{
+                        data: data_in[chartName + '_chart']['values'],
+                        backgroundColor: '#D7CD47',
+                        borderColor: '#D7CD47',
+                        fill: false
+                    }],
+                    labels: data_in[chartName + '_chart']['keys']
+                },
+                options: {
+                    responsive: true,
+                    legend:{ display: false },
+                    title: { display: false },
+                    hover: { mode: 'point', intersect: false},
+                    tooltips: {
+                        mode: 'point',
+                    },
+                    borderWidth: 0,
+                    scales: {
+					xAxes: [{
+						display: true,
+						scaleLabel: {
+							display: false,
+							labelString: ''
+						}
+					}],
+
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: data_in[chartName + '_chart']['title']
+						},
+						ticks: {
+                          beginAtZero: true,
+                          callback: function(value) {if (value % 1 === 0) {return value;}}
+                        }
+					}]
+                    }
                 }
+             };
+             chartCanvas = this.resetCanvas(chartCanvas);
+             var ctx = chartCanvas.getContext('2d');
+             ctx.height = '200px';
+             new ChartJs(ctx, chartConfig);
+        },
+        createDataSummary: function (data) {
+            var bio_data = data['biodiversity_data'];
+            var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
+            this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
+
+            var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
+            this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
+
+            var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
+            this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
+         },
             });
         }
     })
