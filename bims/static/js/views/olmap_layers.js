@@ -20,6 +20,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         administrativeOrder: 0,
         layerSelector: null,
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
+        sleepTimeOut: false,
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
@@ -600,12 +601,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
             });
 
-            $('.layer-source').click(function (e) {
-                self.showLayerSource(e.target.attributes["value"].value);
-            });
+
             if (isFirstTime) {
                 self.initializeLayerSelector();
             }
+            $('.layer-source').unbind('click');
+            $('.layer-source').click(function (e) {
+                self.showLayerSource(e.target.attributes["value"].value);
+                return false;
+            });
         },
         showFeatureInfo: function (coordinate) {
             if (Shared.GetFeatureRequested) {
@@ -778,23 +782,27 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     }
                 },
                 error (err) {
-                    console.log(err);
                     abstract_result = "Abstract information unavailable.";
+                    return false;
                 },
+
                 complete () {
                     layerSourceContainer = $('div.layer-source-info[value="'+ layerKey + '"]');
                     if (layerSourceContainer.html() == "")
                     {
-                        layerSourceContainer.toggle();
+
                         layerSourceContainer.html(`
                             <div class="layer-abstract">
                                 ` + abstract_result + `
                             </div>`);
+                        layerSourceContainer.toggle();
                     }
                     layerSourceContainer.slideToggle(400);
-                }
+                },
             })
+
         },
+
         initializeLayerSelector: function () {
             let self = this;
             this.layerSelector = $('#layers-selector');
