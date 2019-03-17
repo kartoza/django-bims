@@ -59,12 +59,16 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
         def parse_string(string_in):
             return "Unknown" if not string_in else string_in
+        try:
+            river_name = parse_string(obj.river.name)
+        except AttributeError:
+            river_name = 'Unknown'
         site_detail_info = {
             'fbis_site_code': parse_string(obj.id),
             'site_coordinates': parse_string(site_coordinates),
             'site_description': parse_string(obj.site_description),
             'geomorphological_zone': parse_string(geomorphological_zone),
-            'river': parse_string(obj.river.name)}
+            'river': river_name}
         return site_detail_info
 
     def get_class_from_taxonomy(self, taxonomy):
