@@ -103,7 +103,7 @@ class BioCollectionSummary(APIView):
         iucn_status = None
         if taxonomy.iucn_status:
             iucn_status = taxonomy.iucn_status.category
-
+        response_data['iucn_id'] = taxonomy.iucn_redlist_id
         response_data['taxon'] = taxonomy.scientific_name
         response_data['gbif_id'] = taxonomy.gbif_key
         response_data['total_records'] = len(collection_results)
