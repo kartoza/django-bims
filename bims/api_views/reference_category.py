@@ -13,9 +13,17 @@ class ReferenceCategoryList(APIView):
                     ~Q(reference_category='') & Q(validated=True)).\
             values_list(
                     'reference_category', flat=True).\
-            distinct()
+            distinct().order_by('reference_category')
         results = []
+        contain_thesis = False
         for reference in reference_category:
+            # Merge thesis
+            if 'thesis' in reference.lower():
+                if not contain_thesis:
+                    reference = 'Thesis'
+                    contain_thesis = True
+                else:
+                    continue
             results.append(
                 {
                     'category': reference
