@@ -24,6 +24,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         AdminAreaSelected: [],
         LegendsDisplayed: false,
         GetFeatureRequested: false,
+        EndemismList: [],
         CurrentState: {
             FETCH_CLUSTERS: false,
             SEARCH: false,
