@@ -198,7 +198,7 @@ class LocationSite(DocumentLinksMixin):
         if old_location_context_string:
             try:
                 old_location_context = json.loads(old_location_context_string)
-            except ValueError:
+            except (ValueError, TypeError):
                 LOGGER.info('No JSON Object')
         new_data = self.get_geocontext_group_data(group_key)
         if not new_data:
