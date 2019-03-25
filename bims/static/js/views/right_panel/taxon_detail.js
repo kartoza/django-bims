@@ -212,7 +212,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                         taxonId: self.taxonId, taxonName: self.taxonName, siteDetail: self.siteDetail}, self.showRecords);
 
                     var resourcesContainer = $('#taxon-resources');
-                    resourcesContainer.append(self.renderResources(data))
+                    resourcesContainer.append(self.renderResources(data));
 
                     this.OriginInfoList = $('.origin-info-list-detail');
                     this.endemicInfoList= $('.endemic-info-list-detail');
@@ -227,7 +227,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
                     // Set endemic
                     var endemism_block_data = {};
-                    endemism_block_data['value'] = data['endemism'];;
+                    endemism_block_data['value'] = data['endemism'];
                     endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
                     endemism_block_data['value_title'] = data['endemism'];
                     this.endemicInfoList.append(self.renderFBISBlocks(endemism_block_data));
