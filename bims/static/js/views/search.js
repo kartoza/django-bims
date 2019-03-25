@@ -101,6 +101,7 @@ define([
                 url: '/api/endemism-list/',
                 dataType: 'json',
                 success: function (data) {
+                    Shared.EndemismList = data;
                     for (var i = 0; i < data.length; i++) {
                         var checked = '';
                         if ($.inArray(data[i], self.initialSelectedEndemic) > -1) {
