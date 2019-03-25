@@ -13,6 +13,8 @@ class EndemismList(APIView):
             name__isnull=False
         ).values_list(
             'name', flat=True
+        ).exclude(
+            name__exact=''
         ).order_by(
             'name'
         )
