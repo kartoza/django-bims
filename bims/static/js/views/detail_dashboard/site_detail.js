@@ -852,7 +852,23 @@ define([
 
          createDataSummary: function (data) {
             var bio_data = data['biodiversity_data'];
+            var biodiversity_fish_data = data['biodiversity_data']['fish'];
+                    var origin_length = biodiversity_fish_data['origin_chart']['keys'].length;
+                    for (let i = 0; i < origin_length; i++)
+                    {
+                        let next_name = biodiversity_fish_data['origin_chart']['keys'][i];
+                        biodiversity_fish_data['origin_chart']['keys'][i] =
+                            self.parseNameFromAliases(next_name, 'origin',  data);
+                    }
+
+                    var cons_status_length = biodiversity_fish_data['cons_status_chart']['keys'].length;
+                    for (let i = 0; i < cons_status_length; i++) {
+                        let next_name = biodiversity_fish_data['cons_status_chart']['keys'][i];
+                        biodiversity_fish_data['cons_status_chart']['keys'][i] =
+                            self.parseNameFromAliases(next_name, 'cons_status', data);
+                    }
             var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
+
             this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
 
             var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
