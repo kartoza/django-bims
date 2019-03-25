@@ -60,7 +60,7 @@ def import_fish_species_from_file(
             continue
 
         endemism, endemism_created = Endemism.objects.get_or_create(
-            name__icontains=endemism_value
+            name=endemism_value
         )
         taxonomy.endemism = endemism
         taxonomy.save()
