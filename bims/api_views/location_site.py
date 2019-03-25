@@ -696,7 +696,7 @@ class LocationSitesSummary(APIView):
         number_of_unique_taxa = records_collection.values(
             'taxonomy_id').distinct().count()
 
-        result['title'].append('Number of occurrence records')
+        result['title'].append('Number of occurrences')
         result['value'].append(str(self.parse_string(
             number_of_occurrence_records)))
         result['title'].append('Number of species')
