@@ -1,4 +1,5 @@
 import json
+import operator
 import hashlib
 from django.db.models import Q, Count, F
 from django.contrib.gis.db.models import Union, Extent
@@ -239,8 +240,6 @@ class SearchVersion2(object):
             filters['site__in'] = self.site_ids
         if self.categories:
             filters['category__in'] = self.categories
-        if self.reference_category:
-            filters['reference_category__in'] = self.reference_category
         if self.year_ranges:
             filters['collection_date__range'] = self.year_ranges
         if self.months:
@@ -276,6 +275,14 @@ class SearchVersion2(object):
             if geometry_found:
                 filters['site__boundary__in'] = boundary
         bio = bio.filter(**filters)
+
+        if self.reference_category:
+            clauses = (
+                Q(reference_category__icontains=p) for p in
+                self.reference_category
+            )
+            reference_category_filter = reduce(operator.or_, clauses)
+            bio = bio.filter(reference_category_filter)
 
         spatial_filters = SpatialScale.objects.none()
         if self.spatial_filter_group_query:
@@ -358,8 +365,8 @@ class SearchVersion2(object):
                 'site_id', 'name').annotate(total=Count('site')))
 
         return {
-            'total_records': len(self.collection_records),
-            'total_sites': len(sites),
+            'total_records': self.collection_records.count(),
+            'total_sites': sites.count(),
             'records': list(collections),
             'sites': list(sites)
         }
