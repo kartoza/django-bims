@@ -77,6 +77,7 @@ class TaxonDetail(APIView):
         data = serializer.data
 
         records = BiologicalCollectionRecord.objects.filter(
+            validated=True,
             taxonomy=taxon
         )
 
@@ -94,7 +95,7 @@ class TaxonDetail(APIView):
         data['origin'] = origin_value
 
         data['count'] = records.count()
-
+        data['total_sites'] = records.distinct('site').count()
 
         # Taxonomic rank tree
         taxonomic_rank = self.get_taxonomic_rank_values(taxon)
