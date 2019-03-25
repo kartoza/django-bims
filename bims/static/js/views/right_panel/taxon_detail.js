@@ -212,7 +212,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                         taxonId: self.taxonId, taxonName: self.taxonName, siteDetail: self.siteDetail}, self.showRecords);
 
                     var resourcesContainer = $('#taxon-resources');
-                    resourcesContainer.append(self.renderResources(data))
+                    resourcesContainer.append(self.renderResources(data));
 
                     this.OriginInfoList = $('.origin-info-list-detail');
                     this.endemicInfoList= $('.endemic-info-list-detail');
