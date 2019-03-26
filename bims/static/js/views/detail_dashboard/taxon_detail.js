@@ -119,14 +119,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         generateDashboard: function (data) {
             var self = this;
-            if (data['common_name'] != '')
-            {
+            if (data['common_name'] != '') {
                 this.dashboardTitleContainer.html(data['taxon'] + ' ('
-                + data['common_name'] + ')');
-            }
-            else
-            {
-                  this.dashboardTitleContainer.html(data['taxon'])
+                    + data['common_name'] + ')');
+            } else {
+                this.dashboardTitleContainer.html(data['taxon'])
             }
             var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
@@ -146,21 +143,23 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             // };
             origin_block_data['value_title'] = origin_block_data['value'];
             this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
-           
+
             var endemism_block_data = {};
-            endemism_block_data['value'] = data['endemism'];;
+            endemism_block_data['value'] = data['endemism'];
+            ;
             endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
             endemism_block_data['value_title'] = data['endemism'];
             this.endemismBlockData.append(self.renderFBISRPanelBlocks(endemism_block_data));
 
-           //Set conservation status
+            //Set conservation status
             var cons_status_block_data = {};
             cons_status_block_data['value'] = this.iucn_title_from_choices(data['conservation_status'], data);
-            cons_status_block_data['keys'] = ['NE', 'DD', 'LC' ,'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
+            cons_status_block_data['keys'] = ['NE', 'DD', 'LC', 'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
             for (let i = 0; i < cons_status_block_data['keys'].length; i++) {
                 let next_key = cons_status_block_data['keys'][i];
                 cons_status_block_data['keys'][i] = this.iucn_title_from_choices(next_key, data);
-            };
+            }
+            ;
             cons_status_block_data['value_title'] = cons_status_block_data['value'];
             this.conservationStatusList.append(self.renderFBISRPanelBlocks(cons_status_block_data));
 
@@ -219,6 +218,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
             if (!this.mapTaxaSite) {
                 this.mapTaxaSite = new ol.Map({
+                    controls: ol.control.defaults().extend([
+                        new ol.control.ScaleLine()
+                    ]),
                     layers: [
                         new ol.layer.Tile({
                             source: new ol.source.OSM()
@@ -230,6 +232,15 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         zoom: 2
                     })
                 });
+                var graticule = new ol.Graticule({
+                    strokeStyle: new ol.style.Stroke({
+                        color: 'rgba(0,0,0,1)',
+                        width: 1,
+                        lineDash: [2.5, 4]
+                    }),
+                    showLabels: true
+                });
+                graticule.setMap(this.mapTaxaSite);
                 this.mapTaxaSite.addLayer(this.siteTileLayer);
             }
 
@@ -240,7 +251,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             };
             this.siteLayerSource.updateParams(newParams);
 
-             // Zoom to extent
+            // Zoom to extent
             let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
             this.mapTaxaSite.getView().fit(ext, this.mapTaxaSite.getSize());
             if (this.mapTaxaSite.getView().getZoom() > 8) {
@@ -295,7 +306,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 this.taxaRecordsTimelineGraphChart.destroy();
                 this.taxaRecordsTimelineGraphChart = null;
             }
-
 
 
             if (this.mapTaxaSite) {
@@ -358,8 +368,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         downloadChart: function (title, graph_canvas) {
             var img = new Image();
             var ctx = graph_canvas.getContext('2d');
-            img.src='/static/img/bims-stamp.png';
-            img.onload = function() {
+            img.src = '/static/img/bims-stamp.png';
+            img.onload = function () {
                 ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
                     graph_canvas.scrollHeight - img.height - 5);
                 canvas = graph_canvas;
@@ -385,7 +395,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
             var this_GBIF_ID = data['gbif_id'];
             $.get({
-                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this_GBIF_ID+'&limit=4',
+                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + this_GBIF_ID + '&limit=4',
                 dataType: 'json',
                 success: function (data) {
                     var results = data['results'];
@@ -393,30 +403,29 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row row gbif-images-row-fsdd"></div>');
 
                     var result = {};
-                    for (let result_id in results)
-                    {
+                    for (let result_id in results) {
                         var $firstColumnDiv = $('<div class="col-6" "></div>');
                         result = results[result_id];
-                        if(!result.hasOwnProperty('media')) {
+                        if (!result.hasOwnProperty('media')) {
                             continue;
                         }
-                        if(result['media'].length === 0) {
+                        if (result['media'].length === 0) {
                             continue;
                         }
                         var media = result['media'][0];
-                        if(!media.hasOwnProperty('identifier')) {
+                        if (!media.hasOwnProperty('identifier')) {
                             continue;
                         }
                         mediaFound = true;
-                        if(mediaFound) {
+                        if (mediaFound) {
                             $fetchingInfoDiv.hide();
                         }
-                        $firstColumnDiv.append('<a target="_blank" href="'+media['references']+'">' +
-                            '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
+                        $firstColumnDiv.append('<a target="_blank" href="' + media['references'] + '">' +
+                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '" width="100%"/></a>');
                         $rowWrapper.append($firstColumnDiv);
                     }
                     $wrapper.append($rowWrapper);
-                    if(!mediaFound) {
+                    if (!mediaFound) {
                         $fetchingInfoDiv.html('Media not found');
                     }
                 }
@@ -424,7 +433,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
             return $thirdPartyData;
         },
-        renderFBISRPanelBlocks: function(data, stretch_selection = false) {
+        renderFBISRPanelBlocks: function (data, stretch_selection = false) {
             var $detailWrapper = $('<div style="padding-left: 0;"></div>');
             $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
             return $detailWrapper;
@@ -446,8 +455,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 if (key == data_value) {
                     style_class += " fbis-rpanel-block-selected";
                     temp_key = data_title;
-                    if (stretch_selection == true)
-                    {
+                    if (stretch_selection == true) {
                         style_class += " flex-base-auto";
                     }
                 }
@@ -455,7 +463,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                  <div class="fbis-rpanel-block-text">
                                  ${temp_key}</div></div>`)
 
-            };
+            }
+            ;
             result_html += '</div>';
             return result_html;
         },
