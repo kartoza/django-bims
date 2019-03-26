@@ -93,7 +93,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             var dataKeys = data[speciesType][chartName + '_chart']['keys'];
             var dataLength = dataKeys.length;
             var chart_labels = {};
-            chart_labels[chartName] = ''
+            chart_labels[chartName] = '';
             for (var i = 0; i < dataLength; i++)
             {
                 chart_labels[chartName] += '<div><span style="color:' +
