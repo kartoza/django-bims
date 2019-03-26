@@ -124,6 +124,9 @@ define([
             }, 300, function () {
                 if (!self.mapLocationSite) {
                     self.mapLocationSite = new ol.Map({
+                        controls: ol.control.defaults().extend([
+                            new ol.control.ScaleLine()
+                        ]),
                         layers: [
                             new ol.layer.Tile({
                                 source: new ol.source.OSM()
@@ -136,6 +139,15 @@ define([
                         })
                     });
                     self.mapLocationSite.addLayer(self.siteTileLayer);
+                    var graticule = new ol.Graticule({
+                        strokeStyle: new ol.style.Stroke({
+                            color: 'rgba(0,0,0,1)',
+                            width: 1,
+                            lineDash: [2.5, 4]
+                        }),
+                        showLabels: true
+                    });
+                    graticule.setMap(self.mapLocationSite);
                 }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
@@ -175,10 +187,10 @@ define([
                 success: function (data) {
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
-                    if(Object.keys(data['site_details']).length !== 0) {
+                    if (Object.keys(data['site_details']).length !== 0) {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
-                    }else {
+                    } else {
                         $('#fish-ssdd-site-details').hide();
                     }
                     self.createOccurrencesBarChart(data);
@@ -418,16 +430,16 @@ define([
                 })
             }
         },
-        downloadElementEvent: function(button_el) {
+        downloadElementEvent: function (button_el) {
             let target = button_el.target.dataset.datac;
             let element = this.$el.find('#' + target);
             let random_number = Math.random() * 1000000;
             let this_title = `FWBD-Dashboard-Export-{${random_number}}`
             if (element.length > 0)
-                 this.downloadElement(this_title,element);
+                this.downloadElement(this_title, element);
 
         },
-        downloadElement: function(title, element){
+        downloadElement: function (title, element) {
             element[0].scrollIntoView();
             html2canvas(element, {
                 onrendered: function (canvas) {
@@ -489,11 +501,10 @@ define([
             }
             var datasets = [];
             var barChartData = {};
-            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D','#B77282', '#E6E188','#6BC0B5', '#859FAC']
+            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC']
             var myDataset = {}
             var count = dataIn['dataset_labels'].length;
-            for (let i = 0; i < count; i++)
-            {
+            for (let i = 0; i < count; i++) {
                 myDataset = {};
                 var nextKey = dataIn['dataset_labels'][i];
                 var nextColour = colours[i];
@@ -501,7 +512,7 @@ define([
                 myDataset = {
                     'label': nextKey,
                     'backgroundColor': nextColour,
-                    'data' : nextData
+                    'data': nextData
                 }
                 datasets.push(myDataset);
             }
@@ -523,11 +534,11 @@ define([
                     },
                     borderWidth: 0,
                     scales: {
-						xAxes: [{
-							stacked: true,
-						}],
-						yAxes: [{
-							stacked: true,
+                        xAxes: [{
+                            stacked: true,
+                        }],
+                        yAxes: [{
+                            stacked: true,
                             ticks: {
                                 beginAtZero: true,
                                 callback: function (value) {
@@ -540,8 +551,8 @@ define([
                                 display: true,
                                 labelString: 'Occurrences',
                             },
-						}]
-					}
+                        }]
+                    }
                 }
 
             };
@@ -568,19 +579,19 @@ define([
         createConsStatusStackedBarChart: function (data) {
             var locationContext = {}
             var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
-             if (data.hasOwnProperty('cons_status_occurrence')) {
+            if (data.hasOwnProperty('cons_status_occurrence')) {
                 this.renderStackedBarChart(data['cons_status_occurrence'], 'cons_status_bar', chartCanvas);
-             }
-         },
+            }
+        },
 
-        renderBarChart: function(data_in, chartName, chartCanvas) {
+        renderBarChart: function (data_in, chartName, chartCanvas) {
 
-             if (!(data_in.hasOwnProperty(chartName + '_chart')))
-            {
-               return false;
-            };
+            if (!(data_in.hasOwnProperty(chartName + '_chart'))) {
+                return false;
+            }
+            ;
 
-             var chartConfig = {
+            var chartConfig = {
                 type: 'bar',
                 data: {
                     datasets: [{
@@ -593,49 +604,53 @@ define([
                 },
                 options: {
                     responsive: true,
-                    legend:{ display: false },
-                    title: { display: false },
-                    hover: { mode: 'point', intersect: false},
+                    legend: {display: false},
+                    title: {display: false},
+                    hover: {mode: 'point', intersect: false},
                     tooltips: {
                         mode: 'point',
                     },
                     borderWidth: 0,
                     scales: {
-					xAxes: [{
-						display: true,
-						scaleLabel: {
-							display: false,
-							labelString: ''
-						}
-					}],
+                        xAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: false,
+                                labelString: ''
+                            }
+                        }],
 
-					yAxes: [{
-						display: true,
-						scaleLabel: {
-							display: true,
-							labelString: data_in[chartName + '_chart']['title']
-						},
-						ticks: {
-                          beginAtZero: true,
-                          callback: function(value) {if (value % 1 === 0) {return value;}}
-                        }
-					}]
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: data_in[chartName + '_chart']['title']
+                            },
+                            ticks: {
+                                beginAtZero: true,
+                                callback: function (value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                }
+                            }
+                        }]
                     }
                 }
-             };
-             chartCanvas = this.resetCanvas(chartCanvas);
-             var ctx = chartCanvas.getContext('2d');
-             ctx.height = '200px';
-             new ChartJs(ctx, chartConfig);
+            };
+            chartCanvas = this.resetCanvas(chartCanvas);
+            var ctx = chartCanvas.getContext('2d');
+            ctx.height = '200px';
+            new ChartJs(ctx, chartConfig);
         },
         createOccurrencesBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
 
-             if (data.hasOwnProperty('taxa_occurrence')) {
+            if (data.hasOwnProperty('taxa_occurrence')) {
                 this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
-             }
+            }
 
-         },
+        },
         resetCanvas: function (chartCanvas) {
             var chartParent = chartCanvas.parentElement;
             var newCanvas = document.createElement("CANVAS");
@@ -778,19 +793,17 @@ define([
                 options: originTimelineGraphOptions
             })
         },
-        renderTableFromTitlesValuesLists: function (specific_data, all_data=[], alias_type='', bold_title=true) {
+        renderTableFromTitlesValuesLists: function (specific_data, all_data = [], alias_type = '', bold_title = true) {
             var title = '';
             var value = '';
             var temp_result;
             var title_class = ''
             var $result = $('<div></div>');
-            if (bold_title == true)
-            {
+            if (bold_title == true) {
                 title_class = 'title_column';
             }
             var count = specific_data['value'].length;
-            for (let i = 0; i < count; i++)
-            {
+            for (let i = 0; i < count; i++) {
                 title = this.parseNameFromAliases(specific_data['title'][i], alias_type, all_data);
                 value = specific_data['value'][i];
                 temp_result = `<div class="row">
@@ -827,7 +840,7 @@ define([
 
             var originsWrapper = $('#fish-ssdd-origins');
             var originsSub = originsWrapper.find('#origins');
-            originsSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data,  'origin', false));
+            originsSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data, 'origin', false));
 
             var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
             var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
@@ -840,33 +853,32 @@ define([
             if (data.hasOwnProperty('site_detail_info')) {
                 var siteDetailsTemplate = _.template($('#site-details-template').html());
                 $detailWrapper.html(siteDetailsTemplate({
-                    'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
-                    'site_coordinates' : data['site_detail_info']['site_coordinates'],
-                    'site_description' : data['site_detail_info']['site_description'],
-                    'geomorphological_zone' : data['site_detail_info']['geomorphological_zone'],
-                    'river' : data['site_detail_info']['river'],
+                    'fbis_site_code': data['site_detail_info']['fbis_site_code'],
+                    'site_coordinates': data['site_detail_info']['site_coordinates'],
+                    'site_description': data['site_detail_info']['site_description'],
+                    'geomorphological_zone': data['site_detail_info']['geomorphological_zone'],
+                    'river': data['site_detail_info']['river'],
                 }));
             }
             return $detailWrapper;
-         },
+        },
 
-         createDataSummary: function (data) {
+        createDataSummary: function (data) {
             var bio_data = data['biodiversity_data'];
             var biodiversity_fish_data = data['biodiversity_data']['fish'];
-                    var origin_length = biodiversity_fish_data['origin_chart']['keys'].length;
-                    for (let i = 0; i < origin_length; i++)
-                    {
-                        let next_name = biodiversity_fish_data['origin_chart']['keys'][i];
-                        biodiversity_fish_data['origin_chart']['keys'][i] =
-                            self.parseNameFromAliases(next_name, 'origin',  data);
-                    }
+            var origin_length = biodiversity_fish_data['origin_chart']['keys'].length;
+            for (let i = 0; i < origin_length; i++) {
+                let next_name = biodiversity_fish_data['origin_chart']['keys'][i];
+                biodiversity_fish_data['origin_chart']['keys'][i] =
+                    self.parseNameFromAliases(next_name, 'origin', data);
+            }
 
-                    var cons_status_length = biodiversity_fish_data['cons_status_chart']['keys'].length;
-                    for (let i = 0; i < cons_status_length; i++) {
-                        let next_name = biodiversity_fish_data['cons_status_chart']['keys'][i];
-                        biodiversity_fish_data['cons_status_chart']['keys'][i] =
-                            self.parseNameFromAliases(next_name, 'cons_status', data);
-                    }
+            var cons_status_length = biodiversity_fish_data['cons_status_chart']['keys'].length;
+            for (let i = 0; i < cons_status_length; i++) {
+                let next_name = biodiversity_fish_data['cons_status_chart']['keys'][i];
+                biodiversity_fish_data['cons_status_chart']['keys'][i] =
+                    self.parseNameFromAliases(next_name, 'cons_status', data);
+            }
             var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
 
             this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
@@ -876,19 +888,19 @@ define([
 
             var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
             this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
-         },
+        },
 
-         renderPieChart: function(data, speciesType, chartName, chartCanvas) {
+        renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
                 return null;
             }
             var backgroundColours = [
-                            '#8D2641',
-                            '#D7CD47',
-                            '#18A090',
-                            '#A2CE89',
-                            '#4E6440',
-                            '#525351']
+                '#8D2641',
+                '#D7CD47',
+                '#18A090',
+                '#A2CE89',
+                '#4E6440',
+                '#525351']
             var chartConfig = {
                 type: 'pie',
                 data: {
@@ -900,9 +912,9 @@ define([
                 },
                 options: {
                     responsive: true,
-                    legend:{ display: false },
-                    title: { display: false },
-                    hover: { mode: 'nearest', intersect: false},
+                    legend: {display: false},
+                    title: {display: false},
+                    hover: {mode: 'nearest', intersect: false},
                     borderWidth: 0,
                 }
             };
@@ -910,13 +922,12 @@ define([
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
 
-             // Render chart labels
+            // Render chart labels
             var dataKeys = data[speciesType][chartName + '_chart']['keys'];
             var dataLength = dataKeys.length;
             var chart_labels = {};
             chart_labels[chartName] = ''
-            for (var i = 0; i < dataLength; i++)
-            {
+            for (var i = 0; i < dataLength; i++) {
                 chart_labels[chartName] += '<div><span style="color:' +
                     backgroundColours[i] + ';">■</span>' +
                     '<span class="fish-ssdd-legend-title">&nbsp;' +
@@ -925,19 +936,17 @@ define([
             var element_name = `#fish-ssdd-${chartName}-legend`;
             $(element_name).html(chart_labels[chartName]);
         },
-        renderTableFromTitlesValuesLists: function (specific_data, all_data=[], alias_type='', bold_title=true) {
+        renderTableFromTitlesValuesLists: function (specific_data, all_data = [], alias_type = '', bold_title = true) {
             var title = '';
             var value = '';
             var temp_result;
             var title_class = ''
             var $result = $('<div></div>');
-            if (bold_title == true)
-            {
+            if (bold_title == true) {
                 title_class = 'title_column';
             }
             var count = specific_data['value'].length;
-            for (let i = 0; i < count; i++)
-            {
+            for (let i = 0; i < count; i++) {
                 title = this.parseNameFromAliases(specific_data['title'][i], alias_type, all_data);
                 value = specific_data['value'][i];
                 temp_result = `<div class="row">
@@ -948,7 +957,7 @@ define([
             }
             return $result;
         },
-        createOccurrenceDataTable: function(data) {
+        createOccurrenceDataTable: function (data) {
             var renderedOccurrenceData = this.renderOccurrenceData(data);
             var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
             var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
@@ -957,8 +966,7 @@ define([
         renderOccurrenceData: function (data) {
             data_in = data['occurrence_data'];
             var result = '<div>';
-            if (typeof data_in == 'undefined')
-            {
+            if (typeof data_in == 'undefined') {
                 return result + '</div>'
             }
             var count = 0;
@@ -969,8 +977,7 @@ define([
             // Render headings
             try {
                 count = data_in['titles'].length;
-            }
-            catch (e) {
+            } catch (e) {
                 count = 0;
             }
             result += '<div class="row">'; //Open new row
@@ -978,10 +985,8 @@ define([
 
                 column_class = 'col-2 title-column';
                 if ('titles' in data_in) {
-                     column_value = data_in['titles'][i];
-                }
-                else
-                {
+                    column_value = data_in['titles'][i];
+                } else {
                     column_class = 'Unknown';
                 }
                 // Make my first column wider
@@ -991,7 +996,7 @@ define([
                 next_col = `<div class="${column_class}">
                             <div class="center-self">${column_value}
                             </div></div>`;
-                result += next_col ;
+                result += next_col;
             }
             result += '</div>' //Close my row
             // Render rows
@@ -1018,7 +1023,7 @@ define([
                         }
                     }
                     // Make my first column wider
-                    if (j== 0) {
+                    if (j == 0) {
                         column_class = 'col-4';
                     }
                     next_col = `<div class="${column_class}">
@@ -1040,8 +1045,7 @@ define([
             if (alias_type == 'cons_status') {
                 choices = this.flatten_arr(data['iucn_name_list']);
             }
-            if (alias_type == 'origin')
-            {
+            if (alias_type == 'origin') {
                 choices = this.flatten_arr(data['origin_name_list']);
             }
             if (choices.length > 0) {
