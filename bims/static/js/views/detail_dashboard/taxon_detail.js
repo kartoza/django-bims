@@ -119,11 +119,9 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         generateDashboard: function (data) {
             var self = this;
-            if (data['common_name'] != '') {
-                this.dashboardTitleContainer.html(data['taxon'] + ' ('
-                    + data['common_name'] + ')');
-            } else {
-                this.dashboardTitleContainer.html(data['taxon'])
+            this.dashboardTitleContainer.html(data['taxon']);
+            if (data['common_name'] !== '') {
+                this.dashboardTitleContainer.append('<div class="common-name-title">' + data['common_name'] + '</div>');
             }
             var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
@@ -263,7 +261,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     <div class="row">
                     <div class="col-4 title_column">Site name</div>
                     <div class="col-4 title_column">River Name</div>
-                    <div class="col-4 title_column">Records</div>
+                    <div class="col-4 title_column">Occurrences</div>
                     </div>`);
             $.each(data['records_per_area'], function (index, areaRecord) {
                 let site_name = areaRecord['site_name'];
