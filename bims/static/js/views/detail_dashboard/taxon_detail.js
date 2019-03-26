@@ -147,7 +147,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var endemism_block_data = {};
             endemism_block_data['value'] = data['endemism'];
             ;
-            endemism_block_data['keys'] = ['Widespread', 'Regional endemic', 'Micro-endemic'];
+            endemism_block_data['keys'] = Shared.EndemismList;
             endemism_block_data['value_title'] = data['endemism'];
             this.endemismBlockData.append(self.renderFBISRPanelBlocks(endemism_block_data));
 
@@ -267,8 +267,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     </div>`);
             $.each(data['records_per_area'], function (index, areaRecord) {
                 let site_name = areaRecord['site_name'];
-                let count = areaRecord['count']
-                let river_name = 'Unknown'
+                let count = areaRecord['count'];
+                let river_name = 'Unknown';
                 $tableArea.append(`
                     <div class="row">
                     <div class="col-4">${site_name}</div>
@@ -290,7 +290,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 $originInfoItem.css('background-color', '');
             });
 
-            this.conservationStatusList.html = null;
+            this.conservationStatusList.html('');
 
             $.each(this.endemicInfoList.children(), function (key, data) {
                 var $endemicInfoItem = $(data);
