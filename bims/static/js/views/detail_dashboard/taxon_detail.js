@@ -259,17 +259,20 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var $tableArea = $('<div class="container"></div>');
             $tableArea.append(`
                     <div class="row">
-                    <div class="col-4 title_column">Site name</div>
+                    <div class="col-4 title_column">Site code</div>
                     <div class="col-4 title_column">River Name</div>
                     <div class="col-4 title_column">Occurrences</div>
                     </div>`);
             $.each(data['records_per_area'], function (index, areaRecord) {
-                let site_name = areaRecord['site_name'];
+                let site_code = areaRecord['site_code'];
                 let count = areaRecord['count'];
-                let river_name = 'Unknown';
+                let river_name = areaRecord['river'];
+                if (river_name === null) {
+                    river_name = '-';
+                }
                 $tableArea.append(`
                     <div class="row">
-                    <div class="col-4">${site_name}</div>
+                    <div class="col-4">${site_code}</div>
                     <div class="col-4">${river_name}</div>
                     <div class="col-4">${count}</div>
                     </div>`)
