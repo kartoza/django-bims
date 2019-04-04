@@ -22,6 +22,12 @@ class TaxonGroup(models.Model):
         blank=True,
     )
 
+    logo = models.ImageField(
+        upload_to='module_logo',
+        null=True,
+        blank=True
+    )
+
     taxonomies = models.ManyToManyField(Taxonomy)
 
     def __unicode__(self):
