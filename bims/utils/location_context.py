@@ -1,4 +1,3 @@
-import logging
 import hashlib
 import json
 from django.contrib.gis.db import models
@@ -8,8 +7,7 @@ from bims.models.location_site import (
 )
 from bims.models.spatial_scale import SpatialScale
 from bims.models.spatial_scale_group import SpatialScaleGroup
-
-logger = logging.getLogger('bims')
+from bims.utils.logger import log
 
 
 def array_to_dict(array, key_name='key'):
@@ -90,11 +88,11 @@ def format_location_context(location_site_id, force_update=False):
             id=location_site_id
         )
     except LocationSite.DoesNotExist:
-        logger.debug('LocationSite Does Not Exist')
+        log('LocationSite Does Not Exist', 'debug')
         return
 
     if not location_site.location_context_document:
-        logger.debug('LocationSite context document does not exist')
+        log('LocationSite context document does not exist', 'debug')
         return
 
     location_context = json.loads(location_site.location_context_document)
@@ -112,7 +110,7 @@ def format_location_context(location_site_id, force_update=False):
                 process_spatial_scale_data(
                     formatted_location_context['context_group_values']
                 )
-                logger.info('Formatted location context already exist')
+                log('Formatted location context already exist', 'info')
                 return
 
     if not isinstance(location_context, dict):
@@ -134,7 +132,7 @@ def format_location_context(location_site_id, force_update=False):
     formatted['hash'] = hash_string
     location_site.location_context = formatted
     location_site.save()
-    logger.info('Location context formatted')
+    log('Location context formatted', 'info')
 
     models.signals.post_save.connect(
         location_site_post_save_handler,

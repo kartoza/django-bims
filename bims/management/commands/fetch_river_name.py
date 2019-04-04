@@ -5,7 +5,10 @@ from django.core.management.base import BaseCommand
 from bims.models.location_site import (
     LocationSite,
 )
-from bims.location_site.river import fetch_river_name
+from bims.location_site.river import (
+    fetch_river_name,
+    allocate_site_codes_from_river
+)
 from sass.models.river import River
 
 
@@ -43,3 +46,9 @@ class Command(BaseCommand):
             )
             location_site.river = river
             location_site.save()
+
+            # Allocate site code
+            allocate_site_codes_from_river(
+                update_site_code=True,
+                location_id=location_site.id
+            )
