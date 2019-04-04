@@ -41,6 +41,11 @@ class LocationSite(DocumentLinksMixin):
         blank=True,
         default=''
     )
+    legacy_site_code = models.CharField(
+        max_length=100,
+        blank=True,
+        default=''
+    )
     location_type = models.ForeignKey(
         LocationType,
         models.CASCADE,
