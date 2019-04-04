@@ -28,7 +28,11 @@ class TaxonGroup(models.Model):
         blank=True
     )
 
-    taxonomies = models.ManyToManyField(Taxonomy)
+    taxonomies = models.ManyToManyField(
+        Taxonomy,
+        null=True,
+        blank=True
+    )
 
     def __unicode__(self):
         return self.name
