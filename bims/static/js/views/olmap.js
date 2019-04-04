@@ -216,7 +216,7 @@ define([
                             url: '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10',
                             success: function (data) {
                                 if (data.length > 0) {
-                                    Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['name']);
+                                    Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code']);
                                 }
                             }
                         });

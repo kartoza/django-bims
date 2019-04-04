@@ -54,7 +54,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                                      ['service_registry_values']
                                      ['geoclass']
                                      ['value'])
-        except KeyError:
+        except (KeyError, TypeError):
             geomorphological_zone = 'Unknown'
 
         def parse_string(string_in):
@@ -64,7 +64,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         except AttributeError:
             river_name = 'Unknown'
         site_detail_info = {
-            'fbis_site_code': parse_string(obj.id),
+            'fbis_site_code': parse_string(obj.site_code),
             'site_coordinates': parse_string(site_coordinates),
             'site_description': parse_string(obj.site_description),
             'geomorphological_zone': parse_string(geomorphological_zone),
