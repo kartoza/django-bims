@@ -111,6 +111,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 var siteDetailsTemplate = _.template($('#site-details-template').html());
                 $detailWrapper.append(siteDetailsTemplate({
                     'fbis_site_code' : data['site_detail_info']['fbis_site_code'],
+                    'site_name' : data['name'],
                     'site_coordinates' : data['site_detail_info']['site_coordinates'],
                     'site_description' : data['site_detail_info']['site_description'],
                     'geomorphological_zone' : data['site_detail_info']['geomorphological_zone'],
@@ -121,7 +122,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         },
 
         renderClimateData: function (data) {
-            var locationContext = {}
+            var locationContext = {};
             var $detailWrapper = $('<div></div>');
 
             if (data.hasOwnProperty('climate_data'))  {
