@@ -1842,11 +1842,19 @@ div:hover::-webkit-scrollbar {
 }
 
 .module-filters {
-    padding: 5px;
+    padding: 5px;/* msie */
+}
+
+.module-species {
     filter: grayscale(50%);
     opacity: 0.4;
-    filter: alpha(opacity=40); /* msie */
-    background-color: #a0a0a0;
+    filter: alpha(opacity=40);
+}
+
+.module-species.selected {
+    filter: grayscale(0%);
+    opacity: 1;
+    filter: alpha(opacity=100);
 }
 
 .tooltip {
