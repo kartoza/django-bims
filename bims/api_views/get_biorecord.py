@@ -89,8 +89,12 @@ class BioCollectionSummary(APIView):
             year=ExtractYear('collection_date')).values('year').annotate(
             count=Count('year')).order_by('year')
         records_per_area = collection_results.annotate(
-            site_name=F('site__name')).values('site_name').annotate(
-            count=Count('site_name')
+            site_name=F('site__name')
+        ).values('site_name').annotate(
+            count=Count('site_name'),
+            site_code=F('site__site_code'),
+            site_id=F('site__id'),
+            river=F('site__river__name')
         )
 
         taxonomy = collection_results[0].taxonomy
