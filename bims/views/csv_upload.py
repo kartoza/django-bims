@@ -4,6 +4,7 @@
 
 import csv
 import sys
+import uuid
 from datetime import datetime
 from django.urls import reverse_lazy
 from django.contrib.gis.db import models
@@ -16,6 +17,11 @@ from bims.forms.csv_upload import CsvUploadForm
 from bims.models import (
     LocationSite,
     LocationType,
+    Endemism,
+    SamplingMethod
+)
+from sass.models import (
+    River
 )
 from bims.models.location_site import (
     location_site_post_save_handler
@@ -25,6 +31,7 @@ from bims.models.biological_collection_record import (
     collection_post_save_update_cluster
 )
 from bims.utils.gbif import update_collection_record
+from bims.location_site.river import allocate_site_codes_from_river
 
 
 class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
@@ -47,8 +54,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
     additional_fields = {
         'present': 'bool',
         'absent': 'bool',
-        'endemism': 'str',
-        'sampling_method': 'str',
         'sampling_effort': 'str',
         'reference': 'str',
         'reference_category': 'str',
@@ -143,14 +148,15 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         optional_fields_iter = self.additional_fields.items()
                     else:
                         # Python 2 code in this block
-                        optional_fields_iter = self.additional_fields.\
-                            iteritems()
+                        optional_fields_iter = (
+                            self.additional_fields.iteritems()
+                        )
 
                     for (opt_field, field_type) in optional_fields_iter:
                         if opt_field in record:
                             optional_record = self.parse_optional_record(
-                                    record[opt_field],
-                                    field_type
+                                record[opt_field],
+                                field_type
                             )
                             if not optional_record:
                                 optional_record = ''
@@ -168,7 +174,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         float(record['latitude']))
 
                     try:
-                        location_site, status = LocationSite.objects.\
+                        location_site, status = LocationSite.objects. \
                             get_or_create(
                                 location_type=location_type,
                                 geometry_point=record_point,
@@ -196,32 +202,198 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
 
                     # Get existed taxon
                     collections = self.collection_record.objects.filter(
-                            original_species_name=record['species_name']
+                        original_species_name=record['species_name']
                     )
+
+                    # Endemism
+                    endemism = None
+                    if 'endemism' in record:
+                        endemism, endemism_created = (
+                            Endemism.objects.get_or_create(
+                                name=record['endemism']
+                            )
+                        )
 
                     taxonomy = None
                     if collections:
                         taxonomy = collections[0].taxonomy
+
+                    if taxonomy:
+                        taxonomy.endemism = endemism
+                        taxonomy.save()
 
                     # custodian field
                     if 'custodian' in record:
                         optional_records['institution_id'] = \
                             record['custodian']
 
-                    collection_records, created = self.collection_record.\
-                        objects.\
-                        get_or_create(
-                            site=location_site,
-                            original_species_name=record['species_name'],
-                            category=record['category'].lower(),
-                            collection_date=datetime.strptime(
-                                    record['date'], '%Y-%m-%d'),
-                            collector=record['collector'],
-                            notes=record['notes'],
-                            taxonomy=taxonomy,
-                            owner=self.request.user,
-                            **optional_records
+                    category = ''
+                    if 'category' in record:
+                        category = record['category'].lower()
+                    if 'origin' in record:
+                        origin_choices = {
+                            v: k for k, v in
+                            BiologicalCollectionRecord.CATEGORY_CHOICES
+                        }
+                        category = origin_choices[record['origin']]
+
+                    if 'habitat' in record:
+                        habitat_choices = {
+                            v: k for k, v in
+                            BiologicalCollectionRecord.HABITAT_CHOICES
+                        }
+                        optional_records['collection_habitat'] = (
+                            habitat_choices[record['habitat']]
                         )
+
+                    # sampling method
+                    sampling_method = None
+                    if 'sampling_method' in record:
+                        if record['sampling_method'] != 'unspecified':
+                            sampling_method, sm_created = (
+                                SamplingMethod.objects.get_or_create(
+                                    sampling_method=record['sampling_method']
+                                )
+                            )
+                        optional_records['sampling_method'] = (
+                            sampling_method
+                        )
+                    # sampling effort
+                    if sampling_method and 'effort_area' in record:
+                        effort_area = record['effort_area']
+                        if effort_area:
+                            sampling_method.effort_measure = (
+                                effort_area + ' m2'
+                            )
+                            sampling_method.save()
+                    if sampling_method and 'effort_time' in record:
+                        effort_time = record['effort_time']
+                        if effort_time:
+                            sampling_method.effort_measure = (
+                                effort_time + ' min'
+                            )
+                            sampling_method.save()
+
+                    # river
+                    if 'river' in record and record['river']:
+                        river, river_created = River.objects.get_or_create(
+                            name=record['river']
+                        )
+                        location_site.river = river
+                        location_site.save()
+                        allocate_site_codes_from_river(
+                            location_id=location_site.id
+                        )
+
+                    if record['date'].lower() == 'unspecified':
+                        print('Unspecified date -> Next row')
+                        continue
+
+                    created = False
+                    collection_records = None
+                    if 'uuid' in record and record['uuid']:
+                        try:
+                            uuid_value = uuid.UUID(record['uuid']).hex
+                            collection_records = (
+                                BiologicalCollectionRecord.objects.filter(
+                                    uuid=uuid_value
+                                )
+                            )
+                            if collection_records.exists():
+                                collection_records.update(
+                                    site=location_site,
+                                    original_species_name=record[
+                                        'species_name'
+                                    ],
+                                    collection_date=datetime.strptime(
+                                        record['date'], '%Y-%m-%d'),
+                                    taxonomy=taxonomy,
+                                )
+                            else:
+                                optional_records['uuid'] = uuid_value
+                        except ValueError:
+                            print('Bad uuid format')
+
+                    if not collection_records:
+                        collection_records, created = (
+                            BiologicalCollectionRecord.objects.get_or_create(
+                                site=location_site,
+                                original_species_name=record[
+                                    'species_name'
+                                ],
+                                collection_date=datetime.strptime(
+                                    record['date'], '%Y-%m-%d'),
+                                taxonomy=taxonomy,
+                                category=category,
+                                collector=record['collector'],
+                            )
+                        )
+
+                    # update multiple fields
+                    BiologicalCollectionRecord.objects.filter(
+                        id=collection_records.id
+                    ).update(
+                        notes=record['notes'],
+                        owner=self.request.user,
+                        **optional_records
+                    )
+
+                    # Additional data
+                    additional_data = {}
+                    if 'effort_number_throws' in record:
+                        additional_data['effort_number_throws'] = (
+                            record['effort_number_throws']
+                        )
+                    if 'catch_per_number' in record:
+                        additional_data['catch_per_number'] = (
+                            record['catch_per_number']
+                        )
+                    if 'catch_per_unit_effort' in record:
+                        additional_data['catch_per_unit_effort'] = (
+                            record['catch_per_unit_effort']
+                        )
+                    if 'number_of_replicates' in record:
+                        additional_data['number_of_replicates'] = (
+                            record['number_of_replicates']
+                        )
+                    if 'hydraulic_biotope' in record:
+                        additional_data['hydraulic_biotope'] = (
+                            record['hydraulic_biotope']
+                        )
+                    if 'substratum' in record:
+                        additional_data['substratum'] = (
+                            record['substratum']
+                        )
+                    if 'depth_m' in record:
+                        additional_data['depth_m'] = (
+                            record['depth_m']
+                        )
+                    if 'near_bed_velocity' in record:
+                        additional_data['near_bed_velocity'] = (
+                            record['near_bed_velocity']
+                        )
+                    if 'conductivity' in record:
+                        additional_data['conductivity'] = (
+                            record['conductivity']
+                        )
+                    if 'ph' in record:
+                        additional_data['ph'] = (
+                            record['ph']
+                        )
+                    if 'dissolved_oxygen' in record:
+                        additional_data['dissolved_oxygen'] = (
+                            record['dissolved_oxygen']
+                        )
+                    if 'temperature' in record:
+                        additional_data['temperature'] = (
+                            record['temperature']
+                        )
+                    if 'turbidity' in record:
+                        additional_data['turbidity'] = (
+                            record['turbidity']
+                        )
+                    collection_records.additional_data = additional_data
+                    collection_records.save()
 
                     if created:
                         print('%s records added' % record['species_name'])
@@ -231,6 +403,8 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         if not taxonomy:
                             print('Update taxon gbif')
                             update_collection_record(collection_records)
+                            collection_records.taxonomy.endemism = endemism
+                            collection_records.taxonomy.save()
 
                 except KeyError:
                     collection_processed['different_format']['count'] += 1
