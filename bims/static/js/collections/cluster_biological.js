@@ -65,7 +65,6 @@ define([
             });
         },
         clearClusters: function () {
-            this.clearParameters();
             this.resetClusters();
             this.toggleTaxonIndicator();
         },
