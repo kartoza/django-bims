@@ -95,7 +95,25 @@ define([
             this.spatialFilterView = new SpatialFilterView();
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
 
-            var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
+            var nativeOriginDropdown = self.$el.find('.nativeOriginDropdown');
+            var moduleListContainer = self.$el.find('.module-filters');
+
+            $.ajax({
+                type: 'GET',
+                url: '/api/module-list/',
+                dataType: 'json',
+                success: function (data) {
+                    for (var i = 0; i < data.length; i++) {
+                        let $moduleSpecies = $(
+                            '<div data-id="' + data[i]['id'] + '" class="col-lg-4 module-species" title="' + data[i]['name'] + '">' +
+                            '<img src="/uploaded/' + data[i]['logo'] + '"></div>'
+                        );
+                        moduleListContainer.append($moduleSpecies);
+                        $moduleSpecies.click(self.onModuleSpeciesClicked);
+                    }
+                }
+            });
+
             $.ajax({
                 type: 'GET',
                 url: '/api/endemism-list/',
@@ -125,8 +143,7 @@ define([
                     for (var i = 0; i < data.length; i++) {
                         if ($.inArray(data[i], self.initialSelectedCollectors) > -1) {
                             selected = 'selected';
-                        }
-                        else {
+                        } else {
                             selected = '';
                         }
 
@@ -152,9 +169,7 @@ define([
                         for (var i = 0; i < data.length; i++) {
                             if ($.inArray(data[i]['reference'], self.initialSelectedStudyReference) > -1) {
                                 selected = 'selected';
-                            }
-                            else
-                            {
+                            } else {
                                 selected = '';
                             }
                             if (data[i]) {
@@ -299,15 +314,15 @@ define([
 
             var validationFilter = [];
             var validated = true;
-            $('[name=filter-validation]:checked').each(function() {
+            $('[name=filter-validation]:checked').each(function () {
                 validationFilter.push($(this).attr('value'));
             });
 
-            if(validationFilter.indexOf('true') !== -1 && validationFilter.indexOf('false') !== -1){
+            if (validationFilter.indexOf('true') !== -1 && validationFilter.indexOf('false') !== -1) {
                 validated = 'all';
-            }else if(validationFilter.indexOf('true') !== -1 || validationFilter.indexOf('false') !== -1){
+            } else if (validationFilter.indexOf('true') !== -1 || validationFilter.indexOf('false') !== -1) {
                 validated = validationFilter[0]
-            }else if(validationFilter.length === 0){
+            } else if (validationFilter.length === 0) {
                 $('#filter-validation-error').show();
                 return;
             }
@@ -630,6 +645,16 @@ define([
         },
         showMoreSites: function () {
             this.searchResultCollection.fetchMoreSites();
+        },
+        onModuleSpeciesClicked: function (e) {
+            let $element = $(e.currentTarget);
+            let id = $element.data('id');
+            let isSelected = $element.hasClass('selected');
+            if (isSelected) {
+                $element.removeClass('selected');
+            } else {
+                $element.addClass('selected');
+            }
         }
     })
 
