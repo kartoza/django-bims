@@ -15,5 +15,5 @@ class ModuleList(APIView):
                     'name',
                     'logo',
                     'id'
-                )
+                ).order_by('id')
         return Response(list(species_module))

@@ -115,6 +115,17 @@ class Taxonomy(DocumentLinksMixin):
         )
         return children
 
+    def get_all_children(self):
+        query = {}
+        parent = ''
+        or_condition = models.Q()
+        for i in range(6):  # species to class
+            parent += 'parent__'
+            query[parent + 'in'] = [self]
+        for key, value in query.items():
+            or_condition |= models.Q(**{key: value})
+        return Taxonomy.objects.filter(or_condition)
+
     @property
     def class_name(self):
         if self.rank != TaxonomicRank.CLASS.name and self.parent:

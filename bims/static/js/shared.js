@@ -10,7 +10,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
             "&referenceCategory=<%= referenceCategory %>" +
             "&spatialFilter=<%= spatialFilter %>" +
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
-            "&validated=<%= validated %>",
+            "&modules=<%= modules %>&validated=<%= validated %>",
         LocationSiteDetailXHRRequest: null,
         TaxonDetailXHRRequest: null,
         GetFeatureXHRRequest: [],

@@ -14,6 +14,8 @@ from bims.models import (
     SEARCH_PROCESSING,
     SpatialScale,
     SpatialScaleGroup,
+    TaxonGroup,
+    Taxonomy,
 )
 from bims.tasks.search_version_2 import search_task
 
@@ -186,6 +188,14 @@ class SearchVersion2(object):
         return self.parse_request_json('endemic')
 
     @property
+    def modules(self):
+        modules_query = self.get_request_data('modules')
+        if modules_query:
+            return modules_query.split(',')
+        else:
+            return None
+
+    @property
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filters_ids = []
@@ -339,6 +349,24 @@ class SearchVersion2(object):
                 bio = bio.filter(site__geometry_point__intersent=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
+
+        if self.modules:
+            taxon_groups = TaxonGroup.objects.filter(
+                pk__in=self.modules
+            ).values_list('taxonomies', flat=True).distinct('taxonomies')
+            taxa = Taxonomy.objects.filter(pk__in=taxon_groups)
+            modules_query = Q()
+            for taxon in taxa:
+                children = taxon.get_all_children()
+                children = children.filter(
+                    biologicalcollectionrecord__isnull=False
+                ).distinct()
+                if children:
+                    modules_query = Q(
+                        **{'taxonomy__in': children}
+                    )
+            bio = bio.filter(modules_query)
+
         self.location_sites_raw_query = bio.distinct('site').values(
             'site_id',
             'site__geometry_point',

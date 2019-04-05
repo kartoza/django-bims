@@ -68,7 +68,7 @@ class SearchProcess(models.Model):
 
     def set_search_raw_query(self, raw_query):
         raw_query = str(raw_query)
-        ignored_params = ['yearFrom', 'yearTo', 'months']
+        ignored_params = ['yearFrom', 'yearTo', 'months', 'modules']
         query_parsed = urlparse.urlparse(self.query)
         parameters = urlparse.parse_qs(query_parsed.query)
         for param in parameters:
