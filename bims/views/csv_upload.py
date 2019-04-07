@@ -58,7 +58,8 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
         'reference': 'str',
         'reference_category': 'str',
         'site_description': 'str',
-        'site_code': 'str'
+        'site_code': 'str',
+        'source_collection': 'str',
     }
 
     def add_additional_fields(self, fields):
@@ -309,6 +310,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                         record['date'], '%Y-%m-%d'),
                                     taxonomy=taxonomy,
                                 )
+                                collection_records = collection_records[0]
                             else:
                                 optional_records['uuid'] = uuid_value
                         except ValueError:
@@ -328,15 +330,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                 collector=record['collector'],
                             )
                         )
-
-                    # update multiple fields
-                    BiologicalCollectionRecord.objects.filter(
-                        id=collection_records.id
-                    ).update(
-                        notes=record['notes'],
-                        owner=self.request.user,
-                        **optional_records
-                    )
 
                     # Additional data
                     additional_data = {}
@@ -392,8 +385,18 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         additional_data['turbidity'] = (
                             record['turbidity']
                         )
+
+                    collection_records.notes = record['notes']
+                    collection_records.owner = self.request.user
                     collection_records.additional_data = additional_data
                     collection_records.save()
+
+                    # update multiple fields
+                    BiologicalCollectionRecord.objects.filter(
+                        id=collection_records.id
+                    ).update(
+                        **optional_records
+                    )
 
                     if created:
                         print('%s records added' % record['species_name'])
