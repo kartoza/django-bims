@@ -208,7 +208,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
 
                     # Endemism
                     endemism = None
-                    if 'endemism' in record:
+                    if 'endemism' in record and record['endemism']:
                         endemism, endemism_created = (
                             Endemism.objects.get_or_create(
                                 name=record['endemism']
