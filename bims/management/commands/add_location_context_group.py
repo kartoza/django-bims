@@ -6,6 +6,7 @@ from django.db.models import Q
 from bims.models.location_site import (
     LocationSite,
 )
+from bims.utils.logger import log
 
 
 class Command(BaseCommand):
@@ -92,7 +93,7 @@ class Command(BaseCommand):
         i = 1
 
         for location_site in location_sites:
-            print('Updating %s of %s, %s' % (i, num, location_site.name))
+            log('Updating %s of %s, %s' % (i, num, location_site.name))
             i += 1
             all_context = None
             if ignore_not_empty:
@@ -103,14 +104,14 @@ class Command(BaseCommand):
             for group_key in geocontext_group_keys:
                 if (all_context and
                         group_key in all_context['context_group_values']):
-                    print('Context data already exists for {}'.format(
+                    log('Context data already exists for {}'.format(
                         group_key
                     ))
                     continue
                 current_outcome, message = (
                     location_site.add_context_group(group_key))
                 success = current_outcome
-                print('[{status}] [{site_id}] [{group}] - {message}'.format(
+                log('[{status}] [{site_id}] [{group}] - {message}'.format(
                     status='SUCCESS' if success else 'FAILED',
                     site_id=location_site.id,
                     message=message,
