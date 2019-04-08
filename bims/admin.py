@@ -497,7 +497,8 @@ class SassBiotopeAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'display_order',
-        'biotope_form'
+        'biotope_form',
+        'taxon_group',
     )
     list_filter = (
         'name',
