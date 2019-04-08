@@ -1,7 +1,8 @@
 # coding=utf-8
 """Add group to location context document."""
-
+import json
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from bims.models.location_site import (
     LocationSite,
 )
@@ -66,9 +67,21 @@ class Command(BaseCommand):
             site_id = site_id.split(',')
 
         if ignore_not_empty:
-            location_sites = LocationSite.objects.filter(
-                location_context_document__isnull=True,
-            )
+            ignored_filters = None
+            for group_key in geocontext_group_keys:
+                if ignored_filters is None:
+                    ignored_filters = Q(
+                        **{'location_context__'
+                            'context_group_values__{}__isnull'.
+                            format(group_key): True}
+                    )
+                else:
+                    ignored_filters = ignored_filters | Q(
+                        **{'location_context__'
+                            'context_group_values__{}__isnull'.
+                            format(group_key): True}
+                    )
+            location_sites = LocationSite.objects.filter(ignored_filters)
         else:
             location_sites = LocationSite.objects.all()
 
@@ -81,7 +94,19 @@ class Command(BaseCommand):
         for location_site in location_sites:
             print('Updating %s of %s, %s' % (i, num, location_site.name))
             i += 1
+            all_context = None
+            if ignore_not_empty:
+                try:
+                    all_context = json.loads(location_site.location_context)
+                except (ValueError, TypeError):
+                    pass
             for group_key in geocontext_group_keys:
+                if (all_context and
+                        group_key in all_context['context_group_values']):
+                    print('Context data already exists for {}'.format(
+                        group_key
+                    ))
+                    continue
                 current_outcome, message = (
                     location_site.add_context_group(group_key))
                 success = current_outcome
