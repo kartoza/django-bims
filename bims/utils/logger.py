@@ -17,5 +17,5 @@ def log(message, log_type='info', caller=None):
     logger_function = getattr(logger, log_type)
     logger_function('{caller} : {message}'.format(
         caller=caller,
-        message=message
+        message=message.encode('utf-8')
     ))
