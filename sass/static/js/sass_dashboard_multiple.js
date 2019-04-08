@@ -511,7 +511,8 @@ function renderEcologicalChart(data) {
                 legendContainer.append($legend);
                 $legend.after(boundaryData['ec_category']);
                 $legend.css('background-color', boundaryData['color']);
-            })
+            });
+            chartData['chart_data'].reverse();
         }
 
         let $div = $('<div>');
