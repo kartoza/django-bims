@@ -124,7 +124,9 @@ class FishFormView(TemplateView):
                 name=F('reference_category'))
         )
         context['biotope_list'] = list(
-            Biotope.objects.all().values(
+            Biotope.objects.filter(
+                taxon_group__name__icontains='fish',
+                taxon_group__category='SPECIES_MODULE').values(
                 'name', 'description', 'display_order'
             ).order_by('display_order')
         )

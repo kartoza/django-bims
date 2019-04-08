@@ -41,5 +41,12 @@ class Biotope(AbstractAdditionalData):
         blank=True
     )
 
+    taxon_group = models.ForeignKey(
+        'bims.TaxonGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.name
