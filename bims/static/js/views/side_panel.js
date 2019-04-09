@@ -8,7 +8,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         siteDetailData: null,
         events: {
             'click .close-panel': 'closeSidePanel',
-            'click .open-detailed-site-button' : 'openDetailedSiteButton'
+            'click .open-detailed-site-button' : 'openDetailedSiteButton',
+            'click .open-fish-detailed-site-button' : 'openFishDetailedSiteButton'
         },
         initialize: function () {
             // Events
@@ -159,6 +160,21 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             this.siteDetailData = siteDetailData;
         },
         openDetailedSiteButton: function () {
+            if (this.siteDetailData) {
+                Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', this.siteDetailData);
+            }
+        },
+        openFishDetailedSiteButton: function () {
+            let fishModuleId = Shared.FishModuleID;
+            let listModulesParameter = filterParameters['modules'].split(',');
+            listModulesParameter = listModulesParameter.filter(Boolean);
+            for (let i = 0; i < listModulesParameter; i++) {
+                if (listModulesParameter[i] === fishModuleId) {
+                    listModulesParameter.splice(i, 1);
+                }
+            }
+            listModulesParameter.push(fishModuleId);
+            filterParameters['modules'] = listModulesParameter.join();
             if (this.siteDetailData) {
                 Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', this.siteDetailData);
             }

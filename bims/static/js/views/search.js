@@ -106,6 +106,9 @@ define([
                 success: function (data) {
                     for (var i = 0; i < data.length; i++) {
                         let selected = '';
+                        if (data[i]['name'].toLowerCase() === 'fish') {
+                            Shared.FishModuleID = data[i]['id'];
+                        }
                         if ($.inArray(data[i]['id'].toString(), self.initialSelectedModules) > -1) {
                             selected = 'selected';
                         }

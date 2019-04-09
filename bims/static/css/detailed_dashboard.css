@@ -296,3 +296,11 @@ table#filter-history-table {
     font-weight: normal !important;
     font-size: 14pt;
 }
+
+.site-detailed-table thead {
+    font-size: 10pt;
+}
+
+.site-detailed-table tbody {
+    font-size: 10pt;
+}

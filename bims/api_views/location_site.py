@@ -226,6 +226,7 @@ class LocationSitesSummary(APIView):
     TAXA_GRAPH = 'taxa_graph'
     ORIGIN_OCCURRENCE = 'origin_occurrence'
     CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
+    iucn_category = {}
 
     def get(self, request):
         filters = request.GET
@@ -237,17 +238,19 @@ class LocationSitesSummary(APIView):
             query=request.build_absolute_uri()
         )
 
-        if search_process.file_path:
-            if os.path.exists(search_process.file_path):
-                try:
-                    raw_data = open(search_process.file_path)
-                    return Response(json.load(raw_data))
-                except ValueError:
-                    pass
+        # if search_process.file_path:
+        #     if os.path.exists(search_process.file_path):
+        #         try:
+        #             raw_data = open(search_process.file_path)
+        #             return Response(json.load(raw_data))
+        #         except ValueError:
+        #             pass
+
+        self.iucn_category = dict(
+            (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
 
         taxa_occurrence = self.get_site_taxa_occurrences_per_year(
             collection_results)
-
 
         taxa_graph_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
@@ -305,7 +308,6 @@ class LocationSitesSummary(APIView):
             collection_results)
 
         search_process.create_view()
-        occurrence_data = self.get_occurence_data(collection_results)
         biodiversity_data = self.get_biodiversity_data(collection_results)
 
         response_data = {
@@ -318,8 +320,8 @@ class LocationSitesSummary(APIView):
             self.TAXA_GRAPH: dict(taxa_graph),
             self.ORIGIN_OCCURRENCE: dict(origin_occurrence),
             self.CONS_STATUS_OCCURRENCE: dict(cons_status_occurrence),
-            self.OCCURRENCE_DATA: dict(occurrence_data),
-            self.IUCN_NAME_LIST: list(IUCNStatus.CATEGORY_CHOICES),
+            self.OCCURRENCE_DATA: self.occurrence_data(collection_results),
+            self.IUCN_NAME_LIST: self.iucn_category,
             self.ORIGIN_NAME_LIST: list(
                 BiologicalCollectionRecord.CATEGORY_CHOICES),
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
@@ -340,10 +342,12 @@ class LocationSitesSummary(APIView):
         except ValueError:
             return Response(response_data)
 
-    def get_occurence_data(self, collection_results):
-
-        titles = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
-        data_keys = ['taxon', 'origin', 'count', 'endemism', 'cons_status']
+    def occurrence_data(self, collection_results):
+        """
+        Get occurrence data
+        :param collection_results: collection search results
+        :return: list of occurrence data
+        """
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
             origin=F('category'),
@@ -354,11 +358,7 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('taxon')
         ).order_by('taxon')
-        occurrence_data = {}
-        occurrence_data['data'] = list(occurrence_table_data)
-        occurrence_data['titles'] = titles
-        occurrence_data['data_keys'] = data_keys
-
+        occurrence_data = list(occurrence_table_data)
         return occurrence_data
 
     def get_site_taxa_occurrences_per_year(self, collection_results):

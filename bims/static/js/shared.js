@@ -17,6 +17,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         Dispatcher: _.extend({}, Backbone.Events),
         Router: {},
         ClusterSize: 30,
+        FishModuleID: null,
         StorageUtil: new StorageUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
