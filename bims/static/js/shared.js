@@ -1,7 +1,7 @@
 /*global define*/
 'use strict';
 
-define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, StorageUtil) {
+define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Backbone, _, StorageUtil, ColorUtil) {
     return {
         SearchURLParametersTemplate: "?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
@@ -19,6 +19,7 @@ define(['backbone', 'underscore', 'utils/storage'], function (Backbone, _, Stora
         ClusterSize: 30,
         FishModuleID: null,
         StorageUtil: new StorageUtil(),
+        ColorUtil: new ColorUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
         PoliticalRegionBoundaries: null,

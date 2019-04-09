@@ -374,7 +374,8 @@
                     </div>
                 </div>
 
-            </div> {# end of col-lg-4 #}
+            </div>
+            {# end of col-lg-4 #}
 
             <div class="col-lg-8">
                 {# Data Summary #}
@@ -431,6 +432,79 @@
                         </div>
                     </div>
                 </div>
+
+                {# Occurrences per year line chart #}
+                <div class="card" id="fish-ssdd-occurrences-line-chart">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Occurrences
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="fish-ssdd-occurrences-line-chart-canvas">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="col-12 fish-ssdd-occurrences-line-chart">
+                            <canvas id="fish-ssdd-occurrences-line-chart-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                {# Occurrences per year line chart #}
+                <div class="card" id="fish-ssdd-taxa-occurrences-line-chart">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Taxa
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="fish-ssdd-taxa-occurrences-line-chart-canvas">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="col-12 fish-ssdd-taxa-line-chart">
+                            <canvas id="fish-ssdd-taxa-occurrences-line-chart-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                {# origin per year bar chart #}
+                <div class="card" id="fish-ssdd-origin-bar-chart">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inbar">
+                            Origin
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="fish-ssdd-origin-bar-chart-canvas">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="col-12 fish-ssdd-origin-bar-chart">
+                            <canvas id="fish-ssdd-origin-bar-chart-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                {# cons-status per year bar chart #}
+                <div class="card" id="fish-ssdd-cons-status-bar-chart">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inbar">
+                            Conservation Status
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="fish-ssdd-cons-status-bar-chart-canvas">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="col-12 fish-ssdd-cons-status-bar-chart">
+                            <canvas id="fish-ssdd-cons-status-bar-chart-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

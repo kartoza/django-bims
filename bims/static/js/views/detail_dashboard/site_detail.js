@@ -179,10 +179,11 @@ define([
                     } else {
                         $('#fish-ssdd-site-details').hide();
                     }
-                    // self.createOccurrencesBarChart(data);
-                    // self.createTaxaStackedBarChart(data);
-                    // self.createOriginStackedBarChart(data);
-                    // self.createConsStatusStackedBarChart(data);
+                    self.createOccurrencesBarChart(data);
+                    self.createTaxaStackedBarChart(data);
+                    self.createOriginStackedBarChart(data);
+                    self.createConsStatusStackedBarChart(data);
+
                     renderFilterList($('#filter-history-table'));
                     //
                     // // Zoom to extent
@@ -449,32 +450,34 @@ define([
             button.prop("disabled", true);
             this.downloadingCSV(this.csvDownloadUrl, button);
         },
-        renderStackedBarChart: function (dataIn, chartName, chartCanvas) {
-
+        renderStackedBarChart: function (dataIn, chartName, chartCanvas, randomColor = false) {
             if (!(dataIn.hasOwnProperty('data'))) {
                 return false;
             }
             var datasets = [];
             var barChartData = {};
             var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC']
-            var myDataset = {}
+            var myDataset = {};
             var count = dataIn['dataset_labels'].length;
             for (let i = 0; i < count; i++) {
                 myDataset = {};
                 var nextKey = dataIn['dataset_labels'][i];
                 var nextColour = colours[i];
+                if (randomColor) {
+                    nextColour = Shared.ColorUtil.generateHexColor();
+                }
                 var nextData = dataIn['data'][nextKey];
                 myDataset = {
                     'label': nextKey,
                     'backgroundColor': nextColour,
                     'data': nextData
-                }
+                };
                 datasets.push(myDataset);
             }
             barChartData = {
                 'labels': dataIn['labels'],
                 'datasets': datasets,
-            }
+            };
             var chartConfig = {
                 type: 'bar',
                 data: barChartData,
@@ -517,19 +520,47 @@ define([
         },
         createOriginStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
-
+            let originOccurrenceData = data['origin_occurrence'];
+            let originCategoryList = data['origin_name_list'];
+            // Update labels
+            $.each(originOccurrenceData['dataset_labels'], function (index, label) {
+                if (originCategoryList.hasOwnProperty(label)) {
+                    originOccurrenceData['dataset_labels'][index] = originCategoryList[label];
+                }
+            });
+            // Update data title
+            $.each(originOccurrenceData['data'], function (key, data) {
+                if (originCategoryList.hasOwnProperty(key)) {
+                    delete originOccurrenceData['data'][key];
+                    originOccurrenceData['data'][originCategoryList[key]] = data;
+                }
+            });
             if (data.hasOwnProperty('origin_occurrence')) {
-                this.renderStackedBarChart(data['origin_occurrence'], 'origin_bar', chartCanvas);
+                this.renderStackedBarChart(originOccurrenceData, 'origin_bar', chartCanvas);
             }
         },
         createTaxaStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
             if (data.hasOwnProperty('taxa_graph')) {
-                this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas);
+                this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas, true);
             }
         },
         createConsStatusStackedBarChart: function (data) {
-            var locationContext = {}
+            let iucnCategoryList = data['iucn_name_list'];
+            let consStatusData = data['cons_status_occurrence'];
+            // Update labels
+            $.each(consStatusData['dataset_labels'], function (index, label) {
+                if (iucnCategoryList.hasOwnProperty(label)) {
+                    consStatusData['dataset_labels'][index] = iucnCategoryList[label];
+                }
+            });
+            // Update data title
+            $.each(consStatusData['data'], function (key, data) {
+                if (iucnCategoryList.hasOwnProperty(key)) {
+                    delete consStatusData['data'][key];
+                    consStatusData['data'][iucnCategoryList[key]] = data;
+                }
+            });
             var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
             if (data.hasOwnProperty('cons_status_occurrence')) {
                 this.renderStackedBarChart(data['cons_status_occurrence'], 'cons_status_bar', chartCanvas);
@@ -596,11 +627,9 @@ define([
         },
         createOccurrencesBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
-
             if (data.hasOwnProperty('taxa_occurrence')) {
                 this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
             }
-
         },
         createFishSSDDSiteDetails: function (data) {
             var siteDetailsWrapper = $('#fish-ssdd-overview');
@@ -771,7 +800,6 @@ define([
             return occurrenceTable;
         },
         parseNameFromAliases: function (alias, alias_type, data) {
-            console.log(data['origin_name_list']);
             name = '';
             // var name = alias;
             // var choices = [];

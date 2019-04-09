@@ -2,7 +2,7 @@
 import json
 import os
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q, F, Count
+from django.db.models import Q, F, Count, Value, CharField
 from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
@@ -324,7 +324,7 @@ class LocationSitesSummary(APIView):
             self.CATEGORY_SUMMARY: dict(category_summary),
             self.TAXA_GRAPH: dict(taxa_graph),
             self.ORIGIN_OCCURRENCE: dict(origin_occurrence),
-            self.CONS_STATUS_OCCURRENCE: dict(cons_status_occurrence),
+            self.CONS_STATUS_OCCURRENCE: cons_status_occurrence,
             self.OCCURRENCE_DATA: self.occurrence_data(collection_results),
             self.IUCN_NAME_LIST: self.iucn_category,
             self.ORIGIN_NAME_LIST: self.origin_name_list,
@@ -393,6 +393,11 @@ class LocationSitesSummary(APIView):
         :return: dict of occurrence data
         """
         result = dict()
+        years = list(
+            data_in.values_list('year', flat=True).distinct())
+        labels = list(set(data_in.values_list(
+            'name', flat=True
+        ).order_by('name')))
         result['labels'] = list(data_in.values_list(
             'year', flat=True
         ).distinct())
@@ -400,10 +405,19 @@ class LocationSitesSummary(APIView):
             'name', flat=True
         ).order_by('name')))
         result['data'] = {}
-        for dataset_label in result['dataset_labels']:
-            result['data'][dataset_label] = list(data_in.filter(
-                name=dataset_label
-            ).values_list('count', flat=True).distinct())
+        result['data'] = {}
+        for dataset_label in labels:
+            result['data'][dataset_label] = []
+            for dataset_year in years:
+                dataset_data = data_in.filter(
+                    name=dataset_label,
+                    year=dataset_year
+                )
+                total_count = 0
+                if dataset_data.exists():
+                    for dataset in dataset_data:
+                        total_count += dataset['count']
+                result['data'][dataset_label].append(total_count)
         return result
 
     def get_origin_occurrence_data(self, collection_records):
@@ -431,7 +445,9 @@ class LocationSitesSummary(APIView):
         :param: collection_records: collection record queryset
         :return: dict of origin data for stacked bar graph
         """
-        origin_graph_data = collection_records.annotate(
+        cons_graph_data = collection_records.filter(
+            taxonomy__iucn_status__isnull=False
+        ).annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__iucn_status__category'),
         ).values(
@@ -441,7 +457,38 @@ class LocationSitesSummary(APIView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
-        result = self.get_data_per_year(origin_graph_data)
+
+        # unspecified values
+        unspecified_values = collection_records.filter(
+            taxonomy__iucn_status__isnull=True
+        ).annotate(
+            year=ExtractYear('collection_date'),
+            name=Value('DD', output_field=CharField())
+        ).values('year', 'name').annotate(
+            count=Count('year')
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
+
+        result = self.get_data_per_year(cons_graph_data)
+        if not unspecified_values:
+            return result
+        if 'DD' not in result['dataset_labels']:
+            result['dataset_labels'].append('DD')
+            result['data']['DD'] = []
+        for index, dataset_year in enumerate(result['labels']):
+            dataset_data = unspecified_values.filter(
+                name='DD',
+                year=dataset_year
+            )
+            total_count = 0
+            if dataset_data.exists():
+                for dataset in dataset_data:
+                    total_count += dataset['count']
+            try:
+                result['data']['DD'][index] += total_count
+            except IndexError:
+                result['data']['DD'].append(total_count)
         return result
 
     def get_biodiversity_data(self, collection_results):
