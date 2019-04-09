@@ -185,20 +185,20 @@ define([
                     self.createConsStatusStackedBarChart(data);
 
                     renderFilterList($('#filter-history-table'));
-                    //
-                    // // Zoom to extent
-                    // let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
-                    // self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
-                    // if (self.mapLocationSite.getView().getZoom() > 8) {
-                    //     self.mapLocationSite.getView().setZoom(8);
-                    // }
-                    //
-                    // let newParams = {
-                    //     layers: locationSiteGeoserverLayer,
-                    //     format: 'image/png',
-                    //     viewparams: 'where:"' + data['sites_raw_query'] + '"'
-                    // };
-                    // self.siteLayerSource.updateParams(newParams);
+
+                    // Zoom to extent
+                    let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+                    self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
+                    if (self.mapLocationSite.getView().getZoom() > 8) {
+                        self.mapLocationSite.getView().setZoom(8);
+                    }
+
+                    let newParams = {
+                        layers: locationSiteGeoserverLayer,
+                        format: 'image/png',
+                        viewparams: 'where:"' + data['sites_raw_query'] + '"'
+                    };
+                    self.siteLayerSource.updateParams(newParams);
 
                     self.loadingDashboard.hide();
                 }
@@ -632,34 +632,38 @@ define([
             }
         },
         createFishSSDDSiteDetails: function (data) {
-            var siteDetailsWrapper = $('#fish-ssdd-overview');
-            var overview = siteDetailsWrapper.find('#overview');
-            overview.html(this.renderTableFromTitlesValuesLists(
-                data['site_details']['overview']));
-            var catchments = siteDetailsWrapper.find('#catchments');
-            catchments.html(this.renderTableFromTitlesValuesLists(
-                data['site_details']['catchments']),
-                data);
-            var sub_water_management_areas = siteDetailsWrapper.find(
-                '#sub_water_management_areas');
-            sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(
-                data['site_details']['sub_water_management_areas']));
-            var sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
-            sa_ecoregions.html(this.renderTableFromTitlesValuesLists(
-                data['site_details']['sa_ecoregions']));
+            let siteDetailsWrapper = $('#fish-ssdd-overview');
 
-            var recordSitesWrapper = $('#fish-ssdd-records-sites')
-            var recordSitesSub = recordSitesWrapper.find('#records-sites');
-            recordSitesSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']))
+            let overview = siteDetailsWrapper.find('#overview');
+            overview.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
+            let catchments = siteDetailsWrapper.find('#catchments');
+            catchments.html(this.renderTableFromTitlesValuesLists(data['site_details']['catchments']));
 
-            var originsWrapper = $('#fish-ssdd-origins');
-            var originsSub = originsWrapper.find('#origins');
+            let sub_water_management_areas = siteDetailsWrapper.find('#sub_water_management_areas');
+            sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(data['site_details']['sub_water_management_areas']));
+
+            let sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
+            sa_ecoregions.html(this.renderTableFromTitlesValuesLists(data['site_details']['sa_ecoregions']));
+
+            let recordSitesWrapper = $('#fish-ssdd-records-sites');
+            let recordSitesSub = recordSitesWrapper.find('#records-sites');
+            recordSitesSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']));
+
+            let originsWrapper = $('#fish-ssdd-origins');
+            let originsSub = originsWrapper.find('#origins');
+            let originCategoryList = data['origin_name_list'];
+            let originsData = data['site_details']['origins_data'];
+            $.each(originsData, function (key, value) {
+                if (originCategoryList.hasOwnProperty(key)) {
+                    delete originsData[key];
+                    originsData[originCategoryList[key]] = value;
+                }
+            });
             originsSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data, 'origin', false));
 
-            var conservation_statusWrapper = $('#fish-ssdd-conservation-status');
-            var conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
+            let conservation_statusWrapper = $('#fish-ssdd-conservation-status');
+            let conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
             conservation_statusSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
-
         },
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
@@ -750,32 +754,27 @@ define([
             $(element_name).html(chart_labels[chartName]);
         },
         renderTableFromTitlesValuesLists: function (specific_data, all_data = [], alias_type = '', bold_title = true) {
-            var title = '';
-            var value = '';
             var temp_result;
-            var title_class = ''
+            var title_class = '';
             var $result = $('<div></div>');
-            if (bold_title == true) {
+            if (bold_title === true) {
                 title_class = 'title_column';
             }
-            var count = specific_data['value'].length;
-            for (let i = 0; i < count; i++) {
-                title = this.parseNameFromAliases(specific_data['title'][i], alias_type, all_data);
-                value = specific_data['value'][i];
+            $.each(specific_data, function (key, value) {
                 temp_result = `<div class="row">
-                               <div class="col-6 ${title_class}">${title}</div>
+                               <div class="col-6 ${title_class}">${key}</div>
                                <div class="col-6">${value}</div>
-                               </div>`
+                               </div>`;
                 $result.append(temp_result);
-            }
+            });
             return $result;
         },
         createOccurrenceDataTable: function (data) {
             let occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
             let occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
-            occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list']));
+            occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list'], data['origin_name_list']));
         },
-        renderOccurrenceData: function (occurrenceData, conservationStatusList) {
+        renderOccurrenceData: function (occurrenceData, conservationStatusList, originCategoryList) {
             let occurrenceTable = $('<table class="table table-bordered site-detailed-table">');
             occurrenceTable.append("<thead>\n" +
                 "      <tr>\n" +
@@ -789,11 +788,19 @@ define([
             let tableBody = $('<tbody>');
             $.each(occurrenceData, function (index, rowData) {
                 let tRow = $('<tr>');
+                let originName = rowData['origin'];
+                if (originCategoryList.hasOwnProperty(originName)) {
+                    originName = originCategoryList[originName];
+                }
+                let consName = rowData['cons_status'];
+                if (conservationStatusList.hasOwnProperty(consName)) {
+                    consName = conservationStatusList[consName];
+                }
                 tRow.append('<td>' + rowData['taxon'] + '</td>');
-                tRow.append('<td>' + rowData['origin'] + '</td>');
+                tRow.append('<td>' + originName + '</td>');
                 tRow.append('<td>' + rowData['count'] + '</td>');
                 tRow.append('<td>' + rowData['endemism'] + '</td>');
-                tRow.append('<td>' + conservationStatusList[rowData['cons_status']] + '</td>');
+                tRow.append('<td>' + consName + '</td>');
                 tableBody.append(tRow);
             });
             occurrenceTable.append(tableBody);
