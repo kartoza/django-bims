@@ -227,6 +227,7 @@ class LocationSitesSummary(APIView):
     ORIGIN_OCCURRENCE = 'origin_occurrence'
     CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
     iucn_category = {}
+    origin_name_list = {}
 
     def get(self, request):
         filters = request.GET
@@ -248,6 +249,10 @@ class LocationSitesSummary(APIView):
 
         self.iucn_category = dict(
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
+
+        self.origin_name_list = dict(
+            (x, y) for x, y in BiologicalCollectionRecord.CATEGORY_CHOICES
+        )
 
         taxa_occurrence = self.get_site_taxa_occurrences_per_year(
             collection_results)
@@ -322,8 +327,7 @@ class LocationSitesSummary(APIView):
             self.CONS_STATUS_OCCURRENCE: dict(cons_status_occurrence),
             self.OCCURRENCE_DATA: self.occurrence_data(collection_results),
             self.IUCN_NAME_LIST: self.iucn_category,
-            self.ORIGIN_NAME_LIST: list(
-                BiologicalCollectionRecord.CATEGORY_CHOICES),
+            self.ORIGIN_NAME_LIST: self.origin_name_list,
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
@@ -442,10 +446,11 @@ class LocationSitesSummary(APIView):
 
     def get_biodiversity_data(self, collection_results):
         biodiversity_data = {}
-        biodiversity_data['fish'] = {}
-        biodiversity_data['fish']['origin_chart'] = {}
-        biodiversity_data['fish']['cons_status_chart'] = {}
-        biodiversity_data['fish']['endemism_chart'] = {}
+        biodiversity_data['species'] = {}
+        biodiversity_data['species']['origin_chart'] = {}
+        biodiversity_data['species']['cons_status_chart'] = {}
+        biodiversity_data['species']['endemism_chart'] = {}
+        biodiversity_data['species']['sampling_method_chart'] = {}
         origin_by_name_data = collection_results.annotate(
             name=F('category')
         ).values(
@@ -457,9 +462,11 @@ class LocationSitesSummary(APIView):
         )
         keys = origin_by_name_data.values_list('name', flat=True)
         values = origin_by_name_data.values_list('count', flat=True)
-        biodiversity_data['fish']['origin_chart']['data'] = list(values)
-        biodiversity_data['fish']['origin_chart']['keys'] = list(keys)
-        cons_status_data = collection_results.annotate(
+        biodiversity_data['species']['origin_chart']['data'] = list(values)
+        biodiversity_data['species']['origin_chart']['keys'] = list(keys)
+        cons_status_data = collection_results.filter(
+            taxonomy__iucn_status__isnull=False
+        ).annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
             'name'
@@ -468,11 +475,22 @@ class LocationSitesSummary(APIView):
         ).order_by(
             'name'
         )
-        keys = cons_status_data.values_list('name', flat=True)
-        values = cons_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['cons_status_chart']['data'] = list(
-            values)
-        biodiversity_data['fish']['cons_status_chart']['keys'] = list(keys)
+
+        keys = list(cons_status_data.values_list('name', flat=True))
+        values = list(cons_status_data.values_list('count', flat=True))
+        dd_values = collection_results.filter(
+            taxonomy__iucn_status__isnull=True
+        ).count()
+        if dd_values > 0:
+            if 'DD' in keys:
+                key_index = keys.index('DD')
+                values[key_index] += dd_values
+            else:
+                keys.append('DD')
+                values.append(dd_values)
+        biodiversity_data['species']['cons_status_chart']['data'] = values
+        biodiversity_data['species']['cons_status_chart']['keys'] = keys
+
         endemism_status_data = collection_results.annotate(
             name=F('taxonomy__endemism__name')
         ).values(
@@ -484,8 +502,34 @@ class LocationSitesSummary(APIView):
         )
         keys = endemism_status_data.values_list('name', flat=True)
         values = endemism_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['endemism_chart']['data'] = list(values)
-        biodiversity_data['fish']['endemism_chart']['keys'] = list(keys)
+        biodiversity_data['species']['endemism_chart']['data'] = list(values)
+        biodiversity_data['species']['endemism_chart']['keys'] = list(keys)
+
+        # Sampling method
+        sampling_method_data = collection_results.filter(
+            sampling_method__isnull=False
+        ).annotate(
+            name=F('sampling_method__sampling_method')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        smd_keys = list(sampling_method_data.values_list('name', flat=True))
+        smd_data = list(sampling_method_data.values_list('count', flat=True))
+        unspecified_sampling_method = collection_results.filter(
+            sampling_method__isnull=True
+        ).count()
+        if unspecified_sampling_method > 0:
+            smd_data.append(unspecified_sampling_method)
+            smd_keys.append('Unspecified')
+        biodiversity_data['species']['sampling_method_chart'] = {
+            'data': smd_data,
+            'keys': smd_keys
+        }
+
         biodiversity_data['occurrences'] = [0, 0, 0]
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']

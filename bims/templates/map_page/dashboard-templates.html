@@ -376,7 +376,62 @@
 
             </div> {# end of col-lg-4 #}
 
-            <div class="col-lg-8"></div>
+            <div class="col-lg-8">
+                {# Data Summary #}
+                <div class="card" id="fish-ssdd-data-summary">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Occurrence Data
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="data-summary">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="data-summary">
+                            <div class="row fish-ssdd-legends">
+                                <div class="col-3 fish-ssdd-legend"
+                                     id="fish-ssdd-origin-legend"></div>
+                                <div class="col-3 fish-ssdd-legend"
+                                     id="fish-ssdd-endemism-legend"></div>
+                                <div class="col-3 fish-ssdd-legend"
+                                     id="fish-ssdd-cons_status-legend"></div>
+                                <div class="col-3 fish-ssdd-legend"
+                                     id="fish-ssdd-sampling_method-legend"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <canvas id="fish-ssdd-origin-pie"></canvas>
+                                </div>
+                                <div class="col-3">
+                                    <canvas id="fish-ssdd-endemism-pie"></canvas>
+                                </div>
+                                <div class="col-3">
+                                    <canvas id="fish-ssdd-conservation-status-pie"></canvas>
+                                </div>
+                                <div class="col-3">
+                                    <canvas id="fish-ssdd-sampling-method-pie"></canvas>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3 fish-ssdd-titles">
+                                    Origin
+                                </div>
+                                <div class="col-3 fish-ssdd-titles">
+                                    Endemism
+                                </div>
+                                <div class="col-3 fish-ssdd-titles">
+                                    Conservation Status
+                                </div>
+                                <div class="col-3 fish-ssdd-titles">
+                                    Sampling Method
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </script>

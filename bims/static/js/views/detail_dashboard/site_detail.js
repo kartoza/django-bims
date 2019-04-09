@@ -172,7 +172,7 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     self.createOccurrenceDataTable(data);
-                    // self.createDataSummary(data);
+                    self.createDataSummary(data);
                     if (Object.keys(data['site_details']).length !== 0) {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
@@ -647,30 +647,32 @@ define([
             return $detailWrapper;
         },
         createDataSummary: function (data) {
-            var bio_data = data['biodiversity_data'];
-            var biodiversity_fish_data = data['biodiversity_data']['fish'];
-            var origin_length = biodiversity_fish_data['origin_chart']['keys'].length;
+            let bio_data = data['biodiversity_data'];
+            let biodiversityData = data['biodiversity_data']['species'];
+            let origin_length = biodiversityData['origin_chart']['keys'].length;
+            let originNameList = data['origin_name_list'];
             for (let i = 0; i < origin_length; i++) {
-                let next_name = biodiversity_fish_data['origin_chart']['keys'][i];
-                biodiversity_fish_data['origin_chart']['keys'][i] =
-                    self.parseNameFromAliases(next_name, 'origin', data);
+                let next_name = biodiversityData['origin_chart']['keys'][i];
+                if (originNameList.hasOwnProperty(next_name)) {
+                    biodiversityData['origin_chart']['keys'][i] = originNameList[next_name];
+                }
             }
-
-            var cons_status_length = biodiversity_fish_data['cons_status_chart']['keys'].length;
+            let iucnCategory = data['iucn_name_list'];
+            let cons_status_length = biodiversityData['cons_status_chart']['keys'].length;
             for (let i = 0; i < cons_status_length; i++) {
-                let next_name = biodiversity_fish_data['cons_status_chart']['keys'][i];
-                biodiversity_fish_data['cons_status_chart']['keys'][i] =
-                    self.parseNameFromAliases(next_name, 'cons_status', data);
+                let next_name = biodiversityData['cons_status_chart']['keys'][i];
+                if (iucnCategory.hasOwnProperty(next_name)) {
+                    biodiversityData['cons_status_chart']['keys'][i] = iucnCategory[next_name];
+                }
             }
-            var origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
-
-            this.renderPieChart(bio_data, 'fish', 'origin', origin_pie_canvas);
-
-            var endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
-            this.renderPieChart(bio_data, 'fish', 'endemism', endemism_pie_canvas);
-
-            var conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
-            this.renderPieChart(bio_data, 'fish', 'cons_status', conservation_status_pie_canvas);
+            let origin_pie_canvas = document.getElementById('fish-ssdd-origin-pie');
+            this.renderPieChart(bio_data, 'species', 'origin', origin_pie_canvas);
+            let endemism_pie_canvas = document.getElementById('fish-ssdd-endemism-pie');
+            this.renderPieChart(bio_data, 'species', 'endemism', endemism_pie_canvas);
+            let conservation_status_pie_canvas = document.getElementById('fish-ssdd-conservation-status-pie');
+            this.renderPieChart(bio_data, 'species', 'cons_status', conservation_status_pie_canvas);
+            let sampling_method_pie_canvas = document.getElementById('fish-ssdd-sampling-method-pie');
+            this.renderPieChart(bio_data, 'species', 'sampling_method', sampling_method_pie_canvas);
         },
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
@@ -740,13 +742,11 @@ define([
             return $result;
         },
         createOccurrenceDataTable: function (data) {
-            var renderedOccurrenceData = this.renderOccurrenceData(data);
-            var occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
-            var occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
-            occurrenceDataSub.html(renderedOccurrenceData);
+            let occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
+            let occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
+            occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list']));
         },
-        renderOccurrenceData: function (data) {
-            let occurrenceData = data['occurrence_data'];
+        renderOccurrenceData: function (occurrenceData, conservationStatusList) {
             let occurrenceTable = $('<table class="table table-bordered site-detailed-table">');
             occurrenceTable.append("<thead>\n" +
                 "      <tr>\n" +
@@ -764,10 +764,9 @@ define([
                 tRow.append('<td>' + rowData['origin'] + '</td>');
                 tRow.append('<td>' + rowData['count'] + '</td>');
                 tRow.append('<td>' + rowData['endemism'] + '</td>');
-                tRow.append('<td>' + data['iucn_name_list'][rowData['cons_status']] + '</td>');
+                tRow.append('<td>' + conservationStatusList[rowData['cons_status']] + '</td>');
                 tableBody.append(tRow);
             });
-            console.log(tableBody);
             occurrenceTable.append(tableBody);
             return occurrenceTable;
         },
