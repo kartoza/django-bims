@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, jqueryUI,jqueryTouch, ol, LayerStyle) {
+define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, jqueryUI, jqueryTouch, ol, LayerStyle) {
     return Backbone.View.extend({
         // source of layers
         biodiversitySource: null,
@@ -85,8 +85,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // ---------------------------------
             // HIGHLIGHT PINNED LAYER
             // ---------------------------------
-            self.highlightPinnedVectorSource = new ol.source.Vector({
-            });
+            self.highlightPinnedVectorSource = new ol.source.Vector({});
             self.highlightPinnedVector = new ol.layer.Vector({
                 source: self.highlightPinnedVectorSource,
                 style: function (feature) {
@@ -174,7 +173,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             self.initLayer(
                 self.administrativeLayerGroup,
                 _layerName,
-               _isAdministrativeSelected
+                _isAdministrativeSelected
             );
         },
         addLayersToMap: function (map) {
@@ -217,7 +216,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             return;
                         }
 
-                        var layerOrder = value['order']+1;
+                        var layerOrder = value['order'] + 1;
                         self.orders[layerOrder] = value['wms_layer_name'];
 
                         var defaultVisibility = Shared.StorageUtil.getItemDict(
@@ -265,6 +264,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     self.addAdministrativeLayerToMap(data);
                     // Render available layers first because fetching layer from geonode takes time
                     self.renderLayers(true);
+
+                    $('.layer-source').click(function (e) {
+                        self.showLayerSource(e.target.attributes["value"].value);
+                    });
 
                     self.addGeonodeLayersToMap(map);
 
@@ -465,21 +468,21 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             var tags = '';
             var layerId = name;
             if (!source) {
-                    source = '';
+                source = '';
             }
             if (!category) {
-                    category = '';
+                category = '';
             }
             var rowTemplate = _.template($('#layer-selector-row').html());
             let $rowTemplate = $(rowTemplate({
-                    id: layerId,
-                    name: name,
-                    key: key,
-                    checked: checked,
-                    transparency_value: transparencyDefault,
-                    display: layerDisplayed,
-                    source: source,
-                    category: category,
+                id: layerId,
+                name: name,
+                key: key,
+                checked: checked,
+                transparency_value: transparencyDefault,
+                display: layerDisplayed,
+                source: source,
+                category: category,
             }));
             if (isFirstTime) {
                 $rowTemplate.prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
@@ -599,10 +602,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             $('.layer-selector-input').change(function (e) {
                 self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
             });
-
-            $('.layer-source').click(function (e) {
-                self.showLayerSource(e.target.attributes["value"].value);
-            });
             if (isFirstTime) {
                 self.initializeLayerSelector();
             }
@@ -625,7 +624,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             var featuresInfo = {};
             Shared.GetFeatureRequested = true;
             Shared.Dispatcher.trigger('map:showPopup', coordinate,
-                    '<div class="info-popup popup-loading"> Fetching... </div>');
+                '<div class="info-popup popup-loading"> Fetching... </div>');
             $.each(this.layers, function (layer_key, layer) {
                 if (coordinate !== lastCoordinate) {
                     return;
@@ -738,19 +737,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             infoWrapperTab[0].click();
         },
         showLayerSource: function (layerKey) {
-                if (Object.keys(this.layers).length === 0) {
-                    return false;
-                }
-                else if (layerKey !== this.administrativeKeyword) {
-                    this.getLayerAbstract(layerKey);
-                }
-            },
-        getLayerAbstract: function(layerKey) {
+            if (Object.keys(this.layers).length === 0) {
+                return false;
+            } else if (layerKey !== this.administrativeKeyword) {
+                this.getLayerAbstract(layerKey);
+            }
+        },
+        getLayerAbstract: function (layerKey) {
             if (layerKey.indexOf(":") > 0) {
                 layerProvider = layerKey.split(":")[0];
                 layerName = layerKey.split(":")[1];
-            }
-            else {
+            } else {
                 layerProvider = layerKey;
                 layerName = layerKey;
             }
@@ -761,7 +758,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 type: 'GET',
                 url: `http://maps.kartoza.com/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
                 dataType: `xml`,
-                success: function(response){
+                success: function (response) {
                     var xml_response, parser, xmlDoc;
                     xml_response = response['documentElement']['innerHTML'];
                     xml_response = xml_response.replace(/[\r\n]*/g, "");
@@ -770,21 +767,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                     parser = new DOMParser();
                     xmlDoc = parser.parseFromString(xml_response, 'text/xml');
-                    try{
+                    try {
                         abstract_result = xmlDoc.getElementsByTagName("Abstract")[2].childNodes[0].nodeValue;
-                    }
-                    catch (e) {
+                    } catch (e) {
                         abstract_result = "Abstract information unavailable.";
                     }
                 },
-                error (err) {
+                error(err) {
                     console.log(err);
                     abstract_result = "Abstract information unavailable.";
                 },
-                complete () {
-                    layerSourceContainer = $('div.layer-source-info[value="'+ layerKey + '"]');
-                    if (layerSourceContainer.html() == "")
-                    {
+                complete() {
+                    layerSourceContainer = $('div.layer-source-info[value="' + layerKey + '"]');
+                    if (layerSourceContainer.html() == "") {
                         layerSourceContainer.toggle();
                         layerSourceContainer.html(`
                             <div class="layer-abstract">
