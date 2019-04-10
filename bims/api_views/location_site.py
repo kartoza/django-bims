@@ -2,7 +2,7 @@
 import json
 import os
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q, F, Count
+from django.db.models import Q, F, Count, Value, CharField
 from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
@@ -33,7 +33,6 @@ from bims.utils.search_process import (
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
-from sass.models.river import River
 
 
 class LocationSiteList(APIView):
@@ -226,6 +225,8 @@ class LocationSitesSummary(APIView):
     TAXA_GRAPH = 'taxa_graph'
     ORIGIN_OCCURRENCE = 'origin_occurrence'
     CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
+    iucn_category = {}
+    origin_name_list = {}
 
     def get(self, request):
         filters = request.GET
@@ -245,9 +246,15 @@ class LocationSitesSummary(APIView):
                 except ValueError:
                     pass
 
+        self.iucn_category = dict(
+            (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
+
+        self.origin_name_list = dict(
+            (x, y) for x, y in BiologicalCollectionRecord.CATEGORY_CHOICES
+        )
+
         taxa_occurrence = self.get_site_taxa_occurrences_per_year(
             collection_results)
-
 
         taxa_graph_data = collection_results.annotate(
             year=ExtractYear('collection_date'),
@@ -288,13 +295,8 @@ class LocationSitesSummary(APIView):
 
         if site_id:
             site_details = self.get_site_details(site_id)
-
             site_details['records_and_sites'] = (
                 self.get_number_of_records_and_taxa(collection_results))
-            site_details['origins_data'] = self.get_origin_data(
-                collection_results)
-            site_details['conservation_status_data'] = (
-                self.get_conservation_status_data(collection_results))
         else:
             site_details = {}
         origin_occurrence = self.get_origin_occurrence_data(collection_results)
@@ -305,7 +307,6 @@ class LocationSitesSummary(APIView):
             collection_results)
 
         search_process.create_view()
-        occurrence_data = self.get_occurence_data(collection_results)
         biodiversity_data = self.get_biodiversity_data(collection_results)
 
         response_data = {
@@ -317,11 +318,10 @@ class LocationSitesSummary(APIView):
             self.CATEGORY_SUMMARY: dict(category_summary),
             self.TAXA_GRAPH: dict(taxa_graph),
             self.ORIGIN_OCCURRENCE: dict(origin_occurrence),
-            self.CONS_STATUS_OCCURRENCE: dict(cons_status_occurrence),
-            self.OCCURRENCE_DATA: dict(occurrence_data),
-            self.IUCN_NAME_LIST: list(IUCNStatus.CATEGORY_CHOICES),
-            self.ORIGIN_NAME_LIST: list(
-                BiologicalCollectionRecord.CATEGORY_CHOICES),
+            self.CONS_STATUS_OCCURRENCE: cons_status_occurrence,
+            self.OCCURRENCE_DATA: self.occurrence_data(collection_results),
+            self.IUCN_NAME_LIST: self.iucn_category,
+            self.ORIGIN_NAME_LIST: self.origin_name_list,
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
@@ -340,10 +340,12 @@ class LocationSitesSummary(APIView):
         except ValueError:
             return Response(response_data)
 
-    def get_occurence_data(self, collection_results):
-
-        titles = ['Taxon', 'Origin', 'Occurrences', 'Endemism', 'Cons. Status']
-        data_keys = ['taxon', 'origin', 'count', 'endemism', 'cons_status']
+    def occurrence_data(self, collection_results):
+        """
+        Get occurrence data
+        :param collection_results: collection search results
+        :return: list of occurrence data
+        """
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
             origin=F('category'),
@@ -354,11 +356,7 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('taxon')
         ).order_by('taxon')
-        occurrence_data = {}
-        occurrence_data['data'] = list(occurrence_table_data)
-        occurrence_data['titles'] = titles
-        occurrence_data['data_keys'] = data_keys
-
+        occurrence_data = list(occurrence_table_data)
         return occurrence_data
 
     def get_site_taxa_occurrences_per_year(self, collection_results):
@@ -389,6 +387,11 @@ class LocationSitesSummary(APIView):
         :return: dict of occurrence data
         """
         result = dict()
+        years = list(
+            data_in.values_list('year', flat=True).distinct())
+        labels = list(set(data_in.values_list(
+            'name', flat=True
+        ).order_by('name')))
         result['labels'] = list(data_in.values_list(
             'year', flat=True
         ).distinct())
@@ -396,10 +399,19 @@ class LocationSitesSummary(APIView):
             'name', flat=True
         ).order_by('name')))
         result['data'] = {}
-        for dataset_label in result['dataset_labels']:
-            result['data'][dataset_label] = list(data_in.filter(
-                name=dataset_label
-            ).values_list('count', flat=True).distinct())
+        result['data'] = {}
+        for dataset_label in labels:
+            result['data'][dataset_label] = []
+            for dataset_year in years:
+                dataset_data = data_in.filter(
+                    name=dataset_label,
+                    year=dataset_year
+                )
+                total_count = 0
+                if dataset_data.exists():
+                    for dataset in dataset_data:
+                        total_count += dataset['count']
+                result['data'][dataset_label].append(total_count)
         return result
 
     def get_origin_occurrence_data(self, collection_records):
@@ -427,7 +439,9 @@ class LocationSitesSummary(APIView):
         :param: collection_records: collection record queryset
         :return: dict of origin data for stacked bar graph
         """
-        origin_graph_data = collection_records.annotate(
+        cons_graph_data = collection_records.filter(
+            taxonomy__iucn_status__isnull=False
+        ).annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__iucn_status__category'),
         ).values(
@@ -437,15 +451,47 @@ class LocationSitesSummary(APIView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
-        result = self.get_data_per_year(origin_graph_data)
+
+        # unspecified values
+        unspecified_values = collection_records.filter(
+            taxonomy__iucn_status__isnull=True
+        ).annotate(
+            year=ExtractYear('collection_date'),
+            name=Value('DD', output_field=CharField())
+        ).values('year', 'name').annotate(
+            count=Count('year')
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
+
+        result = self.get_data_per_year(cons_graph_data)
+        if not unspecified_values:
+            return result
+        if 'DD' not in result['dataset_labels']:
+            result['dataset_labels'].append('DD')
+            result['data']['DD'] = []
+        for index, dataset_year in enumerate(result['labels']):
+            dataset_data = unspecified_values.filter(
+                name='DD',
+                year=dataset_year
+            )
+            total_count = 0
+            if dataset_data.exists():
+                for dataset in dataset_data:
+                    total_count += dataset['count']
+            try:
+                result['data']['DD'][index] += total_count
+            except IndexError:
+                result['data']['DD'].append(total_count)
         return result
 
     def get_biodiversity_data(self, collection_results):
         biodiversity_data = {}
-        biodiversity_data['fish'] = {}
-        biodiversity_data['fish']['origin_chart'] = {}
-        biodiversity_data['fish']['cons_status_chart'] = {}
-        biodiversity_data['fish']['endemism_chart'] = {}
+        biodiversity_data['species'] = {}
+        biodiversity_data['species']['origin_chart'] = {}
+        biodiversity_data['species']['cons_status_chart'] = {}
+        biodiversity_data['species']['endemism_chart'] = {}
+        biodiversity_data['species']['sampling_method_chart'] = {}
         origin_by_name_data = collection_results.annotate(
             name=F('category')
         ).values(
@@ -457,9 +503,11 @@ class LocationSitesSummary(APIView):
         )
         keys = origin_by_name_data.values_list('name', flat=True)
         values = origin_by_name_data.values_list('count', flat=True)
-        biodiversity_data['fish']['origin_chart']['data'] = list(values)
-        biodiversity_data['fish']['origin_chart']['keys'] = list(keys)
-        cons_status_data = collection_results.annotate(
+        biodiversity_data['species']['origin_chart']['data'] = list(values)
+        biodiversity_data['species']['origin_chart']['keys'] = list(keys)
+        cons_status_data = collection_results.filter(
+            taxonomy__iucn_status__isnull=False
+        ).annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
             'name'
@@ -468,11 +516,22 @@ class LocationSitesSummary(APIView):
         ).order_by(
             'name'
         )
-        keys = cons_status_data.values_list('name', flat=True)
-        values = cons_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['cons_status_chart']['data'] = list(
-            values)
-        biodiversity_data['fish']['cons_status_chart']['keys'] = list(keys)
+
+        keys = list(cons_status_data.values_list('name', flat=True))
+        values = list(cons_status_data.values_list('count', flat=True))
+        dd_values = collection_results.filter(
+            taxonomy__iucn_status__isnull=True
+        ).count()
+        if dd_values > 0:
+            if 'DD' in keys:
+                key_index = keys.index('DD')
+                values[key_index] += dd_values
+            else:
+                keys.append('DD')
+                values.append(dd_values)
+        biodiversity_data['species']['cons_status_chart']['data'] = values
+        biodiversity_data['species']['cons_status_chart']['keys'] = keys
+
         endemism_status_data = collection_results.annotate(
             name=F('taxonomy__endemism__name')
         ).values(
@@ -484,8 +543,34 @@ class LocationSitesSummary(APIView):
         )
         keys = endemism_status_data.values_list('name', flat=True)
         values = endemism_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['endemism_chart']['data'] = list(values)
-        biodiversity_data['fish']['endemism_chart']['keys'] = list(keys)
+        biodiversity_data['species']['endemism_chart']['data'] = list(values)
+        biodiversity_data['species']['endemism_chart']['keys'] = list(keys)
+
+        # Sampling method
+        sampling_method_data = collection_results.filter(
+            sampling_method__isnull=False
+        ).annotate(
+            name=F('sampling_method__sampling_method')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        smd_keys = list(sampling_method_data.values_list('name', flat=True))
+        smd_data = list(sampling_method_data.values_list('count', flat=True))
+        unspecified_sampling_method = collection_results.filter(
+            sampling_method__isnull=True
+        ).count()
+        if unspecified_sampling_method > 0:
+            smd_data.append(unspecified_sampling_method)
+            smd_keys.append('Unspecified')
+        biodiversity_data['species']['sampling_method_chart'] = {
+            'data': smd_data,
+            'keys': smd_keys
+        }
+
         biodiversity_data['occurrences'] = [0, 0, 0]
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
@@ -493,69 +578,30 @@ class LocationSitesSummary(APIView):
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
-        location_sites = LocationSite.objects.filter(id=site_id).all()
         try:
-            site_longitude = self.parse_string(
-                str(location_sites.values('longitude')[0]['longitude']))
-        except IndexError:
-            site_longitude = 'Unknown'
+            location_site = LocationSite.objects.get(id=site_id)
+        except LocationSite.DoesNotExist:
+            return {}
         try:
-            site_latitude = self.parse_string(
-                str(location_sites.values('latitude')[0]['latitude']))
-        except IndexError:
-            site_latitude = 'Unknown'
-        try:
-            site_description = self.parse_string(str(location_sites.values(
-                    'site_description')[0]['site_description']))
-        except IndexError:
-            site_description = 'Unknown'
-        try:
-            context_document = dict(json.loads(str(location_sites.values(
-                'location_context')[0]['location_context'])))
-        except IndexError:
-            context_document = {}
+            context_document = json.loads(location_site.location_context)
         except ValueError:
             context_document = {}
-        try:
-            site_river_id = location_sites.values('river_id')[0]['river_id']
-        except IndexError:
-            site_river_id = 0
-        try:
-            if site_river_id > 0:
-                site_river = River.objects.filter(
-                    id=site_river_id).values('name')[0]['name']
-            else:
-                site_river = 'Unknown'
-        except IndexError:
-            site_river = 'Unknown'
-        overview = {}
-        overview['title'] = []
-        overview['value'] = []
-        catchments = {}
-        catchments['title'] = []
-        catchments['value'] = []
-        sa_ecoregions = {}
-        sa_ecoregions['title'] = []
-        sa_ecoregions['value'] = []
-        sub_water_management_areas = {}
-        sub_water_management_areas['title'] = []
-        sub_water_management_areas['value'] = []
+        site_river = '-'
+        if location_site.river:
+            site_river = location_site.river.name
+        overview = dict()
+        overview['FBIS Site Code'] = location_site.site_code
+        overview['Site coordinates'] = (
+            'Longitude: {long}, Latitude: {lat}'.format(
+                long=self.parse_string(location_site.longitude),
+                lat=self.parse_string(location_site.latitude)
+            )
+        )
+        overview['Site description'] = self.parse_string(
+            location_site.site_description
+        )
+        overview['River'] = site_river
 
-        overview['title'].append('FBIS Site Code')
-        overview['value'].append(str(site_id))
-
-        overview['title'].append('Site coordinates')
-        overview['value'].append(
-            str('Longitude: {site_longitude}, '
-                'Latitude: {site_latitude}').format(
-                site_longitude = site_longitude,
-                site_latitude = site_latitude))
-
-        overview['title'].append('Site description')
-        overview['value'].append(site_description)
-
-        overview['title'].append('River')
-        overview['value'].append(site_river)
         try:
             eco_region = (context_document
                           ['context_group_values']
@@ -564,7 +610,7 @@ class LocationSitesSummary(APIView):
                           ['eco_region']
                           ['value'])
         except KeyError:
-            eco_region = 'Unknown'
+            eco_region = '-'
         try:
             geo_class = (context_document
                          ['context_group_values']
@@ -573,21 +619,18 @@ class LocationSitesSummary(APIView):
                          ['geo_class']
                          ['value'])
         except KeyError:
-            geo_class = 'Unknown'
+            geo_class = '-'
         try:
             geo_zone = ('{geo_class} {eco_region}'.format(
                 geo_class=geo_class,
                 eco_region=eco_region))
         except KeyError:
-            geo_zone = 'Unknown'
-
-        overview['title'].append('Geomorphological zone')
-        overview['value'].append(geo_zone)
-
-        overview['title'].append('River Management Units')
-        overview['value'].append('???')
+            geo_zone = '-'
+        overview['Geomorphological zone'] = geo_zone
+        overview['River Management Units'] = '-'
 
         # Catchments
+        catchments = dict()
         try:
             primary_catchment = (context_document
                                  ['context_group_values']
@@ -596,7 +639,7 @@ class LocationSitesSummary(APIView):
                                  ['primary_catchment_area']
                                  ['value'])
         except KeyError:
-            primary_catchment = 'Unknown'
+            primary_catchment = '-'
         try:
             secondary_catchment = (context_document
                                    ['context_group_values']
@@ -605,7 +648,7 @@ class LocationSitesSummary(APIView):
                                    ['secondary_catchment_area']
                                    ['value'])
         except KeyError:
-            secondary_catchment = 'Unknown'
+            secondary_catchment = '-'
         try:
             tertiary_catchment_area = (context_document
                                        ['context_group_values']
@@ -614,7 +657,7 @@ class LocationSitesSummary(APIView):
                                        ['tertiary_catchment_area']
                                        ['value'])
         except KeyError:
-            tertiary_catchment_area = 'Unknown'
+            tertiary_catchment_area = '-'
         try:
             water_management_area = (context_document
                                      ['context_group_values']
@@ -623,33 +666,21 @@ class LocationSitesSummary(APIView):
                                      ['water_management_area']
                                      ['value'])
         except KeyError:
-            water_management_area = 'Unknown'
+            water_management_area = '-'
+        catchments['Primary'] = primary_catchment
+        catchments['Secondary'] = secondary_catchment
+        catchments['Tertiary'] = tertiary_catchment_area
+        catchments['Quaternary'] = 'Coming Soon'
+        catchments['Quinary'] = 'Coming Soon'
 
-        catchments['title'].append('Primary')
-        catchments['value'].append(primary_catchment)
-
-        catchments['title'].append('Secondary')
-        catchments['value'].append(secondary_catchment)
-
-        catchments['title'].append('Tertiary')
-        catchments['value'].append(tertiary_catchment_area)
-
-        catchments['title'].append('Quaternary')
-        catchments['value'].append('Coming Soon')
-
-        catchments['title'].append('Quinary')
-        catchments['value'].append('very soon...')
-
-        sub_water_management_areas['title'].append(
-            'Sub-Water Management Areas')
-        sub_water_management_areas['value'].append('???')
-
-        sub_water_management_areas['title'].append(
-            'Water Management Areas (WMA)')
-        sub_water_management_areas['value'].append(water_management_area)
+        sub_water_management_areas = dict()
+        sub_water_management_areas['Sub-Water Management Areas'] = '-'
+        sub_water_management_areas['Water Management Areas (WMA)'] = (
+            water_management_area
+        )
 
         # Politcal Boundary Group
-
+        sa_ecoregions = dict()
         try:
             province = self.parse_string(str(context_document
                                              ['context_group_values']
@@ -658,21 +689,13 @@ class LocationSitesSummary(APIView):
                                              ['sa_provinces']
                                              ['value']))
         except KeyError:
-            province = 'Unknown'
+            province = '-'
+        sa_ecoregions['Ecoregion Level 1'] = '-'
+        sa_ecoregions['Ecoregion Level 2'] = '-'
+        sa_ecoregions['Freshwater Ecoregion'] = '-'
+        sa_ecoregions['Province'] = province
 
-        sa_ecoregions['title'].append('Ecoregion Level 1')
-        sa_ecoregions['value'].append('???')
-
-        sa_ecoregions['title'].append('Ecoregion Level 2')
-        sa_ecoregions['value'].append('???')
-
-        sa_ecoregions['title'].append('Freshwater Ecoregion')
-        sa_ecoregions['value'].append('???')
-
-        sa_ecoregions['title'].append('Province')
-        sa_ecoregions['value'].append(province)
-
-        result = {}
+        result = dict()
         result['overview'] = overview
         result['catchments'] = catchments
         result['sub_water_management_areas'] = sub_water_management_areas
@@ -682,30 +705,22 @@ class LocationSitesSummary(APIView):
 
     def parse_string(self, string_in):
         if not string_in:
-            return 'Unknown'
+            return '-'
         else:
-            return string_in
+            return str(string_in)
 
     def get_number_of_records_and_taxa(self, records_collection):
         records_collection.annotate()
-        result = {}
-        result['title'] = []
-        result['value'] = []
-
+        result = dict()
         number_of_occurrence_records = records_collection.count()
         number_of_unique_taxa = records_collection.values(
             'taxonomy_id').distinct().count()
-
-        result['title'].append('Number of occurrences')
-        result['value'].append(str(self.parse_string(
-            number_of_occurrence_records)))
-        result['title'].append('Number of species')
-        result['value'].append(str(self.parse_string(number_of_unique_taxa)))
-
+        result['Number of occurrences'] = self.parse_string(
+            number_of_occurrence_records)
+        result['Number of species'] = self.parse_string(number_of_unique_taxa)
         return result
 
     def get_origin_data(self, collection_results):
-        result = {}
         origin_data = collection_results.annotate(
             value=F('category')
         ).values(
@@ -713,17 +728,9 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('value')
         ).order_by('value')
-
-        result['title'] = list(origin_data.values_list('value', flat=True))
-        result['value'] = list(origin_data.values_list('count', flat=True))
-
-        return result
+        return dict(origin_data.values_list('value', 'count'))
 
     def get_conservation_status_data(self, collection_results):
-        result = {}
-        result['title'] = []
-        result['value'] = []
-
         iucn_data = collection_results.exclude(
             taxonomy__iucn_status__category=None).annotate(
             value=F('taxonomy__iucn_status__category')
@@ -731,11 +738,7 @@ class LocationSitesSummary(APIView):
             'value'
         ).annotate(
             count=Count('value'))
-
-        result['title'] = list(iucn_data.values_list('value', flat=True))
-        result['value'] = list(iucn_data.values_list('count', flat=True))
-
-        return result
+        return dict(iucn_data.values_list('value', 'count'))
 
     def get_value_or_zero_from_key(self, data, key):
         result = {}
