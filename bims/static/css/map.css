@@ -288,8 +288,7 @@ html, body, .map, .map-wrapper, #map-container {
     height: fit-content;
 }
 
-.map-control-panel-box::-webkit-scrollbar
-{
+.map-control-panel-box::-webkit-scrollbar {
     width: 0px;
 }
 
@@ -1084,7 +1083,6 @@ div:hover::-webkit-scrollbar {
     z-index: 999;
 
 
-
     overflow: hidden;
 
     position: fixed;
@@ -1842,7 +1840,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .module-filters {
-    padding: 5px;/* msie */
+    padding: 5px; /* msie */
 }
 
 .module-species {
@@ -2251,15 +2249,19 @@ div:hover::-webkit-scrollbar {
     word-wrap: break-word;
 }
 
-.layer-abstract{
+.layer-abstract {
     margin: 0.5rem;
     word-wrap: break-word;
     white-space: normal;
     padding: 0.5rem 0.5rem 1rem;
+    -webkit-user-select: auto !important; /* Safari */
+    -moz-user-select: auto !important; /* Firefox */
+    -ms-user-select: auto !important; /* IE10+/Edge */
+    user-select: auto !important; /* Standard */
 }
 
-.sass-button {
-
+.layer-abstract:hover {
+    cursor: text;
 }
 
 .right-panel-last-button {
@@ -2329,7 +2331,7 @@ div:hover::-webkit-scrollbar {
     max-height: 20vh;
 }
 
-#filter_study_reference_chosen .chosen-results{
+#filter_study_reference_chosen .chosen-results {
     max-height: 20vh;
 }
 
@@ -2337,7 +2339,6 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     margin-bottom: 0;
 }
-
 
 
 .species-detail-cell {
@@ -2451,8 +2452,6 @@ div:hover::-webkit-scrollbar {
 }
 
 
-
-
 #filter-validation-error {
     font-size: 9pt;
     color: red;
@@ -2504,7 +2503,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #fish-ssdd-records-sites .title_column {
-     font-weight: 700;
+    font-weight: 700;
 }
 
 #fish-ssdd-records-sites .col-6 {
@@ -2522,7 +2521,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #fish-ssdd-origins .title_column {
-     font-weight: 700;
+    font-weight: 700;
 }
 
 #fish-ssdd-origins .col-6 {
@@ -2541,7 +2540,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #fish-ssdd-conservation-status .title-column {
-     font-weight: 700;
+    font-weight: 700;
 }
 
 #fish-ssdd-conservation-status .col-6 {
@@ -2552,7 +2551,8 @@ div:hover::-webkit-scrollbar {
 }
 
 .html2canvas-container {
-    width: 3000px !important; height: 3000px !important;
+    width: 3000px !important;
+    height: 3000px !important;
 }
 
 #biodiversity-data-wrapper .col-3 {
@@ -2602,7 +2602,7 @@ div:hover::-webkit-scrollbar {
     color: #4a4a4a;
     font-size: 0.75rem;
     line-height: 2rem;
- }
+}
 
 #site-details-wrapper .row {
     border: 1px solid #d3d4d1;
@@ -2612,30 +2612,35 @@ div:hover::-webkit-scrollbar {
     font-size: 0.75rem;
     line-height: 2rem;
 
- }
+}
 
- #site-details-wrapper .row .value-column {
+#site-details-wrapper .row .value-column {
     color: #3D647D;
     text-align: right;
     align-self: center;
 }
 
 
- #site-details-wrapper .row .caption-column {
+#site-details-wrapper .row .caption-column {
     color: #4a4a4a;
     text-align: left;
     align-self: center;
 }
 
- .fbis-button-small a { color: inherit; }
+.fbis-button-small a {
+    color: inherit;
+}
 
- .fbis-button-small a:hover {color: inherit; text-decoration: inherit;}
+.fbis-button-small a:hover {
+    color: inherit;
+    text-decoration: inherit;
+}
 
- .fbis-button-disabled {
-     background-color: #BEBEBE !important;
- }
+.fbis-button-disabled {
+    background-color: #BEBEBE !important;
+}
 
- .fbis-button-disabled:hover {
-     cursor: default !important;
-     background-color: #BEBEBE !important;
- }
+.fbis-button-disabled:hover {
+    cursor: default !important;
+    background-color: #BEBEBE !important;
+}

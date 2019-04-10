@@ -269,6 +269,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         self.showLayerSource(e.target.attributes["value"].value);
                     });
 
+                    // let $layerSelector = $('#layers-selector');
+                    // $layerSelector.disableSelection();
+                    // $layerSelector.sortable({cancel: '.layer-abstract'});
+
                     self.addGeonodeLayersToMap(map);
 
                 },
@@ -793,7 +797,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         initializeLayerSelector: function () {
             let self = this;
             this.layerSelector = $('#layers-selector');
-            this.layerSelector.sortable();
+            this.layerSelector.sortable({cancel: '.layer-abstract'});
             this.layerSelector.on('sortupdate', function () {
                 let $layerSelectorInput = $('.layer-selector-input');
                 $($layerSelectorInput.get().reverse()).each(function (index, value) {
