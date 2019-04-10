@@ -269,10 +269,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         self.showLayerSource(e.target.attributes["value"].value);
                     });
 
-                    // let $layerSelector = $('#layers-selector');
-                    // $layerSelector.disableSelection();
-                    // $layerSelector.sortable({cancel: '.layer-abstract'});
-
                     self.addGeonodeLayersToMap(map);
 
                 },
