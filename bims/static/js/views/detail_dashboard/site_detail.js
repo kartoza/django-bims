@@ -652,18 +652,26 @@ define([
             let originsWrapper = $('#fish-ssdd-origins');
             let originsSub = originsWrapper.find('#origins');
             let originCategoryList = data['origin_name_list'];
-            let originsData = data['site_details']['origins_data'];
-            $.each(originsData, function (key, value) {
+            let originsOccurrenceData = data['origin_occurrence']['data'];
+            let originsTableData = {};
+            $.each(originsOccurrenceData, function (key, value) {
                 if (originCategoryList.hasOwnProperty(key)) {
-                    delete originsData[key];
-                    originsData[originCategoryList[key]] = value;
+                    originsTableData[originCategoryList[key]] = value.reduce(function(a, b) { return a + b; }, 0);
                 }
             });
-            originsSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['origins_data'], data, 'origin', false));
+            originsSub.html(this.renderTableFromTitlesValuesLists(originsTableData, data, 'origin', false));
 
             let conservation_statusWrapper = $('#fish-ssdd-conservation-status');
             let conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
-            conservation_statusSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['conservation_status_data'], data, 'cons_status', false));
+            let consStatusOccurrenceData = data['cons_status_occurrence']['data'];
+            let consCategoryList = data['iucn_name_list'];
+            let constTableData = {};
+            $.each(consStatusOccurrenceData, function (key, value) {
+                if (consCategoryList.hasOwnProperty(key)) {
+                    constTableData[consCategoryList[key]] = value.reduce(function(a, b) { return a + b; }, 0);
+                }
+            });
+            conservation_statusSub.html(this.renderTableFromTitlesValuesLists(constTableData, data, 'cons_status', false));
         },
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
