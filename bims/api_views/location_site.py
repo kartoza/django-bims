@@ -33,7 +33,6 @@ from bims.utils.search_process import (
 from bims.models.search_process import SITES_SUMMARY
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
-from sass.models.river import River
 
 
 class LocationSiteList(APIView):
@@ -239,13 +238,13 @@ class LocationSitesSummary(APIView):
             query=request.build_absolute_uri()
         )
 
-        # if search_process.file_path:
-        #     if os.path.exists(search_process.file_path):
-        #         try:
-        #             raw_data = open(search_process.file_path)
-        #             return Response(json.load(raw_data))
-        #         except ValueError:
-        #             pass
+        if search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
 
         self.iucn_category = dict(
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)

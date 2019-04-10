@@ -803,6 +803,8 @@ define([
                 let consName = rowData['cons_status'];
                 if (conservationStatusList.hasOwnProperty(consName)) {
                     consName = conservationStatusList[consName];
+                } else {
+                    consName = 'Data deficient';
                 }
                 tRow.append('<td>' + rowData['taxon'] + '</td>');
                 tRow.append('<td>' + originName + '</td>');
