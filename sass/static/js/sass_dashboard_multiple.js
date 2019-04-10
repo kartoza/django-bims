@@ -65,13 +65,38 @@ function drawMap(data) {
 }
 
 function renderSassScoreChart(data) {
+
+    // find color from ecological data
+    let defaultColor = '#c6c6c6';
+    let sassChartBackgroundColor = [];
+    let siteIds = $.extend([], data['sass_score_chart_data']['site_id']);
+    $.each(siteIds, function (index, data) {
+        sassChartBackgroundColor.push(defaultColor);
+    });
+    $.each(data['ecological_chart_data'], function (index, ecological_data) {
+        $.each(ecological_data['site_data']['site_ids'], function (site_id_index, site_id) {
+            if ($.inArray(site_id, siteIds) >= 0) {
+                let siteIndex = $.inArray(site_id, siteIds);
+                let sassScore = data['sass_score_chart_data']['sass_score'][siteIndex];
+                let asptScore = data['sass_score_chart_data']['aspt_score'][siteIndex];
+                $.each(ecological_data['chart_data'], function (ecologicalDataIndex, ecologicalData) {
+                    if (sassScore > ecologicalData['sass'] || asptScore > ecologicalData['aspt']) {
+                        sassChartBackgroundColor[siteIndex] = ecologicalData['color'];
+                        return false;
+                    }
+                });
+
+            }
+        });
+    });
+
     // Sass score chart
     let sassScoreData = {
         labels: data['sass_score_chart_data']['site_code'],
         datasets: [{
             label: 'Sass Score',
-            backgroundColor: '#589f48',
-            borderColor: '#589f48',
+            backgroundColor: sassChartBackgroundColor,
+            borderColor: sassChartBackgroundColor,
             borderWidth: 1,
             data: data['sass_score_chart_data']['sass_score']
         }]
@@ -80,8 +105,8 @@ function renderSassScoreChart(data) {
         labels: data['sass_score_chart_data']['site_code'],
         datasets: [{
             label: 'Number of taxa',
-            backgroundColor: '#589f48',
-            borderColor: '#589f48',
+            backgroundColor: sassChartBackgroundColor,
+            borderColor: sassChartBackgroundColor,
             borderWidth: 1,
             data: data['sass_score_chart_data']['taxa_count']
         }]
@@ -90,8 +115,8 @@ function renderSassScoreChart(data) {
         labels: data['sass_score_chart_data']['site_code'],
         datasets: [{
             label: 'ASPT',
-            backgroundColor: '#589f48',
-            borderColor: '#589f48',
+            backgroundColor: sassChartBackgroundColor,
+            borderColor: sassChartBackgroundColor,
             borderWidth: 1,
             data: data['sass_score_chart_data']['aspt_score']
         }]
@@ -131,7 +156,7 @@ function renderSassScoreChart(data) {
     };
 
     var chartHeight = 20 * sassScoreData['labels'].length;
-    chartHeight = (chartHeight > 170)? chartHeight:170;
+    chartHeight = (chartHeight > 170) ? chartHeight : 170;
     document.getElementById('sass-score-chart-multiple').height = chartHeight;
     document.getElementById('taxa-numbers-chart-multiple').height = chartHeight;
     document.getElementById('aspt-chart-multiple').height = chartHeight;
