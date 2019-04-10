@@ -292,13 +292,15 @@ class LocationSitesSummary(APIView):
         ).annotate(
             count=Count('category')
         )
+        is_multi_sites = False
 
         if site_id:
             site_details = self.get_site_details(site_id)
             site_details['records_and_sites'] = (
                 self.get_number_of_records_and_taxa(collection_results))
         else:
-            site_details = {}
+            is_multi_sites = True
+            site_details = self.multiple_site_details(collection_results)
         origin_occurrence = self.get_origin_occurrence_data(collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
@@ -325,7 +327,8 @@ class LocationSitesSummary(APIView):
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             'process': search_process.process_id,
             'extent': search.extent(),
-            'sites_raw_query': search_process.process_id
+            'sites_raw_query': search_process.process_id,
+            'is_multi_sites': is_multi_sites
         }
 
         file_path = create_search_process_file(
@@ -575,6 +578,28 @@ class LocationSitesSummary(APIView):
         biodiversity_data['number_of_taxa'] = [0, 0, 0]
         biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         return biodiversity_data
+
+    def multiple_site_details(self, collection_records):
+        """
+        Get detail overview for multiple site
+        :param collection_records: biological colleciton records
+        :return: dict of details
+        """
+        summary = {
+            'overview': {}
+        }
+
+        summary['overview']['Number of occurrence records'] = (
+            collection_records.count()
+        )
+        summary['overview']['Number of sites'] = (
+            collection_records.distinct('site').count()
+        )
+        summary['overview']['Number of species'] = (
+            collection_records.distinct('taxonomy').count()
+        )
+
+        return summary
 
     def get_site_details(self, site_id):
         # get single site detailed dashboard overview data
