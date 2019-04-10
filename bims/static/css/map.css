@@ -270,7 +270,6 @@ html, body, .map, .map-wrapper, #map-container {
     width: 265px;
     background-color: white;
     position: absolute;
-    display: inline-table;
     top: 0;
     color: black;
     padding: 5px 15px 0;
