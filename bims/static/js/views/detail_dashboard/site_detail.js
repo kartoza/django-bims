@@ -173,11 +173,12 @@ define([
                 success: function (data) {
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
-                    if (Object.keys(data['site_details']).length !== 0) {
+                    if (data['is_multi_sites']) {
+                        $('#fish-ssdd-site-details').hide();
+                        self.createMultiSiteDetails(data);
+                    } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
-                    } else {
-                        $('#fish-ssdd-site-details').hide();
                     }
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
@@ -631,6 +632,14 @@ define([
                 this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
             }
         },
+        createMultiSiteDetails: function (data) {
+            let overview = this.$el.find('#records-sites');
+            overview.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
+
+            this.createOriginsOccurrenceTable(data);
+            this.createConservationOccurrenceTable(data);
+            this.createEndemismOccurrenceTable(data);
+        },
         createFishSSDDSiteDetails: function (data) {
             let siteDetailsWrapper = $('#fish-ssdd-overview');
 
@@ -649,29 +658,49 @@ define([
             let recordSitesSub = recordSitesWrapper.find('#records-sites');
             recordSitesSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']));
 
-            let originsWrapper = $('#fish-ssdd-origins');
-            let originsSub = originsWrapper.find('#origins');
+            this.createOriginsOccurrenceTable(data);
+            this.createConservationOccurrenceTable(data);
+            this.createEndemismOccurrenceTable(data);
+        },
+        createOriginsOccurrenceTable: function (data) {
+            let originsSub = this.$el.find('#origins');
             let originCategoryList = data['origin_name_list'];
             let originsOccurrenceData = data['origin_occurrence']['data'];
             let originsTableData = {};
             $.each(originsOccurrenceData, function (key, value) {
                 if (originCategoryList.hasOwnProperty(key)) {
-                    originsTableData[originCategoryList[key]] = value.reduce(function(a, b) { return a + b; }, 0);
+                    originsTableData[originCategoryList[key]] = value.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
                 }
             });
             originsSub.html(this.renderTableFromTitlesValuesLists(originsTableData, data, 'origin', false));
-
-            let conservation_statusWrapper = $('#fish-ssdd-conservation-status');
-            let conservation_statusSub = conservation_statusWrapper.find('#ssdd-conservation-status');
+        },
+        createConservationOccurrenceTable: function (data) {
+            let conservation_statusSub = this.$el.find('#ssdd-conservation-status');
             let consStatusOccurrenceData = data['cons_status_occurrence']['data'];
             let consCategoryList = data['iucn_name_list'];
             let constTableData = {};
             $.each(consStatusOccurrenceData, function (key, value) {
                 if (consCategoryList.hasOwnProperty(key)) {
-                    constTableData[consCategoryList[key]] = value.reduce(function(a, b) { return a + b; }, 0);
+                    constTableData[consCategoryList[key]] = value.reduce(function (a, b) {
+                        return a + b;
+                    }, 0);
                 }
             });
             conservation_statusSub.html(this.renderTableFromTitlesValuesLists(constTableData, data, 'cons_status', false));
+        },
+        createEndemismOccurrenceTable: function (data) {
+            let endemismDataChart = data['biodiversity_data']['species']['endemism_chart'];
+            let endemismData = {};
+            if(!endemismDataChart) {
+                return false;
+            }
+            $.each(endemismDataChart['keys'], function (index, data) {
+                endemismData[data] = endemismDataChart['data'][index];
+            });
+            let wrapper = this.$el.find('#ssdd-endemism');
+            wrapper.html(this.renderTableFromTitlesValuesLists(endemismData, data, 'endemism', false));
         },
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
