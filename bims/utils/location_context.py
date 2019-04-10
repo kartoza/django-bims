@@ -48,7 +48,7 @@ def process_spatial_scale_data(location_context_data, group=None):
                 continue
             spatial_type = 'select'
             spatial_query = context_group['value']
-            if isinstance(context_group['value'], (int, float)):
+            if isinstance(context_group['value'], (int, long, float)):
                 spatial_type = 'input'
                 spatial_query = context_group['key']
                 spatial_scale_group = group
