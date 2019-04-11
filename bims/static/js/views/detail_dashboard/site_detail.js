@@ -322,6 +322,7 @@ define([
             if (!this.isOpen) {
                 return false;
             }
+            this.$el.find('#detailed-site-dashboard-wrapper')[0].scrollIntoView();
             var self = this;
             this.$el.hide('slide', {
                 direction: 'right'
