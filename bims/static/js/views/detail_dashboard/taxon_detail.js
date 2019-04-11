@@ -350,14 +350,22 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         exportTaxasiteMap: function () {
             this.mapTaxaSite.once('postcompose', function (event) {
-                var canvas = event.context.canvas;
-                if (navigator.msSaveBlob) {
-                    navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
-                } else {
-                    canvas.toBlob(function (blob) {
-                        saveAs(blob, 'map.png')
-                    })
-                }
+                let canvas = $('#taxasite-map');
+                html2canvas(canvas, {
+                    useCORS: false,
+                    background: '#FFFFFF',
+                    allowTaint: true,
+                    onrendered: function (canvas) {
+                        $('.ol-control').show();
+                        let link = document.createElement('a');
+                        link.setAttribute("type", "hidden");
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = 'map.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    }
+                });
             });
             this.mapTaxaSite.renderSync();
         },
