@@ -333,16 +333,17 @@ define([
             });
         },
         exportLocationsiteMap: function () {
-            $('.ol-control').hide();
-            this.mapLocationSite.once('postcompose', function (event) {
-                var canvas = document.getElementsByClassName('locationsite-map-wrapper');
+            // $('.ol-control').hide();
+            this.mapLocationSite.once('postrender', function (event) {
+                let canvas = $('#locationsite-map');
                 html2canvas(canvas, {
                     useCORS: true,
                     background: '#FFFFFF',
                     allowTaint: false,
                     onrendered: function (canvas) {
+                        console.log('canvas', canvas);
                         $('.ol-control').show();
-                        var link = document.createElement('a');
+                        let link = document.createElement('a');
                         link.setAttribute("type", "hidden");
                         link.href = canvas.toDataURL("image/png");
                         link.download = 'map.png';
@@ -388,13 +389,17 @@ define([
             }
         },
         downloadElementEvent: function (button_el) {
-            let target = button_el.target.dataset.datac;
+            let button = $(button_el.target);
+            if (!button.hasClass('btn')) {
+                button = button.parent();
+            }
+            let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let random_number = Math.random() * 1000000;
-            let this_title = `FWBD-Dashboard-Export-{${random_number}}`
+            console.log(element);
+            let this_title = `FWBD-Dashboard-Export-{${random_number}}`;
             if (element.length > 0)
                 this.downloadElement(this_title, element);
-
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
@@ -693,7 +698,7 @@ define([
         createEndemismOccurrenceTable: function (data) {
             let endemismDataChart = data['biodiversity_data']['species']['endemism_chart'];
             let endemismData = {};
-            if(!endemismDataChart) {
+            if (!endemismDataChart) {
                 return false;
             }
             $.each(endemismDataChart['keys'], function (index, data) {
