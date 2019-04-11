@@ -396,7 +396,6 @@ define([
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let random_number = Math.random() * 1000000;
-            console.log(element);
             let this_title = `FWBD-Dashboard-Export-{${random_number}}`;
             if (element.length > 0)
                 this.downloadElement(this_title, element);
