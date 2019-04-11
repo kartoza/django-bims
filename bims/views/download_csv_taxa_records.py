@@ -3,7 +3,7 @@ import csv
 from django.http import HttpResponse
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
-from bims.models.taxon import Taxon
+from bims.models.taxonomy import Taxonomy
 from bims.api_views.collection import GetCollectionAbstract
 
 
@@ -38,16 +38,16 @@ def download_csv_site_taxa_records(request):
     if 'biologicalcollectionrecord_ptr' in fields:
         fields.remove('biologicalcollectionrecord_ptr')
 
-    taxon = Taxon.objects.get(pk=taxon_id)
+    taxon = Taxonomy.objects.get(pk=taxon_id)
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = \
-        'attachment; filename="' + taxon.common_name + '.csv"'
+        'attachment; filename="' + taxon.canonical_name + '.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Taxon', taxon.common_name])
+    writer.writerow(['Taxon', taxon.canonical_name])
     writer.writerow(['Total records', len(records)])
-    writer.writerow(['GBIF ID', taxon.gbif_id])
+    writer.writerow(['GBIF ID', taxon.gbif_key])
     writer.writerow([''])
     writer.writerow(fields + ['coordinates'])
 
