@@ -139,7 +139,7 @@ define([
                         })
                     });
                     self.mapLocationSite.addLayer(self.siteTileLayer);
-                    var graticule = new ol.Graticule({
+                    let graticule = new ol.Graticule({
                         strokeStyle: new ol.style.Stroke({
                             color: 'rgba(0,0,0,1)',
                             width: 1,
@@ -333,15 +333,14 @@ define([
             });
         },
         exportLocationsiteMap: function () {
-            // $('.ol-control').hide();
+            $('.ol-control').hide();
             this.mapLocationSite.once('postrender', function (event) {
                 let canvas = $('#locationsite-map');
                 html2canvas(canvas, {
-                    useCORS: true,
+                    useCORS: false,
                     background: '#FFFFFF',
-                    allowTaint: false,
+                    allowTaint: true,
                     onrendered: function (canvas) {
-                        console.log('canvas', canvas);
                         $('.ol-control').show();
                         let link = document.createElement('a');
                         link.setAttribute("type", "hidden");
