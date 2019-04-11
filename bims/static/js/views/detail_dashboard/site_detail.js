@@ -171,6 +171,14 @@ define([
                 url: self.fetchBaseUrl + parameters,
                 dataType: 'json',
                 success: function (data) {
+                    if (data.hasOwnProperty('status')) {
+                        if (data['status'] === 'processing') {
+                            setTimeout(function(){
+                                self.fetchData(parameters);
+                            }, 2000);
+                            return false;
+                        }
+                    }
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
                     if (data['is_multi_sites']) {
