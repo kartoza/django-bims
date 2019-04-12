@@ -321,6 +321,13 @@ class SassDashboardMultipleSitesApiView(APIView):
             index += 1
             eco_region = eco_geo[0]
             geo_class = eco_geo[1]
+
+            # Fix eco_region name
+            eco_region_splits = eco_region.split(' ')
+            if eco_region_splits[0].isdigit():
+                eco_region_splits.pop(0)
+                eco_region = ' '.join(eco_region_splits)
+
             ecological_conditions = SassEcologicalCondition.objects.filter(
                 ecoregion_level_1__icontains=eco_region,
                 geomorphological_zone__icontains=geo_class
