@@ -1,6 +1,7 @@
 # coding=utf8
 import json
 import os
+import hashlib
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count, Value, CharField
 from django.db.models.functions import ExtractYear
@@ -12,6 +13,7 @@ from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
+from bims.tasks.location_site import location_site_summary
 from bims.serializers.location_site_serializer import (
     LocationSiteSerializer,
     LocationSiteClusterSerializer,
@@ -28,9 +30,14 @@ from bims.utils.cluster_point import (
 from bims.api_views.collection import GetCollectionAbstract
 from bims.utils.search_process import (
     get_or_create_search_process,
-    create_search_process_file
+    create_search_process_file,
 )
-from bims.models.search_process import SITES_SUMMARY
+from bims.models.search_process import (
+    SearchProcess,
+    SITES_SUMMARY,
+    SEARCH_FINISHED,
+    SEARCH_PROCESSING
+)
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
 
@@ -209,6 +216,74 @@ class LocationSitesSummary(APIView):
     """
         List cached location site summary based on collection record search.
     """
+
+    def get(self, request):
+        filters = request.GET.dict()
+        search_uri = request.build_absolute_uri()
+
+        search_process, created = get_or_create_search_process(
+            SITES_SUMMARY,
+            query=search_uri
+        )
+
+        if search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
+
+        # Create process id
+        data_for_process_id = dict()
+        data_for_process_id['search_uri'] = search_uri
+        data_for_process_id['collections_total'] = (
+            BiologicalCollectionRecord.objects.all().count()
+        )
+        # Generate unique process id by search uri and total of collections
+        process_id = hashlib.md5(
+            json.dumps(data_for_process_id, sort_keys=True)
+        ).hexdigest()
+        search_process.set_process_id(process_id)
+        search_process.set_status(SEARCH_PROCESSING)
+
+        location_site_summary.delay(
+            filters,
+            search_process.id
+        )
+
+        result_file = search_process.get_file_if_exits(finished=False)
+        if result_file:
+            return Response(result_file)
+        return Response({'status': 'result/status not exists'})
+
+
+class LocationSitesCoordinate(ListAPIView):
+    """
+        List paginated location site based on collection record search,
+        there may be duplication.
+    """
+    serializer_class = LocationSitesCoordinateSerializer
+
+    def get_queryset(self):
+        query_value = self.request.GET.get('search')
+        filters = self.request.GET
+        (
+            collection_results,
+            site_results,
+            fuzzy_search
+        ) = GetCollectionAbstract.apply_filter(
+            query_value,
+            filters,
+            ignore_bbox=True,
+            only_site=True)
+        return collection_results
+
+
+class LocationSiteSummaryGenerator(object):
+    """
+    Generate location site summary
+    """
     COUNT = 'count'
     ORIGIN = 'origin'
     TOTAL_RECORDS = 'total_records'
@@ -228,23 +303,12 @@ class LocationSitesSummary(APIView):
     iucn_category = {}
     origin_name_list = {}
 
-    def get(self, request):
-        filters = request.GET
+    def generate(self, filters, process_id):
         search = SearchVersion2(filters)
         collection_results = search.process_search()
         site_id = filters['siteId']
-        search_process, created = get_or_create_search_process(
-            SITES_SUMMARY,
-            query=request.build_absolute_uri()
-        )
 
-        if search_process.file_path:
-            if os.path.exists(search_process.file_path):
-                try:
-                    raw_data = open(search_process.file_path)
-                    return Response(json.load(raw_data))
-                except ValueError:
-                    pass
+        search_process = SearchProcess.objects.get(id=process_id)
 
         self.iucn_category = dict(
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
@@ -305,6 +369,7 @@ class LocationSitesSummary(APIView):
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
+        search_process.set_status(SEARCH_FINISHED, False)
         cons_status_occurrence = self.get_cons_status_occurrence_data(
             collection_results)
 
@@ -331,17 +396,12 @@ class LocationSitesSummary(APIView):
             'is_multi_sites': is_multi_sites
         }
 
-        file_path = create_search_process_file(
+        search_process.set_status(SEARCH_FINISHED, False)
+        create_search_process_file(
             data=response_data,
             search_process=search_process,
             finished=True
         )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
 
     def occurrence_data(self, collection_results):
         """
@@ -402,7 +462,6 @@ class LocationSitesSummary(APIView):
             'name', flat=True
         ).order_by('name')))
         result['data'] = {}
-        result['data'] = {}
         for dataset_label in labels:
             result['data'][dataset_label] = []
             for dataset_year in years:
@@ -412,8 +471,9 @@ class LocationSitesSummary(APIView):
                 )
                 total_count = 0
                 if dataset_data.exists():
-                    for dataset in dataset_data:
-                        total_count += dataset['count']
+                    total_count = sum(dataset_data.values_list(
+                        'count', flat=True
+                    ))
                 result['data'][dataset_label].append(total_count)
         return result
 
@@ -574,9 +634,6 @@ class LocationSitesSummary(APIView):
             'keys': smd_keys
         }
 
-        biodiversity_data['occurrences'] = [0, 0, 0]
-        biodiversity_data['number_of_taxa'] = [0, 0, 0]
-        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
         return biodiversity_data
 
     def multiple_site_details(self, collection_records):
@@ -628,21 +685,23 @@ class LocationSitesSummary(APIView):
         overview['River'] = site_river
 
         try:
-            eco_region = (context_document
-                          ['context_group_values']
-                          ['eco_geo_group']
-                          ['service_registry_values']
-                          ['eco_region']
-                          ['value'])
+            eco_region = (
+                context_document
+                ['context_group_values']
+                ['eco_geo_group']
+                ['service_registry_values']
+                ['eco_region']
+                ['value'])
         except KeyError:
             eco_region = '-'
         try:
-            geo_class = (context_document
-                         ['context_group_values']
-                         ['eco_geo_group']
-                         ['service_registry_values']
-                         ['geo_class']
-                         ['value'])
+            geo_class = (
+                context_document
+                ['context_group_values']
+                ['eco_geo_group']
+                ['service_registry_values']
+                ['geo_class']
+                ['value'])
         except KeyError:
             geo_class = '-'
         try:
@@ -657,39 +716,43 @@ class LocationSitesSummary(APIView):
         # Catchments
         catchments = dict()
         try:
-            primary_catchment = (context_document
-                                 ['context_group_values']
-                                 ['water_group']
-                                 ['service_registry_values']
-                                 ['primary_catchment_area']
-                                 ['value'])
+            primary_catchment = (
+                context_document
+                ['context_group_values']
+                ['water_group']
+                ['service_registry_values']
+                ['primary_catchment_area']
+                ['value'])
         except KeyError:
             primary_catchment = '-'
         try:
-            secondary_catchment = (context_document
-                                   ['context_group_values']
-                                   ['water_group']
-                                   ['service_registry_values']
-                                   ['secondary_catchment_area']
-                                   ['value'])
+            secondary_catchment = (
+                context_document
+                ['context_group_values']
+                ['water_group']
+                ['service_registry_values']
+                ['secondary_catchment_area']
+                ['value'])
         except KeyError:
             secondary_catchment = '-'
         try:
-            tertiary_catchment_area = (context_document
-                                       ['context_group_values']
-                                       ['water_group']
-                                       ['service_registry_values']
-                                       ['tertiary_catchment_area']
-                                       ['value'])
+            tertiary_catchment_area = (
+                context_document
+                ['context_group_values']
+                ['water_group']
+                ['service_registry_values']
+                ['tertiary_catchment_area']
+                ['value'])
         except KeyError:
             tertiary_catchment_area = '-'
         try:
-            water_management_area = (context_document
-                                     ['context_group_values']
-                                     ['water_group']
-                                     ['service_registry_values']
-                                     ['water_management_area']
-                                     ['value'])
+            water_management_area = (
+                context_document
+                ['context_group_values']
+                ['water_group']
+                ['service_registry_values']
+                ['water_management_area']
+                ['value'])
         except KeyError:
             water_management_area = '-'
         catchments['Primary'] = primary_catchment
@@ -772,25 +835,3 @@ class LocationSitesSummary(APIView):
             return str(data[key]['value'])
         except KeyError:
             return str(0)
-
-
-class LocationSitesCoordinate(ListAPIView):
-    """
-        List paginated location site based on collection record search,
-        there may be duplication.
-    """
-    serializer_class = LocationSitesCoordinateSerializer
-
-    def get_queryset(self):
-        query_value = self.request.GET.get('search')
-        filters = self.request.GET
-        (
-            collection_results,
-            site_results,
-            fuzzy_search
-        ) = GetCollectionAbstract.apply_filter(
-            query_value,
-            filters,
-            ignore_bbox=True,
-            only_site=True)
-        return collection_results
