@@ -123,6 +123,10 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     time_of_day = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
     study_reference = serializers.SerializerMethodField()
+    accredited = serializers.SerializerMethodField()
+
+    def get_accredited(self, obj):
+        return '-'
 
     def get_reference_category(self, obj):
         return obj['reference_category']
@@ -204,6 +208,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
             'longitude',
             'sampling_date',
             'time_of_day',
+            'accredited',
             'sass_version',
             'sass_score',
             'number_of_taxa',
