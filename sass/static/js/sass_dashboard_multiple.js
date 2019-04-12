@@ -123,7 +123,10 @@ function renderSassScoreChart(data) {
     };
     let options = {
         legend: {
-            position: 'bottom'
+            position: 'bottom',
+            labels: {
+                boxWidth: 0,
+            }
         },
         tooltips: {
             enabled: true,

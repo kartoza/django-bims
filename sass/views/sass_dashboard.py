@@ -242,9 +242,16 @@ class SassDashboardView(TemplateView):
                     'service_registry_values']['geo_class']['value'].encode(
                     'utf-8')
             )
+
+            # Fix eco_region name
+            eco_region_splits = eco_region.split(' ')
+            if eco_region_splits[0].isdigit():
+                eco_region_splits.pop(0)
+                eco_region = ' '.join(eco_region_splits)
+
             ecological_conditions = SassEcologicalCondition.objects.filter(
-                ecoregion_level_1__icontains=eco_region,
-                geomorphological_zone__icontains=geo_class
+                ecoregion_level_1__icontains=eco_region.strip(),
+                geomorphological_zone__icontains=geo_class.strip()
             )
 
             if not ecological_conditions:
