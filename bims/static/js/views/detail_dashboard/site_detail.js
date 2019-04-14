@@ -62,7 +62,8 @@ define([
             'click .download-record-timeline': 'downloadRecordTimeline',
             'click .download-collection-timeline': 'downloadCollectionTimeline',
             'click .download-as-csv': 'downloadAsCSV',
-            'click .ssdd-export': 'downloadElementEvent'
+            'click .ssdd-export': 'downloadElementEvent',
+            'click .download-chart-image': 'downloadChartImage',
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -153,10 +154,10 @@ define([
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
                     self.fetchData(data, true);
-                    self.currentFiltersUrl  = '?' + data;
+                    self.currentFiltersUrl = '?' + data;
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
-                    self.currentFiltersUrl  = self.apiParameters(filterParameters);
+                    self.currentFiltersUrl = self.apiParameters(filterParameters);
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
                 }
@@ -176,7 +177,7 @@ define([
                 success: function (data) {
                     if (data.hasOwnProperty('status')) {
                         if (data['status'] === 'processing') {
-                            setTimeout(function(){
+                            setTimeout(function () {
                                 self.fetchData(parameters);
                             }, 2000);
                             return false;
@@ -282,6 +283,7 @@ define([
         },
         clearDashboard: function () {
             var self = this;
+            this.$el.find('.chart-loading').show();
             this.mapLocationSite.removeLayer(this.siteLayerVector);
             this.siteName.html('');
             this.siteNameWrapper.hide();
@@ -411,6 +413,25 @@ define([
             let this_title = `FWBD-Dashboard-Export-{${random_number}}`;
             if (element.length > 0)
                 this.downloadElement(this_title, element);
+        },
+        downloadChartImage: function (e) {
+            let button = $(e.target);
+            if (!button.hasClass('btn')) {
+                button = button.parent();
+            }
+            let target = button.data('datac');
+            let title = button.data('title');
+            let element = this.$el.find('.' + target);
+
+            // Get image
+            let image = element.children('img').attr('src');
+
+            if (image) {
+                let link = document.createElement('a');
+                link.href = image;
+                link.download = title + '.png';
+                link.click();
+            }
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
