@@ -529,6 +529,25 @@
                     </div>
                 </div>
 
+                {# endemism per year bar chart #}
+                <div class="card" id="fish-ssdd-cons-status-bar-chart">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inbar">
+                            Endemism
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="fish-ssdd-cons-status-bar-chart-canvas">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="col-12 fish-ssdd-endemism-bar-chart">
+                            <div class="chart-loading">Fetching...</div>
+                            <div id="fish-ssdd-endemism-chart-canvas"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

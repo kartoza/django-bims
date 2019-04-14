@@ -35,6 +35,7 @@ define([
         vectorLayerFromMainMap: null,
         siteLayerSource: null,
         siteLayerVector: null,
+        currentFiltersUrl: '',
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
@@ -152,8 +153,10 @@ define([
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
                     self.fetchData(data, true);
+                    self.currentFiltersUrl  = '?' + data;
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
+                    self.currentFiltersUrl  = self.apiParameters(filterParameters);
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
                 }
@@ -192,6 +195,7 @@ define([
                     self.createTaxaStackedBarChart(data);
                     self.createOriginStackedBarChart(data);
                     self.createConsStatusStackedBarChart(data);
+                    self.createEndemismStackedBarChart();
 
                     renderFilterList($('#filter-history-table'));
 
@@ -578,6 +582,25 @@ define([
             if (data.hasOwnProperty('cons_status_occurrence')) {
                 this.renderStackedBarChart(data['cons_status_occurrence'], 'cons_status_bar', chartCanvas);
             }
+        },
+        createEndemismStackedBarChart: function () {
+            let chartContainer = this.$el.find('.fish-ssdd-endemism-bar-chart');
+            let width = chartContainer.width();
+            width += 150; // padding
+            let loadingChart = chartContainer.find('.chart-loading');
+            let baseUrl = '/api/location-sites-endemism-chart-data/';
+            baseUrl += this.currentFiltersUrl;
+            baseUrl += '&width=' + width;
+            baseUrl += '&base_64=1';
+            $.get({
+                url: baseUrl,
+                cache: true,
+                processData: false,
+                success: function (data) {
+                    loadingChart.hide();
+                    chartContainer.html('<img alt="" src="' + data + '" />');
+                }
+            })
         },
         renderBarChart: function (data_in, chartName, chartCanvas) {
 
