@@ -77,26 +77,13 @@ class LocationSiteDetail(APIView):
 
     def get(self, request):
         site_id = request.GET.get('siteId')
-        query_value = request.GET.get('search')
         filters = request.GET
 
         # Search collection
-        (
-            collection_results,
-            site_results,
-            fuzzy_search
-        ) = GetCollectionAbstract.apply_filter(
-            query_value,
-            filters,
-            ignore_bbox=True)
-
-        collection_ids = []
-        if collection_results:
-            collection_ids = list(collection_results.values_list(
-                'model_pk',
-                flat=True))
+        search = SearchVersion2(filters)
+        collection_results = search.process_search()
         context = {
-            'collection_ids': collection_ids
+            'collection_results': collection_results
         }
         location_site = self.get_object(site_id)
         serializer = LocationSiteDetailSerializer(
