@@ -363,7 +363,7 @@ class SearchVersion2(object):
                     biologicalcollectionrecord__isnull=False
                 ).distinct()
                 if children:
-                    modules_query = Q(
+                    modules_query = modules_query | Q(
                         **{'taxonomy__in': children}
                     )
             bio = bio.filter(modules_query)

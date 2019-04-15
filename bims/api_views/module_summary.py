@@ -1,10 +1,8 @@
-import copy
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count
+from django.db.models import Count, Q, F, Case, When, Value
 from bims.models import (
     TaxonGroup,
-    Taxonomy,
     BiologicalCollectionRecord,
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
@@ -16,77 +14,39 @@ class ModuleSummary(APIView):
     """
 
     def get(self, request, *args):
-        response_data = {}
+        response_data = dict()
         taxon_groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         )
-
-        taxonomy_filter = 'taxonomy__id'
-        category = 'category'
-
-        summaries = list(BiologicalCollectionRecord.objects.values(
-            taxonomy_filter,
-            category
-        ).annotate(
-            total=Count(taxonomy_filter),
-            total_category=Count(category)
-        ))
-
-        summaries_unprocessed = copy.deepcopy(summaries)
-        for group in taxon_groups:
-            response_data[group.name] = {}
-            taxon_classes = group.taxonomies.all().values_list(
-                'scientific_name', flat=True
-            )
-
-            summary_data = {}
-            summary_taxonomy_ids = []
-
-            for summary in summaries:
-                taxonomy_id = summary[taxonomy_filter]
-                if not taxonomy_id:
-                    continue
-
-                taxonomy = Taxonomy.objects.get(id=taxonomy_id)
-                if not taxonomy:
-                    continue
-
-                class_name = taxonomy.class_name
-                if not class_name:
-                    continue
-                if class_name not in taxon_classes:
-                    continue
-                if class_name not in summary_data:
-                    summary_data[class_name] = {
-                        'total': 0,
-                        'total_site': 0
-                    }
-
-                if summary[category] not in summary_data[class_name]:
-                    summary_data[class_name][summary[category]] = 0
-
-                summary_data[class_name]['total'] += summary['total']
-                summary_data[class_name][summary[category]] += (
-                    summary['total_category']
+        for taxon_group in taxon_groups:
+            taxa = taxon_group.taxonomies.all()
+            response_data[taxon_group.name] = dict()
+            for taxon in taxa:
+                modules_query = Q()
+                children = taxon.get_all_children()
+                children = children.filter(
+                    biologicalcollectionrecord__isnull=False
+                ).distinct()
+                if children:
+                    modules_query = Q(
+                        **{'taxonomy__in': children}
+                    )
+                collections = BiologicalCollectionRecord.objects.filter(
+                    modules_query
                 )
-
-                total_site = len(BiologicalCollectionRecord.objects.filter(
-                    taxonomy__id=taxonomy_id
-                ).values('site__id').distinct())
-                summary_data[class_name]['total_site'] += total_site
-
-                summary_taxonomy_ids.append(taxonomy_id)
-                summaries_unprocessed.remove(summary)
-
-            # Count total sites
-            for taxon_class in taxon_classes:
-                summary_data[taxon_class]['total_site'] = len(
-                    BiologicalCollectionRecord.objects.filter(
-                        taxonomy__id__in=summary_taxonomy_ids
-                    ).values_list('site__id').distinct()
+                response_data[taxon_group.name][taxon.scientific_name] = dict(
+                    collections.annotate(
+                        value=Case(When(category__isnull=False,
+                                        then=F('category')),
+                                   default=Value('Unspecified'))
+                    ).values('value').annotate(
+                        count=Count('value')
+                    ).values_list('value', 'count')
                 )
-
-            response_data[group.name] = summary_data
-            summaries = summaries_unprocessed
-
+                response_data[taxon_group.name][taxon.scientific_name][
+                    'total'] = collections.count()
+                response_data[taxon_group.name][taxon.scientific_name][
+                    'total_site'] = (
+                    collections.distinct('site').count()
+                )
         return Response(response_data)
