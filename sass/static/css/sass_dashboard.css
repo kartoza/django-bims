@@ -170,3 +170,7 @@ body {
 .ecological-alert {
     display: none;
 }
+
+.table {
+    background-color: white !important;
+}
