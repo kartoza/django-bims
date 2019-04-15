@@ -651,24 +651,56 @@ function onDownloadMapClicked(e) {
 }
 
 function renderLocationContextTable() {
-    let $table = $('.sass-info tbody');
-    // River catchments
-    $.each(riverCatchments, function (key, data) {
-        if (data['value']) {
-            $table.append('<tr>\n' +
-                '<th scope="row">' + data['name'] + '</th>' +
-                '<td>' + data['value'] + '</td>\n' +
-                '</tr>')
+    let $table = $('.sass-summary tbody');
+    console.log(riverCatchments);
+    console.log(ecoGeoGroup);
+    let tableData = {
+        'Geomorphological zones': '-',
+        'Province': '-',
+        'Water Management Area': '-',
+        'Sub Water Management Area': '-',
+        'River Management Unit': '-',
+        'Primary Catchment': '-',
+        'Secondary Catchment': '-',
+        'Tertiary Catchment': '-',
+        'Quaternary Catchment': '-',
+        'SA Ecoregion': '-',
+        'National Critical Biodiversity': '-',
+    };
+    
+    if(ecoGeoGroup) {
+        try {
+            tableData['Geomorphological zones'] = ecoGeoGroup['geo_class_recoded']['value'];
+            tableData['SA Ecoregion'] = ecoGeoGroup['eco_region']['value'];
+            tableData['National Critical Biodiversity'] = ecoGeoGroup['national_cba']['value'];
+        } catch (e) {
         }
+    }
+    
+    if (politicalBoundary) {
+        try {
+            tableData['Province'] = politicalBoundary['sa_provinces']['value'];
+        } catch (e) {
+        }
+    }
+    
+    if (riverCatchments) {
+        try {
+            tableData['Primary Catchment'] = riverCatchments['primary_catchment_area']['value'];
+            tableData['Secondary Catchment'] = riverCatchments['secondary_catchment_area']['value'];
+            tableData['Tertiary Catchment'] = riverCatchments['tertiary_catchment_area']['value'];
+            tableData['Water Management Area'] = riverCatchments['water_management_area']['value'];
+            tableData['Quaternary Catchment'] = riverCatchments['quaternary_catchment_area']['value'];
+        } catch (e) {
+        }
+    }
+
+    $.each(tableData, function (key, value) {
+        $table.append('<tr>\n' +
+            '<th scope="row"> ' + key + ' </th>' +
+            '<td>' + value + '</td>\n' +
+            '</tr>');
     });
-    $.each(ecoGeoGroup, function (key, data) {
-        if (data['value']) {
-            $table.append('<tr>\n' +
-                '<th scope="row">' + data['name'] + '</th>' +
-                '<td>' + data['value'] + '</td>\n' +
-                '</tr>')
-        }
-    })
 }
 
 function renderMetricsData() {

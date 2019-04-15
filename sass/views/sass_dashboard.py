@@ -324,6 +324,7 @@ class SassDashboardView(TemplateView):
         context['site_code'] = self.location_site.site_code
         context['site_id'] = self.location_site.id
         context['site_description'] = self.location_site.site_description
+        context['river'] = self.location_site.river.name
 
         if not self.site_visit_taxa:
             context['sass_exists'] = False
@@ -357,6 +358,12 @@ class SassDashboardView(TemplateView):
                 json.dumps(
                     location_context['context_group_values'][
                         'eco_geo_group']['service_registry_values']
+                )
+            )
+            context['political_boundary'] = (
+                json.dumps(
+                    location_context['context_group_values'][
+                        'political_boundary_group']['service_registry_values']
                 )
             )
         except (KeyError, TypeError):
