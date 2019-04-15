@@ -702,7 +702,13 @@ define([
             let overview = siteDetailsWrapper.find('#overview');
             overview.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
             let catchments = siteDetailsWrapper.find('#catchments');
-            catchments.html(this.renderTableFromTitlesValuesLists(data['site_details']['catchments']));
+            let catchmentsData = data['site_details']['catchments'];
+            let orderedCatchments = {};
+            orderedCatchments['Primary'] = catchmentsData['Primary'];
+            orderedCatchments['Secondary'] = catchmentsData['Secondary'];
+            orderedCatchments['Tertiary'] = catchmentsData['Tertiary'];
+            orderedCatchments['Quaternary'] = catchmentsData['Quaternary'];
+            catchments.html(this.renderTableFromTitlesValuesLists(orderedCatchments));
 
             let sub_water_management_areas = siteDetailsWrapper.find('#sub_water_management_areas');
             sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(data['site_details']['sub_water_management_areas']));
@@ -868,7 +874,7 @@ define([
             occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list'], data['origin_name_list']));
         },
         renderOccurrenceData: function (occurrenceData, conservationStatusList, originCategoryList) {
-            let occurrenceTable = $('<table class="table table-bordered site-detailed-table">');
+            let occurrenceTable = $('<table class="table table-bordered table-condensed table-sm site-detailed-table">');
             occurrenceTable.append("<thead>\n" +
                 "      <tr>\n" +
                 "        <th>Taxon</th>\n" +
