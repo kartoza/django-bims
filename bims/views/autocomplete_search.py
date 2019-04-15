@@ -8,6 +8,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
 from bims.models.taxon_group import TaxonGroup
+from sass.models.river import River
 
 
 def autocomplete(request):
@@ -48,6 +49,18 @@ def autocomplete(request):
             values('site_id', 'suggested_name')[:10]
         )
         suggestions.extend(sites)
+
+    if len(suggestions) < 10:
+        rivers = list(
+            River.objects.filter(
+                name__icontains=q,
+                locationsite__biological_collection_record__isnull=False,
+                locationsite__biological_collection_record__validated=True,
+            ).distinct('id').
+            annotate(river_id=F('id'), suggested_name=F('name')).
+            values('river_id', 'suggested_name')[:10]
+        )
+        suggestions.extend(rivers)
 
     the_data = json.dumps({
         'results': suggestions

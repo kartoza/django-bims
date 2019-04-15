@@ -229,7 +229,8 @@ class SearchVersion2(object):
             bio = BiologicalCollectionRecord.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
                 Q(taxonomy__scientific_name__icontains=self.search_query) |
-                Q(site__site_code__icontains=self.search_query)
+                Q(site__site_code__icontains=self.search_query) |
+                Q(site__river__name__icontains=self.search_query)
             )
             if not bio:
                 # Search by vernacular names
