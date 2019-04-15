@@ -251,8 +251,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         site_visit_taxon_list = None
         if self.sass_version == 4:
             taxon_filters['score__isnull'] = False
+            taxon_filters['taxon_sass_4__isnull'] = False
         else:
             taxon_filters['sass_5_score__isnull'] = False
+            taxon_filters['taxon_sass_5__isnull'] = False
         sass_taxon_list = SassTaxon.objects.filter(**taxon_filters).order_by(
             'display_order_sass_%s' % self.sass_version
         )
@@ -269,13 +271,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
                 sass_taxon_score = sass_taxon.sass_5_score
+                sass_taxon_name = sass_taxon.taxon_sass_5
             else:
                 sass_taxon_score = sass_taxon.score
-
-            if sass_taxon.taxon_sass_4:
                 sass_taxon_name = sass_taxon.taxon_sass_4
-            else:
-                sass_taxon_name = sass_taxon.taxon_sass_5
 
             taxon_dict = {
                 'name': sass_taxon_name.upper(),
