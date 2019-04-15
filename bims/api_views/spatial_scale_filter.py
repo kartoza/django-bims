@@ -7,6 +7,11 @@ from bims.views.fish_form import RIVER_CATCHMENT_ORDER
 
 class SpatialScaleFilterList(APIView):
     """API for listing all spatial scale filter"""
+    SPATIAL_FILTER_TO_EXCLUDE = [
+        'Geomorphological Zones',
+        'Ecological Region',
+        'Geomorphological zones',
+    ]
 
     def get_spatial_scale(self, spatial_scale_groups):
         spatial_tree = []
@@ -15,7 +20,11 @@ class SpatialScaleFilterList(APIView):
         for spatial_scale in spatial_scale_groups:
             spatial_scale_children = SpatialScaleGroup.objects.filter(
                 parent=spatial_scale
-            )
+            ).exclude(name__in=self.SPATIAL_FILTER_TO_EXCLUDE)
+            if spatial_scale.name.lower() == (
+                'geomorphological zones - recoded'):
+                spatial_scale.name = 'Geomorphological Zones'
+
             spatial_tree_data = {
                 'id': spatial_scale.id,
                 'key': spatial_scale.key,
@@ -28,7 +37,8 @@ class SpatialScaleFilterList(APIView):
             else:
                 spatial_tree_data['value'] = list(
                     SpatialScale.objects.filter(
-                        group=spatial_scale
+                        group=spatial_scale,
+                        type='select'
                     ).values(
                         'id',
                         'query',
@@ -57,12 +67,21 @@ class SpatialScaleFilterList(APIView):
                             break
                 group['children'] = ordered_river
 
+    def fix_spatial_filters(self, spatial_scale_list):
+        new_spatial_list = []
+        for group in spatial_scale_list:
+            if 'value' in group and not group['value']:
+                continue
+            new_spatial_list.append(group)
+        return new_spatial_list
+
     def get(self, request, *args):
         spatial_scale_groups = SpatialScaleGroup.objects.filter(
             parent__isnull=True
         )
         groups = self.get_spatial_scale(spatial_scale_groups)
         self.order_river_catchments(groups)
+        groups = self.fix_spatial_filters(groups)
 
         return Response(
             groups
