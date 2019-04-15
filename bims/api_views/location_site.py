@@ -733,6 +733,16 @@ class LocationSiteSummaryGenerator(object):
         except KeyError:
             tertiary_catchment_area = '-'
         try:
+            quaternary_catchment_area = (
+                context_document
+                ['context_group_values']
+                ['water_group']
+                ['service_registry_values']
+                ['quaternary_catchment_area']
+                ['value'])
+        except KeyError:
+            quaternary_catchment_area = '-'
+        try:
             water_management_area = (
                 context_document
                 ['context_group_values']
@@ -745,8 +755,8 @@ class LocationSiteSummaryGenerator(object):
         catchments['Primary'] = primary_catchment
         catchments['Secondary'] = secondary_catchment
         catchments['Tertiary'] = tertiary_catchment_area
-        catchments['Quaternary'] = 'Coming Soon'
-        catchments['Quinary'] = 'Coming Soon'
+        catchments['Quaternary'] = quaternary_catchment_area
+        catchments['Quinary'] = '-'
 
         sub_water_management_areas = dict()
         sub_water_management_areas['Sub-Water Management Areas'] = '-'
@@ -765,7 +775,19 @@ class LocationSiteSummaryGenerator(object):
                                              ['value']))
         except KeyError:
             province = '-'
-        sa_ecoregions['Ecoregion Level 1'] = '-'
+
+
+        try:
+            eco_region = self.parse_string(str(context_document
+                                               ['context_group_values']
+                                               ['eco_geo_group']
+                                               ['service_registry_values']
+                                               ['eco_region']
+                                               ['value']))
+        except KeyError:
+            eco_region = '-'
+
+        sa_ecoregions['Ecoregion Level 1'] = eco_region
         sa_ecoregions['Ecoregion Level 2'] = '-'
         sa_ecoregions['Freshwater Ecoregion'] = '-'
         sa_ecoregions['Province'] = province
