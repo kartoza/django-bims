@@ -1,8 +1,10 @@
+import matplotlib
+matplotlib.use('Agg')  # noqa
+import io
 from collections import OrderedDict
 from rest_framework.views import APIView
 import pandas as pd
 import matplotlib.pyplot as plt
-import io
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from django.http import HttpResponse

@@ -165,16 +165,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             }
         },
         openFishDetailedSiteButton: function () {
-            let fishModuleId = Shared.FishModuleID;
-            let listModulesParameter = filterParameters['modules'].split(',');
-            listModulesParameter = listModulesParameter.filter(Boolean);
-            for (let i = 0; i < listModulesParameter; i++) {
-                if (listModulesParameter[i] === fishModuleId) {
-                    listModulesParameter.splice(i, 1);
-                }
-            }
-            listModulesParameter.push(fishModuleId);
-            filterParameters['modules'] = listModulesParameter.join();
+            filterParameters['modules'] = Shared.FishModuleID;
             if (this.siteDetailData) {
                 Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', this.siteDetailData);
             }
