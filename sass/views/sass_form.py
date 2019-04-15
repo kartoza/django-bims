@@ -379,7 +379,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             self.site_code = location_site.site_code
             if not self.site_code:
                 self.site_code = location_site.name
-            self.sass_version = request.GET.get('sass_version', 5)
+            self.sass_version = int(request.GET.get('sass_version', 5))
         else:
             self.site_visit = get_object_or_404(
                 SiteVisit,
