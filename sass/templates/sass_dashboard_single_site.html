@@ -41,6 +41,7 @@
             const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
             const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
             const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
+            const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -60,7 +61,7 @@
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <table class="table table-striped">
+                        <table class="sass-summary table table-striped">
                             <tbody>
                             <tr>
                                 <th scope="row">FBIS Site Code</th>
@@ -73,6 +74,10 @@
                             <tr>
                                 <th scope="row">Site description</th>
                                 <td>{{ site_description }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">River</th>
+                                <td>{{ river }}</td>
                             </tr>
                             </tbody>
                         </table>
@@ -304,6 +309,10 @@
                             <tr>
                                 <th scope="row">Site description</th>
                                 <td>{{ site_description }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">River</th>
+                                <td>{{ river }}</td>
                             </tr>
                             </tbody>
                         </table>
