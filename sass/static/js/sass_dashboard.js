@@ -109,7 +109,19 @@ function renderSASSSummaryChart() {
     function scalesOptionFunction(label) {
         return {
             xAxes: [{
-                display: false
+                type: 'time',
+                distribution: 'series',
+                time: {
+                    parser: 'DD-MM-YYYY',
+                    unit: 'year',
+                    displayFormats: {
+                        year: 'YYYY'
+                    }
+                },
+                ticks: {
+                    source: 'labels'
+                },
+                offset: true
             }],
             yAxes: [{
                 ticks: {
