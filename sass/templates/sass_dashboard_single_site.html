@@ -132,9 +132,14 @@
                             SASS Taxa per biotope
                             <span class="pull-right">
                             {{ sass_taxon_table_data.site_visit_date }}
+                            <i data-download-title="SASS Taxa per biotope - {{ sass_taxon_table_data.site_visit_date }}"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download table as PNG"
+                               class="fa fa-download pull-right download-icon download-table"></i>
                         </span>
                         </div>
-                        <table id="sass-taxon-per-biotope-table" class="table table-condensed table-striped sass-taxon-per-biotope-table">
+                        <table id="sass-taxon-per-biotope-table"
+                               class="table table-condensed table-striped sass-taxon-per-biotope-table">
                             <thead>
                             <tr>
                                 <th>
@@ -204,7 +209,7 @@
                 </div>
                 <div class="col-md-6 mp">
                     <div class="chart-container">
-                        <img width="100%" src="{% static 'img/river.jpg' %}" />
+                        <img width="100%" src="{% static 'img/river.jpg' %}"/>
                     </div>
                     <div class="vertical-space"></div>
                     <div class="chart-container">
@@ -236,7 +241,8 @@
                         </div>
                         <canvas id="sensitivity-chart"></canvas>
                         <p style="padding-top: 15px; font-size: 11pt; margin-bottom: 0px; text-align: center">
-                            This chart shows the data for the latest SASS Record <span id="sc-latest-sass-record"></span>
+                            This chart shows the data for the latest SASS
+                            Record <span id="sc-latest-sass-record"></span>
                         </p>
                     </div>
                     <div class="vertical-space"></div>
