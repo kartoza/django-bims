@@ -234,7 +234,7 @@ class LocationSitesSummary(APIView):
         search_process.set_process_id(process_id)
         search_process.set_status(SEARCH_PROCESSING)
 
-        location_site_summary(
+        location_site_summary.delay(
             filters,
             search_process.id
         )
