@@ -185,9 +185,18 @@ define([
                     }
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
+                    console.log(data['is_sass_exists']);
                     if (data['is_multi_sites']) {
                         $('#fish-ssdd-site-details').hide();
                         self.createMultiSiteDetails(data);
+                        let sassDashboardButton = $('#sass-dashboard-button');
+                        sassDashboardButton.show();
+                        if (!data['is_sass_exists']) {
+                            sassDashboardButton.addClass('disabled');
+                        } else {
+                            let sassLink = '/sass/dashboard-multi-sites/' + self.currentFiltersUrl;
+                            sassDashboardButton.attr('href', sassLink);
+                        }
                     } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
@@ -284,6 +293,10 @@ define([
         clearDashboard: function () {
             var self = this;
             this.$el.find('.chart-loading').show();
+            let sassDashboardButton = $('#sass-dashboard-button');
+            sassDashboardButton.hide();
+            sassDashboardButton.removeClass('disabled');
+            sassDashboardButton.attr('href', '#');
             this.mapLocationSite.removeLayer(this.siteLayerVector);
             this.siteName.html('');
             this.siteNameWrapper.hide();
