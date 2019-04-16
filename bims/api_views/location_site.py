@@ -234,7 +234,7 @@ class LocationSitesSummary(APIView):
         search_process.set_process_id(process_id)
         search_process.set_status(SEARCH_PROCESSING)
 
-        location_site_summary.delay(
+        location_site_summary(
             filters,
             search_process.id
         )
@@ -666,9 +666,14 @@ class LocationSiteSummaryGenerator(object):
                 lat=self.parse_string(location_site.latitude)
             )
         )
-        overview['Site description'] = self.parse_string(
-            location_site.site_description
-        )
+        if location_site.site_description:
+            overview['Site description'] = self.parse_string(
+                location_site.site_description
+            )
+        else:
+            overview['Site description'] = self.parse_string(
+                location_site.name
+            )
         overview['River'] = site_river
 
         try:
