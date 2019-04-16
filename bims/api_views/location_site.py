@@ -3,7 +3,7 @@ import json
 import os
 import hashlib
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q, F, Count, Value, CharField
+from django.db.models import Q, F, Count, Value, CharField, Case, When
 from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
@@ -344,6 +344,7 @@ class LocationSiteSummaryGenerator(object):
             count=Count('category')
         )
         is_multi_sites = False
+        is_sass_exists = False
 
         if site_id:
             site_details = self.get_site_details(site_id)
@@ -352,6 +353,9 @@ class LocationSiteSummaryGenerator(object):
         else:
             is_multi_sites = True
             site_details = self.multiple_site_details(collection_results)
+            is_sass_exists = collection_results.filter(
+                notes__icontains='sass'
+            ).exists()
         origin_occurrence = self.get_origin_occurrence_data(collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
@@ -380,7 +384,8 @@ class LocationSiteSummaryGenerator(object):
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id,
-            'is_multi_sites': is_multi_sites
+            'is_multi_sites': is_multi_sites,
+            'is_sass_exists': is_sass_exists
         }
 
         search_process.set_status(SEARCH_FINISHED, False)
@@ -398,9 +403,13 @@ class LocationSiteSummaryGenerator(object):
         """
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
-            origin=F('category'),
+            origin=Case(When(category__isnull=False,
+                             then=F('category')),
+                        default=Value('Unspecified')),
             cons_status=F('taxonomy__iucn_status__category'),
-            endemism=F('taxonomy__endemism__name'),
+            endemism=Case(When(taxonomy__endemism__isnull=False,
+                               then=F('taxonomy__endemism__name')),
+                          default=Value('Unspecified')),
         ).values(
             'taxon', 'origin', 'cons_status', 'endemism'
         ).annotate(
@@ -472,7 +481,9 @@ class LocationSiteSummaryGenerator(object):
         """
         origin_graph_data = collection_records.annotate(
             year=ExtractYear('collection_date'),
-            name=F('category'),
+            name=Case(When(category__isnull=False,
+                           then=F('category')),
+                      default=Value('Unspecified'))
         ).values(
             'year', 'name'
         ).annotate(
@@ -543,7 +554,9 @@ class LocationSiteSummaryGenerator(object):
         biodiversity_data['species']['endemism_chart'] = {}
         biodiversity_data['species']['sampling_method_chart'] = {}
         origin_by_name_data = collection_results.annotate(
-            name=F('category')
+            name=Case(When(category__isnull=False,
+                           then=F('category')),
+                      default=Value('Unspecified'))
         ).values(
             'name'
         ).annotate(

@@ -80,7 +80,13 @@ function renderFilterList($table) {
             } else if (data['type'] === 'string') {
                 tableData[data['label']] = urlParams[key];
             } else if (data['type'] === 'json') {
-                tableData[data['label']] = JSON.parse(decodeURIComponent(urlParams[key]));
+                let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
+                try {
+                    if (typeof json_data !== 'undefined' && json_data.length > 0) {
+                        tableData[data['label']] = json_data;
+                    }
+                } catch (e) {
+                }
             }
         }
     });
