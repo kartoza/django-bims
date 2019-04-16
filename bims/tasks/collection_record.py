@@ -70,9 +70,19 @@ def download_data_to_csv(path_file, request):
             headers = serializer.data[0].keys()
             rows = serializer.data
 
+            formatted_headers = []
+            # Rename headers
+            for header in headers:
+                if header == 'class_name':
+                    header = 'class'
+                header = header.replace('_or_', '/')
+                header = header.replace('_', ' ').capitalize()
+                formatted_headers.append(header)
+
             with open(path_file, 'wb') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=headers)
+                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
+                writer.fieldnames = headers
                 for row in rows:
                     writer.writerow(row)
 

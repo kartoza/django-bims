@@ -131,7 +131,39 @@ class Taxonomy(DocumentLinksMixin):
         if self.rank != TaxonomicRank.CLASS.name and self.parent:
             return self.parent.class_name
         elif self.rank == TaxonomicRank.CLASS.name:
-            return self.scientific_name
+            return self.canonical_name
+        return ''
+
+    @property
+    def phylum_name(self):
+        if self.rank != TaxonomicRank.PHYLUM.name and self.parent:
+            return self.parent.phylum_name
+        elif self.rank == TaxonomicRank.PHYLUM.name:
+            return self.canonical_name
+        return ''
+
+    @property
+    def order_name(self):
+        if self.rank != TaxonomicRank.ORDER.name and self.parent:
+            return self.parent.order_name
+        elif self.rank == TaxonomicRank.ORDER.name:
+            return self.canonical_name
+        return ''
+
+    @property
+    def family_name(self):
+        if self.rank != TaxonomicRank.FAMILY.name and self.parent:
+            return self.parent.family_name
+        elif self.rank == TaxonomicRank.FAMILY.name:
+            return self.canonical_name
+        return ''
+
+    @property
+    def genus_name(self):
+        if self.rank != TaxonomicRank.GENUS.name and self.parent:
+            return self.parent.genus_name
+        elif self.rank == TaxonomicRank.GENUS.name:
+            return self.canonical_name
         return ''
 
     @property

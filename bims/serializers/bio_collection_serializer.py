@@ -6,6 +6,7 @@ from bims.serializers.taxon_serializer import (
     TaxonSerializer,
     TaxonExportSerializer
 )
+from bims.models.iucn_status import IUCNStatus
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -81,20 +82,46 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     """
     Serializer for biological collection record.
     """
-    location_site = serializers.SerializerMethodField()
+    fbis_site_code = serializers.SerializerMethodField()
+    site_description = serializers.SerializerMethodField()
+    river_name = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
-    date = serializers.SerializerMethodField()
-    collector = serializers.SerializerMethodField()
-    taxon_class = serializers.SerializerMethodField()
-    reference = serializers.SerializerMethodField()
+    sampling_date = serializers.SerializerMethodField()
+    taxon_name = serializers.SerializerMethodField()
+    collector_or_assessor = serializers.SerializerMethodField()
+    study_reference = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
+    endemism = serializers.SerializerMethodField()
+    conservation_status = serializers.SerializerMethodField()
+    phylum = serializers.SerializerMethodField()
+    class_name = serializers.SerializerMethodField()
+    order = serializers.SerializerMethodField()
+    family = serializers.SerializerMethodField()
+    genus = serializers.SerializerMethodField()
+    species = serializers.SerializerMethodField()
 
-    def get_taxon_class(self, obj):
-        return obj.taxonomy.class_name
+    def get_conservation_status(self, obj):
+        if obj.taxonomy.iucn_status:
+            category = dict(IUCNStatus.CATEGORY_CHOICES)
+            try:
+                return category[obj.taxonomy.iucn_status.category]
+            except KeyError:
+                pass
+        return 'Unspecified'
 
-    def get_location_site(self, obj):
+    def get_fbis_site_code(self, obj):
+        return obj.site.site_code
+
+    def get_river_name(self, obj):
+        if obj.site.river:
+            return obj.site.river.name
+        return 'Unspecified'
+
+    def get_site_description(self, obj):
+        if obj.site.site_description:
+            return obj.site.site_description.encode('utf8')
         return obj.site.name.encode('utf8')
 
     def get_latitude(self, obj):
@@ -113,26 +140,68 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
         return category.encode('utf8')
 
-    def get_date(self, obj):
+    def get_endemism(self, obj):
+        if obj.taxonomy.endemism:
+            return obj.taxonomy.endemism.name
+        return 'Unspecified'
+
+    def get_sampling_date(self, obj):
         if obj.collection_date:
             return obj.collection_date.strftime('%Y-%m-%d')
 
-    def get_reference(self, obj):
+    def get_study_reference(self, obj):
         return obj.reference.encode('utf8')
+
+    def get_taxon_name(self, obj):
+        return obj.taxonomy.canonical_name
+
+    def get_class_name(self, obj):
+        return obj.taxonomy.class_name
+
+    def get_phylum(self, obj):
+        return obj.taxonomy.phylum_name
+
+    def get_order(self, obj):
+        return obj.taxonomy.order_name
+
+    def get_family(self, obj):
+        return obj.taxonomy.family_name
+
+    def get_genus(self, obj):
+        return obj.taxonomy.genus_name
+
+    def get_species(self, obj):
+        return obj.taxonomy.scientific_name
 
     def get_reference_category(self, obj):
         return obj.reference_category.encode('utf8')
 
-    def get_collector(self, obj):
+    def get_collector_or_assessor(self, obj):
         return obj.collector.encode('utf8')
 
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
-            'location_site', 'latitude', 'longitude',
-            'original_species_name', 'notes', 'origin',
-            'date', 'collector', 'taxon_class',
-            'reference', 'reference_category']
+            'fbis_site_code',
+            'site_description',
+            'river_name',
+            'latitude',
+            'longitude',
+            'sampling_date',
+            'phylum',
+            'class_name',
+            'order',
+            'family',
+            'genus',
+            'species',
+            'taxon_name',
+            'origin',
+            'endemism',
+            'conservation_status',
+            'reference_category',
+            'study_reference',
+            'collector_or_assessor'
+        ]
 
     def to_representation(self, instance):
         result = super(
