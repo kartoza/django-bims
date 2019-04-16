@@ -356,24 +356,22 @@ class SearchVersion2(object):
                 pk__in=self.modules
             ).values_list('taxonomies', flat=True).distinct('taxonomies')
             taxa = Taxonomy.objects.filter(pk__in=taxon_groups)
-            modules_query = None
+            all_children = []
             for taxon in taxa:
                 children = taxon.get_all_children()
                 children = children.filter(
                     biologicalcollectionrecord__isnull=False
-                ).distinct()
-                if modules_query is None:
-                    modules_query = Q(
-                        **{'taxonomy__in': children}
-                    )
+                ).exclude(id__in=all_children).distinct()
+                if not children:
+                    all_children.append(taxon.id)
                 else:
-                    modules_query = modules_query | Q(
-                        **{'taxonomy__in': children}
+                    all_children.extend(
+                        list(children.values_list('id', flat=True))
                     )
-            if not modules_query:
+            if not all_children:
                 bio = bio.filter(taxonomy__isnull=True)
             else:
-                bio = bio.filter(modules_query)
+                bio = bio.filter(taxonomy__in=all_children)
 
         self.location_sites_raw_query = bio.distinct('site').values(
             'site_id',

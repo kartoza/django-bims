@@ -323,7 +323,10 @@ class SassDashboardView(TemplateView):
         ]
         context['site_code'] = self.location_site.site_code
         context['site_id'] = self.location_site.id
-        context['site_description'] = self.location_site.site_description
+        site_description = self.location_site.site_description
+        if not site_description:
+            site_description = self.location_site.name
+        context['site_description'] = site_description
         context['river'] = self.location_site.river.name
 
         if not self.site_visit_taxa:
