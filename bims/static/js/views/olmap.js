@@ -215,7 +215,9 @@ define([
                         $.ajax({
                             url: '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10',
                             success: function (data) {
-                                if (data.length > 0) {
+                                if (self.uploadDataState) {
+                                    self.mapControlPanel.showUploadDataModal(lon, lat, data[0]);
+                                } else if (data.length > 0) {
                                     Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code']);
                                 }
                             }

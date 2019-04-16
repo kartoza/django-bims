@@ -144,12 +144,10 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/referen
             this.map.addLayer(this.vectorLayer);
 
             if(this.siteFeature) {
-                var site_coordinates =  ol.proj.transform(this.siteFeature.getGeometry().getCoordinates(), 'EPSG:3857', 'EPSG:4326');
-                this.lon = site_coordinates[0];
-                this.lat = site_coordinates[1];
-                var properties = this.siteFeature.getProperties();
-                if(properties.hasOwnProperty('name')) {
-                    $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
+                this.lon = this.siteFeature['longitude'];
+                this.lat = this.siteFeature['latitude'];
+                if(this.siteFeature.hasOwnProperty('name')) {
+                    $('#ud_location_site').val(this.siteFeature['name']);
                     this.addNewSiteButton.show();
                 }
             }
@@ -178,9 +176,8 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/referen
                 field.value = '';
             });
             if(this.siteFeature && exceptions.indexOf('ud_location_site') === -1) {
-                var properties = this.siteFeature.getProperties();
-                if(properties.hasOwnProperty('name'))
-                    $('#ud_location_site').val(this.siteFeature.getProperties()['name']);
+                if(this.siteFeature.hasOwnProperty('name'))
+                    $('#ud_location_site').val(this.siteFeature['name']);
             }
 
             this.referencesSelectDiv.val('').trigger('chosen:updated');
