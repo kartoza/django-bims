@@ -17,7 +17,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         events: {
             'click .close-dashboard': 'closeDashboard',
             'click #export-taxasite-map': 'exportTaxasiteMap',
-            'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline'
+            'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline',
+            'click .ssdd-export': 'downloadElementEvent'
         },
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
 
@@ -280,6 +281,29 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             self.recordsAreaTable.html($tableArea);
             var thirdPartyData = this.renderThirdPartyData(data);
             this.imagesCard.append(thirdPartyData);
+        },
+        downloadElementEvent: function (button_el) {
+            let button = $(button_el.target);
+            if (!button.hasClass('btn')) {
+                button = button.parent();
+            }
+            let target = button.data('datac');
+            let element = this.$el.find('#' + target);
+            let random_number = Math.random() * 1000000;
+            let this_title = `FWBD-Dashboard-Export-{${random_number}}`;
+            if (element.length > 0)
+                this.downloadElement(this_title, element);
+        },
+        downloadElement: function (title, element) {
+            element[0].scrollIntoView();
+            html2canvas(element, {
+                onrendered: function (canvas) {
+                    var link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                    link.download = title + '.png';
+                    link.click();
+                }
+            })
         },
         clearDashboard: function () {
             $.each(this.conservationStatusList.children(), function (key, data) {

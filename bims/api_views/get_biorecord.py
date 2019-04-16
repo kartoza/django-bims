@@ -134,7 +134,7 @@ class BioCollectionSummary(APIView):
         taxonomy_parent = taxonomy.parent
         while taxonomy_parent:
             taxonomy_rank[taxonomy_parent.rank] = (
-                taxonomy_parent.scientific_name
+                taxonomy_parent.canonical_name
             )
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank

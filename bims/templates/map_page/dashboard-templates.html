@@ -85,7 +85,7 @@
                                 <div class="card-body">
                                     <div class="records-per-area-taxonomy-table dashboard-table"
                                          style="margin-top: 10px; margin-bottom: 10px"></div>
-                                    <div class="dashboard-table records-area-table"></div>
+                                    <div class="dashboard-table records-area-table" id="records-area-table"></div>
                                 </div>
                             </div>
                         </div>
@@ -99,6 +99,10 @@
                                     <div class="card-header-title pull-left d-inline">
                                         Occurrences
                                     </div>
+                                    <button class="ssdd-export btn btn-default pull-right"
+                                            data-datac="taxa-records-timeline-graph">
+                                        <i class="fa fa-download"></i>
+                                    </button>
                                 </div>
                                 <div class="card-body">
                                     <canvas id="taxa-records-timeline-graph"></canvas>
@@ -114,6 +118,10 @@
                                     <div class="card-header-title pull-left d-inline">
                                         Origin
                                     </div>
+                                    <button class="ssdd-export btn btn-default pull-right"
+                                            data-datac="origin-block-data">
+                                        <i class="fa fa-download"></i>
+                                    </button>
                                 </div>
                                 <div id="origin-block-data">
                                 </div>
@@ -127,6 +135,10 @@
                                     <div class="card-header-title pull-left d-inline">
                                         Endemism
                                     </div>
+                                    <button class="ssdd-export btn btn-default pull-right"
+                                            data-datac="endemism-block-data">
+                                        <i class="fa fa-download"></i>
+                                    </button>
                                 </div>
                                 <div id="endemism-block-data">
                                 </div>
@@ -141,6 +153,10 @@
                                     <div class="card-header-title pull-left d-inline">
                                         Conservation Status
                                     </div>
+                                    <button class="ssdd-export btn btn-default pull-right"
+                                            data-datac="fsdd-conservation-status-card">
+                                        <i class="fa fa-download"></i>
+                                    </button>
                                 </div>
                                 <div id="fsdd-conservation-status-card">
                                 </div>
@@ -536,7 +552,8 @@
                             Endemism
                         </div>
                         <button class="download-chart-image btn btn-default pull-right"
-                                data-datac="fish-ssdd-endemism-bar-chart" data-title="endemism-chart-per-year">
+                                data-datac="fish-ssdd-endemism-bar-chart"
+                                data-title="endemism-chart-per-year">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
