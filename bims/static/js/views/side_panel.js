@@ -6,10 +6,14 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         returnButton: null,
         validationMode: false,
         siteDetailData: null,
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         events: {
             'click .close-panel': 'closeSidePanel',
             'click .open-detailed-site-button' : 'openDetailedSiteButton',
-            'click .open-fish-detailed-site-button' : 'openFishDetailedSiteButton'
+            'click .open-fish-detailed-site-button' : 'openFishDetailedSiteButton',
+            'click #rp-view-fish-form': 'openFishPanel',
+            'click #rp-add-sass': 'addSassPanel',
+            'click #rp-view-sass': 'viewSassPanel'
         },
         initialize: function () {
             // Events
@@ -169,6 +173,15 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             if (this.siteDetailData) {
                 Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', this.siteDetailData);
             }
+        },
+        openFishPanel: function () {
+            window.location.href = "/fish-form/?siteId=" + filterParameters['siteId'];
+        },
+        addSassPanel: function () {
+            window.location.href = "/sass/" + filterParameters['siteId'];
+        },
+        viewSassPanel: function () {
+            window.location.href = "/sass/dashboard/" + filterParameters['siteId'] + '/' + this.apiParameters(filterParameters);
         }
     })
 });

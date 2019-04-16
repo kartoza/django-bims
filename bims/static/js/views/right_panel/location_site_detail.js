@@ -379,8 +379,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     self.renderMonthlyLineChart(data['climate_data'], 'temperature');
                     self.renderMonthlyLineChart(data['climate_data'], 'rainfall');
 
-                    self.insertDashboardButtons();
-
                     Shared.LocationSiteDetailXHRRequest = null;
                 },
                 error: function (req, err) {
@@ -393,24 +391,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             return arr.reduce(function (flat, toFlatten) {
                 return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
             }, []);
-        },
-        insertDashboardButtons: function () {
-            // Add detail dashboard buttons
-
-            if (is_sass_enabled) {
-                var sassDetailedDashboardButton = `<span><a 
-                    href="/sass/dashboard/${this.parameters['siteId']}/${this.apiParameters(this.parameters)}">VIEW SASS</a></span>`;
-                var sassButton = `<span><a 
-                    href="/sass/${this.parameters['siteId']}">ADD SASS</a></span>`;
-                var rp_view_sass_container = document.getElementById('rp-view-sass');
-                rp_view_sass_container.innerHTML = sassDetailedDashboardButton;
-                var rp_add_sass_container = document.getElementById('rp-add-sass')
-                rp_add_sass_container.innerHTML = sassButton;
-            }
-
-            var fishFormButton = `<span><a href="/fish-form/?siteId=${this.parameters['siteId']}">ADD FISH</a></span>`;
-            var rp_view_fish_form_container = document.getElementById('rp-view-fish-form');
-            rp_view_fish_form_container.innerHTML = fishFormButton;
-        },
+        }
     })
 });
