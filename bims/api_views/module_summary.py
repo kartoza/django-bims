@@ -16,7 +16,8 @@ class ModuleSummary(APIView):
     def get(self, request, *args):
         response_data = dict()
         taxon_groups = TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            name__icontains='fish'
         )
         for taxon_group in taxon_groups:
             taxa = taxon_group.taxonomies.all()
