@@ -363,9 +363,11 @@ define([
 
         },
         isOpen: function () {
+            console.log(this.$el.find('.map-control-panel-box'));
             return !this.$el.find('.map-control-panel-box').is(':hidden');
         },
         show: function () {
+            console.log(this.$el.find('.map-control-panel-box'));
             this.$el.find('.map-control-panel-box').show();
         },
         close: function () {

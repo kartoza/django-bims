@@ -347,7 +347,7 @@ class SearchVersion2(object):
                 pk__in=self.user_boundary
             )
             if user_boundaries:
-                bio = bio.filter(site__geometry_point__intersent=(
+                bio = bio.filter(site__geometry_point__intersects=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
 
