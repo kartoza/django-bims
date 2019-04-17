@@ -322,6 +322,12 @@ BIMS_PREFERENCES = {
     'enable_ecoregion_filter': ast.literal_eval(
         os.environ.get('ENABLE_ECOREGION_FILTER', 'False')
     ),
+    'enable_user_boundary_filter': ast.literal_eval(
+        os.environ.get('ENABLE_USER_BOUNDARY_FILTER', 'False')
+    ),
+    'enable_download_data_from_map': ast.literal_eval(
+        os.environ.get('ENABLE_DOWNLOAD_DATA_FROM_MAP', 'False')
+    ),
     'geoserver_location_site_layer': os.environ.get(
         'GEOSERVER_LOCATION_SITE_LAYER',
         ''
