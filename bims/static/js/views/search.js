@@ -96,7 +96,7 @@ define([
             this.spatialFilterView = new SpatialFilterView();
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
 
-            var nativeOriginDropdown = self.$el.find('.nativeOriginDropdown');
+            var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
 
             $.ajax({
@@ -134,8 +134,8 @@ define([
                             checked = 'checked';
                         }
                         nativeOriginDropdown.append(
-                            '<div class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
-                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</div>'
+                            '<li class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</li>'
                         )
                     }
                     self.filtersReady['endemism'] = true;

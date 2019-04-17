@@ -16,6 +16,7 @@ from bims.models import (
     SpatialScaleGroup,
     TaxonGroup,
     Taxonomy,
+    Endemism
 )
 from bims.tasks.search_version_2 import search_task
 
@@ -264,9 +265,15 @@ class SearchVersion2(object):
                 self.conservation_status
             )
         if self.endemic:
-            filters['taxonomy__endemism__name__in'] = (
-                self.endemic
-            )
+            endemism_list = []
+            for endemic in self.endemic:
+                endemism_list.extend(list(
+                    Endemism.objects.filter(
+                        name__icontains=endemic
+                    ).values_list('id', flat=True)
+                ))
+            endemism_list = list(set(endemism_list))
+            filters['taxonomy__endemism__in'] = endemism_list
         if self.taxon_id:
             filters['taxonomy__in'] = self.taxon_id
         if self.boundary:

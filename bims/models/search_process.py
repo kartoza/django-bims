@@ -73,7 +73,8 @@ class SearchProcess(models.Model):
             'yearTo',
             'months',
             'modules',
-            'userBoundary']
+            'userBoundary',
+            'endemic']
         query_parsed = urlparse.urlparse(self.query)
         parameters = urlparse.parse_qs(query_parsed.query)
         for param in parameters:
