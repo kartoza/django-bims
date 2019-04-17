@@ -396,14 +396,19 @@ class SearchVersion2(object):
             self.collection_records.annotate(
                 name=F('taxonomy__scientific_name'),
                 taxon_id=F('taxonomy_id')).values(
-                'taxon_id', 'name').annotate(total=Count('taxonomy'))
+                'taxon_id', 'name').annotate(
+                total=Count('taxonomy')
+            ).order_by('name')
         )
 
         sites = (
             self.collection_records.annotate(
-                name=F('site__name'),
+                name=F('site__site_code'),
                 site_id=F('site__id')).values(
-                'site_id', 'name').annotate(total=Count('site')))
+                'site_id', 'name').annotate(
+                total=Count('site')
+            ).order_by('name')
+        )
 
         return {
             'total_records': self.collection_records.count(),
