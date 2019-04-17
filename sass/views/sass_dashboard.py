@@ -9,6 +9,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Coalesce
 from bims.models.location_site import LocationSite
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.api_views.search_version_2 import SearchVersion2
 from sass.models import (
     SiteVisitTaxon,
@@ -71,7 +72,10 @@ class SassDashboardView(TemplateView):
         )
         sass_taxon_data = (
             self.site_visit_taxa.filter(
-                site_visit=latest_site_visit
+                site_visit=latest_site_visit,
+                taxonomy__taxongroup__category=(
+                    TaxonomicGroupCategory.SASS_TAXON_GROUP.name
+                )
             ).annotate(
                 sass_taxon_name=Case(
                     When(
