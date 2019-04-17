@@ -1,4 +1,5 @@
 from dateutil.parser import parse
+from django.db.models import Case, When, F
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -251,11 +252,18 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         site_visit_taxon_list = None
         if self.sass_version == 4:
             taxon_filters['score__isnull'] = False
-            taxon_filters['taxon_sass_4__isnull'] = False
         else:
             taxon_filters['sass_5_score__isnull'] = False
-            taxon_filters['taxon_sass_5__isnull'] = False
-        sass_taxon_list = SassTaxon.objects.filter(**taxon_filters).order_by(
+        if not self.read_only:
+            taxon_filters['taxon_sass_{}__isnull'.format(
+                self.sass_version
+            )] = False
+        sass_taxon_list = SassTaxon.objects.annotate(
+            name=Case(
+                When(taxon_sass_5__isnull=False,
+                     then=F('taxon_sass_5')),
+                default=F('taxon_sass_4'))
+        ).filter(**taxon_filters).order_by(
             'display_order_sass_%s' % self.sass_version
         )
         if self.site_visit:
@@ -264,17 +272,16 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             )
             site_visit_taxon_list = (
                 dict((self.site_visit.sitevisittaxon_set.all()).values_list(
-                        'sass_taxon__id',
-                        'taxon_abundance__abc'))
+                    'sass_taxon__id',
+                    'taxon_abundance__abc'))
             )
 
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
                 sass_taxon_score = sass_taxon.sass_5_score
-                sass_taxon_name = sass_taxon.taxon_sass_5
             else:
                 sass_taxon_score = sass_taxon.score
-                sass_taxon_name = sass_taxon.taxon_sass_4
+            sass_taxon_name = sass_taxon.name
 
             taxon_dict = {
                 'name': sass_taxon_name.upper(),
