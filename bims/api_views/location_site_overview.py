@@ -12,6 +12,7 @@ from bims.enums import TaxonomicGroupCategory
 
 class MultiLocationSitesOverview(APIView):
     BIODIVERSITY_DATA = 'biodiversity_data'
+    MODULE = 'module'
     GROUP_ICON = 'icon'
     GROUP_OCCURRENCES = 'occurrences'
     GROUP_SITES = 'sites'
@@ -38,6 +39,7 @@ class MultiLocationSitesOverview(APIView):
         for group in groups:
             group_data = dict()
             group_data[self.GROUP_ICON] = group.logo.name
+            group_data[self.MODULE] = group.id
 
             biodiversity_data[group.name] = group_data
 
@@ -72,7 +74,7 @@ class MultiLocationSitesOverview(APIView):
                 count=Count('name')
             ).values(
                 'name', 'count'
-            )
+            ).order_by('name')
             group_origins = group_records.annotate(
                 name=Case(When(category__isnull=False,
                                then=F('category')),
@@ -83,7 +85,7 @@ class MultiLocationSitesOverview(APIView):
                 count=Count('name')
             ).values(
                 'name', 'count'
-            )
+            ).order_by('name')
             if group_origins:
                 category = dict(BiologicalCollectionRecord.CATEGORY_CHOICES)
                 for group_origin in group_origins:
@@ -101,7 +103,7 @@ class MultiLocationSitesOverview(APIView):
                 count=Count('name')
             ).values(
                 'name', 'count'
-            )
+            ).order_by('name')
             if all_cons_status:
                 category = dict(IUCNStatus.CATEGORY_CHOICES)
                 for cons_status in all_cons_status:

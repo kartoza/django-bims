@@ -12,6 +12,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Bac
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>",
         LocationSiteDetailXHRRequest: null,
+        MultiSitesOverviewXHRRequest: null,
         TaxonDetailXHRRequest: null,
         GetFeatureXHRRequest: [],
         Dispatcher: _.extend({}, Backbone.Events),
