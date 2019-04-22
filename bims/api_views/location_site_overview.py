@@ -13,6 +13,7 @@ from bims.enums import TaxonomicGroupCategory
 class MultiLocationSitesOverview(APIView):
     BIODIVERSITY_DATA = 'biodiversity_data'
     MODULE = 'module'
+    SASS_EXIST = 'sass_exist'
     GROUP_ICON = 'icon'
     GROUP_OCCURRENCES = 'occurrences'
     GROUP_SITES = 'sites'
@@ -32,6 +33,9 @@ class MultiLocationSitesOverview(APIView):
         response_data = dict()
         biodiversity_data = dict()
         response_data[self.BIODIVERSITY_DATA] = biodiversity_data
+        response_data[self.SASS_EXIST] = collection_results.filter(
+                notes__icontains='sass'
+            ).exists()
 
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name

@@ -77,6 +77,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             let $consStatusRow = $('<tr></tr>');
             let $numTaxaRow = $('<tr></tr>');
             let $dashboardRow = $('<tr></tr>');
+            let $sassDashboarRow = $('<tr></tr>');
             $table.append($iconHead);
             $table.append($occurrenceRow);
             $table.append($siteRow);
@@ -85,6 +86,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             $table.append($consStatusRow);
             $table.append($numTaxaRow);
             $table.append($dashboardRow);
+            $table.append($sassDashboarRow);
 
             $iconHead.append('<td></td>');
             $occurrenceRow.append('<td>Occurrences</td>');
@@ -94,6 +96,20 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             $consStatusRow.append('<td>Cons. Status<div class="cons-status-legends"></div></td>');
             $numTaxaRow.append('<td>Number of Taxa</td>');
             $dashboardRow.append('<td style="padding-top: 12px;">Dashboard</td>');
+
+            let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
+            let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
+            $sassDashboarRow.append($sassDashboardButtonContainer);
+            $sassDashboardButtonContainer.append($sassDashboardButton);
+            if (data['sass_exist']) {
+                $sassDashboardButton.click(function () {
+                    let sassUrl = '/sass/dashboard-multi-sites/';
+                    sassUrl += self.apiParameters(filterParameters);
+                    window.location.href = sassUrl;
+                });
+            } else {
+                $sassDashboardButton.addClass('disabled');
+            }
 
             $.each(data['biodiversity_data'], function (key, value) {
                 $iconHead.append('<td class="overview-data"><img width="30" src="/uploaded/' + value['icon'] + '"></td></td>');
