@@ -54,6 +54,10 @@ let filterParametersJSON = {
     'boundary': {
         'label': 'Boundary',
         'type': 'json'
+    },
+    'validated': {
+        'label': 'Validated',
+        'type': 'string'
     }
 };
 

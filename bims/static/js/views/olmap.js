@@ -16,6 +16,7 @@ define([
     'views/right_panel/location_site_detail',
     'views/right_panel/taxon_detail',
     'views/right_panel/records_detail',
+    'views/right_panel/multiple_location_sites_details',
     'views/biodiversity_legend',
     'views/detail_dashboard/taxon_detail',
     'views/detail_dashboard/site_detail',
@@ -23,7 +24,7 @@ define([
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
-             LocationSiteDetail, TaxonDetail, RecordsDetail, BioLegendView,
+             LocationSiteDetail, TaxonDetail, RecordsDetail, MultipleLocationSitesDetail, BioLegendView,
              TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
@@ -64,6 +65,7 @@ define([
             new LocationSiteDetail();
             new TaxonDetail();
             new RecordsDetail();
+            new MultipleLocationSitesDetail();
             this.taxonDetailDashboard = new TaxonDetailDashboard();
             this.siteDetailedDashboard = new SiteDetailedDashboard({parent: this});
 
