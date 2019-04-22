@@ -34,7 +34,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 '</div>');
             container.append($filterDetailWrapper);
             let $filterDetailTable = $('<table class="table table-condensed table-sm table-bordered"></table>');
-            let $filterDetailTableContainer = $('<div class="container-fluid" style="padding: 10px;"></div>');
+            let $filterDetailTableContainer = $('<div class="container-fluid" style="padding-top: 10px;"></div>');
             $filterDetailTableContainer.append($filterDetailTable);
             $filterDetailWrapper.append($filterDetailTableContainer);
             renderFilterList($filterDetailTable);
