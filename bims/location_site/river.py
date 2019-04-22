@@ -77,8 +77,8 @@ def allocate_site_codes_from_river(update_site_code=True, location_id=None):
                 )
             except KeyError:
                 pass
-        if len(catchment_name) > 5:
-            catchment_name = ''
+        if len(catchment_name) > 0:
+            catchment_name = catchment_name[:2].upper()
         site_code += catchment_name
 
         # Get first four letters of the river name
