@@ -35,7 +35,7 @@ class MultiLocationSitesOverview(APIView):
         response_data[self.BIODIVERSITY_DATA] = biodiversity_data
         response_data[self.SASS_EXIST] = collection_results.filter(
                 notes__icontains='sass'
-            ).exists()
+        ).exists()
 
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
