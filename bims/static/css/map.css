@@ -2624,3 +2624,12 @@ div:hover::-webkit-scrollbar {
     cursor: default !important;
     background-color: #BEBEBE !important;
 }
+
+.overview-chart {
+    width: 100px;
+    margin: 0 auto;
+}
+
+.overview-data {
+    text-align: center;
+}

@@ -225,7 +225,12 @@ define([
                 var apiUrl = templateParameter(currentParameters);
                 apiUrl = apiUrl.substr(1);
                 var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
-                $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
+                let $dashboardButton = $('<span class="badge badge-primary">Show overview</span>');
+                $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append($dashboardButton);
+                $dashboardButton.click(function () {
+                    Shared.Dispatcher.trigger('multiSiteDetailPanel:show');
+                });
+                //$searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
             }
 
             var taxaListNumberElm = $('#taxa-list-number');

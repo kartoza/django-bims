@@ -60,6 +60,9 @@ from bims.api_views.module_list import ModuleList
 from bims.api_views.location_site_dashboard import (
     LocationSitesEndemismChartData
 )
+from bims.api_views.location_site_overview import (
+    MultiLocationSitesOverview
+)
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -69,6 +72,9 @@ urlpatterns = [
     url(r'^location-site-detail/$',
         LocationSiteDetail.as_view(),
         name='location-site-detail'),
+    url(r'^multi-location-sites-overview/$',
+        MultiLocationSitesOverview.as_view(),
+        name='multi-location-sites-overview'),
     url(r'^location-sites-summary/$',
         LocationSitesSummary.as_view(),
         name='location-sites-summary'),
