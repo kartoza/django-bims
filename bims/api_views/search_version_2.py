@@ -383,7 +383,7 @@ class SearchVersion2(object):
         self.location_sites_raw_query = bio.distinct('site').values(
             'site_id',
             'site__geometry_point',
-            'site__name').query
+            'site__name').query.sql_with_params()
 
         self.collection_records = bio
         return self.collection_records
