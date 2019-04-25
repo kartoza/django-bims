@@ -1,11 +1,12 @@
-from django.db.models import F, Value, Case, When, Count
+from django.db.models import F, Value, Case, When, Count, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search_version_2 import SearchVersion2 as Search
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
-    IUCNStatus
+    IUCNStatus,
+    Taxonomy
 )
 from bims.enums import TaxonomicGroupCategory
 
@@ -21,6 +22,23 @@ class MultiLocationSitesOverview(APIView):
     GROUP_NUM_OF_TAXA = 'number_of_taxa'
     GROUP_ORIGIN = 'origin'
     GROUP_CONS_STATUS = 'cons_status'
+
+    def get_all_taxa_children(self, taxa):
+        """
+        Get all children from taxa
+        :param taxa: QuerySet of taxa
+        :return: list all children ids
+        """
+        query = {}
+        parent = ''
+        or_condition = Q()
+        query['id__in'] = taxa.values_list('id')
+        for i in range(6):  # species to class
+            parent += 'parent__'
+            query[parent + 'in'] = taxa
+        for key, value in query.items():
+            or_condition |= Q(**{key: value})
+        return Taxonomy.objects.filter(or_condition)
 
     def get(self, request):
         """
@@ -40,7 +58,6 @@ class MultiLocationSitesOverview(APIView):
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         )
-        total_group_occurrences = 0
         for group in groups:
             group_data = dict()
             group_data[self.GROUP_ICON] = group.logo.name
@@ -49,17 +66,9 @@ class MultiLocationSitesOverview(APIView):
             biodiversity_data[group.name] = group_data
 
             taxa = group.taxonomies.all()
-            children_ids = []
-            for taxon in taxa:
-                children = taxon.get_all_children()
-                children = children.filter(
-                    biologicalcollectionrecord__isnull=False
-                ).distinct()
-                children_ids.extend(
-                    children.values_list('id', flat=True)
-                )
+            taxa_children = self.get_all_taxa_children(taxa)
             group_records = collection_results.filter(
-                taxonomy__id__in=children_ids
+                taxonomy__in=taxa_children
             )
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
@@ -115,9 +124,5 @@ class MultiLocationSitesOverview(APIView):
                     if cons_status['name'] in category:
                         cons_status['name'] = category[cons_status['name']]
             group_data[self.GROUP_CONS_STATUS] = all_cons_status
-
-            total_group_occurrences += group_records.count()
-            if total_group_occurrences == collection_results.count():
-                break
 
         return Response(response_data)
