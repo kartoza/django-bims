@@ -190,7 +190,7 @@ define([
             var taxaCount = this.totalTaxa.toString();
             var speciesListName = [];
 
-            if (self.status === 'finished') {
+            if (self.status === 'finished' && this.sitesData.length > 0 && this.recordsData.length > 0) {
                 Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
                 $.each(this.recordsData, function (key, data) {
                     var searchModel = new SearchModel({
@@ -220,17 +220,21 @@ define([
                 });
 
                 // Set multiple site dashboard url
-                var currentParameters = $.extend({}, filterParameters);
-                var templateParameter = _.template(Shared.SearchURLParametersTemplate);
-                var apiUrl = templateParameter(currentParameters);
-                apiUrl = apiUrl.substr(1);
-                var multipleSiteDashboardUrl = '/map/#site-detail/' + apiUrl;
                 let $dashboardButton = $('<span class="badge badge-primary">Show overview</span>');
                 $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append($dashboardButton);
-                $dashboardButton.click(function () {
-                    Shared.Dispatcher.trigger('multiSiteDetailPanel:show');
-                });
-                //$searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append("<a href='" + multipleSiteDashboardUrl + "' class='badge badge-primary'>Show in dashboard</a>");
+                if (this.sitesData.length > 1) {
+                    $dashboardButton.click(function () {
+                        Shared.Dispatcher.trigger('multiSiteDetailPanel:show');
+                    });
+                } else {
+                    let siteId = this.sitesData[0]['site_id'];
+                    let siteName = this.sitesData[0]['name'];
+                    $dashboardButton.click(function () {
+                        Shared.Dispatcher.trigger('siteDetail:show', siteId, siteName);
+                    });
+                }
+            } else {
+                Shared.Dispatcher.trigger('map:clearAllLayers');
             }
 
             var taxaListNumberElm = $('#taxa-list-number');
@@ -267,7 +271,7 @@ define([
                 url: siteResultUrl,
                 success: function (data) {
                     var siteData = data['data'];
-                    for(var i=0; i<siteData.length; i++){
+                    for (var i = 0; i < siteData.length; i++) {
                         var searchModel = new SearchModel({
                             id: siteData[i]['site_id'],
                             count: siteData[i]['total'],
@@ -279,10 +283,10 @@ define([
                         });
                         self.viewCollection.push(searchResultView);
                     }
-                    if(data['has_next']){
+                    if (data['has_next']) {
                         self.pageMoreSites += 1;
                         self.fetchMoreSites()
-                    }else {
+                    } else {
                         self.pageMoreSites = 2
                     }
                 }
