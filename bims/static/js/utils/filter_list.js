@@ -57,7 +57,7 @@ let filterParametersJSON = {
     },
     'validated': {
         'label': 'Validated',
-        'type': 'string'
+        'type': 'json'
     }
 };
 

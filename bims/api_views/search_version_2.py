@@ -120,17 +120,21 @@ class SearchVersion2(object):
         Get validation filter
         :return: dict of validation filter
         """
-        validated_value = self.get_request_data('validated')
-        if validated_value == 'all':
+        validated_values = self.parse_request_json('validated')
+        if (
+                'validated' in validated_values and
+                'non validated' in validated_values
+        ):
             # Get all validated and not validated records
             return {}
-        if validated_value == 'false':
+        elif 'validated' in validated_values:
             return {
-                'validated': False,
+                'validated': True,
             }
-        return {
-            'validated': True
-        }
+        else:
+            return {
+                'validated': False
+            }
 
     @property
     def taxon_id(self):
