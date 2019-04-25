@@ -341,10 +341,8 @@ define([
             $('[name=filter-validation]:checked').each(function () {
                 validationFilter.push($(this).attr('value'));
             });
-            if (validationFilter.indexOf('true') !== -1 && validationFilter.indexOf('false') !== -1) {
-                validated = 'all';
-            } else if (validationFilter.indexOf('true') !== -1 || validationFilter.indexOf('false') !== -1) {
-                validated = validationFilter[0];
+            if (validationFilter.length > 0) {
+                validated = JSON.stringify(validationFilter);
             } else if (validationFilter.length === 0) {
                 $('#filter-validation-error').show();
                 return;

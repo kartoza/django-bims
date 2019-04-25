@@ -50,6 +50,49 @@
         {% endif %}
 
         <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                VALIDATION STATUS <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row" style="display: none">
+            <div class="col-lg-12 filter-content">
+                <div><input id="filter-validation-validated"
+                            name="filter-validation" type="checkbox"
+                            value="validated" checked> <label class="checkbox-label" for="filter-validation-validated">Validated</label>
+                </div>
+                <div><input id="filter-validation-non-validated" name="filter-validation" type="checkbox"
+                            value="non validated"> <label class="checkbox-label" for="filter-validation-non-validated">Non validated</label>
+                </div>
+                {% if is_sass_enabled %}
+                    <div>
+                        <input id="filter-validation-sass-acredited" name="filter-validation" type="checkbox"
+                            value="sass acredited">
+                        <label class="checkbox-label" for="filter-validation-sass-acredited">SASS Acredited</label>
+                    </div>
+                    <div>
+                        <input id="filter-validation-non-sass-acredited" name="filter-validation" type="checkbox"
+                            value="non sass acredited">
+                        <label class="checkbox-label" for="filter-validation-non-sass-acredited">Non SASS Acredited</label>
+                    </div>
+                {% endif %}
+                <div id="filter-validation-error">Please tick at least one
+                    filter.
+                </div>
+            </div>
+
+            <div class="button-filter-wrapper">
+                <button class="apply-filter"><i class="fa fa-check"
+                                                aria-hidden="true"></i> Apply
+                </button>
+                <button class="clear-filter"><i class="fa fa-times"
+                                                aria-hidden="true"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="row sub-filter">
             <div class="col-lg-12 subtitle" id="date-filter-subtitle">
                 {{ date_title }} <i
                     class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
@@ -67,8 +110,8 @@
                 <div>MONTH</div>
                 <table id="month-selector" style="width:100%">
                 </table>
-                <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter">Clear Filter</button>
+                <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
             </div>
         </div>
 
@@ -133,8 +176,8 @@
             <div class="col-lg-12 filter-content" id="filter-category">
             </div>
             <div class="button-filter-wrapper">
-                <button class="apply-filter">Apply Filter</button>
-                <button class="clear-filter clear-origin-filter">Clear Filter</button>
+                <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                <button class="clear-filter clear-origin-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
             </div>
         </div>
 
@@ -155,9 +198,8 @@
                     </select>
                 </div>
                 <div class="button-filter-wrapper">
-                    <button class="apply-filter">Apply Filter</button>
-                    <button class="clear-filter clear-conservation-filter">Clear
-                        Filter
+                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                    <button class="clear-filter clear-conservation-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear
                     </button>
                 </div>
                 <div class="small-space"></div>
@@ -180,8 +222,8 @@
                         multiple>
                 </select>
                 <div class="button-filter-wrapper">
-                    <button class="apply-filter">Apply Filter</button>
-                    <button class="clear-filter">Clear Filter</button>
+                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                    <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
                 </div>
             </div>
         </div>
@@ -200,31 +242,11 @@
                         multiple>
                 </select>
                 <div class="button-filter-wrapper">
-                    <button class="apply-filter">Apply Filter</button>
-                    <button class="clear-filter">Clear Filter</button>
+                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                    <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
                 </div>
             </div>
         {% endif %}
-
-        <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
-                    VALIDATION STATUS <i
-                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-                </div>
-            </div>
-            <div class="row" style="display: none">
-                <div class="col-lg-12 filter-content">
-                    <div><input id="filter-validation-validated" name="filter-validation" type="checkbox" value="true" checked> VALIDATED</div>
-                    <div><input name="filter-validation" type="checkbox" value="false"> NONVALIDATED</div>
-                    <div id="filter-validation-error">Please tick at least one filter.</div>
-                </div>
-
-                <div class="button-filter-wrapper">
-                    <button class="apply-filter">Apply Filter</button>
-                    <button class="clear-filter">Clear Filter</button>
-                </div>
-            </div>
         </div>
 </script>
 
@@ -241,8 +263,8 @@
         <div class="col-lg-12 filter-content reference-category">
         </div>
         <div class="button-filter-wrapper">
-            <button class="apply-filter">Apply Filter</button>
-            <button class="clear-filter">Clear Filter</button>
+            <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+            <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
         </div>
     </div>
 </script>
@@ -304,9 +326,9 @@
         </div>
         {% endif %}
         <div class="spatial-scale-action">
-            <button class="spatial-scale-apply-filter" disabled>Apply Filter
+            <button class="spatial-scale-apply-filter" disabled><i class="fa fa-check" aria-hidden="true"></i> Apply
             </button>
-            <button class="spatial-scale-clear-filter" disabled>Clear Filter
+            <button class="spatial-scale-clear-filter" disabled><i class="fa fa-times" aria-hidden="true"></i> Clear
             </button>
         </div>
     </div>
@@ -326,8 +348,8 @@
             <div class="row boundary-list">
             </div>
             <div class="row boundary-action">
-                <button class="spatial-apply-filter">Apply Filter</button>
-                <button class="spatial-clear-filter">Clear Filter</button>
+                <button class="spatial-apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                <button class="spatial-clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
             </div>
         </div>
     {% endif %}
