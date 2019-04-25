@@ -40,6 +40,7 @@ class MultiLocationSitesOverview(APIView):
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         )
+        total_group_occurrences = 0
         for group in groups:
             group_data = dict()
             group_data[self.GROUP_ICON] = group.logo.name
@@ -114,5 +115,9 @@ class MultiLocationSitesOverview(APIView):
                     if cons_status['name'] in category:
                         cons_status['name'] = category[cons_status['name']]
             group_data[self.GROUP_CONS_STATUS] = all_cons_status
+
+            total_group_occurrences += group_records.count()
+            if total_group_occurrences == collection_results.count():
+                break
 
         return Response(response_data)

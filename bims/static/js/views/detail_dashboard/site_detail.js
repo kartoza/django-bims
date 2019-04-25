@@ -185,7 +185,6 @@ define([
                     }
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
-                    console.log(data['is_sass_exists']);
                     if (data['is_multi_sites']) {
                         $('#fish-ssdd-site-details').hide();
                         self.createMultiSiteDetails(data);
