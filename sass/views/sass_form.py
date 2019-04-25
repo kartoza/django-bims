@@ -366,6 +366,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
         context['site_code'] = self.site_code
+        if self.site_visit:
+            context['sass_version'] = self.site_visit.sass_version
 
         return context
 

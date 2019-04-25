@@ -23,6 +23,8 @@
         <h2>View SASS record</h2>
         <div class="site-code pull-right">
             Site code/name : {{ site_code }}
+            <br/>
+            Sass version : {{ sass_version }}
         </div>
         <div class="row">
             <div class="col-lg-9">
@@ -66,7 +68,7 @@
             <div class="col-lg-3">
                 <div class="form-group">
                     <label for="date" class="input-label">Date :</label>
-                    <input type="date" class="form-control" name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} readonly>
+                    <input type="text" class="form-control" name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} readonly>
                 </div>
                 <div class="form-group">
                     <label for="time" class="input-label">Time :</label>
