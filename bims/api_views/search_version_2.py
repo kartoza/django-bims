@@ -225,6 +225,23 @@ class SearchVersion2(object):
                 spatial_filter_group_ids.append(spatial_filter)
         return spatial_filter_group_ids
 
+    def get_all_taxa_children(self, taxa):
+        """
+        Get all children from taxa
+        :param taxa: QuerySet of taxa
+        :return: list all children ids
+        """
+        query = {}
+        parent = ''
+        or_condition = Q()
+        query['id__in'] = taxa.values_list('id')
+        for i in range(6):  # species to class
+            parent += 'parent__'
+            query[parent + 'in'] = taxa
+        for key, value in query.items():
+            or_condition |= Q(**{key: value})
+        return Taxonomy.objects.filter(or_condition)
+
     def process_search(self):
         """
         Do the search process.
@@ -363,26 +380,32 @@ class SearchVersion2(object):
                 ))
 
         if self.modules:
+            taxon_group_filter = None
             taxon_groups = TaxonGroup.objects.filter(
                 pk__in=self.modules
-            ).values_list('taxonomies', flat=True).distinct('taxonomies')
-            taxa = Taxonomy.objects.filter(pk__in=taxon_groups)
-            all_children = []
-            for taxon in taxa:
-                children = taxon.get_all_children()
-                children = children.filter(
-                    biologicalcollectionrecord__isnull=False
-                ).exclude(id__in=all_children).distinct()
-                if not children:
-                    all_children.append(taxon.id)
-                else:
-                    all_children.extend(
-                        list(children.values_list('id', flat=True))
-                    )
-            if not all_children:
-                bio = bio.filter(taxonomy__isnull=True)
-            else:
-                bio = bio.filter(taxonomy__in=all_children)
+            )
+            for group in taxon_groups:
+                group_filters = None
+                taxa = group.taxonomies.all()
+                all_children = self.get_all_taxa_children(taxa)
+                group_source_collection = group.source_collection
+                if all_children:
+                    if group_source_collection:
+                        group_filters = Q(
+                            taxonomy__in=all_children,
+                            source_collection=group_source_collection
+                        )
+                    else:
+                        group_filters = Q(
+                            taxonomy__in=all_children
+                        )
+                if group_filters:
+                    if taxon_group_filter is None:
+                        taxon_group_filter = group_filters
+                    else:
+                        taxon_group_filter = taxon_group_filter | group_filters
+            if taxon_group_filter:
+                bio = bio.filter(taxon_group_filter)
 
         self.location_sites_raw_query = bio.distinct('site').values(
             'site_id',
@@ -398,7 +421,7 @@ class SearchVersion2(object):
 
         collections = (
             self.collection_records.annotate(
-                name=F('taxonomy__scientific_name'),
+                name=F('taxonomy__canonical_name'),
                 taxon_id=F('taxonomy_id')).values(
                 'taxon_id', 'name').annotate(
                 total=Count('taxonomy')
