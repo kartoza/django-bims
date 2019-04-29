@@ -38,13 +38,19 @@ class SassDashboardView(TemplateView):
             date=F('site_visit__site_visit_date'),
         ).values('date').annotate(
             count=Count('sass_taxon'),
-            sass_score=Sum(Case(
+            sass_score=Coalesce(Sum(Case(
                 When(
                     condition=Q(site_visit__sass_version=5,
-                                sass_taxon__sass_5_score__isnull=False),
+                                sass_taxon__sass_5_score__isnull=False,
+                                taxon_abundance__isnull=False),
                     then='sass_taxon__sass_5_score'),
-                default='sass_taxon__score'
-            )),
+                When(
+                    condition=Q(site_visit__sass_version=4,
+                                sass_taxon__score__isnull=False,
+                                taxon_abundance__isnull=False),
+                    then='sass_taxon__score'),
+                default=0),
+            ), 0),
             sass_id=F('site_visit__id')
         ).annotate(
             aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
