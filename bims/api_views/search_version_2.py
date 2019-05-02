@@ -121,6 +121,8 @@ class SearchVersion2(object):
         :return: dict of validation filter
         """
         validated_values = self.parse_request_json('validated')
+        if not validated_values:
+            return {}
         if (
                 'validated' in validated_values and
                 'non validated' in validated_values
