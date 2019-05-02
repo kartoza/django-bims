@@ -11,3 +11,4 @@ from sass.models.chem import *  # noqa
 from sass.models.site_visit_chem import *  # noqa
 from sass.models.sass_ecological_category import *  # noqa
 from sass.models.sass_ecological_condition import *  # noqa
+from sass.models.site_visit_ecological_condition import *  # noqa
