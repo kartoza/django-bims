@@ -341,7 +341,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                     not ecological_conditions.filter(
                         sass_score_precentile__isnull=False,
                         aspt_score_precentile__isnull=False).exists()
-                ):
+            ):
                 use_combined_geo = True
 
             if use_combined_geo:
