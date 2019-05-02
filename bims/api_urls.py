@@ -62,6 +62,7 @@ from bims.api_views.location_site_dashboard import (
 from bims.api_views.location_site_overview import (
     MultiLocationSitesOverview
 )
+from bims.api_views.source_collection import SourceCollectionList
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -138,6 +139,8 @@ urlpatterns = [
         HidePopupInfoUser.as_view(), name='hide-popup-user'),
     url(r'^list-reference-category/$',
         ReferenceCategoryList.as_view(), name='list-reference-category'),
+    url(r'^list-source-collection/$',
+        SourceCollectionList.as_view(), name='list-source-collection'),
     url(r'^docs/', include_docs_urls(title='BIMS API')),
     url(r'^module-summary/$',
         ModuleSummary.as_view(),
