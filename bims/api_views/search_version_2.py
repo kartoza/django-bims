@@ -195,6 +195,10 @@ class SearchVersion2(object):
         return self.parse_request_json('endemic')
 
     @property
+    def source_collection(self):
+        return self.parse_request_json('sourceCollection')
+
+    @property
     def modules(self):
         modules_query = self.get_request_data('modules')
         if modules_query:
@@ -287,6 +291,8 @@ class SearchVersion2(object):
             filters['taxonomy__iucn_status__category__in'] = (
                 self.conservation_status
             )
+        if self.source_collection:
+            filters['source_collection__in'] = self.source_collection
         if self.endemic:
             endemism_list = []
             for endemic in self.endemic:

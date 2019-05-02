@@ -8,9 +8,10 @@ define([
     'views/search_panel',
     'jquery',
     'views/filter_panel/reference_category',
-    'views/filter_panel/spatial_filter'
+    'views/filter_panel/spatial_filter',
+    'views/filter_panel/source_collection'
 ], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $,
-             ReferenceCategoryView, SpatialFilterView) {
+             ReferenceCategoryView, SpatialFilterView, SourceCollectionView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -27,6 +28,7 @@ define([
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
         initialSelectedReferenceCategory: [],
+        initialSelectedSourceCollection: [],
         initialSelectedEndemic: [],
         initialSelectedModules: [],
         initialYearFrom: null,
@@ -64,9 +66,10 @@ define([
             this.searchInput.autocomplete({
                 autoFocus: true,
                 source: function (request, response) {
+                    var sourceCollection = filterParameters['sourceCollection'];
                     $.ajax({
                         url: "/autocomplete/",
-                        data: {q: request.term},
+                        data: {q: request.term, source_collection: sourceCollection},
                         dataType: "json",
                         success: function (requestResponse) {
                             var responseData = [];
@@ -75,6 +78,7 @@ define([
                                     responseData.push({
                                         'value': value['suggested_name'],
                                         'label': value['suggested_name'],
+                                        'source': value['source'],
                                         'id': value['id']
                                     })
                                 })
@@ -87,7 +91,11 @@ define([
                     var itemValue = ui['item']['value'];
                     self.search(itemValue);
                 }
-            });
+            }).autocomplete("instance")._renderItem = function( ul, item ) {
+                return $( "<li>" )
+                    .append( "<div class='autocomplete-item'><span class='autocomplete-label'>" + item.label + "</span><hr style=\"height:0; visibility:hidden;margin-top: -5px;margin-bottom: -5px\" /><span class='autocomplete-source'>" + item.source + "</span></div>" )
+                    .appendTo( ul );
+            };
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
             this.referenceCategoryView = new ReferenceCategoryView({parent: this});
@@ -95,6 +103,9 @@ define([
 
             this.spatialFilterView = new SpatialFilterView();
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
+
+            this.sourceCollectionView = new SourceCollectionView({parent: this});
+            this.$el.find('.source-collection-wrapper').append(this.sourceCollectionView.render().$el);
 
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
@@ -256,6 +267,15 @@ define([
             }
             filterParameters['referenceCategory'] = referenceCategory;
 
+            // source collection
+            var sourceCollection = self.sourceCollectionView.getSelected();
+            if (sourceCollection.length > 0) {
+                sourceCollection = JSON.stringify(sourceCollection);
+            } else {
+                sourceCollection = '';
+            }
+            filterParameters['sourceCollection'] = sourceCollection;
+
             // Collector filter
             var collectorValue = $("#filter-collectors").val();
             if (collectorValue.length === 0) {
@@ -379,6 +399,7 @@ define([
                 && !filterParameters['modules']
                 && !filterParameters['conservationStatus']
                 && !filterParameters['spatialFilter']
+                && !filterParameters['sourceCollection']
                 && !filterParameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -611,6 +632,12 @@ define([
             self.initialSelectedReferenceCategory = [];
             if (allFilters.hasOwnProperty('referenceCategory')) {
                 self.initialSelectedReferenceCategory = JSON.parse(allFilters['referenceCategory']);
+            }
+
+            // Source collection
+            self.initialSelectedSourceCollection = [];
+            if (allFilters.hasOwnProperty('sourceCollection')) {
+                self.initialSelectedSourceCollection = JSON.parse(allFilters['sourceCollection']);
             }
 
             // Date
