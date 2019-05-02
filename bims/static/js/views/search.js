@@ -78,6 +78,7 @@ define([
                                     responseData.push({
                                         'value': value['suggested_name'],
                                         'label': value['suggested_name'],
+                                        'source': value['source'],
                                         'id': value['id']
                                     })
                                 })
@@ -90,7 +91,11 @@ define([
                     var itemValue = ui['item']['value'];
                     self.search(itemValue);
                 }
-            });
+            }).autocomplete("instance")._renderItem = function( ul, item ) {
+                return $( "<li>" )
+                    .append( "<div class='autocomplete-item'><span class='autocomplete-label'>" + item.label + "</span><hr style=\"height:0; visibility:hidden;margin-top: -5px;margin-bottom: -5px\" /><span class='autocomplete-source'>" + item.source + "</span></div>" )
+                    .appendTo( ul );
+            };
             this.searchBox.hide();
             this.$el.append(this.searchPanel.render().$el);
             this.referenceCategoryView = new ReferenceCategoryView({parent: this});

@@ -2651,3 +2651,18 @@ div:hover::-webkit-scrollbar {
 .checkbox-label {
     font-size: 12pt;
 }
+
+.autocomplete-item {
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.autocomplete-label {
+    font-size: 10pt;
+    font-weight: bold;
+}
+
+.autocomplete-source {
+    font-size: 8pt;
+    font-style: italic;
+    text-transform: capitalize;
+}

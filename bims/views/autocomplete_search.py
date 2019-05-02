@@ -76,7 +76,7 @@ def autocomplete(request):
             values('site_id', 'suggested_name')[:10]
         )
         for site in sites:
-            site['source'] = 'site'
+            site['source'] = 'site code'
         suggestions.extend(sites)
 
     if len(suggestions) < 10:
@@ -91,7 +91,7 @@ def autocomplete(request):
             values('river_id', 'suggested_name')[:10]
         )
         for river in rivers:
-            river['source'] = 'river'
+            river['source'] = 'river name'
         suggestions.extend(rivers)
 
     the_data = json.dumps({
