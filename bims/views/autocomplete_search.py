@@ -14,28 +14,54 @@ from sass.models.river import River
 def autocomplete(request):
     # Search from taxon name
     q = request.GET.get('q', '')
+    source_collection = request.GET.get('source_collection', [])
+    taxonomy_additional_filters = {}
+    vernacular_additional_filters = {}
+    site_additional_filters = {}
+    river_additional_filters = {}
+
+    if source_collection:
+        source_collection = json.loads(source_collection)
+        taxonomy_additional_filters[
+            'biologicalcollectionrecord__source_collection__in'
+        ] = source_collection
+        vernacular_additional_filters[
+            'taxonomy__biologicalcollectionrecord__source_collection__in'
+        ] = source_collection
+        site_additional_filters[
+            'biological_collection_record__source_collection__in'
+        ] = source_collection
+        river_additional_filters[
+            'locationsite__biological_collection_record__source_collection__in'
+        ] = source_collection
+
     if len(q) < 3:
         return HttpResponse([])
 
     suggestions = list(
         Taxonomy.objects.filter(
             canonical_name__icontains=q,
-            biologicalcollectionrecord__validated=True
+            biologicalcollectionrecord__validated=True,
+            **taxonomy_additional_filters
         ).distinct('id').
         annotate(taxon_id=F('id'), suggested_name=F('canonical_name')).
         values('taxon_id', 'suggested_name')[:10]
     )
+    for suggestion in suggestions:
+        suggestion['source'] = 'taxonomy'
 
     if len(suggestions) < 10:
         vernacular_names = list(
             VernacularName.objects.filter(
                 name__icontains=q,
-                taxonomy__biologicalcollectionrecord__validated=True
+                taxonomy__biologicalcollectionrecord__validated=True,
+                **vernacular_additional_filters
             ).distinct('id').
             annotate(taxon_id=F('taxonomy__id'), suggested_name=F('name')).
             values('taxon_id', 'suggested_name')[:10]
         )
-
+        for vernacular_name in vernacular_names:
+            vernacular_name['source'] = 'common name'
         suggestions.extend(vernacular_names)
 
     if len(suggestions) < 10:
@@ -43,11 +69,14 @@ def autocomplete(request):
             LocationSite.objects.filter(
                 site_code__icontains=q,
                 site_code__isnull=False,
-                biological_collection_record__validated=True
+                biological_collection_record__validated=True,
+                **site_additional_filters
             ).distinct('id').
             annotate(site_id=F('id'), suggested_name=F('site_code')).
             values('site_id', 'suggested_name')[:10]
         )
+        for site in sites:
+            site['source'] = 'site'
         suggestions.extend(sites)
 
     if len(suggestions) < 10:
@@ -56,10 +85,13 @@ def autocomplete(request):
                 name__icontains=q,
                 locationsite__biological_collection_record__isnull=False,
                 locationsite__biological_collection_record__validated=True,
+                **river_additional_filters
             ).distinct('id').
             annotate(river_id=F('id'), suggested_name=F('name')).
             values('river_id', 'suggested_name')[:10]
         )
+        for river in rivers:
+            river['source'] = 'river'
         suggestions.extend(rivers)
 
     the_data = json.dumps({

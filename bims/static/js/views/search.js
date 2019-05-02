@@ -66,9 +66,10 @@ define([
             this.searchInput.autocomplete({
                 autoFocus: true,
                 source: function (request, response) {
+                    var sourceCollection = filterParameters['sourceCollection'];
                     $.ajax({
                         url: "/autocomplete/",
-                        data: {q: request.term},
+                        data: {q: request.term, source_collection: sourceCollection},
                         dataType: "json",
                         success: function (requestResponse) {
                             var responseData = [];
