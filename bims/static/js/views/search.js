@@ -8,9 +8,10 @@ define([
     'views/search_panel',
     'jquery',
     'views/filter_panel/reference_category',
-    'views/filter_panel/spatial_filter'
+    'views/filter_panel/spatial_filter',
+    'views/filter_panel/source_collection'
 ], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $,
-             ReferenceCategoryView, SpatialFilterView) {
+             ReferenceCategoryView, SpatialFilterView, SourceCollectionView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -27,6 +28,7 @@ define([
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
         initialSelectedReferenceCategory: [],
+        initialSelectedSourceCollection: [],
         initialSelectedEndemic: [],
         initialSelectedModules: [],
         initialYearFrom: null,
@@ -95,6 +97,9 @@ define([
 
             this.spatialFilterView = new SpatialFilterView();
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
+
+            this.sourceCollectionView = new SourceCollectionView({parent: this});
+            this.$el.find('.source-collection-wrapper').append(this.sourceCollectionView.render().$el);
 
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
@@ -256,6 +261,15 @@ define([
             }
             filterParameters['referenceCategory'] = referenceCategory;
 
+            // source collection
+            var sourceCollection = self.sourceCollectionView.getSelected();
+            if (sourceCollection.length > 0) {
+                sourceCollection = JSON.stringify(sourceCollection);
+            } else {
+                sourceCollection = '';
+            }
+            filterParameters['sourceCollection'] = sourceCollection;
+
             // Collector filter
             var collectorValue = $("#filter-collectors").val();
             if (collectorValue.length === 0) {
@@ -379,6 +393,7 @@ define([
                 && !filterParameters['modules']
                 && !filterParameters['conservationStatus']
                 && !filterParameters['spatialFilter']
+                && !filterParameters['sourceCollection']
                 && !filterParameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -611,6 +626,12 @@ define([
             self.initialSelectedReferenceCategory = [];
             if (allFilters.hasOwnProperty('referenceCategory')) {
                 self.initialSelectedReferenceCategory = JSON.parse(allFilters['referenceCategory']);
+            }
+
+            // Source collection
+            self.initialSelectedSourceCollection = [];
+            if (allFilters.hasOwnProperty('sourceCollection')) {
+                self.initialSelectedSourceCollection = JSON.parse(allFilters['sourceCollection']);
             }
 
             // Date

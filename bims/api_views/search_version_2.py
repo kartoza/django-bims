@@ -196,7 +196,7 @@ class SearchVersion2(object):
 
     @property
     def source_collection(self):
-        return self.parse_request_json('source_collection')
+        return self.parse_request_json('sourceCollection')
 
     @property
     def modules(self):
