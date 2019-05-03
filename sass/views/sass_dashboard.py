@@ -264,7 +264,17 @@ class SassDashboardView(TemplateView):
                 geomorphological_zone__icontains=geo_class.strip()
             )
 
+            use_combined_geo = False
             if not ecological_conditions:
+                use_combined_geo = True
+            if (
+                    not use_combined_geo and
+                    not ecological_conditions.filter(
+                        sass_score_precentile__isnull=False,
+                        aspt_score_precentile__isnull=False).exists()
+            ):
+                use_combined_geo = True
+            if use_combined_geo:
                 # check Combined data
                 geo_class = 'combined'
                 ecological_conditions = SassEcologicalCondition.objects.filter(
