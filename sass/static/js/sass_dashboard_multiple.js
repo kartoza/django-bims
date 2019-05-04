@@ -568,6 +568,73 @@ function renderAll(data) {
     renderEcologicalChart(data);
 }
 
+function removeParam(sourceURL, key) {
+    let rtn = sourceURL.split("?")[0],
+        param,
+        params_arr = [],
+        queryString = (sourceURL.indexOf("?") !== -1) ? sourceURL.split("?")[1] : "";
+    if (queryString !== "") {
+        params_arr = queryString.split("&");
+        for (var i = params_arr.length - 1; i >= 0; i -= 1) {
+            param = params_arr[i].split("=")[0];
+            if (param === key) {
+                params_arr.splice(i, 1);
+            }
+        }
+        rtn = rtn + "?" + params_arr.join("&");
+    }
+    return rtn;
+}
+
+function renderPaginationNavBar(currentPage, totalPage) {
+   let $previousPage = $('.previous-pagination');
+   let $nextPage = $('.next-pagination');
+   let currentUrl = removeParam(window.location.href, 'page');
+   let maxPage = 10;
+   let firstPage = 0;
+   let pageStep = Math.ceil(currentPage/maxPage);
+   if (currentPage > maxPage) {
+       firstPage = maxPage * (pageStep - 1);
+       maxPage = pageStep * maxPage;
+   }
+   if (totalPage < maxPage) {
+       maxPage = totalPage;
+   }
+   for (let i = maxPage; i > firstPage; i--) {
+       let active = '';
+       let url = currentUrl + '&page=' + i;
+       if (currentPage === i) {
+           active = 'active';
+       }
+       $previousPage.after(
+           '<li class="page-item ' + active + '"><a class="page-link" href="' + url + '">' + i + '</a></li>'
+       );
+   }
+   if (firstPage > 1) {
+       let url = currentUrl + '&page=' + firstPage;
+       $previousPage.after(
+           '<li class="page-item"><a class="page-link" href="' + url + '">...</a></li>'
+       )
+   }
+   if (totalPage > maxPage) {
+       let url = currentUrl + '&page=' + (maxPage + 1);
+       $nextPage.before(
+           '<li class="page-item"><a class="page-link" href="' + url + '">...</a></li>'
+       )
+   }
+   if (currentPage > 1) {
+       $previousPage.removeClass('disabled');
+       let link = $previousPage.find('a');
+       link.attr('href', currentUrl + '&page=' + (currentPage - 1));
+   }
+   if (currentPage < totalPage) {
+       $nextPage.removeClass('disabled');
+       let link = $nextPage.find('a');
+       link.attr('href', currentUrl + '&page=' + (currentPage + 1));
+   }
+
+}
+
 $(function () {
     let params = window.location.href.split('dashboard-multi-sites')[1];
     let url = '/sass/dashboard-multi-sites-api' + params;
@@ -576,9 +643,7 @@ $(function () {
         dataType: 'json',
         success: function (data) {
             $('.ajax-container').show();
-            console.log(data);
-            $('#current_page').html(data['current_page']);
-            $('#total_pages').html('/' + data['total_pages']);
+            renderPaginationNavBar(data['current_page'], data['total_pages']);
             renderFilterList($('.filter-table'));
             renderAll(data);
         }

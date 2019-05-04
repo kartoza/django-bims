@@ -33,7 +33,18 @@
         <div class="logo hide-logo pull-right"><img width="50"
                                                     src="{% static 'img/bims-stamp.png' %}">
         </div>
-        <h2 class="dashboard-title">SASS Dashboard <span id="current_page"></span><span id="total_pages"></span> </h2>
+        <h2 class="dashboard-title">SASS Dashboard Multiple Sites
+
+            <span id="current_page"></span><span id="total_pages"></span></h2>
+
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                <li class="page-item disabled previous-pagination"><a class="page-link"
+                                         href="#">Previous</a></li>
+                <li class="page-item next-pagination disabled"><a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
         <div class="row">
             <div class="col-md-7">
                 <div class="map-container ajax-container">
