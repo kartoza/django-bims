@@ -94,7 +94,7 @@
         <table class="table table-sm">
             <thead>
             <tr>
-                <th scope="col">Taxon</th>
+                <th scope="col" colspan="2">Taxa</th>
                 <th scope="col">Stones</th>
                 <th scope="col">Vegetation</th>
                 <th scope="col">Gravel, sand, mud</th>
@@ -104,7 +104,8 @@
             <tbody id="taxon-list">
             {% for taxon in taxon_list %}
                 {% if taxon.score %}
-                    <tr>
+                    <tr class="{% if taxon.bold_bottom_border %} bold_bottom_border {% endif %}">
+                        <td class="taxon-group">{{ taxon.group }}</td>
                         <td data-score="{{ taxon.score }}" data-id="{{ taxon.id }}" scope="row"
                             class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
                             {{ taxon.name }}
@@ -127,7 +128,7 @@
                 {% endif %}
             {% endfor %}
             <tr class="sass-score-row">
-                <td scope="row"
+                <td scope="row" colspan="2"
                     class="taxon-name bold ">
                     SASS Score
                 </td>
@@ -155,7 +156,7 @@
 
             <tr class="sass-score-row">
                 <td scope="row"
-                    class="taxon-name bold ">
+                    class="taxon-name bold " colspan="2">
                     Number of Taxa
                 </td>
                 <td>
@@ -182,7 +183,7 @@
 
              <tr class="sass-score-row">
                 <td scope="row"
-                    class="taxon-name bold ">
+                    class="taxon-name bold " colspan="2">
                     ASPT
                 </td>
                 <td>
@@ -208,22 +209,22 @@
             </tr>
 
             <tr>
-                <th colspan="5" scope="row">
+                <th colspan="6" scope="row">
                     Other biota:
                 </th>
             </tr>
             <tr>
-                <td colspan="5" scope="row">
+                <td colspan="6" scope="row">
                     <textarea class="form-control rounded" rows="6" name="other-biota">{{ other_biota }}</textarea>
                 </td>
             </tr>
             <tr>
-                <th colspan="5" scope="row">
+                <th colspan="6" scope="row">
                     Comments/Observations:
                 </th>
             </tr>
             <tr>
-                <td colspan="5" scope="row">
+                <td colspan="6" scope="row">
                     <textarea class="form-control rounded" rows="6" name="notes"> {{ comments }}</textarea>
                 </td>
             </tr>
