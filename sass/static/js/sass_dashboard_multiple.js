@@ -576,6 +576,9 @@ $(function () {
         dataType: 'json',
         success: function (data) {
             $('.ajax-container').show();
+            console.log(data);
+            $('#current_page').html(data['current_page']);
+            $('#total_pages').html('/' + data['total_pages']);
             renderFilterList($('.filter-table'));
             renderAll(data);
         }
