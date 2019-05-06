@@ -10,8 +10,10 @@ from django.urls import reverse
 from django.contrib.auth.mixins import UserPassesTestMixin
 from geonode.people.models import Profile
 from bims.models.location_site import LocationSite
+from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
 from bims.models.data_source import DataSource
+from bims.models.taxon_group import TaxonGroup
 from sass.models import (
     SiteVisit,
     SassTaxon,
@@ -21,6 +23,7 @@ from sass.models import (
     Rate,
     SassBiotopeFraction
 )
+from bims.enums import TaxonomicGroupCategory
 
 BIOTOPE_STONES = 'SIC/SOOC'
 BIOTOPE_VEGETATION = 'MV/AQV'
@@ -276,17 +279,41 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                     'taxon_abundance__abc'))
             )
 
+        last_taxon_group = ''
+        bold_bottom_border = False
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
                 sass_taxon_score = sass_taxon.sass_5_score
             else:
                 sass_taxon_score = sass_taxon.score
             sass_taxon_name = sass_taxon.name
+            try:
+                taxonomies = Taxonomy.objects.filter(
+                    canonical_name__icontains=sass_taxon.taxon.canonical_name
+                )
+                group = (
+                    TaxonGroup.objects.filter(
+                        taxonomies__in=list(
+                            taxonomies.values_list('id', flat=True)),
+                        category=TaxonomicGroupCategory.SASS_TAXON_GROUP.name
+                    )[0].name
+                )
+                if last_taxon_group != group:
+                    last_taxon_group = group
+                    bold_bottom_border = True
+                else:
+                    bold_bottom_border = False
+                    group = ''
+            except IndexError:
+                group = ''
+                bold_bottom_border = False
 
             taxon_dict = {
                 'name': sass_taxon_name.upper(),
                 'id': sass_taxon.id,
+                'group': group,
                 'score': sass_taxon_score,
+                'bold_bottom_border': bold_bottom_border,
                 's_value': None,
                 'veg_value': None,
                 'gsm_value': None,

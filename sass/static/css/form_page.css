@@ -29,6 +29,17 @@ td.taxon-name {
     font-size: 11pt;
 }
 
+td.taxon-group {
+    vertical-align: middle !important;
+    min-width: 150px;
+    max-width: 150px;
+    font-size: 11pt;
+}
+
+.bold_bottom_border {
+    border-top: 2px solid black;
+}
+
 td.sheet-row {
     vertical-align: middle;
 }
