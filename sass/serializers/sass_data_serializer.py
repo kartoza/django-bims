@@ -195,8 +195,8 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
                 if registry_data['value']:
                     result[registry_data['name']] = registry_data['value']
             return result
-        except KeyError:
-            return ''
+        except (KeyError, TypeError):
+            return result
 
     class Meta:
         model = SiteVisitTaxon
