@@ -75,16 +75,19 @@
                         </div>
 
                         {% include "socialaccount/snippets/login_extra.html" %}
+                        <div class="login-help">
+                            <p>This will automatically signs you up if you login with social account for the first time.</p>
+                            If you want to sign up manually you can click here : <a href="{% url 'account_signup' %}">Sign Up</a>
+                        </div>
 
                     {% else %}
-                        <p>{% blocktrans %}If you have not created an account yet, then please
-                            <a href="{{ signup_url }}">sign up</a> first.{% endblocktrans %}</p>
+                        <div class="login-help" style="padding-top: 30px;">
+                            <p>{% blocktrans %}If you have not created an account yet, then please
+                                <a href="{{ signup_url }}">sign up</a> first.{% endblocktrans %}</p>
+                        </div>
                     {% endif %}
 
-                    <div class="login-help">
-                        <p>This will automatically signs you up if you login with social account for the first time.</p>
-                        If you want to sign up manually you can click here : <a href="{% url 'account_signup' %}">Sign Up</a>
-                    </div>
+
                 </div>
             </div> <!-- /container -->
             </div>
