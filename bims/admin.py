@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
 from django.core.mail import send_mail
-
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
@@ -312,6 +312,8 @@ admin.site.register(Link, LinkAdmin)
 
 
 class ProfileInline(admin.StackedInline):
+    classes = ('grp-collapse grp-open',)
+    inline_classes = ('grp-collapse grp-open',)
     model = BimsProfile
 
 
@@ -328,8 +330,16 @@ class UserCreateForm(ProfileCreationForm):
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
+        ('Profiles',
+         {"classes": ("placeholder bims_profile-group",), "fields": ()}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',
+                                       'groups')}),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+    )
     inlines = [ProfileInline]
-
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
