@@ -49,9 +49,6 @@ INSTALLED_APPS += (
     'bims.signals',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.github',
     'rolepermissions',
     'rest_framework',
     'celery',
@@ -168,9 +165,24 @@ SOCIALACCOUNT_PROVIDERS = {
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_SIGNUP_FORM_CLASS = 'base.forms.SignupForm'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 LOGIN_REDIRECT_URL = "/"
+
+AUTH_WITH_EMAIL_ONLY = ast.literal_eval(os.environ.get(
+        'AUTH_WITH_EMAIL_ONLY', 'False'))
+
+if AUTH_WITH_EMAIL_ONLY:
+    ACCOUNT_USERNAME_REQUIRED = False
+    ACCOUNT_FORMS = {
+        'signup': 'bims.forms.CustomSignupForm',
+    }
+    ACCOUNT_AUTHENTICATION_METHOD = 'email'
+else:
+    INSTALLED_APPS += (
+        'allauth.socialaccount',
+        'allauth.socialaccount.providers.google',
+        'allauth.socialaccount.providers.github',
+    )
 
 # ROLEPERMISSIONS_MODULE = 'roles.settings.roles'
 

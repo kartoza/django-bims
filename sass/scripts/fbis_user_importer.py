@@ -49,7 +49,7 @@ class FbisUserImporter(FbisImporter):
         )
 
         bims_profile.qualifications = self.get_row_value('Qualifications', row)
-        bims_profile.fbis_username = self.get_row_value('UserName', row)
+        bims_profile.full_name = self.get_row_value('UserName', row)
         bims_profile.other = self.get_row_value('Other', row)
         bims_profile.data = {
             'PasswordHint': str(self.get_row_value('PasswordHint', row)),

@@ -23,7 +23,7 @@ class Profile(models.Model):
         default='',
         null=True,
     )
-    fbis_username = models.CharField(
+    full_name = models.CharField(
         max_length=150,
         blank=True,
         default='',
@@ -33,6 +33,10 @@ class Profile(models.Model):
         default='',
         null=True,
         blank=True,
+    )
+    sass_accredited = models.BooleanField(
+        verbose_name='SASS Accredited',
+        default=False
     )
     hide_bims_info = models.BooleanField(
         default=False
