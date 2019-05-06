@@ -96,15 +96,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 })
             });
 
-            // OSM MAPSURFER ROADS - Make default
-            var mapSurfer = new ol.layer.Tile({
-                title: 'OpenStreetMap',
-                source: new ol.source.XYZ({
-                    attributions: ['Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @University of Heidelberg</a>; Map data from <a href="http://openstreetmap.org">OpenStreetMap</a> contributors; <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'],
-                    url: '/bims_proxy/https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}'
-                })
-            });
-
             // OPENMAPTILES
             if (mapTilerKey) {
                 baseSourceLayers.push(this.getPositronBasemap());
@@ -124,7 +115,18 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             }
 
             baseSourceLayers.push(ngiMap);
-            baseSourceLayers.push(mapSurfer);
+
+            if (mapSurferKey) {
+                // OSM MAPSURFER ROADS - Make default
+                var mapSurfer = new ol.layer.Tile({
+                    title: 'OpenStreetMap',
+                    source: new ol.source.XYZ({
+                        attributions: ['Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @University of Heidelberg</a>; Map data from <a href="http://openstreetmap.org">OpenStreetMap</a> contributors; <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'],
+                        url: '/bims_proxy/https://api.openrouteservice.org/mapsurfer/{z}/{x}/{y}.png?api_key=' + mapSurferKey
+                    })
+                });
+                baseSourceLayers.push(mapSurfer);
+            }
             baseSourceLayers.push(toposheet);
 
             if(bingMapKey) {

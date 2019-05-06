@@ -37,6 +37,7 @@ class MapPageView(TemplateView):
         context = super(MapPageView, self).get_context_data(**kwargs)
         context['bing_map_key'] = get_key('BING_MAP_KEY')
         context['map_tiler_key'] = get_key('MAP_TILER_KEY')
+        context['map_surfer_key'] = get_key('MAP_SURFER_KEY')
         context['geocontext_url'] = get_key('GEOCONTEXT_URL')
         context['geocontext_collection_key'] = get_key(
             'GEOCONTEXT_COLLECTION_KEY')
