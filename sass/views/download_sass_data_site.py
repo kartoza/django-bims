@@ -106,7 +106,7 @@ def download_sass_summary_data(request):
 
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
-        id__in=collection_records
+        id__in=list(collection_records.values_list('id', flat=True))
     )
     summary = site_visit_taxa.annotate(
         sampling_date=F('site_visit__site_visit_date'),

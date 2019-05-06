@@ -1,3 +1,4 @@
+import time
 from collections import OrderedDict
 from django.views.generic import TemplateView
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
@@ -5,16 +6,33 @@ from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Avg, Min, Max, Q
 )
 from django.db.models.functions import Cast
+from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models import LocationSite
+from bims.utils.logger import log
 from sass.models import (
+    SiteVisit,
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon,
     SassEcologicalCategory,
     SassEcologicalCondition
 )
+
+
+def timing(f):
+    def wrap(*args, **kwargs):
+        time1 = time.time()
+        ret = f(*args, **kwargs)
+        time2 = time.time()
+        log('%s function took %0.3f ms' % (
+            f.func_name, (time2 - time1) * 1000.0))
+        return ret
+    return wrap
+
+
+MAX_RESULTS_PER_PAGE = 50
 
 
 class SassDashboardMultipleSitesView(TemplateView):
@@ -25,29 +43,8 @@ class SassDashboardMultipleSitesApiView(APIView):
     site_visit_taxa = SiteVisitTaxon.objects.none()
     location_sites = LocationSite.objects.none()
 
+    @timing
     def get_sass_score_chart_data(self):
-        summary = self.site_visit_taxa.annotate(
-            date=F('site_visit__site_visit_date'),
-            site_code=Case(
-                When(site_visit__location_site__site_code__isnull=False,
-                     then='site_visit__location_site__site_code'),
-                default='site_visit__location_site__name'
-            ),
-            sass_id=F('site_visit__id'),
-            site_id=F('site_visit__location_site__id'),
-        ).values('site_code', 'date', 'site_id', 'sass_id').annotate(
-            count=Count('sass_taxon'),
-            sass_score=Sum(Case(
-                When(
-                    condition=Q(site_visit__sass_version=5,
-                                sass_taxon__sass_5_score__isnull=False),
-                    then='sass_taxon__sass_5_score'),
-                default='sass_taxon__score'
-            )),
-        ).annotate(
-            aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
-                                                            FloatField()),
-        ).order_by('-date')
         chart_data = {
             'sass_ids': [],
             'site_id': [],
@@ -62,37 +59,34 @@ class SassDashboardMultipleSitesApiView(APIView):
             'number_assessments': [],
         }
         site_codes = []
-        for data in summary:
-            # Get the latest data
-            if data['site_code'] in site_codes:
-                continue
-            site_codes.append(data['site_code'])
+        for data in self.location_sites:
 
-            chart_data['site_code'].append(
-                data['site_code']
-            )
-            chart_data['sass_ids'].append(
-                data['sass_id']
-            )
-            chart_data['site_id'].append(
-                data['site_id']
-            )
-            chart_data['sass_score'].append(
-                data['sass_score']
-            )
-            chart_data['aspt_score'].append(
-                round(data['aspt'], 2)
-            )
-            chart_data['taxa_count'].append(
-                data['count']
-            )
-            chart_data['date'].append(
-                data['date'].strftime('%d-%m-%Y')
-            )
-            chart_data['number_assessments'].append(
-                len(summary.filter(site=data['site_id']))
-            )
-            averages = summary.filter(site=data['site_id']).aggregate(
+            # Get the latest data
+            site_visit = SiteVisit.objects.filter(
+                location_site=data,
+            ).order_by('-site_visit_date')
+            if not site_visit:
+                continue
+
+            # Average
+            averages = SiteVisitTaxon.objects.filter(
+                site_visit__in=site_visit
+            ).annotate(
+                sass_id=F('site_visit__id'),
+            ).values('sass_id').annotate(
+                count=Count('sass_taxon'),
+                sass_score=Sum(Case(
+                    When(
+                        condition=Q(site_visit__sass_version=5,
+                                    sass_taxon__sass_5_score__isnull=False),
+                        then='sass_taxon__sass_5_score'),
+                    default='sass_taxon__score'
+                ))
+            ).annotate(
+                aspt=Cast(
+                    F('sass_score'), FloatField()) / Cast(
+                    F('count'), FloatField()),
+            ).aggregate(
                 taxa_number_average=Avg('count'),
                 sass_score_average=Avg('sass_score'),
                 aspt_average=Avg('aspt'),
@@ -118,8 +112,64 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'min': averages['aspt_min'],
                 'max': averages['aspt_max'],
             })
+
+            site_visit_index = 0
+            latest_site_visit = site_visit[site_visit_index]
+            if data.site_code in site_codes:
+                continue
+            sass_score_isnull = True
+            site_visit_taxon = None
+            site_visit_data = None
+            while sass_score_isnull:
+                site_visit_taxon = SiteVisitTaxon.objects.filter(
+                    site_visit=latest_site_visit
+                )
+                site_visit_data = site_visit_taxon.aggregate(
+                    sass_score=Sum(Case(
+                        When(
+                            condition=Q(
+                                site_visit__sass_version=5,
+                                sass_taxon__sass_5_score__isnull=False),
+                            then='sass_taxon__sass_5_score'),
+                        default='sass_taxon__score'
+                    ))
+                )
+                if site_visit_data['sass_score']:
+                    sass_score_isnull = False
+                else:
+                    site_visit_index += 1
+                    if site_visit_index >= site_visit.count():
+                        sass_score_isnull = False
+                    latest_site_visit = site_visit[site_visit_index]
+
+            if not site_visit_data or not site_visit_taxon:
+                continue
+
+            site_codes.append(data.site_code)
+            chart_data['site_code'].append(data.site_code)
+            chart_data['sass_ids'].append(latest_site_visit.id)
+            chart_data['site_id'].append(data.id)
+            sass_score = 0
+            taxa_count = site_visit_taxon.distinct('sass_taxon').count()
+            aspt = 0.0
+            if site_visit_data:
+                sass_score = site_visit_data['sass_score']
+                try:
+                    aspt = round(sass_score / taxa_count, 2)
+                except TypeError:
+                    pass
+            chart_data['taxa_count'].append(taxa_count)
+            chart_data['sass_score'].append(sass_score)
+            chart_data['aspt_score'].append(aspt)
+            chart_data['date'].append(
+                latest_site_visit.site_visit_date.strftime('%d-%m-%Y')
+            )
+            chart_data['number_assessments'].append(
+                site_visit_taxon.count()
+            )
         return chart_data
 
+    @timing
     def get_taxa_per_biotope_data(self):
         latest_site_visits = self.site_visit_taxa.order_by(
             'site',
@@ -227,6 +277,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 )
         return sass_taxon_data_dict
 
+    @timing
     def get_biotope_ratings_chart_data(self, sass_ids=None):
         data = {}
 
@@ -271,6 +322,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             'biotope_labels': biotope_labels
         }
 
+    @timing
     def get_ecological_chart_data(self):
         chart_data = {}
         unique_ecoregions = []
@@ -296,7 +348,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                             KeyTextTransform(
                                 'context_group_values',
                                 'location_context')))))
-        ).values('geo_class', 'eco_region', 'id')).distinct()
+        ).values('geo_class', 'eco_region', 'id'))
 
         unique_eco_geo = {}
         max_charts = 4
@@ -395,18 +447,33 @@ class SassDashboardMultipleSitesApiView(APIView):
     def get(self, request):
         filters = request.GET
         search = SearchVersion2(filters)
+        page = int(filters.get('page', 1))
         collection_records = search.process_search()
+        collection_records_ids = collection_records.values_list(
+            'id', flat=True
+        )
+        collection_records_site_ids = collection_records.distinct(
+            'site'
+        ).values_list(
+            'site__id', flat=True
+        )
+        self.location_sites = LocationSite.objects.filter(
+            id__in=list(collection_records_site_ids)
+        )
+        paginator = Paginator(self.location_sites, MAX_RESULTS_PER_PAGE)
+        if page > paginator.num_pages:
+            page = paginator.count
+        current_page = paginator.page(page)
+        self.location_sites = current_page.object_list
+
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
-            id__in=collection_records
+            id__in=list(collection_records_ids),
+            site__in=list(self.location_sites.values_list('id', flat=True))
         )
         sass_score_chart_data = self.get_sass_score_chart_data()
         taxa_per_biotope_data = self.get_taxa_per_biotope_data()
         biotope_ratings_chart_data = self.get_biotope_ratings_chart_data(
             sass_ids=sass_score_chart_data['sass_ids']
-        )
-
-        self.location_sites = LocationSite.objects.filter(
-            id__in=collection_records.values('site').distinct()
         )
         coordinates = []
         ecological_chart_data, unique_ecoregions = (
@@ -418,6 +485,8 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'y': location_site.get_centroid().y
             })
         return Response({
+            'total_pages': paginator.num_pages,
+            'current_page': page,
             'sass_score_chart_data': sass_score_chart_data,
             'taxa_per_biotope_data': taxa_per_biotope_data,
             'biotope_ratings_chart_data': biotope_ratings_chart_data,
