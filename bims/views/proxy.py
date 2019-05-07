@@ -30,4 +30,5 @@ def proxy_request(request, path):
         new_path = path.split(':/')
         path = '://'.join(new_path)
 
+    request.session['access_token'] = None
     return proxy(request, url=path)

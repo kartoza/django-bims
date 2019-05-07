@@ -332,7 +332,8 @@ class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email', 'organization')}),
+        (_('Personal info'), {'fields': (
+            'first_name', 'last_name', 'email', 'organization')}),
         ('Profiles',
          {'classes': ('placeholder bims_profile-group',), 'fields': ()}),
         (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',

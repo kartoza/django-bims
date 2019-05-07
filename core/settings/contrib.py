@@ -126,8 +126,6 @@ STATICFILES_DIRS = [
     absolute_path('sass', 'static'),
 ] + STATICFILES_DIRS
 
-INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
-
 MIDDLEWARE_CLASSES += (
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
@@ -184,6 +182,8 @@ else:
         'allauth.socialaccount.providers.github',
     )
 
+
+INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 # ROLEPERMISSIONS_MODULE = 'roles.settings.roles'
 
 IUCN_API_URL = 'http://apiv3.iucnredlist.org/api/v3'
