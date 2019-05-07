@@ -1,87 +1,130 @@
 # coding=utf-8
-import copy
+from collections import OrderedDict
 from rest_framework.views import APIView, Response
 from bims.models import SpatialScale, SpatialScaleGroup
-from bims.views.fish_form import RIVER_CATCHMENT_ORDER
 
 
 class SpatialScaleFilterList(APIView):
     """API for listing all spatial scale filter"""
-    SPATIAL_FILTER_TO_EXCLUDE = [
-        'Geomorphological Zones',
-        'Ecological Region',
-        'Geomorphological zones',
-    ]
+    SPATIAL_FILTER_GROUPS = OrderedDict([
+        ('Geomorphological Zone', {
+            'key': 'geomorphological_zone',
+            'groups': [
+                'geo_class_recoded'
+            ]
+        }),
+        ('Freshwater Ecoregion', {
+            'key': 'freshwater_ecoregion',
+            'groups': [
+                'feow_hydrosheds'
+            ]
+        }),
+        ('Province', {
+            'key': 'province',
+            'groups': [
+                'sa_provinces'
+            ]
+        }),
+        ('Management Area', {
+            'key': 'management_area',
+            'groups': [
+                'water_management_area'
+            ]
+        }),
+        ('Catchment', {
+            'key': 'river_catchment',
+            'groups': [
+                'primary_catchment_area',
+                'secondary_catchment_area',
+                'tertiary_catchment_area',
+                'quaternary_catchment_area'
+            ]
+        }),
+        ('SA Ecoregion', {
+            'key': 'sa_ecoregion',
+            'groups': [
+                'eco_region_1',
+                'eco_region_2'
+            ]
+        }),
+        ('Critical Biodiversity Area (CBA)', {
+            'key': 'cba',
+            'groups': [
+                'national_cba'
+            ]
+        }),
+        ('National Freshwater Ecosystem Priority Area (NFEPA)', {
+            'key': 'national_freshwater_ecosystem_priority_area',
+            'groups': [
+                'nfepa_rivers_2011',
+                'nfepa_rivers_fepas_2011',
+                'nfepa_wetlands_vegetation',
+                'nfepa_fish_sanctuaries_all_species',
+                'nfepa_fish_sanctuaries_2011',
+                'nfepa_wetlands_2011',
+                'nfepa_wetlandcluster_2011'
+            ]
+        }),
+        ('Strategic Water Source Areas', {
+            'key': 'strategic_water_source_areas',
+            'groups': [
+                'surface_swsas',
+                'ground_swsas'
+            ]
+        })
+    ])
+
 
     def get_spatial_scale(self, spatial_scale_groups):
         spatial_tree = []
         if not spatial_scale_groups:
             return spatial_tree
-        for spatial_scale in spatial_scale_groups:
-            spatial_scale_children = SpatialScaleGroup.objects.filter(
-                parent=spatial_scale
-            ).exclude(name__in=self.SPATIAL_FILTER_TO_EXCLUDE)
-            if spatial_scale.name.lower() == (
-                'geomorphological zones - recoded'):
-                spatial_scale.name = 'Geomorphological Zones'
-
+        for key, value in self.SPATIAL_FILTER_GROUPS.iteritems():
             spatial_tree_data = {
-                'id': spatial_scale.id,
-                'key': spatial_scale.key,
-                'name': spatial_scale.name,
+                'key': value['key'],
+                'name': key,
+                'children': []
             }
-            if spatial_scale_children:
-                spatial_tree_data['children'] = (
-                    self.get_spatial_scale(spatial_scale_children)
-                )
-            else:
-                spatial_tree_data['value'] = list(
+            spatial_scale_groups = SpatialScaleGroup.objects.filter(
+                key__in=value['groups']
+            ).distinct('key')
+            try:
+                objects = dict(
+                    [(obj.key, obj) for obj in spatial_scale_groups])
+                spatial_scale_groups = [
+                    objects[key] for key in value['groups']]
+            except KeyError:
+                pass
+            for group in spatial_scale_groups:
+                spatial_tree_value = list(
                     SpatialScale.objects.filter(
-                        group=spatial_scale,
+                        group=group,
                         type='select'
-                    ).values(
+                    ).order_by('query').values(
                         'id',
                         'query',
                         'name',
                         'type'
                     )
                 )
-            spatial_tree.append(spatial_tree_data)
+                spatial_tree_group_data = {
+                    'id': group.id,
+                    'key': group.key,
+                    'name': group.name,
+                    'value': spatial_tree_value
+                }
+                spatial_tree_data['children'].append(spatial_tree_group_data)
+
+            spatial_tree.append(
+                spatial_tree_data
+            )
         return spatial_tree
-
-    def order_river_catchments(self, spatial_scale_list):
-        """
-        Order river catchment filter
-        :param spatial_scale_list: list of spatial scale filter
-        """
-        river_catchment_order = copy.deepcopy(RIVER_CATCHMENT_ORDER)
-        river_catchment_order.reverse()
-        river_catchment_order.append('nfepa_wetlands')
-        for group in spatial_scale_list:
-            if group['key'] == 'water_group':
-                ordered_river = []
-                for river_order in river_catchment_order:
-                    for group_child in group['children']:
-                        if group_child['key'] == river_order:
-                            ordered_river.append(group_child)
-                            break
-                group['children'] = ordered_river
-
-    def fix_spatial_filters(self, spatial_scale_list):
-        new_spatial_list = []
-        for group in spatial_scale_list:
-            if 'value' in group and not group['value']:
-                continue
-            new_spatial_list.append(group)
-        return new_spatial_list
 
     def get(self, request, *args):
         spatial_scale_groups = SpatialScaleGroup.objects.filter(
             parent__isnull=True
         )
         groups = self.get_spatial_scale(spatial_scale_groups)
-        self.order_river_catchments(groups)
-        groups = self.fix_spatial_filters(groups)
 
         return Response(
             groups
