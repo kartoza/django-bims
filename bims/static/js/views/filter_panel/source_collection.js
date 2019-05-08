@@ -49,6 +49,13 @@ define([
                 selected.push($(this).val())
             });
             return selected;
+        },
+        highlight: function (state) {
+            if (state) {
+                this.$el.find('.subtitle').addClass('filter-panel-selected');
+            } else {
+                this.$el.find('.subtitle').removeClass('filter-panel-selected');
+            }
         }
     })
 });

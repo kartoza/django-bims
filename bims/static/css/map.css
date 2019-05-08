@@ -2666,3 +2666,7 @@ div:hover::-webkit-scrollbar {
     font-style: italic;
     text-transform: capitalize;
 }
+
+.filter-panel-selected {
+    background-color: rgba(232, 226, 81, 0.29) !important;
+}

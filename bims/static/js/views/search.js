@@ -246,6 +246,14 @@ define([
         clearSelectedConservationStatus: function () {
             return this.$el.find("#conservation-status").val("").trigger('chosen:updated');
         },
+        highlightPanel: function (identifier, state) {
+            let panelTitle = $(identifier).prev().find('.subtitle');
+            if (state) {
+                panelTitle.addClass('filter-panel-selected');
+            } else {
+                panelTitle.removeClass('filter-panel-selected');
+            }
+        },
         search: function (searchValue) {
             $('#filter-validation-error').hide();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
@@ -262,8 +270,10 @@ define([
             var referenceCategory = self.referenceCategoryView.getSelected();
             if (referenceCategory.length > 0) {
                 referenceCategory = JSON.stringify(referenceCategory);
+                self.referenceCategoryView.highlight(true);
             } else {
                 referenceCategory = '';
+                self.referenceCategoryView.highlight(false);
             }
             filterParameters['referenceCategory'] = referenceCategory;
 
@@ -271,15 +281,18 @@ define([
             var sourceCollection = self.sourceCollectionView.getSelected();
             if (sourceCollection.length > 0) {
                 sourceCollection = JSON.stringify(sourceCollection);
+                self.sourceCollectionView.highlight(true);
             } else {
                 sourceCollection = '';
+                self.sourceCollectionView.highlight(false);
             }
             filterParameters['sourceCollection'] = sourceCollection;
 
             // Collector filter
             var collectorValue = $("#filter-collectors").val();
+            self.highlightPanel('.filter-collectors-row', collectorValue.length > 0);
             if (collectorValue.length === 0) {
-                collectorValue = ''
+                collectorValue = '';
             } else {
                 var encodedCollectorValue = [];
                 $.each(collectorValue, function (index, value) {
@@ -293,6 +306,7 @@ define([
 
             // reference filter
             var referenceValue = $("#filter-study-reference").val();
+            self.highlightPanel('.filter-study-reference-row', referenceValue.length > 0);
             if (referenceValue.length === 0) {
                 referenceValue = ''
             } else {
@@ -329,9 +343,11 @@ define([
                 endemicValue = JSON.stringify(endemicValue);
             }
             filterParameters['endemic'] = endemicValue;
+            self.highlightPanel('#origin-filter-wrapper', endemicValue.length > 0 || categoryValue.length > 0);
 
             // Conservation status filter
             filterParameters['conservationStatus'] = this.getSelectedConservationStatus();
+            self.highlightPanel('.conservation-status-row', filterParameters['conservationStatus'] !== '[]');
 
             // Boundary filter
             var boundaryValue = this.spatialFilterView.selectedPoliticalRegions;
@@ -354,6 +370,7 @@ define([
             // Spatial filter
             var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
             filterParameters['spatialFilter'] = spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters);
+            this.spatialFilterView.highlight(spatialFilters.length !== 0);
 
             // Validation filter
             var validationFilter = [];
@@ -363,11 +380,15 @@ define([
             });
             if (validationFilter.length > 0) {
                 validated = JSON.stringify(validationFilter);
+                self.highlightPanel('.validation-filter-row', true);
             } else if (validationFilter.length === 0) {
                 $('#filter-validation-error').show();
+                self.highlightPanel('.validation-filter-row', false);
                 return;
             }
             filterParameters['validated'] = validated;
+
+            self.highlightPanel('.module-filters', filterParameters['modules'] !== '');
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -383,6 +404,9 @@ define([
                 filterParameters['yearFrom'] = yearFrom;
                 filterParameters['yearTo'] = yearTo;
                 filterParameters['months'] = monthSelected.join(',');
+                self.highlightPanel('.temporal-scale-row', true);
+            } else {
+                self.highlightPanel('.temporal-scale-row', false);
             }
             Shared.Dispatcher.trigger('map:closeHighlight');
             Shared.Dispatcher.trigger(Shared.EVENTS.SEARCH.HIT, filterParameters);
@@ -454,6 +478,7 @@ define([
 
             Shared.Dispatcher.trigger('map:resetSitesLayer');
             Shared.Dispatcher.trigger('map:refetchRecords');
+            $('.subtitle').removeClass('filter-panel-selected');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {
