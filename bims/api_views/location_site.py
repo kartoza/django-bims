@@ -40,6 +40,7 @@ from bims.models.search_process import (
 )
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
+from bims.models.site_image import SiteImage
 
 
 class LocationSiteList(APIView):
@@ -366,6 +367,12 @@ class LocationSiteSummaryGenerator(object):
 
         search_process.create_view()
         biodiversity_data = self.get_biodiversity_data(collection_results)
+        site_images = SiteImage.objects.filter(
+            site__in=list(
+                collection_results.distinct('site').values_list(
+                    'site__id', flat=True))).values_list(
+            'image', flat=True
+        )
 
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
@@ -381,6 +388,7 @@ class LocationSiteSummaryGenerator(object):
             self.IUCN_NAME_LIST: self.iucn_category,
             self.ORIGIN_NAME_LIST: self.origin_name_list,
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
+            'site_images': list(site_images),
             'process': search_process.process_id,
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id,
