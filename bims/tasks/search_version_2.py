@@ -40,6 +40,7 @@ def search_task(parameters, search_process_id):
                 search_process.create_view()
                 search_process.set_status(SEARCH_FINISHED, False)
                 search_results['status'] = SEARCH_FINISHED
+                search_results['extent'] = search.extent()
                 search_process.save_to_file(search_results)
             else:
                 search_process.set_status(SEARCH_FAILED)
