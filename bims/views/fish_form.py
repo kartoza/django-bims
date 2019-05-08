@@ -15,7 +15,8 @@ from bims.models import (
     BiologicalCollectionRecord,
     Taxonomy,
     LocationType,
-    TaxonGroup
+    TaxonGroup,
+    SiteImage
 )
 
 logger = logging.getLogger('bims')
@@ -192,6 +193,12 @@ class FishFormView(TemplateView):
                 id=post_data.get('site-id', None)
             )
 
+        site_image_file = request.FILES.get('site-image', None)
+        if site_image_file:
+            SiteImage.objects.get_or_create(
+                site=self.location_site,
+                image=site_image_file
+            )
         taxa_id_list = post_data.get('taxa-id-list', '').split(',')
         taxa_id_list = filter(None, taxa_id_list)
         for taxon in taxa_id_list:
