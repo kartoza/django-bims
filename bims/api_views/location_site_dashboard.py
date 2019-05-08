@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.db.models import Case, F, Count, Value, When
 from django.db.models.functions import ExtractYear
 from bims.api_views.search_version_2 import SearchVersion2 as Search
@@ -62,6 +62,8 @@ class LocationSitesEndemismChartData(APIView):
                 ).values_list(
                     'year', 'count'
                 ))
+        if not response_data:
+            raise Http404('No data')
 
         # Convert pixel to inches
         dpi = 72

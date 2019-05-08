@@ -200,11 +200,11 @@ define([
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
                     }
-                    self.createOccurrencesBarChart(data);
-                    self.createTaxaStackedBarChart(data);
-                    self.createOriginStackedBarChart(data);
-                    self.createConsStatusStackedBarChart(data);
-                    self.createEndemismStackedBarChart();
+                    // self.createOccurrencesBarChart(data);
+                    // self.createTaxaStackedBarChart(data);
+                    // self.createOriginStackedBarChart(data);
+                    // self.createConsStatusStackedBarChart(data);
+                    // self.createEndemismStackedBarChart();
 
                     renderFilterList($('#filter-history-table'));
 
