@@ -34,12 +34,14 @@ define([
             }
             for (var i = 0; i < data.length; i++) {
                 var checked = '';
+                var label = data[i].get('source_collection');
+                label = label.charAt(0).toUpperCase() + label.slice(1);
                 if ($.inArray(data[i].get('source_collection'), this.parent.initialSelectedSourceCollection) > -1) {
                     checked = 'checked';
                 }
                 this.listWrapper.append('<div>' +
                     '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="' + data[i].get('source_collection') + '"  ' + checked + ' >&nbsp;' +
-                    '<label for="source-collection-list-'+i+'" >'+ data[i].get('source_collection') + '</label>' +
+                    '<label for="source-collection-list-'+i+'" >'+ label + '</label>' +
                     '</div>');
             }
         },
