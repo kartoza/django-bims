@@ -40,7 +40,7 @@ define([
         numInFlightTiles: 0,
         scaleLineControl: null,
         mapIsReady: false,
-        initCenter: [22.937506, -30.559482],
+        initCenter: [22.948492328125, -31.12543669218031],
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
