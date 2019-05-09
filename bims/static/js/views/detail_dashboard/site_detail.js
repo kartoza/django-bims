@@ -183,6 +183,7 @@ define([
                             return false;
                         }
                     }
+
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
                     if (data['is_multi_sites']) {
@@ -200,21 +201,25 @@ define([
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
                     }
+
+                    renderFilterList($('#filter-history-table'));
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
                     self.createOriginStackedBarChart(data);
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
 
-                    renderFilterList($('#filter-history-table'));
-
                     // Zoom to extent
-                    let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
-                    self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
-                    if (self.mapLocationSite.getView().getZoom() > 8) {
-                        self.mapLocationSite.getView().setZoom(8);
+                    if (data['extent'].length > 0) {
+                        let ext = ol.proj.transformExtent(
+                            data['extent'],
+                            ol.proj.get('EPSG:4326'),
+                            ol.proj.get('EPSG:3857'));
+                        self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
+                        if (self.mapLocationSite.getView().getZoom() > 8) {
+                            self.mapLocationSite.getView().setZoom(8);
+                        }
                     }
-
                     let newParams = {
                         layers: locationSiteGeoserverLayer,
                         format: 'image/png',
@@ -572,6 +577,11 @@ define([
             var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
             let originOccurrenceData = data['origin_occurrence'];
             let originCategoryList = data['origin_name_list'];
+            if (Object.keys(originOccurrenceData['data']).length === 0) {
+                this.$el.find('.fish-ssdd-origin-bar-chart').hide();
+                return;
+            }
+            this.$el.find('.fish-ssdd-origin-bar-chart').show();
             // Update labels
             $.each(originOccurrenceData['dataset_labels'], function (index, label) {
                 if (originCategoryList.hasOwnProperty(label)) {
@@ -592,12 +602,22 @@ define([
         createTaxaStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
             if (data.hasOwnProperty('taxa_graph')) {
+                if(Object.keys(data['taxa_graph']['data']).length === 0) {
+                    this.$el.find('.fish-ssdd-taxa-line-chart').hide();
+                    return;
+                }
+                this.$el.find('.fish-ssdd-taxa-line-chart').show();
                 this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas, true);
             }
         },
         createConsStatusStackedBarChart: function (data) {
             let iucnCategoryList = data['iucn_name_list'];
             let consStatusData = data['cons_status_occurrence'];
+            if (Object.keys(consStatusData['data']).length === 0) {
+                this.$el.find('.fish-ssdd-cons-status-bar-chart').hide();
+                return;
+            }
+            this.$el.find('.fish-ssdd-cons-status-bar-chart').show();
             // Update labels
             $.each(consStatusData['dataset_labels'], function (index, label) {
                 if (iucnCategoryList.hasOwnProperty(label)) {
@@ -632,6 +652,10 @@ define([
                 success: function (data) {
                     loadingChart.hide();
                     chartContainer.html('<img alt="" src="' + data + '" />');
+                },
+                error: function () {
+                    loadingChart.hide();
+                    chartContainer.html('No Data');
                 }
             })
         },
@@ -639,8 +663,7 @@ define([
 
             if (!(data_in.hasOwnProperty(chartName + '_chart'))) {
                 return false;
-            }
-            ;
+            };
 
             var chartConfig = {
                 type: 'bar',
@@ -697,6 +720,11 @@ define([
         createOccurrencesBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-occurrences-line-chart-canvas');
             if (data.hasOwnProperty('taxa_occurrence')) {
+                if (data['taxa_occurrence']['occurrences_line_chart']['values'].length === 0) {
+                    this.$el.find('.fish-ssdd-occurrences-line-chart').hide();
+                    return;
+                }
+                this.$el.find('.fish-ssdd-occurrences-line-chart').show();
                 this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
             }
         },
@@ -883,7 +911,13 @@ define([
         createOccurrenceDataTable: function (data) {
             let occurrenceDataWrapper = $('#fish-ssdd-occurrence-data');
             let occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
-            occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list'], data['origin_name_list']));
+            if (data['occurrence_data'].length > 0 || data['iucn_name_list'].length > 0 || data['origin_name_list'].length > 0) {
+                this.$el.find('.download-as-csv').show();
+                occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list'], data['origin_name_list']));
+            } else {
+                occurrenceDataSub.html('No Data');
+                this.$el.find('.download-as-csv').hide();
+            }
         },
         renderOccurrenceData: function (occurrenceData, conservationStatusList, originCategoryList) {
             let occurrenceTable = $('<table class="table table-bordered table-condensed table-sm site-detailed-table">');
