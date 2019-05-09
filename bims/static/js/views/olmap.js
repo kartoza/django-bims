@@ -461,9 +461,6 @@ define([
             return this;
         },
         mapMoved: function () {
-            let center = this.map.getView().getCenter();
-            center = ol.proj.transform(center, 'EPSG:3857', 'EPSG:4326');
-            console.log(center);
             let self = this;
             let administrative = self.checkAdministrativeLevel();
             if (administrative !== 'detail') {
