@@ -479,6 +479,7 @@ define([
             Shared.Dispatcher.trigger('map:resetSitesLayer');
             Shared.Dispatcher.trigger('map:refetchRecords');
             $('.subtitle').removeClass('filter-panel-selected');
+            Shared.Dispatcher.trigger('map:zoomToDefault');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {

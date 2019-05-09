@@ -169,9 +169,8 @@ define([
                     0, $('.right-panel').width(), 0, 250
                 ]
             });
-            this.map.getView().setZoom(this.getCurrentZoom());
-            if (this.getCurrentZoom() > 18) {
-                this.map.getView().setZoom(18);
+            if (this.map.getView().getZoom() > 8) {
+                this.map.getView().setZoom(8);
             }
         },
         mapClicked: function (e) {

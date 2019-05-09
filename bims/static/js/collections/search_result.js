@@ -24,6 +24,7 @@ define([
         totalTaxa: 0,
         processID: 0,
         pageMoreSites: 2,
+        extent: [],
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -135,6 +136,9 @@ define([
             if (response.hasOwnProperty('process_id')) {
                 this.processID = response['process_id'];
             }
+            if (response.hasOwnProperty('extent')) {
+                this.extent = response['extent'];
+            }
             this.renderCollection();
         },
         renderCollection: function () {
@@ -192,6 +196,10 @@ define([
 
             if (self.status === 'finished' && this.sitesData.length > 0 && this.recordsData.length > 0) {
                 Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
+                if (this.extent.length === 4) {
+                    Shared.Dispatcher.trigger('map:zoomToExtent', this.extent);
+                }
+
                 $.each(this.recordsData, function (key, data) {
                     var searchModel = new SearchModel({
                         id: data['taxon_id'],
@@ -235,6 +243,7 @@ define([
                 }
             } else {
                 Shared.Dispatcher.trigger('map:clearAllLayers');
+                Shared.Dispatcher.trigger('map:zoomToDefault');
             }
 
             var taxaListNumberElm = $('#taxa-list-number');
