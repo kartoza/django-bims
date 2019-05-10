@@ -74,6 +74,10 @@ class SpatialScaleFilterList(APIView):
         })
     ])
 
+    SPATIAL_GROUP_UPDATED_NAMES = {
+        'eco_region_1': 'Ecoregion Level 1',
+        'eco_region_2': 'Ecoregion Level 2'
+    }
 
     def get_spatial_scale(self, spatial_scale_groups):
         spatial_tree = []
@@ -99,7 +103,6 @@ class SpatialScaleFilterList(APIView):
                 spatial_tree_value = list(
                     SpatialScale.objects.filter(
                         group=group,
-                        type='select'
                     ).order_by('query').values(
                         'id',
                         'query',
@@ -107,10 +110,13 @@ class SpatialScaleFilterList(APIView):
                         'type'
                     )
                 )
+                group_name = group.name
+                if group.key in self.SPATIAL_GROUP_UPDATED_NAMES:
+                    group_name = self.SPATIAL_GROUP_UPDATED_NAMES[group.key]
                 spatial_tree_group_data = {
                     'id': group.id,
                     'key': group.key,
-                    'name': group.name,
+                    'name': group_name,
                     'value': spatial_tree_value
                 }
                 spatial_tree_data['children'].append(spatial_tree_group_data)
