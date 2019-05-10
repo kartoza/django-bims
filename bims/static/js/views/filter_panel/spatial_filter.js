@@ -168,6 +168,7 @@ define([
                              '</div>');
                 $container.append(header);
                 header.after(self.renderSpatialChildren(spatialData['children']));
+                header.click();
             });
         },
         renderSpatialChildren: function (spatialData) {
