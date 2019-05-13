@@ -380,12 +380,14 @@ devweb-test:
 	@echo "------------------------------------------------------------------"
 	@docker exec bims-dev-web bash -c 'cd / ; karma start --single-run'
 
-rebuildindex-devweb:
+reset-search-results:
 	@echo
 	@echo "------------------------------------------------------------------"
-	@echo "Running rebuild_index in DEVELOPMENT mode"
+	@echo "Reset search results"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) run devweb python manage.py rebuild_index
+	@docker-compose exec uwsgi python manage.py clear_search_results
+	@docker-compose ${ARGS} restart worker
+	@docker-compose ${ARGS} restart cache
 
 # Run pep8 style checking
 #http://pypi.python.org/pypi/pep8

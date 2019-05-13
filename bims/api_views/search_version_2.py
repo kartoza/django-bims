@@ -42,7 +42,8 @@ class SearchVersion2APIView(APIView):
             if 'sites' in results:
                 results['total_unique_sites'] = len(results['sites'])
                 results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
-            results['total_unique_taxa'] = len(results['records'])
+            if 'records' in results:
+                results['total_unique_taxa'] = len(results['records'])
             results['sites_raw_query'] = search_process.process_id
             return Response(results)
 
@@ -368,6 +369,10 @@ class SearchVersion2(object):
                 if spatial_filter['query']:
                     spatial_query += 'value'
                     spatial_query_value = spatial_filter['query']
+                try:
+                    spatial_query_value = float(spatial_query_value)
+                except ValueError:
+                    pass
                 if spatial_query_list is None:
                     spatial_query_list = Q(
                         **{spatial_query: spatial_query_value}
