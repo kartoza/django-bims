@@ -1,0 +1,5 @@
+{% load i18n %}
+
+{% trans "A new user has been created with username" %} : ({{ username }})
+
+{% trans "Activate this user by following this link" %}: http://{{ current_site }}/admin/people/profile/{{ user_id }}/change/

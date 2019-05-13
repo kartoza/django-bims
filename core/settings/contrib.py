@@ -202,6 +202,7 @@ MODELSDOC_INCLUDE_AUTO_CREATED = True
 
 # contact us email
 CONTACT_US_EMAIL = os.environ.get('CONTACT_US_EMAIL', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', CONTACT_US_EMAIL)
 
 # site tracking stats settings
 TRACK_PAGEVIEWS = True
@@ -299,10 +300,10 @@ if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
 # Set institutionID default value
 INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')
 
-ACCOUNT_APPROVAL_REQUIRED = False
+ACCOUNT_APPROVAL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 ACCOUNT_ADAPTER = 'bims.adapters.account_adapter.AccountAdapter'
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 OGC_SERVER['default']['DATASTORE'] = os.environ.get(
         'DEFAULT_BACKEND_DATASTORE', '')
