@@ -2,7 +2,7 @@ import matplotlib
 matplotlib.use('Agg')  # noqa
 import io
 from collections import OrderedDict
-from rest_framework.views import APIView
+from rest_framework.views import APIView, Response
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -91,3 +91,68 @@ class LocationSitesEndemismChartData(APIView):
         else:
             response = HttpResponse(buf.getvalue(), content_type='image/png')
         return response
+
+
+class OccurrencesChartData(APIView):
+    """
+    Get occurrence data categorized by origin for chart
+    """
+
+    def get_data_per_year(self, collection_data, categories):
+        chart_data = {
+            'dataset_labels': [],
+            'labels': [],
+            'data': {}
+        }
+        year_labels = []
+        category_with_data = dict()
+        for category in categories:
+            category_with_data[category] = []
+
+        for data in collection_data:
+            new_data = False
+            if data['year'] not in year_labels:
+                new_data = True
+                year_labels.append(data['year'])
+
+            if new_data and len(year_labels) > 1:
+                # Add 0 to previous
+                for category in categories:
+                    if len(category_with_data[category]) < len(year_labels) - 1:
+                        category_with_data[category].insert(len(year_labels) - 2, 0)
+
+            category_with_data[data['name']].append(data['count'])
+
+        chart_data['dataset_labels'] = categories
+        chart_data['labels'] = year_labels
+        chart_data['data'] = category_with_data
+
+        return chart_data
+
+    def get(self, request):
+        filters = request.GET.dict()
+        search = Search(filters)
+        collection_results = search.process_search()
+        origin_graph_data = collection_results.annotate(
+            year=ExtractYear('collection_date'),
+            name=Case(When(category__isnull=False,
+                           then=F('category')),
+                      default=Value('Unspecified'))
+        ).values(
+            'year', 'name'
+        ).annotate(
+            count=Count('year'),
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
+
+        categories = list(collection_results.annotate(
+            name=Case(When(category__isnull=False,
+                           then=F('category')),
+                      default=Value('Unspecified'))
+        ).values_list(
+            'name', flat=True
+        ).distinct('name'))
+
+        result = self.get_data_per_year(origin_graph_data, categories)
+        return Response(result)

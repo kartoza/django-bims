@@ -205,9 +205,9 @@ define([
                     renderFilterList($('#filter-history-table'));
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart(data);
-                    self.createOriginStackedBarChart(data);
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
+                    self.createOriginStackedBarChart(data);
 
                     // Zoom to extent
                     if (data['extent'].length > 0) {
@@ -574,30 +574,47 @@ define([
             new ChartJs(ctx, chartConfig);
         },
         createOriginStackedBarChart: function (data) {
-            var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
-            let originOccurrenceData = data['origin_occurrence'];
+            let self = this;
             let originCategoryList = data['origin_name_list'];
-            if (Object.keys(originOccurrenceData['data']).length === 0) {
-                this.$el.find('.fish-ssdd-origin-bar-chart').hide();
-                return;
-            }
-            this.$el.find('.fish-ssdd-origin-bar-chart').show();
-            // Update labels
-            $.each(originOccurrenceData['dataset_labels'], function (index, label) {
-                if (originCategoryList.hasOwnProperty(label)) {
-                    originOccurrenceData['dataset_labels'][index] = originCategoryList[label];
+            let chartContainer = this.$el.find('.fish-ssdd-origin-bar-chart');
+            let width = chartContainer.width();
+            width += 150; // padding
+            let loadingChart = chartContainer.find('.chart-loading');
+            let baseUrl = '/api/location-sites-occurrences-chart-data/';
+            baseUrl += this.currentFiltersUrl;
+            baseUrl += '&width=' + width;
+            baseUrl += '&base_64=1';
+            $.get({
+                url: baseUrl,
+                cache: true,
+                processData: false,
+                success: function (data) {
+                    loadingChart.hide();
+                    if (Object.keys(data['data']).length === 0) {
+                        self.$el.find('.fish-ssdd-origin-bar-chart').hide();
+                        return;
+                    }
+                    self.$el.find('.fish-ssdd-origin-bar-chart').show();
+                    // Update labels
+                    $.each(data['dataset_labels'], function (index, label) {
+                        if (originCategoryList.hasOwnProperty(label)) {
+                            data['dataset_labels'][index] = originCategoryList[label];
+                        }
+                    });
+                    $.each(data['data'], function (key, current_data) {
+                        if (originCategoryList.hasOwnProperty(key)) {
+                            delete data['data'][key];
+                            data['data'][originCategoryList[key]] = current_data;
+                        }
+                    });
+                    let chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
+                    self.renderStackedBarChart(data, 'origin_bar', chartCanvas);
+                },
+                error: function () {
+                    loadingChart.hide();
+                    chartContainer.html('No Data');
                 }
             });
-            // Update data title
-            $.each(originOccurrenceData['data'], function (key, data) {
-                if (originCategoryList.hasOwnProperty(key)) {
-                    delete originOccurrenceData['data'][key];
-                    originOccurrenceData['data'][originCategoryList[key]] = data;
-                }
-            });
-            if (data.hasOwnProperty('origin_occurrence')) {
-                this.renderStackedBarChart(originOccurrenceData, 'origin_bar', chartCanvas);
-            }
         },
         createTaxaStackedBarChart: function (data) {
             var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
