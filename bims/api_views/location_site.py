@@ -1,9 +1,8 @@
 # coding=utf8
 import json
 import os
-import hashlib
 from django.contrib.gis.geos import Polygon
-from django.db.models import Q, F, Count, Value, CharField, Case, When
+from django.db.models import Q, F, Count, Value, Case, When
 from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
@@ -13,7 +12,6 @@ from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from bims.tasks.location_site import location_site_summary
 from bims.serializers.location_site_serializer import (
     LocationSiteSerializer,
     LocationSiteClusterSerializer,
@@ -33,10 +31,8 @@ from bims.utils.search_process import (
     create_search_process_file,
 )
 from bims.models.search_process import (
-    SearchProcess,
     SITES_SUMMARY,
     SEARCH_FINISHED,
-    SEARCH_PROCESSING
 )
 from bims.api_views.search_version_2 import SearchVersion2
 from bims.models.iucn_status import IUCNStatus
@@ -204,79 +200,9 @@ class LocationSitesSummary(APIView):
     """
         List cached location site summary based on collection record search.
     """
-
-    def get(self, request):
-        filters = request.GET.dict()
-        search_uri = request.build_absolute_uri()
-
-        search_process, created = get_or_create_search_process(
-            SITES_SUMMARY,
-            query=search_uri
-        )
-
-        if search_process.file_path:
-            if os.path.exists(search_process.file_path):
-                try:
-                    raw_data = open(search_process.file_path)
-                    return Response(json.load(raw_data))
-                except ValueError:
-                    pass
-
-        # Create process id
-        data_for_process_id = dict()
-        data_for_process_id['search_uri'] = search_uri
-        data_for_process_id['collections_total'] = (
-            BiologicalCollectionRecord.objects.all().count()
-        )
-        # Generate unique process id by search uri and total of collections
-        process_id = hashlib.md5(
-            json.dumps(data_for_process_id, sort_keys=True)
-        ).hexdigest()
-        search_process.set_process_id(process_id)
-        search_process.set_status(SEARCH_PROCESSING)
-
-        location_site_summary.delay(
-            filters,
-            search_process.id
-        )
-
-        result_file = search_process.get_file_if_exits(finished=False)
-        if result_file:
-            return Response(result_file)
-        return Response({'status': 'result/status not exists'})
-
-
-class LocationSitesCoordinate(ListAPIView):
-    """
-        List paginated location site based on collection record search,
-        there may be duplication.
-    """
-    serializer_class = LocationSitesCoordinateSerializer
-
-    def get_queryset(self):
-        query_value = self.request.GET.get('search')
-        filters = self.request.GET
-        (
-            collection_results,
-            site_results,
-            fuzzy_search
-        ) = GetCollectionAbstract.apply_filter(
-            query_value,
-            filters,
-            ignore_bbox=True,
-            only_site=True)
-        return collection_results
-
-
-class LocationSiteSummaryGenerator(object):
-    """
-    Generate location site summary
-    """
     COUNT = 'count'
     ORIGIN = 'origin'
     TOTAL_RECORDS = 'total_records'
-    RECORDS_GRAPH_DATA = 'records_graph_data'
-    RECORDS_OCCURRENCE = 'records_occurrence'
     TAXA_OCCURRENCE = 'taxa_occurrence'
     CATEGORY_SUMMARY = 'category_summary'
     TAXONOMY_NAME = 'name'
@@ -291,12 +217,10 @@ class LocationSiteSummaryGenerator(object):
     iucn_category = {}
     origin_name_list = {}
 
-    def generate(self, filters, process_id):
+    def generate(self, filters, search_process):
         search = SearchVersion2(filters)
         collection_results = search.process_search()
         site_id = filters['siteId']
-
-        search_process = SearchProcess.objects.get(id=process_id)
 
         self.iucn_category = dict(
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
@@ -305,39 +229,12 @@ class LocationSiteSummaryGenerator(object):
             (x, y) for x, y in BiologicalCollectionRecord.CATEGORY_CHOICES
         )
 
-        taxa_occurrence = self.get_site_taxa_occurrences_per_year(
+        taxa_occurrence = self.site_taxa_occurrences_per_year(
             collection_results)
 
-        taxa_graph_data = collection_results.annotate(
-            year=ExtractYear('collection_date'),
-            name=F('taxonomy__scientific_name'),
+        category_summary = collection_results.filter(
+            category__isnull=False
         ).annotate(
-            count=Count('year')
-        ).values(
-            'year', 'name', 'count'
-        ).order_by('year')
-        taxa_graph = self.get_data_per_year(taxa_graph_data)
-
-        records_occurrence = collection_results.annotate(
-            name=F('taxonomy__scientific_name'),
-            taxon_id=F('taxonomy_id'),
-            origin=F('category')
-        ).values(
-            'taxon_id', 'name', 'origin'
-        ).annotate(
-            count=Count('taxonomy')
-        )
-
-        records_graph_data = collection_results.annotate(
-            year=ExtractYear('collection_date'),
-            origin=F('category')
-        ).values(
-            'year', 'origin'
-        ).annotate(
-            count=Count('year')
-        ).order_by('year')
-
-        category_summary = collection_results.annotate(
             origin=F('category')
         ).values_list(
             'origin'
@@ -357,13 +254,10 @@ class LocationSiteSummaryGenerator(object):
             is_sass_exists = collection_results.filter(
                 notes__icontains='sass'
             ).exists()
-        origin_occurrence = self.get_origin_occurrence_data(collection_results)
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
         search_process.set_status(SEARCH_FINISHED, False)
-        cons_status_occurrence = self.get_cons_status_occurrence_data(
-            collection_results)
 
         search_process.create_view()
         biodiversity_data = self.get_biodiversity_data(collection_results)
@@ -377,13 +271,8 @@ class LocationSiteSummaryGenerator(object):
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
             self.SITE_DETAILS: dict(site_details),
-            self.RECORDS_GRAPH_DATA: list(records_graph_data),
             self.TAXA_OCCURRENCE: dict(taxa_occurrence),
-            self.RECORDS_OCCURRENCE: list(records_occurrence),
             self.CATEGORY_SUMMARY: dict(category_summary),
-            self.TAXA_GRAPH: dict(taxa_graph),
-            self.ORIGIN_OCCURRENCE: dict(origin_occurrence),
-            self.CONS_STATUS_OCCURRENCE: cons_status_occurrence,
             self.OCCURRENCE_DATA: self.occurrence_data(collection_results),
             self.IUCN_NAME_LIST: self.iucn_category,
             self.ORIGIN_NAME_LIST: self.origin_name_list,
@@ -395,13 +284,9 @@ class LocationSiteSummaryGenerator(object):
             'is_multi_sites': is_multi_sites,
             'is_sass_exists': is_sass_exists
         }
-
-        search_process.set_status(SEARCH_FINISHED, False)
         create_search_process_file(
-            data=response_data,
-            search_process=search_process,
-            finished=True
-        )
+            response_data, search_process, file_path=None, finished=True)
+        return response_data
 
     def occurrence_data(self, collection_results):
         """
@@ -426,7 +311,7 @@ class LocationSiteSummaryGenerator(object):
         occurrence_data = list(occurrence_table_data)
         return occurrence_data
 
-    def get_site_taxa_occurrences_per_year(self, collection_results):
+    def site_taxa_occurrences_per_year(self, collection_results):
         """
         Get occurrence data for charts
         :param: collection_records: collection record queryset
@@ -438,120 +323,13 @@ class LocationSiteSummaryGenerator(object):
                  ).annotate(count=Count('year')
                             ).values('year', 'count'
                                      ).order_by('year')
-        result = {}
+        result = dict()
         result['occurrences_line_chart'] = {}
         result['occurrences_line_chart']['values'] = list(
             taxa_occurrence_data.values_list('count', flat=True))
         result['occurrences_line_chart']['keys'] = list(
             taxa_occurrence_data.values_list('year', flat=True))
         result['occurrences_line_chart']['title'] = 'Occurrences'
-        return result
-
-    def get_data_per_year(self, data_in):
-        """
-        Get occurrence data for charts
-        :param: library of records to be flattened for a stacked bar chart
-        :return: dict of occurrence data
-        """
-        result = dict()
-        years = list(
-            data_in.values_list('year', flat=True).distinct())
-        labels = list(set(data_in.values_list(
-            'name', flat=True
-        ).order_by('name')))
-        result['labels'] = list(data_in.values_list(
-            'year', flat=True
-        ).distinct())
-        result['dataset_labels'] = list(set(data_in.values_list(
-            'name', flat=True
-        ).order_by('name')))
-        result['data'] = {}
-        for dataset_label in labels:
-            result['data'][dataset_label] = []
-            for dataset_year in years:
-                dataset_data = data_in.filter(
-                    name=dataset_label,
-                    year=dataset_year
-                )
-                total_count = 0
-                if dataset_data.exists():
-                    total_count = sum(dataset_data.values_list(
-                        'count', flat=True
-                    ))
-                result['data'][dataset_label].append(total_count)
-        return result
-
-    def get_origin_occurrence_data(self, collection_records):
-        """
-        Get occurrence data for charts
-        :param: collection_records: collection record queryset
-        :return: dict of occurrence data for stacked bar graph
-        """
-        origin_graph_data = collection_records.annotate(
-            year=ExtractYear('collection_date'),
-            name=Case(When(category__isnull=False,
-                           then=F('category')),
-                      default=Value('Unspecified'))
-        ).values(
-            'year', 'name'
-        ).annotate(
-            count=Count('year'),
-        ).values(
-            'year', 'name', 'count'
-        ).order_by('year')
-        result = self.get_data_per_year(origin_graph_data)
-        return result
-
-    def get_cons_status_occurrence_data(self, collection_records):
-        """
-        Get occurrence data for charts
-        :param: collection_records: collection record queryset
-        :return: dict of origin data for stacked bar graph
-        """
-        cons_graph_data = collection_records.filter(
-            taxonomy__iucn_status__isnull=False
-        ).annotate(
-            year=ExtractYear('collection_date'),
-            name=F('taxonomy__iucn_status__category'),
-        ).values(
-            'year', 'name'
-        ).annotate(
-            count=Count('year'),
-        ).values(
-            'year', 'name', 'count'
-        ).order_by('year')
-
-        # unspecified values
-        unspecified_values = collection_records.filter(
-            taxonomy__iucn_status__isnull=True
-        ).annotate(
-            year=ExtractYear('collection_date'),
-            name=Value('DD', output_field=CharField())
-        ).values('year', 'name').annotate(
-            count=Count('year')
-        ).values(
-            'year', 'name', 'count'
-        ).order_by('year')
-
-        result = self.get_data_per_year(cons_graph_data)
-        if not unspecified_values:
-            return result
-        if 'DD' not in result['dataset_labels']:
-            result['dataset_labels'].append('DD')
-            result['data']['DD'] = []
-        for index, dataset_year in enumerate(result['labels']):
-            dataset_data = unspecified_values.filter(
-                name='DD',
-                year=dataset_year
-            )
-            total_count = 0
-            if dataset_data.exists():
-                for dataset in dataset_data:
-                    total_count += dataset['count']
-            try:
-                result['data']['DD'][index] += total_count
-            except IndexError:
-                result['data']['DD'].append(total_count)
         return result
 
     def get_biodiversity_data(self, collection_results):
@@ -604,7 +382,9 @@ class LocationSiteSummaryGenerator(object):
         biodiversity_data['species']['cons_status_chart']['keys'] = keys
 
         endemism_status_data = collection_results.annotate(
-            name=F('taxonomy__endemism__name')
+            name=Case(When(taxonomy__endemism__name__isnull=False,
+                           then=F('taxonomy__endemism__name')),
+                      default=Value('Unspecified'))
         ).values(
             'name'
         ).annotate(
@@ -870,3 +650,47 @@ class LocationSiteSummaryGenerator(object):
             return str(data[key]['value'])
         except KeyError:
             return str(0)
+
+    def get(self, request):
+        filters = request.GET.dict()
+        search_uri = request.build_absolute_uri()
+
+        search_process, created = get_or_create_search_process(
+            SITES_SUMMARY,
+            query=search_uri
+        )
+
+        if search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
+
+        return Response(self.generate(
+            filters,
+            search_process
+        ))
+
+
+class LocationSitesCoordinate(ListAPIView):
+    """
+        List paginated location site based on collection record search,
+        there may be duplication.
+    """
+    serializer_class = LocationSitesCoordinateSerializer
+
+    def get_queryset(self):
+        query_value = self.request.GET.get('search')
+        filters = self.request.GET
+        (
+            collection_results,
+            site_results,
+            fuzzy_search
+        ) = GetCollectionAbstract.apply_filter(
+            query_value,
+            filters,
+            ignore_bbox=True,
+            only_site=True)
+        return collection_results

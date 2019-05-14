@@ -496,7 +496,7 @@
                 </div>
 
                 {# Occurrences per year line chart #}
-                <div class="card" id="fish-ssdd-taxa-occurrences-line-chart">
+                <div class="card" id="fish-ssdd-taxa-occurrences-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Taxa
@@ -508,6 +508,7 @@
                     </div>
                     <div class="card-body">
                         <div class="col-12 fish-ssdd-taxa-line-chart">
+                            <div class="chart-loading">Fetching...</div>
                             <canvas id="fish-ssdd-taxa-occurrences-line-chart-canvas"></canvas>
                         </div>
                     </div>
@@ -545,13 +546,14 @@
                     </div>
                     <div class="card-body">
                         <div class="col-12 fish-ssdd-cons-status-bar-chart">
+                            <div class="chart-loading">Fetching...</div>
                             <canvas id="fish-ssdd-cons-status-bar-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
 
                 {# endemism per year bar chart #}
-                <div class="card" id="fish-ssdd-cons-status-bar-chart">
+                <div class="card" id="fish-ssdd-endemism-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Endemism

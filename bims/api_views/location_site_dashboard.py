@@ -204,3 +204,24 @@ class LocationSitesConservationChartData(ChartDataApiView):
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
+
+
+class LocationSitesTaxaChartData(ChartDataApiView):
+    """
+    """
+    def categories(self, collection_results):
+        return list(collection_results.annotate(
+            name=F('taxonomy__scientific_name'),
+        ).values_list(
+            'name', flat=True
+        ).distinct('name'))
+
+    def chart_data(self, collection_results):
+        return collection_results.annotate(
+            year=ExtractYear('collection_date'),
+            name=F('taxonomy__scientific_name'),
+        ).annotate(
+            count=Count('year')
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
