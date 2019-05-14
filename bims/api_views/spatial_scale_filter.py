@@ -110,6 +110,15 @@ class SpatialScaleFilterList(APIView):
                         'type'
                     )
                 )
+
+                spatial_tree_value_sorted = sorted(
+                    spatial_tree_value,
+                    key=lambda i: (
+                        int(i['query'].split(' ')[0])
+                        if i['query'].split(' ')[0].isdigit()
+                        else i['query'])
+                )
+
                 group_name = group.name
                 if group.key in self.SPATIAL_GROUP_UPDATED_NAMES:
                     group_name = self.SPATIAL_GROUP_UPDATED_NAMES[group.key]
@@ -117,7 +126,7 @@ class SpatialScaleFilterList(APIView):
                     'id': group.id,
                     'key': group.key,
                     'name': group_name,
-                    'value': spatial_tree_value
+                    'value': spatial_tree_value_sorted
                 }
                 spatial_tree_data['children'].append(spatial_tree_group_data)
 
