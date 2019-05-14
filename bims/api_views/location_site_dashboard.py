@@ -93,12 +93,9 @@ class LocationSitesEndemismChartData(APIView):
         return response
 
 
-class OccurrencesChartData(APIView):
-    """
-    Get occurrence data categorized by origin for chart
-    """
+class ChartDataApiView(APIView):
 
-    def get_data_per_year(self, collection_data, categories):
+    def format_data(self, collection_data, categories):
         chart_data = {
             'dataset_labels': [],
             'labels': [],
@@ -118,8 +115,10 @@ class OccurrencesChartData(APIView):
             if new_data and len(year_labels) > 1:
                 # Add 0 to previous
                 for category in categories:
-                    if len(category_with_data[category]) < len(year_labels) - 1:
-                        category_with_data[category].insert(len(year_labels) - 2, 0)
+                    if len(category_with_data[category]) < len(
+                            year_labels) - 1:
+                        category_with_data[category].insert(
+                            len(year_labels) - 2, 0)
 
             category_with_data[data['name']].append(data['count'])
 
@@ -129,11 +128,40 @@ class OccurrencesChartData(APIView):
 
         return chart_data
 
+    def chart_data(self, collection_results):
+        raise NotImplementedError
+
+    def categories(self, collection_results):
+        raise NotImplementedError
+
     def get(self, request):
         filters = request.GET.dict()
         search = Search(filters)
         collection_results = search.process_search()
-        origin_graph_data = collection_results.annotate(
+        chart_data = self.chart_data(collection_results)
+        categories = self.categories(collection_results)
+        result = self.format_data(
+            chart_data,
+            categories
+        )
+        return Response(result)
+
+
+class OccurrencesChartData(ChartDataApiView):
+    """
+    Get occurrence data categorized by origin for chart
+    """
+    def categories(self, collection_results):
+        return list(collection_results.annotate(
+            name=Case(When(category__isnull=False,
+                           then=F('category')),
+                      default=Value('Unspecified'))
+        ).values_list(
+            'name', flat=True
+        ).distinct('name'))
+
+    def chart_data(self, collection_results):
+        return collection_results.annotate(
             year=ExtractYear('collection_date'),
             name=Case(When(category__isnull=False,
                            then=F('category')),
@@ -146,13 +174,33 @@ class OccurrencesChartData(APIView):
             'year', 'name', 'count'
         ).order_by('year')
 
-        categories = list(collection_results.annotate(
-            name=Case(When(category__isnull=False,
-                           then=F('category')),
+
+class LocationSitesConservationChartData(ChartDataApiView):
+    """
+    Conservation status chart data from filtered collection records
+    """
+
+    def categories(self, collection_results):
+        return list(collection_results.annotate(
+            name=Case(When(taxonomy__iucn_status__category__isnull=False,
+                           then=F('taxonomy__iucn_status__category')),
                       default=Value('Unspecified'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
 
-        result = self.get_data_per_year(origin_graph_data, categories)
-        return Response(result)
+    def chart_data(self, collection_results):
+        return collection_results.filter(
+            taxonomy__iucn_status__isnull=False
+        ).annotate(
+            year=ExtractYear('collection_date'),
+            name=Case(When(taxonomy__iucn_status__category__isnull=False,
+                           then=F('taxonomy__iucn_status__category')),
+                      default=Value('Unspecified')),
+        ).values(
+            'year', 'name'
+        ).annotate(
+            count=Count('year'),
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
