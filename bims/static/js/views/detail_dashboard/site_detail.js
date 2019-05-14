@@ -204,10 +204,10 @@ define([
 
                     renderFilterList($('#filter-history-table'));
                     self.createOccurrencesBarChart(data);
-                    self.createTaxaStackedBarChart(data);
-                    self.createOriginStackedBarChart(data);
+                    self.createTaxaStackedBarChart();
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
+                    self.createOriginStackedBarChart(data);
 
                     // Zoom to extent
                     if (data['extent'].length > 0) {
@@ -328,6 +328,21 @@ define([
             if (this.originTimelineGraphCanvas) {
                 this.originTimelineGraphCanvas.destroy();
                 this.originTimelineGraphCanvas = null;
+            }
+
+            if (this.taxaOccurrencesChartCanvas) {
+                this.taxaOccurrencesChartCanvas.destroy();
+                this.taxaOccurrencesChartCanvas = null;
+            }
+
+            if (this.consChartCanvas) {
+                this.consChartCanvas.destroy();
+                this.consChartCanvas = null;
+            }
+
+            if (this.originChartCanvas) {
+                this.originChartCanvas.destroy();
+                this.originChartCanvas = null;
             }
 
             if (this.mapLocationSite) {
@@ -571,70 +586,112 @@ define([
             };
             chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
-            new ChartJs(ctx, chartConfig);
+            return new ChartJs(ctx, chartConfig);
+        },
+        fetchChartData: function (chartContainer, baseUrl, callback) {
+            let width = chartContainer.width();
+            width += 150; // padding
+            let loadingChart = chartContainer.find('.chart-loading');
+            baseUrl += this.currentFiltersUrl;
+            baseUrl += '&width=' + width;
+            baseUrl += '&base_64=1';
+            $.get({
+                url: baseUrl,
+                cache: true,
+                processData: false,
+                success: function (data) {
+                    loadingChart.hide();
+                    callback(data);
+                },
+                error: function () {
+                    loadingChart.hide();
+                    chartContainer.html('No Data');
+                }
+            });
         },
         createOriginStackedBarChart: function (data) {
-            var chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
-            let originOccurrenceData = data['origin_occurrence'];
+            let self = this;
             let originCategoryList = data['origin_name_list'];
-            if (Object.keys(originOccurrenceData['data']).length === 0) {
-                this.$el.find('.fish-ssdd-origin-bar-chart').hide();
-                return;
-            }
-            this.$el.find('.fish-ssdd-origin-bar-chart').show();
-            // Update labels
-            $.each(originOccurrenceData['dataset_labels'], function (index, label) {
-                if (originCategoryList.hasOwnProperty(label)) {
-                    originOccurrenceData['dataset_labels'][index] = originCategoryList[label];
+            let chartContainer = this.$el.find('.fish-ssdd-origin-bar-chart');
+            let baseUrl = '/api/location-sites-occurrences-chart-data/';
+
+            this.fetchChartData(
+                chartContainer,
+                baseUrl,
+                (responseData) => {
+                    if (Object.keys(responseData['data']).length === 0) {
+                        self.$el.find('.fish-ssdd-origin-bar-chart').hide();
+                        return;
+                    }
+                    self.$el.find('.fish-ssdd-origin-bar-chart').show();
+                    // Update labels
+                    $.each(responseData['dataset_labels'], function (index, label) {
+                        if (originCategoryList.hasOwnProperty(label)) {
+                            responseData['dataset_labels'][index] = originCategoryList[label];
+                        }
+                    });
+                    $.each(responseData['data'], function (key, current_data) {
+                        if (originCategoryList.hasOwnProperty(key)) {
+                            delete responseData['data'][key];
+                            responseData['data'][originCategoryList[key]] = current_data;
+                        }
+                    });
+                    let chartCanvas = document.getElementById('fish-ssdd-origin-bar-chart-canvas');
+                    this.originChartCanvas = self.renderStackedBarChart(responseData, 'origin_bar', chartCanvas);
                 }
-            });
-            // Update data title
-            $.each(originOccurrenceData['data'], function (key, data) {
-                if (originCategoryList.hasOwnProperty(key)) {
-                    delete originOccurrenceData['data'][key];
-                    originOccurrenceData['data'][originCategoryList[key]] = data;
-                }
-            });
-            if (data.hasOwnProperty('origin_occurrence')) {
-                this.renderStackedBarChart(originOccurrenceData, 'origin_bar', chartCanvas);
-            }
+            );
         },
-        createTaxaStackedBarChart: function (data) {
-            var chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
-            if (data.hasOwnProperty('taxa_graph')) {
-                if(Object.keys(data['taxa_graph']['data']).length === 0) {
-                    this.$el.find('.fish-ssdd-taxa-line-chart').hide();
-                    return;
+        createTaxaStackedBarChart: function () {
+            let self = this;
+            let chartContainer = this.$el.find('#fish-ssdd-taxa-occurrences-bar-chart');
+            let baseUrl = '/api/location-sites-taxa-chart-data/';
+            let chartCanvas = document.getElementById('fish-ssdd-taxa-occurrences-line-chart-canvas');
+
+            this.fetchChartData(
+                chartContainer,
+                baseUrl,
+                (responseData) => {
+                    if(Object.keys(responseData['data']).length === 0) {
+                        self.$el.find('.fish-ssdd-taxa-line-chart').hide();
+                        return;
+                    }
+                    self.$el.find('.fish-ssdd-taxa-line-chart').show();
+                    this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'occurrences_line', chartCanvas, true);
                 }
-                this.$el.find('.fish-ssdd-taxa-line-chart').show();
-                this.renderStackedBarChart(data['taxa_graph'], 'occurrences_line', chartCanvas, true);
-            }
+            )
         },
         createConsStatusStackedBarChart: function (data) {
+            let self = this;
             let iucnCategoryList = data['iucn_name_list'];
-            let consStatusData = data['cons_status_occurrence'];
-            if (Object.keys(consStatusData['data']).length === 0) {
-                this.$el.find('.fish-ssdd-cons-status-bar-chart').hide();
-                return;
-            }
-            this.$el.find('.fish-ssdd-cons-status-bar-chart').show();
-            // Update labels
-            $.each(consStatusData['dataset_labels'], function (index, label) {
-                if (iucnCategoryList.hasOwnProperty(label)) {
-                    consStatusData['dataset_labels'][index] = iucnCategoryList[label];
+            let chartContainer = this.$el.find('#fish-ssdd-cons-status-bar-chart');
+            let baseUrl = '/api/location-sites-cons-chart-data/';
+
+            this.fetchChartData(
+                chartContainer,
+                baseUrl,
+                (responseData) => {
+                    if (Object.keys(responseData['data']).length === 0) {
+                        self.$el.find('.fish-ssdd-cons-status-bar-chart').hide();
+                        return;
+                    }
+                    self.$el.find('.fish-ssdd-cons-status-bar-chart').show();
+                    // Update labels
+                    $.each(responseData['dataset_labels'], function (index, label) {
+                        if (iucnCategoryList.hasOwnProperty(label)) {
+                            responseData['dataset_labels'][index] = iucnCategoryList[label];
+                        }
+                    });
+                    // Update data title
+                    $.each(responseData['data'], function (key, data) {
+                        if (iucnCategoryList.hasOwnProperty(key)) {
+                            delete responseData['data'][key];
+                            responseData['data'][iucnCategoryList[key]] = data;
+                        }
+                    });
+                    var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
+                    this.consChartCanvas = self.renderStackedBarChart(responseData, 'cons_status_bar', chartCanvas, true);
                 }
-            });
-            // Update data title
-            $.each(consStatusData['data'], function (key, data) {
-                if (iucnCategoryList.hasOwnProperty(key)) {
-                    delete consStatusData['data'][key];
-                    consStatusData['data'][iucnCategoryList[key]] = data;
-                }
-            });
-            var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
-            if (data.hasOwnProperty('cons_status_occurrence')) {
-                this.renderStackedBarChart(data['cons_status_occurrence'], 'cons_status_bar', chartCanvas);
-            }
+            )
         },
         createEndemismStackedBarChart: function () {
             let chartContainer = this.$el.find('.fish-ssdd-endemism-bar-chart');
@@ -767,30 +824,31 @@ define([
         createOriginsOccurrenceTable: function (data) {
             let originsSub = this.$el.find('#origins');
             let originCategoryList = data['origin_name_list'];
-            let originsOccurrenceData = data['origin_occurrence']['data'];
+            let originChartData = data['biodiversity_data']['species']['origin_chart'];
             let originsTableData = {};
-            $.each(originsOccurrenceData, function (key, value) {
-                if (originCategoryList.hasOwnProperty(key)) {
-                    originsTableData[originCategoryList[key]] = value.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
+            $.each(originChartData['keys'], function (index, value) {
+                let category = value;
+                if(originCategoryList.hasOwnProperty(value)) {
+                    category = originCategoryList[value];
                 }
+                originsTableData[category] = originChartData['data'][index];
             });
-            originsSub.html(this.renderTableFromTitlesValuesLists(originsTableData, data, 'origin', false));
+            originsSub.html(this.renderTableFromTitlesValuesLists(originsTableData, false));
         },
         createConservationOccurrenceTable: function (data) {
             let conservation_statusSub = this.$el.find('#ssdd-conservation-status');
-            let consStatusOccurrenceData = data['cons_status_occurrence']['data'];
+            let consChartData = data['biodiversity_data']['species']['cons_status_chart'];
             let consCategoryList = data['iucn_name_list'];
             let constTableData = {};
-            $.each(consStatusOccurrenceData, function (key, value) {
-                if (consCategoryList.hasOwnProperty(key)) {
-                    constTableData[consCategoryList[key]] = value.reduce(function (a, b) {
-                        return a + b;
-                    }, 0);
+            $.each(consChartData['keys'], function (index, value) {
+                let category = value;
+                if(consCategoryList.hasOwnProperty(value)) {
+                    category = consCategoryList[value];
                 }
+                constTableData[category] = consChartData['data'][index];
             });
-            conservation_statusSub.html(this.renderTableFromTitlesValuesLists(constTableData, data, 'cons_status', false));
+            constTableData = this.sortOnKeys(constTableData);
+            conservation_statusSub.html(this.renderTableFromTitlesValuesLists(constTableData, false));
         },
         createEndemismOccurrenceTable: function (data) {
             let endemismDataChart = data['biodiversity_data']['species']['endemism_chart'];
@@ -802,7 +860,7 @@ define([
                 endemismData[data] = endemismDataChart['data'][index];
             });
             let wrapper = this.$el.find('#ssdd-endemism');
-            wrapper.html(this.renderTableFromTitlesValuesLists(endemismData, data, 'endemism', false));
+            wrapper.html(this.renderTableFromTitlesValuesLists(endemismData, false));
         },
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
@@ -892,7 +950,7 @@ define([
             var element_name = `#fish-ssdd-${chartName}-legend`;
             $(element_name).html(chart_labels[chartName]);
         },
-        renderTableFromTitlesValuesLists: function (specific_data, all_data = [], alias_type = '', bold_title = true) {
+        renderTableFromTitlesValuesLists: function (specific_data, bold_title = true) {
             var temp_result;
             var title_class = '';
             var $result = $('<div></div>');
@@ -984,6 +1042,18 @@ define([
             chartCanvas.remove();
             chartParent.append(newCanvas);
             return document.getElementById(chartId);
+        },
+        sortOnKeys: function (dict) {
+            var sorted = [];
+            for (var key in dict) {
+                sorted[sorted.length] = key;
+            }
+            sorted.sort();
+            var tempDict = {};
+            for (var i = 0; i < sorted.length; i++) {
+                tempDict[sorted[i]] = dict[sorted[i]];
+            }
+            return tempDict;
         }
     })
 });

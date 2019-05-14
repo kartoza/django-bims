@@ -57,7 +57,10 @@ from bims.api_views.river_catchment import (
 from bims.api_views.spatial_scale_filter import SpatialScaleFilterList
 from bims.api_views.module_list import ModuleList
 from bims.api_views.location_site_dashboard import (
-    LocationSitesEndemismChartData
+    LocationSitesEndemismChartData,
+    OccurrencesChartData,
+    LocationSitesConservationChartData,
+    LocationSitesTaxaChartData
 )
 from bims.api_views.location_site_overview import (
     MultiLocationSitesOverview
@@ -81,6 +84,15 @@ urlpatterns = [
     url(r'^location-sites-endemism-chart-data/$',
         LocationSitesEndemismChartData.as_view(),
         name='location-sites-endemism-chart-data'),
+    url(r'^location-sites-occurrences-chart-data/$',
+        OccurrencesChartData.as_view(),
+        name='location-sites-occurrences-chart-data'),
+    url(r'^location-sites-cons-chart-data/$',
+        LocationSitesConservationChartData.as_view(),
+        name='location-sites-cons-chart-data'),
+    url(r'^location-sites-taxa-chart-data/$',
+        LocationSitesTaxaChartData.as_view(),
+        name='location-sites-taxa-chart-data'),
     url(r'^location-sites-coordinate/$',
         LocationSitesCoordinate.as_view(),
         name='location-sites-coordinate'),

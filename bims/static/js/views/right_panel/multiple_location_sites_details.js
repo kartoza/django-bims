@@ -124,6 +124,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                     $dashboardButton.click(function () {
                         let parameters = $.extend(true, {}, filterParameters);
                         parameters['modules'] = value['module'];
+                        parameters['siteId'] = '';
                         Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
                     });
                 }
