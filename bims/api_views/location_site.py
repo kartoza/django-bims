@@ -504,7 +504,6 @@ class LocationSitesSummary(APIView):
         except KeyError:
             geo_zone = '-'
         overview['Geomorphological zone'] = geo_zone
-        overview['River Management Units'] = '-'
 
         # Catchments
         catchments = dict()
@@ -560,12 +559,13 @@ class LocationSitesSummary(APIView):
             water_management_area = '-'
         catchments['Primary'] = primary_catchment
         catchments['Secondary'] = secondary_catchment
-        catchments['Tertiary'] = tertiary_catchment_area
+        catchments['Tertiary'] = (
+            tertiary_catchment_area if tertiary_catchment_area else '-'
+        )
         catchments['Quaternary'] = quaternary_catchment_area
         catchments['Quinary'] = '-'
 
         sub_water_management_areas = dict()
-        sub_water_management_areas['Sub-Water Management Areas'] = '-'
         sub_water_management_areas['Water Management Areas (WMA)'] = (
             water_management_area
         )
@@ -586,16 +586,37 @@ class LocationSitesSummary(APIView):
         try:
             eco_region = self.parse_string(str(context_document
                                                ['context_group_values']
-                                               ['eco_geo_group']
+                                               ['river_ecoregion_group']
                                                ['service_registry_values']
-                                               ['eco_region']
+                                               ['eco_region_1']
                                                ['value']))
         except KeyError:
             eco_region = '-'
 
+        try:
+            eco_region_2 = self.parse_string(str(context_document
+                                               ['context_group_values']
+                                               ['river_ecoregion_group']
+                                               ['service_registry_values']
+                                               ['eco_region_2']
+                                               ['value']))
+        except KeyError:
+            eco_region_2 = '-'
+
+        try:
+            freshwater_ecoregion = self.parse_string(
+                context_document['context_group_values']
+                ['freshwater_ecoregion_of_the_world']
+                ['service_registry_values']
+                ['feow_hydrosheds']
+                ['value']
+            )
+        except KeyError:
+            freshwater_ecoregion = '-'
+
         sa_ecoregions['Ecoregion Level 1'] = eco_region
-        sa_ecoregions['Ecoregion Level 2'] = '-'
-        sa_ecoregions['Freshwater Ecoregion'] = '-'
+        sa_ecoregions['Ecoregion Level 2'] = eco_region_2
+        sa_ecoregions['Freshwater Ecoregion'] = freshwater_ecoregion
         sa_ecoregions['Province'] = province
 
         result = dict()
@@ -660,13 +681,13 @@ class LocationSitesSummary(APIView):
             query=search_uri
         )
 
-        if search_process.file_path:
-            if os.path.exists(search_process.file_path):
-                try:
-                    raw_data = open(search_process.file_path)
-                    return Response(json.load(raw_data))
-                except ValueError:
-                    pass
+        # if search_process.file_path:
+        #     if os.path.exists(search_process.file_path):
+        #         try:
+        #             raw_data = open(search_process.file_path)
+        #             return Response(json.load(raw_data))
+        #         except ValueError:
+        #             pass
 
         return Response(self.generate(
             filters,
