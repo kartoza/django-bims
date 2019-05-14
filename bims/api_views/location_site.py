@@ -595,11 +595,11 @@ class LocationSitesSummary(APIView):
 
         try:
             eco_region_2 = self.parse_string(str(context_document
-                                               ['context_group_values']
-                                               ['river_ecoregion_group']
-                                               ['service_registry_values']
-                                               ['eco_region_2']
-                                               ['value']))
+                                                 ['context_group_values']
+                                                 ['river_ecoregion_group']
+                                                 ['service_registry_values']
+                                                 ['eco_region_2']
+                                                 ['value']))
         except KeyError:
             eco_region_2 = '-'
 
@@ -681,13 +681,13 @@ class LocationSitesSummary(APIView):
             query=search_uri
         )
 
-        # if search_process.file_path:
-        #     if os.path.exists(search_process.file_path):
-        #         try:
-        #             raw_data = open(search_process.file_path)
-        #             return Response(json.load(raw_data))
-        #         except ValueError:
-        #             pass
+        if search_process.file_path:
+            if os.path.exists(search_process.file_path):
+                try:
+                    raw_data = open(search_process.file_path)
+                    return Response(json.load(raw_data))
+                except ValueError:
+                    pass
 
         return Response(self.generate(
             filters,
