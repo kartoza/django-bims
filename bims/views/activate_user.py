@@ -1,7 +1,4 @@
 # coding=utf-8
-__author__ = 'Anita Hapsari <anita@kartoza.com>'
-__date__ = '07/06/18'
-
 from django.shortcuts import reverse, render
 from django.http import Http404, HttpResponseRedirect
 from geonode.people.models import Profile

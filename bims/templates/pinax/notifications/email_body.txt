@@ -1,0 +1,5 @@
+{% load i18n %}{% url "notice_settings" as notices_url %}{% blocktrans %}You have received the following notice from {{ current_site }}:
+
+{{ message }}
+
+{% endblocktrans %}

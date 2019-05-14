@@ -1,5 +1,6 @@
 # coding=utf-8
 from datetime import timedelta
+from datetime import date
 import json
 from pygments import highlight
 from pygments.lexers.data import JsonLexer
@@ -350,6 +351,18 @@ class CustomUserAdmin(ProfileAdmin):
                        'groups',),
         }),
     )
+
+    def save_formset(self, request, form, formset, change):
+        formset.save()
+        if change:
+            for formset_form in formset.forms:
+                if 'sass_accredited' in formset_form.changed_data:
+                    obj = formset_form.instance
+                    if formset_form.cleaned_data['sass_accredited']:
+                        obj.sass_accredited_time = date.today()
+                    else:
+                        obj.sass_accredited_time = None
+                    obj.save()
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
