@@ -213,13 +213,13 @@ class TestApiView(TestCase):
             site=self.location_site
         )
         TaxonGroupF.create(
-            name='Fish',
+            name='fish',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             taxonomies=(taxon_class_1,)
         )
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
-        self.assertTrue(len(response.data['Fish']) > 0)
+        self.assertTrue(len(response.data['fish']) > 0)
 
     def test_get_autocomplete(self):
         view = autocomplete
