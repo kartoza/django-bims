@@ -439,6 +439,13 @@ function createEcologicalScatterDataset(colour, label, data) {
 }
 
 function renderEcologicalCategoryChart() {
+    let header = $('.ecological-chart-header');
+    try {
+        let headerLabel = `${ecoGeoGroup['eco_region']['value']} - ${ecoGeoGroup['geo_class']['value']}`;
+        header.html(headerLabel);
+    } catch (e) {
+    }
+
     let canvasChart = $('#ecological-category-chart');
     var options = {
         hover: {
