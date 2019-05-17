@@ -7,6 +7,7 @@ from bims.models import (
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.models.site_visit_taxon import SiteVisitTaxon
+from sass.models.site_visit import SiteVisit
 
 
 class ModuleSummary(APIView):
@@ -102,6 +103,7 @@ class ModuleSummary(APIView):
         invert_summary['ecological_data'] = list(
             site_visit_ecological
         )
+        invert_summary['total_sass'] = SiteVisit.objects.all().count()
         return invert_summary
 
     def get(self, request, *args):
