@@ -186,6 +186,8 @@ define([
 
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
+
+                    let dashboardHeader = self.$el.find('.dashboard-header');
                     if (data['is_multi_sites']) {
                         $('#fish-ssdd-site-details').hide();
                         self.createMultiSiteDetails(data);
@@ -197,9 +199,11 @@ define([
                             let sassLink = '/sass/dashboard-multi-sites/' + self.currentFiltersUrl;
                             sassDashboardButton.attr('href', sassLink);
                         }
+                        dashboardHeader.html('Multiple Sites Dashboard');
                     } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
+                        dashboardHeader.html('Single Site Dashboard');
                     }
 
                     renderFilterList($('#filter-history-table'));
