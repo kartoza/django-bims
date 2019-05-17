@@ -174,3 +174,10 @@ body {
 .table {
     background-color: white !important;
 }
+
+.ecological-chart-header {
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    padding: 10px;
+}
