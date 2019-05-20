@@ -51,6 +51,13 @@ class LocationSite(DocumentLinksMixin):
         models.CASCADE,
         null=False,
     )
+    refined_geomorphological = models.CharField(
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text='Would be used in preference to the one discovered '
+                  'in geocontext',
+    )
     geometry_point = models.PointField(
         null=True,
         blank=True,
@@ -101,13 +108,6 @@ class LocationSite(DocumentLinksMixin):
         verbose_name='Additional json data',
         null=True,
         blank=True
-    )
-
-    boundary = models.ForeignKey(
-        Boundary,
-        help_text='This is lowest boundary where location is placed.',
-        blank=True,
-        null=True,
     )
 
     latitude = models.FloatField(

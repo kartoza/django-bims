@@ -118,7 +118,11 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 let geomorphologicalZone = '-';
                 let ecologicalRegion = '-';
                 try {
-                    geomorphologicalZone = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['geo_class_recoded']['value'];
+                    if(data['refined_geomorphological']) {
+                        geomorphologicalZone = data['refined_geomorphological'];
+                    } else {
+                        geomorphologicalZone = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['geo_class_recoded']['value'];
+                    }
                     ecologicalRegion = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['eco_region']['value'];
                 } catch (err) {
                 }
