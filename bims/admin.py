@@ -113,6 +113,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'has_location_context')
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
+    raw_id_fields = ('river', )
 
     actions = ['update_location_context', 'delete_location_context']
 
@@ -548,6 +549,12 @@ class SpatialScaleAdmin(admin.ModelAdmin):
         'name',
         'type',
         'group'
+    )
+    list_filter = (
+        'group',
+    )
+    search_fields = (
+        'query',
     )
 
 

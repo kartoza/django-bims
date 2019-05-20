@@ -1,7 +1,7 @@
 from django.db.models import F, Value, Case, When, Count, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from bims.api_views.search_version_2 import SearchVersion2 as Search
+from bims.api_views.search import Search
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,

@@ -39,7 +39,7 @@ def download_data_to_csv(path_file, request):
         BioCollectionOneRowSerializer
     from bims.utils.celery import memcache_lock
     from bims.models import BiologicalCollectionRecord
-    from bims.api_views.search_version_2 import SearchVersion2
+    from bims.api_views.search import Search
 
     path_file_hexdigest = md5(path_file).hexdigest()
 
@@ -54,7 +54,7 @@ def download_data_to_csv(path_file, request):
         if acquired:
             filters = request
             site_results = None
-            search = SearchVersion2(filters)
+            search = Search(filters)
             collection_results = search.process_search()
 
             if not collection_results and site_results:

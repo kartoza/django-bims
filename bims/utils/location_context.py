@@ -105,8 +105,24 @@ def format_location_context(location_site_id, force_update=False):
                 process_spatial_scale_data(
                     formatted_location_context['context_group_values']
                 )
-                log('Formatted location context already exist', 'info')
-                return
+                if location_site.refined_geomorphological:
+                # Update geo value in geocontext data
+                    try:
+                        context_geo = formatted_location_context[
+                            'context_group_values'][
+                            'eco_geo_group']['service_registry_values'][
+                            'geo_class_recoded']['value']
+                        if (
+                                context_geo ==
+                                location_site.refined_geomorphological):
+                            log('Formatted location context already exist')
+                            return
+                    except KeyError:
+                        log('Formatted location context already exist')
+                        return
+                else:
+                    log('Formatted location context already exist')
+                    return
 
     if not isinstance(location_context, dict):
         return
@@ -120,7 +136,15 @@ def format_location_context(location_site_id, force_update=False):
     models.signals.post_save.disconnect(
         location_site_post_save_handler,
     )
-
+    if location_site.refined_geomorphological:
+        try:
+            formatted['context_group_values'][
+                'eco_geo_group']['service_registry_values'][
+                'geo_class_recoded']['value'] = (
+                location_site.refined_geomorphological
+            )
+        except KeyError:
+            pass
     process_spatial_scale_data(
         formatted['context_group_values']
     )

@@ -11,10 +11,11 @@ from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
 from django.contrib.postgres.fields import JSONField
-from bims.models.boundary import Boundary
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.models.document_links_mixin import DocumentLinksMixin
+from bims.models.search_process import SearchProcess
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -306,7 +307,6 @@ class LocationSite(DocumentLinksMixin):
         return field
 
     def save(self, *args, **kwargs):
-        """Check if one of geometry is not null."""
         self.additional_data = self.validate_json_field(
             self.additional_data
         )
@@ -317,6 +317,7 @@ class LocationSite(DocumentLinksMixin):
             self.location_context
         )
 
+        """Check if one of geometry is not null."""
         if self.geometry_point or self.geometry_line or \
                 self.geometry_polygon or self.geometry_multipolygon:
             # Check if geometry is allowed
@@ -331,9 +332,19 @@ class LocationSite(DocumentLinksMixin):
         else:
             raise ValidationError('At least one geometry need to be filled.')
 
+        if (
+                self.__original_refined_geomorphological !=
+                self.refined_geomorphological):
+             SearchProcess.objects.filter(
+                 finished=True
+             ).delete()
+
     def __init__(self, *args, **kwargs):
         super(LocationSite, self).__init__(*args, **kwargs)
         self.__original_centroid = self.get_centroid()
+        self.__original_refined_geomorphological = (
+            self.refined_geomorphological
+        )
 
 
 @receiver(models.signals.post_save)

@@ -34,7 +34,7 @@ from bims.models.search_process import (
     SITES_SUMMARY,
     SEARCH_FINISHED,
 )
-from bims.api_views.search_version_2 import SearchVersion2
+from bims.api_views.search import Search
 from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
 
@@ -77,7 +77,7 @@ class LocationSiteDetail(APIView):
         filters = request.GET
 
         # Search collection
-        search = SearchVersion2(filters)
+        search = Search(filters)
         collection_results = search.process_search()
         context = {
             'collection_results': collection_results
@@ -218,7 +218,7 @@ class LocationSitesSummary(APIView):
     origin_name_list = {}
 
     def generate(self, filters, search_process):
-        search = SearchVersion2(filters)
+        search = Search(filters)
         collection_results = search.process_search()
         site_id = filters['siteId']
 
