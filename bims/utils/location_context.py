@@ -106,7 +106,7 @@ def format_location_context(location_site_id, force_update=False):
                     formatted_location_context['context_group_values']
                 )
                 if location_site.refined_geomorphological:
-                # Update geo value in geocontext data
+                    # Update geo value in geocontext data
                     try:
                         context_geo = formatted_location_context[
                             'context_group_values'][

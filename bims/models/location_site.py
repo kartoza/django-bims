@@ -335,9 +335,9 @@ class LocationSite(DocumentLinksMixin):
         if (
                 self.__original_refined_geomorphological !=
                 self.refined_geomorphological):
-             SearchProcess.objects.filter(
-                 finished=True
-             ).delete()
+            SearchProcess.objects.filter(
+                finished=True
+            ).delete()
 
     def __init__(self, *args, **kwargs):
         super(LocationSite, self).__init__(*args, **kwargs)
