@@ -27,7 +27,6 @@ class AccountAdapter(LocalAccountAdapter):
         # Sent email to staff
         staffs = get_user_model().objects.filter(is_staff=True)
         try:
-            from invitations.adapters import get_invitations_adapter
             current_site = Site.objects.get_current()
             ctx = {
                 'username': user.username,
