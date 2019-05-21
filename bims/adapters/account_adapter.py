@@ -1,4 +1,7 @@
 import re
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -24,7 +27,6 @@ class AccountAdapter(LocalAccountAdapter):
         # Sent email to staff
         staffs = get_user_model().objects.filter(is_staff=True)
         try:
-            from invitations.adapters import get_invitations_adapter
             current_site = Site.objects.get_current()
             ctx = {
                 'username': user.username,
@@ -35,10 +37,21 @@ class AccountAdapter(LocalAccountAdapter):
                 'inviter': user,
             }
             email_template = 'pinax/notifications/account_created'
-            get_invitations_adapter().send_mail(
-                email_template,
-                list(staffs.values_list('email', flat=True)),
-                ctx)
+            subject = render_to_string(
+                '{0}_subject.txt'.format(email_template),
+                ctx
+            )
+            email_body = render_to_string(
+                '{0}_message.txt'.format(email_template),
+                ctx
+            )
+            msg = EmailMultiAlternatives(
+                subject,
+                email_body,
+                settings.DEFAULT_FROM_EMAIL,
+                list(staffs.values_list('email', flat=True)))
+            msg.send()
+
         except BaseException:
             import traceback
             traceback.print_exc()
