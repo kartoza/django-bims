@@ -103,7 +103,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lat = -30
     default_lon = 25
 
-    readonly_fields = ('location_context_prettified', 'boundary')
+    readonly_fields = ('location_context_prettified', )
 
     list_display = (
         'name',
@@ -111,8 +111,9 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'location_type',
         'get_centroid',
         'has_location_context')
-    search_fields = ('name',)
+    search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
+    raw_id_fields = ('river', )
 
     actions = ['update_location_context', 'delete_location_context']
 
@@ -548,6 +549,12 @@ class SpatialScaleAdmin(admin.ModelAdmin):
         'name',
         'type',
         'group'
+    )
+    list_filter = (
+        'group',
+    )
+    search_fields = (
+        'query',
     )
 
 

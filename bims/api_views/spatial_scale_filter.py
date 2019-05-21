@@ -1,7 +1,7 @@
 # coding=utf-8
 from collections import OrderedDict
 from rest_framework.views import APIView, Response
-from bims.models import SpatialScale, SpatialScaleGroup
+from bims.models import SpatialScale, SpatialScaleGroup, GEO_CLASS_GROUP
 
 
 class SpatialScaleFilterList(APIView):
@@ -10,7 +10,7 @@ class SpatialScaleFilterList(APIView):
         ('Geomorphological Zone', {
             'key': 'geomorphological_zone',
             'groups': [
-                'geo_class_recoded'
+                GEO_CLASS_GROUP
             ]
         }),
         ('Freshwater Ecoregion', {

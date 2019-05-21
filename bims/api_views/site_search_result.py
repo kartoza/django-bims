@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from bims.api_views.search_version_2 import MAX_PAGINATED_SITES
+from bims.api_views.search import MAX_PAGINATED_SITES
 from bims.models.search_process import SearchProcess
 
 

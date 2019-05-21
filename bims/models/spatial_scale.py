@@ -5,6 +5,8 @@ SPATIAL_SCALE_TYPE = (
     ('select', 'Select'),
 )
 
+GEO_CLASS_GROUP = 'geo_class_recoded'
+
 
 class SpatialScale(models.Model):
 
@@ -37,4 +39,9 @@ class SpatialScale(models.Model):
         'bims.SpatialScaleGroup',
         null=False,
         blank=False
+    )
+
+    from_geocontext = models.BooleanField(
+        default=True,
+        help_text='Is this data come from geocontext?'
     )

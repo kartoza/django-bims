@@ -23,7 +23,7 @@ from bims.tasks.search_version_2 import search_task
 MAX_PAGINATED_SITES = 20
 
 
-class SearchVersion2APIView(APIView):
+class SearchAPIView(APIView):
     """
     Search with django query
     """
@@ -72,13 +72,13 @@ class SearchVersion2APIView(APIView):
         return Response({'status': 'result/status not exists'})
 
 
-class SearchVersion2(object):
+class Search(object):
     location_sites_raw_query = ''
     collection_records = None
 
     def __init__(self, parameters):
         self.parameters = parameters
-        super(SearchVersion2, self).__init__()
+        super(Search, self).__init__()
 
     def get_request_data(self, field, default_value=None):
         return self.parameters.get(field, default_value)

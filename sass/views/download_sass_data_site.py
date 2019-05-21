@@ -5,7 +5,7 @@ from hashlib import md5
 import datetime
 from django.http.response import JsonResponse
 from django.conf import settings
-from bims.api_views.search_version_2 import SearchVersion2
+from bims.api_views.search import Search
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.tasks.download_sass_data_site import (
     download_sass_data_site_task,
@@ -68,7 +68,7 @@ def download_sass_data_site(request, **kwargs):
     Download all sass data by site id
     """
     filters = request.GET
-    search = SearchVersion2(filters)
+    search = Search(filters)
     collection_records = search.process_search()
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
@@ -99,7 +99,7 @@ def download_sass_summary_data(request):
     Download sass data summary
     """
     filters = request.GET
-    search = SearchVersion2(filters)
+    search = Search(filters)
     collection_records = search.process_search()
 
     # Get SASS data

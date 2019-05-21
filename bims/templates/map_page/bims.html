@@ -62,6 +62,7 @@
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
         const emptyWMSSiteParameter = '{{ bims_preferences.empty_location_site_cluster }}';
+        const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};
     </script>
     {% block extra_head %}
 

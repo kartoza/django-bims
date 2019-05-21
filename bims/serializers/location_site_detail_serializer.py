@@ -38,6 +38,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'geometry',
             'location_type',
             'location_context_document_json',
+            'refined_geomorphological',
         ]
 
     def get_site_detail_info(self, obj):

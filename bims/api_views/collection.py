@@ -24,7 +24,7 @@ from bims.utils.cluster_point import (
 )
 from bims.models.search_process import SearchProcess
 from bims.utils.url import remove_params_from_uri
-from bims.api_views.search_version_2 import SearchVersion2
+from bims.api_views.search import Search
 
 
 class GetCollectionAbstract(APIView):
@@ -201,7 +201,7 @@ class CollectionDownloader(GetCollectionAbstract):
 
     def get(self, request):
         filters = request.GET
-        search = SearchVersion2(filters)
+        search = Search(filters)
         file_type = request.GET.get('fileType', None)
         if not file_type:
             file_type = 'csv'

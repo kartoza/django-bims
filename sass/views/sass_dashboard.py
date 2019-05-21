@@ -10,7 +10,7 @@ from django.db.models import (
 from django.db.models.functions import Cast, Coalesce
 from bims.models.location_site import LocationSite
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.api_views.search_version_2 import SearchVersion2
+from bims.api_views.search import Search
 from sass.models import (
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon,
@@ -26,7 +26,7 @@ class SassDashboardView(TemplateView):
 
     def get_site_visit_taxon(self):
         filters = self.request.GET
-        search = SearchVersion2(filters)
+        search = Search(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
             id__in=collection_records

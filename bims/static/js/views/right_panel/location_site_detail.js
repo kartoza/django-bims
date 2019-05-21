@@ -118,7 +118,11 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 let geomorphologicalZone = '-';
                 let ecologicalRegion = '-';
                 try {
-                    geomorphologicalZone = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['geo_class_recoded']['value'];
+                    if(data['refined_geomorphological']) {
+                        geomorphologicalZone = data['refined_geomorphological'];
+                    } else {
+                        geomorphologicalZone = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['geo_class_recoded']['value'];
+                    }
                     ecologicalRegion = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['eco_region']['value'];
                 } catch (err) {
                 }
@@ -371,7 +375,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     self.renderSidePanelPieChart(data, 'fish', 'origin');
                     self.renderSidePanelPieChart(data, 'fish', 'cons_status');
                     self.renderSidePanelPieChart(data, 'fish', 'endemism');
-                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i> ' + data['site_detail_info']['fbis_site_code']);
+
+                    let sidePanelTitle = '<i class="fa fa-map-marker"></i> ' + data['site_detail_info']['fbis_site_code'];
+                    if (isStaff) {
+                        sidePanelTitle += '<a href="/admin/bims/locationsite/' + data['id'] + '/change/" style="float: right; padding-top: 5px">Edit</a>';
+                    }
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', sidePanelTitle);
 
 
                     var climateDataHTML = self.renderClimateData(data);

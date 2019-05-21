@@ -9,7 +9,7 @@ from django.db.models.functions import Cast
 from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from bims.api_views.search_version_2 import SearchVersion2
+from bims.api_views.search import Search
 from bims.models import LocationSite
 from bims.utils.logger import log
 from sass.models import (
@@ -446,7 +446,7 @@ class SassDashboardMultipleSitesApiView(APIView):
 
     def get(self, request):
         filters = request.GET
-        search = SearchVersion2(filters)
+        search = Search(filters)
         page = int(filters.get('page', 1))
         collection_records = search.process_search()
         collection_records_ids = collection_records.values_list(
