@@ -349,6 +349,11 @@ define([
                 this.originChartCanvas = null;
             }
 
+            if (this.endemismChartCanvas) {
+                this.endemismChartCanvas.destroy();
+                this.endemismChartCanvas = null;
+            }
+
             if (this.mapLocationSite) {
                 let newParams = {
                     layers: locationSiteGeoserverLayer,
@@ -698,27 +703,23 @@ define([
             )
         },
         createEndemismStackedBarChart: function () {
-            let chartContainer = this.$el.find('.fish-ssdd-endemism-bar-chart');
-            let width = chartContainer.width();
-            width += 150; // padding
-            let loadingChart = chartContainer.find('.chart-loading');
+            let self = this;
+            let chartContainer = this.$el.find('#fish-ssdd-endemism-bar-chart');
             let baseUrl = '/api/location-sites-endemism-chart-data/';
-            baseUrl += this.currentFiltersUrl;
-            baseUrl += '&width=' + width;
-            baseUrl += '&base_64=1';
-            $.get({
-                url: baseUrl,
-                cache: true,
-                processData: false,
-                success: function (data) {
-                    loadingChart.hide();
-                    chartContainer.html('<img alt="" src="' + data + '" />');
-                },
-                error: function () {
-                    loadingChart.hide();
-                    chartContainer.html('No Data');
+            let chartCanvas = document.getElementById('fish-ssdd-endemism-bar-chart-canvas');
+
+            this.fetchChartData(
+                chartContainer,
+                baseUrl,
+                (responseData) => {
+                    if(Object.keys(responseData['data']).length === 0) {
+                        self.$el.find('.fish-ssdd-endemism-bar-chart').hide();
+                        return;
+                    }
+                    self.$el.find('.fish-ssdd-endemism-bar-chart').show();
+                    this.endemismChartCanvas = self.renderStackedBarChart(responseData, 'endemism', chartCanvas, true);
                 }
-            })
+            )
         },
         renderBarChart: function (data_in, chartName, chartCanvas) {
 
