@@ -10,7 +10,10 @@ class EndemismList(APIView):
 
     def get(self, request, *args):
         endemism_list = Endemism.objects.filter(
-            name__isnull=False
+            name__isnull=False,
+            taxonomy__biologicalcollectionrecord__isnull=False
+        ).distinct(
+            'name'
         ).values_list(
             'name', flat=True
         ).exclude(
