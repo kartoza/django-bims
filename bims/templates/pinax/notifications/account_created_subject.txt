@@ -1,1 +1,1 @@
-Account created email notification
+[{{ current_site }}] Account created email notification
