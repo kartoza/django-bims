@@ -131,11 +131,22 @@ class FishFormView(TemplateView):
                 'name', 'description', 'display_order'
             ).order_by('display_order')
         )
-        context['sampling_method_list'] = list(
+
+        sampling_method_lower_list = []
+        context['sampling_method_list'] = []
+        sampling_method_list = list(
             SamplingMethod.objects.all().values(
                 'id', 'sampling_method'
             ).order_by(F('normalisation_factor').asc(nulls_first=True))
         )
+        for sampling_method in sampling_method_list:
+            sampling_method_name = (
+                sampling_method['sampling_method'].replace('-', ' ')
+            ).strip()
+            if sampling_method_name.lower() not in sampling_method_lower_list:
+                sampling_method_lower_list.append(sampling_method_name.lower())
+                context['sampling_method_list'].append(sampling_method)
+
         return context
 
     @method_decorator(login_required)
