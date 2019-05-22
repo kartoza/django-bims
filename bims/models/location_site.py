@@ -122,6 +122,12 @@ class LocationSite(DocumentLinksMixin):
         help_text='This is intended only for IPT',
         null=True
     )
+    original_geomorphological = models.CharField(
+        blank=True,
+        null=True,
+        max_length=200,
+        help_text='Original geomorphological zone from spatial layer'
+    )
 
     def get_centroid(self):
         """ Getting centroid of location site """

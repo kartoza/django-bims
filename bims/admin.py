@@ -103,7 +103,9 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lat = -30
     default_lon = 25
 
-    readonly_fields = ('location_context_prettified', )
+    readonly_fields = (
+        'location_context_prettified',
+        'original_geomorphological')
 
     list_display = (
         'name',
@@ -118,7 +120,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     actions = ['update_location_context', 'delete_location_context']
 
     def get_readonly_fields(self, request, obj=None):
-        return ['longitude', 'latitude']
+        return ['longitude', 'latitude', 'original_geomorphological']
 
     def has_location_context(self, obj):
         return bool(obj.location_context_document)

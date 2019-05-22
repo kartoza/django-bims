@@ -100,6 +100,24 @@ def format_location_context(location_site_id, force_update=False):
         formatted_location_context = json.loads(
             location_site.location_context
         )
+
+        if not location_site.original_geomorphological:
+            try:
+                context_geo = formatted_location_context[
+                    'context_group_values'][
+                    'eco_geo_group']['service_registry_values'][
+                    'geo_class_recoded']['value']
+                models.signals.post_save.disconnect(
+                    location_site_post_save_handler,
+                )
+                location_site.original_geomorphological = context_geo
+                location_site.save()
+                models.signals.post_save.connect(
+                    location_site_post_save_handler,
+                )
+            except KeyError:
+                pass
+
         if 'hash' in formatted_location_context:
             if formatted_location_context['hash'] == hash_string:
                 process_spatial_scale_data(
@@ -136,6 +154,17 @@ def format_location_context(location_site_id, force_update=False):
     models.signals.post_save.disconnect(
         location_site_post_save_handler,
     )
+
+    if not location_site.original_geomorphological:
+        try:
+            context_geo = formatted[
+                'context_group_values'][
+                'eco_geo_group']['service_registry_values'][
+                'geo_class_recoded']['value']
+            location_site.original_geomorphological = context_geo
+        except KeyError:
+            pass
+
     if location_site.refined_geomorphological:
         try:
             formatted['context_group_values'][
@@ -145,6 +174,7 @@ def format_location_context(location_site_id, force_update=False):
             )
         except KeyError:
             pass
+
     process_spatial_scale_data(
         formatted['context_group_values']
     )

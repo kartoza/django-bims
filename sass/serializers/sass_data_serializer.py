@@ -1,7 +1,7 @@
 from rest_framework import serializers
 import json
 from django.db.models import Q
-from bims.models import LocationSite
+from bims.models import LocationSite, SpatialScale
 from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon, SiteVisit
 
 
@@ -109,6 +109,7 @@ class SassDataSerializer(serializers.ModelSerializer):
 
 class SassSummaryDataSerializer(serializers.ModelSerializer):
 
+    filter_history = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
     sass_score = serializers.SerializerMethodField()
     number_of_taxa = serializers.SerializerMethodField()
@@ -124,9 +125,37 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     reference_category = serializers.SerializerMethodField()
     study_reference = serializers.SerializerMethodField()
     accredited = serializers.SerializerMethodField()
+    geomorphological_zone = serializers.SerializerMethodField()
+    geomorphological_zone_ground_truthed = serializers.SerializerMethodField()
+
+    def get_filter_history(self, obj):
+        filter_history = {}
+        filters = self.context['filters']
+        for filter_key, filter_value in filters.items():
+            if filter_key == 'spatialFilter':
+                continue
+            if not filter_value:
+                continue
+            try:
+                filter_data = json.loads(filter_value)
+                filter_history[filter_key] = filter_data
+            except ValueError:
+                filter_history[filter_key] = filter_value
+        spatial_filters = filters['spatialFilter']
+        if spatial_filters:
+            spatial_filters = json.loads(spatial_filters)
+            spatial_scales = SpatialScale.objects.filter(
+                id__in=spatial_filters
+            )
+            for spatial_scale in spatial_scales:
+                filter_history[spatial_scale.name] = spatial_scale.query
+        return filter_history
 
     def get_accredited(self, obj):
-        return '-'
+        if obj['accredited']:
+            return 'Y'
+        else:
+            return 'N'
 
     def get_reference_category(self, obj):
         return obj['reference_category']
@@ -174,6 +203,27 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         site_visit_date = obj['sampling_date']
         return site_visit_date.strftime('%d-%m-%Y')
 
+    def get_geomorphological_zone(self, obj):
+        site = LocationSite.objects.get(id=obj['site_id'])
+        if site.original_geomorphological:
+            return site.original_geomorphological
+        else:
+            try:
+                context = json.loads(site.location_context)
+                geo = context[
+                    'context_group_values'][
+                    'eco_geo_group']['service_registry_values'][
+                    'geo_class_recoded']['value']
+                return geo
+            except (KeyError, ValueError):
+                return '-'
+
+    def get_geomorphological_zone_ground_truthed(self, obj):
+        site = LocationSite.objects.get(id=obj['site_id'])
+        if site.refined_geomorphological:
+            return site.refined_geomorphological
+        return '-'
+
     def group_fields(self, context_key, site_id, result):
         try:
             location_site = LocationSite.objects.get(
@@ -201,9 +251,12 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteVisitTaxon
         fields = [
+            'filter_history',
             'FBIS_site_code',
             'site_description',
             'river_name',
+            'geomorphological_zone',
+            'geomorphological_zone_ground_truthed',
             'latitude',
             'longitude',
             'sampling_date',
@@ -248,9 +301,6 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
 
     def to_representation(self, obj):
         result = super(SassSummaryDataSerializer, self).to_representation(obj)
-        site_id = obj['site_id']
         site_visit_id = obj['sass_id']
         result = self.biotope_fractions(site_visit_id, result)
-        result = self.group_fields('water_group', site_id, result)
-        result = self.group_fields('eco_geo_group', site_id, result)
         return result

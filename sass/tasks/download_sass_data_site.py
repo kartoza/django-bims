@@ -61,10 +61,16 @@ def download_sass_summary_data_task(filename, filters, path_file):
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
             search = Search(filters)
+            context = {
+                'filters': filters
+            }
+
             collection_records = search.process_search()
+            collection_ids = list(
+                collection_records.values_list('id', flat=True))
             # Get SASS data
             site_visit_taxa = SiteVisitTaxon.objects.filter(
-                id__in=list(collection_records.values_list('id', flat=True))
+                id__in=collection_ids
             )
             summary = site_visit_taxa.annotate(
                 sampling_date=F('site_visit__site_visit_date'),
@@ -85,6 +91,8 @@ def download_sass_summary_data_task(filename, filters, path_file):
                 ),
                 site_id=F('site_visit__location_site__id'),
                 assessor=F('site_visit__assessor__username'),
+                accredited=F('site_visit__assessor__'
+                             'bims_profile__sass_accredited'),
                 sass_version=F('site_visit__sass_version'),
                 site_description=F(
                     'site_visit__location_site__site_description'),
@@ -106,6 +114,7 @@ def download_sass_summary_data_task(filename, filters, path_file):
             serializer = SassSummaryDataSerializer(
                 summary,
                 many=True,
+                context=context
             )
             headers = serializer.data[0].keys()
             rows = serializer.data
