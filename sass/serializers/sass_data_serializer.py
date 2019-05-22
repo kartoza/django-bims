@@ -7,31 +7,124 @@ from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon, SiteVisit
 
 class SassDataSerializer(serializers.ModelSerializer):
 
-    date = serializers.SerializerMethodField()
+    filter_history = serializers.SerializerMethodField()
+    FBIS_site_code = serializers.SerializerMethodField()
+    site_description = serializers.SerializerMethodField()
+    river_name = serializers.SerializerMethodField()
+    geomorphological_zone = serializers.SerializerMethodField()
+    geomorphological_zone_ground_truthed = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    sampling_date = serializers.SerializerMethodField()
+    accredited = serializers.SerializerMethodField()
     sass_version = serializers.SerializerMethodField()
-    taxa = serializers.SerializerMethodField()
+    collector_or_assessor = serializers.SerializerMethodField()
     sass_taxa = serializers.SerializerMethodField()
-    weight = serializers.SerializerMethodField()
     s = serializers.SerializerMethodField()
     v = serializers.SerializerMethodField()
     g = serializers.SerializerMethodField()
     site = serializers.SerializerMethodField()
-    site_code = serializers.SerializerMethodField()
 
-    def get_site_code(self, obj):
+    class Meta:
+        model = SiteVisitTaxon
+        fields = [
+            'filter_history',
+            'FBIS_site_code',
+            'site_description',
+            'river_name',
+            'geomorphological_zone',
+            'geomorphological_zone_ground_truthed',
+            'latitude',
+            'longitude',
+            'sampling_date',
+            'accredited',
+            'sass_version',
+            'collector_or_assessor',
+            'sass_taxa',
+            's',
+            'v',
+            'g',
+            'site'
+        ]
+
+    def get_filter_history(self, obj):
+        filter_history = {}
+        filters = self.context['filters']
+        for filter_key, filter_value in filters.items():
+            if filter_key == 'spatialFilter':
+                continue
+            if not filter_value:
+                continue
+            try:
+                filter_data = json.loads(filter_value)
+                filter_history[filter_key] = filter_data
+            except ValueError:
+                filter_history[filter_key] = filter_value
+        spatial_filters = filters['spatialFilter']
+        if spatial_filters:
+            spatial_filters = json.loads(spatial_filters)
+            spatial_scales = SpatialScale.objects.filter(
+                id__in=spatial_filters
+            )
+            for spatial_scale in spatial_scales:
+                filter_history[spatial_scale.name] = spatial_scale.query
+        return filter_history
+
+    def get_FBIS_site_code(self, obj):
         site_code = obj.site_visit.location_site.site_code
         if not site_code:
             return obj.site_visit.location_site.name
         return site_code
 
-    def get_date(self, obj):
+    def get_site_description(self, obj):
+        return obj.site_visit.location_site.site_description
+
+    def get_river_name(self, obj):
+        if obj.site_visit.location_site.river:
+            return obj.site_visit.location_site.river.name
+        return '-'
+
+    def get_geomorphological_zone(self, obj):
+        site = obj.site_visit.location_site
+        if site.original_geomorphological:
+            return site.original_geomorphological
+        else:
+            try:
+                context = json.loads(site.location_context)
+                geo = context[
+                    'context_group_values'][
+                    'eco_geo_group']['service_registry_values'][
+                    'geo_class_recoded']['value']
+                return geo
+            except (KeyError, ValueError):
+                return '-'
+
+    def get_geomorphological_zone_ground_truthed(self, obj):
+        site = obj.site_visit.location_site
+        if site.refined_geomorphological:
+            return site.refined_geomorphological
+        return '-'
+
+    def get_latitude(self, obj):
+        return obj.site_visit.location_site.latitude
+
+    def get_longitude(self, obj):
+        return obj.site_visit.location_site.longitude
+
+    def get_sampling_date(self, obj):
         return obj.site_visit.site_visit_date
+
+    def get_accredited(self, obj):
+        if obj.site_visit.assessor.bims_profile.sass_accredited:
+            return 'Y'
+        else:
+            return 'N'
 
     def get_sass_version(self, obj):
         return obj.site_visit.sass_version
 
-    def get_taxa(self, obj):
-        return obj.taxonomy.canonical_name
+    def get_collector_or_assessor(self, obj):
+        return obj.site_visit.assessor.username
 
     def get_sass_taxa(self, obj):
         if obj.site_visit.sass_version == 4:
@@ -90,21 +183,6 @@ class SassDataSerializer(serializers.ModelSerializer):
         if obj.taxon_abundance:
             return obj.taxon_abundance.abc
         return ''
-
-    class Meta:
-        model = SiteVisitTaxon
-        fields = [
-            'site_code',
-            'date',
-            'sass_version',
-            'taxa',
-            'sass_taxa',
-            'weight',
-            's',
-            'v',
-            'g',
-            'site'
-        ]
 
 
 class SassSummaryDataSerializer(serializers.ModelSerializer):

@@ -27,6 +27,9 @@ def download_sass_data_site_task(filename, filters, path_file):
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
             search = Search(filters)
+            context = {
+                'filters': filters
+            }
             collection_records = search.process_search()
             site_visit_taxon = SiteVisitTaxon.objects.filter(
                 id__in=collection_records
@@ -34,14 +37,26 @@ def download_sass_data_site_task(filename, filters, path_file):
             serializer = SassDataSerializer(
                 site_visit_taxon,
                 many=True,
+                context=context
             )
             headers = serializer.data[0].keys()
             rows = serializer.data
+
+            formatted_headers = []
+            # Rename headers
+            for header in headers:
+                formatted_headers.append(header.replace('_', ' ').capitalize())
+
             with open(path_file, 'wb') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=headers)
+                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
+                writer.fieldnames = headers
                 for row in rows:
-                    writer.writerow(row)
+                    try:
+                        writer.writerow(row)
+                    except ValueError:
+                        writer.fieldnames = row.keys()
+                        writer.writerow(row)
             return
     logger.info(
         'Csv %s is already being processed by another worker',
