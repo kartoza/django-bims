@@ -25,5 +25,13 @@ class SiteVisitTaxon(BiologicalCollectionRecord):
         blank=True
     )
 
+    def save(self, *args, **kwargs):
+        owner = self.owner
+        if owner.username == self.collector:
+            self.collector = '{0} {1}'.format(
+                owner.first_name,
+                owner.last_name)
+        super(SiteVisitTaxon, self).save(*args, **kwargs)
+
     class Meta:
         verbose_name_plural = "Site visit taxa"

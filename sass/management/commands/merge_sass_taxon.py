@@ -19,6 +19,7 @@ class Command(BaseCommand):
             sass_taxon_name = sass_taxon.taxon_sass_4.lower().replace(
                 '1 sp', '1')
             taxon_5 = SassTaxon.objects.filter(
+                taxon_sass_4__isnull=True,
                 taxon_sass_5__isnull=False,
                 taxon_sass_5__icontains=sass_taxon_name
             )

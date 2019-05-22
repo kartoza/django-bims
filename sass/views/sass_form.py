@@ -44,6 +44,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     read_only = False
 
     def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
         if self.request.user.is_superuser:
             return True
         sass_id = self.kwargs.get('sass_id', None)

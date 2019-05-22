@@ -21,7 +21,9 @@
 
     <div class="body-form container">
         <h2>View SASS record</h2>
-        <a class="btn btn-primary btn-normal" style="margin-bottom: 10px;" href="/sass/update/{{ site_visit_id }}/">Edit</a>
+        {% if user.is_superuser or user.is_staff %}
+            <a class="btn btn-primary btn-normal" style="margin-bottom: 10px;" href="/sass/update/{{ site_visit_id }}/">Edit</a>
+        {% endif %}
         <div class="site-code pull-right">
             Site code/name : {{ site_code }}
             <br/>
