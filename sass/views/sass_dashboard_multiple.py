@@ -459,7 +459,8 @@ class SassDashboardMultipleSitesApiView(APIView):
         )
         self.location_sites = LocationSite.objects.filter(
             id__in=list(collection_records_site_ids)
-        )
+        ).order_by('site_code')
+
         paginator = Paginator(self.location_sites, MAX_RESULTS_PER_PAGE)
         if page > paginator.num_pages:
             page = paginator.count
