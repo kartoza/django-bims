@@ -19,6 +19,7 @@ from sass.models import (
     SassEcologicalCategory,
     SassEcologicalCondition
 )
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 def timing(f):
@@ -177,7 +178,10 @@ class SassDashboardMultipleSitesApiView(APIView):
         ).distinct('site').values('site_visit')
         sass_taxon_data = (
             self.site_visit_taxa.filter(
-                site_visit__in=latest_site_visits
+                site_visit__in=latest_site_visits,
+                taxonomy__taxongroup__category=(
+                    TaxonomicGroupCategory.SASS_TAXON_GROUP.name
+                )
             ).annotate(
                 site_code=Case(
                     When(site_visit__location_site__site_code__isnull=False,
