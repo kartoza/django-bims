@@ -535,13 +535,13 @@ define([
             }
             var datasets = [];
             var barChartData = {};
-            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC']
+            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC'];
             var myDataset = {};
             var count = dataIn['dataset_labels'].length;
             for (let i = 0; i < count; i++) {
                 myDataset = {};
                 var nextKey = dataIn['dataset_labels'][i];
-                var nextColour = colours[i];
+                var nextColour = colours[i%colours.length];
                 if (randomColor) {
                     nextColour = Shared.ColorUtil.generateHexColor();
                 }
@@ -665,7 +665,7 @@ define([
                         return;
                     }
                     self.$el.find('.fish-ssdd-taxa-line-chart').show();
-                    this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'occurrences_line', chartCanvas, true);
+                    this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'occurrences_line', chartCanvas);
                 }
             )
         },
@@ -698,7 +698,7 @@ define([
                         }
                     });
                     var chartCanvas = document.getElementById('fish-ssdd-cons-status-bar-chart-canvas');
-                    this.consChartCanvas = self.renderStackedBarChart(responseData, 'cons_status_bar', chartCanvas, true);
+                    this.consChartCanvas = self.renderStackedBarChart(responseData, 'cons_status_bar', chartCanvas);
                 }
             )
         },
@@ -717,7 +717,7 @@ define([
                         return;
                     }
                     self.$el.find('.fish-ssdd-endemism-bar-chart').show();
-                    this.endemismChartCanvas = self.renderStackedBarChart(responseData, 'endemism', chartCanvas, true);
+                    this.endemismChartCanvas = self.renderStackedBarChart(responseData, 'endemism', chartCanvas);
                 }
             )
         },
