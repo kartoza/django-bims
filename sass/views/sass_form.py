@@ -257,10 +257,6 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             taxon_filters['score__isnull'] = False
         else:
             taxon_filters['sass_5_score__isnull'] = False
-        if not self.read_only:
-            taxon_filters['taxon_sass_{}__isnull'.format(
-                self.sass_version
-            )] = False
         sass_taxon_list = SassTaxon.objects.annotate(
             name=Case(
                 When(taxon_sass_5__isnull=False,
@@ -381,6 +377,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
         if self.site_visit:
             context['is_update'] = True
+            context['site_visit_id'] = self.site_visit.id
             context['assessor'] = self.site_visit.assessor
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time

@@ -68,7 +68,14 @@ class SassBiotopeFractionAdmin(admin.ModelAdmin):
 class SassTaxonAdmin(admin.ModelAdmin):
     list_display = (
         'taxon',
-        'score'
+        'score',
+        'taxon_sass_4',
+        'taxon_sass_5'
+    )
+
+    search_fields = (
+        'taxon_sass_4',
+        'taxon_sass_5'
     )
 
 

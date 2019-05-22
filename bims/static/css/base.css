@@ -257,3 +257,10 @@ h6 {
 .fbis-red:active {
     background-color: #641F30 !important;
 }
+
+.btn-normal {
+    font-size: 10pt;
+    padding-left: 30px !important;
+    padding-right: 30px !important;
+    text-transform: capitalize;
+}
