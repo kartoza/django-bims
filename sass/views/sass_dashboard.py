@@ -83,13 +83,7 @@ class SassDashboardView(TemplateView):
                     TaxonomicGroupCategory.SASS_TAXON_GROUP.name
                 )
             ).annotate(
-                sass_taxon_name=Case(
-                    When(
-                        condition=Q(site_visit__sass_version=5,
-                                    sass_taxon__taxon_sass_5__isnull=False),
-                        then='sass_taxon__taxon_sass_5'),
-                    default='sass_taxon__taxon_sass_4'
-                ),
+                sass_taxon_name=F('sass_taxon__taxon_sass_4'),
                 sass_score=Case(
                     When(
                         condition=Q(site_visit__sass_version=5,
