@@ -282,7 +282,17 @@ function renderSASSTaxonPerBiotope() {
 }
 
 function renderSensitivityChart() {
-    let options = {};
+    let options = {
+        tooltips: {
+            callbacks: {
+                label: function (tooltipItem, chartData) {
+                    let index = tooltipItem['index'];
+                    let label = chartData['labels'][index];
+                    return label;
+                }
+            }
+        }
+    };
     let data = {
         datasets: [{
             data: [
