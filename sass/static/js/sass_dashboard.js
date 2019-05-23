@@ -224,7 +224,9 @@ function renderSASSTaxonPerBiotope() {
 
     // SASS Score total
     let $sassScoreTr = $('<tr class="total-table" id="sass-score-total">');
-    $sassScoreTr.append('<td colspan="3">SASS Score</td>');
+    $sassScoreTr.append('<td>SASS Score</td>');
+    $sassScoreTr.append('<td> </td>');
+    $sassScoreTr.append('<td> </td>');
     $sassScoreTr.append('<td class="stone">-</td>');
     $sassScoreTr.append('<td class="veg">-</td>');
     $sassScoreTr.append('<td class="gravel">-</td>');
@@ -233,7 +235,9 @@ function renderSASSTaxonPerBiotope() {
 
     // Number of taxa
     let $numberTaxaTr = $('<tr class="total-table" id="number-taxa">');
-    $numberTaxaTr.append('<td colspan="3">Number of Taxa</td>');
+    $numberTaxaTr.append('<td>Number of Taxa</td>');
+    $numberTaxaTr.append('<td> </td>');
+    $numberTaxaTr.append('<td> </td>');
     $numberTaxaTr.append('<td class="stone">-</td>');
     $numberTaxaTr.append('<td class="veg">-</td>');
     $numberTaxaTr.append('<td class="gravel">-</td>');
@@ -242,7 +246,9 @@ function renderSASSTaxonPerBiotope() {
 
     // ASPT
     let $asptTr = $('<tr class="total-table" id="total-aspt">');
-    $asptTr.append('<td colspan="3">ASPT</td>');
+    $asptTr.append('<td>ASPT</td>');
+    $asptTr.append('<td> </td>');
+    $asptTr.append('<td> </td>');
     $asptTr.append('<td class="stone">-</td>');
     $asptTr.append('<td class="veg">-</td>');
     $asptTr.append('<td class="gravel">-</td>');
