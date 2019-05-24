@@ -188,13 +188,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                          then='site_visit__location_site__site_code'),
                     default='site_visit__location_site__name'
                 ),
-                taxon_name=Case(
-                    When(
-                        condition=Q(site_visit__sass_version=5,
-                                    sass_taxon__taxon_sass_5__isnull=False),
-                        then='sass_taxon__taxon_sass_5'),
-                    default='sass_taxon__taxon_sass_4'
-                ),
+                taxon_name=F('sass_taxon__taxon_sass_4'),
                 sass_score=Case(
                     When(
                         condition=Q(site_visit__sass_version=5,
