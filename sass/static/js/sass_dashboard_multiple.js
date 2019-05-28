@@ -517,7 +517,28 @@ function renderEcologicalChart(data) {
         })
     }
 
+    let mergedEcologicalChartData = [];
+    let combinedData = {};
+
+    // Merge combined data with same key
     $.each(ecologicalChartData, function (index, chartData) {
+       if (chartData['site_data']['geo_class'].toLowerCase() !== 'combined') {
+            mergedEcologicalChartData.push(chartData);
+            return true;
+       }
+       if (!combinedData.hasOwnProperty(chartData['site_data']['geo_class'])) {
+           mergedEcologicalChartData.push(chartData);
+           combinedData[chartData['site_data']['geo_class']] = mergedEcologicalChartData.length - 1;
+       } else {
+            let indexCombined = combinedData[chartData['site_data']['geo_class']];
+            mergedEcologicalChartData[indexCombined]['site_data']['site_ids'].push.apply(
+                mergedEcologicalChartData[indexCombined]['site_data']['site_ids'],
+                chartData['site_data']['site_ids']
+            )
+       }
+    });
+
+    $.each(mergedEcologicalChartData, function (index, chartData) {
         let siteIds = chartData['site_data']['site_ids'];
         let plotData = [];
         $.each(siteIds, (indexSiteId, siteId) => {
