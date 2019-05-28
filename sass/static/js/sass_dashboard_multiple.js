@@ -517,7 +517,28 @@ function renderEcologicalChart(data) {
         })
     }
 
+    let mergedEcologicalChartData = [];
+    let combinedData = {};
+
+    // Merge combined data with same key
     $.each(ecologicalChartData, function (index, chartData) {
+       if (chartData['site_data']['geo_class'].toLowerCase() !== 'combined') {
+            mergedEcologicalChartData.push(chartData);
+            return true;
+       }
+       if (!combinedData.hasOwnProperty(chartData['site_data']['geo_class'])) {
+           mergedEcologicalChartData.push(chartData);
+           combinedData[chartData['site_data']['geo_class']] = mergedEcologicalChartData.length - 1;
+       } else {
+            let indexCombined = combinedData[chartData['site_data']['geo_class']];
+            mergedEcologicalChartData[indexCombined]['site_data']['site_ids'].push.apply(
+                mergedEcologicalChartData[indexCombined]['site_data']['site_ids'],
+                chartData['site_data']['site_ids']
+            )
+       }
+    });
+
+    $.each(mergedEcologicalChartData, function (index, chartData) {
         let siteIds = chartData['site_data']['site_ids'];
         let plotData = [];
         $.each(siteIds, (indexSiteId, siteId) => {
@@ -534,13 +555,12 @@ function renderEcologicalChart(data) {
         if (!legendCreated) {
             legendCreated = true;
             let legendContainer = $('.ecological-legend-container');
-            $.each(chartData['chart_data'].reverse(), (indexChartData, boundaryData) => {
+            $.each(chartData['chart_data'], (indexChartData, boundaryData) => {
                 let $legend = $('<span class="ecological-chart-legend">&nbsp;</span>');
                 legendContainer.append($legend);
                 $legend.after(boundaryData['ec_category']);
                 $legend.css('background-color', boundaryData['color']);
             });
-            chartData['chart_data'].reverse();
         }
 
         let $div = $('<div>');
