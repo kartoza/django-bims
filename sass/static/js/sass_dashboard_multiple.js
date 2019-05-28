@@ -555,13 +555,12 @@ function renderEcologicalChart(data) {
         if (!legendCreated) {
             legendCreated = true;
             let legendContainer = $('.ecological-legend-container');
-            $.each(chartData['chart_data'].reverse(), (indexChartData, boundaryData) => {
+            $.each(chartData['chart_data'], (indexChartData, boundaryData) => {
                 let $legend = $('<span class="ecological-chart-legend">&nbsp;</span>');
                 legendContainer.append($legend);
                 $legend.after(boundaryData['ec_category']);
                 $legend.css('background-color', boundaryData['color']);
             });
-            chartData['chart_data'].reverse();
         }
 
         let $div = $('<div>');
