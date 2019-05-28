@@ -9,6 +9,7 @@ from bims.models import (
     Taxonomy
 )
 from bims.enums import TaxonomicGroupCategory
+from sass.models import SiteVisitTaxon
 
 
 class MultiLocationSitesOverview(APIView):
@@ -32,7 +33,7 @@ class MultiLocationSitesOverview(APIView):
         query = {}
         parent = ''
         or_condition = Q()
-        query['id__in'] = taxa.values_list('id')
+        query['id__in'] = list(taxa.values_list('id', flat=True))
         for i in range(6):  # species to class
             parent += 'parent__'
             query[parent + 'in'] = taxa
@@ -51,9 +52,6 @@ class MultiLocationSitesOverview(APIView):
         response_data = dict()
         biodiversity_data = dict()
         response_data[self.BIODIVERSITY_DATA] = biodiversity_data
-        response_data[self.SASS_EXIST] = collection_results.filter(
-                notes__icontains='sass'
-        ).exists()
 
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
@@ -67,8 +65,16 @@ class MultiLocationSitesOverview(APIView):
 
             taxa = group.taxonomies.all()
             taxa_children = self.get_all_taxa_children(taxa)
+            taxa_children_ids = list(
+                taxa_children.values_list('id', flat=True)
+            )
+
             group_records = collection_results.filter(
-                taxonomy__in=taxa_children
+                taxonomy__in=taxa_children_ids
+            )
+            group_records_id = list(group_records.values_list('id', flat=True))
+            response_data[self.SASS_EXIST] = (
+                SiteVisitTaxon.objects.filter(id__in=group_records_id).exists()
             )
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
