@@ -50,7 +50,7 @@ class SpatialScaleFilterList(APIView):
         ('Critical Biodiversity Area (CBA)', {
             'key': 'cba',
             'groups': [
-                'national_cba'
+                'wc_cape_biodiversity_spatial_plan'
             ]
         }),
         ('National Freshwater Ecosystem Priority Area (NFEPA)', {
