@@ -42,24 +42,17 @@ class Command(BaseCommand):
             geocontext_group_keys = groups.split(',')
         else:
             geocontext_group_keys = [
-                "political_boundary_group",
-                "cadastre_group",
-                "elevation_group",
-                "water_group",
-                "rainfall_group",
-                "land_cover_group",
-                "vegetation_group",
-                "monthly_mean_daily_maximum_temperature_group",
-                "monthly_mean_daily_average_temperature_group",
-                "monthly_mean_daily_average_relative_humidity_group",
-                "monthly_standard_deviation_daily_maximum_temperature_group",
-                "monthly_standard_deviation_daily_"
-                "maximum_relative_humidity_group",
-                "monthly_standard_deviation_of_daily_mean_temperature_group",
-                "monthly_means_of_daily_minimum_temperature_group",
-                "monthly_standard_deviation_of_"
-                "daily_minimum_temperature_group",
-                "eco_geo_group"
+                'political_boundary_group',
+                'river_catchment_areas_group',
+                'river_ecoregion_group',
+                'water_management_area',
+                'geomorphological_group',
+                'monthly_mean_daily_average_temperature_group',
+                'rainfall_group',
+                'freshwater_ecoregion_of_the_world',
+                'critical_biodiversity_area',
+                'national_freshwater_ecosystem_priority_area',
+                'strategic_water_source_areas'
             ]
 
         ignore_not_empty = options.get('ignore_not_empty')

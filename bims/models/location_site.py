@@ -193,6 +193,7 @@ class LocationSite(DocumentLinksMixin):
             latitude=latitude,
             geocontext_group_key=group_key,
         )
+        LOGGER.info('Request url : {}'.format(url))
 
         r = requests.get(url)
         if r.status_code != 200:

@@ -481,9 +481,9 @@ class LocationSitesSummary(APIView):
             eco_region = (
                 context_document
                 ['context_group_values']
-                ['eco_geo_group']
+                ['river_ecoregion_group']
                 ['service_registry_values']
-                ['eco_region']
+                ['eco_region_1']
                 ['value'])
         except KeyError:
             eco_region = '-'
@@ -491,7 +491,7 @@ class LocationSitesSummary(APIView):
             geo_class = (
                 context_document
                 ['context_group_values']
-                ['eco_geo_group']
+                ['geomorphological_group']
                 ['service_registry_values']
                 ['geo_class']
                 ['value'])
@@ -511,7 +511,7 @@ class LocationSitesSummary(APIView):
             primary_catchment = (
                 context_document
                 ['context_group_values']
-                ['water_group']
+                ['river_catchment_areas_group']
                 ['service_registry_values']
                 ['primary_catchment_area']
                 ['value'])
@@ -521,7 +521,7 @@ class LocationSitesSummary(APIView):
             secondary_catchment = (
                 context_document
                 ['context_group_values']
-                ['water_group']
+                ['river_catchment_areas_group']
                 ['service_registry_values']
                 ['secondary_catchment_area']
                 ['value'])
@@ -531,7 +531,7 @@ class LocationSitesSummary(APIView):
             tertiary_catchment_area = (
                 context_document
                 ['context_group_values']
-                ['water_group']
+                ['river_catchment_areas_group']
                 ['service_registry_values']
                 ['tertiary_catchment_area']
                 ['value'])
@@ -541,7 +541,7 @@ class LocationSitesSummary(APIView):
             quaternary_catchment_area = (
                 context_document
                 ['context_group_values']
-                ['water_group']
+                ['river_catchment_areas_group']
                 ['service_registry_values']
                 ['quaternary_catchment_area']
                 ['value'])
@@ -551,7 +551,7 @@ class LocationSitesSummary(APIView):
             water_management_area = (
                 context_document
                 ['context_group_values']
-                ['water_group']
+                ['water_management_area']
                 ['service_registry_values']
                 ['water_management_area']
                 ['value'])
