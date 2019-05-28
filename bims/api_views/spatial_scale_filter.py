@@ -91,7 +91,7 @@ class SpatialScaleFilterList(APIView):
             }
             spatial_scale_groups = SpatialScaleGroup.objects.filter(
                 key__in=value['groups']
-            ).distinct('key')
+            ).distinct('id').order_by('id')
             try:
                 objects = dict(
                     [(obj.key, obj) for obj in spatial_scale_groups])
