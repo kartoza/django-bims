@@ -255,9 +255,13 @@ class PermissionAdmin(admin.ModelAdmin):
 class CarouselHeaderAdmin(OrderedModelAdmin):
     list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
+from rangefilter.filter import DateRangeFilter, DateTimeRangeFilter
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
-    list_filter = ('taxonomy', 'collection_date', 'category')
+    class Media:
+        css = {
+            'all': ('admin/custom-admin.css',)
+        }
     list_display = (
         'taxonomy',
         'category',
@@ -266,6 +270,16 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'is_rejected',
         'collector',
         'owner',
+    )
+    raw_id_fields = (
+        'site',
+        'owner',
+        'taxonomy'
+    )
+    list_filter = (
+        ('collection_date', DateRangeFilter),
+        'taxonomy',
+        'category'
     )
 
 
