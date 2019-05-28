@@ -5,6 +5,7 @@ import json
 from pygments import highlight
 from pygments.lexers.data import JsonLexer
 from pygments.formatters.html import HtmlFormatter
+from rangefilter.filter import DateRangeFilter
 
 from django.contrib.admin import SimpleListFilter
 from django import forms
@@ -257,7 +258,10 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
-    list_filter = ('taxonomy', 'collection_date', 'category')
+    class Media:
+        css = {
+            'all': ('admin/custom-admin.css',)
+        }
     list_display = (
         'taxonomy',
         'category',
@@ -266,6 +270,16 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'is_rejected',
         'collector',
         'owner',
+    )
+    raw_id_fields = (
+        'site',
+        'owner',
+        'taxonomy'
+    )
+    list_filter = (
+        ('collection_date', DateRangeFilter),
+        'taxonomy',
+        'category'
     )
 
 

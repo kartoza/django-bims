@@ -58,6 +58,7 @@ INSTALLED_APPS += (
     'django_prometheus',
     'crispy_forms',
     'sass',
+    'rangefilter',
 )
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
