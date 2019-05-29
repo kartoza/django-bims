@@ -35,11 +35,11 @@ class Profile(models.Model):
         null=True,
         blank=True,
     )
-    sass_accredited = models.BooleanField(
-        verbose_name='SASS Accredited',
-        default=False
+    sass_accredited_date_from = models.DateField(
+        null=True,
+        blank=True
     )
-    sass_accredited_time = models.DateField(
+    sass_accredited_date_to = models.DateField(
         null=True,
         blank=True
     )

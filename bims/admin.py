@@ -18,6 +18,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
+from django.utils.html import format_html
 
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
@@ -368,18 +369,33 @@ class CustomUserAdmin(ProfileAdmin):
                        'groups',),
         }),
     )
+    list_display = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'is_staff',
+        'is_active',
+        'sass_accredited_status'
+    )
 
-    def save_formset(self, request, form, formset, change):
-        formset.save()
-        if change:
-            for formset_form in formset.forms:
-                if 'sass_accredited' in formset_form.changed_data:
-                    obj = formset_form.instance
-                    if formset_form.cleaned_data['sass_accredited']:
-                        obj.sass_accredited_time = date.today()
-                    else:
-                        obj.sass_accredited_time = None
-                    obj.save()
+    def sass_accredited_status(self, obj):
+        false_response = format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+        true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        try:
+            profile = BimsProfile.objects.get(user=obj)
+            valid_to = profile.sass_accredited_date_to
+            if not valid_to:
+                return false_response
+            # Check if it is still valid
+            if date.today() > valid_to:
+                return false_response
+            else:
+                return true_response
+        except BimsProfile.DoesNotExist:
+            return false_response
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:

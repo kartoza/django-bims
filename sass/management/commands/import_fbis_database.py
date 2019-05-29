@@ -27,6 +27,9 @@ from sass.scripts.fbis_chem_importer import FbisChemImporter
 from sass.scripts.fbis_site_visit_chem_importer import (
     FbisSiteVisitChemImporter
 )
+from sass.scripts.fbis_user_sass_validation_importer import (
+    FbisUserSassValidationImporter
+)
 
 
 class Command(BaseCommand):
@@ -47,6 +50,7 @@ class Command(BaseCommand):
         'site_visit_taxon': FbisSiteVisitTaxonImporter,
         'chem': FbisChemImporter,
         'site_visit_chem': FbisSiteVisitChemImporter,
+        'user_sass_validation': FbisUserSassValidationImporter
     }
 
     def add_arguments(self, parser):
