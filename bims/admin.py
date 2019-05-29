@@ -347,6 +347,28 @@ class UserCreateForm(ProfileCreationForm):
         self.fields['email'].required = True
 
 
+class SassAccreditedStatusFilter(SimpleListFilter):
+    title = 'Sass accredited status'
+    parameter_name = 'sass_accredited'
+
+    def lookups(self, request, model_admin):
+        return [
+            (True, 'Accredited'),
+            (False, 'Not accredited')
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'True':
+            return queryset.filter(
+                bims_profile__sass_accredited_date_to__gte=date.today()
+            )
+        elif self.value() == 'False':
+            return queryset.filter(
+                bims_profile__sass_accredited_date_to__lte=date.today()
+            )
+        return queryset
+
+
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
@@ -378,6 +400,13 @@ class CustomUserAdmin(ProfileAdmin):
         'is_active',
         'sass_accredited_status'
     )
+    list_filter = (
+        'is_staff',
+        'is_superuser',
+        'is_active',
+        'groups',
+        SassAccreditedStatusFilter
+    )
 
     def sass_accredited_status(self, obj):
         false_response = format_html(
@@ -388,14 +417,14 @@ class CustomUserAdmin(ProfileAdmin):
             profile = BimsProfile.objects.get(user=obj)
             valid_to = profile.sass_accredited_date_to
             if not valid_to:
-                return false_response
+                return '-'
             # Check if it is still valid
             if date.today() > valid_to:
                 return false_response
             else:
                 return true_response
         except BimsProfile.DoesNotExist:
-            return false_response
+            return '-'
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
