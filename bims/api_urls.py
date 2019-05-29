@@ -6,7 +6,6 @@ from bims.api_views.boundary import (
 )
 from bims.api_views.location_site import (
     LocationSiteList,
-    LocationSiteDetail,
     LocationSiteClusterList,
     LocationSitesSummary,
     LocationSitesCoordinate

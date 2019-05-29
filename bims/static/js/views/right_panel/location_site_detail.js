@@ -377,7 +377,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $sassDashboardButtonContainer.append($sassDashboardButton);
             if (data['sass_exist']) {
                 $sassDashboardButton.click(function () {
-                    let sassUrl = '/sass/dashboard/';
+                    let sassUrl = '/sass/dashboard/' + self.siteId + '/';
                     sassUrl += self.apiParameters(filterParameters);
                     window.location.href = sassUrl;
                 });
