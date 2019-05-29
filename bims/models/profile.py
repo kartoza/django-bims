@@ -1,6 +1,8 @@
 __author__ = 'Irwan Fathurrahman <irwan@kartoza.com>'
 __date__ = '26/02/18'
 
+from datetime import  date
+
 import json
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
@@ -46,6 +48,17 @@ class Profile(models.Model):
     hide_bims_info = models.BooleanField(
         default=False
     )
+
+    def is_accredited(self):
+        if (
+            not self.sass_accredited_date_to or
+            not self.sass_accredited_date_from
+        ):
+            return False
+        if self.sass_accredited_date_from > self.sass_accredited_date_to:
+            return False
+        if self.sass_accredited_date_to > date.today():
+            return True
 
     def save(self, *args, **kwargs):
         max_allowed = 10
