@@ -407,6 +407,18 @@ class CustomUserAdmin(ProfileAdmin):
         'groups',
         SassAccreditedStatusFilter
     )
+    #
+    # def save_formset(self, request, form, formset, change):
+    #     formset.save()
+    #     if change:
+    #         for formset_form in formset.forms:
+    #             if 'sass_accredited_date_from' in formset_form.changed_data:
+    #                 obj = formset_form.instance
+    #                 if obj.sass_accredited_date_to:
+    #                     if formset_form.cleaned_data[
+    #                         'sass_accredited_date_from'] > obj.sass_accredited_date_to:
+    #                         raise forms.ValidationError('Dates are incorrect')
+    #                 obj.save()
 
     def sass_accredited_status(self, obj):
         false_response = format_html(

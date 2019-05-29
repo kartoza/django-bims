@@ -7,6 +7,7 @@ import json
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Profile(models.Model):
@@ -74,6 +75,21 @@ class Profile(models.Model):
                 self.data = json.loads(self.data)
                 attempt += 1
         super(Profile, self).save(*args, **kwargs)
+
+    def clean(self):
+        if self.sass_accredited_date_from and not self.sass_accredited_date_to:
+            raise ValidationError(
+                'Missing SASS Accredited date to'
+            )
+        if self.sass_accredited_date_to and not self.sass_accredited_date_from:
+            raise ValidationError(
+                'Missing SASS Accredited date from'
+            )
+        if self.sass_accredited_date_from > self.sass_accredited_date_to:
+            raise ValidationError(
+                'SASS Accredited date from should be '
+                'before SASS Accredited date to'
+            )
 
     class Meta:
         app_label = 'bims'
