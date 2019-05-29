@@ -1,14 +1,8 @@
 import json
-from django.db.models import Count, F, Q
-from collections import defaultdict
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
-from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.models.iucn_status import IUCNStatus
 from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.models.taxon_group import TaxonGroup
-from bims.models.taxonomy import Taxonomy
 
 
 class LocationSiteDetailSerializer(LocationSiteSerializer):
@@ -112,105 +106,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
 
-    def get_biodiversity_data(self, collection_results):
-        biodiversity_data = defaultdict(dict)
-
-        fish_collections = BiologicalCollectionRecord.objects.none()
-        fish_group = TaxonGroup.objects.filter(
-            name__icontains='fish'
-        )
-        if fish_group.exists():
-            taxon_groups = fish_group.values_list(
-                'taxonomies', flat=True
-            ).distinct('taxonomies')
-            taxa = Taxonomy.objects.filter(pk__in=taxon_groups)
-            modules_query = Q()
-            for taxon in taxa:
-                children = taxon.get_all_children()
-                children = children.filter(
-                    biologicalcollectionrecord__isnull=False
-                ).distinct()
-                if children:
-                    modules_query = Q(
-                        **{'taxonomy__in': children}
-                    )
-            fish_collections = collection_results.filter(modules_query)
-
-        biodiversity_data['fish'] = {}
-        biodiversity_data['fish']['origin_chart'] = {}
-        biodiversity_data['fish']['cons_status_chart'] = {}
-        biodiversity_data['fish']['endemism_chart'] = {}
-        origin_by_name_data = fish_collections.annotate(
-            name=F('category')
-        ).values(
-            'name'
-        ).annotate(
-            count=Count('name')
-        ).order_by(
-            'name'
-        )
-        keys = origin_by_name_data.values_list('name', flat=True)
-        values = origin_by_name_data.values_list('count', flat=True)
-        biodiversity_data['fish']['origin_chart']['data'] = list(values)
-        biodiversity_data['fish']['origin_chart']['keys'] = list(keys)
-        cons_status_data = fish_collections.annotate(
-            name=F('taxonomy__iucn_status__category')
-        ).values(
-            'name'
-        ).annotate(
-            count=Count('name')
-        ).order_by(
-            'name'
-        )
-        keys = cons_status_data.values_list('name', flat=True)
-        values = cons_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['cons_status_chart']['data'] = list(
-            values)
-        biodiversity_data['fish']['cons_status_chart']['keys'] = list(keys)
-        endemism_status_data = fish_collections.annotate(
-            name=F('taxonomy__endemism__name')
-        ).values(
-            'name'
-        ).annotate(
-            count=Count('name')
-        ).order_by(
-            'name'
-        )
-        keys = endemism_status_data.values_list('name', flat=True)
-        values = endemism_status_data.values_list('count', flat=True)
-        biodiversity_data['fish']['endemism_chart']['data'] = list(values)
-        biodiversity_data['fish']['endemism_chart']['keys'] = list(keys)
-
-        biodiversity_data['occurrences'] = [0, 0, 0]
-        biodiversity_data['occurrences'][0] = fish_collections.count()
-
-        biodiversity_data['number_of_taxa'] = [
-            fish_collections.distinct('taxonomy').count(),
-            0,
-            0,
-        ]
-
-        biodiversity_data['ecological_condition'] = ['TBA', 'TBA', 'TBA']
-        return biodiversity_data
-
     def to_representation(self, instance):
-        collection_results = self.context.get("collection_results")
         result = super(
             LocationSiteDetailSerializer, self).to_representation(
             instance)
-        if collection_results:
-            collections = collection_results
-        else:
-            collections = BiologicalCollectionRecord.objects.filter(
-                site=instance,
-                validated=True
-            )
         records_occurrence = {}
-
-        try:
-            biodiversity_data = self.get_biodiversity_data(collections)
-        except KeyError:
-            biodiversity_data = {}
         try:
             climate_data = self.get_site_climate_data(
                 instance.location_context)
@@ -221,12 +121,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         except KeyError:
             site_detail_info = {}
 
-        result['iucn_name_list'] = IUCNStatus.CATEGORY_CHOICES
-        result['origin_name_list'] = (
-            BiologicalCollectionRecord.CATEGORY_CHOICES)
         result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
-        result['biodiversity_data'] = biodiversity_data
         result['site_detail_info'] = site_detail_info
 
         return result

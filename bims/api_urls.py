@@ -63,7 +63,8 @@ from bims.api_views.location_site_dashboard import (
     LocationSitesTaxaChartData
 )
 from bims.api_views.location_site_overview import (
-    MultiLocationSitesOverview
+    MultiLocationSitesOverview,
+    SingleLocationSiteOverview
 )
 from bims.api_views.source_collection import SourceCollectionList
 
@@ -73,7 +74,7 @@ urlpatterns = [
     url(r'^location-site/cluster/$', LocationSiteClusterList.as_view()),
     url(r'^location-site/$', LocationSiteList.as_view()),
     url(r'^location-site-detail/$',
-        LocationSiteDetail.as_view(),
+        SingleLocationSiteOverview.as_view(),
         name='location-site-detail'),
     url(r'^multi-location-sites-overview/$',
         MultiLocationSitesOverview.as_view(),
