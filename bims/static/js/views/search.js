@@ -413,6 +413,7 @@ define([
             Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
             if (!filterParameters['search']
                 && !filterParameters['collector']
+                && !filterParameters['validated']
                 && !filterParameters['category']
                 && !filterParameters['yearFrom']
                 && !filterParameters['yearTo']
