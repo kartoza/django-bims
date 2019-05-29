@@ -1,6 +1,7 @@
 from django.db.models import F, Value, Case, When, Count, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.http import Http404
 from bims.api_views.search import Search
 from bims.models import (
     TaxonGroup,
@@ -10,9 +11,14 @@ from bims.models import (
 )
 from bims.enums import TaxonomicGroupCategory
 from sass.models import SiteVisitTaxon
+from bims.models.location_site import LocationSite
+from bims.serializers.location_site_detail_serializer import (
+    LocationSiteDetailSerializer,
+)
 
 
-class MultiLocationSitesOverview(APIView):
+class LocationSiteOverviewData(object):
+
     BIODIVERSITY_DATA = 'biodiversity_data'
     MODULE = 'module'
     SASS_EXIST = 'sass_exist'
@@ -23,6 +29,9 @@ class MultiLocationSitesOverview(APIView):
     GROUP_NUM_OF_TAXA = 'number_of_taxa'
     GROUP_ORIGIN = 'origin'
     GROUP_CONS_STATUS = 'cons_status'
+
+    search_filters = None
+    is_sass_exist = False
 
     def get_all_taxa_children(self, taxa):
         """
@@ -41,17 +50,13 @@ class MultiLocationSitesOverview(APIView):
             or_condition |= Q(**{key: value})
         return Taxonomy.objects.filter(or_condition)
 
-    def get(self, request):
-        """
-        Get overview data for multiple sites
-        """
-        filters = request.GET
-        search = Search(filters)
+    def biodiversity_data(self):
+        if not self.search_filters:
+            return {}
+        search = Search(self.search_filters)
         collection_results = search.process_search()
 
-        response_data = dict()
         biodiversity_data = dict()
-        response_data[self.BIODIVERSITY_DATA] = biodiversity_data
 
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
@@ -73,9 +78,9 @@ class MultiLocationSitesOverview(APIView):
                 taxonomy__in=taxa_children_ids
             )
             group_records_id = list(group_records.values_list('id', flat=True))
-            response_data[self.SASS_EXIST] = (
-                SiteVisitTaxon.objects.filter(id__in=group_records_id).exists()
-            )
+            if group_records_id:
+                self.is_sass_exist = SiteVisitTaxon.objects.filter(
+                    id__in=group_records_id).exists()
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
             group_data[self.GROUP_SITES] = group_records.distinct(
@@ -130,5 +135,40 @@ class MultiLocationSitesOverview(APIView):
                     if cons_status['name'] in category:
                         cons_status['name'] = category[cons_status['name']]
             group_data[self.GROUP_CONS_STATUS] = all_cons_status
+        return biodiversity_data
 
+
+class MultiLocationSitesOverview(APIView, LocationSiteOverviewData):
+
+    def get(self, request):
+        """
+        Get overview data for multiple sites
+        """
+        self.search_filters = request.GET
+
+        response_data = dict()
+        response_data[self.BIODIVERSITY_DATA] = self.biodiversity_data()
+        response_data[self.SASS_EXIST] = self.is_sass_exist
+        return Response(response_data)
+
+
+class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
+
+    def get_object(self, pk):
+        try:
+            return LocationSite.objects.get(pk=pk)
+        except LocationSite.DoesNotExist:
+            raise Http404
+
+    def get(self, request):
+        self.search_filters = request.GET
+        response_data = dict()
+        response_data[self.BIODIVERSITY_DATA] = self.biodiversity_data()
+        response_data[self.SASS_EXIST] = self.is_sass_exist
+
+        site_id = request.GET.get('siteId')
+        location_site = self.get_object(site_id)
+        serializer = LocationSiteDetailSerializer(
+            location_site)
+        response_data.update(serializer.data)
         return Response(response_data)
