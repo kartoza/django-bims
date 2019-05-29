@@ -115,7 +115,7 @@ class SassDataSerializer(serializers.ModelSerializer):
         return obj.site_visit.site_visit_date
 
     def get_accredited(self, obj):
-        if obj.site_visit.assessor.bims_profile.sass_accredited:
+        if obj.site_visit.assessor.bims_profile.is_accredited():
             return 'Y'
         else:
             return 'N'

@@ -18,6 +18,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
+from django.utils.html import format_html
 
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
@@ -346,6 +347,28 @@ class UserCreateForm(ProfileCreationForm):
         self.fields['email'].required = True
 
 
+class SassAccreditedStatusFilter(SimpleListFilter):
+    title = 'Sass accredited status'
+    parameter_name = 'sass_accredited'
+
+    def lookups(self, request, model_admin):
+        return [
+            (True, 'Accredited'),
+            (False, 'Not accredited')
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'True':
+            return queryset.filter(
+                bims_profile__sass_accredited_date_to__gte=date.today()
+            )
+        elif self.value() == 'False':
+            return queryset.filter(
+                bims_profile__sass_accredited_date_to__lte=date.today()
+            )
+        return queryset
+
+
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
@@ -368,18 +391,40 @@ class CustomUserAdmin(ProfileAdmin):
                        'groups',),
         }),
     )
+    list_display = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'is_staff',
+        'is_active',
+        'sass_accredited_status'
+    )
+    list_filter = (
+        'is_staff',
+        'is_superuser',
+        'is_active',
+        'groups',
+        SassAccreditedStatusFilter
+    )
 
-    def save_formset(self, request, form, formset, change):
-        formset.save()
-        if change:
-            for formset_form in formset.forms:
-                if 'sass_accredited' in formset_form.changed_data:
-                    obj = formset_form.instance
-                    if formset_form.cleaned_data['sass_accredited']:
-                        obj.sass_accredited_time = date.today()
-                    else:
-                        obj.sass_accredited_time = None
-                    obj.save()
+    def sass_accredited_status(self, obj):
+        false_response = format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+        true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        try:
+            profile = BimsProfile.objects.get(user=obj)
+            valid_to = profile.sass_accredited_date_to
+            if not valid_to:
+                return '-'
+            # Check if it is still valid
+            if date.today() > valid_to:
+                return false_response
+            else:
+                return true_response
+        except BimsProfile.DoesNotExist:
+            return '-'
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:

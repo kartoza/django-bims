@@ -1,3 +1,4 @@
+from datetime import date
 import json
 import operator
 import hashlib
@@ -122,6 +123,7 @@ class Search(object):
         :return: dict of validation filter
         """
         validated_values = self.parse_request_json('validated')
+        additional_filter = {}
         if not validated_values:
             return {}
         if (
@@ -129,15 +131,29 @@ class Search(object):
                 'non validated' in validated_values
         ):
             # Get all validated and not validated records
-            return {}
+            pass
         elif 'validated' in validated_values:
-            return {
-                'validated': True,
-            }
-        else:
-            return {
-                'validated': False
-            }
+            additional_filter['validated'] = True
+        elif 'non validated' in validated_values:
+            additional_filter['validated'] = False
+
+        if (
+            'sass accredited' in validated_values and
+            'non sass accredited' in validated_values
+        ):
+            pass
+        elif 'sass accredited' in validated_values:
+            additional_filter[
+                'owner__bims_profile__sass_accredited_date_to__gte'] = (
+                date.today()
+            )
+        elif 'non sass accredited' in validated_values:
+            additional_filter[
+                'owner__bims_profile__sass_accredited_date_to__lte'] = (
+                date.today()
+            )
+
+        return additional_filter
 
     @property
     def taxon_id(self):
