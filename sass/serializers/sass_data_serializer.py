@@ -1,4 +1,3 @@
-from datetime import date
 from rest_framework import serializers
 import json
 from django.db.models import Q
