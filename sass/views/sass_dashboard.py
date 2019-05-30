@@ -237,8 +237,9 @@ class SassDashboardView(TemplateView):
         try:
             location_context = json.loads(self.location_site.location_context)
             eco_region = (
-                location_context['context_group_values']['eco_geo_group'][
-                    'service_registry_values']['eco_region']['value'].encode(
+                location_context['context_group_values'][
+                    'river_ecoregion_group'][
+                    'service_registry_values']['eco_region_1']['value'].encode(
                     'utf-8')
             )
             geo_class = (
@@ -375,6 +376,12 @@ class SassDashboardView(TemplateView):
                 json.dumps(
                     location_context['context_group_values'][
                         'eco_geo_group']['service_registry_values']
+                )
+            )
+            context['river_ecoregion_group'] = (
+                json.dumps(
+                    location_context['context_group_values'][
+                        'river_ecoregion_group']['service_registry_values']
                 )
             )
             context['political_boundary'] = (

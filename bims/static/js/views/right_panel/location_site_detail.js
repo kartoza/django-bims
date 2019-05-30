@@ -137,7 +137,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     } else {
                         geomorphologicalZone = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['geo_class_recoded']['value'];
                     }
-                    ecologicalRegion = data['location_context_document_json']['context_group_values']['eco_geo_group']['service_registry_values']['eco_region']['value'];
+                    ecologicalRegion = data['location_context_document_json']['context_group_values']['river_ecoregion_group']['service_registry_values']['eco_region_1']['value'];
                 } catch (err) {
                 }
 

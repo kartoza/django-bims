@@ -457,7 +457,7 @@ function createEcologicalScatterDataset(colour, label, data) {
 function renderEcologicalCategoryChart() {
     let header = $('.ecological-chart-header');
     try {
-        let headerLabel = `${ecoGeoGroup['eco_region']['value']} - ${ecoGeoGroup['geo_class']['value']}`;
+        let headerLabel = `${riverEcoregionGroup['eco_region_1']['value']} - ${ecoGeoGroup['geo_class']['value']}`;
         header.html(headerLabel);
     } catch (e) {
     }
@@ -677,7 +677,7 @@ function renderLocationContextTable() {
     if(ecoGeoGroup) {
         try {
             tableData['Geomorphological zones'] = ecoGeoGroup['geo_class_recoded']['value'];
-            tableData['SA Ecoregion'] = ecoGeoGroup['eco_region']['value'];
+            tableData['SA Ecoregion'] = riverEcoregionGroup['eco_region_1']['value'];
             tableData['National Critical Biodiversity'] = ecoGeoGroup['national_cba']['value'];
         } catch (e) {
         }
