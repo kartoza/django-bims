@@ -457,7 +457,7 @@ function createEcologicalScatterDataset(colour, label, data) {
 function renderEcologicalCategoryChart() {
     let header = $('.ecological-chart-header');
     try {
-        let headerLabel = `${riverEcoregionGroup['eco_region_1']['value']} - ${ecoGeoGroup['geo_class']['value']}`;
+        let headerLabel = `${riverEcoregionGroup['eco_region_1']['value']} - ${geomorphologicalGroup['geo_class']['value']}`;
         header.html(headerLabel);
     } catch (e) {
     }
@@ -673,16 +673,13 @@ function renderLocationContextTable() {
         'SA Ecoregion': '-',
         'National Critical Biodiversity': '-',
     };
-    
-    if(ecoGeoGroup) {
-        try {
-            tableData['Geomorphological zones'] = ecoGeoGroup['geo_class_recoded']['value'];
-            tableData['SA Ecoregion'] = riverEcoregionGroup['eco_region_1']['value'];
-            tableData['National Critical Biodiversity'] = ecoGeoGroup['national_cba']['value'];
-        } catch (e) {
-        }
+    try {
+        tableData['Geomorphological zones'] = geomorphologicalGroup['geo_class_recoded']['value'];
+        tableData['SA Ecoregion'] = riverEcoregionGroup['eco_region_1']['value'];
+        tableData['National Critical Biodiversity'] = ecoGeoGroup['national_cba']['value'];
+    } catch (e) {
     }
-    
+
     if (politicalBoundary) {
         try {
             tableData['Province'] = politicalBoundary['sa_provinces']['value'];

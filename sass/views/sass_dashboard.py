@@ -243,7 +243,8 @@ class SassDashboardView(TemplateView):
                     'utf-8')
             )
             geo_class = (
-                location_context['context_group_values']['eco_geo_group'][
+                location_context['context_group_values'][
+                    'geomorphological_group'][
                     'service_registry_values']['geo_class']['value'].encode(
                     'utf-8')
             )
@@ -372,10 +373,10 @@ class SassDashboardView(TemplateView):
                     'water_group']['service_registry_values']
             river_catchments = self.ordering_catchment_data(river_catchments)
             context['river_catchments'] = (json.dumps(river_catchments))
-            context['eco_geo'] = (
+            context['geomorphological_group'] = (
                 json.dumps(
                     location_context['context_group_values'][
-                        'eco_geo_group']['service_registry_values']
+                        'geomorphological_group']['service_registry_values']
                 )
             )
             context['river_ecoregion_group'] = (
@@ -388,6 +389,12 @@ class SassDashboardView(TemplateView):
                 json.dumps(
                     location_context['context_group_values'][
                         'political_boundary_group']['service_registry_values']
+                )
+            )
+            context['eco_geo'] = (
+                json.dumps(
+                    location_context['context_group_values'][
+                        'eco_geo_group']['service_registry_values']
                 )
             )
         except (KeyError, TypeError):

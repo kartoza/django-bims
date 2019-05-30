@@ -332,7 +332,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                     KeyTextTransform(
                         'service_registry_values',
                         KeyTextTransform(
-                            'eco_geo_group',
+                            'geomorphological_group',
                             KeyTextTransform(
                                 'context_group_values',
                                 'location_context'))))),

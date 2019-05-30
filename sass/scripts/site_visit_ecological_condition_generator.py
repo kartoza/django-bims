@@ -72,7 +72,8 @@ def generate_site_visit_ecological_condition(site_visits):
                     'utf-8')
             )
             geo_class = (
-                location_context['context_group_values']['eco_geo_group'][
+                location_context['context_group_values'][
+                    'geomorphological_group'][
                     'service_registry_values']['geo_class'][
                     'value'].encode(
                     'utf-8')

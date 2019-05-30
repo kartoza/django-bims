@@ -93,7 +93,7 @@ class SassDataSerializer(serializers.ModelSerializer):
                 context = json.loads(site.location_context)
                 geo = context[
                     'context_group_values'][
-                    'eco_geo_group']['service_registry_values'][
+                    'geomorphological_group']['service_registry_values'][
                     'geo_class_recoded']['value']
                 return geo
             except (KeyError, ValueError):
@@ -290,7 +290,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
                 context = json.loads(site.location_context)
                 geo = context[
                     'context_group_values'][
-                    'eco_geo_group']['service_registry_values'][
+                    'geomorphological_group']['service_registry_values'][
                     'geo_class_recoded']['value']
                 return geo
             except (KeyError, ValueError):
