@@ -49,7 +49,6 @@ class MapPageView(TemplateView):
 
         categories = BiologicalCollectionRecord.CATEGORY_CHOICES
         context['collection_category'] = [list(x) for x in categories]
-
         # add base module
         context['biological_modules'] = {
             'base': 'base'
