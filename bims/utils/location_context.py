@@ -105,7 +105,7 @@ def format_location_context(location_site_id, force_update=False):
             try:
                 context_geo = formatted_location_context[
                     'context_group_values'][
-                    'eco_geo_group']['service_registry_values'][
+                    'geomorphological_group']['service_registry_values'][
                     'geo_class_recoded']['value']
                 models.signals.post_save.disconnect(
                     location_site_post_save_handler,
@@ -128,7 +128,8 @@ def format_location_context(location_site_id, force_update=False):
                     try:
                         context_geo = formatted_location_context[
                             'context_group_values'][
-                            'eco_geo_group']['service_registry_values'][
+                            'geomorphological_group'][
+                            'service_registry_values'][
                             'geo_class_recoded']['value']
                         if (
                                 context_geo ==
@@ -159,7 +160,7 @@ def format_location_context(location_site_id, force_update=False):
         try:
             context_geo = formatted[
                 'context_group_values'][
-                'eco_geo_group']['service_registry_values'][
+                'geomorphological_group']['service_registry_values'][
                 'geo_class_recoded']['value']
             location_site.original_geomorphological = context_geo
         except KeyError:
@@ -168,7 +169,7 @@ def format_location_context(location_site_id, force_update=False):
     if location_site.refined_geomorphological:
         try:
             formatted['context_group_values'][
-                'eco_geo_group']['service_registry_values'][
+                'geomorphological_group']['service_registry_values'][
                 'geo_class_recoded']['value'] = (
                 location_site.refined_geomorphological
             )

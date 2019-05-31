@@ -71,7 +71,8 @@ def allocate_site_codes_from_river(update_site_code=True, location_id=None):
         if context:
             try:
                 catchment_name = (
-                    context['context_group_values']['water_group'][
+                    context['context_group_values'][
+                        'river_catchment_areas_group'][
                         'service_registry_values']['secondary_catchment_area'][
                         'value']
                 )

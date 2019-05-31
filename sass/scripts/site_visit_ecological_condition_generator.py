@@ -65,13 +65,15 @@ def generate_site_visit_ecological_condition(site_visits):
                 site_visit.location_site.location_context
             )
             eco_region = (
-                location_context['context_group_values']['eco_geo_group'][
-                    'service_registry_values']['eco_region'][
+                location_context['context_group_values'][
+                    'river_ecoregion_group'][
+                    'service_registry_values']['eco_region_1'][
                     'value'].encode(
                     'utf-8')
             )
             geo_class = (
-                location_context['context_group_values']['eco_geo_group'][
+                location_context['context_group_values'][
+                    'geomorphological_group'][
                     'service_registry_values']['geo_class'][
                     'value'].encode(
                     'utf-8')

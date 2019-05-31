@@ -37,7 +37,8 @@ class SpatialScaleFilterList(APIView):
                 'primary_catchment_area',
                 'secondary_catchment_area',
                 'tertiary_catchment_area',
-                'quaternary_catchment_area'
+                'quaternary_catchment_area',
+                'quinary_catchment_area'
             ]
         }),
         ('SA Ecoregion', {

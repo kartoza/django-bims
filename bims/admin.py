@@ -282,6 +282,11 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'taxonomy',
         'category'
     )
+    search_fields = (
+        'taxonomy__scientific_name',
+        'taxonomy__canonical_name',
+        'original_species_name'
+    )
 
 
 class ShapefileInline(admin.TabularInline):

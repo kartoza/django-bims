@@ -237,12 +237,14 @@ class SassDashboardView(TemplateView):
         try:
             location_context = json.loads(self.location_site.location_context)
             eco_region = (
-                location_context['context_group_values']['eco_geo_group'][
-                    'service_registry_values']['eco_region']['value'].encode(
+                location_context['context_group_values'][
+                    'river_ecoregion_group'][
+                    'service_registry_values']['eco_region_1']['value'].encode(
                     'utf-8')
             )
             geo_class = (
-                location_context['context_group_values']['eco_geo_group'][
+                location_context['context_group_values'][
+                    'geomorphological_group'][
                     'service_registry_values']['geo_class']['value'].encode(
                     'utf-8')
             )
@@ -364,27 +366,31 @@ class SassDashboardView(TemplateView):
                 flat=True
             ).distinct())
 
-        try:
-            location_context = json.loads(self.location_site.location_context)
-            river_catchments = location_context[
-                    'context_group_values'][
-                    'water_group']['service_registry_values']
-            river_catchments = self.ordering_catchment_data(river_catchments)
-            context['river_catchments'] = (json.dumps(river_catchments))
-            context['eco_geo'] = (
-                json.dumps(
-                    location_context['context_group_values'][
-                        'eco_geo_group']['service_registry_values']
-                )
-            )
-            context['political_boundary'] = (
-                json.dumps(
-                    location_context['context_group_values'][
-                        'political_boundary_group']['service_registry_values']
-                )
-            )
-        except (KeyError, TypeError):
-            pass
+        river_catchments = self.location_site.location_context_group_values(
+            'water_group'
+        )
+        river_catchments = self.ordering_catchment_data(river_catchments)
+        context['river_catchments'] = json.dumps(river_catchments)
+        context['river_ecoregion_group'] = (
+            json.dumps(self.location_site.location_context_group_values(
+                'river_ecoregion_group'
+            ))
+        )
+        context['political_boundary'] = (
+            json.dumps(self.location_site.location_context_group_values(
+                'political_boundary_group'
+            ))
+        )
+        context['geomorphological_group'] = (
+            json.dumps(self.location_site.location_context_group_values(
+                'geomorphological_group'
+            ))
+        )
+        context['eco_geo'] = (
+            json.dumps(self.location_site.location_context_group_values(
+                'eco_geo_group'
+            ))
+        )
 
         return context
 
