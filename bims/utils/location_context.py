@@ -115,7 +115,7 @@ def format_location_context(location_site_id, force_update=False):
                 models.signals.post_save.connect(
                     location_site_post_save_handler,
                 )
-            except KeyError:
+            except (KeyError, TypeError):
                 pass
 
         if 'hash' in formatted_location_context:
