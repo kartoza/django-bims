@@ -129,6 +129,26 @@ class LocationSite(DocumentLinksMixin):
         help_text='Original geomorphological zone from spatial layer'
     )
 
+    def location_context_group_values(self, group_name):
+        """
+        Returns location group data by group name
+        :param group_name: string of group name, e.g. geomorphological_group
+        :return: dict of group data
+        """
+        try:
+            location_context = json.loads(self.location_context)
+        except ValueError:
+            return {}
+        try:
+            return (
+                location_context
+                ['context_group_values']
+                [group_name]
+                ['service_registry_values']
+            )
+        except KeyError:
+            return {}
+
     def get_centroid(self):
         """ Getting centroid of location site """
 
