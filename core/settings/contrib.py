@@ -8,6 +8,7 @@ from .base import *  # noqa
 from geonode_generic.settings import *  # noqa
 from .celery_settings import *  # noqa
 import os
+import raven
 try:
     from .secret import IUCN_API_KEY  # noqa
 except ImportError:
@@ -60,6 +61,17 @@ INSTALLED_APPS += (
     'sass',
     'rangefilter',
 )
+
+if os.environ.get('RAVEN_CONFIG_DSN'):
+    INSTALLED_APPS += ('raven.contrib.django.raven_compat',)
+    RAVEN_CONFIG = {
+        'dsn': os.environ.get('RAVEN_CONFIG_DSN'),
+    }
+    if os.environ.get('GIT_PATH'):
+        RAVEN_CONFIG['release'] = (
+            raven.fetch_git_sha(os.environ.get('GIT_PATH'))
+        )
+
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
     'django.contrib.flatpages',
