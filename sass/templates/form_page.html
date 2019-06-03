@@ -22,6 +22,11 @@
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
+        {% if alert %}
+        <div class="alert alert-success" role="alert">
+            {{ alert | safe }}
+        </div>
+        {% endif %}
         {% if is_update %}
             <h2>Update SASS record</h2>
         {% else %}
