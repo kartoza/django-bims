@@ -1,2 +1,4 @@
-latitude,longitude,species_name,location_site,notes,category,date,collector,present,absent,custodian
--33.78,24.46,Anguilla bengalensis labiata,Krom,Example notes,Indigenous,1998-01-01,collector,1,0,bims
+latitude,longitude,species_name,location_site,notes,origin,date,collector,present,absent,custodian
+-33.78,24.46,Anguilla bengalensis labiata,Krom,Example notes,Native,1998-01-01,collector,1,0,bims
+-33.78,24.46,Anguilla bengalensis labiata,Krom,Example notes,Non-native,1998-01-01,collector,1,0,bims
+-33.78,24.46,Anguilla bengalensis labiata,Krom,Example notes,Translocated,1998-01-01,collector,1,0,bims

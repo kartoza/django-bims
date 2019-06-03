@@ -222,8 +222,14 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             date)
 
         if site_id:
-            return redirect(
-                reverse('sass-form-page', kwargs={'site_id': site_id}))
+            url = '{base_url}?{querystring}'.format(
+                base_url=reverse('sass-form-page', kwargs={
+                    'site_id': site_id, }),
+                querystring='sass_created_id={}'.format(
+                    site_visit.id
+                )
+            )
+            return redirect(url)
         else:
             return redirect(
                 reverse('sass-update-page', kwargs={'sass_id': sass_id})
@@ -376,6 +382,22 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(SassFormView, self).get_context_data(**kwargs)
+
+        sass_created_id = self.request.GET.get('sass_created_id', None)
+        if sass_created_id:
+            try:
+                sass_created = SiteVisit.objects.get(
+                    id=sass_created_id
+                )
+                context['alert'] = (
+                    'New SASS data has been added : '
+                    '<a href="/sass/view/{0}">{1}</a>'.format(
+                        sass_created_id,
+                        sass_created.site_visit_date
+                    )
+                )
+            except SiteVisit.DoesNotExist:
+                pass
 
         if self.site_visit:
             context['is_update'] = True

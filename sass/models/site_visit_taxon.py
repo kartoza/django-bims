@@ -27,7 +27,7 @@ class SiteVisitTaxon(BiologicalCollectionRecord):
 
     def save(self, *args, **kwargs):
         owner = self.owner
-        if owner.username == self.collector:
+        if owner and owner.username == self.collector:
             self.collector = '{0} {1}'.format(
                 owner.first_name,
                 owner.last_name)
