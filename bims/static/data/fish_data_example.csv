@@ -1,2 +1,2 @@
-latitude,longitude,species_name,location_site,notes,category,date,collector,present,absent,habitat
--33.78,24.46,Anguilla bengalensis labiata,Krom,Example notes,Indigenous,1998-01-01,collector,1,0,Euryhaline
+latitude,longitude,species_name,location_site,notes,origin,date,collector,present,absent,habitat
+-33.78,24.46,Anguilla bengalensis labiata,Krom,Example notes,Native,1998-01-01,collector,1,0,Euryhaline
