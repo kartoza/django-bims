@@ -255,26 +255,31 @@ function renderTaxaPerBiotopeTable(data) {
     });
 
     // Add data
-    let lastTaxonGroup = '';
+    let listTaxonGroups = {};
     $.each(tableData, function (key, _tableData) {
+        let taxonGroupNameTitle = '';
         let taxonGroupName = _tableData['group_name'];
+        let lastRow = null;
+
         let $tr = $('<tr>');
-        if (lastTaxonGroup === '') {
-            lastTaxonGroup = taxonGroupName;
-        } else if (lastTaxonGroup !== taxonGroupName) {
-            // add border
-            lastTaxonGroup = taxonGroupName;
-            $tr.addClass('taxon-group');
+        if (listTaxonGroups.hasOwnProperty(taxonGroupName)) {
+            lastRow = listTaxonGroups[taxonGroupName];
+            listTaxonGroups[taxonGroupName] = $tr;
+            taxonGroupNameTitle = '';
         } else {
-            taxonGroupName = '';
+            listTaxonGroups[taxonGroupName] = $tr;
+            taxonGroupNameTitle = taxonGroupName;
+            $tr.addClass('taxon-group');
         }
-        $tr.append('<td>' + taxonGroupName + '</td>');
+
+        $tr.append('<td>' + taxonGroupNameTitle + '</td>');
         $tr.append('<td>' + _tableData['taxon_name'] + '</td>');
         $tr.append('<td>' + _tableData['score'] + '</td>');
 
         $.each(siteIds, function (index, siteId) {
             let siteAbundance = _tableData['site_abundance'][siteId];
             let score = _tableData['score'];
+
             if (typeof siteAbundance === 'undefined') {
                 siteAbundance = '';
             } else {
@@ -309,7 +314,11 @@ function renderTaxaPerBiotopeTable(data) {
                 })
             }
         });
-        $table.append($tr);
+        if (lastRow) {
+            $tr.insertAfter(lastRow);
+        } else {
+            $table.append($tr);
+        }
     });
     let $sassScoreTr = $('<tr class="total-table" >');
     $sassScoreTr.append('<td colspan="3"> SASS Score </td>');
