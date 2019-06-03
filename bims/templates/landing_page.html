@@ -42,11 +42,13 @@
                     <img src="{% static 'img/kartoza-logo-only.png' %}" style="width: 55px">
                 </a>
             </div>
+            {% if site_ready %}
             <div class="col-lg-2 pull-right about-links">
                 <p><a href="/pages/aboutus/" style="text-decoration: none; color: white">About</a></p>
                 <p><a href="/contact/" style="text-decoration: none; color: white">Contact</a></p>
                 <p><a>Others</a></p>
             </div>
+            {% endif %}
         </div>
     </div>
     </section>

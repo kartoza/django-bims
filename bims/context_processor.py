@@ -2,6 +2,8 @@
 """
 Our custom context processors
 """
+import ast
+
 from django.conf import settings
 from bims.utils.get_key import get_key
 
@@ -55,6 +57,17 @@ def google_analytic_key(request):
     Return google analytic key
     """
     return {'GOOGLE_ANALYTIC_KEY': get_key('GOOGLE_ANALYTIC_KEY')}
+
+
+def site_ready(request):
+    """
+    Return if site is ready
+    """
+    try:
+        is_site_ready = ast.literal_eval(get_key('SITE_READY'))
+    except (ValueError, SyntaxError):
+        is_site_ready = False
+    return {'site_ready': is_site_ready}
 
 
 def custom_navbar_url(request):
