@@ -7,9 +7,7 @@ django-role-permissions==2.2.0
 markdown==2.6.11
 celery==4.1.0
 
-# Raven pinned to 3.3.7 - see
-# https://github.com/getsentry/raven-python/issues/337
-raven==5.8.1
+raven==6.10.0
 django-sentry==1.13.5
 requests>=2.20.0
 pytz
