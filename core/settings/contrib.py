@@ -92,7 +92,8 @@ try:
         'bims.context_processor.google_analytic_key',
         'bims.context_processor.is_sass_enabled',
         'bims.context_processor.bims_preferences',
-        'bims.context_processor.application_name'
+        'bims.context_processor.application_name',
+        'bims.context_processor.site_ready',
     ]
 except KeyError:
     TEMPLATES = [
