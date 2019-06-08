@@ -23,6 +23,7 @@ from bims.models import (
     TaxonGroup,
     FbisUUID,
     DataSource,
+    Biotope
 )
 
 
@@ -291,3 +292,8 @@ class DataSourceF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'data-source %s' % n)
+
+
+class BiotopeF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Biotope

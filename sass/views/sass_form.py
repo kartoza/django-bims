@@ -80,9 +80,11 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                         rate = rate[0]
                     else:
                         rate = Rate.objects.none()
-                biotope_fraction = SassBiotopeFraction.objects.get(
-                    rate=rate,
-                    sass_biotope_id=biotope_id
+                biotope_fraction, created = (
+                    SassBiotopeFraction.objects.get_or_create(
+                        rate=rate,
+                        sass_biotope_id=biotope_id
+                    )
                 )
                 biotope_fractions.append(biotope_fraction)
             except (
@@ -245,7 +247,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             )
 
         biotope_fractions = self.get_biotope_fractions(self.request.POST)
-
+        sass_biotope_fractions = SassBiotopeFraction.objects.filter(
+            sass_biotope__in=[s.sass_biotope.id for s in biotope_fractions]
+        )
+        site_visit.sass_biotope_fraction.remove(*sass_biotope_fractions)
         site_visit.sass_biotope_fraction.add(*biotope_fractions)
         site_visit.site_visit_date = date
         site_visit.time = datetime
