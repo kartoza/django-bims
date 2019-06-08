@@ -102,6 +102,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             'Veg': 'MV/AQV',
             'GSM': 'G/S/M'
         }
+        updated_site_visit_taxon = []
+        updated_site_visit_biotope_taxon = []
         for post_key, abundance in post_dictionary.iteritems():
             if 'taxon_list' not in post_key:
                 continue
@@ -126,26 +128,61 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                         biotope=biotope,
                     )
                 )
+                updated_site_visit_biotope_taxon.append(
+                    site_visit_biotope_taxon.id
+                )
                 site_visit_biotope_taxon.taxon_abundance = taxon_abundance
                 site_visit_biotope_taxon.date = date
                 site_visit_biotope_taxon.save()
 
             # Total Rating
-            site_visit_taxon, created = (
-                SiteVisitTaxon.objects.get_or_create(
+            try:
+                site_visit_taxon, created = (
+                    SiteVisitTaxon.objects.get_or_create(
+                        site=site_visit.location_site,
+                        site_visit=site_visit,
+                        sass_taxon=sass_taxon,
+                        taxonomy=sass_taxon.taxon,
+                        original_species_name=sass_taxon.taxon.canonical_name,
+                    )
+                )
+            except SiteVisitTaxon.MultipleObjectsReturned:
+                site_visit_taxa = SiteVisitTaxon.objects.filter(
                     site=site_visit.location_site,
                     site_visit=site_visit,
                     sass_taxon=sass_taxon,
                     taxonomy=sass_taxon.taxon,
                     original_species_name=sass_taxon.taxon.canonical_name,
-                    collector=self.request.user.username,
-                    notes='from sass',
                 )
+                site_visit_taxon = site_visit_taxa[0]
+                created = False
+            updated_site_visit_taxon.append(
+                site_visit_taxon.id
             )
-            site_visit_taxon.owner = self.request.user
+            site_visit_taxon.notes = 'from sass'
             site_visit_taxon.collection_date = date
             site_visit_taxon.taxon_abundance = taxon_abundance
+
+            if created:
+                site_visit.owner = self.request.user
+                site_visit.collector = self.request.user.username
+
             site_visit_taxon.save()
+
+        if updated_site_visit_taxon:
+            deleted_site_visit_taxon = SiteVisitTaxon.objects.filter(
+                site=site_visit.location_site,
+                site_visit=site_visit,
+                collection_date=date
+            ).exclude(id__in=updated_site_visit_taxon)
+            deleted_site_visit_biotope_taxon = (
+                SiteVisitBiotopeTaxon.objects.filter(
+                    site_visit=site_visit,
+                    date=date
+                ).exclude(id__in=updated_site_visit_biotope_taxon)
+            )
+            deleted_site_visit_biotope_taxon.delete()
+            deleted_site_visit_taxon.delete()
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -179,6 +216,12 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 data_source = DataSource.objects.create(
                     name=data_source_name
                 )
+        elif data_source_name:
+            data_source, data_source_created = (
+                DataSource.objects.get_or_create(
+                    name=data_source_name
+                )
+            )
 
         # Time
         time_string = request.POST.get('time', None)
