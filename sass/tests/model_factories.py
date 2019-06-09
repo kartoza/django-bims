@@ -1,5 +1,4 @@
 import factory
-import random
 
 from django.utils import timezone
 
@@ -30,8 +29,10 @@ class SassTaxonF(factory.django.DjangoModelFactory):
 
 class SiteVisitF(factory.django.DjangoModelFactory):
     class Meta:
+        django_get_or_create = ('id',)
         model = SiteVisit
 
+    id = factory.Sequence(lambda n: n)
     location_site = factory.SubFactory(LocationSiteF)
     site_visit_date = timezone.now()
     owner = factory.SubFactory(UserF)

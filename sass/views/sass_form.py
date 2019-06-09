@@ -1,5 +1,5 @@
 from dateutil.parser import parse
-from django.db.models import Case, When, F, Q
+from django.db.models import Case, When, F, Q, signals
 from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -8,8 +8,15 @@ from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+
 from geonode.people.models import Profile
-from bims.models.location_site import LocationSite
+from bims.models.location_site import (
+    LocationSite,
+    location_site_post_save_handler
+)
 from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
 from bims.models.data_source import DataSource
@@ -23,6 +30,7 @@ from sass.models import (
     Rate,
     SassBiotopeFraction
 )
+
 from bims.enums import TaxonomicGroupCategory
 
 BIOTOPE_STONES = 'SIC/SOOC'
@@ -190,7 +198,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
         sass_id = kwargs.get('sass_id', None)
-
+        signals.post_save.disconnect(
+            location_site_post_save_handler,
+        )
         # Assessor
         assessor_id = request.POST.get('assessor', None)
         assessor = None
@@ -269,6 +279,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             self.request.POST,
             date)
 
+        signals.post_save.connect(
+            location_site_post_save_handler,
+        )
         if site_id:
             url = '{base_url}?{querystring}'.format(
                 base_url=reverse('sass-form-page', kwargs={
@@ -538,11 +551,18 @@ class SassReadFormView(SassFormView):
         )
 
 
-from django.contrib import messages
-from django.http import HttpResponseRedirect
-from django.views.decorators.csrf import csrf_exempt
-
-class SassDeleteView(View):
+class SassDeleteView(UserPassesTestMixin, View):
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        sass_id = self.kwargs.get('sass_id', None)
+        if not sass_id:
+            return True
+        return SiteVisit.objects.filter(
+            Q(owner=self.request.user) | Q(assessor=self.request.user),
+            id=sass_id,).exists()
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
