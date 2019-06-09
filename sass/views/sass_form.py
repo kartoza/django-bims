@@ -1,6 +1,6 @@
 from dateutil.parser import parse
 from django.db.models import Case, When, F, Q
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
@@ -536,3 +536,30 @@ class SassReadFormView(SassFormView):
         return super(SassFormView, self).get(
             request, *args, **kwargs
         )
+
+
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+
+class SassDeleteView(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SassDeleteView, self).dispatch(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        site_visit = get_object_or_404(
+            SiteVisit,
+            id=kwargs.get('sass_id', None)
+        )
+        site_visit.delete()
+        messages.success(
+            request,
+            'SASS record successfully deleted!',
+            extra_tags='sass_record')
+        redirect_url = '/sass/dashboard/{0}/?siteId={0}'.format(
+            site_visit.location_site.id
+        )
+        return HttpResponseRedirect(redirect_url)

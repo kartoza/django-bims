@@ -4,7 +4,12 @@ $('#submitBtn').click(function () {
 $('#submit').click(function () {
     let submitButton = $('#submit');
     submitButton.addClass('disabled');
-    submitButton.html('Updating...');
+    let submitMessage = submitButton.data('message');
+    if (submitMessage) {
+        submitButton.html(submitMessage);
+    } else {
+        submitButton.html('Updating...');
+    }
     $('#cancel-submit').hide();
     $('#sass-form').submit();
 });

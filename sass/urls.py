@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from sass.views.sass_form import SassFormView, SassReadFormView
+from sass.views.sass_form import SassFormView, SassReadFormView, SassDeleteView
 from sass.views.sass_list import SassListView
 from sass.views.sass_dashboard import SassDashboardView
 from sass.views.sass_dashboard_multiple import (
@@ -17,6 +17,9 @@ urlpatterns = [
     url(r'^update/(?P<sass_id>\d+)/$',
         SassFormView.as_view(),
         name='sass-update-page'),
+    url(r'^delete/(?P<sass_id>\d+)/$',
+        SassDeleteView.as_view(),
+        name='sass-delete'),
     url(r'^view/(?P<sass_id>\d+)/$',
         SassReadFormView.as_view(),
         name='sass-view-page'),
