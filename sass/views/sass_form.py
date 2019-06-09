@@ -1,5 +1,5 @@
 from dateutil.parser import parse
-from django.db.models import Case, When, F
+from django.db.models import Case, When, F, Q
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -52,8 +52,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         if not sass_id:
             return True
         return SiteVisit.objects.filter(
-            id=sass_id,
-            owner=self.request.user).exists()
+            Q(owner=self.request.user) | Q(assessor=self.request.user),
+            id=sass_id,).exists()
 
     def get_biotope_fractions(self, post_dictionary):
         # Get biotope fractions
@@ -453,6 +453,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             context['assessor'] = self.site_visit.assessor
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
+            context['owner'] = self.site_visit.owner
             if self.site_visit.comments_or_observations:
                 context['comments'] = self.site_visit.comments_or_observations
             if self.site_visit.other_biota:
