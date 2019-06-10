@@ -23,6 +23,7 @@ from bims.models import (
     TaxonGroup,
     FbisUUID,
     DataSource,
+    Biotope
 )
 
 
@@ -47,7 +48,10 @@ class LocationSiteF(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LocationSite
+        django_get_or_create = ('id', )
 
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: 'Site name %s' % n)
     location_type = factory.SubFactory(LocationTypeF)
     geometry_point = Point(
         random.uniform(-30.0, 30.0),
@@ -141,12 +145,14 @@ class PermissionF(factory.DjangoModelFactory):
 class UserF(factory.DjangoModelFactory):
     class Meta:
         model = settings.AUTH_USER_MODEL
+        django_get_or_create = ('id', )
 
+    id = factory.Sequence(lambda n: n)
     username = factory.Sequence(lambda n: "username%s" % n)
     first_name = factory.Sequence(lambda n: "first_name%s" % n)
     last_name = factory.Sequence(lambda n: "last_name%s" % n)
     email = factory.Sequence(lambda n: "email%s@example.com" % n)
-    password = ''
+    password = factory.PostGenerationMethodCall('set_password', 'password')
     is_staff = False
     is_active = True
     is_superuser = False
@@ -291,3 +297,8 @@ class DataSourceF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'data-source %s' % n)
+
+
+class BiotopeF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Biotope

@@ -49,6 +49,15 @@
             <div class="logo hide-logo pull-right"><img width="50"
                                                         src="{% static 'img/bims-stamp.png' %}">
             </div>
+            {% if messages %}
+                    {% for message in messages %}
+                        {% if message.extra_tags == 'sass_record' %}
+                            <div class="alert alert-secondary {{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+            {% endif %}
             <h2 class="dashboard-title">SASS Dashboard</h2>
             <div class="row">
                 <div class="col-md-6">

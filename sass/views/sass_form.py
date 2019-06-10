@@ -1,6 +1,6 @@
 from dateutil.parser import parse
-from django.db.models import Case, When, F
-from django.views.generic import TemplateView
+from django.db.models import Case, When, F, Q, signals
+from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
@@ -8,8 +8,15 @@ from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+
 from geonode.people.models import Profile
-from bims.models.location_site import LocationSite
+from bims.models.location_site import (
+    LocationSite,
+    location_site_post_save_handler
+)
 from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
 from bims.models.data_source import DataSource
@@ -23,6 +30,7 @@ from sass.models import (
     Rate,
     SassBiotopeFraction
 )
+
 from bims.enums import TaxonomicGroupCategory
 
 BIOTOPE_STONES = 'SIC/SOOC'
@@ -52,8 +60,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         if not sass_id:
             return True
         return SiteVisit.objects.filter(
-            id=sass_id,
-            owner=self.request.user).exists()
+            Q(owner=self.request.user) | Q(assessor=self.request.user),
+            id=sass_id,).exists()
 
     def get_biotope_fractions(self, post_dictionary):
         # Get biotope fractions
@@ -80,9 +88,11 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                         rate = rate[0]
                     else:
                         rate = Rate.objects.none()
-                biotope_fraction = SassBiotopeFraction.objects.get(
-                    rate=rate,
-                    sass_biotope_id=biotope_id
+                biotope_fraction, created = (
+                    SassBiotopeFraction.objects.get_or_create(
+                        rate=rate,
+                        sass_biotope_id=biotope_id
+                    )
                 )
                 biotope_fractions.append(biotope_fraction)
             except (
@@ -102,6 +112,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             'Veg': 'MV/AQV',
             'GSM': 'G/S/M'
         }
+        updated_site_visit_taxon = []
+        updated_site_visit_biotope_taxon = []
         for post_key, abundance in post_dictionary.iteritems():
             if 'taxon_list' not in post_key:
                 continue
@@ -126,32 +138,69 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                         biotope=biotope,
                     )
                 )
+                updated_site_visit_biotope_taxon.append(
+                    site_visit_biotope_taxon.id
+                )
                 site_visit_biotope_taxon.taxon_abundance = taxon_abundance
                 site_visit_biotope_taxon.date = date
                 site_visit_biotope_taxon.save()
 
             # Total Rating
-            site_visit_taxon, created = (
-                SiteVisitTaxon.objects.get_or_create(
+            try:
+                site_visit_taxon, created = (
+                    SiteVisitTaxon.objects.get_or_create(
+                        site=site_visit.location_site,
+                        site_visit=site_visit,
+                        sass_taxon=sass_taxon,
+                        taxonomy=sass_taxon.taxon,
+                        original_species_name=sass_taxon.taxon.canonical_name,
+                    )
+                )
+            except SiteVisitTaxon.MultipleObjectsReturned:
+                site_visit_taxa = SiteVisitTaxon.objects.filter(
                     site=site_visit.location_site,
                     site_visit=site_visit,
                     sass_taxon=sass_taxon,
                     taxonomy=sass_taxon.taxon,
                     original_species_name=sass_taxon.taxon.canonical_name,
-                    collector=self.request.user.username,
-                    notes='from sass',
                 )
+                site_visit_taxon = site_visit_taxa[0]
+                created = False
+            updated_site_visit_taxon.append(
+                site_visit_taxon.id
             )
-            site_visit_taxon.owner = self.request.user
+            site_visit_taxon.notes = 'from sass'
             site_visit_taxon.collection_date = date
             site_visit_taxon.taxon_abundance = taxon_abundance
+
+            if created:
+                site_visit.owner = self.request.user
+                site_visit.collector = self.request.user.username
+
             site_visit_taxon.save()
+
+        if updated_site_visit_taxon:
+            deleted_site_visit_taxon = SiteVisitTaxon.objects.filter(
+                site=site_visit.location_site,
+                site_visit=site_visit,
+                collection_date=date
+            ).exclude(id__in=updated_site_visit_taxon)
+            deleted_site_visit_biotope_taxon = (
+                SiteVisitBiotopeTaxon.objects.filter(
+                    site_visit=site_visit,
+                    date=date
+                ).exclude(id__in=updated_site_visit_biotope_taxon)
+            )
+            deleted_site_visit_biotope_taxon.delete()
+            deleted_site_visit_taxon.delete()
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
         sass_id = kwargs.get('sass_id', None)
-
+        signals.post_save.disconnect(
+            location_site_post_save_handler,
+        )
         # Assessor
         assessor_id = request.POST.get('assessor', None)
         assessor = None
@@ -179,6 +228,12 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 data_source = DataSource.objects.create(
                     name=data_source_name
                 )
+        elif data_source_name:
+            data_source, data_source_created = (
+                DataSource.objects.get_or_create(
+                    name=data_source_name
+                )
+            )
 
         # Time
         time_string = request.POST.get('time', None)
@@ -202,7 +257,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             )
 
         biotope_fractions = self.get_biotope_fractions(self.request.POST)
-
+        sass_biotope_fractions = SassBiotopeFraction.objects.filter(
+            sass_biotope__in=[s.sass_biotope.id for s in biotope_fractions]
+        )
+        site_visit.sass_biotope_fraction.remove(*sass_biotope_fractions)
         site_visit.sass_biotope_fraction.add(*biotope_fractions)
         site_visit.site_visit_date = date
         site_visit.time = datetime
@@ -221,6 +279,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             self.request.POST,
             date)
 
+        signals.post_save.connect(
+            location_site_post_save_handler,
+        )
         if site_id:
             url = '{base_url}?{querystring}'.format(
                 base_url=reverse('sass-form-page', kwargs={
@@ -405,6 +466,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             context['assessor'] = self.site_visit.assessor
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
+            context['owner'] = self.site_visit.owner
             if self.site_visit.comments_or_observations:
                 context['comments'] = self.site_visit.comments_or_observations
             if self.site_visit.other_biota:
@@ -487,3 +549,37 @@ class SassReadFormView(SassFormView):
         return super(SassFormView, self).get(
             request, *args, **kwargs
         )
+
+
+class SassDeleteView(UserPassesTestMixin, View):
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        sass_id = self.kwargs.get('sass_id', None)
+        if not sass_id:
+            return True
+        return SiteVisit.objects.filter(
+            Q(owner=self.request.user) | Q(assessor=self.request.user),
+            id=sass_id,).exists()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SassDeleteView, self).dispatch(request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        site_visit = get_object_or_404(
+            SiteVisit,
+            id=kwargs.get('sass_id', None)
+        )
+        site_visit.delete()
+        messages.success(
+            request,
+            'SASS record successfully deleted!',
+            extra_tags='sass_record')
+        redirect_url = '/sass/dashboard/{0}/?siteId={0}'.format(
+            site_visit.location_site.id
+        )
+        return HttpResponseRedirect(redirect_url)
