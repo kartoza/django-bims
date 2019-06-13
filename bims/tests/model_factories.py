@@ -34,7 +34,9 @@ class LocationTypeF(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LocationType
+        django_get_or_create = ('id', )
 
+    id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'Test location type %s' % n)
     description = u'Only for testing'
     allowed_geometry = 'POINT'

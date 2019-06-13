@@ -113,13 +113,13 @@ class LocationSite(DocumentLinksMixin):
 
     latitude = models.FloatField(
         blank=True,
-        help_text='This is intended only for IPT',
+        help_text='Latitude of location site',
         null=True
     )
 
     longitude = models.FloatField(
         blank=True,
-        help_text='This is intended only for IPT',
+        help_text='Longitude of location site',
         null=True
     )
     original_geomorphological = models.CharField(
@@ -334,6 +334,8 @@ class LocationSite(DocumentLinksMixin):
         return field
 
     def save(self, *args, **kwargs):
+        lon_lat_changed = False
+
         self.additional_data = self.validate_json_field(
             self.additional_data
         )
@@ -350,8 +352,27 @@ class LocationSite(DocumentLinksMixin):
             # Check if geometry is allowed
             if isinstance(self.get_geometry(),
                           self.location_type.get_allowed_geometry_class()):
-                self.longitude = self.get_centroid().x
-                self.latitude = self.get_centroid().y
+                if (
+                        self.get_centroid().x != self.__original_longitude or
+                        not self.longitude
+                ):
+                    self.longitude = self.get_centroid().x
+                    lon_lat_changed = True
+                if (
+                        self.get_centroid().y != self.__original_latitude or
+                        not self.latitude
+                ):
+                    self.latitude = self.get_centroid().y
+                    lon_lat_changed = True
+
+                # Check if latitude or longitude changed manually
+                if (
+                        self.latitude != self.__original_latitude or
+                        self.longitude != self.__original_longitude
+                ):
+                    if not lon_lat_changed:
+                        self.geometry_point.x = self.longitude
+                        self.geometry_point.y = self.latitude
                 super(LocationSite, self).save(*args, **kwargs)
                 self.__original_centroid = self.get_centroid()
             else:
@@ -372,6 +393,8 @@ class LocationSite(DocumentLinksMixin):
         self.__original_refined_geomorphological = (
             self.refined_geomorphological
         )
+        self.__original_latitude = self.latitude
+        self.__original_longitude = self.longitude
 
 
 @receiver(models.signals.post_save)
