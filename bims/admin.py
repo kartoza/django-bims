@@ -122,7 +122,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     actions = ['update_location_context', 'delete_location_context']
 
     def get_readonly_fields(self, request, obj=None):
-        return ['longitude', 'latitude', 'original_geomorphological']
+        return ['original_geomorphological']
 
     def has_location_context(self, obj):
         return bool(obj.location_context_document)

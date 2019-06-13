@@ -211,6 +211,18 @@ class TestLocationSiteCRUD(TestCase):
         # check if validation error raised
         self.assertRaises(ValidationError, location_site.save)
 
+    def test_LocationSite_update_lat_lon_manually(self):
+        location_site = LocationSiteF.create()
+        new_data = {
+            'latitude': -33.3,
+            'longitude': 25,
+        }
+        location_site.__dict__.update(new_data)
+
+        # check if updated
+        for key, val in new_data.items():
+            self.assertEqual(location_site.__dict__.get(key), val)
+
 
 class TestIUCNStatusCRUD(TestCase):
     """
