@@ -34,6 +34,7 @@ $(function () {
     });
     map.addLayer(biodiversityTileLayer);
     $('#update-coordinate').click(updateCoordinateHandler);
+    $('#update-site-code').click(updateSiteCode);
 });
 
 $('#latitude').keyup((e) => {
@@ -52,6 +53,24 @@ $('#longitude').keyup((e) => {
     }
     document.getElementById('update-coordinate').disabled = false;
 });
+
+let updateSiteCode = (e) => {
+    let latitude = $('#latitude').val();
+    let longitude = $('#longitude').val();
+    let button = $('#update-site-code');
+    let buttonLabel = button.html();
+    document.getElementById('update-site-code').disabled = true;
+    button.html('Generating...');
+
+    $.ajax({
+        url: '/api/get-site-code/?lon=' + longitude + '&lat=' + latitude,
+        success: function (data) {
+            $('#site_code').val(data['site_code']);
+            document.getElementById('update-site-code').disabled = false;
+            button.html(buttonLabel);
+        }
+    });
+};
 
 let updateCoordinateHandler = (e) => {
     let latitude = $('#latitude').val();
@@ -110,4 +129,5 @@ let addMarkerToMap = (lat, lon) => {
     }));
     map.getView().setCenter(locationSiteCoordinate);
     map.getView().setZoom(6);
+    document.getElementById('update-site-code').disabled = false;
 };
