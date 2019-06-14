@@ -35,6 +35,7 @@ $(function () {
     map.addLayer(biodiversityTileLayer);
     $('#update-coordinate').click(updateCoordinateHandler);
     $('#update-site-code').click(updateSiteCode);
+    $('#fetch-geomorphological-zone').click(fetchGeomorphologicalZone);
 });
 
 $('#latitude').keyup((e) => {
@@ -58,15 +59,40 @@ let updateSiteCode = (e) => {
     let latitude = $('#latitude').val();
     let longitude = $('#longitude').val();
     let button = $('#update-site-code');
+    let siteCodeInput = $('#site_code');
     let buttonLabel = button.html();
+
     document.getElementById('update-site-code').disabled = true;
     button.html('Generating...');
+    siteCodeInput.prop('disabled', true);
 
     $.ajax({
         url: '/api/get-site-code/?lon=' + longitude + '&lat=' + latitude,
         success: function (data) {
-            $('#site_code').val(data['site_code']);
+            siteCodeInput.prop('disabled', false);
+            siteCodeInput.val(data['site_code']);
             document.getElementById('update-site-code').disabled = false;
+            button.html(buttonLabel);
+        }
+    });
+};
+
+let fetchGeomorphologicalZone = (e) => {
+    let latitude = $('#latitude').val();
+    let longitude = $('#longitude').val();
+    let button = $('#fetch-geomorphological-zone');
+    let geomorphologicalInput = $('#geomorphological_zone');
+    let buttonLabel = button.html();
+
+    button.prop('disabled', true);
+    button.html('Fetching...');
+    geomorphologicalInput.prop('disabled', true);
+
+    $.ajax({
+        url: '/api/get-geomorphological-zone/?lon=' + longitude + '&lat=' + latitude,
+        success: function (data) {
+            geomorphologicalInput.val(data['geomorphological_zone']);
+            button.prop('disabled', false);
             button.html(buttonLabel);
         }
     });
@@ -101,6 +127,8 @@ let moveMarkerOnTheMap = (lat, lon) => {
     markerSource.addFeature(iconFeature);
     map.getView().setCenter(locationSiteCoordinate);
     map.getView().setZoom(6);
+    $('#geomorphological_zone').val('');
+    $('#site_code').val('');
 };
 
 let addMarkerToMap = (lat, lon) => {
@@ -130,4 +158,5 @@ let addMarkerToMap = (lat, lon) => {
     map.getView().setCenter(locationSiteCoordinate);
     map.getView().setZoom(6);
     document.getElementById('update-site-code').disabled = false;
+    document.getElementById('fetch-geomorphological-zone').disabled = false;
 };
