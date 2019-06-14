@@ -11,10 +11,13 @@ from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
 from django.contrib.postgres.fields import JSONField
+from django.conf import settings
+
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.search_process import SearchProcess
+from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -56,6 +59,7 @@ class LocationSite(DocumentLinksMixin):
         blank=True,
         null=True,
         max_length=200,
+        choices=[(g.name, g.value) for g in GeomorphologicalZoneCategory],
         help_text='Would be used in preference to the one discovered '
                   'in geocontext',
     )
@@ -127,6 +131,13 @@ class LocationSite(DocumentLinksMixin):
         null=True,
         max_length=200,
         help_text='Original geomorphological zone from spatial layer'
+    )
+
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        blank=True,
+        null=True,
     )
 
     def location_context_group_values(self, group_name):

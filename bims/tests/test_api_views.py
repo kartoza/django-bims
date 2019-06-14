@@ -1,4 +1,5 @@
 import json
+import mock
 from django.core.urlresolvers import reverse
 from rest_framework.test import APIRequestFactory
 from bims.tests.model_factories import (
@@ -26,7 +27,12 @@ from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
+from bims.api_views.site_code import GetSiteCode
 from django.test import TestCase
+
+
+def mocked_river_fetch(*args, **kwargs):
+    return 'RIVER'
 
 
 class TestApiView(TestCase):
@@ -230,3 +236,12 @@ class TestApiView(TestCase):
 
         content = json.loads(response.content)
         self.assertTrue(len(content['results']) > 0)
+
+    @mock.patch('bims.location_site.river.fetch_river_name', new=mocked_river_fetch)
+    def test_successfully_get_site_code(self):
+        view = GetSiteCode.as_view()
+        request = self.factory.get(
+            '%s?lat=-32&lon=28' % reverse('get-site-code'))
+        request.user = self.admin_user
+        response = view(request)
+        self.assertTrue(response.status_code == 200)

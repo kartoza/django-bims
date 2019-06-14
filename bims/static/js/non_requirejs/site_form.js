@@ -60,6 +60,8 @@ let updateSiteCode = (e) => {
     let longitude = $('#longitude').val();
     let button = $('#update-site-code');
     let siteCodeInput = $('#site_code');
+    let riverInput = $('#river');
+    let catchmentInput = $('#catchment_geocontext');
     let buttonLabel = button.html();
 
     document.getElementById('update-site-code').disabled = true;
@@ -71,6 +73,8 @@ let updateSiteCode = (e) => {
         success: function (data) {
             siteCodeInput.prop('disabled', false);
             siteCodeInput.val(data['site_code']);
+            riverInput.val(data['river']);
+            catchmentInput.val(JSON.stringify(data['catchment']));
             document.getElementById('update-site-code').disabled = false;
             button.html(buttonLabel);
         }
@@ -82,16 +86,17 @@ let fetchGeomorphologicalZone = (e) => {
     let longitude = $('#longitude').val();
     let button = $('#fetch-geomorphological-zone');
     let geomorphologicalInput = $('#geomorphological_zone');
+    let geomorphologicalGeocontextInput = $('#geomorphological_group_geocontext');
     let buttonLabel = button.html();
 
     button.prop('disabled', true);
     button.html('Fetching...');
-    geomorphologicalInput.prop('disabled', true);
 
     $.ajax({
         url: '/api/get-geomorphological-zone/?lon=' + longitude + '&lat=' + latitude,
         success: function (data) {
             geomorphologicalInput.val(data['geomorphological_zone']);
+            geomorphologicalGeocontextInput.val(JSON.stringify(data['geomorphological_group']));
             button.prop('disabled', false);
             button.html(buttonLabel);
         }

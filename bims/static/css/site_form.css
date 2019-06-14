@@ -37,3 +37,13 @@ body {
 #update-site-code, #fetch-geomorphological-zone {
     margin-left: -10px;
 }
+
+.submit-holder {
+    text-align: center;
+}
+
+.submit-button {
+    padding-left: 50px;
+    padding-right: 50px;
+    text-align: center;
+}

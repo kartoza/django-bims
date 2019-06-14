@@ -1,0 +1,12 @@
+{
+ "catchment_geocontext": "{\"service_registry_values\":[{\"query_type\":\"WFS\",\"description\":null,\"value\":\"Region D\",\"key\":\"primary_catchment_area\",\"name\":\"Primary Catchment Area\"},{\"query_type\":\"WFS\",\"description\":null,\"value\":\"S7\",\"key\":\"secondary_catchment_area\",\"name\":\"Secondary Catchment Area\"},{\"query_type\":\"WFS\",\"description\":null,\"value\":\"S50\",\"key\":\"tertiary_catchment_area\",\"name\":\"Tertiary Catchment Area\"},{\"query_type\":\"WFS\",\"description\":null,\"value\":\"S50G\",\"key\":\"quaternary_catchment_area\",\"name\":\"Quaternary Catchment Area\"},{\"query_type\":\"WFS\",\"description\":null,\"value\":\"S50G2\",\"key\":\"quinary_catchment_area\",\"name\":\"Quinary Catchment Area\"}],\"name\":\"River Catchments in South Africa\",\"key\":\"river_catchment_areas_group\",\"graphable\":false}",
+ "collector": "1",
+ "geomorphological_group_geocontext": "{\"service_registry_values\":[{\"query_type\":\"WFS\",\"description\":null,\"value\":\"Upper\",\"key\":\"geo_class\",\"name\":\"Geomorphological zones\"},{\"query_type\":\"WFS\",\"description\":null,\"value\":\"Mountain headwater stream\",\"key\":\"geo_class_recoded\",\"name\":\"Geomorphological zones\"}],\"name\":\"Geomorphological zones\",\"key\":\"geomorphological_group\",\"graphable\":false}",
+ "geomorphological_zone": "Mountain headwater stream",
+ "latitude": "-32",
+ "longitude": "28",
+ "refined_geomorphological_zone": "LOWER_FOOTHILL",
+ "river": "NXAMAGELE",
+ "site_code": "S7NXAM-00001",
+ "site_description": "Description test"
+}

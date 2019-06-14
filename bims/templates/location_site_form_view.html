@@ -64,6 +64,8 @@
                     <input type="text" name="site_code" id="site_code"
                            class="form-control form-control-sm"
                            placeholder="" required>
+                    <input type="hidden" name="river" id="river">
+                    <input type="hidden" name="catchment_geocontext" id="catchment_geocontext">
                 </div>
                 <div class="update-taxon-container col-sm-2">
                     <button id="update-site-code" type="button"
@@ -74,11 +76,12 @@
             </div>
             <div class="form-group row">
                 <label for="site_name"
-                       class="col-sm-2 col-form-label col-form-label">Geomorphological Zone*</label>
+                       class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>
                 <div class="col-sm-4">
                     <input type="text" name="geomorphological_zone" id="geomorphological_zone"
                            class="form-control form-control-sm"
-                           placeholder="" disabled>
+                           placeholder="" readonly>
+                    <input type="hidden" name="geomorphological_group_geocontext" id="geomorphological_group_geocontext">
                 </div>
                 <div class="update-taxon-container col-sm-2">
                     <button id="fetch-geomorphological-zone" type="button"
@@ -91,9 +94,12 @@
                 <label for="site_name"
                        class="col-sm-2 col-form-label col-form-label">Refined Geomorphological Zone</label>
                 <div class="col-sm-10">
-                    <input type="text" name="refined_geomorphological_zone" id="refined_geomorphological_zone"
-                           class="form-control form-control-sm"
-                           placeholder="">
+                    <select name="refined_geomorphological_zone" class="form-control form-control-sm">
+                        <option value="">-</option>
+                        {% for geo in geomorphological_zone_category %}
+                            <option value="{{ geo.0 }}">{{ geo.1 }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
             <div class="form-group row">
@@ -111,10 +117,14 @@
                        class="col-sm-2 col-form-label col-form-label">Collector
                     </label>
                 <div class="col-sm-10">
-                    <input type="text" name="collector"
+                    <input type="text"
                            class="form-control form-control-sm"
                            placeholder="" value="{{ request.user.username }}" disabled>
+                    <input type="hidden" name="collector" value="{{ request.user.id }}">
                 </div>
+            </div>
+            <div class="form-group submit-holder">
+                <input class="btn btn-success submit-button" type="submit" value="ADD">
             </div>
         </div>
     </form>
