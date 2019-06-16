@@ -65,18 +65,21 @@ class LocationSiteFormView(TemplateView):
         latitude = float(latitude)
         longitude = float(longitude)
 
+        geocontext_data = {
+            'context_group_values': []
+        }
         if catchment_geocontext:
-            self.catchment_geocontext = json_loads_byteified(catchment_geocontext)
+            self.catchment_geocontext = json_loads_byteified(
+                catchment_geocontext)
+            geocontext_data['context_group_values'].append(
+                self.catchment_geocontext)
         if geomorphological_group_geocontext:
             self.geomorphological_group_geocontext = json_loads_byteified(
                 geomorphological_group_geocontext
             )
-        geocontext_data = {
-            'context_group_values': [
-                self.catchment_geocontext,
+            geocontext_data['context_group_values'].append(
                 self.geomorphological_group_geocontext
-            ]
-        }
+            )
 
         try:
             collector = get_user_model().objects.get(
@@ -118,7 +121,8 @@ class LocationSiteFormView(TemplateView):
         location_site.save()
         messages.success(
             self.request,
-            self.success_message
+            self.success_message,
+            extra_tags='location_site_form'
         )
         return HttpResponseRedirect(
             '{url}?id={id}'.format(
@@ -136,22 +140,37 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
     def update_or_create_location_site(self, post_dict):
         # Update current location context document
         if (self.location_site.location_context_document and
-                'location_context_document' in post_dict):
+                post_dict['location_context_document']):
             location_context_document = json.loads(
                 self.location_site.location_context_document)
             for index, location_context_group in enumerate(
                     location_context_document['context_group_values']):
-                if (location_context_group['key'] ==
-                        self.catchment_geocontext['key'] or
+
+                if (self.catchment_geocontext and
+                        location_context_group['key'] ==
+                        self.catchment_geocontext['key']):
+                    del location_context_document[
+                        'context_group_values'][index]
+                    location_context_document['context_group_values'].append(
+                        self.catchment_geocontext)
+
+                if (self.geomorphological_group_geocontext and
                         location_context_group['key'] ==
                         self.geomorphological_group_geocontext['key']):
                     del location_context_document[
                         'context_group_values'][index]
-            location_context_document['context_group_values'].append(
-                self.catchment_geocontext)
-            location_context_document['context_group_values'].append(
-                self.geomorphological_group_geocontext)
+                    location_context_document['context_group_values'].append(
+                        self.geomorphological_group_geocontext)
+            location_context_document['context_group_values'] = list(
+                filter(None, location_context_document['context_group_values'])
+            )
             post_dict['location_context_document'] = location_context_document
+
+        if self.geomorphological_group_geocontext:
+            post_dict['original_geomorphological'] = (
+                self.geomorphological_group_geocontext[
+                    'service_registry_values'][1]['value']
+            )
 
         LocationSite.objects.filter(
             id=self.location_site.id
@@ -174,6 +193,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         )
         context_data['update'] = True
         context_data['allow_to_edit'] = self.allow_to_edit()
+        context_data['site_id'] = self.location_site.id
         return context_data
 
     def allow_to_edit(self):
@@ -200,7 +220,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         # Check if user is the creator of the site or superuser
-        location_site_id = self.request.GET.get('id', None)
+        location_site_id = self.request.POST.get('id', None)
         if not location_site_id:
             raise Http404('Need location site id')
         try:

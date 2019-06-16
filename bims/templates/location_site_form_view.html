@@ -28,9 +28,25 @@
     <form action="{{ request.path }}" method="post" id="site-form"
           class="needs-validation" novalidate enctype="multipart/form-data">
         {% csrf_token %}
+        {% if update %}
+            <input type="hidden" name="id" value="{{ site_id }}">
+        {% endif %}
         <div class="body-form container">
+            {% if messages %}
+                    {% for message in messages %}
+                        {% if message.extra_tags == 'location_site_form' %}
+                            <div class="alert alert-success {{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+            {% endif %}
             <div class="header">
-                Add a location site
+                {% if update %}
+                    Update a location site
+                {% else %}
+                    Add a location site
+                {% endif %}
                 <span id="site-identifier">
                 {% if location_site_code %}{{ location_site_code }} {% else %}
                     {{ location_site_name }}{% endif %}
