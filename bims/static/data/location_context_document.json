@@ -1,0 +1,412 @@
+{"context_group_values": [
+    {
+      "key": "eco_geo_group",
+      "name": "Ecological group",
+      "graphable": false,
+      "service_registry_values": [
+        {
+        },
+        {
+          "key": "eco_region_2",
+          "name": "Ecological Region 2",
+          "value": "1",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "geo_class",
+          "name": "Geomorphological zones",
+          "value": "Upper",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "geo_class_recoded",
+          "name": "Geomorphological zones - recoded",
+          "value": "Upper foothill",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "freshwater_ecoregion_of_the_world",
+      "name": "Freshwater Ecoregion of the World",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "feow_hydrosheds",
+          "name": "Freshwater Ecoregion of the World",
+          "value": "Southern Temperate Highveld",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "river_catchment_areas_group",
+      "name": "River Catchments in South Africa",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "primary_catchment_area",
+          "name": "Primary Catchment Area",
+          "value": "Region N",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "secondary_catchment_area",
+          "name": "Secondary Catchment Area",
+          "value": "N4",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "tertiary_catchment_area",
+          "name": "Tertiary Catchment Area",
+          "value": "P20",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "quaternary_catchment_area",
+          "name": "Quaternary Catchment Area",
+          "value": "N40D",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "quinary_catchment_area",
+          "name": "Quinary Catchment Area",
+          "value": "N40C3",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "political_boundary_group",
+      "name": "Administrative Boundary",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "sa_provinces",
+          "name": "South Africa Provinces",
+          "value": "Eastern Cape",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "river_ecoregion_group",
+      "name": "River ecoregions in South Africa",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "eco_region_1",
+          "name": "Ecological Region 1",
+          "value": "19 SOUTHERN FOLDED MOUNTAINS",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "eco_region_2",
+          "name": "Ecological Region 2",
+          "value": "1",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "water_management_area",
+      "name": "Water Management Area",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "water_management_area",
+          "name": "Water Management Area",
+          "value": "15 - Fish to Keiskamma",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "geomorphological_group",
+      "name": "Geomorphological zone",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "geo_class",
+          "name": "Geomorphological zones",
+          "value": "Upper",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "geo_class_recoded",
+          "name": "Geomorphological zones",
+          "value": "Upper foothill",
+          "query_type": "WFS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "monthly_mean_daily_average_temperature_group",
+      "name": "Monthly mean daily average temperature (C)",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "monthly_mean_daily_average_temperature_january",
+          "name": "Monthly Means Of Daily Average Temperature (C) January",
+          "value": "22.899999618530273",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_february",
+          "name": "Monthly Means Of Daily Average Temperature (C) February",
+          "value": "23.399999618530273",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_march",
+          "name": "Monthly Means Of Daily Average Temperature (C) March",
+          "value": "21.700000762939453",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_april",
+          "name": "Monthly Means Of Daily Average Temperature (C) April",
+          "value": "19.100000381469727",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_may",
+          "name": "Monthly Means Of Daily Average Temperature (C) May",
+          "value": "16.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_june",
+          "name": "Monthly Means Of Daily Average Temperature (C) June",
+          "value": "13.300000190734863",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_july",
+          "name": "Monthly Means Of Daily Average Temperature (C) July",
+          "value": "13.199999809265137",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_august",
+          "name": "Monthly Means Of Daily Average Temperature (C) August",
+          "value": "14.199999809265137",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_september",
+          "name": "Monthly Means Of Daily Average Temperature (C) September",
+          "value": "16.200000762939453",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_october",
+          "name": "Monthly Means Of Daily Average Temperature (C) October",
+          "value": "17.799999237060547",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_november",
+          "name": "Monthly Means Of Daily Average Temperature (C) November",
+          "value": "19.799999237060547",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_mean_daily_average_temperature_december",
+          "name": "Monthly Means Of Daily Average Temperature (C) December",
+          "value": "21.5",
+          "query_type": "WMS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "rainfall_group",
+      "name": "Rainfall",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "monthly_rainfall_january",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (January)",
+          "value": "39.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_february",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (February)",
+          "value": "46.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_march",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (March)",
+          "value": "53.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_april",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (April)",
+          "value": "37.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_may",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (May)",
+          "value": "24.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_june",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (June)",
+          "value": "18.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_july",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (July)",
+          "value": "16.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_august",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (August)",
+          "value": "24.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_september",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (September)",
+          "value": "35.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_october",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (October)",
+          "value": "41.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_november",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (November)",
+          "value": "46.0",
+          "query_type": "WMS",
+          "description": null
+        },
+        {
+          "key": "monthly_rainfall_december",
+          "name": "Monthly Rainfall and its Inter-Annual Variability (December)",
+          "value": "36.0",
+          "query_type": "WMS",
+          "description": null
+        }
+      ]
+    },
+    {
+      "key": "critical_biodiversity_area",
+      "name": "Critical Biodiversity area (CBA)",
+      "graphable": false,
+      "service_registry_values": [
+        {
+        }
+      ]
+    },
+    {
+      "key": "national_freshwater_ecosystem_priority_area",
+      "name": "National Freshwater Ecosystem Priority Area (NFEPA)",
+      "graphable": false,
+      "service_registry_values": [
+        {
+          "key": "nfepa_rivers_2011",
+          "name": "NFEPA Rivers 2011",
+          "value": "N14",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "nfepa_rivers_fepas_2011",
+          "name": "NFEPA river FEPAs 2011",
+          "value": "FEPA",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "nfepa_wetlands_vegetation",
+          "name": "NFEPA Wetlands Vegetation",
+          "value": "Albany Thicket Valley",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "nfepa_fish_sanctuaries_all_species",
+          "name": "NFEPA Fish Sanctuaries All Species",
+          "value": "8507",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "nfepa_fish_sanctuaries_2011",
+          "name": "NFEPA Fish Sanctuaries 2011",
+          "value": "AB",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+          "key": "nfepa_wetlands_2011",
+          "name": "NFEPA Wetlands 2011",
+          "value": "Unchannelled valley-bottom wetland",
+          "query_type": "WFS",
+          "description": null
+        },
+        {
+        }
+      ]
+    },
+    {
+      "key": "strategic_water_source_areas",
+      "name": "Strategic Water Source Areas (WSA)",
+      "graphable": false,
+      "service_registry_values": [
+        {
+        },
+        {
+        }
+      ]
+    }
+  ]
+}

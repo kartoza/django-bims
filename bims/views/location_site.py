@@ -18,6 +18,8 @@ from bims.utils.jsonify import json_loads_byteified
 class LocationSiteFormView(TemplateView):
     template_name = 'location_site_form_view.html'
     success_message = 'New site has been successfully added'
+    catchment_geocontext = None
+    geomorphological_group_geocontext = None
 
     def update_or_create_location_site(self, post_dict):
         return LocationSite.objects.create(**post_dict)
@@ -64,15 +66,15 @@ class LocationSiteFormView(TemplateView):
         longitude = float(longitude)
 
         if catchment_geocontext:
-            catchment_geocontext = json_loads_byteified(catchment_geocontext)
+            self.catchment_geocontext = json_loads_byteified(catchment_geocontext)
         if geomorphological_group_geocontext:
-            geomorphological_group_geocontext = json_loads_byteified(
+            self.geomorphological_group_geocontext = json_loads_byteified(
                 geomorphological_group_geocontext
             )
         geocontext_data = {
             'context_group_values': [
-                catchment_geocontext,
-                geomorphological_group_geocontext
+                self.catchment_geocontext,
+                self.geomorphological_group_geocontext
             ]
         }
 
@@ -109,12 +111,11 @@ class LocationSiteFormView(TemplateView):
         location_site = self.update_or_create_location_site(
             post_dict
         )
-
         if refined_geomorphological_zone:
             location_site.refined_geomorphological = (
                 refined_geomorphological_zone
             )
-            location_site.save()
+        location_site.save()
         messages.success(
             self.request,
             self.success_message
@@ -128,6 +129,25 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
     success_message = 'Site has been successfully updated'
 
     def update_or_create_location_site(self, post_dict):
+        # Update current location context document
+        if (self.location_site.location_context_document and
+                'location_context_document' in post_dict):
+            location_context_document = json.loads(
+                self.location_site.location_context_document)
+            for index, location_context_group in enumerate(
+                    location_context_document['context_group_values']):
+                if (location_context_group['key'] ==
+                        self.catchment_geocontext['key'] or
+                        location_context_group['key'] ==
+                        self.geomorphological_group_geocontext['key']):
+                    del location_context_document[
+                        'context_group_values'][index]
+            location_context_document['context_group_values'].append(
+                self.catchment_geocontext)
+            location_context_document['context_group_values'].append(
+                self.geomorphological_group_geocontext)
+            post_dict['location_context_document'] = location_context_document
+
         LocationSite.objects.filter(
             id=self.location_site.id
         ).update(

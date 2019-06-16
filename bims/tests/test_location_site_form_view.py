@@ -58,7 +58,7 @@ class TestLocationSiteFormView(TestCase):
             username=user.username,
             password='password'
         )
-        post_request = self.client.post(
+        self.client.post(
             '/location-site-form/add/',
             self.post_data,
             follow=True
@@ -93,18 +93,25 @@ class TestLocationSiteFormView(TestCase):
         self.assertEqual(post_request_2.status_code, 404)
 
     def test_LocationSiteFormUpdateView_post_data(self):
+        location_context_path = staticfiles_storage.path(
+            'data/location_context_document.json')
+        location_context_file = open(location_context_path)
+        location_context_document = json.load(location_context_file)
+        post_data = self.post_data
+        post_data['refined_geomorphological_zone'] = ''
+
         user = UserF.create(id=1)
         self.client.login(
             username=user.username,
             password='password'
         )
         location_site = LocationSiteF.create(
-            refined_geomorphological='Refined',
             creator=user,
+            location_context_document=location_context_document
         )
         self.client.post(
             '/location-site-form/update/?id={}'.format(location_site.id),
-            self.post_data,
+            post_data,
             follow=True
         )
         updated_location_site = LocationSite.objects.get(
@@ -112,6 +119,49 @@ class TestLocationSiteFormView(TestCase):
         )
         self.assertTrue(True)
         self.assertEqual(
-            updated_location_site.refined_geomorphological,
-            'LOWER_FOOTHILL'
+            updated_location_site.river.name,
+            'NXAMAGELE'
         )
+        updated_location_context = json.loads(
+            updated_location_site.location_context
+        )
+        self.assertTrue(
+            'river_ecoregion_group' in
+            updated_location_context['context_group_values']
+        )
+        self.assertTrue(
+            'geomorphological_group' in
+            updated_location_context['context_group_values']
+        )
+        self.assertTrue(
+            updated_location_context['context_group_values']
+            ['geomorphological_group']
+            ['service_registry_values']
+            ['geo_class_recoded']
+            ['value'] == 'Mountain headwater stream')
+
+        # Test if there are no location context data
+        location_site_2 = LocationSiteF.create(
+            creator=user,
+        )
+        self.client.post(
+            '/location-site-form/update/?id={}'.format(location_site_2.id),
+            post_data,
+            follow=True
+        )
+        updated_location_site_2 = LocationSite.objects.get(
+            id=location_site_2.id
+        )
+        updated_location_context_2 = json.loads(
+            updated_location_site_2.location_context
+        )
+        self.assertTrue(
+            'river_ecoregion_group' not in
+            updated_location_context_2['context_group_values']
+        )
+        self.assertTrue(
+            updated_location_context_2['context_group_values']
+            ['geomorphological_group']
+            ['service_registry_values']
+            ['geo_class_recoded']
+            ['value'] == 'Mountain headwater stream')
