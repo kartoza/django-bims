@@ -120,7 +120,12 @@ class LocationSiteFormView(TemplateView):
             self.request,
             self.success_message
         )
-        return HttpResponseRedirect(reverse('location-site-form'))
+        return HttpResponseRedirect(
+            '{url}?id={id}'.format(
+                url=reverse('location-site-update-form'),
+                id=location_site.id
+            )
+        )
 
 
 class LocationSiteFormUpdateView(LocationSiteFormView):
@@ -168,6 +173,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
             self.location_site.original_geomorphological
         )
         context_data['update'] = True
+        context_data['allow_to_edit'] = self.allow_to_edit()
         return context_data
 
     def allow_to_edit(self):

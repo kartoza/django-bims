@@ -144,7 +144,7 @@ class TestLocationSiteFormView(TestCase):
         location_site_2 = LocationSiteF.create(
             creator=user,
         )
-        self.client.post(
+        post_request_2 = self.client.post(
             '/location-site-form/update/?id={}'.format(location_site_2.id),
             post_data,
             follow=True
@@ -165,3 +165,9 @@ class TestLocationSiteFormView(TestCase):
             ['service_registry_values']
             ['geo_class_recoded']
             ['value'] == 'Mountain headwater stream')
+        self.assertTrue(
+            post_request_2.redirect_chain[0][0],
+            '/location-site-form/update/?id={}'.format(
+                location_site_2.id
+            )
+        )
