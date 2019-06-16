@@ -67,3 +67,51 @@ class TestLocationSiteFormView(TestCase):
             site_code=self.post_data['site_code']
         )
         self.assertTrue(location_sites.exists())
+
+    def test_LocationSiteFormUpdateView_allow_edit(self):
+        user = UserF.create(id=1)
+        self.client.login(
+            username=user.username,
+            password='password'
+        )
+        location_site = LocationSiteF.create(
+            creator=user,
+        )
+        post_request = self.client.post(
+            '/location-site-form/update/?id={}'.format(location_site.id),
+            self.post_data,
+            follow=True
+        )
+        # Test if user is not the creator
+        location_site_2 = LocationSiteF.create()
+        post_request_2 = self.client.post(
+            '/location-site-form/update/?id={}'.format(location_site_2.id),
+            self.post_data,
+            follow=True
+        )
+        self.assertEqual(post_request.status_code, 200)
+        self.assertEqual(post_request_2.status_code, 404)
+
+    def test_LocationSiteFormUpdateView_post_data(self):
+        user = UserF.create(id=1)
+        self.client.login(
+            username=user.username,
+            password='password'
+        )
+        location_site = LocationSiteF.create(
+            refined_geomorphological='Refined',
+            creator=user,
+        )
+        self.client.post(
+            '/location-site-form/update/?id={}'.format(location_site.id),
+            self.post_data,
+            follow=True
+        )
+        updated_location_site = LocationSite.objects.get(
+            id=location_site.id
+        )
+        self.assertTrue(True)
+        self.assertEqual(
+            updated_location_site.refined_geomorphological,
+            'LOWER_FOOTHILL'
+        )

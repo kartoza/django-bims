@@ -17,6 +17,13 @@ from bims.utils.jsonify import json_loads_byteified
 
 class LocationSiteFormView(TemplateView):
     template_name = 'location_site_form_view.html'
+    success_message = 'New site has been successfully added'
+
+    def update_or_create_location_site(self, post_dict):
+        return LocationSite.objects.create(**post_dict)
+
+    def additional_context_data(self):
+        return {}
 
     def get_context_data(self, **kwargs):
         context = super(LocationSiteFormView, self).get_context_data(**kwargs)
@@ -25,6 +32,7 @@ class LocationSiteFormView(TemplateView):
         context['geomorphological_zone_category'] = [
             (g.name, g.value) for g in GeomorphologicalZoneCategory
         ]
+        context.update(self.additional_context_data())
         return context
 
     @method_decorator(login_required)
@@ -86,16 +94,20 @@ class LocationSiteFormView(TemplateView):
             allowed_geometry='POINT'
         )
 
-        location_site = LocationSite.objects.create(
-            creator=collector,
-            latitude=latitude,
-            longitude=longitude,
-            river=river,
-            site_description=site_description,
-            geometry_point=geometry_point,
-            location_type=location_type,
-            site_code=site_code,
-            location_context_document=geocontext_data
+        post_dict = {
+            'creator': collector,
+            'latitude': latitude,
+            'longitude': longitude,
+            'river': river,
+            'site_description': site_description,
+            'geometry_point': geometry_point,
+            'location_type': location_type,
+            'site_code': site_code,
+            'location_context_document': geocontext_data
+        }
+
+        location_site = self.update_or_create_location_site(
+            post_dict
         )
 
         if refined_geomorphological_zone:
@@ -103,10 +115,74 @@ class LocationSiteFormView(TemplateView):
                 refined_geomorphological_zone
             )
             location_site.save()
-
         messages.success(
             self.request,
-            'New site has been successfully added'
+            self.success_message
         )
-
         return HttpResponseRedirect(reverse('location-site-form'))
+
+
+class LocationSiteFormUpdateView(LocationSiteFormView):
+
+    location_site = None
+    success_message = 'Site has been successfully updated'
+
+    def update_or_create_location_site(self, post_dict):
+        LocationSite.objects.filter(
+            id=self.location_site.id
+        ).update(
+            **post_dict
+        )
+        return LocationSite.objects.get(id=self.location_site.id)
+
+    def additional_context_data(self):
+        context_data = dict()
+        context_data['location_site_lat'] = self.location_site.latitude
+        context_data['location_site_long'] = self.location_site.longitude
+        context_data['site_code'] = self.location_site.site_code
+        context_data['site_description'] = self.location_site.site_description
+        context_data['refined_geo_zone'] = (
+            self.location_site.refined_geomorphological
+        )
+        context_data['original_geo_zone'] = (
+            self.location_site.original_geomorphological
+        )
+        context_data['update'] = True
+        return context_data
+
+    def allow_to_edit(self):
+        """Check if user is allowed to update the data"""
+        if self.request.user.is_superuser:
+            return True
+        if self.location_site.creator:
+            if self.request.user.id == self.location_site.creator.id:
+                return True
+        return False
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        location_site_id = self.request.GET.get('id', None)
+        if not location_site_id:
+            raise Http404('Need location site id')
+        try:
+            self.location_site = LocationSite.objects.get(id=location_site_id)
+        except LocationSite.DoesNotExist:
+            raise Http404('Location site does not exist')
+        return super(LocationSiteFormUpdateView, self).get(
+            request, *args, **kwargs)
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        # Check if user is the creator of the site or superuser
+        location_site_id = self.request.GET.get('id', None)
+        if not location_site_id:
+            raise Http404('Need location site id')
+        try:
+            self.location_site = LocationSite.objects.get(id=location_site_id)
+        except LocationSite.DoesNotExist:
+            raise Http404('Location site does not exist')
+        if not self.allow_to_edit():
+            raise Http404()
+        return super(LocationSiteFormUpdateView, self).post(
+            request, *args, **kwargs
+        )

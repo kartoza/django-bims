@@ -36,6 +36,10 @@ $(function () {
     $('#update-coordinate').click(updateCoordinateHandler);
     $('#update-site-code').click(updateSiteCode);
     $('#fetch-geomorphological-zone').click(fetchGeomorphologicalZone);
+
+    if (locationSiteLat && locationSiteLong) {
+        addMarkerToMap(parseFloat(locationSiteLat), parseFloat(locationSiteLong));
+    }
 });
 
 $('#latitude').keyup((e) => {

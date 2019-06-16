@@ -39,7 +39,9 @@ from bims.views.autocomplete_search import (
 )
 from bims.views.proxy import proxy_request
 from bims.views.fish_form import FishFormView
-from bims.views.location_site import LocationSiteFormView
+from bims.views.location_site import (
+    LocationSiteFormView, LocationSiteFormUpdateView
+)
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -99,6 +101,9 @@ urlpatterns = [
     url(r'^location-site-form/add/$',
         LocationSiteFormView.as_view(),
         name='location-site-form'),
+    url(r'^location-site-form/update/$',
+        LocationSiteFormUpdateView.as_view(),
+        name='location-site-update-form'),
 ]
 
 # Api urls
