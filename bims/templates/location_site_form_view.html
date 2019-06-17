@@ -71,12 +71,12 @@
                        class="col-sm-1 col-form-label col-form-label">Latitude*</label>
                 <input type="text" id="latitude" name="latitude"
                        class="col-sm-2 form-control form-control-sm"
-                       value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                       value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 <label for="date"
                        class="col-sm-1 col-form-label col-form-label">Longitude*</label>
                 <input type="text" id="longitude" name="longitude"
                        class="col-sm-2 form-control form-control-sm"
-                       value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                       value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 <div class="update-taxon-container col-sm-2">
                     <button id="update-coordinate" type="button"
                             class="btn btn-default" disabled>
@@ -108,7 +108,7 @@
                 <div class="col-sm-4">
                     <input type="text" name="geomorphological_zone" id="geomorphological_zone"
                            class="form-control form-control-sm"
-                           placeholder="" value="{{ original_geo_zone }}" readonly>
+                           placeholder="" value="{{ original_geo_zone }}" required readonly>
                     <input type="hidden" name="geomorphological_group_geocontext" id="geomorphological_group_geocontext">
                 </div>
                 <div class="update-taxon-container col-sm-2">
@@ -187,6 +187,8 @@
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery.validate.min.js" %}"></script>
+    <script src="{% static "js/libs/additional-methods.min.js" %}"></script>
     <script src="{% static "js/non_requirejs/site_form.js" %}"></script>
 
 {% endblock %}

@@ -1,6 +1,8 @@
 let map = null;
 let markerSource = null;
 
+$('#site-form').validate();
+
 $(function () {
     let southAfrica = [2910598.850835484, -3326258.3640110902];
     let mapView = new ol.View({

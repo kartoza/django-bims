@@ -50,3 +50,8 @@ body {
     padding-left: 50px;
     padding-right: 50px;
 }
+
+label.error {
+    color: red;
+    font-size: 10pt;
+}
