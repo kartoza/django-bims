@@ -71,9 +71,13 @@ let updateSiteCode = (e) => {
     document.getElementById('update-site-code').disabled = true;
     button.html('Generating...');
     siteCodeInput.prop('disabled', true);
+    let url = '/api/get-site-code/?lon=' + longitude + '&lat=' + latitude;
+    if (siteId) {
+        url += '&site_id=' + siteId
+    }
 
     $.ajax({
-        url: '/api/get-site-code/?lon=' + longitude + '&lat=' + latitude,
+        url: url,
         success: function (data) {
             siteCodeInput.prop('disabled', false);
             siteCodeInput.val(data['site_code']);

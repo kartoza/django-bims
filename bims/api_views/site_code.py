@@ -8,6 +8,7 @@ from rest_framework.views import APIView, Response
 from bims.location_site.river import fetch_river_name
 from bims.utils.get_key import get_key
 from bims.location_site.river import generate_site_code
+from bims.models.location_site import LocationSite
 
 
 class GetSiteCode(LoginRequiredMixin, APIView):
@@ -15,6 +16,16 @@ class GetSiteCode(LoginRequiredMixin, APIView):
     def get(self, request):
         lat = request.GET.get('lat', None)
         lon = request.GET.get('lon', None)
+        site_id = request.GET.get('site_id', None)
+        location_site = None
+        if site_id:
+            try:
+                location_site = LocationSite.objects.get(
+                    id=site_id
+                )
+            except LocationSite.DoesNotExist:
+                pass
+
         catchment = ''
         secondary_catchment_area = ''
 
@@ -45,6 +56,7 @@ class GetSiteCode(LoginRequiredMixin, APIView):
             'catchment': catchment,
             'site_code': generate_site_code(
                 river_name=river_name,
-                catchment=secondary_catchment_area
+                catchment=secondary_catchment_area,
+                location_site=location_site
             )
         })

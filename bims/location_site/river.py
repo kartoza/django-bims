@@ -140,5 +140,13 @@ def generate_site_code(river_name, catchment=None, location_site=None):
 
     site_code_number = len(existed_location_sites) + 1
     site_code_string = str(site_code_number).zfill(5)
-    site_code += site_code_string
-    return site_code
+    site_code_full = site_code
+    site_code_full += site_code_string
+
+    while LocationSite.objects.filter(site_code=site_code_full).exists():
+        site_code_number += 1
+        site_code_string = str(site_code_number).zfill(5)
+        site_code_full = site_code
+        site_code_full += site_code_string
+
+    return site_code_full

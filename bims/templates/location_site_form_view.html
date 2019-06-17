@@ -20,6 +20,7 @@
         const locationSiteLat = '{{ location_site_lat }}';
         const locationSiteLong = '{{ location_site_long }}';
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
+        const siteId = '{{ site_id }}';
     </script>
 
 {% endblock %}
