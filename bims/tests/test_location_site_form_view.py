@@ -5,6 +5,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 
 from bims.tests.model_factories import (
     LocationSiteF,
+    LocationTypeF,
     UserF
 )
 from bims.models import LocationSite
@@ -103,13 +104,18 @@ class TestLocationSiteFormView(TestCase):
         location_context_document = json.load(location_context_file)
         post_data = self.post_data
         post_data['refined_geomorphological_zone'] = ''
+        loc_type = LocationTypeF(
+            name='PointObservation',
+            allowed_geometry='POINT'
+        )
 
         user = UserF.create(id=1)
         self.client.login(
             username=user.username,
-            password='password'
+            password='password',
         )
         location_site = LocationSiteF.create(
+            location_type=loc_type,
             creator=user,
             location_context_document=location_context_document
         )
@@ -148,6 +154,7 @@ class TestLocationSiteFormView(TestCase):
 
         # Test if there are no location context data
         location_site_2 = LocationSiteF.create(
+            location_type=loc_type,
             creator=user,
         )
         post_data['id'] = location_site_2.id
