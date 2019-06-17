@@ -121,6 +121,39 @@ let updateCoordinateHandler = (e) => {
     tableBody.html('');
 
     moveMarkerOnTheMap(latitude, longitude);
+    let radius = 0.5;
+    $.ajax({
+        url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
+        success: function (all_data) {
+            if (all_data.length > 0) {
+                let nearestSite = null;
+                if (siteId) {
+                    let site_id = parseInt(siteId);
+                    $.each(all_data, function (index, site_data) {
+                    if (site_data['id'] !== site_id) {
+                            nearestSite = site_data;
+                            return false;
+                        }
+                    });
+                } else {
+                    nearestSite = all_data[0];
+                }
+
+                if (nearestSite) {
+                    let modal = $("#site-modal");
+                    let nearestSiteName = '';
+                    if (nearestSite['site_code']) {
+                        nearestSiteName = nearestSite['site_code'];
+                    } else {
+                        nearestSiteName = nearestSite['name'];
+                    }
+                    modal.find('#nearest-site-name').html(nearestSiteName);
+                    modal.find('#existing-site-button').attr('href', '/location-site-form/update/?id=' + nearestSite['id']);
+                    modal.modal('show');
+                }
+            }
+        }
+    });
 };
 
 let moveMarkerOnTheMap = (lat, lon) => {
