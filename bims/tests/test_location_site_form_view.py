@@ -78,13 +78,16 @@ class TestLocationSiteFormView(TestCase):
         location_site = LocationSiteF.create(
             creator=user,
         )
+        post_data = self.post_data
+        post_data['id'] = location_site.id
         post_request = self.client.post(
             '/location-site-form/update/?id={}'.format(location_site.id),
-            self.post_data,
+            post_data,
             follow=True
         )
         # Test if user is not the creator
         location_site_2 = LocationSiteF.create()
+        post_data['id'] = location_site_2.id
         post_request_2 = self.client.post(
             '/location-site-form/update/?id={}'.format(location_site_2.id),
             self.post_data,
@@ -110,6 +113,8 @@ class TestLocationSiteFormView(TestCase):
             creator=user,
             location_context_document=location_context_document
         )
+        post_data['id'] = location_site.id
+
         self.client.post(
             '/location-site-form/update/?id={}'.format(location_site.id),
             post_data,
@@ -145,6 +150,7 @@ class TestLocationSiteFormView(TestCase):
         location_site_2 = LocationSiteF.create(
             creator=user,
         )
+        post_data['id'] = location_site_2.id
         post_request_2 = self.client.post(
             '/location-site-form/update/?id={}'.format(location_site_2.id),
             post_data,
