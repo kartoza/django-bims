@@ -125,7 +125,7 @@
                     <select name="refined_geomorphological_zone" class="form-control form-control-sm" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
                         <option value="">-</option>
                         {% for geo in geomorphological_zone_category %}
-                            <option value="{{ geo.0 }}" {% if geo.0 == refined_geo_zone %}selected{% endif %}>{{ geo.1 }}</option>
+                            <option value="{{ geo.1 }}" {% if geo.1 == refined_geo_zone %}selected{% endif %}>{{ geo.1 }}</option>
                         {% endfor %}
                     </select>
                 </div>

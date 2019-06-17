@@ -31,6 +31,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.parameters['validated'] = '';
             this.parameters['modules'] = '';
             this.parameters['sourceCollection'] = '';
+            this.parameters['ecologicalCategory'] = '';
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }

@@ -126,29 +126,37 @@
                 </div>
             </div>
             <div class="row ecological-condition" style="display: none;"
-                 data-toggle="tooltip" data-placement="top" title="Coming Soon">
+                 data-toggle="tooltip" data-placement="top">
                 <div class="row col-lg-12">
-                    <div class="col-lg-4 neutral">
+                    <div class="col-lg-4 neutral" data-category="A">
                         Natural (N)
                     </div>
-                    <div class="col-lg-4 good">
+                    <div class="col-lg-4 good" data-category="B">
                         Good (G)
                     </div>
-                    <div class="col-lg-4 fair">
+                    <div class="col-lg-4 fair" data-category="C">
                         Fair (F)
                     </div>
                 </div>
                 <div class="row col-lg-12">
-                    <div class="col-lg-4 poor">
+                    <div class="col-lg-4 poor" data-category="D">
                         Poor (P)
                     </div>
-                    <div class="col-lg-4 seriously-modified">
+                    <div class="col-lg-4 seriously-modified" data-category="E">
                         Seriously Modified (SM)
                     </div>
-                    <div class="col-lg-4 critically-modified">
+                    <div class="col-lg-4 critically-modified" data-category="F">
                         Critically Modified (CM)
                     </div>
                 </div>
+                <div class="button-filter-wrapper">
+                <button class="apply-filter"><i class="fa fa-check"
+                                                aria-hidden="true"></i> Apply
+                </button>
+                <button class="clear-filter"><i class="fa fa-times"
+                                                aria-hidden="true"></i> Clear
+                </button>
+            </div>
             </div>
         {% endif %}
 

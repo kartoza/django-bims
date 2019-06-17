@@ -19,6 +19,7 @@ define([
         searchBoxOpen: false,
         shouldUpdateUrl: true,
         searchResults: {},
+        selectedEcologicalConditions: [],
         filtersReady: {
             'endemism': false,
             'collector': false,
@@ -43,7 +44,8 @@ define([
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
             'click .clear-origin-filter': 'handleClearOriginClicked',
-            'click .clear-conservation-filter': 'handleClearConservationClicked'
+            'click .clear-conservation-filter': 'handleClearConservationClicked',
+            'click .ecological-condition': 'handleEcologicalConditionClicked'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -388,6 +390,16 @@ define([
             }
             filterParameters['validated'] = validated;
 
+            // ecological category
+            var ecologicalConditions = '';
+            if (self.selectedEcologicalConditions.length > 0) {
+                ecologicalConditions = JSON.stringify(self.selectedEcologicalConditions);
+                self.highlightPanel('.ecological-condition', true);
+            } else {
+                self.highlightPanel('.ecological-condition', false);
+            }
+            filterParameters['ecologicalCategory'] = ecologicalConditions;
+
             self.highlightPanel('.module-filters', filterParameters['modules'] !== '');
 
             // Search value
@@ -424,6 +436,7 @@ define([
                 && !filterParameters['modules']
                 && !filterParameters['conservationStatus']
                 && !filterParameters['spatialFilter']
+                && !filterParameters['ecologicalCategory']
                 && !filterParameters['sourceCollection']
                 && !filterParameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
@@ -532,6 +545,10 @@ define([
                 target.closest('.row').find('#year-from').html(this.startYear);
                 target.closest('.row').find('#year-to').html(this.endYear);
             }
+
+            $('.ecological-condition').find('.col-lg-4').removeClass('selected');
+            this.selectedEcologicalConditions = [];
+
             if (Shared.CurrentState.SEARCH) {
                 this.searchClick();
             }
@@ -712,6 +729,13 @@ define([
                 filterParameters['modules'] = allFilters['modules'];
                 self.initialSelectedModules = allFilters['modules'].split(',');
             }
+
+            if (allFilters.hasOwnProperty('ecologicalCategory')) {
+                self.selectedEcologicalConditions = JSON.parse(allFilters['ecologicalCategory']);
+                $.each(self.selectedEcologicalConditions, function (index, ecologicalCondition) {
+                   $(".ecological-condition").find("[data-category='" + ecologicalCondition + "']").addClass('selected');
+                });
+            }
         },
         showMoreSites: function () {
             this.searchResultCollection.fetchMoreSites();
@@ -742,6 +766,21 @@ define([
             $.each($moduleContainer.children(), function (index, element) {
                 $(element).removeClass('selected');
             });
+        },
+        handleEcologicalConditionClicked: function (e) {
+            let $target = $(e.target);
+            let category = '';
+            if ($target.hasClass('col-lg-4')) {
+                category = $target.data('category');
+                if ($target.hasClass('selected')) {
+                    $target.removeClass('selected');
+                    let index = this.selectedEcologicalConditions.indexOf(category);
+                    if (index !== -1) this.selectedEcologicalConditions.splice(index, 1);
+                } else {
+                    this.selectedEcologicalConditions.push(category);
+                    $target.addClass('selected');
+                }
+            }
         }
     })
 

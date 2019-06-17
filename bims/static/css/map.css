@@ -1865,10 +1865,6 @@ div:hover::-webkit-scrollbar {
 }
 
 .ecological-condition {
-    filter: grayscale(50%);
-    opacity: 0.4;
-    filter: alpha(opacity=40); /* msie */
-    background-color: #a0a0a0;
     color: white;
     padding-top: 8px;
     padding-bottom: 8px;
@@ -1879,9 +1875,19 @@ div:hover::-webkit-scrollbar {
 }
 
 .ecological-condition .col-lg-4 {
+    opacity: 0.3;
     padding: 3px;
     font-size: 9pt;
     width: 80% !important;
+}
+
+.ecological-condition .col-lg-4:hover {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.ecological-condition .selected {
+    opacity: 1 !important;
 }
 
 .neutral {
