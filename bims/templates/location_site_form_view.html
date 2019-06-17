@@ -1,0 +1,194 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Location Site Form
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/site_form.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
+        const locationSiteLat = '{{ location_site_lat }}';
+        const locationSiteLong = '{{ location_site_long }}';
+        const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
+        const siteId = '{{ site_id }}';
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+
+    <form action="{{ request.path }}" method="post" id="site-form"
+          class="needs-validation" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if update %}
+            <input type="hidden" name="id" value="{{ site_id }}">
+        {% endif %}
+        <div class="body-form container">
+            {% if messages %}
+                    {% for message in messages %}
+                        {% if message.extra_tags == 'location_site_form' %}
+                            <div class="alert alert-success {{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+            {% endif %}
+            <div class="header">
+                {% if update %}
+                    Update a location site
+                {% else %}
+                    Add a location site
+                {% endif %}
+                <span id="site-identifier">
+                {% if location_site_code %}{{ location_site_code }} {% else %}
+                    {{ location_site_name }}{% endif %}
+                </span>
+            </div>
+            <div class="alert alert-danger" role="alert"
+                 style="display: none;">
+            </div>
+            <div id="site-map"></div>
+            {% if update %}
+                <div class="form-group row">
+                    <div class="col-lg-12">
+                        <a href="/fish-form/?siteId={{ site_id }}" class="btn btn-info">Add Fish</a>
+                        <a href="/sass/{{ site_id }}/" class="btn btn-info">Add SASS</a>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-1 col-form-label col-form-label">Latitude*</label>
+                <input type="text" id="latitude" name="latitude"
+                       class="col-sm-2 form-control form-control-sm"
+                       value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
+                <label for="date"
+                       class="col-sm-1 col-form-label col-form-label">Longitude*</label>
+                <input type="text" id="longitude" name="longitude"
+                       class="col-sm-2 form-control form-control-sm"
+                       value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
+                <div class="update-taxon-container col-sm-2">
+                    <button id="update-coordinate" type="button"
+                            class="btn btn-default" disabled>
+                        Update coordinate
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Code*</label>
+                <div class="col-sm-4">
+                    <input type="text" name="site_code" id="site_code"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ site_code }}" required {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                    <input type="hidden" name="river" id="river">
+                    <input type="hidden" name="catchment_geocontext" id="catchment_geocontext">
+                </div>
+                <div class="update-taxon-container col-sm-2">
+                    <button id="update-site-code" type="button"
+                            class="btn btn-default" disabled>
+                        Generate site code
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>
+                <div class="col-sm-4">
+                    <input type="text" name="geomorphological_zone" id="geomorphological_zone"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ original_geo_zone }}" required readonly>
+                    <input type="hidden" name="geomorphological_group_geocontext" id="geomorphological_group_geocontext">
+                </div>
+                <div class="update-taxon-container col-sm-2">
+                    <button id="fetch-geomorphological-zone" type="button"
+                            class="btn btn-default" disabled>
+                        Fetch data
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Refined Geomorphological Zone</label>
+                <div class="col-sm-10">
+                    <select name="refined_geomorphological_zone" class="form-control form-control-sm" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                        <option value="">-</option>
+                        {% for geo in geomorphological_zone_category %}
+                            <option value="{{ geo.0 }}" {% if geo.0 == refined_geo_zone %}selected{% endif %}>{{ geo.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Description</label>
+                <div class="col-sm-10">
+                    <input type="text" name="site_description"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ site_description }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Collector
+                    </label>
+                <div class="col-sm-10">
+                    <input type="text"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ username }}" disabled>
+                    <input type="hidden" name="collector" value="{{ user_id }}">
+                </div>
+            </div>
+            <div class="form-group submit-holder">
+                <input class="btn btn-success submit-button" type="submit" value="{% if update %}SAVE{% else %}ADD{% endif %}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+            </div>
+        </div>
+    </form>
+
+    <!-- Modal -->
+    <div class="modal fade" id="site-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Warning</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Site <span id="nearest-site-name"></span> is within 500 metres of your site - do you wish to create a new site or use the existing site?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <a href="#" type="button" class="btn btn-info" id="existing-site-button">Use the existing site</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery.validate.min.js" %}"></script>
+    <script src="{% static "js/libs/additional-methods.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/site_form.js" %}"></script>
+
+{% endblock %}

@@ -307,7 +307,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     }
                     let sidePanelTitle = '<i class="fa fa-map-marker"></i> ' + data['site_detail_info']['fbis_site_code'];
                     if (isStaff) {
-                        sidePanelTitle += '<a href="/admin/bims/locationsite/' + data['id'] + '/change/" style="float: right; padding-top: 5px">Edit</a>';
+                        sidePanelTitle += '<a href="/location-site-form/update/?id=' + data['id'] + '" style="float: right; padding-top: 5px">Edit</a>';
                     }
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', sidePanelTitle);
 

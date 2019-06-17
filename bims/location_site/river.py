@@ -6,16 +6,17 @@ from bims.models import LocationSite
 from bims.utils.logger import log
 
 
-def fetch_river_name(location_site):
+def fetch_river_name(latitude, longitude):
     """
     Fetch river name from GeoContext
-    :param location_site: LocationSite object
+    :param latitude: LocationSite latitude
+    :param longitude: LocationSite longitude
     """
     name = ''
     base_geocontext_url = get_key('GEOCONTEXT_URL')
     api_url = '/api/v1/geocontext/river-name/'
-    y = location_site.latitude
-    x = location_site.longitude
+    y = latitude
+    x = longitude
     geocontext_url = '{base}{api_url}{x}/{y}/'.format(
         base=base_geocontext_url,
         api_url=api_url,
@@ -115,3 +116,37 @@ def allocate_site_codes_from_river(update_site_code=True, location_id=None):
         log('New Site Code : {}'.format(site_code))
         location_site.site_code = site_code
         location_site.save()
+
+
+def generate_site_code(river_name, catchment=None, location_site=None):
+    """Generate site code"""
+    site_code = ''
+    catchment_name = ''
+    if catchment and len(catchment) > 0:
+        catchment_name = catchment[:2].upper()
+    site_code += catchment_name
+    site_code += river_name[:4].upper()
+
+    # Add hyphen
+    site_code += '-'
+
+    # Add five letters describing location e.g. 00001
+    existed_location_sites = LocationSite.objects.filter(
+        site_code__contains=site_code
+    )
+    if location_site:
+        existed_location_sites = existed_location_sites.exclude(
+            id=location_site.id)
+
+    site_code_number = len(existed_location_sites) + 1
+    site_code_string = str(site_code_number).zfill(5)
+    site_code_full = site_code
+    site_code_full += site_code_string
+
+    while LocationSite.objects.filter(site_code=site_code_full).exists():
+        site_code_number += 1
+        site_code_string = str(site_code_number).zfill(5)
+        site_code_full = site_code
+        site_code_full += site_code_string
+
+    return site_code_full

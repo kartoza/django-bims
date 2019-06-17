@@ -192,6 +192,7 @@ class TaxonomyF(factory.django.DjangoModelFactory):
     """
     class Meta:
         model = Taxonomy
+        django_get_or_create = ('id',)
 
     id = factory.Sequence(lambda n: n)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
@@ -227,6 +228,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     """
     class Meta:
         model = BiologicalCollectionRecord
+        django_get_or_create = ('id', )
 
     id = factory.Sequence(lambda n: n)
     site = factory.SubFactory(LocationSiteF)

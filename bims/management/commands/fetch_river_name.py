@@ -37,7 +37,10 @@ class Command(BaseCommand):
             print('Fetch river name for [{}]'.format(
                 location_site.id
             ))
-            river_name = fetch_river_name(location_site)
+            river_name = fetch_river_name(
+                location_site.latitude,
+                location_site.longitude
+            )
             if not river_name:
                 print('Got empty river name from geocontext')
                 continue

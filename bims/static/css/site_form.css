@@ -1,0 +1,57 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+
+.btn {
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.body-form {
+    padding-top: 100px;
+    padding-bottom: 50px;
+}
+
+.header {
+    font-size: 15pt;
+    padding-bottom: 10px;
+}
+
+#site-map {
+    width: 100%;
+    max-height: 500px;
+    height: 500px;
+    padding-bottom: 15px;
+}
+
+#update-coordinate {
+    margin-top: 2px;
+}
+
+#update-site-code, #fetch-geomorphological-zone {
+    margin-left: -10px;
+}
+
+.submit-holder {
+    text-align: center;
+}
+
+.submit-button {
+    text-align: center;
+}
+
+.btn {
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+label.error {
+    color: red;
+    font-size: 10pt;
+}

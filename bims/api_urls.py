@@ -66,6 +66,8 @@ from bims.api_views.location_site_overview import (
     SingleLocationSiteOverview
 )
 from bims.api_views.source_collection import SourceCollectionList
+from bims.api_views.site_code import GetSiteCode
+from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -135,6 +137,10 @@ urlpatterns = [
         RejectCollectionData.as_view(), name='reject-collection-data'),
     url(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
+    url(r'^get-site-code/$',
+        GetSiteCode.as_view(), name='get-site-code'),
+    url(r'^get-geomorphological-zone/$',
+        GetGeomorphologicalZone.as_view(), name='get-geomorphological-zone'),
     url(r'^get-bio-records/$',
         GetBioRecords.as_view(), name='get-bio-records'),
     url(r'^bio-collection-summary/$',
