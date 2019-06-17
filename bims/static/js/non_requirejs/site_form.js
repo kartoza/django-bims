@@ -166,6 +166,8 @@ let addMarkerToMap = (lat, lon) => {
     }));
     map.getView().setCenter(locationSiteCoordinate);
     map.getView().setZoom(6);
-    document.getElementById('update-site-code').disabled = false;
-    document.getElementById('fetch-geomorphological-zone').disabled = false;
+    if (allowToEdit) {
+        document.getElementById('update-site-code').disabled = false;
+        document.getElementById('fetch-geomorphological-zone').disabled = false;
+    }
 };

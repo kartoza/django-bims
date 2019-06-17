@@ -25,7 +25,10 @@ class LocationSiteFormView(TemplateView):
         return LocationSite.objects.create(**post_dict)
 
     def additional_context_data(self):
-        return {}
+        return {
+            'username': self.request.user.username,
+            'user_id': self.request.user.id
+        }
 
     def get_context_data(self, **kwargs):
         context = super(LocationSiteFormView, self).get_context_data(**kwargs)
@@ -44,6 +47,8 @@ class LocationSiteFormView(TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         collector = request.POST.get('collector', None)
+        if not collector:
+            collector = None
         latitude = request.POST.get('latitude', None)
         longitude = request.POST.get('longitude', None)
         refined_geomorphological_zone = request.POST.get(
@@ -59,7 +64,7 @@ class LocationSiteFormView(TemplateView):
             None
         )
 
-        if not collector or not latitude or not longitude or not site_code:
+        if not latitude or not longitude or not site_code:
             raise Http404()
 
         latitude = float(latitude)
@@ -81,12 +86,13 @@ class LocationSiteFormView(TemplateView):
                 self.geomorphological_group_geocontext
             )
 
-        try:
-            collector = get_user_model().objects.get(
-                id=collector
-            )
-        except get_user_model().DoesNotExist:
-            raise Http404('User does not exist')
+        if collector:
+            try:
+                collector = get_user_model().objects.get(
+                    id=collector
+                )
+            except get_user_model().DoesNotExist:
+                raise Http404('User does not exist')
 
         river, river_created = River.objects.get_or_create(
             name=river_name,
@@ -194,6 +200,9 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['update'] = True
         context_data['allow_to_edit'] = self.allow_to_edit()
         context_data['site_id'] = self.location_site.id
+        if self.location_site.creator:
+            context_data['username'] = self.location_site.creator.username
+            context_data['user_id'] = self.location_site.creator.id
         return context_data
 
     def allow_to_edit(self):
