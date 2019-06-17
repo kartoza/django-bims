@@ -21,7 +21,7 @@ def get_html_for_radio_group(name, sass_rating):
     column_width = 100 / 6
     try:
         value = int(sass_rating)
-    except:
+    except:  # noqa
         value = 0
     result_html = (
                 '<div class="form-control sass-radio-label" '

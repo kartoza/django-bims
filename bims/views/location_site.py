@@ -15,6 +15,7 @@ from bims.models import LocationSite, LocationType
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
 
+
 class LocationSiteFormView(TemplateView):
     template_name = 'location_site_form_view.html'
     success_message = 'New site has been successfully added'

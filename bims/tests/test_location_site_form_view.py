@@ -19,7 +19,8 @@ class TestLocationSiteFormView(TestCase):
         """
         Sets up before each test
         """
-        post_data_path = staticfiles_storage.path('data/site_form_post_data.json')
+        post_data_path = staticfiles_storage.path(
+            'data/site_form_post_data.json')
         post_data_file = open(post_data_path)
         self.post_data = json.load(post_data_file)
 
