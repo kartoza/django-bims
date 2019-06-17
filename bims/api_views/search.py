@@ -20,6 +20,9 @@ from bims.models import (
     Endemism
 )
 from bims.tasks.search_version_2 import search_task
+from sass.models import (
+    SiteVisitTaxon
+)
 
 MAX_PAGINATED_SITES = 20
 
@@ -216,6 +219,10 @@ class Search(object):
         return self.parse_request_json('sourceCollection')
 
     @property
+    def ecological_category(self):
+        return self.parse_request_json('ecologicalCategory')
+
+    @property
     def modules(self):
         modules_query = self.get_request_data('modules')
         if modules_query:
@@ -270,8 +277,13 @@ class Search(object):
         Do the search process.
         :return: search results
         """
+        collection_record_model = BiologicalCollectionRecord
+
+        if self.ecological_category:
+            collection_record_model = SiteVisitTaxon
+
         if self.search_query:
-            bio = BiologicalCollectionRecord.objects.filter(
+            bio = collection_record_model.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
                 Q(taxonomy__scientific_name__icontains=self.search_query) |
                 Q(site__site_code__icontains=self.search_query) |
@@ -279,12 +291,12 @@ class Search(object):
             )
             if not bio:
                 # Search by vernacular names
-                bio = BiologicalCollectionRecord.objects.filter(
+                bio = collection_record_model.objects.filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
         else:
-            bio = BiologicalCollectionRecord.objects.all()
+            bio = collection_record_model.objects.all()
 
         filters = dict()
         validation_filter = self.validation_filter()
@@ -338,6 +350,13 @@ class Search(object):
                 geometry_found = boundary[0].geometry
             if geometry_found:
                 filters['site__boundary__in'] = boundary
+        if self.ecological_category:
+            (
+                filters[
+                    'site_visit__'
+                    'sitevisitecologicalcondition__'
+                    'ecological_condition__category__in']
+            ) = self.ecological_category
         bio = bio.filter(**filters)
 
         if self.reference_category:
