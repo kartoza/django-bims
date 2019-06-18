@@ -43,7 +43,10 @@
                         {% if redirect_field_value %}
                             <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
                         {% endif %}
-                        <button class="login custom-form-submit btn-login" type="submit">{% trans "SIGN UP" %}</button>
+
+                        {% include "recaptcha.html" %}
+
+                        <button id="submit-button" class="login custom-form-submit btn-login" type="submit">{% trans "SIGN UP" %}</button>
                     </form>
                     <div class="login-help">
                         <a href="{% url 'account_login' %}">{% trans "Log In" %}</a> -

@@ -76,10 +76,10 @@
                             <input type="text" name="decoy" value="" placeholder="Please leave blank" autofill="off" />
                             <p class="help-block decoy">If you can see the decoy field, please leave it blank.</p>
                         </div>
-
+                    {% include "recaptcha.html" %}
                     <div class="row">
                             <div class="offset-lg-2">
-                                <input class="btn-login pull-right pull-right" id="submitt" type="submit" value="Send Feedback"/>
+                                <input class="btn-login pull-right pull-right" id="submit-button" type="submit" value="Send Feedback" style="margin-left: 25px;"/>
                             </div>
                         </div>
                     </form>
