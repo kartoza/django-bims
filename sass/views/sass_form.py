@@ -328,9 +328,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             taxon_filters['sass_5_score__isnull'] = False
         sass_taxon_list = SassTaxon.objects.annotate(
             name=Case(
-                When(taxon_sass_5__isnull=False,
-                     then=F('taxon_sass_5')),
-                default=F('taxon_sass_4'))
+                When(taxon_sass_4__isnull=False,
+                     then=F('taxon_sass_4')),
+                default=F('taxon_sass_5'))
         ).filter(**taxon_filters).order_by(
             'display_order_sass_%s' % self.sass_version
         )
