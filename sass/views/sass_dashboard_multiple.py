@@ -166,7 +166,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 latest_site_visit.site_visit_date.strftime('%d-%m-%Y')
             )
             chart_data['number_assessments'].append(
-                site_visit_taxon.count()
+                site_visit.count()
             )
         return chart_data
 
