@@ -48,6 +48,11 @@ class SassTaxon(AbstractAdditionalData):
         blank=True
     )
 
+    rating_scale = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.taxon.scientific_name
 
