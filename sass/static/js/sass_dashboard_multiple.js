@@ -326,9 +326,8 @@ function renderTaxaPerBiotopeTable(data) {
     $taxaNumbersTr.append('<td colspan="3"> Number of Taxa </td>');
     let $asptTr = $('<tr class="total-table" >');
     $asptTr.append('<td colspan="3"> ASPT </td>');
-
-    $.each(totalSassPerSite, function (siteId, totalSassScore) {
-        $.each(totalSassScore, function (category, value) {
+    $.each(siteIds, function (index, siteId) {
+        $.each(totalSassPerSite[siteId], function (category, value) {
             $sassScoreTr.append('<td>' + value + '</td>');
             $taxaNumbersTr.append('<td>' + numberOfTaxaPerSite[siteId][category] + '</td>');
             if (value && numberOfTaxaPerSite[siteId][category]) {
