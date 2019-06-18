@@ -111,7 +111,7 @@
                 {% if taxon.score %}
                     <tr class="{% if taxon.bold_bottom_border %} bold_bottom_border {% endif %}">
                         <td class="taxon-group">{{ taxon.group }}</td>
-                        <td data-score="{{ taxon.score }}" data-id="{{ taxon.id }}" scope="row"
+                        <td data-score="{{ taxon.score }}" data-rating-scale="{% if taxon.rating_scale %}{{ taxon.rating_scale }}{% endif %}" data-id="{{ taxon.id }}" scope="row"
                             class="taxon-name {% if taxon.should_bold %} bold {% endif %}">
                             {{ taxon.name }}
                         </td>

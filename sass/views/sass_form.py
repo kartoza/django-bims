@@ -379,6 +379,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 'group': group,
                 'score': sass_taxon_score,
                 'bold_bottom_border': bold_bottom_border,
+                'rating_scale': sass_taxon.rating_scale,
                 's_value': None,
                 'veg_value': None,
                 'gsm_value': None,

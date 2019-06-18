@@ -44,6 +44,54 @@ function calculateTaxa(bio, bioObject, totalTaxaNumber, totalTaxaScore) {
     totalTaxaNumber[bio] = notEmptyInputs.length;
 }
 
+function checkRatingScalePrevRow(row) {
+    let previousRow = row.prev();
+    let prevScale = previousRow.find('.taxon-name').data('rating-scale');
+    let ratingScale = row.find('.taxon-name').data('rating-scale');
+
+    if (prevScale) {
+        if (ratingScale > prevScale) {
+            previousRow.find('.total-rating').val('');
+            checkRatingScalePrevRow(previousRow);
+        }
+    }
+}
+
+function checkRatingScaleNextRow(currentRow, nextRow) {
+    let nextScale = nextRow.find('.taxon-name').data('rating-scale');
+    let ratingScale = currentRow.find('.taxon-name').data('rating-scale');
+
+    if (nextScale) {
+        if (nextScale > ratingScale) {
+            let nextRowHasValue = false;
+            $(nextRow.find('.rating-input')).each(function () {
+                if ($(this).val()) {
+                    nextRowHasValue = true;
+                    return true;
+                }
+            });
+            if (nextRowHasValue) {
+                currentRow.find('.total-rating').val('');
+            } else {
+                console.log('check next');
+                checkRatingScaleNextRow(currentRow, nextRow.next());
+            }
+        }
+    }
+}
+
+function checkRatingScale(row) {
+    let ratingScale = row.find('.taxon-name').data('rating-scale');
+    if (!ratingScale) {
+        return;
+    }
+
+    let nextRow = row.next();
+
+    checkRatingScaleNextRow(row, nextRow);
+    checkRatingScalePrevRow(row);
+}
+
 $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
@@ -144,6 +192,9 @@ $(document).ready(function () {
             });
             let totalInput = row.find('.total-rating');
             totalInput.val(greatest);
+            if (greatest) {
+                checkRatingScale(row);
+            }
         }
     });
 
