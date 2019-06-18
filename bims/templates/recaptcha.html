@@ -1,0 +1,37 @@
+{% if bims_preferences.recaptcha_key %}
+    <script type="text/javascript">
+        var enableSubmitButton = function(response) {
+            document.getElementById("submit-button").disabled = false;
+        };
+        var onloadCallback = function() {
+            grecaptcha.render('html_element', {
+                'sitekey' : '{{ bims_preferences.recaptcha_key }}',
+                'callback': enableSubmitButton
+            });
+        };
+        $(function () {
+            document.getElementById("submit-button").disabled = true;
+        });
+    </script>
+    <div id="html_element" style="padding-left: 40px; margin-bottom: 10px;"></div>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+    <style>
+
+        #submit-button:disabled, #submit-button[disabled]{
+            color: #b7b7b7 !important;
+            border: 2px solid #b7b7b7;
+        }
+
+        #submit-button:disabled:hover, #submit-button[disabled]:hover{
+            color: #b7b7b7 !important;
+            background-color: #ffffff;
+            border: 2px solid #b7b7b7;
+        }
+
+        #submit-button[disabled]:hover {
+            text-shadow: 0 0 rgba(0,0,0,0.3);
+            background-color: white;
+        }
+
+    </style>
+{% endif %}

@@ -366,5 +366,9 @@ BIMS_PREFERENCES = {
     'empty_location_site_cluster': os.environ.get(
         'EMPTY_LOCATION_SITE_CLUSTER',
         'empty_location_site_cluster'
+    ),
+    'recaptcha_key': os.environ.get(
+        'RECAPTCHA_KEY',
+        ''
     )
 }
