@@ -136,7 +136,7 @@ def format_location_context(location_site_id, force_update=False):
                                 location_site.refined_geomorphological):
                             log('Formatted location context already exist')
                             return
-                    except KeyError:
+                    except (KeyError, TypeError):
                         log('Formatted location context already exist')
                         return
                 else:
@@ -163,7 +163,7 @@ def format_location_context(location_site_id, force_update=False):
                 'geomorphological_group']['service_registry_values'][
                 'geo_class_recoded']['value']
             location_site.original_geomorphological = context_geo
-        except KeyError:
+        except (KeyError, TypeError):
             pass
 
     if location_site.refined_geomorphological:
@@ -173,8 +173,38 @@ def format_location_context(location_site_id, force_update=False):
                 'geo_class_recoded']['value'] = (
                 location_site.refined_geomorphological
             )
-        except KeyError:
-            pass
+        except (KeyError, TypeError):
+            if (
+                    'geomorphological_group' not in
+                    formatted['context_group_values']
+            ):
+                formatted['geomorphological_group'] = {
+                    'service_registry_values': {}
+                }
+            if (
+                    'service_registry_values' not in
+                    formatted['context_group_values']
+                    ['geomorphological_group']
+            ):
+                formatted[
+                    'geomorphological_group'][
+                    'service_registry_values'] = {
+                    'geo_class_recoded': {}
+                }
+            if (
+                    'geo_class_recoded' not in
+                    formatted['context_group_values']
+                    ['geomorphological_group']
+                    ['service_registry_values']
+            ):
+                formatted['context_group_values'][
+                    'geomorphological_group']['service_registry_values'] = {
+                    'geo_class_recoded': {
+                        'name': 'Geomorphological zones',
+                        'key': 'geo_class_recoded',
+                        'value': location_site.refined_geomorphological
+                    }
+                }
 
     process_spatial_scale_data(
         formatted['context_group_values']

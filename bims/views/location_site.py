@@ -174,10 +174,13 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
             post_dict['location_context_document'] = location_context_document
 
         if self.geomorphological_group_geocontext:
-            post_dict['original_geomorphological'] = (
-                self.geomorphological_group_geocontext[
-                    'service_registry_values'][1]['value']
-            )
+            try:
+                post_dict['original_geomorphological'] = (
+                    self.geomorphological_group_geocontext[
+                        'service_registry_values'][1]['value']
+                )
+            except KeyError:
+                pass
 
         LocationSite.objects.filter(
             id=self.location_site.id
