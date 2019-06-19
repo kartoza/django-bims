@@ -19,21 +19,26 @@ def get_or_create_search_process(search_type, query, process_id=None):
         category=search_type
     )
     if query:
-        search_processes = SearchProcess.objects.filter(
+        search_processes = search_processes.filter(
             query=query
         )
         fields['query'] = query
         fields['process_id'] = hashlib.md5(query).hexdigest()
     if process_id:
-        search_processes = SearchProcess.objects.filter(
+        search_processes = search_processes.filter(
             process_id=process_id
         )
         fields['process_id'] = process_id
-    if len(search_processes) > 1:
-        for search_process in search_processes[1:len(search_processes)]:
-            search_process.delete()
 
-    if search_processes.exists():
+    if search_processes.count() > 1:
+        # Check finished
+        if search_processes.filter(finished=True).exists():
+            search_process = search_processes.filter(finished=True)[0]
+        else:
+            search_process = search_processes[0]
+        to_be_removed = search_processes.exclude(id=search_process.id)
+        to_be_removed.delete()
+    elif search_processes.count() == 1:
         search_process = search_processes[0]
     else:
         created = True

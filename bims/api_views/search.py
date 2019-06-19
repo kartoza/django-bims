@@ -10,7 +10,6 @@ from bims.models import (
     BiologicalCollectionRecord,
     Boundary,
     UserBoundary,
-    SearchProcess,
     SEARCH_RESULTS,
     SEARCH_PROCESSING,
     SpatialScale,
@@ -23,6 +22,7 @@ from bims.tasks.search_version_2 import search_task
 from sass.models import (
     SiteVisitTaxon
 )
+from bims.utils.search_process import get_or_create_search_process
 
 MAX_PAGINATED_SITES = 20
 
@@ -35,8 +35,8 @@ class SearchAPIView(APIView):
     def get(self, request):
         parameters = request.GET
         search_uri = request.build_absolute_uri()
-        search_process, created = SearchProcess.objects.get_or_create(
-            category=SEARCH_RESULTS,
+        search_process, created = get_or_create_search_process(
+            search_type=SEARCH_RESULTS,
             query=search_uri
         )
 
