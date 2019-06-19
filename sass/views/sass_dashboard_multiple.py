@@ -443,7 +443,8 @@ class SassDashboardMultipleSitesApiView(APIView):
         return all_chart_data, unique_ecoregions
 
     def get(self, request):
-        filters = request.GET
+        filters = request.GET.dict()
+        filters['validated'] = ''
         search = Search(filters)
         page = int(filters.get('page', 1))
         collection_records = search.process_search()

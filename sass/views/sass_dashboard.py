@@ -25,7 +25,8 @@ class SassDashboardView(TemplateView):
     site_visit_taxa = SiteVisitTaxon.objects.none()
 
     def get_site_visit_taxon(self):
-        filters = self.request.GET
+        filters = self.request.GET.dict()
+        filters['validated'] = ''
         search = Search(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
