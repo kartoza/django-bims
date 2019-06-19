@@ -175,8 +175,6 @@ let moveMarkerOnTheMap = (lat, lon) => {
     markerSource.addFeature(iconFeature);
     map.getView().setCenter(locationSiteCoordinate);
     map.getView().setZoom(6);
-    $('#geomorphological_zone').val('');
-    $('#site_code').val('');
 };
 
 let addMarkerToMap = (lat, lon) => {
