@@ -44,6 +44,100 @@ function calculateTaxa(bio, bioObject, totalTaxaNumber, totalTaxaScore) {
     totalTaxaNumber[bio] = notEmptyInputs.length;
 }
 
+function getGreatestRowValue(row) {
+    let greatest = '';
+    let allowedInput = ['D', 'C', 'B', 'A', '1'];
+    $.each(row.find('td'), function (index, td) {
+        let input = $($(td).find('input')[0]);
+        if (input.hasClass('rating-input') && !input.hasClass('total-rating')) {
+            let inputValue = input.val();
+            if (!inputValue) {
+                return true;
+            }
+            if (!greatest) {
+                greatest = inputValue;
+            } else {
+                let greatestIndex = allowedInput.indexOf(greatest);
+                let inputIndex = allowedInput.indexOf(inputValue);
+                if (inputIndex < greatestIndex) {
+                    greatest = inputValue;
+                }
+            }
+        }
+    });
+    return greatest;
+}
+
+function checkRatingScalePrevRow(currentRow, previousRow, deleted) {
+    let prevScale = previousRow.find('.taxon-name').data('rating-scale');
+    let ratingScale = currentRow.find('.taxon-name').data('rating-scale');
+
+    if (prevScale) {
+        if (ratingScale > prevScale) {
+            let previousTotalRating = previousRow.find('.total-rating').val();
+            if (previousTotalRating && !deleted) {
+                previousRow.find('.total-rating').val('');
+                previousRow.find('.total-rating').trigger('focusout');
+            }
+            if (!previousTotalRating && deleted) {
+                // Check next row doesn't have total value
+                let noTotalNextRow = true;
+                let nextRow = currentRow.next();
+                let nextRatingScale = nextRow.find('.taxon-name').data('rating-scale');
+                while (nextRatingScale) {
+                    noTotalNextRow = nextRow.find('.total-rating').val() === '';
+                    nextRow = nextRow.next();
+                    nextRatingScale = nextRow.find('.taxon-name').data('rating-scale');
+                }
+                if (noTotalNextRow) {
+                    let greatest = getGreatestRowValue(previousRow);
+                    if (greatest) {
+                        previousRow.find('.total-rating').val(greatest);
+                        previousRow.find('.total-rating').trigger('focusout');
+                        return;
+                    }
+                }
+            }
+            checkRatingScalePrevRow(currentRow, previousRow.prev(), deleted);
+        }
+    }
+}
+
+function checkRatingScaleNextRow(currentRow, nextRow) {
+    let nextScale = nextRow.find('.taxon-name').data('rating-scale');
+    let ratingScale = currentRow.find('.taxon-name').data('rating-scale');
+
+    if (nextScale) {
+        if (nextScale > ratingScale) {
+            let nextRowHasValue = false;
+            $(nextRow.find('.rating-input')).each(function () {
+                if ($(this).val()) {
+                    nextRowHasValue = true;
+                    return true;
+                }
+            });
+            if (nextRowHasValue) {
+                currentRow.find('.total-rating').val('');
+            } else {
+                checkRatingScaleNextRow(currentRow, nextRow.next());
+            }
+        }
+    }
+}
+
+function checkRatingScale(row, deleted) {
+    let ratingScale = row.find('.taxon-name').data('rating-scale');
+    if (!ratingScale) {
+        return;
+    }
+
+    let nextRow = row.next();
+    let previousRow = row.prev();
+
+    checkRatingScaleNextRow(row, nextRow);
+    checkRatingScalePrevRow(row, previousRow, deleted);
+}
+
 $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
@@ -109,7 +203,6 @@ $(document).ready(function () {
     });
 
     let $ratingInput = $('.rating-input');
-    let allowedInput = ['D', 'C', 'B', 'A', '1'];
     $ratingInput.on('keypress', function (e) {
         let char = e.key;
         char = char.toUpperCase();
@@ -123,27 +216,14 @@ $(document).ready(function () {
             return true;
         } else {
             let row = $(this).parent().parent();
-            let greatest = '';
-            $.each(row.find('td'), function (index, td) {
-                let input = $($(td).find('input')[0]);
-                if (input.hasClass('rating-input') && !input.hasClass('total-rating')) {
-                    let inputValue = input.val();
-                    if (!inputValue) {
-                        return true;
-                    }
-                    if (!greatest) {
-                        greatest = inputValue;
-                    } else {
-                        let greatestIndex = allowedInput.indexOf(greatest);
-                        let inputIndex = allowedInput.indexOf(inputValue);
-                        if (inputIndex < greatestIndex) {
-                            greatest = inputValue;
-                        }
-                    }
-                }
-            });
+            let greatest = getGreatestRowValue(row);
             let totalInput = row.find('.total-rating');
             totalInput.val(greatest);
+            let deleted = !this.value && !greatest;
+            if (deleted || totalInput.val()) {
+                checkRatingScale(row, deleted);
+            }
+
         }
     });
 
@@ -165,6 +245,7 @@ $(document).ready(function () {
                 totalTaxaScore[biotope] += parseInt(scoreDiv.data('score'));
             }
         }
+
         $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
         $('#sass-score-' + biotope).html(totalTaxaScore[biotope]);
         let aspt = parseFloat(totalTaxaScore[biotope]) / parseFloat(totalTaxaNumber[biotope]);
