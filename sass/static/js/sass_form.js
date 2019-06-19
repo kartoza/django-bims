@@ -44,15 +44,18 @@ function calculateTaxa(bio, bioObject, totalTaxaNumber, totalTaxaScore) {
     totalTaxaNumber[bio] = notEmptyInputs.length;
 }
 
-function checkRatingScalePrevRow(row) {
-    let previousRow = row.prev();
+function checkRatingScalePrevRow(currentRow, previousRow) {
     let prevScale = previousRow.find('.taxon-name').data('rating-scale');
-    let ratingScale = row.find('.taxon-name').data('rating-scale');
+    let ratingScale = currentRow.find('.taxon-name').data('rating-scale');
 
     if (prevScale) {
         if (ratingScale > prevScale) {
-            previousRow.find('.total-rating').val('');
-            checkRatingScalePrevRow(previousRow);
+            let previousTotalRating = previousRow.find('.total-rating').val();
+            if (previousTotalRating) {
+                previousRow.find('.total-rating').val('');
+                previousRow.find('.total-rating').trigger('focusout');
+            }
+            checkRatingScalePrevRow(currentRow, previousRow.prev());
         }
     }
 }
@@ -73,7 +76,6 @@ function checkRatingScaleNextRow(currentRow, nextRow) {
             if (nextRowHasValue) {
                 currentRow.find('.total-rating').val('');
             } else {
-                console.log('check next');
                 checkRatingScaleNextRow(currentRow, nextRow.next());
             }
         }
@@ -87,9 +89,10 @@ function checkRatingScale(row) {
     }
 
     let nextRow = row.next();
+    let previousRow = row.prev();
 
     checkRatingScaleNextRow(row, nextRow);
-    checkRatingScalePrevRow(row);
+    checkRatingScalePrevRow(row, previousRow);
 }
 
 $(document).ready(function () {
@@ -192,9 +195,10 @@ $(document).ready(function () {
             });
             let totalInput = row.find('.total-rating');
             totalInput.val(greatest);
-            if (greatest) {
+            if (totalInput.val()) {
                 checkRatingScale(row);
             }
+
         }
     });
 
@@ -216,6 +220,7 @@ $(document).ready(function () {
                 totalTaxaScore[biotope] += parseInt(scoreDiv.data('score'));
             }
         }
+
         $('#number-taxa-' + biotope).html(totalTaxaNumber[biotope]);
         $('#sass-score-' + biotope).html(totalTaxaScore[biotope]);
         let aspt = parseFloat(totalTaxaScore[biotope]) / parseFloat(totalTaxaNumber[biotope]);
