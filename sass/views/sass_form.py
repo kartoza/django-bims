@@ -74,20 +74,20 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             biotope_value = post_dictionary.get(biotope_key, None)
             try:
                 if biotope_value:
-                    rate = Rate.objects.get(
+                    rate = Rate.objects.filter(
                         rate=biotope_value,
                         group=2
-                    )
+                    ).exclude(description__icontains='not rated')
                 else:
                     # Empty rate
                     rate = Rate.objects.filter(
                         description__icontains='not rated',
                         group=2
                     )
-                    if rate.exists():
-                        rate = rate[0]
-                    else:
-                        rate = Rate.objects.none()
+                if rate.exists():
+                    rate = rate[0]
+                else:
+                    rate = Rate.objects.none()
                 biotope_fraction, created = (
                     SassBiotopeFraction.objects.get_or_create(
                         rate=rate,
@@ -146,38 +146,40 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 site_visit_biotope_taxon.save()
 
             # Total Rating
-            try:
-                site_visit_taxon, created = (
-                    SiteVisitTaxon.objects.get_or_create(
+            if 'TOT' == biotope_identifier:
+                try:
+                    site_visit_taxon, created = (
+                        SiteVisitTaxon.objects.get_or_create(
+                            site=site_visit.location_site,
+                            site_visit=site_visit,
+                            sass_taxon=sass_taxon,
+                            taxonomy=sass_taxon.taxon,
+                            original_species_name=
+                            sass_taxon.taxon.canonical_name,
+                        )
+                    )
+                except SiteVisitTaxon.MultipleObjectsReturned:
+                    site_visit_taxa = SiteVisitTaxon.objects.filter(
                         site=site_visit.location_site,
                         site_visit=site_visit,
                         sass_taxon=sass_taxon,
                         taxonomy=sass_taxon.taxon,
                         original_species_name=sass_taxon.taxon.canonical_name,
                     )
+                    site_visit_taxon = site_visit_taxa[0]
+                    created = False
+                updated_site_visit_taxon.append(
+                    site_visit_taxon.id
                 )
-            except SiteVisitTaxon.MultipleObjectsReturned:
-                site_visit_taxa = SiteVisitTaxon.objects.filter(
-                    site=site_visit.location_site,
-                    site_visit=site_visit,
-                    sass_taxon=sass_taxon,
-                    taxonomy=sass_taxon.taxon,
-                    original_species_name=sass_taxon.taxon.canonical_name,
-                )
-                site_visit_taxon = site_visit_taxa[0]
-                created = False
-            updated_site_visit_taxon.append(
-                site_visit_taxon.id
-            )
-            site_visit_taxon.notes = 'from sass'
-            site_visit_taxon.collection_date = date
-            site_visit_taxon.taxon_abundance = taxon_abundance
+                site_visit_taxon.notes = 'from sass'
+                site_visit_taxon.collection_date = date
+                site_visit_taxon.taxon_abundance = taxon_abundance
 
-            if created:
-                site_visit.owner = self.request.user
-                site_visit.collector = self.request.user.username
+                if created:
+                    site_visit.owner = self.request.user
+                    site_visit.collector = self.request.user.username
 
-            site_visit_taxon.save()
+                site_visit_taxon.save()
 
         if updated_site_visit_taxon:
             deleted_site_visit_taxon = SiteVisitTaxon.objects.filter(
