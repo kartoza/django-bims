@@ -69,14 +69,18 @@ let taxonAutocompleteHandler = {
         $parent.append(tdTaxonAbundance);
         taxonAbundanceInput.change(taxonAbundanceOnChange);
 
-        let samplingMethodContainer = $parent.next().find('.sampling-method-container').clone();
-        samplingMethodContainer.children().attr('name', u.item.value + '-sampling-method');
-        samplingMethodContainer.appendTo($parent);
+        let samplingMethodContainer = $($('#sampling-method-container').html());
+        samplingMethodContainer.attr('name', u.item.value + '-sampling-method');
+        let samplingMethodTd = $('<td>');
+        samplingMethodTd.append(samplingMethodContainer);
+        samplingMethodTd.appendTo($parent);
 
-        let samplingEffortContainer = $parent.next().find('.sampling-effort-container').clone();
-        $(samplingEffortContainer.children()[0]).attr('name', u.item.value + '-sampling-effort');
-        $(samplingEffortContainer.children()[1]).attr('name', u.item.value + '-sampling-effort-type');
-        samplingEffortContainer.appendTo($parent);
+        let samplingEffortContainer = $($('#sampling-effort-container').html());
+        $(samplingEffortContainer[0]).attr('name', u.item.value + '-sampling-effort');
+        $(samplingEffortContainer[2]).attr('name', u.item.value + '-sampling-effort-type');
+        let samplingEffortTd = $('<td>');
+        samplingEffortTd.append(samplingEffortContainer);
+        samplingEffortTd.appendTo($parent);
     }
 };
 

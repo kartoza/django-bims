@@ -299,8 +299,32 @@
                 </div>
             </div>
         </div>
-
     </form>
+
+    <div id="sampling-method-container" style="display: none;">
+        <select class="form-control"
+                name="{{ taxon.taxon_id }}-sampling-method">
+            <option value=""> Not specified</option>
+            {% for sampling_method in sampling_method_list %}
+                <option value="{{ sampling_method.id }}">
+                    {{ sampling_method.sampling_method }} </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div id="sampling-effort-container" style="display: none;">
+        <input type="number" min="0"
+               name="{{ taxon.taxon_id }}-sampling-effort"
+               class="form-control pull-left"
+               style="width: 100px">
+        <select class="form-control pull-right"
+                name="{{ taxon.taxon_id }}-sampling-effort-type"
+                style="width: 200px">
+            <option value=""> Not specified</option>
+            <option value="min"> Time (min)</option>
+            <option value="meter"> Area (m)</option>
+        </select>
+    </div>
+
 {% endblock %}
 
 {% block foot %}
