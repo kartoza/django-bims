@@ -370,5 +370,8 @@ BIMS_PREFERENCES = {
     'recaptcha_key': os.environ.get(
         'RECAPTCHA_KEY',
         ''
+    ),
+    'enable_upload_data': ast.literal_eval(
+        os.environ.get('ENABLE_UPLOAD_DATA', 'True')
     )
 }
