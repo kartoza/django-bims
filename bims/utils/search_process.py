@@ -89,3 +89,7 @@ def create_search_process_file(data, search_process,
         search_process.save()
 
     return search_process.file_path
+
+
+def clear_finished_search_process():
+    SearchProcess.objects.filter(finished=True).delete()

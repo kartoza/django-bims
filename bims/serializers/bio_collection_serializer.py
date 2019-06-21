@@ -68,7 +68,7 @@ class BioCollectionDetailSerializer(serializers.ModelSerializer):
         children_records['name'] = children._meta.verbose_name
         fields = children._meta.get_fields(include_parents=False)
         for field in fields:
-            if field.primary_key:
+            if field.primary_key or field.is_relation:
                 continue
             children_records[field.name] = getattr(children, field.name)
         return children_records
