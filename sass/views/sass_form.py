@@ -30,6 +30,7 @@ from sass.models import (
     Rate,
     SassBiotopeFraction
 )
+from bims.utils.search_process import clear_finished_search_process
 
 from bims.enums import TaxonomicGroupCategory
 
@@ -156,6 +157,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                             taxonomy=sass_taxon.taxon,
                             original_species_name=
                             sass_taxon.taxon.canonical_name,
+                            validated=True
                         )
                     )
                 except SiteVisitTaxon.MultipleObjectsReturned:
@@ -178,6 +180,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 if created:
                     site_visit.owner = self.request.user
                     site_visit.collector = self.request.user.username
+                    clear_finished_search_process()
 
                 site_visit_taxon.save()
 

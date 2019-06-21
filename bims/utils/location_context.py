@@ -178,7 +178,9 @@ def format_location_context(location_site_id, force_update=False):
                     'geomorphological_group' not in
                     formatted['context_group_values']
             ):
-                formatted['geomorphological_group'] = {
+                formatted['context_group_values']['geomorphological_group'] = {
+                    'key': 'geomorphological_group',
+                    'name': 'Geomorphological zones',
                     'service_registry_values': {}
                 }
             if (
