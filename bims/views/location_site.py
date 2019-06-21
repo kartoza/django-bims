@@ -14,6 +14,7 @@ from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models import LocationSite, LocationType
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
+from bims.tasks.location_site import update_location_context
 
 
 class LocationSiteFormView(TemplateView):
@@ -23,7 +24,9 @@ class LocationSiteFormView(TemplateView):
     geomorphological_group_geocontext = None
 
     def update_or_create_location_site(self, post_dict):
-        return LocationSite.objects.create(**post_dict)
+        location_site = LocationSite.objects.create(**post_dict)
+        update_location_context.delay(location_site.id)
+        return location_site
 
     def additional_context_data(self):
         return {
