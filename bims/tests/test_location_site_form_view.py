@@ -2,6 +2,7 @@ import json
 
 from django.test import TestCase
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.shortcuts import reverse
 
 from bims.tests.model_factories import (
     LocationSiteF,
@@ -184,4 +185,50 @@ class TestLocationSiteFormView(TestCase):
             '/location-site-form/update/?id={}'.format(
                 location_site_2.id
             )
+        )
+
+    def test_LocationSiteFormView_delete(self):
+        loc_type = LocationTypeF(
+            name='PointObservation',
+            allowed_geometry='POINT'
+        )
+        user = UserF.create(id=1)
+        location_site_2 = LocationSiteF.create(
+            location_type=loc_type,
+            creator=user,
+        )
+        self.client.login(
+            username=user.username,
+            password='password',
+        )
+        post_data = {}
+        post_request_2 = self.client.post(
+            '/location-site-form/delete/{}/'.format(
+                location_site_2.id
+            ),
+            post_data,
+            follow=True
+        )
+        self.assertFalse(
+            LocationSite.objects.filter(id=location_site_2.id).exists()
+        )
+        self.assertEqual(
+            post_request_2.redirect_chain[0][0],
+            reverse('location-site-form')
+        )
+        location_site_3 = LocationSiteF.create(
+            location_type=loc_type,
+        )
+        post_request_3 = self.client.post(
+            '/location-site-form/delete/{}/'.format(
+                location_site_3.id
+            ),
+            post_data,
+            follow=True
+        )
+        self.assertTrue(
+            LocationSite.objects.filter(id=location_site_3.id).exists()
+        )
+        self.assertTrue(
+            '/account/login' in post_request_3.redirect_chain[0][0],
         )
