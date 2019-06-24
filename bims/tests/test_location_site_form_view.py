@@ -1,4 +1,5 @@
 import json
+from mock import patch
 
 from django.test import TestCase
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -61,11 +62,14 @@ class TestLocationSiteFormView(TestCase):
             username=user.username,
             password='password'
         )
-        self.client.post(
-            '/location-site-form/add/',
-            self.post_data,
-            follow=True
-        )
+        with patch('bims.tasks.location_site.'
+                   'update_location_context.delay') as mock_task:
+            self.client.post(
+                '/location-site-form/add/',
+                self.post_data,
+                follow=True
+            )
+            self.assertTrue(mock_task.called)
         location_sites = LocationSite.objects.filter(
             site_code=self.post_data['site_code']
         )
