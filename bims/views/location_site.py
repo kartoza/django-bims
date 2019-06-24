@@ -1,6 +1,6 @@
 import json
 
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
@@ -8,6 +8,8 @@ from django.http import Http404, HttpResponseRedirect
 from django.contrib import messages
 from django.shortcuts import reverse
 from django.contrib.gis.geos import Point
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.shortcuts import get_object_or_404
 
 from bims.utils.get_key import get_key
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
@@ -248,3 +250,40 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         return super(LocationSiteFormUpdateView, self).post(
             request, *args, **kwargs
         )
+
+
+class LocationSiteFormDeleteView(UserPassesTestMixin, View):
+    location_site = None
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        location_site_id = self.kwargs.get('site_id', None)
+        if not location_site_id:
+            return False
+        try:
+            self.location_site = LocationSite.objects.get(
+                id=location_site_id
+            )
+        except LocationSite.DoesNotExist:
+            return False
+        if self.location_site.creator:
+            if self.request.user.id == self.location_site.creator.id:
+                return True
+        return False
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        location_site = get_object_or_404(
+            LocationSite,
+            id=self.kwargs.get('site_id', None)
+        )
+        location_site.delete()
+        messages.success(
+            self.request,
+            'Location site successfully deleted',
+            extra_tags='location_site_form'
+        )
+        return HttpResponseRedirect(reverse('location-site-form'))
