@@ -128,25 +128,22 @@
             <div class="row ecological-condition" style="display: none;"
                  data-toggle="tooltip" data-placement="top">
                 <div class="row col-lg-12">
-                    <div class="col-lg-4 neutral" data-category="A">
+                    <div class="col-lg-4 neutral ecological-condition-item" data-category="A" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Unmodified natural">
                         Natural (N)
                     </div>
-                    <div class="col-lg-4 good" data-category="B">
+                    <div class="col-lg-4 good ecological-condition-item" data-category="B"  data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Largely natural with few modifications">
                         Good (G)
                     </div>
-                    <div class="col-lg-4 fair" data-category="C">
+                    <div class="col-lg-4 fair ecological-condition-item" data-category="C" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Moderately modified">
                         Fair (F)
                     </div>
                 </div>
                 <div class="row col-lg-12">
-                    <div class="col-lg-4 poor" data-category="D">
+                    <div class="col-lg-6 poor ecological-condition-item" data-category="D" style="font-size: 9pt" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Largely modified">
                         Poor (P)
                     </div>
-                    <div class="col-lg-4 seriously-modified" data-category="E">
-                        Seriously Modified (SM)
-                    </div>
-                    <div class="col-lg-4 critically-modified" data-category="F">
-                        Critically Modified (CM)
+                    <div class="col-lg-6 seriously-modified ecological-condition-item" data-category="E" style="font-size: 9pt" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Seriously modified (S)/Critically or extremely modified (CM)">
+                        Seriously/Critically Modified (S/CM)
                     </div>
                 </div>
                 <div class="button-filter-wrapper">
@@ -172,11 +169,20 @@
                 <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
                 <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
                 <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
+                <div class="smaller-font btn-group btn-group-sm">
+                    <button id="non-native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="non-native" data-toggle="dropdown">Non-Native</button>
+                    <div class="non-native-origin-dropdown dropdown-menu origin-menu">
+                        <li class="dropdown-item non-native-dropdown-item" id="alien-origin-checkbox" data-non-native-value="alien">
+                            <input class="non-native-checkbox" name="non-native-value" type="checkbox" value="alien"> Alien
+                        </li>
+                        <li class="dropdown-item non-native-dropdown-item" id="extralimital-origin-checkbox" data-non-native-value="translocated">
+                            <input class="non-native-checkbox" name="non-native-value" type="checkbox" value="translocated"> Extralimital
+                        </li>
+                    </div>
+                </div>
                 <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
-                    <button type="button" class="btn origin-btn btn-secondary" data-origin="alien">Non-native</button>
-                    <button type="button" class="btn origin-btn btn-secondary" data-origin="translocated">Translocated</button>
                     <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
-                    <div class="native-origin-dropdown dropdown-menu" aria-labelledby="native-origin-btn">
+                    <div class="native-origin-dropdown dropdown-menu origin-menu" aria-labelledby="native-origin-btn">
                         <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All endemic </div>
                     </div>
                 </div>
@@ -199,11 +205,13 @@
             </div>
             <div class="row conservation-status-row" style="display: none">
                 <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
-                    <select multiple  data-placeholder="Select Some Conservation Status" id="conservation-status">
-                        {% for status_data in conservation_status_data %}
-                            <option value="{{ status_data.status }}">{{ status_data.name }}</option>
-                        {% endfor %}
-                    </select>
+                    {% for status_data in conservation_status_data %}
+                        <div>
+                            <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
+                            <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
+                                data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
+                        </div>
+                    {% endfor %}
                 </div>
                 <div class="button-filter-wrapper">
                     <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>

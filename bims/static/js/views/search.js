@@ -43,6 +43,7 @@ define([
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
+            'click .non-native-dropdown-item': 'handleNonNativeDropdown',
             'click .clear-origin-filter': 'handleClearOriginClicked',
             'click .clear-conservation-filter': 'handleClearConservationClicked',
             'click .ecological-condition': 'handleEcologicalConditionClicked'
@@ -141,15 +142,26 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     Shared.EndemismList = data;
+                    let endemicPopoverData = {
+                        'micro-endemic level 1': 'Endemic to <5 rivers within one primary catchment',
+                        'micro-endemic level 2': 'Endemic to a single river',
+                        'regional endemic level 1': 'Endemic to a Freshwater Ecoregion (e.g. CFE), more than one primary catchment',
+                        'regional endemic level 2': 'Endemic to one primary catchment',
+                        'widespread': 'Occurs in more than one Freshwater Ecoregion'
+                    };
                     for (var i = 0; i < data.length; i++) {
                         var checked = '';
                         if ($.inArray(data[i], self.initialSelectedEndemic) > -1) {
                             checked = 'checked';
                         }
-                        nativeOriginDropdown.append(
-                            '<li class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
-                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</li>'
-                        )
+                        var liElement = $('<li class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</li>');
+                        nativeOriginDropdown.append(liElement);
+                        liElement.popover({
+                            content: endemicPopoverData[data[i].toLowerCase()],
+                            trigger: 'hover',
+                            placement: 'top'
+                        })
                     }
                     self.filtersReady['endemism'] = true;
                 }
@@ -239,9 +251,12 @@ define([
             }
         },
         getSelectedConservationStatus: function () {
-            var status = this.$el.find("#conservation-status").chosen().val();
-            if (status) {
-                return JSON.stringify(status)
+            var selected = [];
+            $('.conservation-status-wrapper').find('input:checked').each(function () {
+                selected.push($(this).val())
+            });
+            if (selected) {
+                return JSON.stringify(selected)
             }
             return '';
         },
@@ -546,7 +561,7 @@ define([
                 target.closest('.row').find('#year-to').html(this.endYear);
             }
 
-            $('.ecological-condition').find('.col-lg-4').removeClass('selected');
+            $('.ecological-condition').find('.ecological-condition-item').removeClass('selected');
             this.selectedEcologicalConditions = [];
 
             if (Shared.CurrentState.SEARCH) {
@@ -612,6 +627,25 @@ define([
                 $('#native-origin-btn').removeClass('selected');
             }
         },
+        handleNonNativeDropdown: function (e) {
+            e.stopPropagation();
+            var value = $(e.target).data('non-native-value');
+            console.log(value);
+            var inputCheckbox = $(e.target).find('input');
+            if (inputCheckbox.is(":checked")) {
+                inputCheckbox.prop('checked', false);
+                $('#' + value).prop('checked', false);
+            } else {
+                inputCheckbox.prop('checked', true);
+                $('#' + value).prop('checked', true);
+            }
+            var atLeastOneIsChecked = $('.non-native-origin-dropdown').find('.non-native-checkbox:checked').length > 0;
+            if (atLeastOneIsChecked) {
+                $('#non-native-origin-btn').addClass('selected');
+            } else {
+                $('#non-native-origin-btn').removeClass('selected');
+            }
+        },
         clearClickedOriginButton: function () {
             this.$el.find('.origin-btn').removeClass('selected');
         },
@@ -639,16 +673,20 @@ define([
             if (allFilters.hasOwnProperty('category')) {
                 var categories = JSON.parse(allFilters['category']);
                 var originFilterWrapper = this.$el.find('#origin-filter-wrapper');
+                var nonNativeSelected = false;
                 $.each(categories, function (index, category) {
                     $('#' + category).prop('checked', true);
                 });
-                var buttons = originFilterWrapper.find('.origin-btn');
-                $.each(buttons, function (index, button) {
-                    var $button = $(button);
-                    if ($.inArray($button.data('origin'), categories) > -1) {
-                        $button.addClass('selected');
+                var nonNativeCheckbox = originFilterWrapper.find('.non-native-checkbox');
+                $.each(nonNativeCheckbox, function (index, button) {
+                    if ($.inArray($(button).val(), categories) >- 1) {
+                        $(button).prop('checked', true);
+                        nonNativeSelected = true;
                     }
-                })
+                });
+                if (nonNativeSelected) {
+                    $('#non-native-origin-btn').addClass('selected');
+                }
             }
 
             // Collectors
@@ -711,7 +749,9 @@ define([
             // Conservation status
             if (allFilters.hasOwnProperty('conservationStatus')) {
                 var conservationStatus = JSON.parse(allFilters['conservationStatus']);
-                $('#conservation-status').val(conservationStatus);
+                $.each(conservationStatus, function (index, category) {
+                    $('#conservation-status-' + category).prop('checked', true);
+                });
             }
 
             // River catchment
@@ -770,7 +810,7 @@ define([
         handleEcologicalConditionClicked: function (e) {
             let $target = $(e.target);
             let category = '';
-            if ($target.hasClass('col-lg-4')) {
+            if ($target.hasClass('ecological-condition-item')) {
                 category = $target.data('category');
                 if ($target.hasClass('selected')) {
                     $target.removeClass('selected');

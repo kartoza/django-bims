@@ -255,6 +255,10 @@ html, body, .map, .map-wrapper, #map-container {
     color: transparent;
 }
 
+.origin-menu > .dropdown-item {
+    padding-top: 10px;
+}
+
 .panel-loading {
     display: none;
     margin-top: 50px;
@@ -1874,14 +1878,14 @@ div:hover::-webkit-scrollbar {
     margin-left: 0;
 }
 
-.ecological-condition .col-lg-4 {
+.ecological-condition .ecological-condition-item {
     opacity: 0.3;
     padding: 3px;
     font-size: 9pt;
     width: 80% !important;
 }
 
-.ecological-condition .col-lg-4:hover {
+.ecological-condition .ecological-condition-item:hover {
     opacity: 1;
     cursor: pointer;
 }
@@ -1914,10 +1918,12 @@ div:hover::-webkit-scrollbar {
     background-color: black;
 }
 
+.tooltip, .popover { pointer-events: none; max-width: 350px; }
+
 .conservation-status-wrapper {
     padding-top: 15px;
-    padding-bottom: 3px;
     overflow-y: unset;
+    margin-bottom: -5px;
 }
 
 .conservation-status-wrapper li {
@@ -2173,6 +2179,7 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     padding-top: 10px;
     padding-bottom: 10px;
+    margin-left: -5px;
 }
 
 .smaller-font .btn {
@@ -2196,14 +2203,14 @@ div:hover::-webkit-scrollbar {
     background-color: #e0d441;
 }
 
-.native-origin-dropdown {
+.native-origin-dropdown, .non-native-origin-dropdown {
     margin-top: 0;
     padding-top: 0;
     padding-bottom: 0;
     z-index: 999;
 }
 
-#native-origin-btn {
+#native-origin-btn, #non-native-origin-btn {
     color: white;
 }
 

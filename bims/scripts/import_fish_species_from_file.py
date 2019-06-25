@@ -3,9 +3,9 @@ import os
 import logging
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
-from bims.models import IUCNStatus, Endemism
+from bims.models import IUCNStatus, Endemism, BiologicalCollectionRecord
 
-FISH_FILE = 'SA.Master.fish.species.csv'
+FISH_FILE = 'SA.Master.fish.species.list_Final.csv'
 
 SCIENTIFIC_NAME_KEY = 'Scientific name and authority'
 CANONICAL_NAME_KEY = 'Taxon'
@@ -20,11 +20,13 @@ logger = logging.getLogger('bims')
 
 def import_fish_species_from_file(
     import_occurrences=False,
+    update_origin=False,
     fish_file=FISH_FILE):
     """
     Read fish list from a file then fetch the data from GBIF.
     :param fish_file: Fish species file to read
     :param import_occurrences: Should also import occurrences or not
+    :param update_origin: Update origin of collections
     """
     folder_name = 'data'
     file_path = os.path.join(
@@ -84,3 +86,15 @@ def import_fish_species_from_file(
                 origin=fish_data[ORIGIN_KEY][i],
                 habitat=fish_data[HABITAT_KEY][i]
             )
+
+        if update_origin:
+            collections = BiologicalCollectionRecord.objects.filter(
+                taxonomy=taxonomy
+            )
+            origin = None
+            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                if fish_data[ORIGIN_KEY][i].lower() == category[1].lower():
+                    origin = category[0]
+                    break
+            if origin:
+                collections.update(category=origin)

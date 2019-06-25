@@ -79,6 +79,38 @@ require([
         $('[data-toggle="tooltip"]').tooltip();
         $('[data-toggle="popover"]').popover();
 
+        $('#native-origin-btn').popover({
+            content: 'Native: (or indigenous) means a taxon occurring within its natural ' +
+                'range (past or present) and dispersal potential ' +
+                '(i.e. within the range it occupies naturally or' +
+                ' could occupy without direct or indirect introduction or care by humans)',
+            trigger: 'hover',
+            placement: 'top',
+        });
+
+        $('#non-native-origin-btn').popover({
+            content: 'Non-native: A category that includes both Alien and Extralimital taxa',
+            trigger: 'hover',
+            placement: 'top',
+        });
+
+        $('#alien-origin-checkbox').popover({
+            content: 'Alien: (non-native, non-indigenous, foreign, exotic) means a taxon ' +
+                'occurring outside of its natural range (past or present) and dispersal ' +
+                'potential (i.e. outside the range it occupies naturally or could not occupy ' +
+                'without direct or indirect introduction or care by humans) and includes any part, ' +
+                'gametes or propagule of such species that might survive and subsequently reproduce',
+            trigger: 'hover',
+            placement: 'top',
+        });
+
+        $('#extralimital-origin-checkbox').popover({
+            content: 'Extralimital: Species native to South Africa that have been ' +
+                'translocated into areas where they did not naturally occur.',
+            trigger: 'hover',
+            placement: 'top',
+        });
+
         $('.try-again-button').click(function () {
             Shared.Dispatcher.trigger('map:reloadXHR', this.features)
         });
