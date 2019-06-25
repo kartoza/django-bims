@@ -1878,14 +1878,14 @@ div:hover::-webkit-scrollbar {
     margin-left: 0;
 }
 
-.ecological-condition .col-lg-4 {
+.ecological-condition .ecological-condition-item {
     opacity: 0.3;
     padding: 3px;
     font-size: 9pt;
     width: 80% !important;
 }
 
-.ecological-condition .col-lg-4:hover {
+.ecological-condition .ecological-condition-item:hover {
     opacity: 1;
     cursor: pointer;
 }
@@ -1918,10 +1918,12 @@ div:hover::-webkit-scrollbar {
     background-color: black;
 }
 
+.tooltip, .popover { pointer-events: none; max-width: 350px; }
+
 .conservation-status-wrapper {
     padding-top: 15px;
-    padding-bottom: 3px;
     overflow-y: unset;
+    margin-bottom: -5px;
 }
 
 .conservation-status-wrapper li {
