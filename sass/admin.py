@@ -181,6 +181,10 @@ class SiteVisitEcologicalConditionAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'site_visit',
     )
+    search_fields = (
+        'site_visit__location_site__name',
+        'site_visit__location_site__site_code',
+    )
 
 
 # Register your models here.
