@@ -17,6 +17,13 @@ class Command(BaseCommand):
             default=True,
             help='Should also import occurrences from gbif')
 
+        parser.add_argument(
+            '-o',
+            '--update-origin',
+            dest='update_origin',
+            default=True,
+            help='Update collection origin')
+
     def handle(self, *args, **options):
         try:
             import_occurrences = (
@@ -24,5 +31,11 @@ class Command(BaseCommand):
             )
         except ValueError:
             import_occurrences = False
+        try:
+            update_origin = (
+                ast.literal_eval(options.get('update_origin'))
+            )
+        except ValueError:
+            update_origin = False
 
-        import_fish_species_from_file(import_occurrences)
+        import_fish_species_from_file(import_occurrences, update_origin)

@@ -134,12 +134,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.iucnLink.attr('href', `https://apiv3.iucnredlist.org/api/v3/taxonredirect/${iucn_redlist_id}/`);
 
             var origin_block_data = {};
-            origin_block_data['keys'] = ['Native', 'Non-native', 'Translocated'];
+            origin_block_data['keys'] = ['Native', 'Alien', 'Extralimital'];
             origin_block_data['value'] = this.origin_title_from_choices(data['origin'], data);
-            // for (let i = 0; i < origin_block_data['keys'].length; i++) {
-            //     let next_key = origin_block_data['keys'][i];
-            //     origin_block_data['keys'][i] = this.origin_title_from_choices(next_key, data);
-            // };
             origin_block_data['value_title'] = origin_block_data['value'];
             this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
 
