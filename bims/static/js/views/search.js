@@ -43,6 +43,7 @@ define([
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
+            'click .non-native-dropdown-item': 'handleNonNativeDropdown',
             'click .clear-origin-filter': 'handleClearOriginClicked',
             'click .clear-conservation-filter': 'handleClearConservationClicked',
             'click .ecological-condition': 'handleEcologicalConditionClicked'
@@ -612,6 +613,25 @@ define([
                 $('#native-origin-btn').removeClass('selected');
             }
         },
+        handleNonNativeDropdown: function (e) {
+            e.stopPropagation();
+            var value = $(e.target).data('non-native-value');
+            console.log(value);
+            var inputCheckbox = $(e.target).find('input');
+            if (inputCheckbox.is(":checked")) {
+                inputCheckbox.prop('checked', false);
+                $('#' + value).prop('checked', false);
+            } else {
+                inputCheckbox.prop('checked', true);
+                $('#' + value).prop('checked', true);
+            }
+            var atLeastOneIsChecked = $('.non-native-origin-dropdown').find('.non-native-checkbox:checked').length > 0;
+            if (atLeastOneIsChecked) {
+                $('#non-native-origin-btn').addClass('selected');
+            } else {
+                $('#non-native-origin-btn').removeClass('selected');
+            }
+        },
         clearClickedOriginButton: function () {
             this.$el.find('.origin-btn').removeClass('selected');
         },
@@ -639,16 +659,20 @@ define([
             if (allFilters.hasOwnProperty('category')) {
                 var categories = JSON.parse(allFilters['category']);
                 var originFilterWrapper = this.$el.find('#origin-filter-wrapper');
+                var nonNativeSelected = false;
                 $.each(categories, function (index, category) {
                     $('#' + category).prop('checked', true);
                 });
-                var buttons = originFilterWrapper.find('.origin-btn');
-                $.each(buttons, function (index, button) {
-                    var $button = $(button);
-                    if ($.inArray($button.data('origin'), categories) > -1) {
-                        $button.addClass('selected');
+                var nonNativeCheckbox = originFilterWrapper.find('.non-native-checkbox');
+                $.each(nonNativeCheckbox, function (index, button) {
+                    if ($.inArray($(button).val(), categories) >- 1) {
+                        $(button).prop('checked', true);
+                        nonNativeSelected = true;
                     }
-                })
+                });
+                if (nonNativeSelected) {
+                    $('#non-native-origin-btn').addClass('selected');
+                }
             }
 
             // Collectors

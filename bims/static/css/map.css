@@ -255,6 +255,10 @@ html, body, .map, .map-wrapper, #map-container {
     color: transparent;
 }
 
+.origin-menu > .dropdown-item {
+    padding-top: 10px;
+}
+
 .panel-loading {
     display: none;
     margin-top: 50px;
@@ -2173,6 +2177,7 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     padding-top: 10px;
     padding-bottom: 10px;
+    margin-left: -5px;
 }
 
 .smaller-font .btn {
@@ -2196,14 +2201,14 @@ div:hover::-webkit-scrollbar {
     background-color: #e0d441;
 }
 
-.native-origin-dropdown {
+.native-origin-dropdown, .non-native-origin-dropdown {
     margin-top: 0;
     padding-top: 0;
     padding-bottom: 0;
     z-index: 999;
 }
 
-#native-origin-btn {
+#native-origin-btn, #non-native-origin-btn {
     color: white;
 }
 
