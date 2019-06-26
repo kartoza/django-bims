@@ -22,25 +22,25 @@ def generate_site_visit_ecological_condition(site_visits):
         ))
 
         site_visit_taxa = SiteVisitTaxon.objects.filter(
-            site_visit=site_visit
+            site_visit=site_visit,
         )
 
         summary = site_visit_taxa.annotate(
+            sass_id=F('site_visit__id')).values('sass_id').annotate(
             count=Count('sass_taxon'),
             sass_score=Coalesce(Sum(Case(
-                When(
-                    condition=Q(site_visit__sass_version=5,
-                                sass_taxon__sass_5_score__isnull=False,
-                                taxon_abundance__isnull=False),
-                    then='sass_taxon__sass_5_score'),
                 When(
                     condition=Q(site_visit__sass_version=4,
                                 sass_taxon__score__isnull=False,
                                 taxon_abundance__isnull=False),
                     then='sass_taxon__score'),
+                When(
+                    condition=Q(site_visit__sass_version=5,
+                                sass_taxon__sass_5_score__isnull=False,
+                                taxon_abundance__isnull=False),
+                    then='sass_taxon__sass_5_score'),
                 default=0),
             ), 0),
-            sass_id=F('site_visit__id')
         ).annotate(
             aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
                                                             FloatField()),
@@ -55,10 +55,11 @@ def generate_site_visit_ecological_condition(site_visits):
         site_visit_ecological, created = (
             SiteVisitEcologicalCondition.objects.get_or_create(
                 site_visit=site_visit,
-                sass_score=sass_score,
-                aspt_score=aspt_score
             )
         )
+
+        site_visit_ecological.sass_score = sass_score
+        site_visit_ecological.aspt_score = aspt_score
 
         try:
             location_context = json.loads(
