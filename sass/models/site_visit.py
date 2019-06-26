@@ -4,7 +4,11 @@
 from django.contrib.gis.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+
 from bims.models import LocationSite
+from bims.utils.logger import log
 from sass.enums.water_level import (
     WaterLevel,
     WATER_LEVEL_NAME,
@@ -130,3 +134,18 @@ class SiteVisit(AbstractAdditionalData):
 
     def __unicode__(self):
         return self.location_site.name
+
+
+@receiver(post_save, sender=SiteVisit)
+def site_visit_post_save_handler(**kwargs):
+    from sass.scripts.site_visit_ecological_condition_generator import (
+        generate_site_visit_ecological_condition
+    )
+    try:
+        site_visit = kwargs['instance']
+    except KeyError:
+        return
+    log('Generate site visit ecological condition')
+    site_visits = list()
+    site_visits.append(site_visit)
+    generate_site_visit_ecological_condition(site_visits)

@@ -55,10 +55,11 @@ def generate_site_visit_ecological_condition(site_visits):
         site_visit_ecological, created = (
             SiteVisitEcologicalCondition.objects.get_or_create(
                 site_visit=site_visit,
-                sass_score=sass_score,
-                aspt_score=aspt_score
             )
         )
+
+        site_visit_ecological.sass_score = sass_score
+        site_visit_ecological.aspt_score = aspt_score
 
         try:
             location_context = json.loads(
