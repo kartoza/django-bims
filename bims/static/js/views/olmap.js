@@ -216,6 +216,7 @@ define([
                     } else if (count === 1) {
                         let url = '';
                         if (Shared.CurrentState.SEARCH) {
+                            filterParameters['siteId'] = '';
                             url = '/api/get-site-by-coord/' + self.apiParameters(filterParameters) + '&lon=' + lon + '&lat=' + lat + '&radius=10&search_mode=True';
                         } else {
                             url = '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10'

@@ -41,30 +41,29 @@ class SiteByCoord(APIView):
         except (ValueError, TypeError):
             return Response('Invalid lat or lon format')
 
-        if not process_id:
-            site_filters = {
-                'biological_collection_record__validated': True
-            }
-            if search_mode:
-                search = Search(request.GET.dict())
-                collection_results = search.process_search()
-                collection_result_ids = list(collection_results.values_list(
-                    'id', flat=True
-                ))
-                site_filters['biological_collection_record__id__in'] = (
-                    collection_result_ids
-                )
+        if search_mode:
+            search = Search(request.GET.dict())
+            collection_results = search.process_search()
+            site_ids = collection_results.filter(
+                site__geometry_point__distance_lte=(point, D(km=radius))
+            ).distinct('site').values_list('site', flat=True)
             location_sites = LocationSite.objects.filter(
-                **site_filters
-            ).distinct()
+                id__in=site_ids
+            ).annotate(
+                distance=Distance('geometry_point', point)
+            ).order_by('distance')[:10]
         else:
-            location_sites = LocationSite.objects.all()
-
-        location_sites = location_sites.filter(
-            geometry_point__distance_lte=(point, D(km=radius))
-        ).annotate(
-            distance=Distance('geometry_point', point)
-        ).order_by('distance')[:10]
+            if not process_id:
+                location_sites = LocationSite.objects.filter(
+                    biological_collection_record__validated=True
+                ).distinct()
+            else:
+                location_sites = LocationSite.objects.all()
+            location_sites = location_sites.filter(
+                geometry_point__distance_lte=(point, D(km=radius))
+            ).annotate(
+                distance=Distance('geometry_point', point)
+            ).order_by('distance')[:10]
 
         responses = []
         for site in location_sites:

@@ -79,6 +79,8 @@ services:
       - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
     restart: unless-stopped
     user: root
+    extra_hosts:
+      - 'localhost: 192.168.1.197'
 
   worker:
     build:
