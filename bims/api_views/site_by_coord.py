@@ -4,6 +4,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from bims.models.location_site import LocationSite
+from bims.api_views.search import Search
 
 
 class SiteByCoord(APIView):
@@ -27,6 +28,7 @@ class SiteByCoord(APIView):
         lon = request.GET.get('lon', None)
         radius = request.GET.get('radius', 0.0)
         process_id = request.GET.get('process_id', None)
+        search_mode = request.GET.get('search_mode', None)
         radius = float(radius)
 
         if not lat or not lon:
@@ -40,8 +42,20 @@ class SiteByCoord(APIView):
             return Response('Invalid lat or lon format')
 
         if not process_id:
+            site_filters = {
+                'biological_collection_record__validated': True
+            }
+            if search_mode:
+                search = Search(request.GET.dict())
+                collection_results = search.process_search()
+                collection_result_ids = list(collection_results.values_list(
+                    'id', flat=True
+                ))
+                site_filters['biological_collection_record__id__in'] = (
+                    collection_result_ids
+                )
             location_sites = LocationSite.objects.filter(
-                biological_collection_record__validated=True
+                **site_filters
             ).distinct()
         else:
             location_sites = LocationSite.objects.all()
