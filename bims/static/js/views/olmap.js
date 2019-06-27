@@ -41,6 +41,7 @@ define([
         scaleLineControl: null,
         mapIsReady: false,
         initCenter: [22.948492328125, -31.12543669218031],
+        apiParameters: _.template(Shared.SearchURLParametersTemplate),
         events: {
             'click .zoom-in': 'zoomInMap',
             'click .zoom-out': 'zoomOutMap',
@@ -213,8 +214,15 @@ define([
                             self.getCurrentZoom() + 2
                         );
                     } else if (count === 1) {
+                        let url = '';
+                        if (Shared.CurrentState.SEARCH) {
+                            url = '/api/get-site-by-coord/' + self.apiParameters(filterParameters) + '&lon=' + lon + '&lat=' + lat + '&radius=10&search_mode=True';
+                        } else {
+                            url = '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10'
+                        }
+
                         $.ajax({
-                            url: '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10',
+                            url: url,
                             success: function (data) {
                                 if (self.uploadDataState) {
                                     self.mapControlPanel.showUploadDataModal(lon, lat, data[0]);
