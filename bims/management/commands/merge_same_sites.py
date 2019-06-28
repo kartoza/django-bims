@@ -29,7 +29,8 @@ class Command(BaseCommand):
                 if not site_destination:
                     site_destination = site
                 else:
-                    if len(site.site_description) > len(site_destination.site_description):
+                    if len(site.site_description) > len(
+                            site_destination.site_description):
                         site_destination = site
                 all_collections.append(
                     BiologicalCollectionRecord.objects.filter(
