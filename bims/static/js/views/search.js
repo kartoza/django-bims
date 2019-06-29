@@ -43,7 +43,7 @@ define([
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
-            'click .non-native-dropdown-item': 'handleNonNativeDropdown',
+            'click #non-native-origin-btn': 'handleNonNativeClicked',
             'click .clear-origin-filter': 'handleClearOriginClicked',
             'click .clear-conservation-filter': 'handleClearConservationClicked',
             'click .ecological-condition': 'handleEcologicalConditionClicked'
@@ -627,23 +627,14 @@ define([
                 $('#native-origin-btn').removeClass('selected');
             }
         },
-        handleNonNativeDropdown: function (e) {
-            e.stopPropagation();
-            var value = $(e.target).data('non-native-value');
-            console.log(value);
-            var inputCheckbox = $(e.target).find('input');
-            if (inputCheckbox.is(":checked")) {
-                inputCheckbox.prop('checked', false);
-                $('#' + value).prop('checked', false);
+        handleNonNativeClicked: function (e) {
+            let button = $(e.target);
+            if (button.hasClass('selected')) {
+                $('#alien').prop('checked', true);
+                $('#translocated').prop('checked', true);
             } else {
-                inputCheckbox.prop('checked', true);
-                $('#' + value).prop('checked', true);
-            }
-            var atLeastOneIsChecked = $('.non-native-origin-dropdown').find('.non-native-checkbox:checked').length > 0;
-            if (atLeastOneIsChecked) {
-                $('#non-native-origin-btn').addClass('selected');
-            } else {
-                $('#non-native-origin-btn').removeClass('selected');
+                $('#alien').prop('checked', false);
+                $('#translocated').prop('checked', false);
             }
         },
         clearClickedOriginButton: function () {
@@ -672,15 +663,10 @@ define([
             // Category
             if (allFilters.hasOwnProperty('category')) {
                 var categories = JSON.parse(allFilters['category']);
-                var originFilterWrapper = this.$el.find('#origin-filter-wrapper');
                 var nonNativeSelected = false;
                 $.each(categories, function (index, category) {
                     $('#' + category).prop('checked', true);
-                });
-                var nonNativeCheckbox = originFilterWrapper.find('.non-native-checkbox');
-                $.each(nonNativeCheckbox, function (index, button) {
-                    if ($.inArray($(button).val(), categories) >- 1) {
-                        $(button).prop('checked', true);
+                    if (category === 'alien' || category === 'translocated') {
                         nonNativeSelected = true;
                     }
                 });
