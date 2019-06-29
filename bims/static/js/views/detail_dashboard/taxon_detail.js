@@ -134,8 +134,13 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.iucnLink.attr('href', `https://apiv3.iucnredlist.org/api/v3/taxonredirect/${iucn_redlist_id}/`);
 
             var origin_block_data = {};
-            origin_block_data['keys'] = ['Native', 'Alien', 'Extralimital'];
-            origin_block_data['value'] = this.origin_title_from_choices(data['origin'], data);
+            var origin_dict = {
+                'indigenous': 'Native',
+                'alien': 'Non-Native',
+                'translocated': 'Non-Native'
+            };
+            origin_block_data['keys'] = ['Native', 'Non-Native'];
+            origin_block_data['value'] = origin_dict[data['origin']];
             origin_block_data['value_title'] = origin_block_data['value'];
             this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
 
@@ -497,11 +502,11 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             result_html += '</div>';
             return result_html;
         },
-        origin_title_from_choices: function (short_name, data) {
+        origin_title_from_choices: function (short_name, origin_dict) {
             var name = short_name;
             var choices = [];
-            choices = this.flatten_arr(data['origin_choices_list']);
-            if (choices.length > 0) {
+            choices = this.flatten_arr(origin_dict);
+            if (origin_dict.length > 0) {
                 let index = choices.indexOf(short_name) + 1;
                 let long_name = choices[index];
                 name = long_name;
