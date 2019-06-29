@@ -603,16 +603,13 @@ define([
 
             if (endemicValue === 'all-endemic') {
                 if (inputCheckbox.is(":checked")) {
-                    $('#indigenous').prop('checked', false);
                     inputCheckbox.prop('checked', false);
                 } else {
                     $(e.target).parent().find('.endemic-checkbox').prop('checked', true);
-                    $('#indigenous').prop('checked', true);
                     inputCheckbox.prop('checked', true);
                 }
             } else {
                 $('#all-endemic-checkbox').prop('checked', false);
-                $('#indigenous').prop('checked', false);
                 if (inputCheckbox.is(":checked")) {
                     inputCheckbox.prop('checked', false);
                 } else {
@@ -622,8 +619,10 @@ define([
 
             var atLeastOneIsChecked = $('.native-origin-dropdown').find('.endemic-checkbox:checked').length > 0;
             if (atLeastOneIsChecked) {
+                $('#indigenous').prop('checked', true);
                 $('#native-origin-btn').addClass('selected');
             } else {
+                $('#indigenous').prop('checked', false);
                 $('#native-origin-btn').removeClass('selected');
             }
         },
