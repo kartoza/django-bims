@@ -28,7 +28,8 @@ class SpatialScaleFilterList(APIView):
         ('Management Area', {
             'key': 'management_area',
             'groups': [
-                'water_management_area'
+                'water_management_area',
+                'sub_wmas'
             ]
         }),
         ('Catchment', {
