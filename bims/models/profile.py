@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 
 
 class Profile(models.Model):
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -93,6 +94,9 @@ class Profile(models.Model):
 
     class Meta:
         app_label = 'bims'
+        permissions = (
+            ('get_all_email', 'Get all email'),
+        )
 
     def __unicode__(self):
         return u'%s' % self.qualifications
