@@ -24,8 +24,8 @@ class AccountAdapter(LocalAccountAdapter):
             raise ValidationError('Password Error')
 
     def respond_user_inactive(self, request, user):
-        # Sent email to staff
-        staffs = get_user_model().objects.filter(is_staff=True)
+        # Sent email to superuser
+        staffs = get_user_model().objects.filter(is_superuser=True)
         try:
             current_site = Site.objects.get_current()
             ctx = {
