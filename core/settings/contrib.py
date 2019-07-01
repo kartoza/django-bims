@@ -215,6 +215,7 @@ MODELSDOC_FIELD_WRAPPER = 'modelsdoc.wrappers.FieldWrapper'
 MODELSDOC_INCLUDE_AUTO_CREATED = True
 
 # contact us email
+SERVER_EMAIL = os.environ.get('ADMIN_EMAILS', 'admin@kartoza.com')
 CONTACT_US_EMAIL = os.environ.get('CONTACT_US_EMAIL', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', CONTACT_US_EMAIL)
 
