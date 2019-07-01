@@ -3,9 +3,14 @@ import os
 import logging
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
-from bims.models import IUCNStatus, Endemism, BiologicalCollectionRecord
+from bims.models import (
+    IUCNStatus,
+    Endemism,
+    BiologicalCollectionRecord,
+    Taxonomy
+)
 
-FISH_FILE = 'SA.Master.fish.species.list_Final.csv'
+FISH_FILE = 'SA.Master.fish.species.list_Final_Updated.csv'
 
 SCIENTIFIC_NAME_KEY = 'Scientific name and authority'
 CANONICAL_NAME_KEY = 'Taxon'
@@ -53,34 +58,34 @@ def import_fish_species_from_file(
         canonical_name = fish_data[CANONICAL_NAME_KEY][i]
         endemism_value = fish_data[ENDEMISM_KEY][i]
 
-        taxonomy = fetch_all_species_from_gbif(
-            species=canonical_name,
-            should_get_children=True
-        )
-
-        if not taxonomy:
-            continue
-
-        endemism, endemism_created = Endemism.objects.get_or_create(
-            name=endemism_value
-        )
-        taxonomy.endemism = endemism
-        taxonomy.save()
-
-        conservation_status = fish_data[CONSERVATION_STATUS_KEY][i]
-        for category in IUCNStatus.CATEGORY_CHOICES:
-            if category[1].lower() == conservation_status.lower():
-                iucn_status = IUCNStatus.objects.filter(
-                    category=category[0]
-                )
-                if len(iucn_status) < 1:
-                    break
-                logger.info('Add IUCN status : %s' %
-                            iucn_status[0].get_category_display())
-                taxonomy.iucn_status = iucn_status[0]
-                taxonomy.save()
-
         if import_occurrences:
+            taxonomy = fetch_all_species_from_gbif(
+                species=canonical_name,
+                should_get_children=True
+            )
+
+            if not taxonomy:
+                continue
+
+            endemism, endemism_created = Endemism.objects.get_or_create(
+                name=endemism_value
+            )
+            taxonomy.endemism = endemism
+            taxonomy.save()
+
+            conservation_status = fish_data[CONSERVATION_STATUS_KEY][i]
+            for category in IUCNStatus.CATEGORY_CHOICES:
+                if category[1].lower() == conservation_status.lower():
+                    iucn_status = IUCNStatus.objects.filter(
+                        category=category[0]
+                    )
+                    if len(iucn_status) < 1:
+                        break
+                    logger.info('Add IUCN status : %s' %
+                                iucn_status[0].get_category_display())
+                    taxonomy.iucn_status = iucn_status[0]
+                    taxonomy.save()
+
             import_gbif_occurrences(
                 taxonomy=taxonomy,
                 origin=fish_data[ORIGIN_KEY][i],
@@ -88,13 +93,21 @@ def import_fish_species_from_file(
             )
 
         if update_origin:
-            collections = BiologicalCollectionRecord.objects.filter(
-                taxonomy=taxonomy
+            taxa = Taxonomy.objects.filter(
+                scientific_name=fish_data[SCIENTIFIC_NAME_KEY][i]
             )
-            origin = None
-            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
-                if fish_data[ORIGIN_KEY][i].lower() == category[1].lower():
-                    origin = category[0]
-                    break
+            if not taxa.exists():
+                continue
+            endemism, endemism_created = Endemism.objects.get_or_create(
+                name=endemism_value
+            )
+            taxa.update(endemism=endemism)
+            collections = BiologicalCollectionRecord.objects.filter(
+                taxonomy__in=taxa
+            )
+            if fish_data[ORIGIN_KEY][i].lower() == 'native':
+                origin = 'indigenous'
+            else:
+                origin = 'alien'
             if origin:
                 collections.update(category=origin)
