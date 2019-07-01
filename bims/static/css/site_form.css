@@ -55,3 +55,25 @@ label.error {
     color: red;
     font-size: 10pt;
 }
+
+.custom-control {
+    top: 10px;
+    right: 10px;
+}
+
+.custom-control button {
+    height: 40px !important;
+    width: 40px !important;
+}
+
+.ol-control-selected button {
+    background-color: green !important;
+}
+
+.custom-control:hover button {
+    background-color: green;
+}
+
+.ol-control-selected:hover button {
+    background-color: rgba(0,60,136,.7);
+}
