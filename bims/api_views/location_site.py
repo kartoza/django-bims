@@ -505,6 +505,11 @@ class LocationSitesSummary(APIView):
             geo_zone = '-'
         overview['Geomorphological zone'] = geo_zone
 
+        refined_geomorphological = '-'
+        if location_site.refined_geomorphological:
+            refined_geomorphological = location_site.refined_geomorphological
+        overview['Refined Geomorphological zone'] = refined_geomorphological
+
         # Catchments
         catchments = dict()
         try:
@@ -559,9 +564,7 @@ class LocationSitesSummary(APIView):
             water_management_area = '-'
         catchments['Primary'] = primary_catchment
         catchments['Secondary'] = secondary_catchment
-        catchments['Tertiary'] = (
-            tertiary_catchment_area if tertiary_catchment_area else '-'
-        )
+        catchments['Tertiary'] = tertiary_catchment_area
         catchments['Quaternary'] = quaternary_catchment_area
         catchments['Quinary'] = '-'
 
