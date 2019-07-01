@@ -368,7 +368,7 @@ class SassDashboardView(TemplateView):
             ).distinct())
 
         river_catchments = self.location_site.location_context_group_values(
-            'water_group'
+            'river_catchment_areas_group'
         )
         river_catchments = self.ordering_catchment_data(river_catchments)
         context['river_catchments'] = json.dumps(river_catchments)
@@ -387,9 +387,24 @@ class SassDashboardView(TemplateView):
                 'geomorphological_group'
             ))
         )
+        refined_geomorphological = '-'
+        if self.location_site.refined_geomorphological:
+            refined_geomorphological = (
+                self.location_site.refined_geomorphological
+            )
+        context['refined_geomorphological'] = refined_geomorphological
+        context['original_geomorphological'] = (
+            self.location_site.original_geomorphological
+        )
+
         context['eco_geo'] = (
             json.dumps(self.location_site.location_context_group_values(
                 'eco_geo_group'
+            ))
+        )
+        context['wma'] = (
+            json.dumps(self.location_site.location_context_group_values(
+                'water_management_area'
             ))
         )
 

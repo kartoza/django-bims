@@ -44,6 +44,9 @@
             const riverEcoregionGroup = {% if eco_geo %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
             const geomorphologicalGroup = {% if eco_geo %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
             const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
+            const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
+            const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
+            const originalGeomorphologicalZone = '{{ original_geomorphological }}';
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"

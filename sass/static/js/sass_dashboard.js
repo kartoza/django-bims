@@ -661,11 +661,11 @@ function onDownloadMapClicked(e) {
 function renderLocationContextTable() {
     let $table = $('.sass-summary tbody');
     let tableData = {
-        'Geomorphological zones': '-',
+        'Geomorphological zone': '-',
+        'Refined Geomorphological zone': refinedGeomorphologicalZone,
         'Province': '-',
         'Water Management Area': '-',
         'Sub Water Management Area': '-',
-        'River Management Unit': '-',
         'Primary Catchment': '-',
         'Secondary Catchment': '-',
         'Tertiary Catchment': '-',
@@ -674,10 +674,16 @@ function renderLocationContextTable() {
         'National Critical Biodiversity': '-',
     };
     try {
-        tableData['Geomorphological zones'] = geomorphologicalGroup['geo_class_recoded']['value'];
+        tableData['Geomorphological zone'] = geomorphologicalGroup['geo_class_recoded']['value'];
         tableData['SA Ecoregion'] = riverEcoregionGroup['eco_region_1']['value'];
         tableData['National Critical Biodiversity'] = ecoGeoGroup['national_cba']['value'];
+        tableData['Sub Water Management Area'] = waterManagementAreaGroup['sub_wmas']['value'];
+        tableData['Water Management Area'] = waterManagementAreaGroup['water_management_area']['value'];
     } catch (e) {
+    }
+
+    if (originalGeomorphologicalZone) {
+        tableData['Geomorphological zone'] = originalGeomorphologicalZone;
     }
 
     if (politicalBoundary) {
@@ -692,7 +698,6 @@ function renderLocationContextTable() {
             tableData['Primary Catchment'] = riverCatchments['primary_catchment_area']['value'];
             tableData['Secondary Catchment'] = riverCatchments['secondary_catchment_area']['value'];
             tableData['Tertiary Catchment'] = riverCatchments['tertiary_catchment_area']['value'];
-            tableData['Water Management Area'] = riverCatchments['water_management_area']['value'];
             tableData['Quaternary Catchment'] = riverCatchments['quaternary_catchment_area']['value'];
         } catch (e) {
         }

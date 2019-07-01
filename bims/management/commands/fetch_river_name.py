@@ -1,6 +1,6 @@
 # coding=utf-8
 """Get river name for location sites"""
-
+import ast
 from django.core.management.base import BaseCommand
 from bims.models.location_site import (
     LocationSite,
@@ -23,9 +23,18 @@ class Command(BaseCommand):
             dest='location_site_id',
             default=None,
             help='Id of location site')
+        parser.add_argument(
+            '-a',
+            '--allocate-site-code',
+            dest='allocate_site_code',
+            default=None,
+            help='Allocate site code')
 
     def handle(self, *args, **options):
         location_site_id = options.get('location_site_id')
+        allocate_site_code = ast.literal_eval(
+            options.get('allocate_site_code', 'True')
+        )
         if location_site_id:
             location_sites = LocationSite.objects.filter(id=location_site_id)
         else:
@@ -51,7 +60,8 @@ class Command(BaseCommand):
             location_site.save()
 
             # Allocate site code
-            allocate_site_codes_from_river(
-                update_site_code=True,
-                location_id=location_site.id
-            )
+            if allocate_site_code:
+                allocate_site_codes_from_river(
+                    update_site_code=True,
+                    location_id=location_site.id
+                )
