@@ -1,5 +1,6 @@
 let map = null;
 let markerSource = null;
+let clickMapCoordinate = false;
 
 $('#site-form').validate();
 
@@ -10,7 +11,44 @@ $(function () {
         zoom: 5
     });
 
+    let handleRotateNorth = function handleRotateNorth (e) {
+        e.preventDefault();
+        let olButton = $(e.target).parent();
+        if (olButton.hasClass('ol-control-selected')) {
+            olButton.removeClass('ol-control-selected');
+            clickMapCoordinate = false;
+        } else {
+            olButton.addClass('ol-control-selected');
+            clickMapCoordinate = true;
+        }
+        map.getView().setRotation(0);
+    };
+
+    let customControl = function(opt_options) {
+        var options = opt_options || {};
+
+        var button = document.createElement('button');
+        button.innerHTML = '<i class="fa fa-map-pin" aria-hidden="true"></i>';
+
+        var element = document.createElement('div');
+        button.setAttribute('data-toggle', 'popover');
+        button.setAttribute('data-placement', 'left');
+        button.setAttribute('data-trigger', 'hover');
+
+        element.appendChild(button);
+
+        element.className = 'custom-control ol-unselectable ol-control';
+        ol.control.Control.call(this, {
+            element: element
+        });
+        button.addEventListener('click', handleRotateNorth, false);
+    };
+    ol.inherits(customControl, ol.control.Control);
+
     map = new ol.Map({
+        controls: ol.control.defaults().extend([
+          new customControl
+        ]),
         target: 'site-map',
         layers: [
             new ol.layer.Tile({
@@ -19,6 +57,20 @@ $(function () {
         ],
         view: mapView
     });
+
+    map.on('click', function (e) {
+        if (!clickMapCoordinate) {
+            return false;
+        }
+        let coords = ol.proj.toLonLat(e.coordinate);
+        let lat = coords[1];
+        let lon = coords[0];
+        $('#latitude').val(lat);
+        $('#longitude').val(lon);
+        updateCoordinate();
+    });
+
+    $('[data-toggle="popover"]').popover();
 
     let biodiversityLayersOptions = {
         url: geoserverPublicUrl + 'wms',
@@ -114,6 +166,10 @@ let fetchGeomorphologicalZone = (e) => {
 };
 
 let updateCoordinateHandler = (e) => {
+    updateCoordinate();
+};
+
+let updateCoordinate = function () {
     let latitude = $('#latitude').val();
     let longitude = $('#longitude').val();
     let tableBody = $('#closest-site-table-body');
@@ -173,8 +229,10 @@ let moveMarkerOnTheMap = (lat, lon) => {
     });
     markerSource.clear();
     markerSource.addFeature(iconFeature);
-    map.getView().setCenter(locationSiteCoordinate);
-    map.getView().setZoom(6);
+    if (!clickMapCoordinate) {
+        map.getView().setCenter(locationSiteCoordinate);
+        map.getView().setZoom(6);
+    }
 };
 
 let addMarkerToMap = (lat, lon) => {
@@ -186,7 +244,7 @@ let addMarkerToMap = (lat, lon) => {
         'EPSG:3857');
     let markerStyle = new ol.style.Style({
         image: new ol.style.Icon(({
-            anchor: [0.5, 46],
+            anchor: [0.55, 43],
             anchorXUnits: 'fraction',
             anchorYUnits: 'pixels',
             opacity: 0.75,
@@ -201,8 +259,10 @@ let addMarkerToMap = (lat, lon) => {
         source: markerSource,
         style: markerStyle,
     }));
-    map.getView().setCenter(locationSiteCoordinate);
-    map.getView().setZoom(6);
+    if (!clickMapCoordinate) {
+        map.getView().setCenter(locationSiteCoordinate);
+        map.getView().setZoom(6);
+    }
     if (allowToEdit) {
         document.getElementById('update-site-code').disabled = false;
         document.getElementById('fetch-geomorphological-zone').disabled = false;
