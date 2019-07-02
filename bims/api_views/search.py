@@ -438,14 +438,17 @@ class Search(object):
                 all_children = self.get_all_taxa_children(taxa)
                 group_source_collection = group.source_collection
                 if all_children:
+                    all_children_ids = list(all_children.values_list(
+                        'id', flat=True
+                    ))
                     if group_source_collection:
                         group_filters = Q(
-                            taxonomy__in=all_children,
+                            taxonomy__in=all_children_ids,
                             source_collection=group_source_collection
                         )
                     else:
                         group_filters = Q(
-                            taxonomy__in=all_children
+                            taxonomy__in=all_children_ids
                         )
                 if group_filters:
                     if taxon_group_filter is None:

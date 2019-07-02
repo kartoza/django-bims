@@ -220,9 +220,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
                     // Set origin
                     var origin_block_data = {};
-                    if (data['origin'] !== 'Native') {
-                        data['origin'] = 'Non-Native';
-                    }
                     origin_block_data['value'] = data['origin'];
                     origin_block_data['keys'] = ['Native', 'Non-Native'];
                     origin_block_data['value_title'] = data['origin'];

@@ -51,6 +51,15 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     sass_version = 5
     site_code = ''
     read_only = False
+    source_collection = None
+
+    def __init__(self, *args, **kwargs):
+        super(SassFormView, self).__init__(*args, **kwargs)
+        taxon_groups = TaxonGroup.objects.filter(
+            name__icontains='Inverterbrates'
+        )
+        if taxon_groups.exists():
+            self.source_collection = taxon_groups[0].source_collection
 
     def test_func(self):
         if self.request.user.is_anonymous:
@@ -157,7 +166,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                             taxonomy=sass_taxon.taxon,
                             original_species_name=
                             sass_taxon.taxon.canonical_name,
-                            validated=True
+                            validated=True,
+                            source_collection=self.source_collection
                         )
                     )
                 except SiteVisitTaxon.MultipleObjectsReturned:
@@ -167,6 +177,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                         sass_taxon=sass_taxon,
                         taxonomy=sass_taxon.taxon,
                         original_species_name=sass_taxon.taxon.canonical_name,
+                    )
+                    site_visit_taxa.update(
+                        source_collection=self.source_collection
                     )
                     site_visit_taxon = site_visit_taxa[0]
                     created = False
