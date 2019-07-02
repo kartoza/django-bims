@@ -21,9 +21,8 @@ class BiologicalCollectionRecord(
     AbstractValidation, DocumentLinksMixin):
     """Biological collection model."""
     CATEGORY_CHOICES = (
-        ('alien', 'Alien'),
+        ('alien', 'Non-Native'),
         ('indigenous', 'Native'),
-        ('translocated', 'Extralimital')
     )
 
     HABITAT_CHOICES = (

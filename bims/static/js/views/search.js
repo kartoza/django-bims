@@ -630,10 +630,8 @@ define([
             let button = $(e.target);
             if (button.hasClass('selected')) {
                 $('#alien').prop('checked', true);
-                $('#translocated').prop('checked', true);
             } else {
                 $('#alien').prop('checked', false);
-                $('#translocated').prop('checked', false);
             }
         },
         clearClickedOriginButton: function () {
