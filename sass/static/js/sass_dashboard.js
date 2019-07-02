@@ -363,7 +363,10 @@ function renderBiotopeRatingsChart() {
         'Aquatic vegetation': '#375822',
         'Gravel': '#4E7F31',
         'Sand': '#BE9001',
-        'Silt/mud/clay': '#bdbe0d'
+        'Silt/mud/clay': '#bdbe0d',
+        'Bedrock': '#8D2641',
+        'Marginal vegetation in current (MVIC)': '#B77282',
+        'Marginal vegetation out of current (MVOC)': '#18A090'
     };
 
     $.each(dateLabels, function (index, date) {
