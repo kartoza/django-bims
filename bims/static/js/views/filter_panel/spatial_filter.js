@@ -168,6 +168,12 @@ define([
                              '</div>');
                 $container.append(header);
                 header.after(self.renderSpatialChildren(spatialData['children']));
+                if (spatialData['name'] === 'Critical Biodiversity Area (CBA)') {
+                    header.next().prepend('<div class="coming-soon-filter">Coming soon! The National and Provincial ' +
+                        'Critical Biodiversity Area (CBA) and ' +
+                        'the National Ecological Support Area (ESA) ' +
+                        'layers will be included in Version 3.</div>')
+                }
                 header.click();
             });
         },

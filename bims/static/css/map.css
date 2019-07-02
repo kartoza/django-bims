@@ -2683,3 +2683,14 @@ div:hover::-webkit-scrollbar {
 .filter-panel-selected {
     background-color: rgba(232, 226, 81, 0.29) !important;
 }
+
+.coming-soon-filter {
+    margin-left: -15px !important;
+    margin-right: -15px !important;
+    margin-top: -5px !important;
+    margin-bottom: 5px;
+    padding: 5px;
+    background-color: #E6E188;
+    font-size: 9pt;
+    font-style: italic;
+}
