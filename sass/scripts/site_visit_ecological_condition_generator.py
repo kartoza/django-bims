@@ -90,12 +90,29 @@ def generate_site_visit_ecological_condition(site_visits):
         sass_ecological_conditions = (
             SassEcologicalCondition.objects.filter(
                 ecoregion_level_1__icontains=eco_region.strip(),
-                geomorphological_zone__icontains=geo_class.strip()
+                geomorphological_zone__icontains=geo_class.strip(),
+                sass_score_precentile__isnull=False,
+                aspt_score_precentile__isnull=False
             )
         )
 
+        if not sass_ecological_conditions.exists():
+            # Check combined
+            sass_ecological_conditions = (
+                SassEcologicalCondition.objects.filter(
+                    ecoregion_level_1__icontains=eco_region.strip(),
+                    geomorphological_zone__icontains='combined',
+                    sass_score_precentile__isnull=False,
+                    aspt_score_precentile__isnull=False
+                )
+            )
         found_ecological_condition = False
         for sass_ecological_condition in sass_ecological_conditions:
+            if (
+                    not sass_ecological_condition.sass_score_precentile and
+                    not sass_ecological_condition.aspt_score_precentile
+            ):
+                continue
             if (
                     sass_score >
                     sass_ecological_condition.sass_score_precentile or

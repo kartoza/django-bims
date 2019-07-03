@@ -23,6 +23,7 @@ class SassDashboardView(TemplateView):
     template_name = 'sass_dashboard_single_site.html'
     location_site = LocationSite.objects.none()
     site_visit_taxa = SiteVisitTaxon.objects.none()
+    use_combined_geo = False
 
     def get_site_visit_taxon(self):
         filters = self.request.GET.dict()
@@ -278,6 +279,7 @@ class SassDashboardView(TemplateView):
                     ecoregion_level_1__icontains=eco_region,
                     geomorphological_zone__icontains=geo_class
                 )
+            self.use_combined_geo = use_combined_geo
 
             ecological_conditions = ecological_conditions.annotate(
                 ecological_name=F('ecological_category__name'),
@@ -387,6 +389,7 @@ class SassDashboardView(TemplateView):
                 'geomorphological_group'
             ))
         )
+        context['use_combined_geo'] = self.use_combined_geo
         refined_geomorphological = '-'
         if self.location_site.refined_geomorphological:
             refined_geomorphological = (

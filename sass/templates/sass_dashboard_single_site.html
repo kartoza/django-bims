@@ -47,6 +47,7 @@
             const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
             const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
             const originalGeomorphologicalZone = '{{ original_geomorphological }}';
+            const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
