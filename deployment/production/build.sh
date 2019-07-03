@@ -9,7 +9,7 @@ if [ -z "$IMAGE_NAME" ]; then
 fi
 
 if [ -z "$TAG_NAME" ]; then
-	TAG_NAME=latest
+	TAG_NAME=v2.1
 fi
 
 if [ -z "$BUILD_ARGS" ]; then
