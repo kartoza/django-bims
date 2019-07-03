@@ -459,8 +459,12 @@ function createEcologicalScatterDataset(colour, label, data) {
 
 function renderEcologicalCategoryChart() {
     let header = $('.ecological-chart-header');
+    let geoName = geomorphologicalGroup['geo_class']['value'];
+    if (useCombinedGeo) {
+        geoName = 'Combine';
+    }
     try {
-        let headerLabel = `${riverEcoregionGroup['eco_region_1']['value']} - ${geomorphologicalGroup['geo_class']['value']}`;
+        let headerLabel = `${riverEcoregionGroup['eco_region_1']['value']} - ${geoName}`;
         header.html(headerLabel);
     } catch (e) {
     }
