@@ -138,6 +138,7 @@ class BiologicalCollectionRecord(
         help_text='Collection record uuid',
         max_length=200,
         null=True,
+        blank=True
     )
 
     additional_data = JSONField(
@@ -197,6 +198,19 @@ class BiologicalCollectionRecord(
             ).exists():
                 collection_uuid = uuid.uuid4()
             self.uuid = collection_uuid
+
+        # Try to get category if empty
+        if not self.category:
+            bio_with_category = BiologicalCollectionRecord.objects.filter(
+                taxonomy__canonical_name__icontains=
+                self.taxonomy.canonical_name,
+                category__isnull=False
+            )
+            if bio_with_category.exists():
+                self.category = bio_with_category[0].category
+
+        if not self.original_species_name:
+            self.original_species_name = self.taxonomy.canonical_name
 
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 
