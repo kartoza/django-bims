@@ -54,7 +54,7 @@ def process_spatial_scale_data(location_context_data, group=None):
                     name=context_group['name'],
                     parent=group
                 ))
-            spatial_scale, spatial_created = (
+            try:
                 SpatialScale.objects.get_or_create(
                     group=spatial_scale_group,
                     key=context_group['key'],
@@ -62,7 +62,18 @@ def process_spatial_scale_data(location_context_data, group=None):
                     type=spatial_type,
                     query=spatial_query
                 )
-            )
+            except SpatialScale.MultipleObjectsReturned:
+                # shouldn't be happen
+                spatial_scales = SpatialScale.objects.filter(
+                    group=spatial_scale_group,
+                    key=context_group['key'],
+                    name=context_group['name'],
+                    type=spatial_type,
+                    query=spatial_query
+                )
+                SpatialScale.objects.filter(
+                    id__in=spatial_scales.values_list('id', flat=True)[1:]
+                ).delete()
         else:
             spatial_scale_group, created = (
                 SpatialScaleGroup.objects.get_or_create(
