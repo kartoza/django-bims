@@ -39,13 +39,16 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         updateCurrentSpeciesSearchResult: function (newList) {
             this.currentSpeciesSearchResult = newList;
         },
-        show: function (id, name, zoomToObject) {
+        show: function (id, name, zoomToObject, addMarker) {
             this.originLegends = {};
             this.endemismLegends = {};
             this.consStatusLegends = {};
             this.siteId = id;
             this.siteName = name;
             this.zoomToObject = zoomToObject;
+            if (typeof addMarker === 'undefined') {
+                this.addMarker = true;
+            }
             this.parameters = filterParameters;
             this.parameters['siteId'] = id;
             filterParameters = $.extend(true, {}, this.parameters);

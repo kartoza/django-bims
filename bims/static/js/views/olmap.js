@@ -214,6 +214,14 @@ define([
                             self.getCurrentZoom() + 2
                         );
                     } else if (count === 1) {
+
+                        // Check if the feature is single location site marker
+                        if (features[0]['id'].includes('location_site_view')) {
+                            // Get location site id
+                            var siteId = features[0]['id'].split('.')[1];
+                            Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
+                        }
+
                         let url = '';
                         if (Shared.CurrentState.SEARCH) {
                             filterParameters['siteId'] = '';
@@ -222,22 +230,37 @@ define([
                             url = '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10'
                         }
 
+                        self.showMarkerAndRightPanel(features[0]);
+
                         $.ajax({
                             url: url,
                             success: function (data) {
                                 if (self.uploadDataState) {
                                     self.mapControlPanel.showUploadDataModal(lon, lat, data[0]);
                                 } else if (data.length > 0) {
-                                    Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code']);
+                                    Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code'], false, false);
                                 }
                             }
                         });
                     } else {
-                        self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, e.coordinate);
+                        // Check if the feature is single location site marker
+                        if (features[0]['id'].includes('location_site_view')) {
+                            // Get location site id
+                            Shared.Dispatcher.trigger('siteDetail:show', features[0]['id'].split('.')[1], '');
+                        } else {
+                            self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, e.coordinate);
+                        }
                     }
                 }
             });
-
+        },
+        showMarkerAndRightPanel: function (feature) {
+            var _feature = new ol.format.GeoJSON().readFeatures(feature, {
+                featureProjection: 'EPSG:4326'
+            });
+            this.switchHighlight(_feature, true);
+            Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
+            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i> Loading...');
         },
         showFeature: function (features, lon, lat, coordinate) {
             let featuresClickedResponseData = [];
