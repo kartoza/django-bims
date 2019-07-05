@@ -78,7 +78,7 @@ class LocationSiteOverviewData(object):
                 taxonomy__in=taxa_children_ids
             )
             group_records_id = list(group_records.values_list('id', flat=True))
-            if group_records_id:
+            if group_records_id and not self.is_sass_exist:
                 self.is_sass_exist = SiteVisitTaxon.objects.filter(
                     id__in=group_records_id).exists()
 
