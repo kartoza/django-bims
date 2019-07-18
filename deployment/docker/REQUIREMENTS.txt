@@ -60,3 +60,4 @@ git+https://github.com/dimasciput/pandas_access.git
 selenium==3.12.0
 matplotlib==2.2.4
 django-admin-rangefilter==0.4.0
+django-preferences

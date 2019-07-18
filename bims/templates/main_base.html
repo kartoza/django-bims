@@ -25,12 +25,34 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', '{{ GOOGLE_ANALYTIC_KEY }}');
+        const isSiteNoticeAvailable = {% if preferences.SiteSetting.site_notice %}true{% else %}false{% endif %};
     </script>
 
+    <script src="{% static 'js/non_requirejs/cookies.js' %}"></script>
+    <script src="{% static 'js/non_requirejs/site_notice.js' %}"></script>
     {% block head %} {% endblock %}
 
 </head>
 <body id="page-top">
+<!-- Modal -->
+<div class="modal fade" id="siteNoticeModal" tabindex="-1" role="dialog" aria-labelledby="siteNoticeModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="siteNoticeModalLabel">Site Notice</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {{ preferences.SiteSetting.site_notice|urlize|linebreaks }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% block navigation %}
     <!-- Navigation -->

@@ -60,6 +60,7 @@ INSTALLED_APPS += (
     'crispy_forms',
     'sass',
     'rangefilter',
+    'preferences',
 )
 
 if os.environ.get('RAVEN_CONFIG_DSN'):
@@ -94,6 +95,7 @@ try:
         'bims.context_processor.bims_preferences',
         'bims.context_processor.application_name',
         'bims.context_processor.site_ready',
+        'preferences.context_processors.preferences_cp',
     ]
 except KeyError:
     TEMPLATES = [
