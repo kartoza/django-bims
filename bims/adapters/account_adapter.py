@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from geonode.people.adapters import LocalAccountAdapter
+from bims.models import Profile
 
 
 class AccountAdapter(LocalAccountAdapter):
@@ -28,12 +29,17 @@ class AccountAdapter(LocalAccountAdapter):
         staffs = get_user_model().objects.filter(is_superuser=True)
         try:
             current_site = Site.objects.get_current()
+            profile = Profile.objects.get(user=user)
             ctx = {
                 'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'organization': user.organization,
                 'user_id': user.id,
                 'current_site': current_site,
                 'site_name': current_site.name,
                 'email': user.email,
+                'role': profile.get_role_display(),
                 'inviter': user,
             }
             email_template = 'pinax/notifications/account_created'
