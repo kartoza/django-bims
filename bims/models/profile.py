@@ -11,7 +11,13 @@ from django.core.exceptions import ValidationError
 
 
 class Profile(models.Model):
-
+    ROLE_CHOICES = (
+        ('water_resource_manager', 'Water Resource Manager'),
+        ('researcher', 'Researcher'),
+        ('consultant', 'Consultant'),
+        ('conservation_planner', 'Conservation Planner'),
+        ('citizen', 'Citizen'),
+    )
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -49,6 +55,12 @@ class Profile(models.Model):
     )
     hide_bims_info = models.BooleanField(
         default=False
+    )
+    role = models.CharField(
+        max_length=100,
+        choices=ROLE_CHOICES,
+        blank=True,
+        null=True,
     )
 
     def is_accredited(self):

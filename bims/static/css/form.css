@@ -27,7 +27,7 @@
     position: relative;
 }
 
-.custom-form-container input[type=text], input[type=password], input[type=email]{
+.custom-form-container input[type=text], input[type=password], input[type=email], select{
     height: 44px;
     font-size: 16px;
     width: 100%;

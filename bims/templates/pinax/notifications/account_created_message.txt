@@ -1,6 +1,12 @@
 {% load i18n %}
 You have received the following notice from {{ current_site }}:
 
-{% trans "A new user has been created with username" %} : ({{ username }})
+{% trans "A new user has been created " %} :
+
+Email : {{ email }}
+Username : {{ username }}
+Full name : {{ first_name }} {{ last_name }}
+Organization / Institution : {{ organization }}
+Role : {{ role }}
 
 {% trans "Activate this user by following this link" %}: http://{{ current_site }}/admin/people/profile/{{ user_id }}/change/
