@@ -6,6 +6,7 @@ from pygments import highlight
 from pygments.lexers.data import JsonLexer
 from pygments.formatters.html import HtmlFormatter
 from rangefilter.filter import DateRangeFilter
+from preferences.admin import PreferencesAdmin
 
 from django.contrib.admin import SimpleListFilter
 from django import forms
@@ -60,7 +61,8 @@ from bims.models import (
     SpatialScale,
     SpatialScaleGroup,
     SamplingMethod,
-    SiteImage
+    SiteImage,
+    SiteSetting
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -687,6 +689,7 @@ admin.site.register(SpatialScale, SpatialScaleAdmin)
 admin.site.register(SpatialScaleGroup, SpatialScaleGroupAdmin)
 admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SiteImage, SiteImageAdmin)
+admin.site.register(SiteSetting, PreferencesAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

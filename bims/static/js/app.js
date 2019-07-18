@@ -136,5 +136,7 @@ require([
             }
             $('#general-info-modal').fadeOut();
         });
+
+        showSiteNotice();
     });
 });

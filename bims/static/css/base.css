@@ -264,3 +264,11 @@ h6 {
     padding-right: 30px !important;
     text-transform: capitalize;
 }
+
+#siteNoticeModal {
+    line-height: 1.5;
+}
+
+#siteNoticeModal .close span {
+    font-size: 20pt !important;
+}
