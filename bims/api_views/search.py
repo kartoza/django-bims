@@ -2,10 +2,13 @@ from datetime import date
 import json
 import operator
 import hashlib
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Value
+from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
+from geonode.people.models import Profile
 from bims.models import (
     BiologicalCollectionRecord,
     Boundary,
@@ -312,8 +315,6 @@ class Search(object):
             filters['collection_date__range'] = self.year_ranges
         if self.months:
             filters['collection_date__month__in'] = self.months
-        if self.collector:
-            filters['collector__in'] = self.collector
         if self.reference:
             filters['reference__in'] = self.reference
         if self.conservation_status:
@@ -346,7 +347,6 @@ class Search(object):
                 )
                 if len(boundary) == 0:
                     break
-                print(len(boundary))
                 geometry_found = boundary[0].geometry
             if geometry_found:
                 filters['site__boundary__in'] = boundary
@@ -358,6 +358,16 @@ class Search(object):
                     'ecological_condition__category__in']
             ) = self.ecological_category
         bio = bio.filter(**filters)
+
+        if self.collector:
+            assessors = Profile.objects.annotate(
+                full_name=Concat('first_name', Value(' '), 'last_name')
+            ).filter(full_name__in=self.collector)
+            bio = bio.filter(
+                Q(collector__in=self.collector) |
+                Q(sitevisittaxon__site_visit__assessor__in=list(
+                    assessors.values_list('id', flat=True)))
+            )
 
         if self.reference_category:
             clauses = (
