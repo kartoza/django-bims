@@ -33,9 +33,12 @@
         <div class="logo hide-logo pull-right"><img width="50"
                                                     src="{% static 'img/bims-stamp.png' %}">
         </div>
-        <h2 class="dashboard-title">SASS Dashboard Multiple Sites
-
-            <span id="current_page"></span><span id="total_pages"></span></h2>
+        <div class="dashboard-title">
+            <h2> SASS Dashboard Multiple Sites
+                <span id="current_page"></span><span id="total_pages"></span>
+            </h2>
+            <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
 
         <nav aria-label="Page navigation example">
             <ul class="pagination">
@@ -230,5 +233,6 @@
     <script src="{% static "js/utils/filter_list.js" %}"></script>
     <script src="{% static "js/ecological_chart.js" %}"></script>
     <script src="{% static "js/sass_dashboard_multiple.js" %}"></script>
+    <script src="{% static "js/sass_dashboard_close.js" %}"></script>
 
 {% endblock %}

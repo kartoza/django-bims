@@ -45,6 +45,23 @@ body {
 
 .dashboard-title {
     border-bottom: 3px solid #1b900d;
+    margin-bottom: 10px;
+}
+
+.dashboard-close {
+    float: right;
+    margin-top: -40px;
+    font-size: 20pt;
+    background-color: #526B43;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #ffffff;
+}
+
+.dashboard-close:hover {
+    cursor: pointer;
+    color: #526B43;
+    background-color: #ffffff;
 }
 
 .table-title, .chart-title {
