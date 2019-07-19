@@ -7,10 +7,15 @@ from django.utils import timezone
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
 from geonode.people.models import Profile
 from bims.models.location_site import (
@@ -264,7 +269,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             except ValueError:
                 pass
 
-        if not sass_id and site_id:
+        new_site_visit = not sass_id and site_id
+        if new_site_visit:
             site_visit = SiteVisit.objects.create(
                 owner=self.request.user,
                 location_site_id=site_id
@@ -296,6 +302,34 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             site_visit,
             self.request.POST,
             date)
+
+        # Send email to superusers
+        if new_site_visit:
+            ctx = {
+                'owner': self.request.user,
+                'assessor': site_visit.assessor,
+                'sass_version': site_visit.sass_version,
+                'site_visit_date': site_visit.site_visit_date.strftime(
+                    '%m/%d/%Y'),
+                'site_visit_id': site_visit.id,
+                'current_site': Site.objects.get_current()
+            }
+            staffs = get_user_model().objects.filter(is_superuser=True)
+            email_template = 'notifications/sass_created'
+            subject = render_to_string(
+                '{0}_subject.txt'.format(email_template),
+                ctx
+            )
+            email_body = render_to_string(
+                '{0}_message.txt'.format(email_template),
+                ctx
+            )
+            msg = EmailMultiAlternatives(
+                subject,
+                email_body,
+                settings.DEFAULT_FROM_EMAIL,
+                list(staffs.values_list('email', flat=True)))
+            msg.send()
 
         signals.post_save.connect(
             location_site_post_save_handler,

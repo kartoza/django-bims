@@ -1,0 +1,11 @@
+{% load i18n %}
+You have received the following notice from {{ current_site }}:
+
+{% trans "A new SASS data has been created " %} :
+
+Creator : {{ owner.username }}
+Assessor :{% if assessor %} {{ assessor.first_name }} {{ assessor.last_name }} ({{ assessor.username }}) {% else %} - {% endif %}
+SASS Version : {{ sass_version }}
+Site Visit Date : {{ site_visit_date }}
+
+{% trans "You can see the data by following this link" %}: http://{{ current_site }}/sass/view/{{ site_visit_id }}/
