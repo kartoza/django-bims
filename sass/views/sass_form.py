@@ -204,14 +204,11 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
         if updated_site_visit_taxon:
             deleted_site_visit_taxon = SiteVisitTaxon.objects.filter(
-                site=site_visit.location_site,
                 site_visit=site_visit,
-                collection_date=date
             ).exclude(id__in=updated_site_visit_taxon)
             deleted_site_visit_biotope_taxon = (
                 SiteVisitBiotopeTaxon.objects.filter(
                     site_visit=site_visit,
-                    date=date
                 ).exclude(id__in=updated_site_visit_biotope_taxon)
             )
             deleted_site_visit_biotope_taxon.delete()

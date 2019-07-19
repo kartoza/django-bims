@@ -1,3 +1,5 @@
+const allowedInput = ['D', 'C', 'B', 'A', '1'];
+
 $('#submitBtn').click(function () {
 });
 
@@ -46,7 +48,6 @@ function calculateTaxa(bio, bioObject, totalTaxaNumber, totalTaxaScore) {
 
 function getGreatestRowValue(row) {
     let greatest = '';
-    let allowedInput = ['D', 'C', 'B', 'A', '1'];
     $.each(row.find('td'), function (index, td) {
         let input = $($(td).find('input')[0]);
         if (input.hasClass('rating-input') && !input.hasClass('total-rating')) {
