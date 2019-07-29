@@ -354,7 +354,11 @@ function renderBiotopeRatingsChart(data) {
                     beginAtZero: true,
                 },
                 gridLines: {},
-                stacked: true
+                stacked: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Biotope rating'
+                }
             }],
             yAxes: [{
                 barPercentage: 1,
