@@ -17,6 +17,10 @@ let ecologicalChartOptions = {
             ticks: {
                 suggestedMin: 0,
                 suggestedMax: 10
+            },
+            scaleLabel: {
+                display: true,
+                labelString: 'ASPT'
             }
         }],
         xAxes: [{
@@ -26,6 +30,10 @@ let ecologicalChartOptions = {
             ticks: {
                 suggestedMin: 0,
                 suggestedMax: 200
+            },
+            scaleLabel: {
+                display: true,
+                labelString: 'SASS Score'
             }
         }]
     },
