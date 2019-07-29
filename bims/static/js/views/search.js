@@ -598,14 +598,24 @@ define([
         },
         handleEndemicDropdown: function (e) {
             e.stopPropagation();
-            var endemicValue = $(e.target).data('endemic-value');
-            var inputCheckbox = $(e.target).find('input');
+            var target = $(e.target);
+            if (target.hasClass('endemic-checkbox')) {
+                if (target.is(':checked')) {
+                    target.prop('checked', false);
+                } else {
+                    target.prop('checked', true);
+                }
+                target = target.parent();
+            }
+            var endemicValue = target.data('endemic-value');
+            var inputCheckbox = target.find('input');
 
             if (endemicValue === 'all-endemic') {
                 if (inputCheckbox.is(":checked")) {
                     inputCheckbox.prop('checked', false);
+                    target.parent().find('.endemic-checkbox').prop('checked', false);
                 } else {
-                    $(e.target).parent().find('.endemic-checkbox').prop('checked', true);
+                    target.parent().find('.endemic-checkbox').prop('checked', true);
                     inputCheckbox.prop('checked', true);
                 }
             } else {
