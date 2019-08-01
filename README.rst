@@ -14,10 +14,6 @@ The latest source code is available at http://github.com/kartoza/django-bims.
 Project Activity
 ----------------
 
-|ready| |inprogress|
-
-|throughput_graph|
-
 * Current test status master: |test_status_master| 
 
 * Current test status develop: |test_status_develop| 
@@ -105,9 +101,6 @@ Thank you to the individual contributors who have helped to build HealthyRivers:
 .. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
 .. _docker: http://docker.com
 .. _project setup guide: deployment/ansible/README.md
-.. |ready| image:: https://badge.waffle.io/kartoza/django-bims.svg?label=ready&title=Ready
-.. |inprogress| image:: https://badge.waffle.io/kartoza/django-bims.svg?label=in%20progress&title=In%20Progress
-.. |throughput_graph| image:: https://graphs.waffle.io/kartoza/django-bims/throughput.svg
 .. |test_status_master| image:: https://travis-ci.org/kartoza/django-bims.svg?branch=master
 .. |test_status_develop| image:: https://travis-ci.org/kartoza/django-bims.svg?branch=develop
 .. |nbsp| unicode:: 0xA0
