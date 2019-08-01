@@ -81,13 +81,6 @@ The keys are:
 
 
 
-Generating boundaries
----------------------------
-Bims using boundaries for clustering. To generate it, do
-
-    make generate-boundaries
-
-
 Thank you
 _________
 
