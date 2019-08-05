@@ -219,7 +219,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
                 filter_history[filter_key] = filter_data
             except ValueError:
                 filter_history[filter_key] = filter_value
-        spatial_filters = filters['spatialFilter']
+        spatial_filters = filters.get('spatialFilter', None)
         if spatial_filters:
             spatial_filters = json.loads(spatial_filters)
             spatial_scales = SpatialScale.objects.filter(
@@ -230,7 +230,11 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         return filter_history
 
     def get_accredited(self, obj):
-        if obj['accredited']:
+        site_visit = SiteVisit.objects.get(id=obj['sass_id'])
+        assessor = site_visit.assessor
+        if not assessor:
+            return 'N'
+        if assessor.bims_profile.is_accredited():
             return 'Y'
         else:
             return 'N'
