@@ -1,3 +1,4 @@
+import re
 from dateutil.parser import parse
 from django.db.models import Case, When, F, Q, signals
 from django.views.generic import TemplateView, View
@@ -360,8 +361,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             biotope_rate = -1
             if biotope_data.name in biotope_fractions:
                 biotope_rate = biotope_fractions[biotope_data.name]
+            # Remove abbreviations
+            biotope_data_name = re.sub(r'\([^)]*\)', '', biotope_data.name)
             biotope_form_list.append({
-                'name': biotope_data.name,
+                'name': biotope_data_name,
                 'rate': biotope_rate
             })
         return biotope_form_list
