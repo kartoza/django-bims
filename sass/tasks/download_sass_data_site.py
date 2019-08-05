@@ -106,8 +106,6 @@ def download_sass_summary_data_task(filename, filters, path_file):
                 ),
                 site_id=F('site_visit__location_site__id'),
                 assessor=F('site_visit__assessor__username'),
-                accredited=F('site_visit__assessor__'
-                             'bims_profile__sass_accredited'),
                 sass_version=F('site_visit__sass_version'),
                 site_description=F(
                     'site_visit__location_site__site_description'),
