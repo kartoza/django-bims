@@ -198,6 +198,7 @@ $(document).ready(function () {
         },
         select: function (e, u) {
             e.preventDefault();
+            $('#accredited').prop("checked", false);
             $('#assessor').val(u.item.label);
             $('#assessor_id').val(u.item.value);
         }

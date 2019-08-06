@@ -74,6 +74,33 @@ class Profile(models.Model):
         if self.sass_accredited_date_to > date.today():
             return True
 
+    def accredit(
+            self,
+            date_accredit_from=None,
+            date_accredit_to=None):
+        """
+        Accredit user
+        :param date_accredit_from: accredited user start date
+        :param date_accredit_to: accredited user end date
+        """
+        if not date_accredit_to:
+            self.sass_accredited_date_to = date(date.today().year, 12, 31)
+        else:
+            if date_accredit_to <= date.today():
+                self.sass_accredited_date_to = date(date.today().year, 12, 31)
+            else:
+                self.sass_accredited_date_to = date_accredit_to
+        if self.sass_accredited_date_from:
+            # If we already have accreditation start date, no need to update it
+            self.save()
+            return
+
+        if not date_accredit_from:
+            self.sass_accredited_date_from = date(date.today().year, 1, 1)
+        else:
+            self.sass_accredited_date_from = date_accredit_from
+        self.save()
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

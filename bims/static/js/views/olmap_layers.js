@@ -122,7 +122,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     viewparams: 'where:' + defaultWMSSiteParameters
                 },
                 ratio: 1,
-                serverType: 'geoserver'
+                serverType: 'geoserver',
+                transition: 0
             };
             self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
             self.biodiversityTileLayer = new ol.layer.Tile({

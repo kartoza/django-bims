@@ -23,6 +23,7 @@ from bims.models.location_site import (
     LocationSite,
     location_site_post_save_handler
 )
+from bims.models.profile import Profile as BimsProfile
 from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
 from bims.models.data_source import DataSource
@@ -87,6 +88,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 'name', 'id'
             ))
         for biotope_key, biotope_id in biotope_list.iteritems():
+            biotope_key = re.sub(r'\([^)]*\)', '', biotope_key)
             biotope_value = post_dictionary.get(biotope_key, None)
             try:
                 if biotope_value:
@@ -230,6 +232,13 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 assessor = Profile.objects.get(id=int(assessor_id))
             except Profile.DoesNotExist:
                 pass
+
+        # Accredited
+        accredited = request.POST.get('accredited', False) == 'on'
+        if accredited and assessor:
+            bims_profile = BimsProfile.objects.get(user=assessor)
+            if not bims_profile.is_accredited():
+                bims_profile.accredit()
 
         # Date
         date_string = request.POST.get('date', None)
@@ -517,6 +526,10 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             context['is_update'] = True
             context['site_visit_id'] = self.site_visit.id
             context['assessor'] = self.site_visit.assessor
+            if self.site_visit.assessor:
+                bims_profile = BimsProfile.objects.get(
+                    user=self.site_visit.assessor)
+                context['accredited'] = bims_profile.is_accredited()
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
             context['owner'] = self.site_visit.owner
