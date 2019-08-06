@@ -55,6 +55,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
                 layerType = layerName;
             }
+            if (layerName === 'Sites') {
+                layerType = layerName;
+            }
 
             var savedLayerVisibility = Shared.StorageUtil.getItemDict(layerType, 'selected');
 
@@ -121,8 +124,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 ratio: 1,
                 serverType: 'geoserver'
             };
-            self.biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
-            self.biodiversityTileLayer = new ol.layer.Image({
+            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
+            self.biodiversityTileLayer = new ol.layer.Tile({
                 source: self.biodiversitySource
             });
             self.initLayer(
@@ -185,6 +188,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 biodiversityOrder = 0;
             }
             self.orders[0] = 'Sites';
+            self.addBiodiveristyLayersToMap(map);
+            self.renderLayers(false);
 
             $.ajax({
                 type: 'GET',
@@ -260,7 +265,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     let administrativeOrder = self.administrativeOrder + 1;
                     self.orders[administrativeOrder] = self.administrativeKeyword;
 
-                    self.addBiodiveristyLayersToMap(map);
                     self.addAdministrativeLayerToMap(data);
                     // Render available layers first because fetching layer from geonode takes time
                     self.renderLayers(true);
