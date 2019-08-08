@@ -33,8 +33,13 @@ class CollectorList(APIView):
             ).order_by('collector')
         )
         all_users = list(assessors) + list(collectors)
+        all_users = list(set(all_users))
         all_users.sort()
+        user_index = 0
+        if len(all_users) > 0:
+            while all_users[user_index] == ' ':
+                user_index += 1
         return HttpResponse(
-            json.dumps(all_users),
+            json.dumps(all_users[user_index:]),
             content_type='application/json'
         )
