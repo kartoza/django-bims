@@ -1,7 +1,31 @@
 let map = null;
 let markerSource = null;
 
-$('#site-form').validate();
+let validator = $('#site-form').validate({
+    submitHandler: function(form) {
+        let siteCode = $('#site_code').val();
+        // Check length
+        if (siteCode.length !== 12) {
+            showSiteCodeError();
+            return false;
+        }
+        console.log('here');
+        // Check regex
+        let regex = /(\w{6})-(\w{5})/g;
+        let regexResult = regex.test(siteCode);
+        if (!regexResult) {
+            showSiteCodeError();
+            return false;
+        }
+        form.submit();
+    }
+});
+
+let showSiteCodeError = function () {
+    validator.showErrors({
+        site_code: 'Invalid Site Code format'
+    });
+};
 
 $(function () {
     let southAfrica = [2910598.850835484, -3326258.3640110902];
