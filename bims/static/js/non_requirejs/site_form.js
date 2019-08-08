@@ -9,7 +9,6 @@ let validator = $('#site-form').validate({
             showSiteCodeError();
             return false;
         }
-        console.log('here');
         // Check regex
         let regex = /(\w{6})-(\w{5})/g;
         let regexResult = regex.test(siteCode);
