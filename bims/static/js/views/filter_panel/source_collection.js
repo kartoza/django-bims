@@ -48,6 +48,12 @@ define([
                     '</div>');
             }
         },
+        updateChecked: function () {
+            let self = this;
+            $.each(this.parent.initialSelectedSourceCollection, function (index, sourceCollection) {
+                self.listWrapper.find(':input[value="'+sourceCollection+'"]').prop('checked', true);
+            });
+        },
         getSelected: function () {
             var selected = [];
             this.$el.find('input:checked').each(function () {
