@@ -16,7 +16,7 @@
     <script type="text/javascript">
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
-        const defaultWMSSiteParameters = '{{ bims_preferences.default_location_site_cluster }}';
+        const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const locationSiteLat = '{{ location_site_lat }}';
         const locationSiteLong = '{{ location_site_long }}';
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};

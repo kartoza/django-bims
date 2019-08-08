@@ -487,11 +487,11 @@ define([
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
-            Shared.Router.clearSearch();
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
             this.searchInput.val('');
             $('.clear-filter').click();
+            Shared.Router.clearSearch();
             $('.map-search-result').hide();
             this.searchPanel.clearSidePanel();
             this.clearClickedOriginButton();
@@ -656,7 +656,7 @@ define([
                 this.searchClick();
             }
         },
-        filtersUpdated: function (filters) {
+        filtersUpdated: function (filters, firstCall=true) {
             var self = this;
             var allFilters = {};
 
@@ -713,6 +713,9 @@ define([
             self.initialSelectedSourceCollection = [];
             if (allFilters.hasOwnProperty('sourceCollection')) {
                 self.initialSelectedSourceCollection = JSON.parse(allFilters['sourceCollection']);
+                if (!firstCall) {
+                    self.sourceCollectionView.updateChecked();
+                }
             }
 
             // Date

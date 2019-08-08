@@ -362,10 +362,6 @@ BIMS_PREFERENCES = {
         'GEOSERVER_LOCATION_SITE_LAYER',
         ''
     ),
-    'default_location_site_cluster': os.environ.get(
-        'DEFAULT_LOCATION_SITE_CLUSTER',
-        'default_location_site_cluster'
-    ),
     'empty_location_site_cluster': os.environ.get(
         'EMPTY_LOCATION_SITE_CLUSTER',
         'empty_location_site_cluster'

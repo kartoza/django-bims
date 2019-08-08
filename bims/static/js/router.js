@@ -37,9 +37,14 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             }
         },
         initialize: function () {
+            let self = this;
+            this.defaultFiltersExist = false;
+            this.defaultFiltersParam = '';
             this.initializeParameters();
+            this.defaultSelectedFilters = JSON.parse(mapDefaultSelectedFilters);
             this.map = new olmap();
             this.eventsConnector = new EventsConnector();
+
         },
         search: function (query) {
             var searchControl = $('.search-control');
@@ -76,8 +81,26 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
         },
         clearSearch: function () {
             this.navigate('', false);
+            this.toMap();
         },
         toMap: function () {
+            var self = this;
+
+            if (!this.defaultFiltersParam) {
+                $.each(this.defaultSelectedFilters, function (index, selectedFilter) {
+                    if (self.parameters.hasOwnProperty(selectedFilter['filter_key'])) {
+                        self.parameters[selectedFilter['filter_key']] = JSON.stringify(selectedFilter['filter_values']);
+                        self.defaultFiltersExist = true;
+                    }
+                });
+            }
+            if (this.defaultFiltersExist && !this.defaultFiltersParam) {
+                this.defaultFiltersParam = $.param(self.parameters);
+            }
+            if (this.defaultFiltersParam) {
+                Shared.Dispatcher.trigger('filters:updateFilters', this.defaultFiltersParam, false);
+            }
+
             Shared.Dispatcher.trigger('map:closeDetailedDashboard');
         },
         updateUrl: function (url, trigger) {
