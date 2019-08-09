@@ -3,11 +3,6 @@
 {% load i18n %}
 
 {% block title %} {{ block.super }} {% endblock %}
-{% block header %}
-    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
-    <link href="{% static "css/navbar_geonode.css" %}" rel="stylesheet">
-    {% include 'navigation_bar.html' %}
-{% endblock %}
 
 {% block body_class %}documents{% endblock %}
 
