@@ -5,6 +5,16 @@ $('#submitBtn').click(function () {
 
 $('#submit').click(function () {
     let submitButton = $('#submit');
+    let dateValue = $('#date').val();
+    let $frontendAlert = $('.frontend-alert');
+    $frontendAlert.hide();
+    if (!dateValue) {
+        $('#cancel-submit').click();
+        $frontendAlert.html('Missing date value').show();
+        $('html, body').animate({
+            scrollTop: 0}, 500);
+        return false;
+    }
     submitButton.addClass('disabled');
     let submitMessage = submitButton.data('message');
     if (submitMessage) {

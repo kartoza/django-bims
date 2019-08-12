@@ -22,6 +22,8 @@
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
+        <div class="alert alert-danger frontend-alert" style="display: none;" role="alert">
+        </div>
         {% if alert %}
         <div class="alert alert-success" role="alert">
             {{ alert | safe }}
