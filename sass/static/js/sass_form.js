@@ -139,6 +139,41 @@ function checkRatingScale(row, deleted) {
     checkRatingScalePrevRow(row, previousRow, deleted);
 }
 
+function userInputAutocomplete (inputIdName) {
+    $('#'+inputIdName).autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                type: 'get',
+                dataType: 'json',
+                success: function (data) {
+                    response($.map(data, function (item) {
+                        return {
+                            label: item.first_name + ' ' + item.last_name,
+                            value: item.id
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 2,
+        open: function (event, ui) {
+            setTimeout(function () {
+                $('.ui-autocomplete').css('z-index', 99);
+            }, 0);
+        },
+        change: function(event,ui){
+            $(this).val((ui.item ? ui.item.label : ""));
+        },
+        select: function (e, u) {
+            e.preventDefault();
+            $('#accredited').prop("checked", false);
+            $('#' + inputIdName).val(u.item.label);
+            $('#' + inputIdName + '_id').val(u.item.value);
+        }
+    });
+}
+
 $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
@@ -174,35 +209,9 @@ $(document).ready(function () {
         changeYear: true
     });
     $('#time').timepicker({'timeFormat': 'H:i'});
-    $('#assessor').autocomplete({
-        source: function (request, response) {
-            $.ajax({
-                url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
-                type: 'get',
-                dataType: 'json',
-                success: function (data) {
-                    response($.map(data, function (item) {
-                        return {
-                            label: item.first_name + ' ' + item.last_name,
-                            value: item.id
-                        }
-                    }));
-                }
-            });
-        },
-        minLength: 2,
-        open: function (event, ui) {
-            setTimeout(function () {
-                $('.ui-autocomplete').css('z-index', 99);
-            }, 0);
-        },
-        select: function (e, u) {
-            e.preventDefault();
-            $('#accredited').prop("checked", false);
-            $('#assessor').val(u.item.label);
-            $('#assessor_id').val(u.item.value);
-        }
-    });
+
+    self.userInputAutocomplete('assessor');
+    self.userInputAutocomplete('collector');
 
     let $ratingInput = $('.rating-input');
     $ratingInput.on('keypress', function (e) {

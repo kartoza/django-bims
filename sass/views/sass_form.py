@@ -77,7 +77,9 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         if not sass_id:
             return True
         return SiteVisit.objects.filter(
-            Q(owner=self.request.user) | Q(assessor=self.request.user),
+            Q(owner=self.request.user) |
+            Q(assessor=self.request.user) |
+            Q(collector=self.request.user),
             id=sass_id,).exists()
 
     def get_biotope_fractions(self, post_dictionary):
@@ -200,7 +202,6 @@ class SassFormView(UserPassesTestMixin, TemplateView):
 
                 if created:
                     site_visit.owner = self.request.user
-                    site_visit.collector = self.request.user.username
                     clear_finished_search_process()
 
                 site_visit_taxon.save()
@@ -230,6 +231,15 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         if assessor_id:
             try:
                 assessor = Profile.objects.get(id=int(assessor_id))
+            except Profile.DoesNotExist:
+                pass
+
+        # Collector
+        collector_id = request.POST.get('collector', None)
+        collector = None
+        if collector_id:
+            try:
+                collector = Profile.objects.get(id=int(collector_id))
             except Profile.DoesNotExist:
                 pass
 
@@ -296,6 +306,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
         site_visit.site_visit_date = date
         site_visit.time = datetime
         site_visit.assessor = assessor
+        site_visit.collector = collector
         site_visit.sass_version = self.sass_version
         site_visit.data_source = data_source
         site_visit.comments_or_observations = request.POST.get(
@@ -526,6 +537,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             context['is_update'] = True
             context['site_visit_id'] = self.site_visit.id
             context['assessor'] = self.site_visit.assessor
+            context['collector'] = self.site_visit.collector
             if self.site_visit.assessor:
                 bims_profile = BimsProfile.objects.get(
                     user=self.site_visit.assessor)
