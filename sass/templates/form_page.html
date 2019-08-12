@@ -22,13 +22,15 @@
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
+        <div class="alert alert-danger frontend-alert" style="display: none;" role="alert">
+        </div>
         {% if alert %}
         <div class="alert alert-success" role="alert">
             {{ alert | safe }}
         </div>
         {% endif %}
         {% if is_update %}
-            <h2>Update SASS record</h2>
+            <h2>Update SASS record </h2>
         {% else %}
             <h2>Add SASS record</h2>
         {% endif %}
@@ -76,8 +78,13 @@
             </div>
             <div class="col-lg-3">
                 <div class="form-group">
-                    <label for="date" class="input-label">Date :</label>
-                    <input type="text" class="form-control" id="date" name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} >
+                    <label for="date" class="input-label">Date (required) :</label>
+                    <input type="text" class="form-control" id="date" required name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} >
+                </div>
+                 <div class="form-group">
+                    <label for="assessor" class="input-label">Collector :</label>
+                    <input type="text" class="form-control" id="collector" {% if collector %} value="{{ collector.first_name }} {{ collector.last_name }}" {% endif %} >
+                    <input type="hidden" id="collector_id" name="collector" {% if collector %} value="{{ collector.id }}" {% endif %}>
                 </div>
                 <div class="form-group">
                     <label for="assessor" class="input-label">Assessor :</label>

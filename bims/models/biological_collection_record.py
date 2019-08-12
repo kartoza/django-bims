@@ -59,7 +59,17 @@ class BiologicalCollectionRecord(
         max_length=300,
         blank=True,
         default='',
+        help_text='Collector name in string value, this is useful for '
+                  'collector values from GBIF and other third party sources',
         verbose_name='collector or observer',
+    )
+    collector_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        help_text='The user object of the actual capturer/collector '
+                  'of this data',
+        null=True,
+        blank=True,
+        related_name='%(class)s_collector_user'
     )
     notes = models.TextField(
         blank=True,

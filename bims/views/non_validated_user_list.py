@@ -1,6 +1,7 @@
 # coding=utf-8
 from braces.views import LoginRequiredMixin
 from django.views.generic import ListView
+from django.db.models import Q
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 
@@ -42,9 +43,9 @@ class NonValidatedObjectsUserView(LoginRequiredMixin, ListView):
         if self.queryset is None:
             queryset = \
                 BiologicalCollectionRecord.objects.filter(
+                    Q(owner=user) | Q(collector_user=user),
                     validated=False,
-                    owner=user,
-                    taxonomy__isnull=False
+                    taxonomy__isnull=False,
                 ).order_by('-id')
             if filter_name is not None:
                 queryset = queryset.filter(

@@ -39,7 +39,8 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
             taxon_list = allowed_taxon.get(request.user)
             return (
                 self.object.owner == request.user or
-                self.object.taxonomy in taxon_list
+                self.object.taxonomy in taxon_list or
+                self.object.collector_user == request.user
             )
         return False
 

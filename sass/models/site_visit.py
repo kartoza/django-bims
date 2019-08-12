@@ -42,9 +42,18 @@ class SiteVisit(AbstractAdditionalData):
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        help_text='Creator/owner of this data from the web',
         null=True,
         blank=True,
         related_name='%(class)s_owner'
+    )
+
+    collector = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        help_text='Actual capturer/collector of this data',
+        null=True,
+        blank=True,
+        related_name='%(class)s_data_collector'
     )
 
     assessor = models.ForeignKey(
