@@ -100,6 +100,10 @@
                     <input type="text" class="form-control" name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} readonly>
                 </div>
                 <div class="form-group">
+                    <label for="assessor" class="input-label">Collector :</label>
+                    <input type="text" class="form-control" id="collector" {% if collector %} value="{{ collector.first_name }} {{ collector.last_name }}" {% endif %} readonly>
+                </div>
+                <div class="form-group">
                     <label for="assessor" class="input-label">Assessor :</label>
                     <input type="text" class="form-control" id="assessor" {% if assessor %} value="{{ assessor.first_name }} {{ assessor.last_name }}" {% endif %} readonly>
                 </div>

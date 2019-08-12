@@ -312,6 +312,14 @@ $(function () {
                 $('.ui-autocomplete').css('z-index', 99);
             }, 0);
         },
+        change: function (event, ui) {
+            let $collectorIdInput = $('#collector_id');
+            if (ui.item) {
+                $collectorIdInput.val(ui.item.value);
+            } else {
+                $collectorIdInput.val(' ');
+            }
+        },
         select: function (e, u) {
             e.preventDefault();
             $('#collector').val(u.item.label);

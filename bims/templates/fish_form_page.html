@@ -144,7 +144,7 @@
                        class="col-sm-2 col-form-label col-form-label required-text">Collector</label>
                 <div class="col-sm-10">
                     <input type="text" class="form-control form-control-sm"
-                           id="collector" placeholder="" name="collector" value="{% if user.first_name %} {{ user.first_name }} {% else %} {{ user.username }} {%  endif%}"
+                           id="collector" placeholder="" name="collector" value="{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{%endif%}"
                            required>
                     <div class="invalid-feedback">
                         Please provide a collector

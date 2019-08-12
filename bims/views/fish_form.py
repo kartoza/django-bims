@@ -1,6 +1,7 @@
 import json
 import logging
 from dateutil.parser import parse
+from django.contrib.auth import get_user_model
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
@@ -52,7 +53,7 @@ class FishFormView(TemplateView):
 
     def taxa_from_river_catchment(self):
         """
-        Get taxa from river_catchment
+        Get taxa from nearest river_catchment
         :return: list of taxa
         """
         river_catchment_value = None
@@ -166,6 +167,7 @@ class FishFormView(TemplateView):
     def post(self, request, *args, **kwargs):
         date_string = request.POST.get('date', None)
         collector = request.POST.get('collector', '')
+        collector_id = request.POST.get('collector_id', '').strip()
         biotope_id = request.POST.get('biotope', None)
         reference = request.POST.get('study_reference', '')
         reference_category = request.POST.get('reference_category', '')
@@ -186,6 +188,15 @@ class FishFormView(TemplateView):
         site_point = Point(
             float(longitude),
             float(latitude))
+
+        # If collector id exist then get the user object
+        collector_user = None
+        if collector_id:
+            try:
+                collector_user = get_user_model().objects.get(
+                    id=int(collector_id))
+            except get_user_model().DoesNotExist:
+                pass
 
         if site_name or site_code:
             location_type, created = LocationType.objects.get_or_create(
@@ -243,6 +254,7 @@ class FishFormView(TemplateView):
                             original_species_name=taxonomy.canonical_name,
                             site=self.location_site,
                             collector=collector,
+                            collector_user=collector_user,
                             sampling_method=sampling_method,
                             abundance_number=abundance,
                             owner=self.request.user,
