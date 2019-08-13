@@ -11,7 +11,12 @@ python manage.py gruntserver
 
 # Run collectstatic
 echo "Run collectstatic"
-python manage.py collectstatic --noinput -i geoexplorer
+python manage.py collectstatic --noinput
+
+# Run paver sync
+echo "Run paver sync"
+cd /usr/src/geonode
+paver sync
 
 # Run as bash entrypoint
 exec "$@"
