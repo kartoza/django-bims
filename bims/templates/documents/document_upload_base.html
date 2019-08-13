@@ -8,11 +8,6 @@
 {% block title %} {{ block.super }} {% endblock %}
 
 {% block body_class %}documents{% endblock %}
-{% block header %}
-    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
-    <link href="{% static "css/navbar_geonode.css" %}" rel="stylesheet">
-    {% include 'navigation_bar.html' %}
-{% endblock %}
 
 {% block body_outer %}
 <div class="page-header">
@@ -30,4 +25,3 @@
   {% block sidebar %}{% endblock sidebar %}
 </div>
 {% endblock body_outer %}
-{% block footer %}{% endblock %}

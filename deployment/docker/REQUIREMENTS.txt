@@ -5,7 +5,8 @@ django-model-utils==1.4.0
 django-pipeline==1.6.14
 django-role-permissions==2.2.0
 markdown==2.6.11
-celery==4.1.0
+celery==4.2.1
+kombu==4.6.3
 
 raven==6.10.0
 django-sentry==1.13.5
@@ -61,3 +62,5 @@ selenium==3.12.0
 matplotlib==2.2.4
 django-admin-rangefilter==0.4.0
 django-preferences==1.0.0
+django_extensions==2.2.1
+service-identity==18.1.0
