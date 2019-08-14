@@ -366,7 +366,7 @@ class Command(BaseCommand):
                 copy_tree(media_folder, media_root)
                 print "Media Files Restored into '"+media_root+"'."
 
-                call_command('collectstatic', interactive=False)
+                call_command('collectstatic', interactive=False, ignore=['geoexplorer', ])
 
                 # Cleanup DB
                 try:
