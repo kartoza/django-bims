@@ -134,7 +134,7 @@ collectstatic:
 	#We need to run collect static in the same context as the running
 	# uwsgi container it seems so I use docker exec here
 	# no -it flag so we can run over remote shell
-	@docker-compose ${ARGS} exec uwsgi python manage.py collectstatic --noinput ${CMD_ARGS}
+	@docker-compose ${ARGS} exec uwsgi python manage.py collectstatic --noinput ${CMD_ARGS} -i geoexplorer
 
 reload:
 	@echo
@@ -321,10 +321,9 @@ enable-machine:
 sync: up
 	@docker-compose ${ARGS} exec uwsgi python manage.py makemigrations --noinput --merge
 	@docker-compose ${ARGS} exec uwsgi paver sync
-	@docker-compose ${ARGS} exec uwsgi bash -c 'cd /usr/src/geonode; paver sync;'
 
 sync-geonode:
-	@docker-compose ${ARGS} exec uwsgi bash -c 'cd /usr/src/geonode; paver sync;'
+	@docker-compose ${ARGS} exec uwsgi paver sync
 
 sync-roles:
 	@echo
