@@ -3,23 +3,8 @@
 from operator import methodcaller
 
 from django import forms
-from django.core.validators import RegexValidator
 from django.utils.translation import ugettext_lazy as _
-
-
-DOI_REGEX = '(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?!["&\'<>])\S)+)'
-doi_validator = RegexValidator(
-    DOI_REGEX,
-    _("One (or more) DOI is not valid"),
-    'invalid'
-)
-
-PMID_REGEX = '^-?\d+\Z'
-pmid_validator = RegexValidator(
-    PMID_REGEX,
-    _("One (or more) PMID is not valid"),
-    'invalid'
-)
+from td_biblio.utils.format_validator import BibliographyFormatValidator
 
 
 def text_to_list(raw):
@@ -35,7 +20,6 @@ def text_to_list(raw):
 
 
 class EntryBatchImportForm(forms.Form):
-
     pmids = forms.CharField(
         label=_("PMID"),
         widget=forms.Textarea(
@@ -68,14 +52,14 @@ class EntryBatchImportForm(forms.Form):
         """Transform raw data in a PMID list"""
         pmids = text_to_list(self.cleaned_data['pmids'])
         for pmid in pmids:
-            pmid_validator(pmid)
+            BibliographyFormatValidator.pmid_format_validation(pmid)
         return pmids
 
     def clean_dois(self):
         """Transform raw data in a DOI list"""
         dois = text_to_list(self.cleaned_data['dois'])
         for doi in dois:
-            doi_validator(doi)
+            BibliographyFormatValidator.doi_format_validation(doi)
         return dois
 
     def clean(self):
@@ -86,4 +70,4 @@ class EntryBatchImportForm(forms.Form):
 
         if not len(dois) and not len(pmids):
             raise forms.ValidationError(
-                    _("You need to submit at least one valid DOI or PMID"))
+                _("You need to submit at least one valid DOI or PMID"))

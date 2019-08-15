@@ -23,7 +23,6 @@ from habanero import cn
 from td_biblio.exceptions import DOILoaderError, PMIDLoaderError
 from td_biblio.models import Author, Journal, Entry, AuthorEntryRank
 
-
 logger = logging.getLogger('td_biblio')
 
 
@@ -129,6 +128,15 @@ class BaseLoader(object):
 
         # Save or Update this entry
         entry, is_new = Entry.objects.get_or_create(**entry_fields)
+
+        # if created, assign the others fields from record
+        if is_new:
+            for attr, value in record.iteritems():
+                try:
+                    setattr(entry, attr, value)
+                except (ValueError, AttributeError):
+                    pass
+            entry.save()
 
         # Authors
         for rank, record_author in enumerate(record['authors']):
@@ -330,6 +338,11 @@ class DOILoader(BaseLoader):
             'is_partial_publication_date': is_partial_publication_date
         }
 
+        # optional fields
+        try:
+            record['doi'] = input['DOI']
+        except KeyError:
+            pass
         return record
 
     def load_records(self, DOIs=None):
