@@ -6,7 +6,9 @@ from td_biblio.views.bibliography import (
 from td_biblio.api_views.bibliography import GetBibliographyByDOI
 
 api_urls = [
-    url('^fetch/by-doi/$', GetBibliographyByDOI.as_view(), name='fetch-by-doi'),
+    url(
+        '^fetch/by-doi/$',
+        GetBibliographyByDOI.as_view(), name='fetch-by-doi'),
 ]
 
 urlpatterns = [
