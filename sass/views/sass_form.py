@@ -150,14 +150,29 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 biotope = Biotope.objects.get(
                     name=biotope_name
                 )
-                site_visit_biotope_taxon, status = (
-                    SiteVisitBiotopeTaxon.objects.get_or_create(
-                        site_visit=site_visit,
-                        sass_taxon=sass_taxon,
-                        taxon=sass_taxon.taxon,
-                        biotope=biotope,
+                try:
+                    site_visit_biotope_taxon, status = (
+                        SiteVisitBiotopeTaxon.objects.get_or_create(
+                            site_visit=site_visit,
+                            sass_taxon=sass_taxon,
+                            taxon=sass_taxon.taxon,
+                            biotope=biotope,
+                        )
                     )
-                )
+                except SiteVisitBiotopeTaxon.MultipleObjectsReturned:
+                    # There shouldn't be multiple objects returned,
+                    # but just in case, remove the new one
+                    site_visit_biotope_taxa = (
+                        SiteVisitBiotopeTaxon.objects.filter(
+                            site_visit=site_visit,
+                            sass_taxon=sass_taxon,
+                            taxon=sass_taxon.taxon,
+                            biotope=biotope,
+                        ).order_by('id')
+                    )
+                    for to_delete in site_visit_biotope_taxa[1:]:
+                        to_delete.delete()
+                    site_visit_biotope_taxon = site_visit_biotope_taxa[0]
                 updated_site_visit_biotope_taxon.append(
                     site_visit_biotope_taxon.id
                 )
