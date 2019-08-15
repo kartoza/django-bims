@@ -199,11 +199,11 @@ define([
                             let sassLink = '/sass/dashboard-multi-sites/' + self.currentFiltersUrl;
                             sassDashboardButton.attr('href', sassLink);
                         }
-                        dashboardHeader.html('Multiple Sites Dashboard');
+                        dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                     } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
-                        dashboardHeader.html('Single Site Dashboard');
+                        dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
                     }
 
                     renderFilterList($('#filter-history-table'));

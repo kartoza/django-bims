@@ -37,6 +37,7 @@ from bims.models.search_process import (
 from bims.api_views.search import Search
 from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
+from bims.models.taxon_group import TaxonGroup
 
 
 class LocationSiteList(APIView):
@@ -268,6 +269,13 @@ class LocationSitesSummary(APIView):
             'image', flat=True
         )
 
+        # Check module
+        modules = []
+        if 'modules' in filters:
+            modules = list(TaxonGroup.objects.filter(
+                id__in=filters['modules']
+            ).values_list('name', flat=True))
+
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
             self.SITE_DETAILS: dict(site_details),
@@ -277,6 +285,7 @@ class LocationSitesSummary(APIView):
             self.IUCN_NAME_LIST: self.iucn_category,
             self.ORIGIN_NAME_LIST: self.origin_name_list,
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
+            'modules': modules,
             'site_images': list(site_images),
             'process': search_process.process_id,
             'extent': search.extent(),
