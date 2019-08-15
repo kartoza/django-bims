@@ -1,4 +1,3 @@
-import sys
 from td_biblio.tests.model_factories import (
     AuthorF,
     JournalF,
@@ -39,7 +38,8 @@ class TestApiView(TestCase):
 
     def test_fetch_bibliography_by_doi_wrong_format(self):
         view = GetBibliographyByDOI.as_view()
-        request = self.factory.get('/bibliography/api/fetch/by-doi/?q=11.1111/GCCE.1111.1111111')
+        request = self.factory.get(
+            '/bibliography/api/fetch/by-doi/?q=11.1111/GCCE.1111.1111111')
         request.user = self.admin_user
         response = view(request)
         self.assertEqual(
@@ -48,7 +48,8 @@ class TestApiView(TestCase):
 
     def test_fetch_bibliography_by_doi(self):
         view = GetBibliographyByDOI.as_view()
-        request = self.factory.get('/bibliography/api/fetch/by-doi/?q=' + self.doi)
+        request = self.factory.get(
+            '/bibliography/api/fetch/by-doi/?q=' + self.doi)
         request.user = self.admin_user
         response = view(request)
         self.assertEqual(
