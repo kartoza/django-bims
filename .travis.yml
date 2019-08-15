@@ -39,7 +39,7 @@ install:
   - make setup-ansible ANSIBLE_ARGS="--extra-vars='pycharm_version=\"\"' --skip-tags=development"
   # show docker-compose.override.yml for debugging
   - cat deployment/docker-compose.override.yml
-  - make build
+  - make build-travis
   - make up-travis
   # Wait until database migrations ready
   - until make sync; do echo "Retrying"; sleep 5; done

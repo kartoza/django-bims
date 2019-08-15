@@ -82,6 +82,39 @@ services:
     extra_hosts:
       - 'localhost: 192.168.1.197'
 
+  uwsgi_travis:
+    build:
+      context: docker
+      dockerfile: Dockerfile-travis
+    hostname: uwsgi_travis
+    working_dir: /usr/src/app
+    entrypoint: []
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
+      - GEOCONTEXT_COLLECTION_KEY=climate
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+      - APP_NAME=bims
+    links:
+      - smtp:smtp
+      - db:db
+      - geoserver:geoserver
+      - worker:worker
+      - hub:hub
+    volumes:
+      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    restart: unless-stopped
+    user: root
+    extra_hosts:
+      - 'localhost: 192.168.1.197'
+
   worker:
     build:
       context: docker
@@ -142,6 +175,13 @@ services:
     hostname: nginx
     links:
       - uwsgi:uwsgi"
+    restart: unless-stopped
+
+  web_travis:
+    image: nginx
+    hostname: nginx
+    links:
+    - uwsgi:uwsgi-travis"
     restart: unless-stopped
 
   rabbitmq:

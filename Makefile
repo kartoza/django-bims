@@ -64,12 +64,19 @@ web:
 	@# We add --no-recreate so that it does not destroy & recreate the db container
 	@docker-compose ${ARGS} up --no-recreate --no-deps -d dbbackups
 
+build-travis:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Building in travis mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} build uwsgi_travis
+
 up-travis:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d web
+	@docker-compose ${ARGS} up -d web_travis
 	@docker-compose ${ARGS} up -d firefox
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
