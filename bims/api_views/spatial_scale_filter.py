@@ -77,8 +77,8 @@ class SpatialScaleFilterList(APIView):
     ])
 
     SPATIAL_GROUP_UPDATED_NAMES = {
-        'eco_region_1': 'Ecoregion Level 1',
-        'eco_region_2': 'Ecoregion Level 2'
+        'eco_region_1': 'SA Ecoregion Level 1',
+        'eco_region_2': 'SA Ecoregion Level 2'
     }
 
     def get_spatial_scale(self, spatial_scale_groups):
