@@ -38,6 +38,7 @@ from bims.api_views.search import Search
 from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 class LocationSiteList(APIView):
@@ -273,6 +274,7 @@ class LocationSitesSummary(APIView):
         modules = []
         if 'modules' in filters:
             modules = list(TaxonGroup.objects.filter(
+                category=TaxonomicGroupCategory.SPECIES_MODULE.name,
                 id__in=filters['modules']
             ).values_list('name', flat=True))
 
@@ -626,8 +628,8 @@ class LocationSitesSummary(APIView):
         except KeyError:
             freshwater_ecoregion = '-'
 
-        sa_ecoregions['Ecoregion Level 1'] = eco_region
-        sa_ecoregions['Ecoregion Level 2'] = eco_region_2
+        sa_ecoregions['SA Ecoregion Level 1'] = eco_region
+        sa_ecoregions['SA Ecoregion Level 2'] = eco_region_2
         sa_ecoregions['Freshwater Ecoregion'] = freshwater_ecoregion
         sa_ecoregions['Province'] = province
 
