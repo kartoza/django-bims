@@ -184,10 +184,15 @@ function userInputAutocomplete (inputIdName) {
     });
 }
 
+function closeSassForm(e) {
+    window.history.back();
+}
+
 $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
     let totalTaxaScore = $.extend({}, biotope_number);
+    $('.sass-form-close').click(closeSassForm);
 
     $.each(biotope_number, function (key, value) {
         calculateTaxa(key, totalTaxa, totalTaxaNumber, totalTaxaScore);

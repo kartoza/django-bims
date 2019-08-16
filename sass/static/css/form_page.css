@@ -105,3 +105,22 @@ td.sampled-name {
 .sass-score-row .taxon-name {
     font-size: 13pt;
 }
+
+.sass-form-close-container {
+    margin-bottom: 43px;
+}
+
+.sass-form-close {
+    float: right;
+    font-size: 20pt;
+    background-color: #526B43;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #ffffff;
+}
+
+.sass-form-close:hover {
+    cursor: pointer;
+    color: #526B43;
+    background-color: #ffffff;
+}
