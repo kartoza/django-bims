@@ -209,6 +209,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['update'] = True
         context_data['allow_to_edit'] = self.allow_to_edit()
         context_data['site_id'] = self.location_site.id
+        context_data['legacy_site_code'] = self.location_site.legacy_site_code
         if self.location_site.creator:
             context_data['username'] = self.location_site.creator.username
             context_data['user_id'] = self.location_site.creator.id
