@@ -11,6 +11,7 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-16.04
     steps:
+    - uses: actions/checkout@v1
     - name: Login to Docker Hub
       uses: actions/docker/login@master
       env:
