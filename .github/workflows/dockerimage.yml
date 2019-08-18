@@ -14,4 +14,4 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Build the Docker image
-      run: docker build . --file deployment/production/Dockerfile --tag dimasciput/kartoza-django-bims:latest
+      run: docker build --file deployment/production/Dockerfile deployment/production/ --tag dimasciput/kartoza-django-bims:latest
