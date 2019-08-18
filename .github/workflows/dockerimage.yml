@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-16.04
  
     steps:
-    - uses: actions/checkout@v1
-    - name: Build the Docker image
-      run: docker build --file deployment/production/Dockerfile deployment/production/ --tag dimasciput/kartoza-django-bims:latest
+    - uses: actions/docker/login@master
+    - name: Login to Docker hub
+      env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: docker login
