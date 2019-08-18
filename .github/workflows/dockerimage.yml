@@ -8,6 +8,7 @@ on:
 jobs:
 
   build:
+    name: Build and Push Docker Image
     runs-on: ubuntu-16.04
     steps:
     - name: Login to Docker Hub
@@ -17,12 +18,12 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   
   update-rancher:
+    name: Update Rancher Stacks
     needs: build
     runs-on: ubuntu-16.04
     steps:
     - name : Update rancher
       run: |
-        cd /
         git clone --depth 1 https://github.com/lucernae/rancher-api-helper.git
         cd rancher-api-helper
         pip install -r requirements.txt
