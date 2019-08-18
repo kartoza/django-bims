@@ -19,7 +19,7 @@ jobs:
       env: 
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      run: docker push dimasciput/kartoza-django-bims:latest
+    - run: docker push dimasciput/kartoza-django-bims:latest
   
   update-rancher:
     name: Update Rancher Stacks
