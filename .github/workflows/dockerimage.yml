@@ -13,3 +13,9 @@ jobs:
  
     steps:
     - uses: actions/docker/login@master
+      with: # Set the secret as an input
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      env: # Or as an environment variable
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
