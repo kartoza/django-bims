@@ -1,10 +1,9 @@
 name: Test Docker Image CI
 
-on: push
-
-push: 
-  branches:
-    - develop
+on: 
+  push: 
+    branches:
+      - develop
 
 jobs:
 
