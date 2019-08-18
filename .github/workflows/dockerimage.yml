@@ -1,4 +1,4 @@
-name: Test Docker Image CI
+name: Build and Push Docker Image
 
 on: 
   push: 
@@ -12,10 +12,4 @@ jobs:
     runs-on: ubuntu-16.04
  
     steps:
-    - uses: actions/checkout@v1
-    - name: Login to Docker hub
-      run: docker login -p ${{ secrets.DOCKER_PASSWORD }} -u ${{ secrets.DOCKER_USERNAME }}
-    - name: Build the Docker image
-      run: docker build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
-    - name: Push the Docker Image
-      run: docker push dimasciput/kartoza-django-bims:latest
+    - uses: actions/docker/login@master
