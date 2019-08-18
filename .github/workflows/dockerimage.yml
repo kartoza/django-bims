@@ -1,6 +1,6 @@
 name: Test Docker Image CI
 
-on: [push]
+on: push
 
 push: 
   branches:
