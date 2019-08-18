@@ -16,6 +16,10 @@ jobs:
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    - name: Build the Docker image
+      run: docker build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
+    - name: Push the Docker Image
+      run: docker push dimasciput/kartoza-django-bims:latest
   
   update-rancher:
     name: Update Rancher Stacks
