@@ -11,5 +11,5 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-16.04
     steps:
-      - uses: kartoza/kbims-healthyrivers@develop
+      - uses: kartoza/kbims-healthyrivers/.github/workflows@develop
       
