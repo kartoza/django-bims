@@ -18,7 +18,7 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     - name: Build the Docker image
-      users: actions/docker/cli@master
+      uses: actions/docker/cli@master
       env:
         args: build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
       # run: docker build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
