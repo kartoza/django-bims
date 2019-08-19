@@ -7,20 +7,27 @@ on:
 
 jobs:
         
-  update-rancher:
-    name: Update Rancher Stacks
+  build-freshwaterbiodiversity-image:
+    name: Build and Push Docker Freshwaterbiodiversity Image
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v1
+      with: 
+        repository: kartoza/kbims-healthyrivers
+        ref: master
+    - name: Login to Docker Hub
+      uses: actions/docker/login@master
+      env: 
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Build the Docker Freshwaterbiodiversity Image
+      working-directory: ../kbims-healthyrivers
+      uses: actions/docker/cli@master
       with:
-        repository: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REPO }}
-        ref: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REF }}
-    - uses: actions/setup-node@v1
-    - name: npm install, run node script
-      env:
-        rancherAccessKey: ${{ secrets.RANCHER_ACCESS_KEY }}
-        rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
-      working-directory: ../kartoza-rancher-scripts
-      run: |
-        npm install
-        ls
+        args: build deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
+    - name: Push the Docker Freshwaterbiodiversity Image
+      working-directory: ../kbims-healthyrivers
+      uses: actions/docker/cli@master
+      with:
+        args: push dimaciput/healthyrivers_uwsgi:latest
+        
