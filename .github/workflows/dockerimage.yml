@@ -23,7 +23,7 @@ jobs:
         args: build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
       # run: docker build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
     - name: Push the Docker Image
-    - run: docker push dimasciput/kartoza-django-bims:latest
+      run: docker push dimasciput/kartoza-django-bims:latest
   
   update-rancher:
     name: Update Rancher Stacks
