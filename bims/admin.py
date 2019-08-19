@@ -206,6 +206,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             pass
         obj.save()
 
+
 class IUCNStatusAdmin(admin.ModelAdmin):
     list_display = ('get_category_display', 'sensitive', 'iucn_colour')
 
