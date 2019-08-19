@@ -8,3 +8,17 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
 ]
 PIPELINE_ENABLED = False
 STATICFILES_STORAGE = 'pipeline.storage.NonPackagingPipelineStorage'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'gis',
+        'USER': 'docker',
+        'PASSWORD': 'docker',
+        'HOST': 'travis_db',
+        'PORT': 5432,
+        'TEST': {
+            'NAME': 'gis_test'
+        },
+    }
+}

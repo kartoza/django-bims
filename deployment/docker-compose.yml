@@ -44,6 +44,26 @@ services:
     volumes:
       - geoserver-data-dir:/geoserver_data/data
 
+  travis-db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - POSTGRES_USER=docker
+      - POSTGRES_PASS=docker
+    restart: unless-stopped
+    ports:
+      - "65432:5432"
+
+  travis:
+    image: kartoza/kbims_uwsgi:latest
+    restart: unless-stopped
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.travis_docker
+    depends_on:
+      - travis-db
+    links:
+      - travis-db:db
+
   bims_uwsgi:
     build:
       context: docker
