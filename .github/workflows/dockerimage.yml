@@ -18,8 +18,8 @@ jobs:
     - uses: actions/setup-node@v1
     - name: npm install, run script
       env:
-        rancherAccessKey: ${{ RANCHER_SECRET_KEY }}
-        rancherSecretKey: ${{ RANCHER_ACCESS_KEY }}
+        rancherAccessKey: ${{ secrets.RANCHER_SECRET_KEY }}
+        rancherSecretKey: ${{ secrets.RANCHER_ACCESS_KEY }}
       run: |
         cd kartoza-rancher-scripts
         npm install
