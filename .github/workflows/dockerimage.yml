@@ -8,6 +8,25 @@ on:
 jobs:
 
   build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: Login to Docker Hub
+      uses: actions/docker/login@master
+      env: 
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Build the Docker image
+      uses: actions/docker/cli@master
+      with:
+        args: build deployment/production/ --build-arg BIMS_TAG=develop --tag dimasciput/kartoza-django-bims:latest
+    - name: Push the Docker Image
+      uses: actions/docker/cli@master
+      with:
+        args: push dimasciput/kartoza-django-bims:latest
+  
+  update-rancher:
     name: Rancher Scripts
     runs-on: ubuntu-16.04
     steps:
@@ -16,7 +35,7 @@ jobs:
         repository: dimasciput/kartoza-rancher-scripts
         ref: testing.healthyrivers.kartoza.com
     - uses: actions/setup-node@v1
-    - name: npm install, run script
+    - name: npm install, run node script
       env:
         rancherAccessKey: ${{ secrets.RANCHER_ACCESS_KEY }}
         rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
@@ -24,4 +43,3 @@ jobs:
         cd ../kartoza-rancher-scripts
         npm install
         node rancher_scripts.js
-  
