@@ -99,8 +99,21 @@ class TestLocationSiteFormView(TestCase):
             self.post_data,
             follow=True
         )
+        # Test if user is the owner but not the creator
+        location_site_3 = LocationSiteF.create(
+            owner=user,
+            creator=None
+        )
+        post_data['id'] = location_site_3.id
+        post_request_3 = self.client.post(
+            '/location-site-form/update/?id={}'.format(location_site_3.id),
+            self.post_data,
+            follow=True
+        )
+
         self.assertEqual(post_request.status_code, 200)
         self.assertEqual(post_request_2.status_code, 404)
+        self.assertEqual(post_request_3.status_code, 200)
 
     def test_LocationSiteFormUpdateView_post_data(self):
         location_context_path = staticfiles_storage.path(
