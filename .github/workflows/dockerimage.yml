@@ -16,9 +16,9 @@ jobs:
         repository: kartoza/kbims-healthyrivers
         ref: master
         fetch-depth: 1
-        path: /home/kbims-healthyrivers/
+        path: home/kbims-healthyrivers/
     - name: Build the Docker Freshwaterbiodiversity Image
       uses: actions/docker/cli@master
       with:
-        args: build /home/kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
+        args: build ../home/kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
       
