@@ -20,7 +20,7 @@ jobs:
     - name: Build the Docker image
       uses: actions/docker/cli@master
       with:
-        args: build deployment/production/ --build-arg BIMS_TAG=develop --tag kartoza/kbims_uwsgi:latest
+        args: pull kartoza/kbims_uwsgi:latest
     - name: Run docker compose
       working-directory: deployment/
       run: docker-compose run travis
