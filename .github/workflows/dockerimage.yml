@@ -6,9 +6,29 @@ on:
       - develop
 
 jobs:
+
+  build:
+    name: Build and Push Docker Django BIMS Image
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: Login to Docker Hub
+      uses: actions/docker/login@master
+      env: 
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Build the Docker Django Bims Image
+      uses: actions/docker/cli@master
+      with:
+        args: build deployment/production/ --build-arg BIMS_TAG=${{ GITHUB_REF }} --tag ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+    - name: Push the Docker Django Bims Image
+      uses: actions/docker/cli@master
+      with:
+        args: push ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
         
   build-freshwaterbiodiversity-image:
     name: Build and Push Docker Freshwaterbiodiversity Image
+    needs: build
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v1
@@ -17,8 +37,37 @@ jobs:
         ref: master
         fetch-depth: 1
         path: django-bims/kbims-healthyrivers/
+    - name: Login to Docker Hub
+      uses: actions/docker/login@master
+      env: 
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     - name: Build the Docker Freshwaterbiodiversity Image
       uses: actions/docker/cli@master
       with:
-        args: build kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
-      
+        args: build kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag ${{ secrets.IMAGE_FRESHWATERBIODIVERSITY_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+    - name: Push the Docker Freshwaterbiodiversity Image
+      uses: actions/docker/cli@master
+      with:
+        args: push ${{ secrets.IMAGE_FRESHWATERBIODIVERSITY_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+
+  
+  update-freshwaterbiodiversity-rancher-stacks:
+    name: Update Rancher Stacks
+    needs: build-freshwaterbiodiversity-image
+    runs-on: ubuntu-16.04
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        repository: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REPO }}
+        ref: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REF }}
+    - uses: actions/setup-node@v1
+    - name: npm install, run node script
+      env:
+        rancherAccessKey: ${{ secrets.RANCHER_ACCESS_KEY }}
+        rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
+      working-directory: ../kartoza-rancher-scripts
+      run: |
+        cd ../kartoza-rancher-scripts
+        npm install
+        node rancher_scripts.js
