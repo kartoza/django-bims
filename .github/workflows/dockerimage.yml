@@ -21,12 +21,10 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     - name: Build the Docker Freshwaterbiodiversity Image
-      working-directory: ../kbims-healthyrivers
       uses: actions/docker/cli@master
       with:
-        args: build deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
+        args: build ../kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
     - name: Push the Docker Freshwaterbiodiversity Image
-      working-directory: ../kbims-healthyrivers
       uses: actions/docker/cli@master
       with:
         args: push dimaciput/healthyrivers_uwsgi:latest
