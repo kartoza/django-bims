@@ -23,7 +23,7 @@ jobs:
       run: |
         pwd
         ls
-        cd kartoza-rancher-scripts
+        cd ../kartoza-rancher-scripts
         npm install
         node rancher_scripts.js
   
