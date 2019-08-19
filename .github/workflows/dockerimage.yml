@@ -9,13 +9,12 @@ jobs:
         
   update-rancher:
     name: Update Rancher Stacks
-    needs: build
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@v1
       with:
-        repository: dimasciput/kartoza-rancher-scripts
-        ref: testing.healthyrivers.kartoza.com
+        repository: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REPO }}
+        ref: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REF }}
     - uses: actions/setup-node@v1
     - name: npm install, run node script
       env:
