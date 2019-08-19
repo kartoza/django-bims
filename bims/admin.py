@@ -120,6 +120,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
     raw_id_fields = ('river', )
+    list_display_links = ['name', 'site_code']
 
     actions = ['update_location_context', 'delete_location_context']
 
@@ -198,6 +199,12 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     location_context_prettified.short_description = 'Pretty Location Context'
 
+    def save_model(self, request, obj, form, change):
+        if not obj.creator:
+            obj.creator = request.user
+        if obj.owner and not request.user.is_superuser:
+            pass
+        obj.save()
 
 class IUCNStatusAdmin(admin.ModelAdmin):
     list_display = ('get_category_display', 'sensitive', 'iucn_colour')
