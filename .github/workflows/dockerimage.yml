@@ -20,7 +20,7 @@ jobs:
     - name: Build the Docker Django Bims Image
       uses: actions/docker/cli@master
       with:
-        args: build deployment/production/ --build-arg BIMS_TAG=${{ GITHUB_REF }} --tag ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+        args: build deployment/production/ --build-arg BIMS_TAG=${{ secrets.GITHUB_REF }} --tag ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
     - name: Push the Docker Django Bims Image
       uses: actions/docker/cli@master
       with:
