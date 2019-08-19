@@ -23,7 +23,7 @@ jobs:
     - name: Build the Docker Freshwaterbiodiversity Image
       uses: actions/docker/cli@master
       with:
-        args: build ../kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
+        args: build kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
     - name: Push the Docker Freshwaterbiodiversity Image
       uses: actions/docker/cli@master
       with:
