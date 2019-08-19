@@ -12,4 +12,6 @@ jobs:
     runs-on: ubuntu-16.04
     steps:
       - uses: kartoza/kbims-healthyrivers/.github/workflows@develop
+        env:
+          secrets: ${{ secrets }}
       
