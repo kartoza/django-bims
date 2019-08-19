@@ -15,4 +15,9 @@ jobs:
       with:
         repository: dimasciput/kartoza-rancher-scripts
         ref: testing.healthyrivers.kartoza.com
-        
+    - uses: actions/setup-node@v1
+    - name: npm install, run script
+      run: |
+        npm install
+        node rancher_scripts.js
+  
