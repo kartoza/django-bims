@@ -15,17 +15,10 @@ jobs:
       with: 
         repository: kartoza/kbims-healthyrivers
         ref: master
-    - name: Login to Docker Hub
-      uses: actions/docker/login@master
-      env: 
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        fetch-depth: 1
+        path: /kbims-healthyrivers/
     - name: Build the Docker Freshwaterbiodiversity Image
       uses: actions/docker/cli@master
       with:
-        args: build kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
-    - name: Push the Docker Freshwaterbiodiversity Image
-      uses: actions/docker/cli@master
-      with:
-        args: push dimaciput/healthyrivers_uwsgi:latest
-        
+        args: build /kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag dimaciput/healthyrivers_uwsgi:latest
+      
