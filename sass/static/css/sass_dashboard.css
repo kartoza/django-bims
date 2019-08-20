@@ -198,3 +198,10 @@ body {
     font-weight: bold;
     padding: 10px;
 }
+
+.ecological-legend-info {
+    font-size: 9pt;
+    margin-top: 5pt;
+    color: grey;
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

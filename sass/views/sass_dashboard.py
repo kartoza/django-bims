@@ -346,7 +346,10 @@ class SassDashboardView(TemplateView):
         if not site_description:
             site_description = self.location_site.name
         context['site_description'] = site_description
-        context['river'] = self.location_site.river.name
+        try:
+            context['river'] = self.location_site.river.name
+        except AttributeError:
+            context['river'] = '-'
 
         if not self.site_visit_taxa:
             context['sass_exists'] = False
