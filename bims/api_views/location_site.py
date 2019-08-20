@@ -1,4 +1,5 @@
 # coding=utf8
+import ast
 import json
 import os
 from django.contrib.gis.geos import Polygon
@@ -504,14 +505,13 @@ class LocationSitesSummary(APIView):
                 ['context_group_values']
                 ['geomorphological_group']
                 ['service_registry_values']
-                ['geo_class']
+                ['geo_class_recoded']
                 ['value'])
         except KeyError:
             geo_class = '-'
         try:
-            geo_zone = ('{geo_class} {eco_region}'.format(
-                geo_class=geo_class,
-                eco_region=eco_region))
+            geo_zone = ('{geo_class}'.format(
+                geo_class=geo_class))
         except KeyError:
             geo_zone = '-'
         overview['Geomorphological zone'] = geo_zone
@@ -689,13 +689,14 @@ class LocationSitesSummary(APIView):
     def get(self, request):
         filters = request.GET.dict()
         search_uri = request.build_absolute_uri()
+        use_cached = ast.literal_eval(filters.get('cached', 'True'))
 
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
             query=search_uri
         )
 
-        if search_process.file_path:
+        if search_process.file_path and use_cached:
             if os.path.exists(search_process.file_path):
                 try:
                     raw_data = open(search_process.file_path)
