@@ -12,7 +12,9 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import get_object_or_404
 
 from bims.utils.get_key import get_key
-from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
+from bims.enums.geomorphological_zone import (
+    GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
+)
 from bims.models import LocationSite, LocationType
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
@@ -41,7 +43,7 @@ class LocationSiteFormView(TemplateView):
         context['geoserver_public_location'] = get_key(
             'GEOSERVER_PUBLIC_LOCATION')
         context['geomorphological_zone_category'] = [
-            (g.name, g.value) for g in GeomorphologicalZoneCategory
+            (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
         context.update(self.additional_context_data())
         return context
