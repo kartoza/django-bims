@@ -52,9 +52,10 @@ class LocationSiteFormView(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        collector = request.POST.get('collector', None)
-        if not collector:
-            collector = None
+        owner = request.POST.get('owner', None)
+        site_id = request.POST.get('id', None)
+        if not owner:
+            owner = None
         latitude = request.POST.get('latitude', None)
         longitude = request.POST.get('longitude', None)
         refined_geomorphological_zone = request.POST.get(
@@ -92,17 +93,17 @@ class LocationSiteFormView(TemplateView):
                 self.geomorphological_group_geocontext
             )
 
-        if collector:
+        if owner:
             try:
-                collector = get_user_model().objects.get(
-                    id=collector
+                owner = get_user_model().objects.get(
+                    id=owner
                 )
             except get_user_model().DoesNotExist:
                 raise Http404('User does not exist')
 
         river, river_created = River.objects.get_or_create(
             name=river_name,
-            owner=collector
+            owner=owner
         )
 
         geometry_point = Point(longitude, latitude)
@@ -112,7 +113,7 @@ class LocationSiteFormView(TemplateView):
         )
 
         post_dict = {
-            'creator': collector,
+            'owner': owner,
             'latitude': latitude,
             'longitude': longitude,
             'river': river,
@@ -122,6 +123,20 @@ class LocationSiteFormView(TemplateView):
             'site_code': site_code,
             'location_context_document': geocontext_data
         }
+
+        if site_id and owner:
+            # Check if user is only owner but not the creator
+            # then user shouldn't be able to change the owner
+            try:
+                site_object = LocationSite.objects.get(id=site_id)
+                if (
+                        site_object.owner == request.user and
+                        not request.user.is_superuser and
+                        site_object.creator != request.user
+                ):
+                    del post_dict['owner']
+            except LocationSite.DoesNotExist:
+                pass
 
         location_site = self.update_or_create_location_site(
             post_dict
@@ -210,15 +225,18 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['allow_to_edit'] = self.allow_to_edit()
         context_data['site_id'] = self.location_site.id
         context_data['legacy_site_code'] = self.location_site.legacy_site_code
-        if self.location_site.creator:
-            context_data['username'] = self.location_site.creator.username
-            context_data['user_id'] = self.location_site.creator.id
+        if self.location_site.owner:
+            context_data['fullname'] = self.location_site.owner.get_full_name()
+            context_data['user_id'] = self.location_site.owner.id
         return context_data
 
     def allow_to_edit(self):
         """Check if user is allowed to update the data"""
         if self.request.user.is_superuser:
             return True
+        if self.location_site.owner:
+            if self.request.user.id == self.location_site.owner.id:
+                return True
         if self.location_site.creator:
             if self.request.user.id == self.location_site.creator.id:
                 return True
@@ -272,6 +290,9 @@ class LocationSiteFormDeleteView(UserPassesTestMixin, View):
             return False
         if self.location_site.creator:
             if self.request.user.id == self.location_site.creator.id:
+                return True
+        if self.location_site.owner:
+            if self.request.user.id == self.location_site.owner.id:
                 return True
         return False
 

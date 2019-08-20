@@ -136,6 +136,17 @@ class LocationSite(DocumentLinksMixin):
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.SET_NULL,
+        related_name='site_creator',
+        help_text='The creator of the site',
+        blank=True,
+        null=True,
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        related_name='site_owner',
+        help_text='The owner of the site',
         blank=True,
         null=True,
     )

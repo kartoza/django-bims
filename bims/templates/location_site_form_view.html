@@ -157,19 +157,21 @@
             </div>
             <div class="form-group row">
                 <label for="site_name"
-                       class="col-sm-2 col-form-label col-form-label">Collector
+                       class="col-sm-2 col-form-label col-form-label">Owner
                     </label>
                 <div class="col-sm-10">
                     <input type="text"
                            class="form-control form-control-sm"
-                           placeholder="" value="{{ username }}" disabled>
-                    <input type="hidden" name="collector" value="{{ user_id }}">
+                           placeholder="" value="{{ fullname }}" id="owner" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} >
+                    <input type="hidden" name="owner" id="owner_id" value="{{ user_id }}">
                 </div>
             </div>
             <div class="form-group submit-holder">
                 {% if update %}
-                    <input class="btn btn-success submit-button" type="submit" value="SAVE" {% if not allow_to_edit %}disabled{% endif %}>
-                    <input type="button" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger" value="DELETE">
+                    {% if allow_to_edit %}
+                        <input class="btn btn-success submit-button" type="submit" value="SAVE">
+                        <input type="button" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger" value="DELETE">
+                    {% endif %}
                 {% else %}
                     <input class="btn btn-success submit-button" type="submit" value="ADD">
                 {% endif %}
