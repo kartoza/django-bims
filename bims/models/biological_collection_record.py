@@ -15,6 +15,7 @@ from bims.utils.gbif import update_collection_record
 from bims.models.validation import AbstractValidation
 from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.taxonomy import Taxonomy
+from bims.models.source_reference import SourceReference
 
 
 class BiologicalCollectionRecord(
@@ -163,6 +164,13 @@ class BiologicalCollectionRecord(
 
     biotope = models.ForeignKey(
         'bims.Biotope',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
+    source_reference = models.ForeignKey(
+        SourceReference,
         null=True,
         blank=True,
         on_delete=models.SET_NULL
