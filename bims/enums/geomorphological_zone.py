@@ -16,3 +16,17 @@ class GeomorphologicalZoneCategory(Enum):
     REJUVENATED_BEDROCK_FALL_CASCADES = 'Rejuvenated bedrock fall / cascades'
     REJUVENATED_FOOTHILL = 'Rejunevated foothill'
     UPLAND_FLOODPLAIN = 'Upland floodplain'
+
+
+GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER = [
+    GeomorphologicalZoneCategory.SOURCE_ZONE,
+    GeomorphologicalZoneCategory.MOUNTAIN_HEADWATER_STREAM,
+    GeomorphologicalZoneCategory.MOUNTAIN_STREAM,
+    GeomorphologicalZoneCategory.TRANSITIONAL,
+    GeomorphologicalZoneCategory.UPPER_FOOTHILL,
+    GeomorphologicalZoneCategory.LOWER_FOOTHILL,
+    GeomorphologicalZoneCategory.LOWLAND_RIVER,
+    GeomorphologicalZoneCategory.REJUVENATED_BEDROCK_FALL_CASCADES,
+    GeomorphologicalZoneCategory.REJUVENATED_FOOTHILL,
+    GeomorphologicalZoneCategory.UPLAND_FLOODPLAIN
+]
