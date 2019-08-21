@@ -39,6 +39,7 @@ AUTHENTICATION_BACKENDS = (
 INSTALLED_APPS = (
     'grappelli',
     'colorfield',
+    'polymorphic',
 ) + INSTALLED_APPS
 
 # Grapelli settings

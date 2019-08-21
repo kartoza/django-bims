@@ -705,3 +705,5 @@ admin.site.unregister(UploadFile)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
+
+from bims.custom_admin import * # noqa

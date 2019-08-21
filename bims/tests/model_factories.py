@@ -23,7 +23,11 @@ from bims.models import (
     TaxonGroup,
     FbisUUID,
     DataSource,
-    Biotope
+    Biotope,
+    SourceReference,
+    SourceReferenceBibliography,
+    SourceReferenceDatabase,
+    DatabaseRecord
 )
 
 
@@ -306,3 +310,23 @@ class DataSourceF(factory.django.DjangoModelFactory):
 class BiotopeF(factory.django.DjangoModelFactory):
     class Meta:
         model = Biotope
+
+
+class SourceReferenceF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SourceReference
+
+
+class SourceReferenceBibliographyF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SourceReferenceBibliography
+
+
+class SourceReferenceDatabaseF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SourceReferenceDatabase
+
+
+class DatabaseRecordF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DatabaseRecord

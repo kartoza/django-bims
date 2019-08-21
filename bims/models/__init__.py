@@ -36,3 +36,4 @@ user_logged_out.disconnect(do_logout_from_geonode)
 
 from bims.models.auth import *  # noqa
 from bims.models.site_setting import *  # noqa
+from bims.models.source_reference import *  # noqa
