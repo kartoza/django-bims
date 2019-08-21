@@ -29,7 +29,15 @@ let filterParametersJSON = {
     },
     'category': {
         'label': 'Category',
-        'type': 'json'
+        'type': 'json',
+        'rename': {
+            'alien': 'Non-Native',
+            'indigenous': 'Native'
+        }
+    },
+    'sourceCollection': {
+        'label': 'Data Source',
+        'type': 'json',
     },
     'reference': {
         'label': 'Reference',
@@ -87,7 +95,22 @@ function renderFilterList($table) {
                 let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
                 try {
                     if (typeof json_data !== 'undefined' && json_data.length > 0) {
-                        tableData[data['label']] = json_data;
+                        tableData[data['label']] = ''
+                        $.each(json_data, function (index, json_label) {
+                            if (typeof json_label === 'undefined') {
+                                return true;
+                            }
+                            let label = json_label;
+                            if (data.hasOwnProperty('rename')) {
+                                if (data['rename'].hasOwnProperty(label)) {
+                                    label = data['rename'][label];
+                                }
+                            }
+                            tableData[data['label']] += label.charAt(0).toUpperCase() + label.slice(1);
+                            if (index < json_data.length-1) {
+                                tableData[data['label']] += ', ';
+                            }
+                        });
                     }
                 } catch (e) {
                 }

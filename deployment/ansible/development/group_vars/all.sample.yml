@@ -27,6 +27,7 @@ django:
     DATABASE_USERNAME: docker
     DATABASE_HOST: db
     SITEURL: http://django-bims.test/
+    GEOSERVER_LOCATION_SITE_LAYER: bims:location_site_view
 
 geonode:
   environment:
