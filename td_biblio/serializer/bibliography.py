@@ -47,10 +47,14 @@ class EntrySerializer(serializers.ModelSerializer):
     """
     Serializer entry bibliography.
     """
+    full_title = serializers.SerializerMethodField()
     authors = serializers.SerializerMethodField()
     editors = serializers.SerializerMethodField()
     journal = serializers.SerializerMethodField()
     publisher = serializers.SerializerMethodField()
+
+    def get_full_title(self, obj):
+        return obj.__unicode__()
 
     def get_authors(self, obj):
         return AuthorSerializer(obj.authors.all(), many=True).data

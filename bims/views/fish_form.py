@@ -1,5 +1,8 @@
+import uuid
 import json
 import logging
+import time
+from datetime import datetime
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from django.views.generic import TemplateView
@@ -35,6 +38,35 @@ class FishFormView(TemplateView):
     """View for fish form"""
     template_name = 'fish_form_page.html'
     location_site = None
+
+    @staticmethod
+    def get_last_session(request):
+        try:
+            return request.session['%s-fish-uploader' % request.user.username]
+        except KeyError:
+            return None
+
+    @staticmethod
+    def add_last_session(request, session_uuid, data):
+        try:
+            session_data = request.session[
+                '%s-fish-uploader' % request.user.username]
+        except KeyError:
+            session_data = {}
+        session_data[session_uuid] = data
+        request.session[
+            '%s-fish-uploader' % request.user.username] = session_data
+
+    @staticmethod
+    def remove_session(request, session_uuid):
+        try:
+            session_data = request.session[
+                '%s-fish-uploader' % request.user.username]
+            del session_data[session_uuid]
+            request.session[
+                '%s-fish-uploader' % request.user.username] = session_data
+        except KeyError:
+            pass
 
     def all_fishes(self, fish_parents):
         """
@@ -223,6 +255,8 @@ class FishFormView(TemplateView):
             )
         taxa_id_list = post_data.get('taxa-id-list', '').split(',')
         taxa_id_list = filter(None, taxa_id_list)
+
+        collection_record_ids = []
         for taxon in taxa_id_list:
             observed_key = '{}-observed'.format(taxon)
             abundance_key = '{}-abundance'.format(taxon)
@@ -264,6 +298,7 @@ class FishFormView(TemplateView):
                             sampling_effort=sampling_effort
                         )
                     )
+                    collection_record_ids.append(collection_record.id)
                     if status:
                         logger.info(
                             'Collection record added with id {}'.format(
@@ -273,4 +308,12 @@ class FishFormView(TemplateView):
             except KeyError:
                 continue
 
-        return HttpResponseRedirect(reverse('nonvalidated-user-list'))
+        session_uuid = '%s' % uuid.uuid4()
+        FishFormView.add_last_session(request, session_uuid, {
+            'edited_at': int(time.mktime(datetime.now().timetuple())),
+            'records': collection_record_ids,
+            'location_site': self.location_site.name,
+            'form': 'fish-form'
+        })
+        url = reverse('source-reference-form') + '?session=' + session_uuid
+        return HttpResponseRedirect(url)

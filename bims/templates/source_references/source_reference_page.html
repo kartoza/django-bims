@@ -1,0 +1,225 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Source Reference
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <style>
+        .input-information {
+            margin-top: 10px;
+        }
+
+        #bibliography-title {
+            color: darkgreen;
+            font-weight: 300;
+            letter-spacing: .01em;
+            line-height: 1.6;
+            font-size: 90%;
+        }
+
+        #bibliography-title.error {
+            color: maroon;
+            font-style: italic;
+        }
+
+        #fetch-doi-button {
+            font-size: 18px;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+
+        form input, form button {
+            height: calc(2.25rem + 2px);
+        }
+
+        form table tr td:nth-child(2) {
+            padding-left: 5px
+        }
+
+        .references-row.hidden {
+            display: none;
+        }
+
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    {% if sessions %}
+        <!-- Modal -->
+        <div id="session-modal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Session found</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>You have some session source references form that is not finished.
+                            Please finish these session.</p>
+                        {% for session_id, session in sessions.items %}
+                            <p id="{{ session_id }}"><a href="{% url 'source-reference-form' %}?session={{ session_id }}">{{ session_id }}</a></p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    {% else %}
+        <form action="{{ request.get_full_path }}" method="post" id="source-reference-form"
+              class="needs-validation" novalidate enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="body-form container">
+                <div class="header">
+                    Source references for records
+                </div>
+                <br> <br>
+                <div class="alert alert-danger" role="alert"
+                     style="display: none;">
+                </div>
+                <div class="form-group row">
+                    <label for="reference-category"
+                           class="col-sm-2 col-form-label col-form-label"><b>Reference Category</b></label>
+                    <div class="col-sm-10">
+                        <select id="reference-category" class="form-control" name="reference_category">
+                            <option value=""> Not specified</option>
+                            <option value="database"> Database</option>
+                            <option value="bibliography"> Peer-reviewed scientific article</option>
+                            <option value="document"> Published report or thesis</option>
+                            <option value="no-source"> Unpublished data</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row references-row">
+                    <label for="date" class="col-sm-2 col-form-label col-form-label"><b>DOI</b></label>
+                    <div class="col-sm-10">
+                        <table style="width: 100%">
+                            <tr>
+                                <td>
+                                    <input id="doi-input" type="text" class="form-control form-control-sm" placeholder="put doi and click search button on the right.">
+                                </td>
+                                <td style="width: 46px;">
+                                    <button id="fetch-doi-button" type="button" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i></button>
+                                </td>
+                        </table>
+                        <div class="input-information">
+                            <span id="bibliography-title"></span>
+                            <input type="text" name="bibliography-id" id="bibliography-reference" style="display: none">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row references-row">
+                    <label for="study-reference"
+                           class="col-sm-2 col-form-label col-form-label"><b>Study Reference</b></label>
+                    <div class="col-sm-10">
+                        <table style="width: 100%">
+                            <tr>
+                                <td>
+                                    <select id="study-reference" name="document-id" type="text" class="form-control form-control-sm">
+                                        {% for doc in documents %}
+                                            <option value="{{ doc.id }}">{{ doc.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td style="width: 46px;">
+                                    <button type="button" class="btn btn-primary">Upload new ...</button>
+                                </td>
+                        </table>
+                    </div>
+                </div>
+                <div class="form-group row references-row">
+                    <label for="database-reference"
+                           class="col-sm-2 col-form-label col-form-label"><b>Database</b></label>
+                    <div class="col-sm-10">
+                        <table style="width: 100%">
+                            <tr>
+                                <td>
+                                    <select id="database-reference" name="database-id" type="text" class="form-control form-control-sm">
+                                        {% for db in database %}
+                                            <option value="{{ db.id }}">{{ db.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td style="width: 46px;">
+                                    <button type="button" class="btn btn-primary">Add new ...</button>
+                                </td>
+                        </table>
+                    </div>
+                </div>
+                <div class="form-group row references-row">
+                    <label for="notes-reference"
+                           class="col-sm-2 col-form-label col-form-label">Notes</label>
+                    <div class="col-sm-10">
+                        <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="submit-wrapper">
+                <input type="button" name="btn" id="submitBtn" data-toggle="modal"
+                       data-target="#confirm-submit" class="btn btn-info"
+                       value="Submit">
+            </div>
+
+            <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
+                 aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            Confirm Submit
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to submit this source reference?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default"
+                                    data-dismiss="modal">Cancel
+                            </button>
+                            <a href="#" id="submit"
+                               class="btn btn-success success">Submit</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+
+{% endblock %}
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/source_reference_form.js" %}"></script>
+
+    <script>
+        let renderFishFormTitle = (location_site, records, edited_at) => {
+            /** render title of additonal form to render fish title **/
+            return ' in <b>' + location_site + '</b>' +
+                ' for <b>' + records.length + '</b> records' +
+                ' at <b>' + new Date(edited_at) + ' </b>';
+        };
+        $(function () {
+            {% if sessions %}
+                $('#session-modal').modal('show');
+                {% for session_id, session in sessions.items %}
+                    {% if session.form == 'fish-form' %}
+                        $("#{{ session_id }}").append(
+                            renderFishFormTitle('{{ session.location_site }}', {{ session.records }}, {{ session.edited_at }}));
+                    {% endif %}
+                {% endfor %}
+                return;
+            {% endif %}
+        });
+    </script>
+
+{% endblock %}
