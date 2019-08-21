@@ -44,6 +44,7 @@ from bims.views.location_site import (
     LocationSiteFormUpdateView,
     LocationSiteFormDeleteView
 )
+from bims.views.source_reference_form import SourceReferenceView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -62,7 +63,7 @@ urlpatterns = [
     url(r'^process_user_boundary_shapefiles/$',
         process_user_boundary_shapefiles,
         name='process_user_boundary_shapefiles'),
-    url(r'^links/$', LinksCategoryView.as_view(), name = 'link_list'),
+    url(r'^links/$', LinksCategoryView.as_view(), name='link_list'),
     url(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user'),
     url(r'^under-development/$',
@@ -100,6 +101,8 @@ urlpatterns = [
         name='location-site-autocomplete-search'),
     url(r'^bims_proxy/(?P<path>.*)', proxy_request),
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
+    url(r'^source-reference-form/$', SourceReferenceView.as_view(),
+        name='source-reference-form'),
     url(r'^location-site-form/add/$',
         LocationSiteFormView.as_view(),
         name='location-site-form'),
