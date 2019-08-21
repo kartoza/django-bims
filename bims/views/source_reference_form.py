@@ -5,7 +5,6 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.urls import reverse
 from django.http import HttpResponseRedirect
-from bims.views.fish_form import FishFormView
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.source_reference import (
     DatabaseRecord,
@@ -14,42 +13,19 @@ from bims.models.source_reference import (
     SourceIsNotFound
 )
 from geonode.documents.models import Document
+from bims.views.mixin.session_form import SessionFormMixin
+from bims.views.mixin.session_form.exception import (
+    SessionDataNotFound,
+    SessionNotFound,
+    SessionUUIDNotFound
+)
 
 logger = logging.getLogger('bims')
 
 
-class SessionUUIDNotFound(Exception):
-    """ Exception if no session uuid found"""
-
-    def __init__(self):
-        message = 'you don\'t have any session'
-        errors = message
-        super(SessionUUIDNotFound, self).__init__(message)
-        self.errors = errors
-
-
-class SessionNotFound(Exception):
-    """ Exception if no session found"""
-
-    def __init__(self):
-        message = 'you don\'t have any session'
-        errors = message
-        super(SessionNotFound, self).__init__(message)
-        self.errors = errors
-
-
-class SessionDataNotFound(Exception):
-    """ Exception if session data is not found"""
-
-    def __init__(self):
-        message = 'session is wrong or expired'
-        errors = message
-        super(SessionDataNotFound, self).__init__(message)
-        self.errors = errors
-
-
-class SourceReferenceView(TemplateView):
+class SourceReferenceView(TemplateView, SessionFormMixin):
     """ View for source references form """
+    session_identifier = 'fish-form'
     template_name = 'source_references/source_reference_page.html'
     additional_context = {}
     SOURCE_REFERENCE_CATEGORIES = {
@@ -65,27 +41,15 @@ class SourceReferenceView(TemplateView):
         })
         return context
 
-    def check_session_data(self):
-        session = FishFormView.get_last_session(self.request)
-        if not session:
-            raise SessionNotFound()
-        try:
-            session_uuid = self.request.GET.get('session', None)
-            if not session_uuid:
-                raise SessionUUIDNotFound()
-            return session[session_uuid]
-        except KeyError:
-            raise SessionDataNotFound()
-
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            self.additional_context = self.check_session_data()
+            self.additional_context = self.get_session_data(self.request)
         except (SessionNotFound, SessionDataNotFound) as e:
             return HttpResponseBadRequest('%s' % e)
         except SessionUUIDNotFound:
             self.additional_context = {
-                'sessions': FishFormView.get_last_session(self.request)
+                'sessions': self.get_last_session(self.request)
             }
         return super(SourceReferenceView, self).get(request, *args, **kwargs)
 
@@ -93,14 +57,14 @@ class SourceReferenceView(TemplateView):
     def post(self, request, *args, **kwargs):
         category = None
         try:
-            session_data = self.check_session_data()
+            session_data = self.get_session_data(self.request)
             data = request.POST.dict()
             try:
                 records = session_data['records']
                 biological_records = BiologicalCollectionRecord.objects. \
                     filter(id__in=records)
             except KeyError:
-                return HttpResponseBadRequest('session is broken')
+                return HttpResponseBadRequest('Session is broken')
             category = data['reference_category']
 
             # create source reference
@@ -115,7 +79,7 @@ class SourceReferenceView(TemplateView):
 
             # delete the session
             session_uuid = self.request.GET.get('session', None)
-            FishFormView.remove_session(request, session_uuid)
+            self.remove_session(request, session_uuid)
         except (
                 SessionNotFound,
                 SessionDataNotFound,

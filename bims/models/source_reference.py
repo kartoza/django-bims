@@ -13,7 +13,7 @@ class SourceIsNotFound(Exception):
     """ Exception if source is not found"""
 
     def __init__(self):
-        message = 'source is not found'
+        message = 'Source is not found'
         errors = message
         super(SourceIsNotFound, self).__init__(message)
         self.errors = errors

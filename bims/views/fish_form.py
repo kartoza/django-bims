@@ -22,6 +22,7 @@ from bims.models import (
     TaxonGroup,
     SiteImage
 )
+from bims.views.mixin.session_form.mixin import SessionFormMixin
 
 logger = logging.getLogger('bims')
 
@@ -34,39 +35,11 @@ RIVER_CATCHMENT_ORDER = [
 ]
 
 
-class FishFormView(TemplateView):
+class FishFormView(TemplateView, SessionFormMixin):
     """View for fish form"""
     template_name = 'fish_form_page.html'
     location_site = None
-
-    @staticmethod
-    def get_last_session(request):
-        try:
-            return request.session['%s-fish-uploader' % request.user.username]
-        except KeyError:
-            return None
-
-    @staticmethod
-    def add_last_session(request, session_uuid, data):
-        try:
-            session_data = request.session[
-                '%s-fish-uploader' % request.user.username]
-        except KeyError:
-            session_data = {}
-        session_data[session_uuid] = data
-        request.session[
-            '%s-fish-uploader' % request.user.username] = session_data
-
-    @staticmethod
-    def remove_session(request, session_uuid):
-        try:
-            session_data = request.session[
-                '%s-fish-uploader' % request.user.username]
-            del session_data[session_uuid]
-            request.session[
-                '%s-fish-uploader' % request.user.username] = session_data
-        except KeyError:
-            pass
+    session_identifier = 'fish-form'
 
     def all_fishes(self, fish_parents):
         """
@@ -309,7 +282,7 @@ class FishFormView(TemplateView):
                 continue
 
         session_uuid = '%s' % uuid.uuid4()
-        FishFormView.add_last_session(request, session_uuid, {
+        self.add_last_session(request, session_uuid, {
             'edited_at': int(time.mktime(datetime.now().timetuple())),
             'records': collection_record_ids,
             'location_site': self.location_site.name,
