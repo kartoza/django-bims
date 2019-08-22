@@ -1,6 +1,7 @@
 import logging
-from django.http import HttpResponseBadRequest
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -37,7 +38,9 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         context.update(self.additional_context)
         context.update({
             'documents': Document.objects.all(),
-            'database': DatabaseRecord.objects.all()
+            'database': DatabaseRecord.objects.all(),
+            'ALLOWED_DOC_TYPES': ','.join(
+                ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES])
         })
         return context
 

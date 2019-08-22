@@ -1,0 +1,30 @@
+from django.contrib.gis.db import models
+from geonode.documents.models import Document
+
+
+class BimsDocument(models.Model):
+    """Data source for forms"""
+    document = models.OneToOneField(Document, on_delete=models.CASCADE)
+    year = models.IntegerField(null=True, blank=True)
+    author = models.CharField(max_length=512, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.document.__unicode__()
+
+    def update_metadata(self, data, silent=False):
+        """ Update metadata to this object.
+        :param data: data that will be updated
+        :type data: dict
+        """
+        for field in BimsDocument._meta.get_fields():
+            field = field.name
+            if field in ['id', 'document']:
+                continue
+            try:
+                setattr(self, field, data[field])
+            except KeyError:
+                pass
+            except ValueError as e:
+                if not silent:
+                    raise e
+        self.save()

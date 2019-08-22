@@ -1,0 +1,130 @@
+<!-- Modal -->
+<div id="new-document-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <form id="new-document-form" action="{% url 'source-reference-document-upload' %}" method="post"
+                  class="needs-validation" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h4 class="modal-title">Upload New Document</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="new-document-modal-error" class="alert alert-danger" role="alert"
+                         style="display: none;">
+                    </div>
+                    <div class="form-group row">
+                        <label for="document-author"
+                               class="col-sm-2 col-form-label col-form-label"><b>Author(s)</b></label>
+                        <div class="col-sm-10">
+                            <input id="document-author" type="text" class="form-control form-control-sm" name="author" maxlength="512" required>
+                            <div id="document-author-error" class="alert alert-danger" role="alert"
+                                 style="display: none;">Author is required
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="document-year"
+                               class="col-sm-2 col-form-label col-form-label">Year</label>
+                        <div class="col-sm-10">
+                            <input id="document-year" type="number" class="form-control form-control-sm" name="year" min="1900" max="9999">
+                            <div id="document-year-error" class="alert alert-danger" role="alert"
+                                 style="display: none;">Year should be between 1900 to 9999
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="document-title"
+                               class="col-sm-2 col-form-label col-form-label"><b>Title</b></label>
+                        <div class="col-sm-10">
+                            <input id="document-title" type="text" class="form-control form-control-sm" name="title" required>
+                            <div id="document-title-error" class="alert alert-danger" role="alert"
+                                 style="display: none;">Document is required
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="document-description"
+                               class="col-sm-2 col-form-label col-form-label">Description</label>
+                        <div class="col-sm-10">
+                            <textarea id="document-description" type="text" class="form-control form-control-sm" name="description"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label col-form-label"></label>
+                        <div class="col-sm-10">
+                            <input id="document-file" type="file" name="doc_file" accept="{{ ALLOWED_DOC_TYPES }}" required>
+                            <div id="document-file-error" class="alert alert-danger" role="alert"
+                                 style="display: none;">File is required
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="permissions" value='{"users":{"AnonymousUser":["view_resourcebase","download_resourcebase"]},"groups":{}}' id="permissions">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button id="new-document-upload" type="button" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    let newDocumentSubmitCallback = (response) => {
+
+    };
+    $(function () {
+        let $form = $('#new-document-form');
+        let $button = $('#new-document-upload');
+        let $modal = $('#new-document-modal');
+        let $error = $('#new-document-modal-error');
+        let $yearInput = $('#document-year');
+        $form.submit(function (e) {
+            e.preventDefault();
+            $('.alert-danger').hide();
+
+            {# validation #}
+            if ($yearInput.val() && (parseInt($yearInput.val()) < 1900 || parseInt($yearInput.val()) > 9999)) {
+                $('#document-year-error').show();
+                return;
+            }
+            if (!$('#document-author').val()) {
+                $('#document-author-error').show();
+                return;
+            }
+            if (!$('#document-title').val()) {
+                $('#document-title-error').show();
+                return;
+            }
+            if (!$('#document-file').val()) {
+                $('#document-file-error').show();
+                return;
+            }
+            $modal.find('button').prop('disabled', true);
+            $.ajax({
+                type: 'POST',
+                url: $form.attr('action'),
+                data: new FormData(this),
+                dataType: 'json',
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    newDocumentSubmitCallback(response);
+                    $modal.find('button').prop('disabled', false);
+                    $modal.find('input').val('');
+                    $('#new-document-modal').modal('toggle');
+                },
+                error: function (error) {
+                    $error.show();
+                    $error.html(error['responseText']);
+                    $modal.find('button').prop('disabled', false);
+                }
+            });
+            return false;
+        });
+        $button.click(function () {
+            $form.submit();
+        })
+    });
+</script>
