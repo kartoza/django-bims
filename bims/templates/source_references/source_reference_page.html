@@ -13,6 +13,22 @@
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
     <style>
+        .header {
+            font-size: 19pt;
+            padding-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .body-form {
+            border: 1px solid grey;
+            margin-top: 100px;
+            padding: 30px;
+        }
+
+        .submit-wrapper {
+            margin-top: 50px;
+        }
+
         .input-information {
             margin-top: 10px;
         }
@@ -46,6 +62,10 @@
 
         .references-row.hidden {
             display: none;
+        }
+
+        table td {
+            vertical-align: top !important;
         }
 
     </style>
@@ -103,7 +123,8 @@
                         <table style="width: 100%">
                             <tr>
                                 <td>
-                                    <input id="doi-input" type="text" class="form-control form-control-sm" placeholder="put doi and click search button on the right.">
+                                    <input id="doi-input" type="text" class="form-control form-control-sm"
+                                           placeholder="Insert the DOI in this format: 10.1007/s11230-017-9737, and then click the button to generate the study reference.">
                                 </td>
                                 <td style="width: 46px;">
                                     <button id="fetch-doi-button" type="button" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i></button>
@@ -127,6 +148,9 @@
                                             <option value="{{ doc.id }}">{{ doc.title }}</option>
                                         {% endfor %}
                                     </select>
+                                    <small class="form-text text-muted">
+                                        Select the study reference from the list provided or click "Upload New" to upload a new document.
+                                    </small>
                                 </td>
                                 <td style="width: 46px;">
                                     <button type="button" class="btn btn-primary">Upload new ...</button>
@@ -146,6 +170,9 @@
                                             <option value="{{ db.id }}">{{ db.name }}</option>
                                         {% endfor %}
                                     </select>
+                                    <small class="form-text text-muted">
+                                        Select database from the list of database provided or click "Add New" to add another database.
+                                    </small>
                                 </td>
                                 <td style="width: 46px;">
                                     <button type="button" class="btn btn-primary">Add new ...</button>
@@ -160,12 +187,12 @@
                         <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note"></textarea>
                     </div>
                 </div>
-            </div>
 
-            <div class="submit-wrapper">
-                <input type="button" name="btn" id="submitBtn" data-toggle="modal"
-                       data-target="#confirm-submit" class="btn btn-info"
-                       value="Submit">
+                <div class="submit-wrapper">
+                    <input type="button" name="btn" id="submitBtn" data-toggle="modal"
+                           data-target="#confirm-submit" class="btn btn-info"
+                           value="Submit">
+                </div>
             </div>
 
             <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"

@@ -11,21 +11,38 @@ let showReferenceRow = ($row) => {
 let categoryChanged = (value) => {
     /** called when category changed **/
     $('.references-row').addClass('hidden');
+    $notesReference.val('');
     switch (value) {
         case 'database':
             showReferenceRow($databaseReference);
             showReferenceRow($notesReference);
+            $notesReference.attr(
+                "placeholder",
+                "Provide any additional information about the database. E.g. The year created, the host, etc.");
             break;
         case 'bibliography':
             showReferenceRow($bibliographyReference);
             showReferenceRow($notesReference);
+            $notesReference.attr(
+                "placeholder",
+                "Provide any additional information about study reference. " +
+                "E.g. Data extracted from Shelton, J.M., 2013 PhD thesis - Shelton, J.M., 2013. " +
+                "Impact of non-native rainbow trout on stream food webs in the Cape Floristic Region, South Africa intergrating evidence from surveys and experiments." +
+                "University of Cape Town.");
             break;
         case 'document':
             showReferenceRow($studyReference);
             showReferenceRow($notesReference);
+            $notesReference.attr(
+                "placeholder",
+                "Provide any additional information about study reference. " +
+                "E.g. Data from the report was used in Dallas, H.F. & Rivers-Moore, N.A., 2012 paper (10.1007/s10750-011-0856-4).");
             break;
         case 'no-source':
             showReferenceRow($notesReference);
+            $notesReference.attr(
+                "placeholder",
+                "Provide any additional information about the unpublished data. E.g. I went on a hiking trip to the Cederberg and saw Galaxias Zebratus in the Olifants River.");
             break;
     }
 };
