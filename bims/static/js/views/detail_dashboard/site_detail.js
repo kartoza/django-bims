@@ -987,8 +987,8 @@ define([
             occurrenceTable.append("<thead>\n" +
                 "      <tr>\n" +
                 "        <th>Taxon</th>\n" +
-                "        <th>Origin</th>\n" +
                 "        <th>Occurrences</th>\n" +
+                "        <th>Origin</th>\n" +
                 "        <th>Endemism</th>\n" +
                 "        <th>Cons. Status</th>\n" +
                 "      </tr>\n" +
@@ -1007,8 +1007,8 @@ define([
                     consName = 'Data deficient';
                 }
                 tRow.append('<td>' + rowData['taxon'] + '</td>');
-                tRow.append('<td>' + originName + '</td>');
                 tRow.append('<td>' + rowData['count'] + '</td>');
+                tRow.append('<td>' + originName + '</td>');
                 tRow.append('<td>' + rowData['endemism'] + '</td>');
                 tRow.append('<td>' + consName + '</td>');
                 tableBody.append(tRow);
