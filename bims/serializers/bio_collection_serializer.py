@@ -147,7 +147,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_sampling_date(self, obj):
         if obj.collection_date:
-            return obj.collection_date.strftime('%Y-%m-%d')
+            return obj.collection_date.isoformat().split('T')[0]
 
     def get_study_reference(self, obj):
         return obj.reference.encode('utf8')
@@ -235,7 +235,7 @@ class BioCollectionGeojsonSerializer(GeoFeatureModelSerializer):
 
     def get_date(self, obj):
         if obj.collection_date:
-            return obj.collection_date.strftime('%Y-%m-%d')
+            return obj.collection_date.isoformat().split('T')[0]
 
     def get_collector(self, obj):
         return obj.collector
