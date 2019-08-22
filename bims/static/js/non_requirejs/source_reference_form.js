@@ -50,6 +50,10 @@ let categoryValidation = (value) => {
     }
     return null
 };
+newDatabaseRecordSubmitCallback = (response) => {
+    $databaseReference.append('<option value="' + response.id + '">' + response.name + '</option>');
+    $databaseReference.val(response.id);
+};
 
 $(function () {
     // DOI handler
