@@ -121,7 +121,6 @@ class SiteVisit(AbstractAdditionalData):
 
     sass_biotope_fraction = models.ManyToManyField(
         'sass.SassBiotopeFraction',
-        null=True,
         blank=True
     )
 

@@ -43,7 +43,6 @@ class Taxonomy(DocumentLinksMixin):
     vernacular_names = models.ManyToManyField(
         to=VernacularName,
         blank=True,
-        null=True,
     )
 
     taxonomic_status = models.CharField(

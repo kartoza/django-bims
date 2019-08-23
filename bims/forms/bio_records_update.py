@@ -30,10 +30,10 @@ class BioRecordsForm(forms.ModelForm):
             Fieldset(
                 form_title,
                 Field('original_species_name', css_class='form-control'),
-                Field('ready_for_validation', css_class='form-control'),
+                Field('ready_for_validation', css_class=''),
                 Field('category', css_class='form-control'),
-                Field('present', css_class='form-control'),
-                Field('absent', css_class='form-control'),
+                Field('present', css_class=''),
+                Field('absent', css_class=''),
                 Field('collection_date', css_class='form-control'),
                 Field('notes', css_class='form-control'),
                 Field('taxonomy', css_class='form-control'),

@@ -33,8 +33,8 @@
 {% endblock %}
 
 {% block body_content %}
-    <div class="container" style="text-align: center; margin-top: 25px; margin-bottom: 25px">
-        <h1 class="title-heading">UPDATE BIODIVERSITY RECORDS</h1>
+    <div class="container header-wrapper">
+        Update Biodiversity Record
     </div>
     <div class="container" style="margin-bottom: 50px">
     <div class="form-wrapper form-control">
@@ -51,19 +51,16 @@
             <input name="references" type="hidden">
             <input name="documents" type="hidden">
         </form>
-        <div class="form-group">
-            <label>References</label>
-            <select multiple id="references" class="form-control">
-                {% for reference in all_references %}
-                    <option {% if reference.id in references_link %} selected {% endif %} value="{{ reference.id }}">{{ reference.title }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Documents</label>
-            <select multiple id="documents" class="form-control">
-
-            </select>
+        <div class="reference-wrapper">
+            <div class="form-group">
+                <label>Reference Category</label>
+                <input type="text" class="form-control" disabled value="{{ reference_category }}"/>
+            </div>
+            <div class="form-group">
+                <label>Source Reference</label>
+                <input type="text" class="form-control" disabled value="{{ source_reference }}"/>
+            </div>
+            <button type="button" class="btn btn-info update-reference">Open Source Reference Form</button>
         </div>
         <div class="form-group">
             <label>Geometry type</label>
@@ -148,7 +145,7 @@
             });
             source.addFeatures(geojson_feature);
             map.getView().setCenter(ol.proj.transform([geometry_json['coordinates'][0], geometry_json['coordinates'][1]], 'EPSG:4326', 'EPSG:3857'));
-            map.getView().setZoom(10);
+            map.getView().setZoom(12);
             $('#custom-lat').val(geometry_json['coordinates'][0]);
             $('#custom-long').val(geometry_json['coordinates'][1]);
 
@@ -181,7 +178,7 @@
                             });
                             source.addFeatures(geojson_feature2);
                             map.getView().setCenter(ol.proj.transform([geometry_location['coordinates'][0], geometry_location['coordinates'][1]], 'EPSG:4326', 'EPSG:3857'));
-                            map.getView().setZoom(10);
+                            map.getView().setZoom(12);
                             $('#custom-lat').val(geometry_location['coordinates'][0]);
                             $('#custom-long').val(geometry_location['coordinates'][1]);
                         }
@@ -267,7 +264,12 @@
             });
             source.addFeatures(new_geojson_feature);
             map.getView().setCenter(ol.proj.transform(coordinates, 'EPSG:4326', 'EPSG:3857'));
-            map.getView().setZoom(10);
+            map.getView().setZoom(12);
         }
+
+        $('.update-reference').click(function () {
+            let url = '/source-reference-form/?collection_id=' + {{ id }} + '&next=/update/' + {{ id }};
+            location.href  = url;
+        });
     </script>
 {% endblock %}

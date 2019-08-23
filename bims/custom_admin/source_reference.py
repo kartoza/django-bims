@@ -16,14 +16,17 @@ class DatabaseRecordAdmin(admin.ModelAdmin):
 
 
 class SourceReferenceBibliographyAdmin(PolymorphicChildModelAdmin):
+    list_display = ('source', 'note')
     base_model = SourceReferenceBibliography
 
 
 class SourceReferenceDatabaseAdmin(PolymorphicChildModelAdmin):
+    list_display = ('source', 'note')
     base_model = SourceReferenceDatabase
 
 
 class SourceReferenceDocumentAdmin(PolymorphicChildModelAdmin):
+    list_display = ('source', 'note')
     base_model = SourceReferenceDocument
 
 
