@@ -30,7 +30,6 @@ class TaxonGroup(models.Model):
 
     taxonomies = models.ManyToManyField(
         Taxonomy,
-        null=True,
         blank=True
     )
 

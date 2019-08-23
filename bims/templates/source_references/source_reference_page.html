@@ -73,6 +73,11 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script type="text/javascript">
+        const referenceCategory = '{{ additional_context_data.reference_category }}';
+        const sourceReferenceId = {% if additional_context_data.source_reference %}'{{ additional_context_data.source_reference.id }}'{% else %}''{% endif %};
+        const sourceReferenceDoi = {% if additional_context_data.source_reference.doi %}'{{ additional_context_data.source_reference.doi }}'{% else %}''{% endif %};
+    </script>
 {% endblock %}
 
 {% block body_content %}
@@ -104,7 +109,7 @@
             {% csrf_token %}
             <div class="body-form container">
                 <div class="header">
-                    Source references for records
+                    Source reference for records
                 </div>
                 <br> <br>
                 <div class="alert alert-danger" role="alert"
@@ -118,7 +123,7 @@
                             <option value=""> Not specified</option>
                             <option value="database"> Database</option>
                             <option value="bibliography"> Peer-reviewed scientific article</option>
-                            <option value="document"> Published report or thesis</option>
+                            <option value="document"> Published report or thesis </option>
                             <option value="no-source"> Unpublished data</option>
                         </select>
                     </div>
@@ -194,7 +199,7 @@
                     <label for="notes-reference"
                            class="col-sm-2 col-form-label col-form-label">Notes</label>
                     <div class="col-sm-10">
-                        <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note"></textarea>
+                        <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note">{{ additional_context_data.note }}</textarea>
                     </div>
                 </div>
 

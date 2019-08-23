@@ -53,6 +53,14 @@ class SourceReference(PolymorphicModel):
     note = models.TextField(
         null=True, blank=True)
 
+    @property
+    def reference_type(self):
+        return 'Unpublished data'
+
+    @property
+    def source(self):
+        return self
+
     def __unicode__(self):
         if not self.get_source_unicode() and self.note:
             return self.note
@@ -98,17 +106,24 @@ class SourceReference(PolymorphicModel):
                 Document.DoesNotExist,
                 DatabaseRecord.DoesNotExist):
             raise SourceIsNotFound()
-        source_reference = _SourceModel()
-        source_reference.note = note
+        model_fields = {
+            'note': note
+        }
         if source:
-            source_reference.source = source
-        source_reference.save()
+            model_fields['source'] = source
+        source_reference, created = _SourceModel.objects.get_or_create(
+            **model_fields
+        )
         return source_reference
 
 
 class SourceReferenceBibliography(SourceReference):
     """ Source reference with bibliography source"""
     source = models.ForeignKey(Entry)
+
+    @property
+    def reference_type(self):
+        return 'Peer-reviewed scientific article'
 
     def __unicode__(self):
         return u'%s' % self.source
@@ -118,6 +133,10 @@ class SourceReferenceDatabase(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(DatabaseRecord)
 
+    @property
+    def reference_type(self):
+        return 'Database'
+
     def __unicode__(self):
         return u'%s' % self.source
 
@@ -125,6 +144,10 @@ class SourceReferenceDatabase(SourceReference):
 class SourceReferenceDocument(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(Document)
+
+    @property
+    def reference_type(self):
+        return 'Published report or thesis'
 
     def __unicode__(self):
         return u'%s' % self.source

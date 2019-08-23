@@ -2,6 +2,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -31,13 +32,12 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
     session_identifier = 'fish-form'
     template_name = 'source_references/source_reference_page.html'
     additional_context = {}
-    SOURCE_REFERENCE_CATEGORIES = {
-
-    }
+    collection_record = None
 
     def get_context_data(self, **kwargs):
         context = super(SourceReferenceView, self).get_context_data(**kwargs)
         context.update(self.additional_context)
+        additional_context_data = {}
 
         source_reference_document = []
         try:
@@ -47,64 +47,112 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
                 keywords=keyword)
         except HierarchicalKeyword.DoesNotExist:
             pass
+
+        if self.collection_record:
+            additional_context_data['reference_category'] = (
+                self.collection_record.source_reference.reference_type
+            )
+            additional_context_data['source_reference'] = (
+                self.collection_record.source_reference.source
+            )
+            additional_context_data['note'] = (
+                self.collection_record.source_reference.note
+            )
         context.update({
             'documents': source_reference_document,
             'database': DatabaseRecordSerializer(
                 DatabaseRecord.objects.all(), many=True).data,
             'ALLOWED_DOC_TYPES': ','.join(
-                ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES])
+                ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES]),
+            'additional_context_data': additional_context_data
         })
         return context
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
+        collection_id = self.request.GET.get('collection_id', None)
+        session_found, session_not_found_message = True, ''
         try:
             self.additional_context = self.get_session_data(self.request)
         except (SessionNotFound, SessionDataNotFound) as e:
-            return HttpResponseBadRequest('%s' % e)
+            session_found, session_not_found_message = False, e
         except SessionUUIDNotFound:
             self.additional_context = {
                 'sessions': self.get_last_session(self.request)
             }
+        if not session_found and not collection_id:
+            return HttpResponseBadRequest('%s' % session_not_found_message)
+        elif collection_id:
+            self.collection_record = get_object_or_404(
+                BiologicalCollectionRecord,
+                pk=collection_id,
+                validated=False,
+                owner=self.request.user
+            )
         return super(SourceReferenceView, self).get(request, *args, **kwargs)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
+        collection_id = self.request.GET.get('collection_id', None)
+        session_found, session_not_found_message = True, ''
         category = None
+        data = request.POST.dict()
+        biological_records = None
+
         try:
+            category = data['reference_category']
             session_data = self.get_session_data(self.request)
-            data = request.POST.dict()
             try:
                 records = session_data['records']
                 biological_records = BiologicalCollectionRecord.objects. \
                     filter(id__in=records)
             except KeyError:
                 return HttpResponseBadRequest('Session is broken')
-            category = data['reference_category']
-
-            # create source reference
-            source = None
-            if category != 'no-source':
-                source = int(data[category + '-id'])
-            else:
-                category = None
-            source_reference = SourceReference.create_source_reference(
-                category, source, data['note'])
-            biological_records.update(source_reference=source_reference)
-
             # delete the session
             session_uuid = self.request.GET.get('session', None)
             self.remove_session(request, session_uuid)
         except (
                 SessionNotFound,
                 SessionDataNotFound,
-                SessionUUIDNotFound,
-                CategoryIsNotRecognized,
-                SourceIsNotFound) as e:
-            return HttpResponseBadRequest('%s' % e)
+                SessionUUIDNotFound) as e:
+            session_found, session_not_found_message = False, e
         except KeyError as e:
             return HttpResponseBadRequest('%s is not in data' % e)
         except ValueError:
             return HttpResponseBadRequest(
                 '%s is not integer' % (category + '-id'))
-        return HttpResponseRedirect(reverse('nonvalidated-user-list'))
+
+        if not session_found and not collection_id:
+            return HttpResponseBadRequest('%s' % session_not_found_message)
+        elif collection_id:
+            collection_record = get_object_or_404(
+                BiologicalCollectionRecord,
+                pk=collection_id,
+                validated=False,
+                owner=self.request.user
+            )
+            biological_records = BiologicalCollectionRecord.objects.filter(
+                id__in=[collection_record.id]
+            )
+
+        # create source reference
+        try:
+            source = None
+            if category != 'no-source':
+                source = int(data[category + '-id'])
+            else:
+                category = None
+            source_reference = SourceReference.create_source_reference(
+                category, source, data.get('note', None))
+        except SourceIsNotFound as e:
+            return HttpResponseBadRequest('%s' % e)
+        except CategoryIsNotRecognized as e:
+            return HttpResponseBadRequest('%s' % e)
+
+        if biological_records:
+            biological_records.update(source_reference=source_reference)
+
+        response_redirect = reverse('nonvalidated-user-list')
+        if request.GET.get('next', None):
+            response_redirect = request.GET.get('next')
+        return HttpResponseRedirect(response_redirect)

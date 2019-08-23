@@ -8,14 +8,16 @@ let showReferenceRow = ($row) => {
     $($row.closest('.references-row')).removeClass('hidden');
 };
 
-let categoryChanged = (value) => {
+let categoryChanged = (value, _sourceReferenceId=null) => {
     /** called when category changed **/
     $('.references-row').addClass('hidden');
-    $notesReference.val('');
     switch (value) {
         case 'database':
             showReferenceRow($databaseReference);
             showReferenceRow($notesReference);
+            if(_sourceReferenceId) {
+                $databaseReference.val(_sourceReferenceId);
+            }
             $notesReference.attr(
                 "placeholder",
                 "Provide any additional information about the database. E.g. The year created, the host, etc.");
@@ -23,6 +25,10 @@ let categoryChanged = (value) => {
         case 'bibliography':
             showReferenceRow($bibliographyReference);
             showReferenceRow($notesReference);
+            if(_sourceReferenceId) {
+                $("#doi-input").val(_sourceReferenceId);
+                $('#fetch-doi-button').click();
+            }
             $notesReference.attr(
                 "placeholder",
                 "Provide any additional information about study reference. " +
@@ -33,6 +39,9 @@ let categoryChanged = (value) => {
         case 'document':
             showReferenceRow($studyReference);
             showReferenceRow($notesReference);
+            if(_sourceReferenceId) {
+                $studyReference.val(_sourceReferenceId);
+            }
             $notesReference.attr(
                 "placeholder",
                 "Provide any additional information about study reference. " +
@@ -106,6 +115,19 @@ $(function () {
         categoryChanged($referenceCategory.val());
     });
     $('.references-row').addClass('hidden');
+    if (referenceCategory) {
+        $referenceCategory.find('option').each(function () {
+            if ($(this).html().trim().toLowerCase() === referenceCategory.toLowerCase()) {
+                $(this).attr('selected', 'selected');
+                let _id = parseInt(sourceReferenceId);
+                if (sourceReferenceDoi) {
+                    _id = sourceReferenceDoi;
+                }
+                categoryChanged($(this).val(), _id);
+                return;
+            }
+        });
+    }
 
     // submit
     let form = $('#source-reference-form');

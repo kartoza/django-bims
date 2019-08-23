@@ -25,7 +25,6 @@ class RiverCatchment(models.Model):
     location_sites = models.ManyToManyField(
         'bims.LocationSite',
         related_name='location_sites',
-        null=True,
         blank=True
     )
 

@@ -137,3 +137,22 @@ select {
     border-radius: .25rem;
     padding: 3px 5px;
 }
+
+.header-wrapper {
+    padding-top: 100px;
+    font-size: 15pt;
+    padding-bottom: 10px;
+}
+
+.reference-wrapper {
+    border: 1px solid gainsboro;
+    border-radius: 2px;
+    padding: 20px;
+    margin-bottom: 10px;
+}
+
+.update-reference {
+    padding-left: 15px;
+    padding-right: 15px;
+    font-size: 11pt;
+}
