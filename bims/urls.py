@@ -15,6 +15,7 @@ from bims.api_views.collection import (
 )
 
 from bims.api_views.get_feature_info import GetFeatureInfo
+from bims.api_views.database_record import DatabaseRecordsList
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
@@ -104,6 +105,9 @@ urlpatterns = [
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
     url(r'^source-reference-form/$', SourceReferenceView.as_view(),
         name='source-reference-form'),
+    url(r'^source-reference/database/',
+        DatabaseRecordsList.as_view(),
+        name='source-reference-database'),
     url(r'^source-reference/document/upload$',
         SourceReferenceBimsDocumentUploadView.as_view(),
         name='source-reference-document-upload'),

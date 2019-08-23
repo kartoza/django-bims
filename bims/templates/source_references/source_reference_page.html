@@ -70,13 +70,13 @@
 
     </style>
 
-    <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
 {% endblock %}
 
 {% block body_content %}
+    {% include "source_references/new_database_record_modal.html" %}
     {% include "source_references/new_document_modal.html" %}
     {% if sessions %}
         <!-- Modal -->
@@ -183,7 +183,9 @@
                                     </small>
                                 </td>
                                 <td style="width: 46px;">
-                                    <button type="button" class="btn btn-primary">Add new ...</button>
+                                    <input type="button" name="btn" data-toggle="modal"
+                                           data-target="#new-database-record-modal" class="btn btn-primary"
+                                           value="Add new ...">
                                 </td>
                         </table>
                     </div>
@@ -228,6 +230,7 @@
 
 {% endblock %}
 {% block foot %}
+    <!-- Plugin JavaScript -->
     <script src="{% static "js/non_requirejs/source_reference_form.js" %}"></script>
 
     <script>

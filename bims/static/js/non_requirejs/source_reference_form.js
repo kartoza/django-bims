@@ -68,6 +68,11 @@ let categoryValidation = (value) => {
     return null
 };
 
+newDatabaseRecordSubmitCallback = (response) => {
+    $databaseReference.append('<option value="' + response.id + '">' + response.name + '</option>');
+    $databaseReference.val(response.id);
+};
+
 newDocumentSubmitCallback = (response) => {
     $studyReference.append('<option value="' + response.id + '">' + response.title + '</option>');
     $studyReference.val(response.id);

@@ -21,6 +21,7 @@ from bims.views.mixin.session_form.exception import (
     SessionNotFound,
     SessionUUIDNotFound
 )
+from bims.serializers.database_record import DatabaseRecordSerializer
 
 logger = logging.getLogger('bims')
 
@@ -48,7 +49,8 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
             pass
         context.update({
             'documents': source_reference_document,
-            'database': DatabaseRecord.objects.all(),
+            'database': DatabaseRecordSerializer(
+                DatabaseRecord.objects.all(), many=True).data,
             'ALLOWED_DOC_TYPES': ','.join(
                 ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES])
         })
