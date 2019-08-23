@@ -49,15 +49,16 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
             pass
 
         if self.collection_record:
-            additional_context_data['reference_category'] = (
-                self.collection_record.source_reference.reference_type
-            )
-            additional_context_data['source_reference'] = (
-                self.collection_record.source_reference.source
-            )
-            additional_context_data['note'] = (
-                self.collection_record.source_reference.note
-            )
+            if self.collection_record.source_reference:
+                additional_context_data['reference_category'] = (
+                    self.collection_record.source_reference.reference_type
+                )
+                additional_context_data['source_reference'] = (
+                    self.collection_record.source_reference.source
+                )
+                additional_context_data['note'] = (
+                    self.collection_record.source_reference.note
+                )
         context.update({
             'documents': source_reference_document,
             'database': DatabaseRecordSerializer(
