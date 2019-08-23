@@ -42,7 +42,10 @@ class DatabaseRecord(models.Model):
         null=True, blank=True)
 
     def __unicode__(self):
-        return u'%s' % self.name
+        name = '%s' % self.name
+        if self.url:
+            name += ' (%s)' % self.url
+        return u'%s' % name
 
 
 class SourceReference(PolymorphicModel):

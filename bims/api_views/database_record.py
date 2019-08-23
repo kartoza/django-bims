@@ -19,7 +19,7 @@ class DatabaseRecordsList(APIView):
             return HttpResponseForbidden()
         data = request.data
         try:
-            record = DatabaseRecord.objects.create(
+            record, created = DatabaseRecord.objects.get_or_create(
                 name=data['name'],
                 description=data.get('description', None),
                 url=data.get('url', None),
