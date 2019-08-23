@@ -21,6 +21,8 @@ from django.contrib.flatpages.models import FlatPage
 from django.db import models
 from django.utils.html import format_html
 
+from geonode.documents.admin import DocumentAdmin
+from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
@@ -62,7 +64,8 @@ from bims.models import (
     SpatialScaleGroup,
     SamplingMethod,
     SiteImage,
-    SiteSetting
+    SiteSetting,
+    BimsDocument
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -655,6 +658,16 @@ class SiteImageAdmin(admin.ModelAdmin):
     )
 
 
+class BimsDocumentInline(admin.StackedInline):
+    model = BimsDocument
+    classes = ('collapse open',)
+    inline_classes = ('collapse open',)
+
+
+class BimsDocumentAdmin(DocumentAdmin):
+    inlines = [BimsDocumentInline]
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -702,6 +715,10 @@ admin.site.register(SiteSetting, PreferencesAdmin)
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)
 admin.site.unregister(UploadFile)
+
+# Rerender geonode document admin
+admin.site.unregister(Document)
+admin.site.register(Document, BimsDocumentAdmin)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

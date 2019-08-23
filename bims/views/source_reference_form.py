@@ -1,6 +1,7 @@
 import logging
-from django.http import HttpResponseBadRequest
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -12,6 +13,7 @@ from bims.models.source_reference import (
     CategoryIsNotRecognized,
     SourceIsNotFound
 )
+from geonode.base.models import HierarchicalKeyword
 from geonode.documents.models import Document
 from bims.views.mixin.session_form import SessionFormMixin
 from bims.views.mixin.session_form.exception import (
@@ -36,10 +38,21 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
     def get_context_data(self, **kwargs):
         context = super(SourceReferenceView, self).get_context_data(**kwargs)
         context.update(self.additional_context)
+
+        source_reference_document = []
+        try:
+            keyword = HierarchicalKeyword.objects.get(
+                slug='bims_source_reference')
+            source_reference_document = Document.objects.filter(
+                keywords=keyword)
+        except HierarchicalKeyword.DoesNotExist:
+            pass
         context.update({
-            'documents': Document.objects.all(),
+            'documents': source_reference_document,
             'database': DatabaseRecordSerializer(
-                DatabaseRecord.objects.all(), many=True).data
+                DatabaseRecord.objects.all(), many=True).data,
+            'ALLOWED_DOC_TYPES': ','.join(
+                ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES])
         })
         return context
 
