@@ -1,5 +1,6 @@
 from django.contrib.gis.db import models
 from geonode.documents.models import Document
+from bims.utils.model import parsing_value_by_type
 
 
 class BimsDocument(models.Model):
@@ -21,7 +22,9 @@ class BimsDocument(models.Model):
             if field in ['id', 'document']:
                 continue
             try:
-                setattr(self, field, data[field])
+                value = parsing_value_by_type(self, field, data[field])
+                if value:
+                    setattr(self, field, value)
             except KeyError:
                 pass
             except ValueError as e:
