@@ -15,12 +15,15 @@ from django.forms.utils import ErrorList
 from geonode.utils import resolve_object
 from geonode.people.forms import ProfileForm
 from geonode.base.forms import CategoryForm
-from geonode.base.models import TopicCategory
+from geonode.base.models import (
+    TopicCategory, HierarchicalKeyword, TaggedContentItem
+)
 from geonode.documents.models import Document
 from geonode.documents.forms import DocumentForm
 from geonode.groups.models import GroupProfile
 from geonode.documents.views import DocumentUploadView
 
+from bims.models.bims_document import BimsDocument
 from bims.models.taxon import Taxon
 
 logger = logging.getLogger("geonode.documents.views")
@@ -79,6 +82,73 @@ class BimsDocumentUploadView(DocumentUploadView):
         return super(BimsDocumentUploadView, self).form_valid(
                 form
         )
+
+
+class SourceReferenceBimsDocumentUploadView(DocumentUploadView):
+    def form_valid(self, form):
+        """
+        If the form is valid, save the associated model.
+        """
+        self.object = form.save(commit=False)
+        self.object.owner = self.request.user
+        # by default, if RESOURCE_PUBLISHING=True then document.is_published
+        # must be set to False
+        # RESOURCE_PUBLISHING works in similar way as ADMIN_MODERATE_UPLOADS,
+        # but is applied to documents only. ADMIN_MODERATE_UPLOADS has wider
+        # usage
+        is_published = not (
+                settings.RESOURCE_PUBLISHING or
+                settings.ADMIN_MODERATE_UPLOADS)
+        self.object.is_published = is_published
+
+        # save abstract
+        try:
+            self.object.abstract = form.data['description']
+        except KeyError:
+            pass
+        self.object.save()
+
+        super(SourceReferenceBimsDocumentUploadView, self).form_valid(
+            form
+        )
+
+        # tag keyword of document as Bims Source Reference
+        keyword = None
+        try:
+            keyword = HierarchicalKeyword.objects.get(
+                slug='bims_source_reference')
+        except HierarchicalKeyword.DoesNotExist:
+            try:
+                last_keyword = HierarchicalKeyword.objects.filter(
+                    depth=1).order_by('path').last()
+                if not last_keyword:
+                    path = '0000'
+                else:
+                    path = last_keyword.path
+                path = "{:04d}".format(int(path) + 1)
+                keyword, created = HierarchicalKeyword.objects.get_or_create(
+                    slug='bims_source_reference',
+                    name='Bims Source Reference',
+                    depth=1,
+                    path=path)
+            except Exception:
+                pass
+        if keyword:
+            TaggedContentItem.objects.get_or_create(
+                content_object=self.object, tag=keyword)
+
+        # add additional metadata
+        bims_document, created = BimsDocument.objects.get_or_create(
+            document=self.object)
+        bims_document.update_metadata(form.data)
+
+        return HttpResponse(
+            json.dumps({
+                'id': self.object.id,
+                'title': self.object.title
+            }),
+            content_type='application/json',
+            status=200)
 
 
 @login_required

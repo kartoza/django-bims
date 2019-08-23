@@ -68,6 +68,10 @@ let categoryValidation = (value) => {
     return null
 };
 
+newDocumentSubmitCallback = (response) => {
+    $studyReference.append('<option value="' + response.id + '">' + response.title + '</option>');
+    $studyReference.val(response.id);
+};
 $(function () {
     // DOI handler
     var $bibliographyTitle = $('#bibliography-title');

@@ -23,6 +23,7 @@ from bims.views.shapefile_upload import (
     process_shapefiles,
     process_user_boundary_shapefiles
 )
+from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
@@ -103,6 +104,9 @@ urlpatterns = [
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
     url(r'^source-reference-form/$', SourceReferenceView.as_view(),
         name='source-reference-form'),
+    url(r'^source-reference/document/upload$',
+        SourceReferenceBimsDocumentUploadView.as_view(),
+        name='source-reference-document-upload'),
     url(r'^location-site-form/add/$',
         LocationSiteFormView.as_view(),
         name='location-site-form'),
