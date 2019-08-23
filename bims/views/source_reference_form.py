@@ -42,7 +42,8 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         try:
             keyword = HierarchicalKeyword.objects.get(
                 slug='bims_source_reference')
-            source_reference_document = Document.objects.filter(keywords=keyword)
+            source_reference_document = Document.objects.filter(
+                keywords=keyword)
         except HierarchicalKeyword.DoesNotExist:
             pass
         context.update({
