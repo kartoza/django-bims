@@ -3,6 +3,7 @@
     Source reference that overridden with it's own source
 """
 
+from collections import OrderedDict
 from django.db import models
 from polymorphic.models import PolymorphicModel
 from td_biblio.models.bibliography import Entry
@@ -151,3 +152,13 @@ class SourceReferenceDocument(SourceReference):
 
     def __unicode__(self):
         return u'%s' % self.source
+
+
+LIST_SOURCE_REFERENCES = OrderedDict([
+    (SourceReferenceDatabase().reference_type, SourceReferenceDatabase),
+    (
+        SourceReferenceBibliography().reference_type,
+        SourceReferenceBibliography),
+    (SourceReferenceDocument().reference_type, SourceReferenceDocument),
+    (SourceReference().reference_type, SourceReference),
+])

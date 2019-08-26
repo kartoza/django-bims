@@ -200,14 +200,14 @@ define([
                     } else {
                         var selected;
                         for (var i = 0; i < data.length; i++) {
-                            if ($.inArray(data[i]['reference'], self.initialSelectedStudyReference) > -1) {
+                            if ($.inArray(data[i]['id'] + '', self.initialSelectedStudyReference) > -1) {
                                 selected = 'selected';
                             } else {
                                 selected = '';
                             }
                             if (data[i]) {
                                 $('#filter-study-reference').append(`
-                                    <option value="${data[i]['reference']}" ${selected}>${data[i]['reference']}</option>`);
+                                    <option value="${data[i]['id']}" ${selected}>${data[i]['reference']}</option>`);
                             }
                         }
                     }
