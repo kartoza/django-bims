@@ -20,7 +20,8 @@ from bims.models import (
     TaxonGroup,
     Taxonomy,
     Endemism,
-    LIST_SOURCE_REFERENCES
+    LIST_SOURCE_REFERENCES,
+    SourceReference
 )
 from bims.tasks.search import search_task
 from sass.models import (
@@ -327,7 +328,7 @@ class Search(object):
         if self.months:
             filters['collection_date__month__in'] = self.months
         if self.reference:
-            filters['reference__in'] = self.reference
+            filters['source_reference__in'] = self.reference
         if self.conservation_status:
             filters['taxonomy__iucn_status__category__in'] = (
                 self.conservation_status
