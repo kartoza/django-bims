@@ -2,15 +2,6 @@ body {
     font-family: "Roboto Condensed";
 }
 
-table, tr, th, td {
-    border: 1px solid black;
-    padding: 5px 10px;
-}
-
-th {
-    background-color: lightgrey;
-}
-
 tr:nth-child(odd) {background: #f5f5f5}
 
 .pagination {
@@ -142,6 +133,10 @@ select {
     padding-top: 100px;
     font-size: 15pt;
     padding-bottom: 10px;
+}
+
+.header-wrapper hr {
+    max-width: 100%;
 }
 
 .reference-wrapper {
