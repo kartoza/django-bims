@@ -13,7 +13,7 @@ class ReferenceList(APIView):
         references = SourceReference.objects.filter(
             biologicalcollectionrecord__isnull=False,
             biologicalcollectionrecord__validated=True
-        )
+        ).distinct('id')
         results = []
         for reference in references:
             results.append(
