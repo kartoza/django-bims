@@ -484,6 +484,15 @@ class SassDashboardMultipleSitesApiView(APIView):
                 'x': location_site.get_centroid().x,
                 'y': location_site.get_centroid().y
             })
+
+        collection_with_references = self.site_visit_taxa.exclude(
+            source_reference__isnull=True
+        ).distinct('source_reference')
+        data_sources = [
+            str(col.source_reference.source) for col in
+            collection_with_references
+        ]
+
         return Response({
             'total_pages': paginator.num_pages,
             'current_page': page,
@@ -493,11 +502,5 @@ class SassDashboardMultipleSitesApiView(APIView):
             'ecological_chart_data': ecological_chart_data,
             'unique_ecoregions': unique_ecoregions,
             'coordinates': coordinates,
-            'data_sources': list(
-                self.site_visit_taxa.exclude(
-                    site_visit__data_source__isnull=True
-                ).values_list(
-                    'site_visit__data_source__name',
-                    flat=True
-                ).distinct())
+            'data_sources': data_sources
         })
