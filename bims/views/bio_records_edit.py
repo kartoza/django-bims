@@ -70,10 +70,11 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
                 many=True).data
         context['id'] = self.object.id
         context['location_site_selected'] = self.object.site
-        context['reference_category'] = (
-            self.object.source_reference.reference_type
-        )
-        context['source_reference'] = self.object.source_reference.source
+        if self.object.source_reference:
+            context['reference_category'] = (
+                self.object.source_reference.reference_type
+            )
+            context['source_reference'] = self.object.source_reference.source
 
         return context
 
