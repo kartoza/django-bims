@@ -38,7 +38,8 @@ define([
                     checked = 'checked';
                 }
                 this.listWrapper.append('<div>' +
-                    '<input type="checkbox" name="reference-category-value" value="' + data[i].get('category') + '"  ' + checked + ' >&nbsp;' + data[i].get('category') +
+                    '<input type="checkbox" id="reference-category-filter-'+ i +'" name="reference-category-value" value="' + data[i].get('category') + '"  ' + checked + ' >&nbsp; ' +
+                        '<label class="form-check-label" for="reference-category-filter-'+ i +'">' + data[i].get('category') + '</label>' +
                     '</div>');
             }
         },

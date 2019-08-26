@@ -5,7 +5,7 @@ import hashlib
 from django.db.models import Q, Count, F, Value
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
-from rest_framework.views import APIView
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 
 from geonode.people.models import Profile
@@ -19,18 +19,21 @@ from bims.models import (
     SpatialScaleGroup,
     TaxonGroup,
     Taxonomy,
-    Endemism
+    Endemism,
+    LIST_SOURCE_REFERENCES
 )
-from bims.tasks.search_version_2 import search_task
+from bims.tasks.search import search_task
 from sass.models import (
     SiteVisitTaxon
 )
 from bims.utils.search_process import get_or_create_search_process
+from bims.utils.api_view import BimsApiView
+
 
 MAX_PAGINATED_SITES = 20
 
 
-class SearchAPIView(APIView):
+class SearchAPIView(BimsApiView):
     """
     Search with django query
     """
@@ -43,16 +46,17 @@ class SearchAPIView(APIView):
             query=search_uri
         )
 
-        results = search_process.get_file_if_exits()
-        if results:
-            results['process_id'] = search_process.process_id
-            if 'sites' in results:
-                results['total_unique_sites'] = len(results['sites'])
-                results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
-            if 'records' in results:
-                results['total_unique_taxa'] = len(results['records'])
-            results['sites_raw_query'] = search_process.process_id
-            return Response(results)
+        if self.is_cached():
+            results = search_process.get_file_if_exits()
+            if results:
+                results['process_id'] = search_process.process_id
+                if 'sites' in results:
+                    results['total_unique_sites'] = len(results['sites'])
+                    results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
+                if 'records' in results:
+                    results['total_unique_taxa'] = len(results['records'])
+                results['sites_raw_query'] = search_process.process_id
+                return Response(results)
 
         # Create process id
         data_for_process_id = dict()
@@ -67,16 +71,23 @@ class SearchAPIView(APIView):
         search_process.set_process_id(process_id)
         search_process.set_status(SEARCH_PROCESSING)
 
-        # call worker task
-        search_task.delay(
-            parameters,
-            search_process.id,
-        )
-
-        result_file = search_process.get_file_if_exits(finished=False)
-        if result_file:
-            return Response(result_file)
-        return Response({'status': 'result/status not exists'})
+        if self.is_background_request():
+            # call worker task
+            search_task.delay(
+                parameters,
+                search_process.id,
+            )
+            result_file = search_process.get_file_if_exits(finished=False)
+            if result_file:
+                return Response(result_file)
+            return Response({'status': 'result/status not exists'})
+        else:
+            search_results = search_task(
+                parameters,
+                search_process.id,
+                self.is_background_request()
+            )
+            return Response(search_results)
 
 
 class Search(object):
@@ -371,7 +382,9 @@ class Search(object):
 
         if self.reference_category:
             clauses = (
-                Q(reference_category__icontains=p) for p in
+                Q(source_reference__polymorphic_ctype=
+                  ContentType.objects.get_for_model(
+                      LIST_SOURCE_REFERENCES[p])) for p in
                 self.reference_category
             )
             reference_category_filter = reduce(operator.or_, clauses)
