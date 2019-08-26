@@ -97,11 +97,13 @@
                         Accredited at the time of collection
                     </label>
                 </div>
+                {% if is_update %}
                 <div class="form-group">
-                    <label for="data-source" class="input-label">Source :</label>
-                    <input type="text" class="form-control" id="data-source" name="data-source-name" {% if data_source %} value="{{ data_source.name }}" {% endif %}>
-                    <input type="hidden" id="data-source-id" name="data-source-id" {% if data_source %} value="{{ data_source.id }}" {% endif %}>
+                    <label for="data-source" class="input-label">Source Reference :</label>
+                    <div style="white-space: nowrap; overflow: auto;">{{ source_reference }}</div>
+                    <div><small class="text-muted">To update this value, click the next button to go to the Source Reference form</small></div>
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -245,7 +247,7 @@
             </tbody>
         </table>
         <div class="submit-wrapper">
-            <input type="button" name="btn" id="submitBtn" data-toggle="modal" data-target="#confirm-submit" class="btn btn-info" value="Submit">
+            <input type="button" name="btn" id="submitBtn" data-toggle="modal" data-target="#confirm-submit" class="btn btn-info" value="Next">
         </div>
 
         <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
@@ -256,7 +258,7 @@
                         Confirm Submit
                     </div>
                     <div class="modal-body">
-                        Are you sure you want to submit the SASS form?
+                        Are you sure you want to submit the SASS form and go to the next form?
                     </div>
                     <div class="modal-footer">
                         <button type="button" id="cancel-submit" class="btn btn-default"

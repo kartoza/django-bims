@@ -1,11 +1,13 @@
 import re
+import time
+import uuid
+from datetime import datetime as libdatetime
 from dateutil.parser import parse
 from django.db.models import Case, When, F, Q, signals
 from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
-from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -37,6 +39,7 @@ from sass.models import (
     Rate,
     SassBiotopeFraction
 )
+from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.utils.search_process import clear_finished_search_process
 
 from bims.enums import TaxonomicGroupCategory
@@ -50,7 +53,7 @@ BSS_STONES_IN_CURRENT = 'Stones in current (SIC)'
 BSS_STONES_OUT_OF_CURRENT = 'Stones out of current (SOOC)'
 
 
-class SassFormView(UserPassesTestMixin, TemplateView):
+class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
     """Template view for Sass Form"""
     template_name = 'form_page.html'
     post_dictionary = {}
@@ -59,6 +62,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
     site_code = ''
     read_only = False
     source_collection = None
+    session_identifier = 'sass-form'
 
     def __init__(self, *args, **kwargs):
         super(SassFormView, self).__init__(*args, **kwargs)
@@ -233,6 +237,8 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             deleted_site_visit_biotope_taxon.delete()
             deleted_site_visit_taxon.delete()
 
+        return updated_site_visit_taxon
+
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
@@ -331,7 +337,7 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             'other-biota', None
         )
         site_visit.save()
-        self.update_site_visit_biotope_taxon(
+        site_visit_taxon_ids = self.update_site_visit_biotope_taxon(
             site_visit,
             self.request.POST,
             date)
@@ -368,18 +374,34 @@ class SassFormView(UserPassesTestMixin, TemplateView):
             location_site_post_save_handler,
         )
         if site_id:
-            url = '{base_url}?{querystring}'.format(
+            next_url = '{base_url}?{querystring}'.format(
                 base_url=reverse('sass-form-page', kwargs={
                     'site_id': site_id, }),
                 querystring='sass_created_id={}'.format(
                     site_visit.id
                 )
             )
-            return redirect(url)
         else:
-            return redirect(
+            next_url = (
                 reverse('sass-update-page', kwargs={'sass_id': sass_id})
             )
+
+        session_uuid = '%s' % uuid.uuid4()
+        self.add_last_session(request, session_uuid, {
+            'edited_at': int(time.mktime(libdatetime.now().timetuple())),
+            'records': site_visit_taxon_ids,
+            'location_site': site_visit.location_site.name,
+            'form': 'sass-form'
+        })
+        url = reverse('source-reference-form') + (
+            '?session={session}&identifier={identifier}&next={next}'.format(
+                session=session_uuid,
+                next=next_url,
+                identifier=self.session_identifier
+            )
+        )
+        return HttpResponseRedirect(url)
+
 
     def get_biotope_form_data(self):
         biotope_form_list = []
@@ -564,7 +586,12 @@ class SassFormView(UserPassesTestMixin, TemplateView):
                 context['comments'] = self.site_visit.comments_or_observations
             if self.site_visit.other_biota:
                 context['other_biota'] = self.site_visit.other_biota
-            context['data_source'] = self.site_visit.data_source
+            site_visit_taxon = SiteVisitTaxon.objects.filter(
+                site_visit=self.site_visit, source_reference__isnull=False)
+            if site_visit_taxon.exists():
+                context['source_reference'] = (
+                    site_visit_taxon[0].source_reference
+                )
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()

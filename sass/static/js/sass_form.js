@@ -216,9 +216,6 @@ $(document).ready(function () {
         return true;
     });
 
-    if (isUpdate) {
-        $('#submitBtn').val('Update');
-    }
     $("#date").datepicker({
         changeMonth: true,
         changeYear: true
