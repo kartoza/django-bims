@@ -21,7 +21,6 @@ from bims.models import (
     Taxonomy,
     Endemism,
     LIST_SOURCE_REFERENCES,
-    SourceReference
 )
 from bims.tasks.search import search_task
 from sass.models import (
