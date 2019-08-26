@@ -50,7 +50,7 @@
                 </form>
             </div>
         {% endif %}
-        <div class="site-code pull-right">
+        <div class="site-code pull-right view-only">
             <div class="sass-form-close-container">
                 <div class="sass-form-close"><i class="fa fa-times" aria-hidden="true"></i></div>
             </div>
@@ -117,9 +117,9 @@
                     </label>
                 </div>
                 <div class="form-group">
-                    <label for="data-source" class="input-label">Source :</label>
-                    <input type="text" class="form-control" id="data-source" name="data-source-name" {% if data_source %} value="{{ data_source.name }}" {% endif %} readonly>
-                    <input type="hidden" id="data-source-id" name="data-source-id" {% if data_source %} value="{{ data_source.id }}" {% endif %}>
+                    <label for="data-source" class="input-label">Source Reference :</label>
+                    <input type="text" class="form-control" id="data-source" name="data-source-name" {% if source_reference %} value="{{ source_reference }}" {% endif %} readonly>
+                    <input type="hidden" id="data-source-id" name="data-source-id" {% if source_reference %} value="{{ source_reference.id }}" {% endif %}>
                 </div>
             </div>
         </div>
@@ -275,7 +275,6 @@
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="{% static "js/libs/jquery.timepicker.min.js" %}"></script>
-    <script src="{% static "js/sass_form.js" %}"></script>
     <script type="text/javascript">
         $(':radio:not(:checked)').attr('disabled', true);
     </script>

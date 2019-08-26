@@ -93,6 +93,10 @@ td.sampled-name {
     font-weight: bold;
 }
 
+.view-only {
+    margin-top: -50px;
+}
+
 .sass-score {
     float: right;
     padding-right: 10px;

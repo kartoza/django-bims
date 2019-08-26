@@ -48,6 +48,19 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         except HierarchicalKeyword.DoesNotExist:
             pass
 
+        if 'records' in context:
+            # check if there is existing source_reference from collection
+            collection_records = BiologicalCollectionRecord.objects.filter(
+                id__in=context['records'],
+                source_reference__isnull=False
+            ).distinct('source_reference')
+            if collection_records.exists():
+                if collection_records.count() > 1:
+                    # There are multiple source references, skip
+                    pass
+                else:
+                    self.collection_record = collection_records[0]
+
         if self.collection_record:
             if self.collection_record.source_reference:
                 additional_context_data['reference_category'] = (
@@ -72,6 +85,9 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         collection_id = self.request.GET.get('collection_id', None)
+        identifier = self.request.GET.get('identifier', None)
+        if identifier:
+            self.session_identifier = identifier
         session_found, session_not_found_message = True, ''
         try:
             self.additional_context = self.get_session_data(self.request)
@@ -95,6 +111,9 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         collection_id = self.request.GET.get('collection_id', None)
+        identifier = self.request.GET.get('identifier', None)
+        if identifier:
+            self.session_identifier = identifier
         session_found, session_not_found_message = True, ''
         category = None
         data = request.POST.dict()
