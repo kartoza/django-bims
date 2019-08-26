@@ -2150,6 +2150,15 @@ div:hover::-webkit-scrollbar {
     filter: invert(60%);
 }
 
+.chosen-wrapper {
+    padding: 10px;
+    width: 100%;
+}
+
+.chosen-container.chosen-with-drop .chosen-drop {
+    position: relative;
+}
+
 .chosen-select, .chosen-container {
     width: 100% !important;
 }
