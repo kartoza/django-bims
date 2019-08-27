@@ -31,10 +31,7 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
             }
             $notesReference.attr(
                 "placeholder",
-                "Provide any additional information about study reference. " +
-                "E.g. Data extracted from Shelton, J.M., 2013 PhD thesis - Shelton, J.M., 2013. " +
-                "Impact of non-native rainbow trout on stream food webs in the Cape Floristic Region, South Africa intergrating evidence from surveys and experiments." +
-                "University of Cape Town.");
+                "If these data appear in other study references please specify those study references.");
             break;
         case 'document':
             showReferenceRow($studyReference);
@@ -44,14 +41,13 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
             }
             $notesReference.attr(
                 "placeholder",
-                "Provide any additional information about study reference. " +
-                "E.g. Data from the report was used in Dallas, H.F. & Rivers-Moore, N.A., 2012 paper (10.1007/s10750-011-0856-4).");
+                "If these data appear in other study references, please specify those study references.");
             break;
         case 'no-source':
             showReferenceRow($notesReference);
             $notesReference.attr(
                 "placeholder",
-                "Provide any additional information about the unpublished data. E.g. I went on a hiking trip to the Cederberg and saw Galaxias Zebratus in the Olifants River.");
+                "Please specify the purpose of the data collected.");
             break;
     }
 };

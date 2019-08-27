@@ -21,6 +21,9 @@
                             <div id="document-author-error" class="alert alert-danger" role="alert"
                                  style="display: none;">Author is required
                             </div>
+                            <small class="form-text text-muted">
+                                E.g. Smith, W.C., Brown, F.D, and Kleynhans, C.B.
+                            </small>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -63,7 +66,11 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button id="new-document-upload" type="button" class="btn btn-primary">Upload</button>
+                    <button id="new-document-upload" type="button" class="btn btn-primary">
+                        <img src="/static/img/small-loading.svg" width="25"
+                            alt="Loading view" style="display: none;">
+                        <span class="label">Upload</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -101,6 +108,9 @@
                 return;
             }
             $modal.find('button').prop('disabled', true);
+            $button.find('.label').hide();
+            $button.find('img').show();
+
             $.ajax({
                 type: 'POST',
                 url: $form.attr('action'),
@@ -112,6 +122,8 @@
                 success: function (response) {
                     newDocumentSubmitCallback(response);
                     $modal.find('button').prop('disabled', false);
+                    $button.find('.label').show();
+                    $button.find('img').hide();
                     $modal.find('input').val('');
                     $('#new-document-modal').modal('toggle');
                 },
@@ -119,6 +131,8 @@
                     $error.show();
                     $error.html(error['responseText']);
                     $modal.find('button').prop('disabled', false);
+                    $button.find('.label').show();
+                    $button.find('img').hide();
                 }
             });
             return false;
