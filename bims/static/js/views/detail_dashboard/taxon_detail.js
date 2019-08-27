@@ -43,7 +43,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.recordsTable = this.$el.find('.records-table');
             this.recordsAreaTable = this.$el.find('.records-area-table');
             this.mapTaxaSite = null;
-            this.csvDownloadsUrl = '/download-csv-taxa-records/';
+            this.csvDownloadsBaseUrl = '/download-csv-taxa-records/';
+            this.csvDownloadsUrl = '';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
 
@@ -77,7 +78,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 self.url = '/api/bio-collection-summary/';
                 if (typeof data === 'string') {
                     self.url += '?' + data;
-                    self.csvDownloadsUrl += '?' + data;
+                    self.csvDownloadsUrl = self.csvDownloadsBaseUrl + '?' + data;
                 } else {
                     self.taxonName = data.taxonName;
                     self.taxonId = data.taxonId;
@@ -88,7 +89,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                     Shared.Router.updateUrl('species-detail/' + self.apiParameters(filterParameters).substr(1), true);
                     var params = self.apiParameters(self.parameters);
-                    self.csvDownloadsUrl += params;
+                    self.csvDownloadsUrl = self.csvDownloadsBaseUrl + params;
                     self.url += params;
                 }
 
