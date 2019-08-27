@@ -576,7 +576,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             context['assessor'] = self.site_visit.assessor
             context['collector'] = self.site_visit.collector
             if self.site_visit.assessor:
-                bims_profile = BimsProfile.objects.get(
+                bims_profile, created = BimsProfile.objects.get_or_create(
                     user=self.site_visit.assessor)
                 context['accredited'] = bims_profile.is_accredited()
             context['date'] = self.site_visit.site_visit_date
