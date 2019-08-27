@@ -4,36 +4,22 @@ from django.http import HttpResponse
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxonomy import Taxonomy
-from bims.api_views.collection import GetCollectionAbstract
+from bims.api_views.search import Search
 
 
 def download_csv_site_taxa_records(request):
     taxon_id = request.GET.get('taxon')
-    query_value = request.GET.get('search')
     filters = request.GET
-
-    # Search collection
-    collection_results, \
-        site_results, \
-        fuzzy_search = GetCollectionAbstract.apply_filter(
-            query_value,
-            filters,
-            ignore_bbox=True)
-
-    records = [q.object for q in collection_results]
+    search = Search(filters)
+    records = search.process_search()
 
     current_model = BiologicalCollectionRecord
-
-    try:
-        children_model = records[0].get_children()
-        if children_model:
-            current_model = children_model
-    except:  # noqa
-        pass
 
     fields = [f.name for f in current_model._meta.get_fields()]
     fields.remove('ready_for_validation')
     fields.remove('validated')
+    fields.remove('reference')
+    fields.remove('reference_category')
 
     if 'biologicalcollectionrecord_ptr' in fields:
         fields.remove('biologicalcollectionrecord_ptr')
@@ -52,15 +38,13 @@ def download_csv_site_taxa_records(request):
     writer.writerow(fields + ['coordinates'])
 
     for record in records:
-        try:
-            children_record = record.get_children()
-            if children_record:
-                record = children_record
-        except:  # noqa
-            pass
         row_object = []
         for field in fields:
-            row_object.append(getattr(record, field))
+            try:
+                record_data = getattr(record, field)
+            except AttributeError:
+                record_data = '-'
+            row_object.append(record_data)
         row_object.append('%s,%s' % (
             record.site.get_centroid().coords[1],
             record.site.get_centroid().coords[0],

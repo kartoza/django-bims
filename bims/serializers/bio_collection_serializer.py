@@ -150,7 +150,10 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.collection_date.isoformat().split('T')[0]
 
     def get_study_reference(self, obj):
-        return obj.reference.encode('utf8')
+        if obj.source_reference:
+            return str(obj.source_reference.source)
+        else:
+            return '-'
 
     def get_taxon_name(self, obj):
         return obj.taxonomy.canonical_name
@@ -174,7 +177,10 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return obj.taxonomy.scientific_name
 
     def get_reference_category(self, obj):
-        return obj.reference_category.encode('utf8')
+        if obj.source_reference:
+            return obj.source_reference.reference_type
+        else:
+            return '-'
 
     def get_collector_or_assessor(self, obj):
         return obj.collector.encode('utf8')
