@@ -81,15 +81,10 @@
                     <label for="date" class="input-label">Date (required) :</label>
                     <input type="text" class="form-control" id="date" required name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} >
                 </div>
-                 <div class="form-group">
-                    <label for="assessor" class="input-label">Collector :</label>
-                    <input type="text" class="form-control" id="collector" {% if collector %} value="{{ collector.first_name }} {{ collector.last_name }}" {% endif %} >
-                    <input type="hidden" id="collector_id" name="collector" {% if collector %} value="{{ collector.id }}" {% endif %}>
-                </div>
                 <div class="form-group">
-                    <label for="assessor" class="input-label">Assessor :</label>
-                    <input type="text" class="form-control" id="assessor" {% if assessor %} value="{{ assessor.first_name }} {{ assessor.last_name }}" {% endif %} >
-                    <input type="hidden" id="assessor_id" name="assessor" {% if assessor %} value="{{ assessor.id }}" {% endif %}>
+                    <label for="owner" class="input-label">Owner :</label>
+                    <input type="text" class="form-control" id="owner" {% if owner %} value="{% if owner.first_name %}{{ owner.first_name }} {{ owner.last_name }}{% else %}{{ owner.username }}{% endif %}" {% endif %} >
+                    <input type="hidden" id="owner_id" name="owner" {% if owner %} value="{{ owner.id }}" {% endif %}>
                 </div>
                 <div class="form-check form-group">
                     <input class="form-check-input" type="radio" {% if accredited %} checked {% endif %} id="accredited" name="accredited">

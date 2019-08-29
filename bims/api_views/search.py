@@ -371,13 +371,13 @@ class Search(object):
         bio = bio.filter(**filters)
 
         if self.collector:
-            assessors = Profile.objects.annotate(
+            sass_owners = Profile.objects.annotate(
                 full_name=Concat('first_name', Value(' '), 'last_name')
             ).filter(full_name__in=self.collector)
             bio = bio.filter(
                 Q(collector__in=self.collector) |
-                Q(sitevisittaxon__site_visit__assessor__in=list(
-                    assessors.values_list('id', flat=True)))
+                Q(sitevisittaxon__site_visit__owner__in=list(
+                    sass_owners.values_list('id', flat=True)))
             )
 
         if self.reference_category:

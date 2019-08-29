@@ -21,7 +21,7 @@
 
     <div class="body-form container">
         <h2>View SASS record</h2>
-        {% if user.is_superuser or owner == user or assessor == user %}
+        {% if user.is_superuser or owner == user or collector == user %}
             <a class="btn btn-primary btn-normal" style="margin-bottom: 10px;" href="/sass/update/{{ site_visit_id }}/">Edit</a>
             <div class="btn btn-danger btn-normal" style="margin-bottom: 10px;" data-toggle="modal" data-target="#confirm-submit">Delete</div>
             <div class="modal fade" id="confirm-submit" tabindex="-1"
@@ -103,12 +103,8 @@
                     <input type="text" class="form-control" name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} readonly>
                 </div>
                 <div class="form-group">
-                    <label for="assessor" class="input-label">Collector :</label>
-                    <input type="text" class="form-control" id="collector" {% if collector %} value="{{ collector.first_name }} {{ collector.last_name }}" {% endif %} readonly>
-                </div>
-                <div class="form-group">
-                    <label for="assessor" class="input-label">Assessor :</label>
-                    <input type="text" class="form-control" id="assessor" {% if assessor %} value="{{ assessor.first_name }} {{ assessor.last_name }}" {% endif %} readonly>
+                    <label for="owner" class="input-label">Owner :</label>
+                    <input type="text" class="form-control" id="owner" {% if owner %} value="{% if owner.first_name %}{{ owner.first_name }} {{ owner.last_name }}{% else %}{{ owner.username }}{% endif %}" {% endif %} readonly>
                 </div>
                 <div class="form-check form-group">
                     <input class="form-check-input" type="radio" disabled {% if accredited %} checked {% endif %} id="accredited" name="accredited">

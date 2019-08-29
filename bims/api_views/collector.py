@@ -12,12 +12,12 @@ class CollectorList(APIView):
     """API for listing all biological collection record collectors."""
 
     def get(self, request, *args):
-        assessors = (
+        owners = (
             SiteVisit.objects.all().exclude(
-                assessor__isnull=True
+                owner__isnull=True
             ).annotate(
                 full_name=Concat(
-                    'assessor__first_name', V(' '), 'assessor__last_name',
+                    'owner__first_name', V(' '), 'owner__last_name',
                     output_field=CharField()
                 )
             ).distinct('full_name').order_by(
@@ -32,7 +32,7 @@ class CollectorList(APIView):
                 'collector'
             ).order_by('collector')
         )
-        all_users = list(assessors) + list(collectors)
+        all_users = list(owners) + list(collectors)
         all_users = list(set(all_users))
         all_users.sort()
         user_index = 0

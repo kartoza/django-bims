@@ -90,7 +90,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     origin = serializers.SerializerMethodField()
     sampling_date = serializers.SerializerMethodField()
     taxon_name = serializers.SerializerMethodField()
-    collector_or_assessor = serializers.SerializerMethodField()
+    collector_or_owner = serializers.SerializerMethodField()
     study_reference = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
@@ -182,7 +182,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         else:
             return '-'
 
-    def get_collector_or_assessor(self, obj):
+    def get_collector_or_owner(self, obj):
+        if obj.owner:
+            return obj.owner.encode('utf8')
         return obj.collector.encode('utf8')
 
     class Meta:
@@ -206,7 +208,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'conservation_status',
             'reference_category',
             'study_reference',
-            'collector_or_assessor'
+            'collector_or_owner'
         ]
 
     def to_representation(self, instance):

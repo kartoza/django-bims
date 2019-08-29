@@ -30,7 +30,7 @@ class RiverAdmin(admin.ModelAdmin):
 class SiteVisitAdmin(ForeignKeyAutocompleteAdmin):
     list_display = (
         'location_site',
-        'assessor',
+        'owner',
         'site_visit_date',
         'water_level',
         'water_turbidity',
