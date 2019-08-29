@@ -56,13 +56,6 @@ class SiteVisit(AbstractAdditionalData):
         related_name='%(class)s_data_collector'
     )
 
-    assessor = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        related_name='%(class)s_assessor'
-    )
-
     water_level = models.CharField(
         max_length=100,
         choices=[
