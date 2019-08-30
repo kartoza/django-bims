@@ -84,6 +84,7 @@
                 <div class="form-group">
                     <label for="owner" class="input-label">Owner :</label>
                     <input type="text" class="form-control" id="owner" {% if owner %} value="{% if owner.first_name %}{{ owner.first_name }} {{ owner.last_name }}{% else %}{{ owner.username }}{% endif %}" {% endif %} >
+                    <small class="form-text text-muted">Please select the Owner, if you are the data capturer and not the Owner</small>
                     <input type="hidden" id="owner_id" name="owner" {% if owner %} value="{{ owner.id }}" {% endif %}>
                 </div>
                 <div class="form-check form-group">
