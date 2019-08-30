@@ -146,6 +146,7 @@
                     <input type="text" class="form-control form-control-sm" onClick="this.setSelectionRange(0, this.value.length)"
                            id="owner" placeholder="" name="owner" value="{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{%endif%}"
                            required>
+                    <small class="form-text text-muted">Please select the Owner, if you are the data capturer and not the Owner</small>
                     <div class="invalid-feedback">
                         Please provide a owner
                     </div>

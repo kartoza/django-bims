@@ -163,6 +163,7 @@
                     <input type="text" onClick="this.setSelectionRange(0, this.value.length)"
                            class="form-control form-control-sm"
                            placeholder="" value="{{ fullname }}" id="owner" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} >
+                    <small class="form-text text-muted">Please select the Owner, if you are the data capturer and not the Owner</small>
                     <input type="hidden" name="owner" id="owner_id" value="{{ user_id }}">
                 </div>
             </div>
