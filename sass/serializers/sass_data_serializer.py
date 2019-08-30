@@ -18,7 +18,7 @@ class SassDataSerializer(serializers.ModelSerializer):
     sampling_date = serializers.SerializerMethodField()
     accredited = serializers.SerializerMethodField()
     sass_version = serializers.SerializerMethodField()
-    collector_or_assessor = serializers.SerializerMethodField()
+    collector_or_owner = serializers.SerializerMethodField()
     sass_taxa = serializers.SerializerMethodField()
     s = serializers.SerializerMethodField()
     v = serializers.SerializerMethodField()
@@ -39,7 +39,7 @@ class SassDataSerializer(serializers.ModelSerializer):
             'sampling_date',
             'accredited',
             'sass_version',
-            'collector_or_assessor',
+            'collector_or_owner',
             'sass_taxa',
             's',
             'v',
@@ -60,14 +60,17 @@ class SassDataSerializer(serializers.ModelSerializer):
                 filter_history[filter_key] = filter_data
             except ValueError:
                 filter_history[filter_key] = filter_value
-        spatial_filters = filters['spatialFilter']
-        if spatial_filters:
-            spatial_filters = json.loads(spatial_filters)
-            spatial_scales = SpatialScale.objects.filter(
-                id__in=spatial_filters
-            )
-            for spatial_scale in spatial_scales:
-                filter_history[spatial_scale.name] = spatial_scale.query
+        try:
+            spatial_filters = filters['spatialFilter']
+            if spatial_filters:
+                spatial_filters = json.loads(spatial_filters)
+                spatial_scales = SpatialScale.objects.filter(
+                    id__in=spatial_filters
+                )
+                for spatial_scale in spatial_scales:
+                    filter_history[spatial_scale.name] = spatial_scale.query
+        except KeyError:
+            pass
         return filter_history
 
     def get_FBIS_site_code(self, obj):
@@ -115,7 +118,7 @@ class SassDataSerializer(serializers.ModelSerializer):
         return obj.site_visit.site_visit_date
 
     def get_accredited(self, obj):
-        if obj.site_visit.assessor.bims_profile.is_accredited():
+        if obj.site_visit.owner.bims_profile.is_accredited():
             return 'Y'
         else:
             return 'N'
@@ -123,8 +126,8 @@ class SassDataSerializer(serializers.ModelSerializer):
     def get_sass_version(self, obj):
         return obj.site_visit.sass_version
 
-    def get_collector_or_assessor(self, obj):
-        return obj.site_visit.assessor.username
+    def get_collector_or_owner(self, obj):
+        return obj.site_visit.owner.username
 
     def get_sass_taxa(self, obj):
         if obj.site_visit.sass_version == 4:
@@ -193,7 +196,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     number_of_taxa = serializers.SerializerMethodField()
     aspt = serializers.SerializerMethodField()
     sampling_date = serializers.SerializerMethodField()
-    assessor = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
     sass_version = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     river_name = serializers.SerializerMethodField()
@@ -231,10 +234,10 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
 
     def get_accredited(self, obj):
         site_visit = SiteVisit.objects.get(id=obj['sass_id'])
-        assessor = site_visit.assessor
-        if not assessor:
+        owner = site_visit.owner
+        if not owner:
             return 'N'
-        if assessor.bims_profile.is_accredited():
+        if owner.bims_profile.is_accredited():
             return 'Y'
         else:
             return 'N'
@@ -266,8 +269,8 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     def get_FBIS_site_code(self, obj):
         return obj['FBIS_site_code']
 
-    def get_assessor(self, obj):
-        return obj['assessor']
+    def get_owner(self, obj):
+        return obj['owner']
 
     def get_sass_version(self, obj):
         return obj['sass_version']
@@ -350,7 +353,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
             'aspt',
             'reference_category',
             'study_reference',
-            'assessor',
+            'owner',
         ]
 
     def biotope_fractions(self, site_visit_id, result):

@@ -222,7 +222,7 @@ $(document).ready(function () {
     });
     $('#time').timepicker({'timeFormat': 'H:i'});
 
-    self.userInputAutocomplete('assessor');
+    self.userInputAutocomplete('owner');
     self.userInputAutocomplete('collector');
 
     let $ratingInput = $('.rating-input');

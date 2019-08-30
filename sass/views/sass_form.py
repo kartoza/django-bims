@@ -82,7 +82,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             return True
         return SiteVisit.objects.filter(
             Q(owner=self.request.user) |
-            Q(assessor=self.request.user) |
             Q(collector=self.request.user),
             id=sass_id,).exists()
 
@@ -246,28 +245,20 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         signals.post_save.disconnect(
             location_site_post_save_handler,
         )
-        # Assessor
-        assessor_id = request.POST.get('assessor', None)
-        assessor = None
-        if assessor_id:
-            try:
-                assessor = Profile.objects.get(id=int(assessor_id))
-            except Profile.DoesNotExist:
-                pass
 
-        # Collector
-        collector_id = request.POST.get('collector', None)
-        collector = None
-        if collector_id:
+        # Owner
+        owner_id = request.POST.get('owner', None)
+        owner = None
+        if owner_id:
             try:
-                collector = Profile.objects.get(id=int(collector_id))
+                owner = Profile.objects.get(id=int(owner_id))
             except Profile.DoesNotExist:
                 pass
 
         # Accredited
         accredited = request.POST.get('accredited', False) == 'on'
-        if accredited and assessor:
-            bims_profile = BimsProfile.objects.get(user=assessor)
+        if accredited and owner:
+            bims_profile = BimsProfile.objects.get(user=owner)
             if not bims_profile.is_accredited():
                 bims_profile.accredit()
 
@@ -310,7 +301,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         new_site_visit = not sass_id and site_id
         if new_site_visit:
             site_visit = SiteVisit.objects.create(
-                owner=self.request.user,
+                collector=self.request.user,
                 location_site_id=site_id
             )
         else:
@@ -326,8 +317,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         site_visit.sass_biotope_fraction.add(*biotope_fractions)
         site_visit.site_visit_date = date
         site_visit.time = datetime
-        site_visit.assessor = assessor
-        site_visit.collector = collector
+        site_visit.owner = owner
         site_visit.sass_version = self.sass_version
         site_visit.data_source = data_source
         site_visit.comments_or_observations = request.POST.get(
@@ -345,8 +335,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         # Send email to superusers
         if new_site_visit:
             ctx = {
-                'owner': self.request.user,
-                'assessor': site_visit.assessor,
+                'collector': self.request.user,
+                'owner': site_visit.owner,
                 'sass_version': site_visit.sass_version,
                 'site_visit_date': site_visit.site_visit_date.strftime(
                     '%m/%d/%Y'),
@@ -573,15 +563,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         if self.site_visit:
             context['is_update'] = True
             context['site_visit_id'] = self.site_visit.id
-            context['assessor'] = self.site_visit.assessor
             context['collector'] = self.site_visit.collector
-            if self.site_visit.assessor:
-                bims_profile, created = BimsProfile.objects.get_or_create(
-                    user=self.site_visit.assessor)
-                context['accredited'] = bims_profile.is_accredited()
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
-            context['owner'] = self.site_visit.owner
+            owner = self.site_visit.owner
             if self.site_visit.comments_or_observations:
                 context['comments'] = self.site_visit.comments_or_observations
             if self.site_visit.other_biota:
@@ -592,6 +577,14 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 context['source_reference'] = (
                     site_visit_taxon[0].source_reference
                 )
+        else:
+            owner = self.request.user
+
+        if owner:
+            context['owner'] = owner
+            bims_profile, created = BimsProfile.objects.get_or_create(
+                user=owner)
+            context['accredited'] = bims_profile.is_accredited()
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
@@ -681,7 +674,7 @@ class SassDeleteView(UserPassesTestMixin, View):
         if not sass_id:
             return True
         return SiteVisit.objects.filter(
-            Q(owner=self.request.user) | Q(assessor=self.request.user),
+            Q(owner=self.request.user) | Q(collector=self.request.user),
             id=sass_id,).exists()
 
     @method_decorator(csrf_exempt)

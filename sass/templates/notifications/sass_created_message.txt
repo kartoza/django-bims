@@ -3,8 +3,8 @@ You have received the following notice from {{ current_site }}:
 
 {% trans "A new SASS data has been created " %} :
 
-Creator : {{ owner.username }}
-Assessor :{% if assessor %} {{ assessor.first_name }} {{ assessor.last_name }} ({{ assessor.username }}) {% else %} - {% endif %}
+Creator : {{ collector.username }}
+Owner :{% if owner %} {{ owner.first_name }} {{ owner.last_name }} ({{ owner.username }}) {% else %} - {% endif %}
 SASS Version : {{ sass_version }}
 Site Visit Date : {{ site_visit_date }}
 
