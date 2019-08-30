@@ -290,7 +290,7 @@ $(function () {
 
     $taxonAbundance.change(taxonAbundanceOnChange);
 
-    $('#collector').autocomplete({
+    $('#owner').autocomplete({
         source: function (request, response) {
             $.ajax({
                 url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
@@ -313,17 +313,18 @@ $(function () {
             }, 0);
         },
         change: function (event, ui) {
-            let $collectorIdInput = $('#collector_id');
+            let $ownerIdInput = $('#owner_id');
             if (ui.item) {
-                $collectorIdInput.val(ui.item.value);
+                $ownerIdInput.val(ui.item.value);
             } else {
-                $collectorIdInput.val(' ');
+                $ownerIdInput.val(' ');
+                $('#owner').val('');
             }
         },
         select: function (e, u) {
             e.preventDefault();
-            $('#collector').val(u.item.label);
-            $('#collector_id').val(u.item.value);
+            $('#owner').val(u.item.label);
+            $('#owner_id').val(u.item.value);
         }
     });
 

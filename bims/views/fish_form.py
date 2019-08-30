@@ -171,8 +171,7 @@ class FishFormView(TemplateView, SessionFormMixin):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         date_string = request.POST.get('date', None)
-        collector = request.POST.get('collector', '')
-        collector_id = request.POST.get('collector_id', '').strip()
+        owner_id = request.POST.get('owner_id', '').strip()
         biotope_id = request.POST.get('biotope', None)
         reference = request.POST.get('study_reference', '')
         reference_category = request.POST.get('reference_category', '')
@@ -195,13 +194,15 @@ class FishFormView(TemplateView, SessionFormMixin):
             float(latitude))
 
         # If collector id exist then get the user object
-        collector_user = None
-        if collector_id:
+        owner = None
+        if owner_id:
             try:
-                collector_user = get_user_model().objects.get(
-                    id=int(collector_id))
+                owner = get_user_model().objects.get(
+                    id=int(owner_id))
             except get_user_model().DoesNotExist:
                 pass
+        else:
+            owner = self.request.user
 
         if site_name or site_code:
             location_type, created = LocationType.objects.get_or_create(
@@ -260,11 +261,10 @@ class FishFormView(TemplateView, SessionFormMixin):
                             taxonomy=taxonomy,
                             original_species_name=taxonomy.canonical_name,
                             site=self.location_site,
-                            collector=collector,
-                            collector_user=collector_user,
+                            collector_user=self.request.user,
                             sampling_method=sampling_method,
                             abundance_number=abundance,
-                            owner=self.request.user,
+                            owner=owner,
                             biotope=biotope,
                             reference=reference,
                             reference_category=reference_category,
