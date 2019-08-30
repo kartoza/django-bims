@@ -78,6 +78,6 @@ class SeleniumTest(LiveServerTestCase):
         self.selenium.add_cookie(session_cookie)
         self.selenium.refresh()
 
-        info = self.selenium.find_element_by_id('description')
+        info = self.selenium.find_element_by_id('error-title')
         self.assertEqual(info.text,
-                         'There was a problem loading this page')
+                         '404 - PAGE NOT FOUND')
