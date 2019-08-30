@@ -45,6 +45,11 @@ class LocationSiteFormView(TemplateView):
         context['geomorphological_zone_category'] = [
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
+        if self.request.user.get_full_name():
+            context['fullname'] = self.request.user.get_full_name()
+        else:
+            context['fullname'] = self.request.user.username
+        context['user_id'] = self.request.user.id
         context.update(self.additional_context_data())
         return context
 
