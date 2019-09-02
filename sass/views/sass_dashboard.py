@@ -368,8 +368,8 @@ class SassDashboardView(TemplateView):
         collection_with_references = self.site_visit_taxa.exclude(
                 source_reference__isnull=True
         ).distinct('source_reference')
-        context['data_sources'] = [
-            col.source_reference.source for col in collection_with_references
+        context['source_references'] = [
+            col.source_reference for col in collection_with_references
         ]
 
         river_catchments = self.location_site.location_context_group_values(
