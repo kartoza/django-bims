@@ -152,6 +152,17 @@ class BioCollectionSummary(APIView):
         else:
             response_data['common_name'] = str(
                 common_names[0]['name']).capitalize()
+
+        # Source references
+        collection_with_references = collection_results.exclude(
+            source_reference__isnull=True
+        ).distinct('source_reference')
+        source_references = [
+            col.source_reference.link_template() for col in
+            collection_with_references
+        ]
+        response_data['source_references'] = source_references
+
         file_path = create_search_process_file(
             data=response_data,
             search_process=search_process,

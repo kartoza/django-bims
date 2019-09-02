@@ -47,6 +47,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.csvDownloadsUrl = '';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
+            this.metadataTableList = this.$el.find('#metadata-table-list-taxon');
 
             let biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
@@ -103,6 +104,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 dataType: 'json',
                 success: function (data) {
                     self.generateDashboard(data);
+                    self.renderMetadataTable(data);
                     self.loadingDashboard.hide();
                 }
             })
@@ -118,6 +120,14 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 genus: taxonomy_rank['GENUS'],
                 species: taxonomy_rank['SPECIES'],
             }));
+        },
+        renderMetadataTable: function (data) {
+            var self = this;
+            this.metadataTableList.html(' ');
+            let dataSources = data['source_references'];
+            $.each(dataSources, function (index, source) {
+                self.metadataTableList.append('<li>' + source + '</li>')
+            });
         },
         generateDashboard: function (data) {
             var self = this;
@@ -328,6 +338,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.endemismBlockData.html('');
             this.imagesCard.html('');
             this.originBlockData.html('');
+            this.metadataTableList.html('');
             // Clear canvas
             if (this.taxaRecordsTimelineGraphChart) {
                 this.taxaRecordsTimelineGraphChart.destroy();
