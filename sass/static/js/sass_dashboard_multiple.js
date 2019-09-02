@@ -507,7 +507,7 @@ function onDownloadSummaryCSVClicked(e) {
 
 function renderDataSources(data) {
     let ulDiv = $('#data-source-list');
-    let dataSources = data['data_sources'];
+    let dataSources = data['source_references'];
     $.each(dataSources, function (index, source) {
         ulDiv.append('<li>' + source + '</li>')
     });
