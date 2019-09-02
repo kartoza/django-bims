@@ -488,8 +488,8 @@ class SassDashboardMultipleSitesApiView(APIView):
         collection_with_references = self.site_visit_taxa.exclude(
             source_reference__isnull=True
         ).distinct('source_reference')
-        data_sources = [
-            str(col.source_reference.source) for col in
+        source_references = [
+            col.source_reference.link_template() for col in
             collection_with_references
         ]
 
@@ -502,5 +502,5 @@ class SassDashboardMultipleSitesApiView(APIView):
             'ecological_chart_data': ecological_chart_data,
             'unique_ecoregions': unique_ecoregions,
             'coordinates': coordinates,
-            'data_sources': data_sources
+            'source_references': source_references
         })

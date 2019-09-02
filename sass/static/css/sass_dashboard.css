@@ -205,3 +205,7 @@ body {
     color: grey;
     font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
+
+.data-content {
+    line-height: 22px;
+}

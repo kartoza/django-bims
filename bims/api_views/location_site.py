@@ -217,6 +217,7 @@ class LocationSitesSummary(APIView):
     TAXA_GRAPH = 'taxa_graph'
     ORIGIN_OCCURRENCE = 'origin_occurrence'
     CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
+    SOURCE_REFERENCES = 'source_references'
     iucn_category = {}
     origin_name_list = {}
 
@@ -276,8 +277,16 @@ class LocationSitesSummary(APIView):
         if 'modules' in filters:
             modules = list(TaxonGroup.objects.filter(
                 category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-                id__in=filters['modules']
+                id=filters['modules']
             ).values_list('name', flat=True))
+
+        collection_with_references = collection_results.exclude(
+            source_reference__isnull=True
+        ).distinct('source_reference')
+        source_references = [
+            col.source_reference.link_template() for col in
+            collection_with_references
+        ]
 
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
@@ -288,6 +297,7 @@ class LocationSitesSummary(APIView):
             self.IUCN_NAME_LIST: self.iucn_category,
             self.ORIGIN_NAME_LIST: self.origin_name_list,
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
+            self.SOURCE_REFERENCES: source_references,
             'modules': modules,
             'site_images': list(site_images),
             'process': search_process.process_id,

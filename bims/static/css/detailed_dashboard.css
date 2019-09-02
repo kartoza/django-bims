@@ -313,3 +313,8 @@ table#filter-history-table {
     margin-right: 30px;
     border-bottom: 3px solid #1b900d;
 }
+
+#metadata-table-list {
+    font-size: 11pt;
+    line-height: 25px;
+}

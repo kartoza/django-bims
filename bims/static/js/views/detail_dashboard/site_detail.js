@@ -186,6 +186,7 @@ define([
 
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
+                    self.renderMetadataTable(data);
 
                     let dashboardHeader = self.$el.find('.dashboard-header');
                     if (data['is_multi_sites']) {
@@ -305,6 +306,7 @@ define([
             sassDashboardButton.hide();
             sassDashboardButton.removeClass('disabled');
             sassDashboardButton.attr('href', '#');
+            $('#metadata-table-list').html('');
             this.mapLocationSite.removeLayer(this.siteLayerVector);
             this.siteName.html('');
             this.siteNameWrapper.hide();
@@ -981,6 +983,14 @@ define([
                 occurrenceDataSub.html('No Data');
                 this.$el.find('.download-as-csv').hide();
             }
+        },
+        renderMetadataTable: function (data) {
+            let ulDiv = $('#metadata-table-list');
+            ulDiv.html(' ');
+            let dataSources = data['source_references'];
+            $.each(dataSources, function (index, source) {
+                ulDiv.append('<li>' + source + '</li>')
+            });
         },
         renderOccurrenceData: function (occurrenceData, conservationStatusList, originCategoryList) {
             let occurrenceTable = $('<table class="table table-bordered table-condensed table-sm site-detailed-table">');

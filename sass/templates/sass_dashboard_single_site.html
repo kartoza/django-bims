@@ -289,12 +289,12 @@
                     <div class="vertical-space"></div>
                     <div class="table-container">
                         <div class="table-title">
-                            Data Sources
+                            Metadata Table
                         </div>
                         <div class="data-content">
                             <ul id="data-source-list">
-                                {% for data_source in data_sources %}
-                                    <li>{{ data_source }}</li>
+                                {% for reference in source_references %}
+                                    <li>{{ reference.link_template | safe }}</li>
                                 {% endfor %}
                             </ul>
                         </div>

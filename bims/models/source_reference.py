@@ -5,6 +5,7 @@
 
 from collections import OrderedDict
 from django.db import models
+from django.conf import settings
 from polymorphic.models import PolymorphicModel
 from td_biblio.models.bibliography import Entry
 from geonode.documents.models import Document
@@ -57,6 +58,18 @@ class SourceReference(PolymorphicModel):
     @property
     def reference_type(self):
         return 'Unpublished data'
+
+    def link_template(self):
+        """Returns html template containing the reference data"""
+        if self.note:
+            return (
+                '<i class="fa fa-file-o" aria-hidden="true"></i>'
+                ' {note}'.format(note=self.note)
+            )
+        return (
+            '<i class="fa fa-file-o" aria-hidden="true"></i>'
+            ' Unpublished data'
+        )
 
     @property
     def source(self):
@@ -126,6 +139,21 @@ class SourceReferenceBibliography(SourceReference):
     def reference_type(self):
         return 'Peer-reviewed scientific article'
 
+    @property
+    def is_bibliography(self):
+        return True
+
+    def link_template(self):
+        """Returns html template containing the reference data"""
+        return (
+            '<i class="fa fa-newspaper-o" aria-hidden="true"></i>'
+            ' <a href="http://dx.doi.org/{doi}" '
+            'target="_blank">{source}</a>'.format(
+                doi=self.source.doi,
+                source=self.source
+            )
+        )
+
     def __unicode__(self):
         return u'%s' % self.source
 
@@ -138,6 +166,24 @@ class SourceReferenceDatabase(SourceReference):
     def reference_type(self):
         return 'Database'
 
+    def link_template(self):
+        """Returns html template containing the reference data"""
+        if self.source.url:
+            return (
+                '<i class="fa fa-database" aria-hidden="true"></i>'
+                ' <a href="{url}" '
+                'target="_blank">{source}</a>'.format(
+                    url=self.source.url,
+                    source=self.source
+                )
+            )
+        return (
+            '<i class="fa fa-database" aria-hidden="true"></i>'
+            ' {source}'.format(
+                source=self.source
+            )
+        )
+
     def __unicode__(self):
         return u'%s' % self.source
 
@@ -145,6 +191,18 @@ class SourceReferenceDatabase(SourceReference):
 class SourceReferenceDocument(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(Document)
+
+    def link_template(self):
+        """Returns html template containing the reference data"""
+        return (
+            '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'
+            ' <a href="{media}{url}" '
+            'download>{source}</a>'.format(
+                media=settings.MEDIA_URL,
+                url=self.source.doc_file,
+                source=self.source
+            )
+        )
 
     @property
     def reference_type(self):
