@@ -153,7 +153,7 @@ class MapPageView(TemplateView):
                     desc = conservation_status_desc[status]
                 conservation_status_data.append({
                     'status': str(iucn_status.category),
-                    'name': categories[iucn_status.category],
+                    'name': categories[iucn_status.category].title(),
                     'desc': desc
                 })
             context['conservation_status_data'] = conservation_status_data

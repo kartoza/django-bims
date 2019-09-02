@@ -5,7 +5,7 @@ let filterParametersJSON = {
     },
     'search': {
         'label': 'Search Query',
-        'type': 'string'
+        'type': 'unicode'
     },
     'yearFrom': {
         'label': 'Year From',
@@ -64,7 +64,7 @@ let filterParametersJSON = {
         'type': 'json'
     },
     'validated': {
-        'label': 'Validated',
+        'label': 'Validation Status',
         'type': 'json'
     }
 };
@@ -83,7 +83,7 @@ function getUrlVars() {
 function renderFilterList($table) {
     let urlParams = getUrlVars();
     let tableData = {};
-    $table.html('<tr><th>Name</th><th>Value</th></tr>');
+    $table.html('<tr><th>Category</th><th>Value</th></tr>');
 
     $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
@@ -91,6 +91,8 @@ function renderFilterList($table) {
                 tableData[data['label']] = urlParams[key].split(',');
             } else if (data['type'] === 'string') {
                 tableData[data['label']] = urlParams[key];
+            } else if (data['type'] === 'unicode') {
+                tableData[data['label']] = decodeURIComponent(urlParams[key]);
             } else if (data['type'] === 'json') {
                 let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
                 try {

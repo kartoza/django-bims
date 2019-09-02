@@ -44,7 +44,7 @@ define([
                 }
                 this.listWrapper.append('<div>' +
                     '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="' + data[i].get('source_collection') + '"  ' + checked + ' >&nbsp;' +
-                    '<label for="source-collection-list-'+i+'" >'+ label + '</label>' +
+                    '<label for="source-collection-list-'+i+'" >'+ label.toUpperCase() + '</label>' +
                     '</div>');
             }
         },
