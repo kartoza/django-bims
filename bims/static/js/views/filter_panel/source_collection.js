@@ -7,6 +7,16 @@ define([
     return Backbone.View.extend({
         template: _.template($('#source-collection-template').html()),
         listWrapper: '',
+        dataSourceCaptions: {
+            "fbis": "Data not available via GBIF that have been sourced and collated from reputable " +
+                "databases, peer-reviewed scientific articles, published reports, theses and other unpublished data sources.",
+            "gbif": "Freshwater species occurrence data available for South Africa" +
+                " that are currently available via the Global Biodiversity Information " +
+                "Facility (GBIF). GBIF includes periodically-updated data from the South" +
+                " African Institute for Aquatic Biodiversity (SAIAB), as well as 'Research Grade' " +
+                "iNaturalist data (i.e. records from non-captive individuals, with a picture, locality " +
+                "and date, and with two or more IDs in agreement at species level)."
+        },
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
@@ -42,9 +52,14 @@ define([
                 if ($.inArray(data[i].get('source_collection'), this.parent.initialSelectedSourceCollection) > -1) {
                     checked = 'checked';
                 }
-                this.listWrapper.append('<div>' +
+                let dataSourceCaption = '';
+                if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase())) {
+                    dataSourceCaption = '<br/><small class="text-muted">'+ this.dataSourceCaptions[label.toLowerCase()] +'</small>';
+                }
+                this.listWrapper.append('<div style="padding-bottom: 10px;">' +
                     '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="' + data[i].get('source_collection') + '"  ' + checked + ' >&nbsp;' +
-                    '<label for="source-collection-list-'+i+'" >'+ label.toUpperCase() + '</label>' +
+                    '<label for="source-collection-list-'+i+'" style="margin-bottom: 0 !important;">'+ label.toUpperCase() + '</label>' +
+                    dataSourceCaption +
                     '</div>');
             }
         },
