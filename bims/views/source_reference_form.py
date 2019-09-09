@@ -103,8 +103,6 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
             self.collection_record = get_object_or_404(
                 BiologicalCollectionRecord,
                 pk=collection_id,
-                validated=False,
-                owner=self.request.user
             )
         return super(SourceReferenceView, self).get(request, *args, **kwargs)
 
@@ -148,8 +146,6 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
             collection_record = get_object_or_404(
                 BiologicalCollectionRecord,
                 pk=collection_id,
-                validated=False,
-                owner=self.request.user
             )
             biological_records = BiologicalCollectionRecord.objects.filter(
                 id__in=[collection_record.id]
