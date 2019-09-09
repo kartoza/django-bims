@@ -10,6 +10,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.contrib.postgres.fields import JSONField
 
+from preferences import preferences
 from bims.models.location_site import LocationSite
 from bims.utils.gbif import update_collection_record
 from bims.models.validation import AbstractValidation
@@ -194,6 +195,12 @@ class BiologicalCollectionRecord(
     def on_post_save(self):
         if not self.taxonomy:
             update_collection_record(self)
+        if not self.source_collection:
+            if preferences.SiteSetting.default_data_source:
+                self.source_collection = (
+                    preferences.SiteSetting.default_data_source
+                )
+                self.save()
 
     def save(self, *args, **kwargs):
         max_allowed = 10
