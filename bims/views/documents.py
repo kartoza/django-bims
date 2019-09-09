@@ -106,8 +106,16 @@ class SourceReferenceBimsDocumentUploadView(DocumentUploadView):
             self.object.abstract = form.data['description']
         except KeyError:
             pass
-        self.object.save()
 
+        # Save document source
+        try:
+            self.object.supplemental_information = json.dumps({
+                'document_source': form.data['document_source']
+            })
+        except KeyError:
+            pass
+
+        self.object.save()
         super(SourceReferenceBimsDocumentUploadView, self).form_valid(
             form
         )
