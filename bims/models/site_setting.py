@@ -25,6 +25,13 @@ class SiteSetting(Preferences):
         default='default_location_site_cluster'
     )
 
+    default_data_source = models.CharField(
+        max_length=100,
+        help_text='Default data source when adding new collection',
+        null=True,
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
