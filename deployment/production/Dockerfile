@@ -21,7 +21,7 @@ RUN cd /usr/src/bims/deployment/docker && \
     pip install uwsgi && \
     npm install -g grunt-cli && \
     cp package.json /package.json && \
-    cp Gruntfile.js /Gruntfile.js && \
+    cp /usr/src/bims/deployment/production/Gruntfile.js /Gruntfile.js && \
     cd / && npm install && \
     mkdir -p /home/web/media && \
     cd /usr/src/bims/deployment/production && \

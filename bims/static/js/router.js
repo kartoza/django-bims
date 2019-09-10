@@ -41,7 +41,9 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.defaultFiltersExist = false;
             this.defaultFiltersParam = '';
             this.initializeParameters();
-            this.defaultSelectedFilters = JSON.parse(mapDefaultSelectedFilters);
+            let _mapDefaultSelectedFilters = mapDefaultSelectedFilters.replace(/u'/gi, "'");
+            _mapDefaultSelectedFilters = _mapDefaultSelectedFilters.replace(/'/gi, "\"");
+            this.defaultSelectedFilters = JSON.parse(_mapDefaultSelectedFilters);
             this.map = new olmap();
             this.eventsConnector = new EventsConnector();
 
