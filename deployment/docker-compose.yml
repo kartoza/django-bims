@@ -36,7 +36,7 @@ services:
       - geoserver-data-dir:/geoserver_data/data
 
   geoserver:
-    image: geosolutionsit/geoserver-docker:2.13.x
+    image: geonode/geoserver:2.15.x
     restart: unless-stopped
     depends_on:
       - db

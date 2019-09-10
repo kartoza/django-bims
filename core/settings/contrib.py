@@ -375,3 +375,14 @@ BIMS_PREFERENCES = {
         os.environ.get('ENABLE_UPLOAD_DATA', 'True')
     )
 }
+
+# Remove geonode session middleware
+if (
+        'geonode.security.middleware.SessionControlMiddleware' in
+        MIDDLEWARE_CLASSES
+    ):
+    MIDDLEWARE_CLASSES_LIST = list(MIDDLEWARE_CLASSES)
+    MIDDLEWARE_CLASSES_LIST.remove(
+        'geonode.security.middleware.SessionControlMiddleware'
+    )
+    MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES_LIST)
