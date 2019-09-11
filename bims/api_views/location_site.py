@@ -456,13 +456,13 @@ class LocationSitesSummary(APIView):
             'overview': {}
         }
 
-        summary['overview']['Number of occurrence records'] = (
+        summary['overview']['Number of Occurrence Records'] = (
             collection_records.count()
         )
-        summary['overview']['Number of sites'] = (
+        summary['overview']['Number of Sites'] = (
             collection_records.distinct('site').count()
         )
-        summary['overview']['Number of species'] = (
+        summary['overview']['Number of Species'] = (
             collection_records.distinct('taxonomy').count()
         )
 

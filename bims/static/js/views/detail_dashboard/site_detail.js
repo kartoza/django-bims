@@ -860,6 +860,7 @@ define([
             originsSub.html(this.renderTableFromTitlesValuesLists(originsTableData, false));
         },
         createConservationOccurrenceTable: function (data) {
+            let self = this;
             let conservation_statusSub = this.$el.find('#ssdd-conservation-status');
             let consChartData = data['biodiversity_data']['species']['cons_status_chart'];
             let consCategoryList = data['iucn_name_list'];
@@ -869,6 +870,7 @@ define([
                 if(consCategoryList.hasOwnProperty(value)) {
                     category = consCategoryList[value];
                 }
+                category = self.titleCase(category);
                 constTableData[category] = consChartData['data'][index];
             });
             constTableData = this.sortOnKeys(constTableData);
