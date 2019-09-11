@@ -2487,6 +2487,7 @@ div:hover::-webkit-scrollbar {
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
     font-size: 12px;
+    margin-bottom: -1px;
 }
 
 #fish-ssdd-site-details .col-12.sub-title {
@@ -2502,7 +2503,7 @@ div:hover::-webkit-scrollbar {
 
 #fish-ssdd-site-details .title_column {
     font-weight: 700;
-
+    margin-right: -1px;
 }
 
 #fish-ssdd-records-sites .col-6 {
@@ -2702,4 +2703,13 @@ div:hover::-webkit-scrollbar {
     background-color: #E6E188;
     font-size: 9pt;
     font-style: italic;
+}
+
+.col-12.sub-title.site-details-header {
+    text-align: center;
+}
+
+.site-details-header {
+    background: #bebebe;
+    border-color: #bebebe !important;
 }

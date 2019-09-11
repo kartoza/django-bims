@@ -83,7 +83,7 @@ function getUrlVars() {
 function renderFilterList($table) {
     let urlParams = getUrlVars();
     let tableData = {};
-    $table.html('<tr><th>Category</th><th>Value</th></tr>');
+    $table.html('<tr><th>Category</th><th>Selection</th></tr>');
 
     $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
