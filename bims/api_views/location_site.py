@@ -531,7 +531,8 @@ class LocationSitesSummary(APIView):
         refined_geomorphological = '-'
         if location_site.refined_geomorphological:
             refined_geomorphological = location_site.refined_geomorphological
-        river_and_geo['Refined Geomorphological zone'] = refined_geomorphological
+        river_and_geo['Refined Geomorphological zone'] = \
+            refined_geomorphological
 
         # Catchments
         catchments = dict()
