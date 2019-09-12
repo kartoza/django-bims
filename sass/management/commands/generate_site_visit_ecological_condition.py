@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from sass.models import (
     SiteVisit,
 )
-from sass.scripts.site_visit_ecological_condition_generator import (
+from scripts.importer.site_visit_ecological_condition_generator import (
     generate_site_visit_ecological_condition
 )
 

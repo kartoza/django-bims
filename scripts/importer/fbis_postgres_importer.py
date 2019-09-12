@@ -1,5 +1,5 @@
 import psycopg2 as driv
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisPostgresImporter(FbisImporter):

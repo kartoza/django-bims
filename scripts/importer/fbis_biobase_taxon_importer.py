@@ -1,4 +1,4 @@
-from sass.scripts.fbis_postgres_importer import FbisPostgresImporter
+from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
 from bims.utils.gbif import search_taxon_identifier
 from biobase.models import BioTaxon
 

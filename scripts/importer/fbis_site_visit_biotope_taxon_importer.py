@@ -5,7 +5,7 @@ from sass.models import (
     SassTaxon
 )
 from bims.models import Biotope
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 from datetime import datetime
 
 

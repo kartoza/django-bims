@@ -1,6 +1,6 @@
 from bims.models import TaxonGroup
 from sass.models import SassTaxon
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 from bims.utils.gbif import search_taxon_identifier
 
 

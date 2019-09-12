@@ -4,7 +4,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.contenttypes.models import ContentType
 from easyaudit.signals.model_signals import pre_save as easyaudit_presave
 from geonode.people.models import Profile
-from sass.scripts.fbis_postgres_importer import FbisPostgresImporter
+from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
 from sass.models.river import River
 from bims.models import (
     FbisUUID,

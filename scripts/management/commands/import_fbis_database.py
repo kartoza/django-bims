@@ -1,37 +1,38 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
-from sass.scripts.fbis_user_importer import FbisUserImporter
-from sass.scripts.fbis_site_importer import FbisSiteImporter
-from sass.scripts.fbis_river_importer import FbisRiverImporter
-from sass.scripts.fbis_site_visit_importer import FbisSiteVisitImporter
-from sass.scripts.fbis_sass_biotope_importer import FbisSassBiotopeImporter
-from sass.scripts.fbis_rate_importer import FbisRateImporter
-from sass.scripts.fbis_site_visit_sass_biotope_importer import (
+from scripts.importer.fbis_user_importer import FbisUserImporter
+from scripts.importer.fbis_site_importer import FbisSiteImporter
+from scripts.importer.fbis_river_importer import FbisRiverImporter
+from scripts.importer.fbis_site_visit_importer import FbisSiteVisitImporter
+from scripts.importer.fbis_sass_biotope_importer import FbisSassBiotopeImporter
+from scripts.importer.fbis_rate_importer import FbisRateImporter
+from scripts.importer.fbis_site_visit_sass_biotope_importer import (
     FbisSiteVisitSassBiotopeImporter
 )
-from sass.scripts.fbis_taxon_importer import FbisTaxonImporter
-from sass.scripts.fbis_taxon_group_importer import FbisTaxonGroupImporter
-from sass.scripts.fbis_taxon_abudance_importer import (
+from scripts.importer.fbis_taxon_importer import FbisTaxonImporter
+from scripts.importer.fbis_taxon_group_importer import FbisTaxonGroupImporter
+from scripts.importer.fbis_taxon_abudance_importer import (
     FbisTaxonAbundanceImporter
 )
-from sass.scripts.fbis_site_visit_biotope_taxon_importer import (
+from scripts.importer.fbis_site_visit_biotope_taxon_importer import (
     FbisSiteVisitBiotopeTaxonImporter
 )
-from sass.scripts.fbis_sass_validation_status_importer import (
+from scripts.importer.fbis_sass_validation_status_importer import (
     FbisSassValidationStatusImporter
 )
-from sass.scripts.fbis_site_visit_taxon_importer import (
+from scripts.importer.fbis_site_visit_taxon_importer import (
     FbisSiteVisitTaxonImporter
 )
-from sass.scripts.fbis_chem_importer import FbisChemImporter
-from sass.scripts.fbis_site_visit_chem_importer import (
+from scripts.importer.fbis_chem_importer import FbisChemImporter
+from scripts.importer.fbis_site_visit_chem_importer import (
     FbisSiteVisitChemImporter
 )
-from sass.scripts.fbis_user_sass_validation_importer import (
+from scripts.importer.fbis_user_sass_validation_importer import (
     FbisUserSassValidationImporter
 )
-from sass.scripts.fbis_biobase_site_importer import FbisBiobaseSiteImporter
-from sass.scripts.fbis_biobase_taxon_importer import FbisBiobaseTaxonImporter
+from scripts.importer.fbis_biobase_site_importer import FbisBiobaseSiteImporter
+from scripts.importer.fbis_biobase_taxon_importer import FbisBiobaseTaxonImporter
+from scripts.importer.fbis_biobase_biotope_importer import FbisBiobaseTaxonImporter
 
 
 class Command(BaseCommand):
@@ -54,7 +55,8 @@ class Command(BaseCommand):
         'site_visit_chem': FbisSiteVisitChemImporter,
         'user_sass_validation': FbisUserSassValidationImporter,
         'biobase_test': FbisBiobaseSiteImporter,
-        'biobase_taxon': FbisBiobaseTaxonImporter
+        'biobase_taxon': FbisBiobaseTaxonImporter,
+        'biobase_biotope': FbisBiobaseTaxonImporter
     }
 
     def add_arguments(self, parser):

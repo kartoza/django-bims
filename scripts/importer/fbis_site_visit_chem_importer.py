@@ -1,5 +1,5 @@
 from sass.models import SiteVisitChem, SiteVisit, Chem
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisSiteVisitChemImporter(FbisImporter):

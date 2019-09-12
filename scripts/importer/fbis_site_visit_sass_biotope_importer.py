@@ -1,5 +1,5 @@
 from sass.models import SassBiotopeFraction, SiteVisit, Rate
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 from bims.models import Biotope as SassBiotope
 
 

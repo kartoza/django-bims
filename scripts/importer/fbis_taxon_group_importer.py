@@ -1,5 +1,5 @@
 from bims.models import TaxonGroup
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 

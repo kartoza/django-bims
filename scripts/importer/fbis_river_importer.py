@@ -2,7 +2,7 @@ from bims.models import (
     FbisUUID,
 )
 from sass.models import River
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisRiverImporter(FbisImporter):

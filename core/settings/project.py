@@ -14,7 +14,8 @@ from .contrib import *  # noqa
 INSTALLED_APPS += (
     'bims',
     'td_biblio',
-    'biobase'
+    'biobase',
+    'scripts'
 )
 
 # Set languages which want to be translated
