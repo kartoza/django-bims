@@ -298,7 +298,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
     search_fields = (
         'taxonomy__scientific_name',
         'taxonomy__canonical_name',
-        'original_species_name'
+        'original_species_name',
+        'uuid'
     )
 
 

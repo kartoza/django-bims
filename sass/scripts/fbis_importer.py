@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from uuid import UUID
 from sqlite3 import Error
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
@@ -7,6 +8,13 @@ from bims.models.fbis_uuid import FbisUUID
 
 
 class FbisImporter(object):
+
+    is_sqlite = True
+    postgres_database = ''
+    postgres_user = ''
+    postgres_password = ''
+    postgres_host = ''
+    postgres_port = 5432
 
     def __init__(self, sqlite_filename, max_row = None):
         self.sqlite_filename = sqlite_filename
@@ -54,18 +62,22 @@ class FbisImporter(object):
 
     def select_table(self, conn):
         cur = conn.cursor()
-        sql = "select * from \'{table_name}\'".format(
-            table_name=self.table_name.lower()
+        sql = "SELECT * FROM {table_name}".format(
+            table_name=self.table_name
         )
+        if self.max_row:
+            sql += ' LIMIT {max}'.format(max=self.max_row)
         cur.execute(sql)
         self.sqlite_rows = cur.fetchall()
         cur.close()
 
     def get_table_colums(self, conn):
         cur = conn.cursor()
-        sql = "select * from \'{table_name}\' where 1=0".format(
-            table_name=self.table_name.lower()
+        sql = "SELECT * FROM {table_name} WHERE 1=0".format(
+            table_name=self.table_name
         )
+        if self.max_row:
+            sql += ' LIMIT {max}'.format(max=self.max_row)
         cur.execute(sql)
         self.table_colums = [d[0] for d in cur.description]
         cur.close()
@@ -74,7 +86,7 @@ class FbisImporter(object):
         if not self.content_type:
             print('Empty content type')
             return
-        fbis_uuid, uuid_created = FbisUUID.objects.get_or_create(
+        FbisUUID.objects.get_or_create(
             content_type=self.content_type,
             object_id=object_id,
             uuid=uuid
@@ -100,7 +112,10 @@ class FbisImporter(object):
                 return None
             return ''
         else:
-            return row[column_index]
+            value = row[column_index]
+            if isinstance(value, UUID):
+                value = str(value)
+            return value
 
     @property
     def content_type_model(self):
@@ -111,14 +126,16 @@ class FbisImporter(object):
         raise NotImplementedError
 
     def import_data(self):
-        file_exists = self.get_file_path()
-        if not file_exists:
-            return None
+        if self.is_sqlite:
+            file_exists = self.get_file_path()
+            if not file_exists:
+                return None
 
         # Set content type
-        self.content_type = ContentType.objects.get_for_model(
-            self.content_type_model
-        )
+        if self.content_type_model:
+            self.content_type = ContentType.objects.get_for_model(
+                self.content_type_model
+            )
 
         conn = self.create_connection()
         with conn:
