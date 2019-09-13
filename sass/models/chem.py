@@ -25,6 +25,11 @@ class Chem(models.Model):
         null=True
     )
 
+    decimal_place = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
     minimum = models.FloatField(
         null=True,
         blank=True

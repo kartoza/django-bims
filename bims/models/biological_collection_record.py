@@ -14,13 +14,11 @@ from preferences import preferences
 from bims.models.location_site import LocationSite
 from bims.utils.gbif import update_collection_record
 from bims.models.validation import AbstractValidation
-from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.taxonomy import Taxonomy
 from bims.models.source_reference import SourceReference
 
 
-class BiologicalCollectionRecord(
-    AbstractValidation, DocumentLinksMixin):
+class BiologicalCollectionRecord(AbstractValidation):
     """Biological collection model."""
     CATEGORY_CHOICES = (
         ('alien', 'Non-Native'),
@@ -158,7 +156,7 @@ class BiologicalCollectionRecord(
         null=True
     )
 
-    abundance_number = models.IntegerField(
+    abundance_number = models.FloatField(
         blank=True,
         null=True
     )
@@ -225,7 +223,7 @@ class BiologicalCollectionRecord(
             self.uuid = collection_uuid
 
         # Try to get category if empty
-        if not self.category:
+        if not self.category and self.taxonomy:
             bio_with_category = BiologicalCollectionRecord.objects.filter(
                 taxonomy__canonical_name__icontains=
                 self.taxonomy.canonical_name,

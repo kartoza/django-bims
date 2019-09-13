@@ -2,19 +2,19 @@ from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
 from bims.models import Biotope
 
 
-class FbisBiobaseTaxonImporter(FbisPostgresImporter):
+class FbisBiobaseBiotopeImporter(FbisPostgresImporter):
 
     table_name = 'public."BioBiotope"'
     content_type_model = Biotope
 
     def process_row(self, row, index):
-        biotope = self.get_row_value('Biotope')
+        biotope_name = self.get_row_value('Biotope')
         broad = self.get_row_value('BroadBiotope')
         specific = self.get_row_value('SpecificBiotope')
         substratum = self.get_row_value('Substratum')
 
         biotope, created = Biotope.objects.get_or_create(
-            name=biotope,
+            name=biotope_name,
             broad=broad,
             specific=specific,
             substratum=substratum

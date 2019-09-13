@@ -18,6 +18,17 @@ class FbisBiobaseSiteImporter(FbisPostgresImporter):
 
     table_name = 'public."BioSite"'
     content_type_model = LocationSite
+    refined_geo_category = {
+        'Source': 'Source zone',
+        'Mountain Headwater': 'Mountain headwater stream',
+        'Foothill/Transitional': 'Foothil/Transitional',
+        'Upland Transitional': 'Upland transitional',
+        'Mountain Stream': 'Mountain headwater stream',
+        'Upland Plateau': 'Upland plateau',
+        'Transitional': 'Transitional',
+        'Foothill': 'Foothill',
+        'Lowland': 'Lowland river'
+    }
 
     def __init__(self, sqlite_filename, max_row=None):
         super(FbisBiobaseSiteImporter, self).__init__(sqlite_filename, max_row)
@@ -53,9 +64,13 @@ class FbisBiobaseSiteImporter(FbisPostgresImporter):
         river = None
         river_name = self.get_row_value('RiverName')
         if river_name:
-            river, river_created = River.objects.get_or_create(
-                name=river_name
-            )
+            try:
+                river, river_created = River.objects.get_or_create(
+                    name=river_name
+                )
+            except River.MultipleObjectsReturned:
+                rivers = River.objects.filter(name=river_name)
+                river = rivers[0]
             river.additional_data = {
                 'UserID': self.get_row_value('User'),
                 'BioBaseData': True
@@ -85,9 +100,16 @@ class FbisBiobaseSiteImporter(FbisPostgresImporter):
             'Description',
             row
         )
+        refined_geo_zone = self.refined_geo_category[
+            self.get_row_value('Reach')
+        ]
+        location_site.refined_geomorphological = refined_geo_zone
+
         location_site.additional_data = {
             'OldSiteCode': self.get_row_value('SiteCode'),
             'UserID': self.get_row_value('User'),
+            'Reach': self.get_row_value('Reach'),
+            'LegacyRiverName': self.get_row_value('RiverName'),
             'BioBaseData': True
         }
 

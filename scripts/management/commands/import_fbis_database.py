@@ -31,8 +31,11 @@ from scripts.importer.fbis_user_sass_validation_importer import (
     FbisUserSassValidationImporter
 )
 from scripts.importer.fbis_biobase_site_importer import FbisBiobaseSiteImporter
-from scripts.importer.fbis_biobase_taxon_importer import FbisBiobaseTaxonImporter
-from scripts.importer.fbis_biobase_biotope_importer import FbisBiobaseTaxonImporter
+from scripts.importer.fbis_biobase_biotope_importer import FbisBiobaseBiotopeImporter
+from scripts.importer.fbis_biobase_collection_importer import FbisBiobaseCollectionImporter
+from scripts.importer.fbis_biobase_chemical_importer import (
+    FbisBiobaseChemicalImporter
+)
 
 
 class Command(BaseCommand):
@@ -54,9 +57,10 @@ class Command(BaseCommand):
         'chem': FbisChemImporter,
         'site_visit_chem': FbisSiteVisitChemImporter,
         'user_sass_validation': FbisUserSassValidationImporter,
-        'biobase_test': FbisBiobaseSiteImporter,
-        'biobase_taxon': FbisBiobaseTaxonImporter,
-        'biobase_biotope': FbisBiobaseTaxonImporter
+        'biobase_site': FbisBiobaseSiteImporter,
+        'biobase_biotope': FbisBiobaseBiotopeImporter,
+        'biobase_collections': FbisBiobaseCollectionImporter,
+        'biobase_chemical': FbisBiobaseChemicalImporter
     }
 
     def add_arguments(self, parser):
