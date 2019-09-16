@@ -64,25 +64,41 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
         )
 
         # Get taxonomy detail
+        taxonomy_unspecified = False
         species = self.get_row_value(
             self.species_ranks[current_species_rank]
         )
         while (
                 species.lower() == 'unspecified' and
-                current_species_rank < len(self.species_ranks)
+                current_species_rank < len(self.species_ranks) and
+                not taxonomy_unspecified
         ):
             current_species_rank += 1
-            species = self.get_row_value(
-                self.species_ranks[current_species_rank]
-            )
+            try:
+                species = self.get_row_value(
+                    self.species_ranks[current_species_rank]
+                )
+            except IndexError:
+                taxonomy_unspecified = True
 
-        taxonomy = search_taxon_identifier(species)
-        while not taxonomy and current_species_rank < len(self.species_ranks):
-            current_species_rank += 1
-            species = self.get_row_value(
-                self.species_ranks[current_species_rank]
-            )
+        if not taxonomy_unspecified:
             taxonomy = search_taxon_identifier(species)
+            while (
+                    not taxonomy and
+                    current_species_rank < len(self.species_ranks) and
+                    not taxonomy_unspecified
+            ):
+                current_species_rank += 1
+                try:
+                    species = self.get_row_value(
+                        self.species_ranks[current_species_rank]
+                    )
+                    taxonomy = search_taxon_identifier(species)
+                except IndexError:
+                    taxonomy = None
+                    taxonomy_unspecified = True
+        else:
+            taxonomy = None
 
         collection, created = BiologicalCollectionRecord.objects.get_or_create(
             original_species_name=original_species_name,
