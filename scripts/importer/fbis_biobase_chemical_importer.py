@@ -1,6 +1,8 @@
 from datetime import datetime
 from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
-from bims.models import ChemicalRecord, LocationSite
+from bims.models import (
+    ChemicalRecord, LocationSite, SourceReferenceBibliography
+)
 from sass.models import Chem
 
 
@@ -26,6 +28,10 @@ class FbisBiobaseChemicalImporter(FbisPostgresImporter):
         location_site = self.get_object_from_uuid(
             column='BioSiteID',
             model=LocationSite
+        )
+        source_reference = self.get_object_from_uuid(
+            column='BioReferenceID',
+            model=SourceReferenceBibliography
         )
         value = self.get_row_value('ChemValue')
         if not value:
@@ -58,10 +64,10 @@ class FbisBiobaseChemicalImporter(FbisPostgresImporter):
 
         chemical_record.additional_data = {
             'BioBaseData': True,
-            'BioReferenceID': self.get_row_value('BioReferenceID'),
             'User': self.get_row_value('User'),
             'ChemDate': self.get_row_value('ChemDate')
         }
+        chemical_record.source_reference = source_reference
         chemical_record.save()
 
         self.save_uuid(

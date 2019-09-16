@@ -1,7 +1,10 @@
 from datetime import datetime
 from django.contrib.auth import get_user_model
 from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
-from bims.models import BiologicalCollectionRecord, LocationSite, Biotope
+from bims.models import (
+    BiologicalCollectionRecord, LocationSite,
+    Biotope, SourceReferenceBibliography
+)
 from bims.utils.gbif import search_taxon_identifier
 
 
@@ -41,6 +44,10 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
         site = self.get_object_from_uuid(
             column='BioSiteID',
             model=LocationSite
+        )
+        source_reference = self.get_object_from_uuid(
+            column='BioReferenceID',
+            model=SourceReferenceBibliography
         )
         month = self.get_row_value(
             'Month'
@@ -96,6 +103,8 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
             'WarningDescription': self.get_row_value('WarningDescription'),
             'User': self.get_row_value('User')
         }
+
+        collection.source_reference = source_reference
 
         superusers = get_user_model().objects.filter(is_superuser=True)
         if superusers.exists():
