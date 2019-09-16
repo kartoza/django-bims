@@ -9,8 +9,8 @@ class Biotope(AbstractAdditionalData):
     """Sass Biotope model."""
     BIOTOPE_FORM_CHOICES = (
         ('0', '0'),
-        ('1', '1'), # SASS Form
-        ('2', '2')  # SASS Form
+        ('1', '1'),  # SASS Form
+        ('2', '2')   # SASS Form
     )
 
     name = models.CharField(

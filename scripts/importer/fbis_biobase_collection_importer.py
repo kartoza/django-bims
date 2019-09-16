@@ -89,7 +89,7 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
             taxonomy=taxonomy,
             site=site,
             biotope=biotope,
-            present=present==1,
+            present=present == 1,
             abundance_number=abundance,
             collection_date=datetime.strptime(date_string, '%Y-%m-%d'),
             validated=True
