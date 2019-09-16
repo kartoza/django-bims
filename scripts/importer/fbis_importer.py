@@ -104,7 +104,10 @@ class FbisImporter(object):
     def get_row_value(self, column_name, row=None, return_none_if_empty=False):
         if not row:
             row = self.current_row
-        column_index = self.table_colums.index(column_name)
+        try:
+            column_index = self.table_colums.index(column_name)
+        except ValueError:
+            return None
         if column_index < 0:
             return None
         if not row[column_index]:
