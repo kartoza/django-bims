@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from geonode.people.models import Profile
 from bims.models import LocationSite
 from sass.models import SiteVisit
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 from sass.enums.canopy_cover import CanopyCover
 from sass.enums.water_level import WaterLevel, WATER_LEVEL_NAME
 from sass.enums.water_turbidity import WaterTurbidity

@@ -282,6 +282,8 @@ def search_taxon_identifier(search_query, fetch_parent=True):
 
     if not key:
         species_detail = find_species(search_query)
+        if not species_detail:
+            return None
         rank = species_detail.get('rank', '')
         rank_key = rank.lower() + 'Key'
 

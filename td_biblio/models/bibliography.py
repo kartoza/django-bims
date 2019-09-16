@@ -437,7 +437,7 @@ class AuthorEntryRank(models.Model):
         ordering = ('rank',)
 
     def __unicode__(self):
-        return '%(author)s:%(rank)d:%(entry)s' % {
+        return '%(author)s:%(rank)d:%(entry)s'.decode('utf-8') % {
             'author': self.author,
             'entry': self.entry,
             'rank': self.rank}

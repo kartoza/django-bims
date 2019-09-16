@@ -2,7 +2,7 @@
 import dateutil.parser
 from geonode.people.models import Profile
 from bims.models.profile import Profile as BimsProfile
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisUserImporter(FbisImporter):

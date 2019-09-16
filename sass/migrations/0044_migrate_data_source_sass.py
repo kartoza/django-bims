@@ -43,6 +43,7 @@ def migrate_source_reference_database(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('bims', '0157_auto_20190820_0631'),
         ('sass', '0043_auto_20190823_0848'),
     ]
 

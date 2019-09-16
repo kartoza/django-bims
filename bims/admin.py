@@ -65,7 +65,8 @@ from bims.models import (
     SamplingMethod,
     SiteImage,
     SiteSetting,
-    BimsDocument
+    BimsDocument,
+    ChemicalRecord
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -298,7 +299,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
     search_fields = (
         'taxonomy__scientific_name',
         'taxonomy__canonical_name',
-        'original_species_name'
+        'original_species_name',
+        'uuid'
     )
 
 
@@ -668,6 +670,18 @@ class BimsDocumentAdmin(DocumentAdmin):
     inlines = [BimsDocumentInline]
 
 
+class ChemicalRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        'value',
+        'chem',
+        'date',
+        'location_site'
+    )
+    raw_id_fields = (
+        'location_site',
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -711,6 +725,7 @@ admin.site.register(SpatialScaleGroup, SpatialScaleGroupAdmin)
 admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
+admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

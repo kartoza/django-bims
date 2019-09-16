@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 from bims.models import Profile
 from bims.utils.logger import log
 

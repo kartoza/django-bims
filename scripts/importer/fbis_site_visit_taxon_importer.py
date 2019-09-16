@@ -4,7 +4,7 @@ from django.db.utils import IntegrityError
 from easyaudit.signals.model_signals import pre_save as easyaudit_presave
 from geonode.people.models import Profile
 from sass.models import SiteVisitTaxon, SiteVisit, SassTaxon, TaxonAbundance
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisSiteVisitTaxonImporter(FbisImporter):

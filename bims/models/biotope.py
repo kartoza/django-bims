@@ -9,8 +9,8 @@ class Biotope(AbstractAdditionalData):
     """Sass Biotope model."""
     BIOTOPE_FORM_CHOICES = (
         ('0', '0'),
-        ('1', '1'),
-        ('2', '2')
+        ('1', '1'),  # SASS Form
+        ('2', '2')   # SASS Form
     )
 
     name = models.CharField(
@@ -37,6 +37,24 @@ class Biotope(AbstractAdditionalData):
     biotope_component = models.ForeignKey(
         to='self',
         on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    broad = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    specific = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    substratum = models.CharField(
+        max_length=100,
         null=True,
         blank=True
     )

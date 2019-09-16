@@ -38,3 +38,4 @@ from bims.models.auth import *  # noqa
 from bims.models.site_setting import *  # noqa
 from bims.models.source_reference import *  # noqa
 from bims.models.bims_document import *  # noqa
+from bims.models.chemical_record import *  # noqa

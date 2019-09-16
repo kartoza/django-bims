@@ -10,7 +10,7 @@ from bims.models import (
     location_site_post_save_handler
 )
 from sass.models import River
-from sass.scripts.fbis_importer import FbisImporter
+from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisSiteImporter(FbisImporter):
