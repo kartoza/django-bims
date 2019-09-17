@@ -150,8 +150,8 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
             content_type=user_ctype
         )
         if owners.exists():
-            collection.owner = owners[0]
-            collection.collector_user = owners[0]
+            collection.owner = owners[0].content_object
+            collection.collector_user = owners[0].content_object
         else:
             superusers = get_user_model().objects.filter(is_superuser=True)
             if superusers.exists():

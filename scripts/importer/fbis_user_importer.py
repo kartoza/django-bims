@@ -27,11 +27,11 @@ class FbisUserImporter(FbisPostgresImporter):
                 username_value += '_%s' % str(same_username)
         profile, created = Profile.objects.get_or_create(
             username=username_value,
-            email=self.get_row_value('Email', row),
-            is_active=True,
         )
 
         if created:
+            profile.is_active = True
+            profile.email = self.get_row_value('Email', row)
             profile.first_name = self.get_row_value('FirstName', row)
             profile.last_name = self.get_row_value('Surname', row)
             profile.date_joined = date_joined
