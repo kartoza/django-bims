@@ -14,7 +14,7 @@ from geonode.decorators import on_ogc_backend
 from geonode import geoserver
 from oauth2_provider.models import AccessToken, get_application_model
 
-from bims.models.site_setting import SiteSetting
+from preferences import preferences
 
 
 logger = logging.getLogger(__name__)
@@ -111,12 +111,8 @@ def user_signed_up_(request, user, **kwargs):
     except Site.DoesNotExist:
         bims_site_name = 'Biodiversity Information System'
 
-    try:
-        site_setting = SiteSetting.objects.first()
-        bims_team_name = site_setting.default_team_name
-        if not bims_team_name:
-            bims_team_name = 'BIMS'
-    except SiteSetting.DoesNotExist:
+    bims_team_name = preferences.SiteSetting.default_team_name
+    if not bims_team_name:
         bims_team_name = 'BIMS'
 
     data = {
