@@ -32,6 +32,13 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    default_team_name = models.CharField(
+        max_length=150,
+        help_text='Default team name',
+        null=True,
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
