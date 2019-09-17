@@ -804,7 +804,15 @@ define([
             let siteDetailsWrapper = $('#fish-ssdd-overview');
 
             let overview = siteDetailsWrapper.find('#overview');
-            overview.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
+            let orderedOverview = {};
+            orderedOverview['FBIS Site Code'] = data['site_details']['overview']['FBIS Site Code'];
+            orderedOverview['Site coordinates'] = data['site_details']['overview']['Site coordinates'];
+            orderedOverview['Site description'] = data['site_details']['overview']['Site description'];
+            overview.html(this.renderTableFromTitlesValuesLists(orderedOverview));
+
+            let river_and_geomorphology = siteDetailsWrapper.find('#river_and_geomorphological');
+            river_and_geomorphology.html(this.renderTableFromTitlesValuesLists(data['site_details']['river_and_geomorphological']));
+
             let catchments = siteDetailsWrapper.find('#catchments');
             let catchmentsData = data['site_details']['catchments'];
             let orderedCatchments = {};
@@ -815,10 +823,19 @@ define([
             catchments.html(this.renderTableFromTitlesValuesLists(orderedCatchments));
 
             let sub_water_management_areas = siteDetailsWrapper.find('#sub_water_management_areas');
-            sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(data['site_details']['sub_water_management_areas']));
+            let ordered_management_areas = {};
+            ordered_management_areas['Water Management Areas'] = data['site_details']['sub_water_management_areas']['Water Management Areas'];
+            ordered_management_areas['Sub Water Management Areas'] = data['site_details']['sub_water_management_areas']['Sub Water Management Areas'];
+            ordered_management_areas['River Management Unit'] = data['site_details']['sub_water_management_areas']['River Management Unit'];
+            sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(ordered_management_areas));
 
             let sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
-            sa_ecoregions.html(this.renderTableFromTitlesValuesLists(data['site_details']['sa_ecoregions']));
+            let orderedEcoregions = {};
+            orderedEcoregions['SA Ecoregion Level 1'] = data['site_details']['sa_ecoregions']['SA Ecoregion Level 1'];
+            orderedEcoregions['SA Ecoregion Level 2'] = data['site_details']['sa_ecoregions']['SA Ecoregion Level 2'];
+            orderedEcoregions['Freshwater Ecoregion'] = data['site_details']['sa_ecoregions']['Freshwater Ecoregion'];
+            orderedEcoregions['Province'] = data['site_details']['sa_ecoregions']['Province'];
+            sa_ecoregions.html(this.renderTableFromTitlesValuesLists(orderedEcoregions));
 
             let recordSitesWrapper = $('#fish-ssdd-records-sites');
             let recordSitesSub = recordSitesWrapper.find('#records-sites');
@@ -843,6 +860,7 @@ define([
             originsSub.html(this.renderTableFromTitlesValuesLists(originsTableData, false));
         },
         createConservationOccurrenceTable: function (data) {
+            let self = this;
             let conservation_statusSub = this.$el.find('#ssdd-conservation-status');
             let consChartData = data['biodiversity_data']['species']['cons_status_chart'];
             let consCategoryList = data['iucn_name_list'];
@@ -852,19 +870,22 @@ define([
                 if(consCategoryList.hasOwnProperty(value)) {
                     category = consCategoryList[value];
                 }
+                category = self.titleCase(category);
                 constTableData[category] = consChartData['data'][index];
             });
             constTableData = this.sortOnKeys(constTableData);
             conservation_statusSub.html(this.renderTableFromTitlesValuesLists(constTableData, false));
         },
         createEndemismOccurrenceTable: function (data) {
+            let self = this;
             let endemismDataChart = data['biodiversity_data']['species']['endemism_chart'];
             let endemismData = {};
             if (!endemismDataChart) {
                 return false;
             }
             $.each(endemismDataChart['keys'], function (index, data) {
-                endemismData[data] = endemismDataChart['data'][index];
+                var titleData = self.titleCase(data);
+                endemismData[titleData] = endemismDataChart['data'][index];
             });
             let wrapper = this.$el.find('#ssdd-endemism');
             wrapper.html(this.renderTableFromTitlesValuesLists(endemismData, false));
@@ -957,7 +978,7 @@ define([
             var element_name = `#fish-ssdd-${chartName}-legend`;
             $(element_name).html(chart_labels[chartName]);
         },
-        renderTableFromTitlesValuesLists: function (specific_data, bold_title = true) {
+        renderTableFromTitlesValuesLists: function (specific_data, bold_title = false) {
             var temp_result;
             var title_class = '';
             var $result = $('<div></div>');
@@ -1069,6 +1090,13 @@ define([
                 tempDict[sorted[i]] = dict[sorted[i]];
             }
             return tempDict;
+        },
+        titleCase: function (str) {
+            var splitStr = str.toLowerCase().split(' ');
+            for (var i = 0; i < splitStr.length; i++) {
+               splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);
+            }
+            return splitStr.join(' ');
         }
     })
 });

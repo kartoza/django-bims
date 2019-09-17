@@ -456,13 +456,13 @@ class LocationSitesSummary(APIView):
             'overview': {}
         }
 
-        summary['overview']['Number of occurrence records'] = (
+        summary['overview']['Occurences'] = (
             collection_records.count()
         )
-        summary['overview']['Number of sites'] = (
+        summary['overview']['Number of Sites'] = (
             collection_records.distinct('site').count()
         )
-        summary['overview']['Number of species'] = (
+        summary['overview']['Number of Taxa'] = (
             collection_records.distinct('taxonomy').count()
         )
 
@@ -497,7 +497,9 @@ class LocationSitesSummary(APIView):
             overview['Site description'] = self.parse_string(
                 location_site.name
             )
-        overview['River'] = site_river
+
+        river_and_geo = dict()
+        river_and_geo['River'] = site_river
 
         try:
             eco_region = (
@@ -524,12 +526,13 @@ class LocationSitesSummary(APIView):
                 geo_class=geo_class))
         except KeyError:
             geo_zone = '-'
-        overview['Geomorphological zone'] = geo_zone
+        river_and_geo['Geomorphological zone'] = geo_zone
 
         refined_geomorphological = '-'
         if location_site.refined_geomorphological:
             refined_geomorphological = location_site.refined_geomorphological
-        overview['Refined Geomorphological zone'] = refined_geomorphological
+        river_and_geo['Refined Geomorphological zone'] = \
+            refined_geomorphological
 
         # Catchments
         catchments = dict()
@@ -583,6 +586,18 @@ class LocationSitesSummary(APIView):
                 ['value'])
         except KeyError:
             water_management_area = '-'
+
+        try:
+            sub_water_management_area = (
+                context_document
+                ['context_group_values']
+                ['water_management_area']
+                ['service_registry_values']
+                ['sub_wmas']
+                ['value'])
+        except KeyError:
+            sub_water_management_area = '-'
+
         catchments['Primary'] = primary_catchment
         catchments['Secondary'] = secondary_catchment
         catchments['Tertiary'] = tertiary_catchment_area
@@ -590,9 +605,13 @@ class LocationSitesSummary(APIView):
         catchments['Quinary'] = '-'
 
         sub_water_management_areas = dict()
-        sub_water_management_areas['Water Management Areas (WMA)'] = (
+        sub_water_management_areas['Water Management Areas'] = (
             water_management_area
         )
+        sub_water_management_areas['Sub Water Management Areas'] = (
+            sub_water_management_area
+        )
+        sub_water_management_areas['River Management Unit'] = '-'
 
         # Politcal Boundary Group
         sa_ecoregions = dict()
@@ -605,7 +624,6 @@ class LocationSitesSummary(APIView):
                                              ['value']))
         except KeyError:
             province = '-'
-
 
         try:
             eco_region = self.parse_string(str(context_document
@@ -645,6 +663,7 @@ class LocationSitesSummary(APIView):
 
         result = dict()
         result['overview'] = overview
+        result['river_and_geomorphological'] = river_and_geo
         result['catchments'] = catchments
         result['sub_water_management_areas'] = sub_water_management_areas
         result['sa_ecoregions'] = sa_ecoregions
@@ -663,9 +682,9 @@ class LocationSitesSummary(APIView):
         number_of_occurrence_records = records_collection.count()
         number_of_unique_taxa = records_collection.values(
             'taxonomy_id').distinct().count()
-        result['Number of occurrences'] = self.parse_string(
+        result['Number of Occurrences'] = self.parse_string(
             number_of_occurrence_records)
-        result['Number of species'] = self.parse_string(number_of_unique_taxa)
+        result['Number of Taxa'] = self.parse_string(number_of_unique_taxa)
         return result
 
     def get_origin_data(self, collection_results):
