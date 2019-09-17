@@ -456,13 +456,13 @@ class LocationSitesSummary(APIView):
             'overview': {}
         }
 
-        summary['overview']['Number of Occurrence Records'] = (
+        summary['overview']['Occurences'] = (
             collection_records.count()
         )
         summary['overview']['Number of Sites'] = (
             collection_records.distinct('site').count()
         )
-        summary['overview']['Number of Species'] = (
+        summary['overview']['Number of Taxa'] = (
             collection_records.distinct('taxonomy').count()
         )
 
@@ -684,7 +684,7 @@ class LocationSitesSummary(APIView):
             'taxonomy_id').distinct().count()
         result['Number of Occurrences'] = self.parse_string(
             number_of_occurrence_records)
-        result['Number of Species'] = self.parse_string(number_of_unique_taxa)
+        result['Number of Taxa'] = self.parse_string(number_of_unique_taxa)
         return result
 
     def get_origin_data(self, collection_results):
