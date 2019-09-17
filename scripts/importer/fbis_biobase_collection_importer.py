@@ -1,9 +1,15 @@
 from datetime import datetime
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import signals
 from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
+from easyaudit.signals.model_signals import pre_save as easyaudit_presave
+from geonode.people.models import Profile
 from bims.models import (
     BiologicalCollectionRecord, LocationSite,
-    Biotope, SourceReferenceBibliography
+    Biotope, SourceReferenceBibliography,
+    FbisUUID,
+    collection_post_save_handler
 )
 from bims.utils.gbif import search_taxon_identifier
 
@@ -21,6 +27,20 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
         'Class',
         'Phylum',
     ]
+
+    def start_processing_rows(self):
+        signals.post_save.disconnect(
+            collection_post_save_handler,
+        )
+        signals.pre_save.disconnect(
+            easyaudit_presave,
+            dispatch_uid='easy_audit_signals_pre_save'
+        )
+
+    def finish_processing_rows(self):
+        signals.post_save.connect(
+            collection_post_save_handler,
+        )
 
     def process_row(self, row, index):
         current_species_rank = 0
@@ -122,10 +142,21 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
 
         collection.source_reference = source_reference
 
-        superusers = get_user_model().objects.filter(is_superuser=True)
-        if superusers.exists():
-            collection.owner = superusers[0]
-            collection.collector_user = superusers[0]
+        user_ctype = ContentType.objects.get_for_model(
+            Profile
+        )
+        owners = FbisUUID.objects.filter(
+            uuid=self.get_row_value('User'),
+            content_type=user_ctype
+        )
+        if owners.exists():
+            collection.owner = owners[0]
+            collection.collector_user = owners[0]
+        else:
+            superusers = get_user_model().objects.filter(is_superuser=True)
+            if superusers.exists():
+                collection.owner = superusers[0]
+                collection.collector_user = superusers[0]
 
         collection.save()
 
