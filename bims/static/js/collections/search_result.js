@@ -228,7 +228,7 @@ define([
                 });
 
                 // Set multiple site dashboard url
-                let $dashboardButton = $('<span class="badge badge-primary">Show overview</span>');
+                let $dashboardButton = $('<span class="badge badge-primary">Sites overview</span>');
                 $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append($dashboardButton);
                 if (this.sitesData.length > 1) {
                     $dashboardButton.click(function () {

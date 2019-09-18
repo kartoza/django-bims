@@ -2713,3 +2713,7 @@ div:hover::-webkit-scrollbar {
     background: #bebebe;
     border-color: #bebebe !important;
 }
+
+.badge-primary {
+    background-color: #00a592 !important;
+}
