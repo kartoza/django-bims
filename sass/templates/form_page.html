@@ -18,6 +18,9 @@
 {% endblock %}
 
 {% block body_content %}
+    <div class="sass-form-close-container">
+        <div class="sass-form-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+    </div>
 
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
