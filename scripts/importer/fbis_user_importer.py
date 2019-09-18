@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import dateutil.parser
 from geonode.people.models import Profile
 from bims.models.profile import Profile as BimsProfile
 from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
@@ -55,7 +54,8 @@ class FbisUserImporter(FbisPostgresImporter):
             bims_profile.data = {
                 'PasswordHint': str(self.get_row_value('PasswordHint', row)),
                 'RegionPolID': str(self.get_row_value('RegionPolID', row)),
-                'OrganisationID': str(self.get_row_value('OrganisationID', row)),
+                'OrganisationID': str(self.get_row_value(
+                    'OrganisationID', row)),
                 'RegionalChampion': str(self.get_row_value(
                     'RegionalChampion',
                     row)),
