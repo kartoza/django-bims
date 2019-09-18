@@ -44,7 +44,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         max_length=50,
         choices=CATEGORY_CHOICES,
         blank=True,
-        null=True,
+        default=''
     )
     present = models.BooleanField(
         default=True,
@@ -134,14 +134,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         help_text='e.g. SANBI',
         max_length=200,
         blank=True,
-        null=True,
+        default=''
     )
 
     upstream_id = models.CharField(
         help_text='Upstream id, e.g. Gbif key',
         max_length=200,
         blank=True,
-        null=True
+        default=''
     )
 
     uuid = models.UUIDField(

@@ -76,8 +76,11 @@ class SourceReference(PolymorphicModel):
         return self
 
     def __unicode__(self):
-        if not self.get_source_unicode() and self.note:
-            return self.note
+        if not self.get_source_unicode():
+            if self.note:
+                return self.note
+            else:
+                return 'None'
         else:
             return self.get_source_unicode()
 
