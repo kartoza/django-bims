@@ -476,7 +476,7 @@ class LocationSitesSummary(APIView):
             return {}
         try:
             context_document = json.loads(location_site.location_context)
-        except ValueError:
+        except (ValueError, TypeError):
             context_document = {}
         site_river = '-'
         if location_site.river:

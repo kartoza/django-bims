@@ -277,6 +277,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         css = {
             'all': ('admin/custom-admin.css',)
         }
+    # exclude = ['source_reference',]
     list_display = (
         'taxonomy',
         'category',
