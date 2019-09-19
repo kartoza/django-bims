@@ -368,9 +368,69 @@ class SassDashboardView(TemplateView):
         collection_with_references = self.site_visit_taxa.exclude(
                 source_reference__isnull=True
         ).distinct('source_reference')
-        context['source_references'] = [
-            col.source_reference for col in collection_with_references
-        ]
+
+        source_references = []
+        for col in collection_with_references:
+            try:
+                title = col.source_reference.source.title
+            except AttributeError:
+                title = '-'
+
+            if col.source_reference.reference_type == \
+                    'Published report or thesis':
+                url = '{}{}'.format(
+                    settings.MEDIA_URL, col.source_reference.source.doc_file)
+                authors = col.source_reference.source.bimsdocument.author
+                pub_year = col.source_reference.source.bimsdocument.year
+                try:
+                    source = \
+                        json.loads(
+                            col.source_reference.source
+                                .supplemental_information)['document_source']
+                except:
+                    source = '-'
+            else:
+                try:
+                    authors = \
+                        [
+                            person.__unicode__() for person in
+                            col.source_reference.source.authors.all(
+                            ).order_by('authorentryrank__rank')
+                        ]
+                except AttributeError:
+                    authors = '-'
+
+                try:
+                    pub_year = \
+                        col.source_reference.source.publication_date.year
+                except AttributeError:
+                    pub_year = '-'
+
+                try:
+                    url = col.source_reference.source.doi
+                except AttributeError:
+                    url = '-'
+
+                try:
+                    source = col.source_reference.source.journal.name
+                except AttributeError:
+                    source = col.source_reference.__unicode__()
+
+            note = \
+                col.source_reference.note if col.source_reference.note else '-'
+
+            item = {
+                'Reference Category': col.source_reference.reference_type,
+                'Author/s': authors,
+                'Year': pub_year,
+                'Title': title,
+                'Source': source,
+                'DOI/URL': url,
+                'Notes': note
+            }
+            source_references.append(item)
+
+        context['source_references'] = json.dumps(source_references)
 
         river_catchments = self.location_site.location_context_group_values(
             'river_catchment_areas_group'

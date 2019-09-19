@@ -314,7 +314,25 @@ table#filter-history-table {
     border-bottom: 3px solid #1b900d;
 }
 
-#metadata-table-list {
+#metadata-table-list, .custom-table {
     font-size: 11pt;
     line-height: 25px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.custom-table thead {
+    background-color: lightgrey;
+}
+
+.custom-table thead th {
+    border-bottom: 2px solid black !important;
+}
+
+.custom-table tbody {
+    border-bottom: 1px solid black;
+}
+
+.custom-table td, .custom-table th {
+    border-top: 1px solid black !important;
 }
