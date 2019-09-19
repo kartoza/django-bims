@@ -18,7 +18,6 @@
 {% endblock %}
 
 {% block body_content %}
-
     <form action="{{ request.path }}" method="post" id="sass-form">
     {% csrf_token %}
     <div class="body-form container">
@@ -29,13 +28,20 @@
             {{ alert | safe }}
         </div>
         {% endif %}
+        <div class="row">
+        <div class="col-lg-9">
         {% if is_update %}
             <h2>Update SASS record </h2>
         {% else %}
             <h2>Add SASS record</h2>
         {% endif %}
-        <div class="site-code pull-right">
+        </div>
+        <div class="site-code col-lg-3" style="margin-top: 0 !important;">
+            <div class="sass-form-close-container">
+                <div class="sass-form-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+            </div>
             Site code/name : {{ site_code }}
+        </div>
         </div>
         <div class="row">
             <div class="col-lg-9">

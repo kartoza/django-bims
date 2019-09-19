@@ -185,7 +185,11 @@ function userInputAutocomplete (inputIdName) {
 }
 
 function closeSassForm(e) {
-    window.history.back();
+    if(window.document.referrer === ''){
+        window.location.href = '/map'
+    }else {
+        window.history.back();
+    }
 }
 
 $(document).ready(function () {
