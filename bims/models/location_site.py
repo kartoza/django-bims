@@ -278,7 +278,7 @@ class LocationSite(DocumentLinksMixin):
                     context_group['service_registry_values'] = (
                         new_context_data['service_registry_values']
                     )
-            except TypeError:
+            except (TypeError, KeyError):
                 continue
         if not data_exists:
             return_message = 'Group values added'
