@@ -271,12 +271,15 @@ class LocationSite(DocumentLinksMixin):
         data_exists = False
         return_message = ''
         for context_group in old_location_context['context_group_values']:
-            if context_group['key'] == key:
-                return_message = 'Group value updated'
-                data_exists = True
-                context_group['service_registry_values'] = (
-                    new_context_data['service_registry_values']
-                )
+            try:
+                if context_group['key'] == key:
+                    return_message = 'Group value updated'
+                    data_exists = True
+                    context_group['service_registry_values'] = (
+                        new_context_data['service_registry_values']
+                    )
+            except TypeError:
+                continue
         if not data_exists:
             return_message = 'Group values added'
             old_location_context['context_group_values'].append(
