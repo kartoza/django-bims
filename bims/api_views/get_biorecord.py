@@ -175,7 +175,7 @@ class BioCollectionSummary(APIView):
                     source = \
                         json.loads(
                             col.source_reference.source
-                                .supplemental_information)['document_source']
+                            .supplemental_information)['document_source']
                 except:
                     source = '-'
             else:

@@ -1,5 +1,6 @@
 import json
 from collections import OrderedDict
+from django.conf import settings
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -386,7 +387,7 @@ class SassDashboardView(TemplateView):
                     source = \
                         json.loads(
                             col.source_reference.source
-                                .supplemental_information)['document_source']
+                            .supplemental_information)['document_source']
                 except:
                     source = '-'
             else:

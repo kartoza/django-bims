@@ -1,5 +1,7 @@
+import json
 import time
 from collections import OrderedDict
+from django.conf import settings
 from django.views.generic import TemplateView
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db.models import (
@@ -505,7 +507,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                     source = \
                         json.loads(
                             col.source_reference.source
-                                .supplemental_information)['document_source']
+                            .supplemental_information)['document_source']
                 except:
                     source = '-'
             else:
