@@ -34,20 +34,18 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 authors = col.source_reference.source.bimsdocument.author
                 pub_year = col.source_reference.source.bimsdocument.year
                 try:
-                    source = \
-                        json.loads(
-                            col.source_reference.source
-                                .supplemental_information)['document_source']
+                    source = json.loads(
+                        col.source_reference.source.supplemental_information
+                    )['document_source']
                 except:
                     source = '-'
             else:
                 try:
-                    authors = \
-                        [
-                            person.__unicode__() for person in
-                            col.source_reference.source.authors.all(
-                            ).order_by('authorentryrank__rank')
-                        ]
+                    authors = [
+                        person.__unicode__() for person in
+                        col.source_reference.source.authors.all(
+                        ).order_by('authorentryrank__rank')
+                    ]
                 except AttributeError:
                     authors = '-'
 
