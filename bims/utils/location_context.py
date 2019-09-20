@@ -15,26 +15,26 @@ def array_to_dict(array, key_name='key'):
     if not isinstance(array, list):
         return dictionary
     for data_dict in array:
-        for data_key, data_value in data_dict.iteritems():
-            if isinstance(data_value, list):
-                formatted_dict = array_to_dict(data_value)
-                if formatted_dict:
-                    data_dict[data_key] = formatted_dict
-            elif data_value:
-                if isinstance(data_value, float):
-                    continue
-                if data_value.isdigit():
-                    data_dict[data_key] = int(data_value)
-                else:
-                    try:
-                        data_dict[data_key] = float(data_value)
-                    except ValueError:
-                        continue
-            else:
-                continue
         try:
+            for data_key, data_value in data_dict.iteritems():
+                if isinstance(data_value, list):
+                    formatted_dict = array_to_dict(data_value)
+                    if formatted_dict:
+                        data_dict[data_key] = formatted_dict
+                elif data_value:
+                    if isinstance(data_value, float):
+                        continue
+                    if data_value.isdigit():
+                        data_dict[data_key] = int(data_value)
+                    else:
+                        try:
+                            data_dict[data_key] = float(data_value)
+                        except ValueError:
+                            continue
+                else:
+                    continue
             dictionary[data_dict[key_name]] = data_dict
-        except KeyError:
+        except (AttributeError, KeyError, TypeError):
             continue
     return dictionary
 
