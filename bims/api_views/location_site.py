@@ -3,7 +3,6 @@ import ast
 import json
 import os
 from django.contrib.gis.geos import Polygon
-from django.conf import settings
 from django.db.models import Q, F, Count, Value, Case, When
 from django.db.models.functions import ExtractYear
 from django.http import Http404, HttpResponseBadRequest
