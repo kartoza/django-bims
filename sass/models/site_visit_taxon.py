@@ -1,5 +1,5 @@
 from django.contrib.gis.db import models
-from bims.models import BiologicalCollectionRecord
+from bims.models import BiologicalCollectionRecord, BiologicalCollectionManager
 from sass.models import SiteVisit, TaxonAbundance
 
 
@@ -24,6 +24,8 @@ class SiteVisitTaxon(BiologicalCollectionRecord):
         null=True,
         blank=True
     )
+
+    objects = BiologicalCollectionManager()
 
     def save(self, *args, **kwargs):
         owner = self.owner

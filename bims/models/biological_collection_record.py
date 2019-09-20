@@ -18,6 +18,79 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.source_reference import SourceReference
 
 
+class BiologicalCollectionQuerySet(models.QuerySet):
+    def source_references(self):
+        source_references = []
+        for col in self:
+            try:
+                title = col.source_reference.source.title
+            except AttributeError:
+                title = '-'
+
+            if col.source_reference.reference_type == \
+                    'Published report or thesis':
+                url = '{}{}'.format(
+                    settings.MEDIA_URL, col.source_reference.source.doc_file)
+                authors = col.source_reference.source.bimsdocument.author
+                pub_year = col.source_reference.source.bimsdocument.year
+                try:
+                    source = \
+                        json.loads(
+                            col.source_reference.source
+                                .supplemental_information)['document_source']
+                except:
+                    source = '-'
+            else:
+                try:
+                    authors = \
+                        [
+                            person.__unicode__() for person in
+                            col.source_reference.source.authors.all(
+                            ).order_by('authorentryrank__rank')
+                        ]
+                except AttributeError:
+                    authors = '-'
+
+                try:
+                    pub_year = \
+                        col.source_reference.source.publication_date.year
+                except AttributeError:
+                    pub_year = '-'
+
+                try:
+                    url = col.source_reference.source.doi
+                except AttributeError:
+                    url = '-'
+
+                try:
+                    source = col.source_reference.source.journal.name
+                except AttributeError:
+                    source = col.source_reference.__unicode__()
+
+            note = \
+                col.source_reference.note if col.source_reference.note else '-'
+
+            item = {
+                'Reference Category': col.source_reference.reference_type,
+                'Author/s': authors,
+                'Year': pub_year,
+                'Title': title,
+                'Source': source,
+                'DOI/URL': url,
+                'Notes': note
+            }
+            source_references.append(item)
+        return source_references
+
+
+class BiologicalCollectionManager(models.Manager):
+    def get_queryset(self):
+        return BiologicalCollectionQuerySet(self.model, using=self._db)
+
+    def source_references(self):
+        return self.get_queryset().source_references()
+
+
 class BiologicalCollectionRecord(AbstractValidation):
     """Biological collection model."""
     CATEGORY_CHOICES = (
@@ -174,6 +247,8 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True,
         on_delete=models.SET_NULL
     )
+
+    objects = BiologicalCollectionManager()
 
     @property
     def data_name(self):

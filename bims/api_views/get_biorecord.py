@@ -4,7 +4,6 @@ import os
 from braces.views import LoginRequiredMixin
 from rest_framework.views import APIView, Response
 from django.http import HttpResponse
-from django.conf import settings
 from django.db.models import Count, F
 from django.db.models.functions import ExtractYear
 from rest_framework import status
@@ -158,66 +157,7 @@ class BioCollectionSummary(APIView):
         collection_with_references = collection_results.exclude(
             source_reference__isnull=True
         ).distinct('source_reference')
-        source_references = []
-        for col in collection_with_references:
-            try:
-                title = col.source_reference.source.title
-            except AttributeError:
-                title = '-'
-
-            if col.source_reference.reference_type == \
-                    'Published report or thesis':
-                url = '{}{}'.format(
-                    settings.MEDIA_URL, col.source_reference.source.doc_file)
-                authors = col.source_reference.source.bimsdocument.author
-                pub_year = col.source_reference.source.bimsdocument.year
-                try:
-                    source = \
-                        json.loads(
-                            col.source_reference.source
-                            .supplemental_information)['document_source']
-                except:
-                    source = '-'
-            else:
-                try:
-                    authors = \
-                        [
-                            person.__unicode__() for person in
-                            col.source_reference.source.authors.all(
-                            ).order_by('authorentryrank__rank')
-                        ]
-                except AttributeError:
-                    authors = '-'
-
-                try:
-                    pub_year = \
-                        col.source_reference.source.publication_date.year
-                except AttributeError:
-                    pub_year = '-'
-
-                try:
-                    url = col.source_reference.source.doi
-                except AttributeError:
-                    url = '-'
-
-                try:
-                    source = col.source_reference.source.journal.name
-                except AttributeError:
-                    source = col.source_reference.__unicode__()
-
-            note = \
-                col.source_reference.note if col.source_reference.note else '-'
-
-            item = {
-                'Reference Category': col.source_reference.reference_type,
-                'Author/s': authors,
-                'Year': pub_year,
-                'Title': title,
-                'Source': source,
-                'DOI/URL': url,
-                'Notes': note
-            }
-            source_references.append(item)
+        source_references = collection_with_references.source_references()
         response_data['source_references'] = source_references
 
         file_path = create_search_process_file(
