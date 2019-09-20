@@ -50,9 +50,9 @@ class Command(BaseCommand):
                 'monthly_mean_daily_average_temperature_group',
                 'rainfall_group',
                 'freshwater_ecoregion_of_the_world',
-                'critical_biodiversity_area',
+                # 'critical_biodiversity_area',
                 'national_freshwater_ecosystem_priority_area',
-                'strategic_water_source_areas'
+                # 'strategic_water_source_areas'
             ]
 
         ignore_not_empty = options.get('ignore_not_empty')

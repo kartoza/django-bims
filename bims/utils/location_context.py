@@ -12,6 +12,8 @@ from bims.utils.logger import log
 
 def array_to_dict(array, key_name='key'):
     dictionary = {}
+    if not isinstance(array, list):
+        return dictionary
     for data_dict in array:
         for data_key, data_value in data_dict.iteritems():
             if isinstance(data_value, list):
