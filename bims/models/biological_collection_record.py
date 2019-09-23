@@ -144,7 +144,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         default=''
     )
 
-    uuid = models.UUIDField(
+    uuid = models.CharField(
         help_text='Collection record uuid',
         max_length=200,
         null=True,
@@ -215,11 +215,11 @@ class BiologicalCollectionRecord(AbstractValidation):
                 attempt += 1
 
         if not self.uuid:
-            collection_uuid = uuid.uuid4()
+            collection_uuid = str(uuid.uuid4())
             while BiologicalCollectionRecord.objects.filter(
                 uuid=collection_uuid
             ).exists():
-                collection_uuid = uuid.uuid4()
+                collection_uuid = str(uuid.uuid4())
             self.uuid = collection_uuid
 
         # Try to get category if empty

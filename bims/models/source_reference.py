@@ -137,6 +137,7 @@ class SourceReference(PolymorphicModel):
 class SourceReferenceBibliography(SourceReference):
     """ Source reference with bibliography source"""
     source = models.ForeignKey(Entry)
+    document = models.ForeignKey(Document)
 
     @property
     def reference_type(self):
@@ -164,6 +165,7 @@ class SourceReferenceBibliography(SourceReference):
 class SourceReferenceDatabase(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(DatabaseRecord)
+    document = models.ForeignKey(Document)
 
     @property
     def reference_type(self):
