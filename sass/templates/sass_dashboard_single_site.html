@@ -48,6 +48,7 @@
             const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
             const originalGeomorphologicalZone = '{{ original_geomorphological }}';
             const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
+            const sourceReferences = {{ source_references | safe }};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -292,11 +293,8 @@
                             Metadata Table
                         </div>
                         <div class="data-content">
-                            <ul id="data-source-list">
-                                {% for reference in source_references %}
-                                    <li>{{ reference.link_template | safe }}</li>
-                                {% endfor %}
-                            </ul>
+                            <table id="data-source-list" class="table table-hover custom-table">
+                            </table>
                         </div>
                     </div>
                 </div>
