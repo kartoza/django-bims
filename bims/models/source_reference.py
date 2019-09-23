@@ -136,8 +136,9 @@ class SourceReference(PolymorphicModel):
 
 class SourceReferenceBibliography(SourceReference):
     """ Source reference with bibliography source"""
-    source = models.ForeignKey(Entry)
-    document = models.ForeignKey(Document)
+    source = models.ForeignKey(Entry, null=True, on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        Document, null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
     def reference_type(self):
@@ -165,7 +166,8 @@ class SourceReferenceBibliography(SourceReference):
 class SourceReferenceDatabase(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(DatabaseRecord)
-    document = models.ForeignKey(Document)
+    document = models.ForeignKey(
+        Document, null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
     def reference_type(self):
