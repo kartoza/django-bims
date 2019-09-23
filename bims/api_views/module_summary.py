@@ -1,9 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count, F, Case, When, Value
+from django.db.models import Count, F, Case, When, Value, Q
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
+    Taxonomy
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.models.site_visit_taxon import SiteVisitTaxon
@@ -71,10 +72,18 @@ class ModuleSummary(APIView):
             return {}
         invert_group = invert_group[0]
         taxa = invert_group.taxonomies.all()
-
         all_taxa = list(taxa.values_list('id', flat=True))
+        taxa = Taxonomy.objects.filter(
+            Q(id__in=all_taxa) |
+            Q(parent__in=all_taxa) |
+            Q(parent__parent__in=all_taxa) |
+            Q(parent__parent__parent__in=all_taxa) |
+            Q(parent__parent__parent__parent__in=all_taxa) |
+            Q(parent__parent__parent__parent__parent__in=all_taxa)
+        )
+
         collections = BiologicalCollectionRecord.objects.filter(
-            taxonomy__in=all_taxa
+            taxonomy__in=taxa
         )
         invert_summary = dict()
         invert_summary[

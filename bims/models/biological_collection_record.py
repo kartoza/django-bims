@@ -37,7 +37,7 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                     source = json.loads(
                         col.source_reference.source.supplemental_information
                     )['document_source']
-                except:
+                except:  # noqa
                     source = '-'
             else:
                 try:
