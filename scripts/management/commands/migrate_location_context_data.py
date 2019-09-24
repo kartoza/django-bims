@@ -55,7 +55,7 @@ class Command(BaseCommand):
                             name=context_name,
                             value=context_value
                         )
-            except KeyError:
+            except (KeyError, UnicodeEncodeError):
                 continue
             site.location_context = None
             site.location_context_document = None
