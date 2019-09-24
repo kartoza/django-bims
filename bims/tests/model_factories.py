@@ -27,7 +27,8 @@ from bims.models import (
     SourceReference,
     SourceReferenceBibliography,
     SourceReferenceDatabase,
-    DatabaseRecord
+    DatabaseRecord,
+    LocationContext
 )
 
 
@@ -63,6 +64,19 @@ class LocationSiteF(factory.django.DjangoModelFactory):
         random.uniform(-30.0, 30.0),
         random.uniform(-30.0, 30.0)
     )
+
+
+class LocationContextF(factory.django.DjangoModelFactory):
+    """
+    Location context factory
+    """
+    class Meta:
+        model = LocationContext
+
+    site = factory.SubFactory(LocationSiteF)
+    name = factory.Sequence(lambda n: 'name %s' % n)
+    key = factory.Sequence(lambda n: 'key %s' % n)
+    group_key = factory.Sequence(lambda n: 'group_key %s' % n)
 
 
 class IUCNStatusF(factory.django.DjangoModelFactory):
