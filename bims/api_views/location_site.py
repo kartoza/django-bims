@@ -44,7 +44,6 @@ from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.models.chem import Chem
-from sass.enums.chem_unit import ChemUnit
 
 
 class LocationSiteList(APIView):
