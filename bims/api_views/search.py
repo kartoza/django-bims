@@ -417,35 +417,27 @@ class Search(object):
                 ))
 
         if self.modules:
-            taxon_group_filter = None
             taxon_groups = TaxonGroup.objects.filter(
                 pk__in=self.modules
             )
-            for group in taxon_groups:
-                group_filters = None
-                taxa = group.taxonomies.all()
-                all_children = self.get_all_taxa_children(taxa)
-                group_source_collection = group.source_collection
-                if all_children:
-                    all_children_ids = list(all_children.values_list(
-                        'id', flat=True
-                    ))
-                    if group_source_collection:
-                        group_filters = Q(
-                            taxonomy__in=all_children_ids,
-                            source_collection=group_source_collection
-                        )
-                    else:
-                        group_filters = Q(
-                            taxonomy__in=all_children_ids
-                        )
-                if group_filters:
-                    if taxon_group_filter is None:
-                        taxon_group_filter = group_filters
-                    else:
-                        taxon_group_filter = taxon_group_filter | group_filters
-            if taxon_group_filter:
-                bio = bio.filter(taxon_group_filter)
+            all_parent_taxa = list(
+                taxon_groups.values_list('taxonomies', flat=True))
+            group_source_collections = list(
+                taxon_groups.values_list('source_collection', flat=True)
+            )
+            parent = 'taxonomy__'
+            module_query = {}
+            module_or_condition = Q()
+            module_query['taxonomy__id__in'] = all_parent_taxa
+            for i in range(6):  # species to class
+                parent += 'parent__'
+                module_query[parent + 'in'] = all_parent_taxa
+            for key, value in module_query.items():
+                module_or_condition |= Q(**{key: value})
+            module_or_condition |= Q(
+                source_collection__in=group_source_collections)
+            if module_or_condition:
+                bio = bio.filter(module_or_condition)
 
         self.location_sites_raw_query = bio.distinct('site').values(
             'site_id',

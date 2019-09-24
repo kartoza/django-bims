@@ -468,10 +468,8 @@ class SassDashboardMultipleSitesApiView(APIView):
         collection_with_references = self.site_visit_taxa.exclude(
             source_reference__isnull=True
         ).distinct('source_reference')
-        source_references = [
-            col.source_reference.link_template() for col in
-            collection_with_references
-        ]
+
+        source_references = collection_with_references.source_references()
 
         return Response({
             'total_pages': paginator.num_pages,

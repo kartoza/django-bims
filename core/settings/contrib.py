@@ -141,6 +141,7 @@ STATICFILES_DIRS = [
     absolute_path('core', 'base_static'),
     absolute_path('bims', 'static'),
     absolute_path('sass', 'static'),
+    absolute_path('scripts', 'static'),
 ] + STATICFILES_DIRS
 
 MIDDLEWARE_CLASSES += (

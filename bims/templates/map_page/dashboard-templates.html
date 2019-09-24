@@ -74,21 +74,6 @@
                             </div>
                         </div>
                     </div>
-                    {#  Metadata table #}
-                    <div class="row">
-                        <div class="col-lg-12" id="sdd-metadata-table-list">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="card-header-title pull-left d-inline">
-                                        Metadata Table
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <ul id="metadata-table-list-taxon"></ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="col-lg-8 dashboard-graph-wrapper">
                     <div class="row">
@@ -199,6 +184,21 @@
                                 <div class="card-body"
                                      id="fsdd-images-card-body">
 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {#  Metadata table #}
+                    <div class="row">
+                        <div class="col-lg-12" id="sdd-metadata-table-list">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-header-title pull-left d-inline">
+                                        Metadata Table
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table id="metadata-table-list-taxon"  class="table table-hover custom-table"></table>
                                 </div>
                             </div>
                         </div>
@@ -435,19 +435,6 @@
                     </div>
                 </div>
 
-                {# Metadata table #}
-                <div class="card" id="ssdd-metadata-table">
-                    <div class="card-header">
-                        <div class="card-header-title pull-left d-inline">
-                            Metadata Table
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <ul id="metadata-table-list">
-                        </ul>
-                    </div>
-                </div>
-
                 <div class="sass-dashboard-button-container container" style="padding: 10px; text-align: center">
                     <a href="#" class="btn btn-info" id="sass-dashboard-button" style="display:none; font-size: 10pt;">Open SASS Dashboard</a>
                 </div>
@@ -602,6 +589,19 @@
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="fish-ssdd-cons-status-bar-chart-canvas"></canvas>
                         </div>
+                    </div>
+                </div>
+
+                {# Metadata table #}
+                <div class="card" id="ssdd-metadata-table">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Metadata Table
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table id="metadata-table-list" class="table table-hover custom-table">
+                        </table>
                     </div>
                 </div>
 
