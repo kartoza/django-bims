@@ -2,6 +2,7 @@
 """Get river name for location sites"""
 import ast
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from bims.models.location_site import (
     LocationSite,
 )
@@ -39,13 +40,16 @@ class Command(BaseCommand):
             location_sites = LocationSite.objects.filter(id=location_site_id)
         else:
             location_sites = LocationSite.objects.filter(
-                river__isnull=True
+                Q(river__isnull=True) | Q(river__name='')
             )
-
+        index = 1
         for location_site in location_sites:
-            print('Fetch river name for [{}]'.format(
-                location_site.id
+            print('Fetch river name for [{site}] ({current}/{len})'.format(
+                site=location_site.id,
+                current=index,
+                len=location_sites.count()
             ))
+            index += 1
             river_name = fetch_river_name(
                 location_site.latitude,
                 location_site.longitude
@@ -53,9 +57,12 @@ class Command(BaseCommand):
             if not river_name:
                 print('Got empty river name from geocontext')
                 continue
-            river, created = River.objects.get_or_create(
-                name=river_name
-            )
+            try:
+                river, created = River.objects.get_or_create(
+                    name=river_name
+                )
+            except River.MultipleObjectsReturned:
+                river = River.objects.filter(name=river_name)[0]
             location_site.river = river
             location_site.save()
 
