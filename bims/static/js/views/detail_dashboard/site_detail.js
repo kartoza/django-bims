@@ -213,6 +213,7 @@ define([
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
                     self.createOriginStackedBarChart(data);
+                    self.renderChemGraph(data);
 
                     // Zoom to extent
                     if (data['extent'].length > 0) {
@@ -1131,6 +1132,79 @@ define([
                splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);
             }
             return splitStr.join(' ');
+        },
+        renderChemGraph: function (data) {
+            var $chemWrapper = $('#fish-ssdd-chem-bar-chart');
+            $chemWrapper.html('');
+            $.each(data['chemical_records'], function (key, value) {
+                var id_canvas = key + '-chem-chart-canvas';
+                var canvas = '<canvas class="chem-bar-chart" id="' + id_canvas + '"></canvas>';
+                $chemWrapper.append(canvas);
+                var ctx = document.getElementById(id_canvas).getContext('2d');
+                var datasets = [];
+                var labels = [];
+                var background_colour = ['green', 'red', 'blue'];
+                var yLabel;
+                $.each(value, function (idx, val) {
+                    var key_item = Object.keys(val)[0];
+                    if(key_item.toLowerCase().indexOf('max') === -1 && key_item.toLowerCase().indexOf('min') === -1){
+                        yLabel = val[key_item]['name'] + ' (' + val[key_item]['unit'] + ')'
+                    }
+                    var value_data = val[key_item]['values'];
+                    var graph_data = [];
+                    for(var i=0; i<value_data.length; i++){
+                        if(labels.indexOf(value_data[i]['str_date']) === -1) {
+                            labels.push(value_data[i]['str_date'])
+                        }
+                        graph_data.push({
+                            y: value_data[i]['value'],
+                            x: value_data[i]['str_date']
+                        })
+                    }
+                    datasets.push({
+                        label: key_item,
+                        data: graph_data,
+                        backgroundColor: [
+                            background_colour[idx]
+                        ],
+                        borderColor: [
+                            background_colour[idx]
+                        ],
+                        borderWidth: 2,
+                        fill: false
+                    })
+                });
+                var _data = {
+                    labels: labels,
+                    datasets: datasets
+                };
+                var options= {
+					responsive: true,
+					hoverMode: 'index',
+					stacked: false,
+					title: {
+						display: false
+					},
+					scales: {
+						yAxes: [{
+						    scaleLabel: {
+                                display: true,
+                                labelString: yLabel
+                            },
+							type: 'linear',
+							display: true,
+							position: 'left'
+						}]
+					}
+				};
+                var chartConfig = {
+                    type: 'line',
+                    data: _data,
+                    options: options
+                };
+
+                new ChartJs(ctx, chartConfig)
+            })
         }
     })
 });

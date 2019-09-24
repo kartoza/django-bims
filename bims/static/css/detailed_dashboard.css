@@ -336,3 +336,7 @@ table#filter-history-table {
 .custom-table td, .custom-table th {
     border-top: 1px solid black !important;
 }
+
+.chem-bar-chart {
+    margin-bottom: 25px
+}
