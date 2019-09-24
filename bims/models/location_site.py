@@ -12,12 +12,14 @@ from django.contrib.gis.db import models
 from django.dispatch import receiver
 from django.contrib.postgres.fields import JSONField
 from django.conf import settings
+from django.utils import timezone
 
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.search_process import SearchProcess
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
+from bims.models.location_context import LocationContext
 
 
 LOGGER = logging.getLogger(__name__)
@@ -248,45 +250,27 @@ class LocationSite(DocumentLinksMixin):
         return json.dumps(r.json())
 
     def add_context_group(self, group_key):
-        old_location_context_string = self.location_context_document
-        old_location_context = None
-        if old_location_context_string:
-            try:
-                old_location_context = json.loads(old_location_context_string)
-            except (ValueError, TypeError):
-                if isinstance(old_location_context_string, dict):
-                    old_location_context = old_location_context_string
-                else:
-                    LOGGER.info('Not a JSON Object')
-        new_data = self.get_geocontext_group_data(group_key)
-        if not new_data:
-            return False, "Error from GeoContext"
-        if not old_location_context:
-            old_location_context_string = (
-                '{"context_group_values":[%s]}' % new_data)
-            self.location_context_document = old_location_context_string
-            return True, "Group values added to empty document"
-        new_context_data = json.loads(new_data)
-        key = new_context_data['key']
-        data_exists = False
-        return_message = ''
-        for context_group in old_location_context['context_group_values']:
-            try:
-                if context_group['key'] == key:
-                    return_message = 'Group value updated'
-                    data_exists = True
-                    context_group['service_registry_values'] = (
-                        new_context_data['service_registry_values']
+        from bims.models import LocationContext
+        geocontext_data_string = self.get_geocontext_group_data(group_key)
+        try:
+            geocontext_data = json.loads(geocontext_data_string)
+            for geocontext_value in geocontext_data['service_registry_values']:
+                if not geocontext_value['value']:
+                    continue
+                location_context, created = (
+                    LocationContext.objects.get_or_create(
+                        site=self,
+                        key=geocontext_value['key'],
                     )
-            except (TypeError, KeyError):
-                continue
-        if not data_exists:
-            return_message = 'Group values added'
-            old_location_context['context_group_values'].append(
-                new_context_data
-            )
-        self.location_context_document = json.dumps(old_location_context)
-        return True, return_message
+                )
+                location_context.name = geocontext_value['name']
+                location_context.group_key = geocontext_data['key']
+                location_context.fetch_time = timezone.now()
+                location_context.value = str(geocontext_value['value'])
+                location_context.save()
+        except (ValueError, KeyError, TypeError):
+            return False, 'Could not format the geocontext data'
+        return True, 'Added'
 
     def clear_location_context_document(self):
         self.location_context_document = ""
@@ -427,7 +411,46 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
-    from bims.utils.location_context import format_location_context
     if not issubclass(sender, LocationSite):
         return
-    format_location_context(instance.id)
+    models.signals.post_save.disconnect(
+        location_site_post_save_handler,
+    )
+
+    # Update refined geomorphological if exist
+    if instance.refined_geomorphological:
+        try:
+            try:
+                geo_context, created = LocationContext.objects.get_or_create(
+                    site=instance,
+                    key='geo_class_recoded',
+                )
+            except LocationContext.MultipleObjectsReturned:
+                LocationContext.objects.filter(
+                    site=instance,
+                    key='geo_class_recoded'
+                ).delete()
+                geo_context = LocationContext.objects.create(
+                    site=instance,
+                    key='geo_class_recoded'
+                )
+                created = True
+            geo_context.name = 'Geomorphological zones'
+            geo_context.group_key = 'geomorphological_group'
+            if not created:
+                if instance.refined_geomorphological != geo_context.value:
+                    instance.original_geomorphological = geo_context.value
+                    geo_context.value = instance.refined_geomorphological
+                    geo_context.save()
+            else:
+                geo_context.value = instance.refined_geomorphological
+                geo_context.save()
+            if not instance.original_geomorphological:
+                instance.original_geomorphological = geo_context.value
+            instance.save()
+        except LocationContext.MultipleObjectsReturned:
+            pass
+
+    models.signals.post_save.connect(
+        location_site_post_save_handler
+    )

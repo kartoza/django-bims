@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 from django.db.models import F, Count, Sum, Case, When, Q, FloatField
 from django.db.models.functions import Cast, Coalesce
 from sass.models import (
@@ -8,6 +7,7 @@ from sass.models import (
     SiteVisitTaxon,
     SassEcologicalCategory
 )
+from bims.models import LocationContext
 from bims.utils.logger import log
 
 
@@ -60,32 +60,17 @@ def generate_site_visit_ecological_condition(site_visits):
 
         site_visit_ecological.sass_score = sass_score
         site_visit_ecological.aspt_score = aspt_score
+        location_context = LocationContext.objects.filter(
+            site=site_visit.location_site
+        )
+        eco_region = location_context.value_from_key('eco_region_1')
+        geo_class = location_context.value_from_key('geo_class')
 
-        try:
-            location_context = json.loads(
-                site_visit.location_site.location_context
-            )
-            eco_region = (
-                location_context['context_group_values'][
-                    'river_ecoregion_group'][
-                    'service_registry_values']['eco_region_1'][
-                    'value'].encode(
-                    'utf-8')
-            )
-            geo_class = (
-                location_context['context_group_values'][
-                    'geomorphological_group'][
-                    'service_registry_values']['geo_class'][
-                    'value'].encode(
-                    'utf-8')
-            )
-            # Fix eco_region name
-            eco_region_splits = eco_region.split(' ')
+        eco_region_splits = eco_region.split(' ')
+        if len(eco_region_splits) > 0:
             if eco_region_splits[0].isdigit():
                 eco_region_splits.pop(0)
                 eco_region = ' '.join(eco_region_splits)
-        except (TypeError, ValueError, KeyError):
-            continue
 
         sass_ecological_conditions = (
             SassEcologicalCondition.objects.filter(

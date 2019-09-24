@@ -1,8 +1,7 @@
-import json
 import requests
 from requests.exceptions import HTTPError
 from bims.utils.get_key import get_key
-from bims.models import LocationSite
+from bims.models import LocationSite, LocationContext
 from bims.utils.logger import log
 
 
@@ -63,22 +62,14 @@ def allocate_site_codes_from_river(update_site_code=True, location_id=None):
         site_code = ''
         river_name = location_site.river.name
         # Get second catchment
-        context = {}
         catchment_name = ''
-        try:
-            context = json.loads(location_site.location_context)
-        except ValueError:
-            pass
-        if context:
-            try:
-                catchment_name = (
-                    context['context_group_values'][
-                        'river_catchment_areas_group'][
-                        'service_registry_values']['secondary_catchment_area'][
-                        'value']
-                )
-            except KeyError:
-                pass
+        location_context = LocationContext.objects.filter(
+            site=location_site
+        )
+        if location_context.exists():
+            catchment_name = location_context.value_from_key(
+                'secondary_catchment_area'
+            )
         if len(catchment_name) > 0:
             catchment_name = catchment_name[:2].upper()
         site_code += catchment_name

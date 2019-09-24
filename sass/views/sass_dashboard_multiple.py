@@ -1,7 +1,6 @@
 import time
 from collections import OrderedDict
 from django.views.generic import TemplateView
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Avg, Min, Max, Q
 )
@@ -10,7 +9,7 @@ from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search import Search
-from bims.models import LocationSite
+from bims.models import LocationSite, LocationContext
 from bims.utils.logger import log
 from sass.models import (
     SiteVisit,
@@ -325,40 +324,21 @@ class SassDashboardMultipleSitesApiView(APIView):
         chart_data = {}
         unique_ecoregions = []
         all_chart_data = []
-        eco_geo_data = (self.location_sites.annotate(
-            geo_class=KeyTextTransform(
-                'value', KeyTextTransform(
-                    'geo_class',
-                    KeyTextTransform(
-                        'service_registry_values',
-                        KeyTextTransform(
-                            'geomorphological_group',
-                            KeyTextTransform(
-                                'context_group_values',
-                                'location_context'))))),
-            eco_region=KeyTextTransform(
-                'value', KeyTextTransform(
-                    'eco_region_1',
-                    KeyTextTransform(
-                        'service_registry_values',
-                        KeyTextTransform(
-                            'river_ecoregion_group',
-                            KeyTextTransform(
-                                'context_group_values',
-                                'location_context')))))
-        ).values('geo_class', 'eco_region', 'id'))
-
-        unique_eco_geo = {}
         max_charts = 4
-        for eco_geo in eco_geo_data:
-            eco_region = eco_geo['eco_region']
-            geo_class = eco_geo['geo_class']
-            if not eco_region or not geo_class:
-                continue
-            tuple_key = (eco_region, geo_class)
-            if tuple_key not in unique_eco_geo:
-                unique_eco_geo[tuple_key] = []
-            unique_eco_geo[tuple_key].append(eco_geo['id'])
+
+        eco_geo_data = LocationContext.objects.filter(
+                site__in=list(self.location_sites)
+        ).distinct('site__id', 'value')
+        unique_eco_geo = {}
+        for site in self.location_sites:
+            eco_region = eco_geo_data.filter(
+                site=site).value_from_key('eco_region_1')
+            geo_class = eco_geo_data.filter(
+                site=site).value_from_key('geo_class')
+            if (eco_region, geo_class) not in unique_eco_geo:
+                unique_eco_geo[(eco_region, geo_class)] = [site.id]
+            else:
+                unique_eco_geo[(eco_region, geo_class)].append(site.id)
 
         index = 0
         for eco_geo, site_ids in unique_eco_geo.iteritems():

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 import json
 from django.db.models import Q
-from bims.models import LocationSite, SpatialScale
+from bims.models import LocationSite, SpatialScale, LocationContext
 from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon, SiteVisit
 
 
@@ -293,15 +293,12 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         if site.original_geomorphological:
             return site.original_geomorphological
         else:
-            try:
-                context = json.loads(site.location_context)
-                geo = context[
-                    'context_group_values'][
-                    'geomorphological_group']['service_registry_values'][
-                    'geo_class_recoded']['value']
-                return geo
-            except (KeyError, ValueError):
-                return '-'
+            location_context = LocationContext.objects.filter(
+                site=site
+            )
+            return location_context.value_from_key(
+                'geo_class_recoded'
+            )
 
     def get_geomorphological_zone_ground_truthed(self, obj):
         site = LocationSite.objects.get(id=obj['site_id'])
@@ -316,22 +313,12 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
             )
         except LocationSite.DoesNotExist:
             return ''
-        location_context = json.loads(
-            location_site.location_context
+        location_context = LocationContext.objects.filter(
+            site=location_site
         )
-        try:
-            context_group = (
-                location_context['context_group_values'][context_key]
-            )
-            for registry_value in context_group['service_registry_values']:
-                registry_data = (
-                    context_group['service_registry_values'][registry_value]
-                )
-                if registry_data['value']:
-                    result[registry_data['name']] = registry_data['value']
-            return result
-        except (KeyError, TypeError):
-            return result
+        for context in location_context:
+            result[context.name] = context.value
+        return result
 
     class Meta:
         model = SiteVisitTaxon

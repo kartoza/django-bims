@@ -139,7 +139,7 @@ class SiteVisit(AbstractAdditionalData):
 
 @receiver(post_save, sender=SiteVisit)
 def site_visit_post_save_handler(**kwargs):
-    from scripts.importer.site_visit_ecological_condition_generator import (
+    from sass.scripts.site_visit_ecological_condition_generator import (
         generate_site_visit_ecological_condition
     )
     try:

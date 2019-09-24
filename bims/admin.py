@@ -66,7 +66,8 @@ from bims.models import (
     SiteImage,
     SiteSetting,
     BimsDocument,
-    ChemicalRecord
+    ChemicalRecord,
+    LocationContext
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -105,6 +106,14 @@ class HasLocationContextDocument(django_admin.SimpleListFilter):
         return queryset
 
 
+class LocationContextInline(admin.TabularInline):
+    model = LocationContext
+
+
+class LocationContextAdmin(admin.ModelAdmin):
+    list_display = ('key', 'name', 'value')
+
+
 class LocationSiteAdmin(admin.GeoModelAdmin):
     form = LocationSiteForm
     default_zoom = 5
@@ -127,6 +136,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     list_display_links = ['name', 'site_code']
 
     actions = ['update_location_context', 'delete_location_context']
+    inlines = [LocationContextInline, ]
 
     def get_readonly_fields(self, request, obj=None):
         return ['original_geomorphological']

@@ -15,8 +15,6 @@ from bims.models import (
     UserBoundary,
     SEARCH_RESULTS,
     SEARCH_PROCESSING,
-    SpatialScale,
-    SpatialScaleGroup,
     TaxonGroup,
     Taxonomy,
     Endemism,
@@ -247,13 +245,28 @@ class Search(object):
     @property
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
-        spatial_filters_ids = []
+        spatial_filter_groups = []
+        or_condition = Q()
         if not spatial_filters:
             return []
         for spatial_filter in spatial_filters:
-            if 'group' not in spatial_filter:
-                spatial_filters_ids.append(spatial_filter)
-        return spatial_filters_ids
+            spatial_filter_splitted = spatial_filter.split(',')
+            if 'group' in spatial_filter_splitted:
+                spatial_filter_groups.append(
+                    spatial_filter.split(',')[1]
+                )
+            else:
+                if spatial_filter_splitted[0] != 'value':
+                    continue
+                or_condition |= Q(**{
+                    'site__locationcontext__key': spatial_filter_splitted[1],
+                    'site__locationcontext__value': spatial_filter_splitted[2]}
+                                  )
+            if spatial_filter_groups:
+                or_condition |= Q(**{
+                    'site__locationcontext__key__in':
+                        spatial_filter_groups})
+        return or_condition
 
     @property
     def spatial_filter_group_query(self):
@@ -390,56 +403,9 @@ class Search(object):
             reference_category_filter = reduce(operator.or_, clauses)
             bio = bio.filter(reference_category_filter)
 
-        spatial_filters = SpatialScale.objects.none()
-        if self.spatial_filter_group_query:
-            spatial_filter_groups = SpatialScaleGroup.objects.filter(
-                Q(id__in=self.spatial_filter_group_query) |
-                Q(parent__in=self.spatial_filter_group_query)
-            )
-            lowest_spatial_filter_groups = SpatialScaleGroup.objects.filter(
-                Q(parent__in=spatial_filter_groups)
-            )
-            if not lowest_spatial_filter_groups:
-                lowest_spatial_filter_groups = spatial_filter_groups
-            spatial_filters = SpatialScale.objects.filter(
-                group__in=lowest_spatial_filter_groups
-            )
-        if self.spatial_filter:
-            spatial_filters = SpatialScale.objects.filter(
-                id__in=self.spatial_filter
-            ) | spatial_filters
-        if spatial_filters:
-            spatial_filters = spatial_filters.values(
-                'query', 'group__key', 'group__parent__key')
-            spatial_query_list = None
-            for spatial_filter in spatial_filters:
-                spatial_query = (
-                    'site__location_context__context_group_values__'
-                )
-                spatial_query_value = ''
-                if spatial_filter['group__parent__key']:
-                    spatial_query += (
-                        spatial_filter['group__parent__key'] + '__'
-                    )
-                if spatial_filter['group__key']:
-                    spatial_query += 'service_registry_values__'
-                    spatial_query += spatial_filter['group__key'] + '__'
-                if spatial_filter['query']:
-                    spatial_query += 'value'
-                    spatial_query_value = spatial_filter['query']
-                try:
-                    spatial_query_value = float(spatial_query_value)
-                except ValueError:
-                    pass
-                if spatial_query_list is None:
-                    spatial_query_list = Q(
-                        **{spatial_query: spatial_query_value}
-                    )
-                else:
-                    spatial_query_list = spatial_query_list | Q(
-                        **{spatial_query: spatial_query_value}
-                    )
-            bio = bio.filter(spatial_query_list)
+        _spatial_fitler = self.spatial_filter
+        if _spatial_fitler:
+            bio = bio.filter(_spatial_fitler)
 
         if self.user_boundary:
             user_boundaries = UserBoundary.objects.filter(

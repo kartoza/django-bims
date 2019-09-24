@@ -9,6 +9,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Coalesce
 from bims.models.location_site import LocationSite
+from bims.models.location_context import LocationContext
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.api_views.search import Search
 from sass.models import (
@@ -24,6 +25,7 @@ class SassDashboardView(TemplateView):
     location_site = LocationSite.objects.none()
     site_visit_taxa = SiteVisitTaxon.objects.none()
     use_combined_geo = False
+    location_context = LocationContext.objects.none()
 
     def get_site_visit_taxon(self):
         filters = self.request.GET.dict()
@@ -237,20 +239,12 @@ class SassDashboardView(TemplateView):
     def get_ecological_chart_data(self):
         chart_data = {}
         try:
-            location_context = json.loads(self.location_site.location_context)
-            eco_region = (
-                location_context['context_group_values'][
-                    'river_ecoregion_group'][
-                    'service_registry_values']['eco_region_1']['value'].encode(
-                    'utf-8')
+            eco_region = self.location_context.value_from_key(
+                'eco_region_1'
             )
-            geo_class = (
-                location_context['context_group_values'][
-                    'geomorphological_group'][
-                    'service_registry_values']['geo_class']['value'].encode(
-                    'utf-8')
+            geo_class = self.location_context.value_from_key(
+                'geo_class'
             )
-
             # Fix eco_region name
             eco_region_splits = eco_region.split(' ')
             if eco_region_splits[0].isdigit():
@@ -322,7 +316,7 @@ class SassDashboardView(TemplateView):
         }
 
         for key, value in river_catchment.items():
-            if value['key'] not in display_order:
+            if key not in display_order:
                 value['display_order'] = 5
             else:
                 value['display_order'] = display_order[value['key']]
@@ -372,23 +366,23 @@ class SassDashboardView(TemplateView):
             col.source_reference for col in collection_with_references
         ]
 
-        river_catchments = self.location_site.location_context_group_values(
+        river_catchments = self.location_context.values_from_group(
             'river_catchment_areas_group'
         )
-        river_catchments = self.ordering_catchment_data(river_catchments)
+        # river_catchments = self.ordering_catchment_data(river_catchments)
         context['river_catchments'] = json.dumps(river_catchments)
         context['river_ecoregion_group'] = (
-            json.dumps(self.location_site.location_context_group_values(
+            json.dumps(self.location_context.values_from_group(
                 'river_ecoregion_group'
             ))
         )
         context['political_boundary'] = (
-            json.dumps(self.location_site.location_context_group_values(
+            json.dumps(self.location_context.values_from_group(
                 'political_boundary_group'
             ))
         )
         context['geomorphological_group'] = (
-            json.dumps(self.location_site.location_context_group_values(
+            json.dumps(self.location_context.values_from_group(
                 'geomorphological_group'
             ))
         )
@@ -404,12 +398,12 @@ class SassDashboardView(TemplateView):
         )
 
         context['eco_geo'] = (
-            json.dumps(self.location_site.location_context_group_values(
+            json.dumps(self.location_context.values_from_group(
                 'eco_geo_group'
             ))
         )
         context['wma'] = (
-            json.dumps(self.location_site.location_context_group_values(
+            json.dumps(self.location_context.values_from_group(
                 'water_management_area'
             ))
         )
@@ -424,5 +418,8 @@ class SassDashboardView(TemplateView):
         self.location_site = get_object_or_404(
             LocationSite,
             pk=site_id
+        )
+        self.location_context = LocationContext.objects.filter(
+            site=self.location_site
         )
         return super(SassDashboardView, self).get(request, *args, **kwargs)

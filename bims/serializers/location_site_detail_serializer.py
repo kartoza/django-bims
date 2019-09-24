@@ -1,6 +1,7 @@
 import json
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
+from bims.models.location_context import LocationContext
 from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.enums.taxonomic_rank import TaxonomicRank
 
@@ -63,10 +64,10 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return taxonomy.canonical_name
         return None
 
-    def get_site_climate_data(self, context_document):
+    def get_site_climate_data(self, instance):
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
                   'Sep', 'Oct', 'Nov', 'Dec']
-        site_climate_data = {}
+        site_climate_data = dict()
         site_climate_data['temperature_chart'] = {}
         site_climate_data['temperature_chart']['values'] = []
         site_climate_data['temperature_chart']['keys'] = []
@@ -74,34 +75,39 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         site_climate_data['rainfall_chart']['values'] = []
         site_climate_data['rainfall_chart']['keys'] = []
 
-        if context_document:
-            context_document_dictionary = json.loads(context_document)
-            monthly_annual_temperature_values = (
-                context_document_dictionary
-                ['context_group_values']
-                ['monthly_mean_daily_average_temperature_group']
-                ['service_registry_values'])
-            monthly_annual_rainfall_values = (
-                context_document_dictionary
-                ['context_group_values']
-                ['rainfall_group']
-                ['service_registry_values'])
-            count = 0
-            for month_temperature in \
-                monthly_annual_temperature_values.iteritems():
-                site_climate_data['temperature_chart']['values'].append(round(
-                    month_temperature[1]['value'], 2))
-                site_climate_data['temperature_chart']['keys'].append(
-                    str(months[count]))
-                count += 1
-            count = 0
+        location_contexts = LocationContext.objects.filter(site=instance)
 
-            for month_rainfall in monthly_annual_rainfall_values.iteritems():
-                site_climate_data['rainfall_chart']['values'].append(round(
-                    month_rainfall[1]['value'], 2))
-                site_climate_data['rainfall_chart']['keys'].append(
-                    str(months[count]))
-                count += 1
+        monthly_annual_temperature_values = location_contexts.filter(
+            group_key='monthly_mean_daily_average_temperature_group'
+        )
+
+        monthly_annual_rainfall_values = location_contexts.filter(
+            group_key='rainfall_group'
+        )
+
+        for month in months:
+            temp_data = (
+                monthly_annual_temperature_values.filter(key__icontains=month)
+            )
+            if temp_data.exists():
+                site_climate_data['temperature_chart']['values'].append(
+                    round(float(temp_data[0].value))
+                )
+            else:
+                site_climate_data['temperature_chart']['values'].append(0)
+            site_climate_data['temperature_chart']['keys'].append(month)
+
+            rain_data = (
+                monthly_annual_rainfall_values.filter(key__icontains=month)
+            )
+            if rain_data.exists():
+                site_climate_data['rainfall_chart']['values'].append(
+                    round(float(rain_data[0].value))
+                )
+            else:
+                site_climate_data['rainfall_chart']['values'].append(0)
+            site_climate_data['rainfall_chart']['keys'].append(month)
+
         site_climate_data['temperature_chart']['title'] = 'Annual Temperature'
         site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
@@ -113,7 +119,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         records_occurrence = {}
         try:
             climate_data = self.get_site_climate_data(
-                instance.location_context)
+                instance)
         except KeyError:
             climate_data = {}
         try:
