@@ -10,7 +10,7 @@ from bims.tests.model_factories import (
     LocationTypeF,
     UserF
 )
-from bims.models import LocationSite
+from bims.models import LocationSite, LocationContext
 
 
 class TestLocationSiteFormView(TestCase):
@@ -147,28 +147,24 @@ class TestLocationSiteFormView(TestCase):
         updated_location_site = LocationSite.objects.get(
             id=location_site.id
         )
-        self.assertTrue(True)
+        updated_location_context = LocationContext.objects.filter(
+            site=location_site
+        )
         self.assertEqual(
             updated_location_site.river.name,
             'NXAMAGELE'
         )
-        updated_location_context = json.loads(
-            updated_location_site.location_context
+        self.assertTrue(
+            updated_location_context.filter(
+                key__icontains='catchment_area').exists()
         )
         self.assertTrue(
-            'river_ecoregion_group' in
-            updated_location_context['context_group_values']
+            updated_location_context.filter(
+                key='geo_class_recoded').exists()
         )
         self.assertTrue(
-            'geomorphological_group' in
-            updated_location_context['context_group_values']
-        )
-        self.assertTrue(
-            updated_location_context['context_group_values']
-            ['geomorphological_group']
-            ['service_registry_values']
-            ['geo_class_recoded']
-            ['value'] == 'Mountain headwater stream')
+            updated_location_context.value_from_key('geo_class_recoded') ==
+            'Mountain headwater stream')
 
         # Test if there are no location context data
         location_site_2 = LocationSiteF.create(
@@ -181,22 +177,16 @@ class TestLocationSiteFormView(TestCase):
             post_data,
             follow=True
         )
-        updated_location_site_2 = LocationSite.objects.get(
-            id=location_site_2.id
-        )
-        updated_location_context_2 = json.loads(
-            updated_location_site_2.location_context
+        updated_location_context_2 = LocationContext.objects.filter(
+            site=location_site_2
         )
         self.assertTrue(
-            'river_ecoregion_group' not in
-            updated_location_context_2['context_group_values']
+            updated_location_context_2.filter(
+                key__icontains='catchment_area').exists()
         )
         self.assertTrue(
-            updated_location_context_2['context_group_values']
-            ['geomorphological_group']
-            ['service_registry_values']
-            ['geo_class_recoded']
-            ['value'] == 'Mountain headwater stream')
+            updated_location_context_2.value_from_key('geo_class_recoded') ==
+            'Mountain headwater stream')
         self.assertTrue(
             post_request_2.redirect_chain[0][0],
             '/location-site-form/update/?id={}'.format(

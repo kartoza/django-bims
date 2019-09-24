@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from bims.models.location_site import LocationSite
+from bims.models.location_context import LocationContext
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
@@ -472,10 +473,7 @@ class LocationSitesSummary(APIView):
             location_site = LocationSite.objects.get(id=site_id)
         except LocationSite.DoesNotExist:
             return {}
-        try:
-            context_document = json.loads(location_site.location_context)
-        except (ValueError, TypeError):
-            context_document = {}
+        location_context = LocationContext.objects.filter(site=location_site)
         site_river = '-'
         if location_site.river:
             site_river = location_site.river.name
@@ -499,32 +497,10 @@ class LocationSitesSummary(APIView):
         river_and_geo = dict()
         river_and_geo['River'] = site_river
 
-        try:
-            eco_region = (
-                context_document
-                ['context_group_values']
-                ['river_ecoregion_group']
-                ['service_registry_values']
-                ['eco_region_1']
-                ['value'])
-        except KeyError:
-            eco_region = '-'
-        try:
-            geo_class = (
-                context_document
-                ['context_group_values']
-                ['geomorphological_group']
-                ['service_registry_values']
-                ['geo_class_recoded']
-                ['value'])
-        except KeyError:
-            geo_class = '-'
-        try:
-            geo_zone = ('{geo_class}'.format(
-                geo_class=geo_class))
-        except KeyError:
-            geo_zone = '-'
-        river_and_geo['Geomorphological zone'] = geo_zone
+        river_and_geo['Geomorphological zone'] = (
+            location_context.value_from_key(
+                'geo_class_recoded')
+        )
 
         refined_geomorphological = '-'
         if location_site.refined_geomorphological:
@@ -534,130 +510,50 @@ class LocationSitesSummary(APIView):
 
         # Catchments
         catchments = dict()
-        try:
-            primary_catchment = (
-                context_document
-                ['context_group_values']
-                ['river_catchment_areas_group']
-                ['service_registry_values']
-                ['primary_catchment_area']
-                ['value'])
-        except KeyError:
-            primary_catchment = '-'
-        try:
-            secondary_catchment = (
-                context_document
-                ['context_group_values']
-                ['river_catchment_areas_group']
-                ['service_registry_values']
-                ['secondary_catchment_area']
-                ['value'])
-        except KeyError:
-            secondary_catchment = '-'
-        try:
-            tertiary_catchment_area = (
-                context_document
-                ['context_group_values']
-                ['river_catchment_areas_group']
-                ['service_registry_values']
-                ['tertiary_catchment_area']
-                ['value'])
-        except KeyError:
-            tertiary_catchment_area = '-'
-        try:
-            quaternary_catchment_area = (
-                context_document
-                ['context_group_values']
-                ['river_catchment_areas_group']
-                ['service_registry_values']
-                ['quaternary_catchment_area']
-                ['value'])
-        except KeyError:
-            quaternary_catchment_area = '-'
-        try:
-            water_management_area = (
-                context_document
-                ['context_group_values']
-                ['water_management_area']
-                ['service_registry_values']
-                ['water_management_area']
-                ['value'])
-        except KeyError:
-            water_management_area = '-'
 
-        try:
-            sub_water_management_area = (
-                context_document
-                ['context_group_values']
-                ['water_management_area']
-                ['service_registry_values']
-                ['sub_wmas']
-                ['value'])
-        except KeyError:
-            sub_water_management_area = '-'
-
-        catchments['Primary'] = primary_catchment
-        catchments['Secondary'] = secondary_catchment
-        catchments['Tertiary'] = tertiary_catchment_area
-        catchments['Quaternary'] = quaternary_catchment_area
-        catchments['Quinary'] = '-'
+        catchments['Primary'] = location_context.value_from_key(
+            'primary_catchment_area')
+        catchments['Secondary'] = location_context.value_from_key(
+            'secondary_catchment_area')
+        catchments['Tertiary'] = location_context.value_from_key(
+            'tertiary_catchment_area')
+        catchments['Quaternary'] = location_context.value_from_key(
+            'quaternary_catchment_area')
+        catchments['Quinary'] = location_context.value_from_key(
+            'quinary_catchment_area')
 
         sub_water_management_areas = dict()
         sub_water_management_areas['Water Management Areas'] = (
-            water_management_area
+            location_context.value_from_key(
+                'water_management_area')
         )
         sub_water_management_areas['Sub Water Management Areas'] = (
-            sub_water_management_area
+            location_context.value_from_key(
+                'sub_wmas')
         )
-        sub_water_management_areas['River Management Unit'] = '-'
+        sub_water_management_areas['River Management Unit'] = (
+            location_context.value_from_key(
+                'river_management_unit')
+        )
 
-        # Politcal Boundary Group
+        # # Politcal Boundary Group
         sa_ecoregions = dict()
-        try:
-            province = self.parse_string(str(context_document
-                                             ['context_group_values']
-                                             ['political_boundary_group']
-                                             ['service_registry_values']
-                                             ['sa_provinces']
-                                             ['value']))
-        except KeyError:
-            province = '-'
-
-        try:
-            eco_region = self.parse_string(str(context_document
-                                               ['context_group_values']
-                                               ['river_ecoregion_group']
-                                               ['service_registry_values']
-                                               ['eco_region_1']
-                                               ['value']))
-        except KeyError:
-            eco_region = '-'
-
-        try:
-            eco_region_2 = self.parse_string(str(context_document
-                                                 ['context_group_values']
-                                                 ['river_ecoregion_group']
-                                                 ['service_registry_values']
-                                                 ['eco_region_2']
-                                                 ['value']))
-        except KeyError:
-            eco_region_2 = '-'
-
-        try:
-            freshwater_ecoregion = self.parse_string(
-                context_document['context_group_values']
-                ['freshwater_ecoregion_of_the_world']
-                ['service_registry_values']
-                ['feow_hydrosheds']
-                ['value']
-            )
-        except KeyError:
-            freshwater_ecoregion = '-'
-
-        sa_ecoregions['SA Ecoregion Level 1'] = eco_region
-        sa_ecoregions['SA Ecoregion Level 2'] = eco_region_2
-        sa_ecoregions['Freshwater Ecoregion'] = freshwater_ecoregion
-        sa_ecoregions['Province'] = province
+        sa_ecoregions['SA Ecoregion Level 1'] = (
+            location_context.value_from_key(
+                'eco_region_1')
+        )
+        sa_ecoregions['SA Ecoregion Level 2'] = (
+            location_context.value_from_key(
+                'eco_region_2')
+        )
+        sa_ecoregions['Freshwater Ecoregion'] = (
+            location_context.value_from_key(
+                'feow_hydrosheds')
+        )
+        sa_ecoregions['Province'] = (
+            location_context.value_from_key(
+                'sa_provinces')
+        )
 
         result = dict()
         result['overview'] = overview

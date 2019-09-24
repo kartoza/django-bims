@@ -1,5 +1,3 @@
-import json
-
 from django.views.generic import TemplateView, View
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -15,7 +13,7 @@ from bims.utils.get_key import get_key
 from bims.enums.geomorphological_zone import (
     GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
 )
-from bims.models import LocationSite, LocationType
+from bims.models import LocationSite, LocationType, LocationContext
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
 from bims.tasks.location_site import update_location_context
@@ -173,32 +171,31 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
 
     def update_or_create_location_site(self, post_dict):
         # Update current location context document
-        if (self.location_site.location_context_document and
-                post_dict['location_context_document']):
-            location_context_document = json.loads(
-                self.location_site.location_context_document)
-            for index, location_context_group in enumerate(
-                    location_context_document['context_group_values']):
-
-                if (self.catchment_geocontext and
-                        location_context_group['key'] ==
-                        self.catchment_geocontext['key']):
-                    del location_context_document[
-                        'context_group_values'][index]
-                    location_context_document['context_group_values'].append(
-                        self.catchment_geocontext)
-
-                if (self.geomorphological_group_geocontext and
-                        location_context_group['key'] ==
-                        self.geomorphological_group_geocontext['key']):
-                    del location_context_document[
-                        'context_group_values'][index]
-                    location_context_document['context_group_values'].append(
-                        self.geomorphological_group_geocontext)
-            location_context_document['context_group_values'] = list(
-                filter(None, location_context_document['context_group_values'])
-            )
-            post_dict['location_context_document'] = location_context_document
+        if post_dict['location_context_document']:
+            for context_data in post_dict[
+                'location_context_document'][
+                'context_group_values']:
+                for context_value in context_data['service_registry_values']:
+                    try:
+                        location_context, created = (
+                            LocationContext.objects.get_or_create(
+                                key=context_value['key'],
+                                site=self.location_site
+                            )
+                        )
+                    except LocationContext.MultipleObjectsReturned:
+                        LocationContext.objects.filter(
+                            key=context_value['key'],
+                            site=self.location_site
+                        ).delete()
+                        location_context = LocationContext.objects.create(
+                            key=context_value['key'],
+                            site=self.location_site
+                        )
+                    location_context.value = context_value['value']
+                    location_context.name = context_value['name']
+                    location_context.save()
+            del post_dict['location_context_document']
 
         if self.geomorphological_group_geocontext:
             try:

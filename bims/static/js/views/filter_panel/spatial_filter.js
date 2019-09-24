@@ -183,6 +183,17 @@ define([
             self.renderChildTree(spatialData, tree, 1, spatialData['name']);
             return tree;
         },
+        getHash: function(input){
+            if (typeof input === 'undefined') {
+                return ''
+            }
+            var hash = 0, len = input.length;
+            for (var i = 0; i < len; i++) {
+                hash  = ((hash << 5) - hash) + input.charCodeAt(i);
+                hash |= 0; // to 32bit integer
+            }
+            return hash;
+        },
         renderChildTree: function (data, wrapper, level, name, isChecked = false) {
             var self = this;
             var selectedArray = this.selectedSpatialFilters;
@@ -199,15 +210,16 @@ define([
                 var dataName = '';
 
                 var _isChecked = isChecked;
-                dataValue = data[i]['id'];
+                dataValue = 'value,' + data[i]['key'] + ',' + data[i]['query'];
 
                 if (data[i].hasOwnProperty('query')) {
                     label = data[i]['query'];
                     dataName = data[i]['query'];
                 } else {
+                    var hash = self.getHash(data[i]['query']);
                     label = data[i]['name'];
                     dataName = data[i]['key'];
-                    dataValue = 'group-' + data[i]['id'];
+                    dataValue = 'group,' + dataName;
                 }
                 if (selectedArray.includes(dataValue.toString())) {
                     _isChecked = true;
@@ -370,11 +382,9 @@ define([
 
         },
         isOpen: function () {
-            console.log(this.$el.find('.map-control-panel-box'));
             return !this.$el.find('.map-control-panel-box').is(':hidden');
         },
         show: function () {
-            console.log(this.$el.find('.map-control-panel-box'));
             this.$el.find('.map-control-panel-box').show();
         },
         close: function () {

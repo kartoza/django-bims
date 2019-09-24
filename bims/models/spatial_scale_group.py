@@ -1,4 +1,8 @@
 from django.contrib.gis.db import models
+SPATIAL_SCALE_TYPE = (
+    ('input', 'Input'),
+    ('select', 'Select'),
+)
 
 
 class SpatialScaleGroup(models.Model):
@@ -21,6 +25,13 @@ class SpatialScaleGroup(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True
+    )
+
+    type = models.CharField(
+        max_length=50,
+        choices=SPATIAL_SCALE_TYPE,
+        blank=True,
+        null=True,
     )
 
     def __unicode__(self):

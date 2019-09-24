@@ -1,7 +1,8 @@
 # coding=utf-8
 from collections import OrderedDict
 from rest_framework.views import APIView, Response
-from bims.models import SpatialScale, SpatialScaleGroup, GEO_CLASS_GROUP
+from bims.models import GEO_CLASS_GROUP, LocationContext
+from django.db.models import Case, When, CharField, Value, F
 
 
 class SpatialScaleFilterList(APIView):
@@ -20,7 +21,7 @@ class SpatialScaleFilterList(APIView):
             ]
         }),
         ('Province', {
-            'key': 'province',
+            'key': 'political_boundary_group',
             'groups': [
                 'sa_provinces'
             ]
@@ -81,38 +82,36 @@ class SpatialScaleFilterList(APIView):
         'eco_region_2': 'SA Ecoregion Level 2'
     }
 
-    def get_spatial_scale(self, spatial_scale_groups):
+    def get_spatial_scale(self):
         spatial_tree = []
-        if not spatial_scale_groups:
-            return spatial_tree
         for key, value in self.SPATIAL_FILTER_GROUPS.iteritems():
             spatial_tree_data = {
                 'key': value['key'],
                 'name': key,
                 'children': []
             }
-            spatial_scale_groups = SpatialScaleGroup.objects.filter(
-                key__in=value['groups']
-            ).distinct('id').order_by('id')
-            try:
-                objects = dict(
-                    [(obj.key, obj) for obj in spatial_scale_groups])
-                spatial_scale_groups = [
-                    objects[key] for key in value['groups']]
-            except KeyError:
-                pass
-            for group in spatial_scale_groups:
+            whens = [
+                When(
+                    key=k, then=Value(v)
+                ) for k, v in self.SPATIAL_GROUP_UPDATED_NAMES.iteritems()
+            ]
+            for group in value['groups']:
+                location_contexts = LocationContext.objects.filter(
+                    key=group
+                ).distinct('value').order_by('value').exclude(value='None')
+                if not location_contexts:
+                    continue
                 spatial_tree_value = list(
-                    SpatialScale.objects.filter(
-                        group=group,
-                    ).order_by('query').values(
-                        'id',
-                        'query',
-                        'name',
-                        'type'
-                    )
-                )
-
+                    location_contexts.values(
+                        'key',
+                    ).annotate(
+                        name=Case(
+                            *whens,
+                            default='name',
+                            output_field=CharField()
+                        ),
+                        query=F('value')
+                    ))
                 spatial_tree_value_sorted = sorted(
                     spatial_tree_value,
                     key=lambda i: (
@@ -120,17 +119,12 @@ class SpatialScaleFilterList(APIView):
                         if i['query'].split(' ')[0].isdigit()
                         else i['query'])
                 )
-
-                group_name = group.name
-                if group.key in self.SPATIAL_GROUP_UPDATED_NAMES:
-                    group_name = self.SPATIAL_GROUP_UPDATED_NAMES[group.key]
-                spatial_tree_group_data = {
-                    'id': group.id,
-                    'key': group.key,
-                    'name': group_name,
+                spatial_tree_children = {
+                    'key': group,
+                    'name': location_contexts[0].name,
                     'value': spatial_tree_value_sorted
                 }
-                spatial_tree_data['children'].append(spatial_tree_group_data)
+                spatial_tree_data['children'].append(spatial_tree_children)
 
             spatial_tree.append(
                 spatial_tree_data
@@ -138,10 +132,7 @@ class SpatialScaleFilterList(APIView):
         return spatial_tree
 
     def get(self, request, *args):
-        spatial_scale_groups = SpatialScaleGroup.objects.filter(
-            parent__isnull=True
-        )
-        groups = self.get_spatial_scale(spatial_scale_groups)
+        groups = self.get_spatial_scale()
 
         return Response(
             groups

@@ -1,5 +1,4 @@
 import uuid
-import json
 import logging
 import time
 from datetime import datetime
@@ -20,7 +19,8 @@ from bims.models import (
     Taxonomy,
     LocationType,
     TaxonGroup,
-    SiteImage
+    SiteImage,
+    LocationContext
 )
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 
@@ -61,42 +61,28 @@ class FishFormView(TemplateView, SessionFormMixin):
         Get taxa from nearest river_catchment
         :return: list of taxa
         """
-        river_catchment_value = None
-        river_catchment_query = None
+        river_catchment_query = {}
         fish_group, created = TaxonGroup.objects.get_or_create(
             name='Fish'
         )
         all_fishes = self.all_fishes(fish_group.taxonomies.all())
+        location_contexts = LocationContext.objects.filter(
+            site=self.location_site
+        )
 
-        try:
-            location_site_context = json.loads(
-                self.location_site.location_context)
-            water_group = (
-                location_site_context['context_group_values']['water_group']
-                ['service_registry_values']
+        for river_catchment in RIVER_CATCHMENT_ORDER:
+            river_catchment_value = location_contexts.value_from_key(
+                river_catchment
             )
-            for river_catchment in RIVER_CATCHMENT_ORDER:
-                if river_catchment in water_group:
-                    river_catchment_value = (
-                        water_group[river_catchment]['value']
-                    )
-                    river_catchment_query = (
-                            'location_context__'
-                            'context_group_values__water_group__'
-                            'service_registry_values__%s__value' %
-                            river_catchment
-                    )
-                    break
-        except (KeyError, TypeError) as e:
-            logger.error(e)
-            pass
+            if river_catchment_value != '-':
+                river_catchment_query = {
+                    'locationcontext__value': river_catchment_value
+                }
 
         taxa_list = []
-        if river_catchment_value and river_catchment_query:
+        if river_catchment_query:
             taxa_list = list(
-                LocationSite.objects.filter(**{
-                    river_catchment_query: river_catchment_value
-                }).values(
+                LocationSite.objects.filter(**river_catchment_query).values(
                     taxon_id=F('biological_collection_record__taxonomy'),
                     taxon_name=F(
                         'biological_collection_record__taxonomy__'
