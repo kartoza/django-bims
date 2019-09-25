@@ -9,11 +9,14 @@ from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
+from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
+from bims.serializers.chemical_records_serializer import \
+    ChemicalRecordsSerializer
 from bims.serializers.location_site_serializer import (
     LocationSiteSerializer,
     LocationSiteClusterSerializer,
@@ -41,6 +44,7 @@ from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from sass.models.chem import Chem
 
 
 class LocationSiteList(APIView):
@@ -219,6 +223,7 @@ class LocationSitesSummary(APIView):
     ORIGIN_OCCURRENCE = 'origin_occurrence'
     CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
     SOURCE_REFERENCES = 'source_references'
+    CHEMICAL_RECORDS = 'chemical_records'
     iucn_category = {}
     origin_name_list = {}
 
@@ -287,6 +292,42 @@ class LocationSitesSummary(APIView):
 
         source_references = collection_with_references.source_references()
 
+        chems = ChemicalRecord.objects.filter(location_site_id=site_id)
+        list_chems_code = (
+            list(
+                chems.values_list(
+                    'chem__chem_code').distinct('chem__chem_code')))
+        list_chems = {}
+        for chem in list_chems_code:
+            chem_name = (
+                chem[0].lower().replace(
+                    'max', '').replace('min', '').replace('-n', ''))
+            chem_name = chem_name.upper()
+
+            qs = chems.filter(chem__chem_code=chem[0]).order_by('date')
+            value = ChemicalRecordsSerializer(qs, many=True)
+            chem_data = None
+            try:
+                chem_data = Chem.objects.get(chem_code=chem[0])
+            except Chem.MultipleObjectsReturned:
+                queries = Chem.objects.filter(chem_code=chem[0])
+                for query in queries:
+                    if query.chem_unit:
+                        chem_data = query
+                if not chem_data:
+                    chem_data = queries.first()
+
+            data = {
+                'unit': chem_data.chem_unit,
+                'name': chem_data.chem_description,
+                'values': value.data
+            }
+
+            try:
+                list_chems[chem_name].append({chem[0]: data})
+            except KeyError:
+                list_chems[chem_name] = [{chem[0]: data}]
+
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
             self.SITE_DETAILS: dict(site_details),
@@ -297,6 +338,7 @@ class LocationSitesSummary(APIView):
             self.ORIGIN_NAME_LIST: self.origin_name_list,
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             self.SOURCE_REFERENCES: source_references,
+            self.CHEMICAL_RECORDS: list_chems,
             'modules': modules,
             'site_images': list(site_images),
             'process': search_process.process_id,
