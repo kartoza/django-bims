@@ -191,6 +191,7 @@ define([
                     let dashboardHeader = self.$el.find('.dashboard-header');
                     if (data['is_multi_sites']) {
                         $('#fish-ssdd-site-details').hide();
+                        $('#ssdd-chem-chart-wrapper').hide();
                         self.createMultiSiteDetails(data);
                         let sassDashboardButton = $('#sass-dashboard-button');
                         sassDashboardButton.show();
@@ -204,7 +205,9 @@ define([
                     } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
+                        $('#ssdd-chem-chart-wrapper').show();
                         dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
+                        self.renderChemGraph(data);
                     }
 
                     renderFilterList($('#filter-history-table'));
@@ -213,7 +216,6 @@ define([
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
                     self.createOriginStackedBarChart(data);
-                    self.renderChemGraph(data);
 
                     // Zoom to extent
                     if (data['extent'].length > 0) {

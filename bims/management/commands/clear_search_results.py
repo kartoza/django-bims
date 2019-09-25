@@ -21,3 +21,4 @@ class Command(BaseCommand):
             'csv_processed'
         )
         shutil.rmtree(csv_path)
+        os.mkdir(csv_path)
