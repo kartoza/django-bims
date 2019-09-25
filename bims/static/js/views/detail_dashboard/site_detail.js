@@ -64,6 +64,7 @@ define([
             'click .download-as-csv': 'downloadAsCSV',
             'click .ssdd-export': 'downloadElementEvent',
             'click .download-chart-image': 'downloadChartImage',
+            'click #chem-graph-export': 'downloadChemGraphs'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -439,11 +440,14 @@ define([
                     graph_canvas.scrollHeight - img.height - 5);
                 canvas = graph_canvas;
                 html2canvas(canvas, {
+                    width: 10000,
+                    height: 10000,
                     onrendered: function (canvas) {
                         var link = document.createElement('a');
                         link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
                         link.download = title + '.png';
                         link.click();
+                        link.remove();
                     }
                 })
             }
@@ -1139,7 +1143,7 @@ define([
             var $chemWrapper = $('#fish-ssdd-chem-bar-chart');
             $chemWrapper.html('');
             $.each(data['chemical_records'], function (key, value) {
-                var id_canvas = key + '-chem-chart-canvas';
+                var id_canvas = key + '-chem-chart';
                 var canvas = '<canvas class="chem-bar-chart" id="' + id_canvas + '"></canvas>';
                 $chemWrapper.append(canvas);
                 var ctx = document.getElementById(id_canvas).getContext('2d');
@@ -1207,6 +1211,15 @@ define([
 
                 new ChartJs(ctx, chartConfig)
             })
+        },
+        downloadChemGraphs: function () {
+            var self = this;
+            var elements = $('#fish-ssdd-chem-bar-chart .chem-bar-chart');
+            for(var i=0; i<elements.length; i++){
+                var title = $(elements[i]).attr('id');
+                var canvas = $(elements[i])[0];
+                self.downloadChart(title, canvas);
+            }
         }
     })
 });
