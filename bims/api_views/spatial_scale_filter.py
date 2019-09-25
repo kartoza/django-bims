@@ -53,7 +53,18 @@ class SpatialScaleFilterList(APIView):
         ('Critical Biodiversity Area (CBA)', {
             'key': 'cba',
             'groups': [
-                'wc_cape_biodiversity_spatial_plan'
+                'national_cba_layer',
+                'national_esa',
+                'npa_layer',
+                'limpopo_cba',
+                'free_state_cba',
+                'gauteng_cba',
+                'mpumalanga_cba',
+                'northern_cape_cba',
+                'north_west_cba',
+                'kzn_cba',
+                'ec_cba',
+                'wc_cba'
             ]
         }),
         ('National Freshwater Ecosystem Priority Area (NFEPA)', {
