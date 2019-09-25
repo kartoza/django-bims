@@ -292,41 +292,42 @@ class LocationSitesSummary(APIView):
 
         source_references = collection_with_references.source_references()
 
-        chems = ChemicalRecord.objects.filter(location_site_id=site_id)
-        list_chems_code = (
-            list(
-                chems.values_list(
-                    'chem__chem_code').distinct('chem__chem_code')))
         list_chems = {}
-        for chem in list_chems_code:
-            chem_name = (
-                chem[0].lower().replace(
-                    'max', '').replace('min', '').replace('-n', ''))
-            chem_name = chem_name.upper()
+        if site_id:
+            chems = ChemicalRecord.objects.filter(location_site_id=site_id)
+            list_chems_code = (
+                list(
+                    chems.values_list(
+                        'chem__chem_code').distinct('chem__chem_code')))
+            for chem in list_chems_code:
+                chem_name = (
+                    chem[0].lower().replace(
+                        'max', '').replace('min', '').replace('-n', ''))
+                chem_name = chem_name.upper()
 
-            qs = chems.filter(chem__chem_code=chem[0]).order_by('date')
-            value = ChemicalRecordsSerializer(qs, many=True)
-            chem_data = None
-            try:
-                chem_data = Chem.objects.get(chem_code=chem[0])
-            except Chem.MultipleObjectsReturned:
-                queries = Chem.objects.filter(chem_code=chem[0])
-                for query in queries:
-                    if query.chem_unit:
-                        chem_data = query
-                if not chem_data:
-                    chem_data = queries.first()
+                qs = chems.filter(chem__chem_code=chem[0]).order_by('date')
+                value = ChemicalRecordsSerializer(qs, many=True)
+                chem_data = None
+                try:
+                    chem_data = Chem.objects.get(chem_code=chem[0])
+                except Chem.MultipleObjectsReturned:
+                    queries = Chem.objects.filter(chem_code=chem[0])
+                    for query in queries:
+                        if query.chem_unit:
+                            chem_data = query
+                    if not chem_data:
+                        chem_data = queries.first()
 
-            data = {
-                'unit': chem_data.chem_unit,
-                'name': chem_data.chem_description,
-                'values': value.data
-            }
+                data = {
+                    'unit': chem_data.chem_unit,
+                    'name': chem_data.chem_description,
+                    'values': value.data
+                }
 
-            try:
-                list_chems[chem_name].append({chem[0]: data})
-            except KeyError:
-                list_chems[chem_name] = [{chem[0]: data}]
+                try:
+                    list_chems[chem_name].append({chem[0]: data})
+                except KeyError:
+                    list_chems[chem_name] = [{chem[0]: data}]
 
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
