@@ -242,8 +242,8 @@ class LocationSitesSummary(APIView):
         taxa_occurrence = self.site_taxa_occurrences_per_year(
             collection_results)
 
-        category_summary = collection_results.filter(
-            category__isnull=False
+        category_summary = collection_results.exclude(
+            category=''
         ).annotate(
             origin=F('category')
         ).values_list(
@@ -360,9 +360,9 @@ class LocationSitesSummary(APIView):
         """
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
-            origin=Case(When(category__isnull=False,
-                             then=F('category')),
-                        default=Value('Unspecified')),
+            origin=Case(When(category='',
+                             then=Value('Unspecified')),
+                        default=F('category')),
             cons_status=F('taxonomy__iucn_status__category'),
             endemism=Case(When(taxonomy__endemism__isnull=False,
                                then=F('taxonomy__endemism__name')),
@@ -404,9 +404,9 @@ class LocationSitesSummary(APIView):
         biodiversity_data['species']['endemism_chart'] = {}
         biodiversity_data['species']['sampling_method_chart'] = {}
         origin_by_name_data = collection_results.annotate(
-            name=Case(When(category__isnull=False,
-                           then=F('category')),
-                      default=Value('Unspecified'))
+            name=Case(When(category='',
+                           then=Value('Unspecified')),
+                      default=F('category'))
         ).values(
             'name'
         ).annotate(

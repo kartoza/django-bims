@@ -64,9 +64,9 @@ class OccurrencesChartData(ChartDataApiView):
     """
     def categories(self, collection_results):
         return list(collection_results.annotate(
-            name=Case(When(category__isnull=False,
-                           then=F('category')),
-                      default=Value('Unspecified'))
+            name=Case(When(category='',
+                           then=Value('Unspecified')),
+                      default=F('category'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -74,9 +74,9 @@ class OccurrencesChartData(ChartDataApiView):
     def chart_data(self, collection_results):
         return collection_results.annotate(
             year=ExtractYear('collection_date'),
-            name=Case(When(category__isnull=False,
-                           then=F('category')),
-                      default=Value('Unspecified'))
+            name=Case(When(category='',
+                           then=Value('Unspecified')),
+                      default=F('category'))
         ).values(
             'year', 'name'
         ).annotate(
@@ -95,19 +95,17 @@ class LocationSitesConservationChartData(ChartDataApiView):
         return list(collection_results.annotate(
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Unspecified'))
+                      default=Value('Data deficient'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
 
     def chart_data(self, collection_results):
-        return collection_results.filter(
-            taxonomy__iucn_status__isnull=False
-        ).annotate(
+        return collection_results.annotate(
             year=ExtractYear('collection_date'),
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Unspecified')),
+                      default=Value('Data deficient')),
         ).values(
             'year', 'name'
         ).annotate(
