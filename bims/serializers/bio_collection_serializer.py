@@ -156,7 +156,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_taxon_name(self, obj):
-        return obj.taxonomy.canonical_name
+        return obj.taxonomy.scientific_name
 
     def get_class_name(self, obj):
         return obj.taxonomy.class_name
@@ -174,7 +174,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return obj.taxonomy.genus_name
 
     def get_species(self, obj):
-        return obj.taxonomy.scientific_name
+        return obj.original_species_name
 
     def get_reference_category(self, obj):
         if obj.source_reference:
@@ -184,7 +184,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_collector_or_owner(self, obj):
         if obj.owner:
-            return obj.owner.encode('utf8')
+            return obj.owner.username.encode('utf8')
         return obj.collector.encode('utf8')
 
     class Meta:
