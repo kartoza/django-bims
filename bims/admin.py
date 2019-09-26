@@ -669,6 +669,9 @@ class SiteImageAdmin(admin.ModelAdmin):
         'site',
         'image'
     )
+    raw_id_fields = (
+        'site',
+    )
 
 
 class BimsDocumentInline(admin.StackedInline):

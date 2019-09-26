@@ -217,6 +217,7 @@ define([
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
                     self.createOriginStackedBarChart(data);
+                    self.createSiteImageCarousel(data);
 
                     // Zoom to extent
                     if (data['extent'].length > 0) {
@@ -311,6 +312,7 @@ define([
             sassDashboardButton.removeClass('disabled');
             sassDashboardButton.attr('href', '#');
             $('#metadata-table-list').html('');
+            this.clearSiteImages();
             this.mapLocationSite.removeLayer(this.siteLayerVector);
             this.siteName.html('');
             this.siteNameWrapper.hide();
@@ -658,6 +660,33 @@ define([
                     this.originChartCanvas = self.renderStackedBarChart(responseData, 'origin_bar', chartCanvas);
                 }
             );
+        },
+        createSiteImageCarousel: function (data) {
+            let wrapper = this.$el.find('#ssdd-carousel-wrapper');
+            let siteImages = data['site_images'];
+            if (siteImages.length > 0) {
+                wrapper.show();
+            }
+            $.each(siteImages, function (index, siteImage) {
+                let className = '';
+                if (index === 0) {
+                    className = 'active'
+                }
+                wrapper.find('.carousel-indicators').append(
+                    '<li data-target="#ssdd-site-image-carousel" data-slide-to="'+ index +'" class="'+ className +'"></li>'
+                );
+                wrapper.find('.carousel-inner').append(
+                    '<div class="carousel-item '+ className +'">' +
+                    '  <img src="/uploaded/'+ siteImage +'" style="width: 100%">' +
+                    '</div>'
+                );
+            });
+        },
+        clearSiteImages: function () {
+            let wrapper = this.$el.find('#ssdd-carousel-wrapper');
+            wrapper.hide();
+            wrapper.find('.carousel-indicators').html('');
+            wrapper.find('.carousel-inner').html('');
         },
         createTaxaStackedBarChart: function () {
             let self = this;
