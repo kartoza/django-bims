@@ -156,25 +156,39 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_taxon_name(self, obj):
-        return obj.taxonomy.scientific_name
+        if obj.taxonomy.scientific_name:
+            return obj.taxonomy.scientific_name.encode('utf-8')
+        return '-'
 
     def get_class_name(self, obj):
-        return obj.taxonomy.class_name
+        if obj.taxonomy.class_name:
+            return obj.taxonomy.class_name.encode('utf-8')
+        return '-'
 
     def get_phylum(self, obj):
-        return obj.taxonomy.phylum_name
+        if obj.taxonomy.phylum_name:
+            return obj.taxonomy.phylum_name.encode('utf-8')
+        return '-'
 
     def get_order(self, obj):
-        return obj.taxonomy.order_name
+        if obj.taxonomy.order_name:
+            return obj.taxonomy.order_name.encode('utf-8')
+        return '-'
 
     def get_family(self, obj):
-        return obj.taxonomy.family_name
+        if obj.taxonomy.family_name:
+            return obj.taxonomy.family_name.encode('utf-8')
+        return '-'
 
     def get_genus(self, obj):
-        return obj.taxonomy.genus_name
+        if obj.taxonomy.genus_name:
+            return obj.taxonomy.genus_name.encode('utf-8')
+        return '-'
 
     def get_species(self, obj):
-        return obj.original_species_name
+        if obj.original_species_name:
+            return obj.original_species_name.encode('utf-8')
+        return '-'
 
     def get_reference_category(self, obj):
         if obj.source_reference:
