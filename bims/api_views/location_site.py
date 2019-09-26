@@ -1,5 +1,6 @@
 # coding=utf8
 import ast
+import datetime
 import json
 import os
 from django.contrib.gis.geos import Polygon
@@ -299,6 +300,7 @@ class LocationSitesSummary(APIView):
                 list(
                     chems.values_list(
                         'chem__chem_code').distinct('chem__chem_code')))
+            x_label = []
             for chem in list_chems_code:
                 chem_name = (
                     chem[0].lower().replace(
@@ -324,10 +326,23 @@ class LocationSitesSummary(APIView):
                     'values': value.data
                 }
 
-                try:
-                    list_chems[chem_name].append({chem[0]: data})
-                except KeyError:
-                    list_chems[chem_name] = [{chem[0]: data}]
+                for val in value.data:
+                    if val['str_date'] not in x_label:
+                        x_label.append(val['str_date'])
+
+                list_show_chem = [
+                    'electrical conductivity',
+                    'ph',
+                    'dissolved oxygen',
+                    'temperature',
+                ]
+                if chem_data.chem_description.lower().replace(
+                        '_', ' ') in list_show_chem:
+                    try:
+                        list_chems[chem_name].append({chem[0]: data})
+                    except KeyError:
+                        list_chems[chem_name] = [{chem[0]: data}]
+            list_chems['x_label'] = x_label
 
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
