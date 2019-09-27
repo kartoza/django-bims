@@ -1185,7 +1185,7 @@ define([
                         label: key_item,
                         data: graph_data,
                         backgroundColor: '#cfdeea',
-                        borderColor: 'lightgrey',
+                        borderColor: '#cfdeea',
                         borderWidth: 2,
                         fill: false
                     })
