@@ -1,6 +1,5 @@
 # coding=utf8
 import ast
-import datetime
 import json
 import os
 from django.contrib.gis.geos import Polygon
