@@ -1184,7 +1184,7 @@ define([
                     datasets.push({
                         label: key_item,
                         data: graph_data,
-                        backgroundColor: 'lightgrey',
+                        backgroundColor: '#cfdeea',
                         borderColor: 'lightgrey',
                         borderWidth: 2,
                         fill: false
