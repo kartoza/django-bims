@@ -121,7 +121,7 @@
     width: -webkit-fill-available;
 }
 
-.download-as-csv {
+.download-as-csv, .download-chem-csv {
     text-transform: none;
     font-size: 10pt;
 }

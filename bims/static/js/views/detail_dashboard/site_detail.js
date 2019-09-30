@@ -28,6 +28,7 @@ define([
         fetchBaseUrl: '/api/location-sites-summary/?',
         fetchLocationSiteCoordinateUrl: '/api/location-sites-coordinate/?',
         csvDownloadUrl: '/api/collection/download/',
+        chemCsvDownloadUrl: '/api/chemical-record/download/',
         locationSiteCoordinateRequestXHR: null,
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
         uniqueSites: [],
@@ -62,6 +63,7 @@ define([
             'click .download-record-timeline': 'downloadRecordTimeline',
             'click .download-collection-timeline': 'downloadCollectionTimeline',
             'click .download-as-csv': 'downloadAsCSV',
+            'click .download-chem-csv': 'downloadChemRecordsAsCSV',
             'click .ssdd-export': 'downloadElementEvent',
             'click .download-chart-image': 'downloadChartImage',
             'click #chem-graph-export': 'downloadChemGraphs'
@@ -154,10 +156,12 @@ define([
                 }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
+                    self.chemCsvDownloadUrl += '?' + data;
                     self.fetchData(data, true);
                     self.currentFiltersUrl = '?' + data;
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
+                    self.chemCsvDownloadUrl += self.apiParameters(filterParameters);
                     self.currentFiltersUrl = self.apiParameters(filterParameters);
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
@@ -499,7 +503,7 @@ define([
         downloadingCSV: function (url, downloadButton) {
             var self = this;
             self.downloadCSVXhr = $.get({
-                url: self.csvDownloadUrl,
+                url: url,
                 dataType: 'json',
                 success: function (data) {
                     if (data['status'] !== "success") {
@@ -539,6 +543,12 @@ define([
             button.html('Processing...');
             button.prop("disabled", true);
             this.downloadingCSV(this.csvDownloadUrl, button);
+        },
+        downloadChemRecordsAsCSV: function (e) {
+            var button = $(e.target);
+            button.html('Processing...');
+            button.prop("disabled", true);
+            this.downloadingCSV(this.chemCsvDownloadUrl, button);
         },
         renderStackedBarChart: function (dataIn, chartName, chartCanvas, randomColor = false) {
             if (!(dataIn.hasOwnProperty('data'))) {
@@ -1171,14 +1181,21 @@ define([
         renderChemGraph: function (data) {
             var $chemWrapper = $('#fish-ssdd-chem-bar-chart');
             $chemWrapper.html('');
+            var xLabel = data['chemical_records']['x_label'];
+            delete data['chemical_records']['x_label'];
+
+            xLabel.sort(function(a, b) {
+                a = new Date(a);
+                b = new Date(b);
+                return a < b ? -1 : a > b ? 1 : 0;
+            });
+
             $.each(data['chemical_records'], function (key, value) {
                 var id_canvas = key + '-chem-chart';
                 var canvas = '<canvas class="chem-bar-chart" id="' + id_canvas + '"></canvas>';
                 $chemWrapper.append(canvas);
                 var ctx = document.getElementById(id_canvas).getContext('2d');
                 var datasets = [];
-                var labels = [];
-                var background_colour = ['green', 'red', 'blue'];
                 var yLabel;
                 $.each(value, function (idx, val) {
                     var key_item = Object.keys(val)[0];
@@ -1188,9 +1205,6 @@ define([
                     var value_data = val[key_item]['values'];
                     var graph_data = [];
                     for(var i=0; i<value_data.length; i++){
-                        if(labels.indexOf(value_data[i]['str_date']) === -1) {
-                            labels.push(value_data[i]['str_date'])
-                        }
                         graph_data.push({
                             y: value_data[i]['value'],
                             x: value_data[i]['str_date']
@@ -1199,18 +1213,14 @@ define([
                     datasets.push({
                         label: key_item,
                         data: graph_data,
-                        backgroundColor: [
-                            background_colour[idx]
-                        ],
-                        borderColor: [
-                            background_colour[idx]
-                        ],
+                        backgroundColor: '#cfdeea',
+                        borderColor: '#cfdeea',
                         borderWidth: 2,
                         fill: false
                     })
                 });
                 var _data = {
-                    labels: labels,
+                    labels: xLabel,
                     datasets: datasets
                 };
                 var options= {
@@ -1233,7 +1243,7 @@ define([
 					}
 				};
                 var chartConfig = {
-                    type: 'line',
+                    type: 'bar',
                     data: _data,
                     options: options
                 };

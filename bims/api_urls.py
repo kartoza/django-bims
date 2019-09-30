@@ -64,6 +64,7 @@ from bims.api_views.location_site_overview import (
 from bims.api_views.source_collection import SourceCollectionList
 from bims.api_views.site_code import GetSiteCode
 from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
+from bims.api_views.chemical_record import ChemicalRecordDownloader
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -106,6 +107,8 @@ urlpatterns = [
         ClusterCollection.as_view()),
     url(r'^collection/download/$',
         CollectionDownloader.as_view()),
+    url(r'^chemical-record/download/$',
+        ChemicalRecordDownloader.as_view()),
     url(r'^search-v2/$',
         SearchAPIView.as_view(), name='search-api-version-2'),
     url(r'^boundary/geojson$',

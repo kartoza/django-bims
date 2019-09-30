@@ -12,3 +12,39 @@ class ChemicalRecordsSerializer(serializers.ModelSerializer):
 
     def get_str_date(self, obj):
         return str(obj.date)
+
+
+class ChemicalRecordsOneRowSerializer(serializers.ModelSerializer):
+    date_record = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    chemical_code = serializers.SerializerMethodField()
+    source_references = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChemicalRecord
+        fields = [
+            'id',
+            'date_record',
+            'name',
+            'chemical_code',
+            'unit',
+            'value',
+            'location_site',
+            'source_references'
+        ]
+
+    def get_date_record(self, obj):
+        return str(obj.date)
+
+    def get_unit(self, obj):
+        return obj.chem.chem_unit
+
+    def get_name(self, obj):
+        return obj.chem.chem_description
+
+    def get_chemical_code(self, obj):
+        return obj.chem.chem_code
+
+    def get_source_references(self, obj):
+        return obj.source_reference.get_source_unicode()
