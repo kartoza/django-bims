@@ -326,10 +326,6 @@ class LocationSitesSummary(APIView):
                     'values': value.data
                 }
 
-                for val in value.data:
-                    if val['str_date'] not in x_label:
-                        x_label.append(val['str_date'])
-
                 list_show_chem = [
                     'electrical conductivity',
                     'ph',
@@ -338,6 +334,9 @@ class LocationSitesSummary(APIView):
                 ]
                 if chem_data.chem_description.lower().replace(
                         '_', ' ') in list_show_chem:
+                    for val in value.data:
+                        if val['str_date'] not in x_label:
+                            x_label.append(val['str_date'])
                     try:
                         list_chems[chem_name].append({chem[0]: data})
                     except KeyError:
