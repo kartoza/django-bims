@@ -210,9 +210,13 @@ define([
                     } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
-                        $('#ssdd-chem-chart-wrapper').show();
-                        dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
-                        self.renderChemGraph(data);
+                        if(data['is_chem_exists']) {
+                            $('#ssdd-chem-chart-wrapper').show();
+                            dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
+                            self.renderChemGraph(data);
+                        }else {
+                            $('#ssdd-chem-chart-wrapper').hide();
+                        }
                     }
 
                     renderFilterList($('#filter-history-table'));
@@ -1197,6 +1201,7 @@ define([
                 var ctx = document.getElementById(id_canvas).getContext('2d');
                 var datasets = [];
                 var yLabel;
+                var xLabelData = [];
                 $.each(value, function (idx, val) {
                     var key_item = Object.keys(val)[0];
                     if(key_item.toLowerCase().indexOf('max') === -1 && key_item.toLowerCase().indexOf('min') === -1){
@@ -1208,7 +1213,8 @@ define([
                         graph_data.push({
                             y: value_data[i]['value'],
                             x: value_data[i]['str_date']
-                        })
+                        });
+                        xLabelData.push(value_data[i]['str_date'])
                     }
                     datasets.push({
                         label: key_item,
@@ -1219,8 +1225,14 @@ define([
                         fill: false
                     })
                 });
+
+                xLabelData.sort(function(a, b) {
+                    a = new Date(a);
+                    b = new Date(b);
+                    return a < b ? -1 : a > b ? 1 : 0;
+                });
                 var _data = {
-                    labels: xLabel,
+                    labels: xLabelData,
                     datasets: datasets
                 };
                 var options= {
@@ -1238,7 +1250,10 @@ define([
                             },
 							type: 'linear',
 							display: true,
-							position: 'left'
+							position: 'left',
+                            ticks: {
+                                beginAtZero: true
+                            }
 						}]
 					}
 				};

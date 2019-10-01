@@ -293,6 +293,7 @@ class LocationSitesSummary(APIView):
         source_references = collection_with_references.source_references()
 
         list_chems = {}
+        is_chem_exists = False
         if site_id:
             chems = ChemicalRecord.objects.filter(location_site_id=site_id)
             list_chems_code = (
@@ -325,10 +326,6 @@ class LocationSitesSummary(APIView):
                     'values': value.data
                 }
 
-                for val in value.data:
-                    if val['str_date'] not in x_label:
-                        x_label.append(val['str_date'])
-
                 list_show_chem = [
                     'electrical conductivity',
                     'ph',
@@ -337,10 +334,14 @@ class LocationSitesSummary(APIView):
                 ]
                 if chem_data.chem_description.lower().replace(
                         '_', ' ') in list_show_chem:
+                    for val in value.data:
+                        if val['str_date'] not in x_label:
+                            x_label.append(val['str_date'])
                     try:
                         list_chems[chem_name].append({chem[0]: data})
                     except KeyError:
                         list_chems[chem_name] = [{chem[0]: data}]
+                is_chem_exists = True
             list_chems['x_label'] = x_label
 
         response_data = {
@@ -360,7 +361,8 @@ class LocationSitesSummary(APIView):
             'extent': search.extent(),
             'sites_raw_query': search_process.process_id,
             'is_multi_sites': is_multi_sites,
-            'is_sass_exists': is_sass_exists
+            'is_sass_exists': is_sass_exists,
+            'is_chem_exists': is_chem_exists
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)
