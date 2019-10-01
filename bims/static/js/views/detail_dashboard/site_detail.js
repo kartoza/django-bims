@@ -210,9 +210,13 @@ define([
                     } else {
                         $('#fish-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
-                        $('#ssdd-chem-chart-wrapper').show();
-                        dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
-                        self.renderChemGraph(data);
+                        if(data['is_chem_exists']) {
+                            $('#ssdd-chem-chart-wrapper').show();
+                            dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
+                            self.renderChemGraph(data);
+                        }else {
+                            $('#ssdd-chem-chart-wrapper').hide();
+                        }
                     }
 
                     renderFilterList($('#filter-history-table'));
@@ -1238,7 +1242,10 @@ define([
                             },
 							type: 'linear',
 							display: true,
-							position: 'left'
+							position: 'left',
+                            ticks: {
+                                beginAtZero: true
+                            }
 						}]
 					}
 				};
