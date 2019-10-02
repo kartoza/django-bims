@@ -61,6 +61,6 @@ class LocationContext(models.Model):
         default=''
     )
     fetch_time = models.DateTimeField(
-        default=timezone.now()
+        default=timezone.now
     )
     objects = LocationContextManager()
