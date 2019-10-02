@@ -22,12 +22,9 @@ from bims.tasks.location_site import update_location_context
 class LocationSiteFormView(TemplateView):
     template_name = 'location_site_form_view.html'
     success_message = 'New site has been successfully added'
-    catchment_geocontext = None
-    geomorphological_group_geocontext = None
 
     def update_or_create_location_site(self, post_dict):
         location_site = LocationSite.objects.create(**post_dict)
-        update_location_context.delay(location_site.id)
         return location_site
 
     def additional_context_data(self):
@@ -58,7 +55,6 @@ class LocationSiteFormView(TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         owner = request.POST.get('owner', None)
-        site_id = request.POST.get('id', None)
         if not owner:
             owner = None
         latitude = request.POST.get('latitude', None)
@@ -82,22 +78,6 @@ class LocationSiteFormView(TemplateView):
         latitude = float(latitude)
         longitude = float(longitude)
 
-        geocontext_data = {
-            'context_group_values': []
-        }
-        if catchment_geocontext:
-            self.catchment_geocontext = json_loads_byteified(
-                catchment_geocontext)
-            geocontext_data['context_group_values'].append(
-                self.catchment_geocontext)
-        if geomorphological_group_geocontext:
-            self.geomorphological_group_geocontext = json_loads_byteified(
-                geomorphological_group_geocontext
-            )
-            geocontext_data['context_group_values'].append(
-                self.geomorphological_group_geocontext
-            )
-
         if owner:
             try:
                 owner = get_user_model().objects.get(
@@ -116,8 +96,8 @@ class LocationSiteFormView(TemplateView):
             name='PointObservation',
             allowed_geometry='POINT'
         )
-
         post_dict = {
+            'name': site_code,
             'owner': owner,
             'latitude': latitude,
             'longitude': longitude,
@@ -125,37 +105,64 @@ class LocationSiteFormView(TemplateView):
             'site_description': site_description,
             'geometry_point': geometry_point,
             'location_type': location_type,
-            'site_code': site_code,
-            'location_context_document': geocontext_data
+            'site_code': site_code
         }
-
-        if site_id and owner:
-            # Check if user is only owner but not the creator
-            # then user shouldn't be able to change the owner
-            try:
-                site_object = LocationSite.objects.get(id=site_id)
-                if (
-                        site_object.owner == request.user and
-                        not request.user.is_superuser and
-                        site_object.creator != request.user
-                ):
-                    del post_dict['owner']
-            except LocationSite.DoesNotExist:
-                pass
-
         location_site = self.update_or_create_location_site(
             post_dict
         )
+        if geomorphological_group_geocontext:
+            geomorphological_data = json_loads_byteified(
+                geomorphological_group_geocontext
+            )
+            for registry in geomorphological_data['service_registry_values']:
+                LocationContext.objects.get_or_create(
+                    site=location_site,
+                    value=registry['value'],
+                    key=registry['key'],
+                    name=registry['name'],
+                    group_key=geomorphological_data['key']
+                )
+        if catchment_geocontext:
+            catchment_data = json_loads_byteified(
+                catchment_geocontext
+            )
+            for registry in catchment_data['service_registry_values']:
+                LocationContext.objects.get_or_create(
+                    site=location_site,
+                    value=registry['value'],
+                    key=registry['key'],
+                    name=registry['name'],
+                    group_key=catchment_data['key']
+                )
         if refined_geomorphological_zone:
             location_site.refined_geomorphological = (
                 refined_geomorphological_zone
             )
+        geo_class = LocationContext.objects.filter(
+            site=location_site,
+            key='geo_class_recoded'
+        )
+        if not location_site.creator:
+            location_site.creator = self.request.user
+        # Set original_geomorphological
+        if geo_class.exists():
+            location_site.original_geomorphological = (
+                geo_class[0].value.encode('utf-8')
+            )
+        else:
+            location_site.original_geomorphological = (
+                refined_geomorphological_zone
+            )
         location_site.save()
+
         messages.success(
             self.request,
             self.success_message,
             extra_tags='location_site_form'
         )
+
+        update_location_context.delay(location_site.id)
+
         return HttpResponseRedirect(
             '{url}?id={id}'.format(
                 url=reverse('location-site-update-form'),
@@ -171,41 +178,6 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
 
     def update_or_create_location_site(self, post_dict):
         # Update current location context document
-        if post_dict['location_context_document']:
-            for context_data in post_dict[
-                'location_context_document'][
-                'context_group_values']:
-                for context_value in context_data['service_registry_values']:
-                    try:
-                        location_context, created = (
-                            LocationContext.objects.get_or_create(
-                                key=context_value['key'],
-                                site=self.location_site
-                            )
-                        )
-                    except LocationContext.MultipleObjectsReturned:
-                        LocationContext.objects.filter(
-                            key=context_value['key'],
-                            site=self.location_site
-                        ).delete()
-                        location_context = LocationContext.objects.create(
-                            key=context_value['key'],
-                            site=self.location_site
-                        )
-                    location_context.value = context_value['value']
-                    location_context.name = context_value['name']
-                    location_context.save()
-            del post_dict['location_context_document']
-
-        if self.geomorphological_group_geocontext:
-            try:
-                post_dict['original_geomorphological'] = (
-                    self.geomorphological_group_geocontext[
-                        'service_registry_values'][1]['value']
-                )
-            except KeyError:
-                pass
-
         LocationSite.objects.filter(
             id=self.location_site.id
         ).update(

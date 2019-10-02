@@ -439,7 +439,8 @@ def location_site_post_save_handler(sender, instance, **kwargs):
             geo_context.group_key = 'geomorphological_group'
             if not created:
                 if instance.refined_geomorphological != geo_context.value:
-                    instance.original_geomorphological = geo_context.value
+                    if not instance.original_geomorphological:
+                        instance.original_geomorphological = geo_context.value
                     geo_context.value = instance.refined_geomorphological
                     geo_context.save()
             else:
