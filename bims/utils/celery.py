@@ -1,4 +1,5 @@
 import logging
+import functools
 from contextlib import contextmanager
 from kombu.five import monotonic
 from django.core.cache import cache
@@ -24,3 +25,18 @@ def memcache_lock(lock_id, oid):
             # owned by someone else
             # also don't release the lock if we didn't acquire it
             cache.delete(lock_id)
+
+def single_instance_task(timeout):
+    def task_exc(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            lock_id = "celery-single-instance-" + func.__name__
+            acquire_lock = lambda: cache.add(lock_id, "true", timeout)
+            release_lock = lambda: cache.delete(lock_id)
+            if acquire_lock():
+                try:
+                    func(*args, **kwargs)
+                finally:
+                    release_lock()
+        return wrapper
+    return task_exc
