@@ -281,26 +281,6 @@
                 return;
             {% endif %}
         });
-
-        function renderDocumentInfo() {
-            var $selectedOption = $('#study-reference option:selected');
-            var year = $selectedOption.attr('year');
-            var author = $selectedOption.attr('author');
-            var title = $selectedOption.attr('title-doc');
-            $('.table-info-document .body-table').html(
-                '<td>'+ author +'</td>' +
-                '<td>'+ year +'</td>' +
-                '<td>'+ title +'</td>'
-            )
-        }
-
-        $(document).ready(function () {
-            renderDocumentInfo();
-
-            $('#study-reference').change(function () {
-                renderDocumentInfo()
-            });
-        });
     </script>
 
 {% endblock %}

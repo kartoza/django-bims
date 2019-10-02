@@ -153,7 +153,9 @@ class SourceReferenceBimsDocumentUploadView(DocumentUploadView):
         return HttpResponse(
             json.dumps({
                 'id': self.object.id,
-                'title': self.object.title
+                'title': self.object.title,
+                'author': self.object.bimsdocument.author,
+                'year': self.object.bimsdocument.year
             }),
             content_type='application/json',
             status=200)

@@ -73,14 +73,39 @@ let categoryValidation = (value) => {
     return null
 };
 
+function renderDocumentInfo() {
+    var $selectedOption = $('#study-reference option:selected');
+    var year = $selectedOption.attr('year');
+    var author = $selectedOption.attr('author');
+    var title = $selectedOption.attr('title-doc');
+    $('.table-info-document .body-table').html(
+        '<td>'+ author +'</td>' +
+        '<td>'+ year +'</td>' +
+        '<td>'+ title +'</td>'
+    )
+}
+
+$(document).ready(function () {
+    renderDocumentInfo();
+
+    $('#study-reference').change(function () {
+        renderDocumentInfo()
+    });
+});
+
 newDatabaseRecordSubmitCallback = (response) => {
     $databaseReference.append('<option value="' + response.id + '">' + response.name + '</option>');
     $databaseReference.val(response.id);
 };
 
 newDocumentSubmitCallback = (response) => {
-    $studyReference.append('<option value="' + response.id + '">' + response.title + '</option>');
+    $studyReference.append('<option ' +
+        'value="' + response.id + '" ' +
+        'author="' + response.author + '" ' +
+        'year="' + response.year + '" ' +
+        'title-doc="' + response.title + '">' + response.title + '</option>');
     $studyReference.val(response.id);
+    renderDocumentInfo();
 };
 $(function () {
     // DOI handler
