@@ -68,6 +68,17 @@
             vertical-align: top !important;
         }
 
+        .table-info-document th, .table-info-document td {
+            padding: 5px;
+            border: 1px solid #ced4da;
+            border-collapse: collapse;
+        }
+
+        .table-info-document {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
     </style>
 
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
@@ -156,7 +167,10 @@
                                 <td>
                                     <select id="study-reference" name="document-id" type="text" class="form-control form-control-sm">
                                         {% for doc in documents %}
-                                            <option value="{{ doc.id }}">{{ doc.title }}</option>
+                                            <option value="{{ doc.id }}"
+                                                    author="{{ doc.bimsdocument.author }}"
+                                                    year="{{ doc.bimsdocument.year }}"
+                                                    title-doc="{{ doc.title }}">{{ doc.title }}</option>
                                         {% endfor %}
                                     </select>
                                     <small class="form-text text-muted">
@@ -168,6 +182,16 @@
                                            data-target="#new-document-modal" class="btn btn-primary"
                                            value="Upload new ...">
                                 </td>
+                        </table>
+                        <table class="table-info-document">
+                            <tr>
+                                <th>Author</th>
+                                <th>Year</th>
+                                <th>Title</th>
+                            </tr>
+                            <tr class="body-table">
+
+                            </tr>
                         </table>
                     </div>
                 </div>
