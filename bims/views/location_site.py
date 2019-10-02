@@ -55,7 +55,6 @@ class LocationSiteFormView(TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         owner = request.POST.get('owner', None)
-        site_id = request.POST.get('id', None)
         if not owner:
             owner = None
         latitude = request.POST.get('latitude', None)
