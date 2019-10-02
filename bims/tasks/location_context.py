@@ -98,7 +98,7 @@ SPATIAL_GROUP_UPDATED_NAMES = {
 
 
 @shared_task(name='bims.tasks.generate_spatial_scale_filter', queue='update')
-@single_instance_task(60*10)
+@single_instance_task(60 * 10)
 def generate_spatial_scale_filter(file_path=None):
     spatial_tree = []
     for key, value in SPATIAL_FILTER_GROUPS.iteritems():

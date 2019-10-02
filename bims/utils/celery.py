@@ -26,13 +26,14 @@ def memcache_lock(lock_id, oid):
             # also don't release the lock if we didn't acquire it
             cache.delete(lock_id)
 
+
 def single_instance_task(timeout):
     def task_exc(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             lock_id = "celery-single-instance-" + func.__name__
-            acquire_lock = lambda: cache.add(lock_id, "true", timeout)
-            release_lock = lambda: cache.delete(lock_id)
+            acquire_lock = lambda: cache.add(lock_id, "true", timeout)  # noqa
+            release_lock = lambda: cache.delete(lock_id)  # noqa
             if acquire_lock():
                 try:
                     func(*args, **kwargs)
