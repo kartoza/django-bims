@@ -17,4 +17,6 @@ def update_location_context(location_site_id):
 
     call_command(
         'add_location_context_group',
-        site_id='{}'.format(location_site_id))
+        site_id='{}'.format(location_site_id),
+        ignore_not_empty='True'
+    )
