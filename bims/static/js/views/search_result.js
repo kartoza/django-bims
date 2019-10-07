@@ -16,6 +16,9 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'jquery'], f
             } else if (this.getResultType() === 'show-more-site') {
                 $(e.target).parent().remove();
                 Shared.Dispatcher.trigger('search:showMoreSites');
+            } else if (this.getResultType() === 'show-more-taxa') {
+                $(e.target).parent().remove();
+                Shared.Dispatcher.trigger('search:showMoreTaxa');
             }
         },
         getResultType: function () {
@@ -35,6 +38,10 @@ define(['backbone', 'models/search_result', 'shared', 'underscore', 'jquery'], f
                 var template = _.template($('#show-more-result-site-template').html());
                 this.$el.html(template(this.model.attributes));
                 $('#site-list').append(this.$el);
+            } else if (this.getResultType() === 'show-more-taxa') {
+                var template = _.template($('#show-more-result-site-template').html());
+                this.$el.html(template(this.model.attributes));
+                $('#taxa-list').append(this.$el);
             }
         },
         destroy: function () {

@@ -11,7 +11,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Bac
             "&spatialFilter=<%= spatialFilter %>" +
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>&sourceCollection=<%= sourceCollection %>" +
-            "&ecologicalCategory=<%= ecologicalCategory %>",
+            "&abioticData=<%= abioticData %>&ecologicalCategory=<%= ecologicalCategory %>",
         LocationSiteDetailXHRRequest: null,
         MultiSitesOverviewXHRRequest: null,
         TaxonDetailXHRRequest: null,

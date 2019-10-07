@@ -1848,6 +1848,21 @@ div:hover::-webkit-scrollbar {
     padding: 5px; /* msie */
 }
 
+.module-hr {
+    max-width: none !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    border-width: 1px;
+}
+
+.module-checkbox-wrapper {
+    text-align: left;
+}
+
+.button-filter-module {
+    padding: 8px 0px;
+}
+
 .module-species {
     filter: grayscale(50%);
     opacity: 0.4;

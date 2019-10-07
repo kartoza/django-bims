@@ -15,7 +15,9 @@ from bims.models.location_site import LocationSite
 from bims.utils.gbif import update_collection_record
 from bims.models.validation import AbstractValidation
 from bims.models.taxonomy import Taxonomy
+from bims.models.taxon_group import TaxonGroup
 from bims.models.source_reference import SourceReference
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 class BiologicalCollectionQuerySet(models.QuerySet):
@@ -246,6 +248,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         on_delete=models.SET_NULL
     )
 
+    module_group = models.ForeignKey(
+        'bims.TaxonGroup',
+        help_text='Which module this collection belong to',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     objects = BiologicalCollectionManager()
 
     @property
@@ -271,6 +281,20 @@ class BiologicalCollectionRecord(AbstractValidation):
                 self.source_collection = (
                     preferences.SiteSetting.default_data_source
                 )
+                self.save()
+        if self.taxonomy:
+            # Get taxon group if exists
+            taxonomies = [self.taxonomy.id]
+            taxonomy_parent = self.taxonomy.parent
+            while taxonomy_parent:
+                taxonomies.append(taxonomy_parent.id)
+                taxonomy_parent = taxonomy_parent.parent
+            taxon_groups = TaxonGroup.objects.filter(
+                taxonomies__in=taxonomies,
+                category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            )
+            if taxon_groups.exists():
+                self.module_group = taxon_groups[0]
                 self.save()
 
     def save(self, *args, **kwargs):

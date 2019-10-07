@@ -9,6 +9,7 @@ define([
         url: "",
         searchUrl: "/api/search-v2/",
         siteResultUrl: "/api/site-search-result/",
+        taxaResultUrl: "/api/taxa-search-result/",
         viewCollection: [],
         searchPanel: null,
         searchValue: '',
@@ -24,7 +25,9 @@ define([
         totalTaxa: 0,
         processID: 0,
         pageMoreSites: 2,
+        pageMoreTaxa: 2,
         extent: [],
+        searchXHR: null,
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -64,7 +67,16 @@ define([
 
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
+            this.status = '';
             this.getSearchResults();
+        },
+        clearSearchRequest: function () {
+            if (!this.searchXHR) {
+                return false;
+            }
+            this.status = 'abort';
+            this.searchXHR.abort();
+            this.searchXHR = null;
         },
         hideAll: function (e) {
             let $target = $(e.target);
@@ -85,7 +97,14 @@ define([
         },
         getSearchResults: function () {
             var self = this;
-            return this.fetch({
+            if (this.searchXHR) {
+                this.searchXHR.abort();
+                this.searchXHR = null;
+            }
+            if (this.status === 'abort') {
+                return false;
+            }
+            this.searchXHR = this.fetch({
                 success: function () {
                     Shared.CurrentState.SEARCH = true;
                 },
@@ -106,7 +125,8 @@ define([
                         }, timeout);
                     }
                 }
-            })
+            });
+            return this.searchXHR;
         },
         parse: function (response) {
             if (response.hasOwnProperty('records')) {
@@ -261,17 +281,64 @@ define([
             }
             taxaListNumberElm.html(taxaCount);
             siteListNumberElm.html(siteCount);
+
+            // Add show more button for site list
             if (self.sitesData.length < self.totalSites) {
-                var searchModel = new SearchModel({
-                    name: 'Show More',
-                    record_type: 'show-more-site'
-                });
-                var searchResultView = new SearchResultView({
-                    model: searchModel
-                });
-                self.viewCollection.push(searchResultView);
+                self.viewCollection.push(new SearchResultView({
+                    model: new SearchModel({
+                        name: 'Show More',
+                        record_type: 'show-more-site'
+                    })
+                }));
             }
+
+            // Add show more button for taxa list
+            if (self.recordsData.length < self.totalRecords) {
+                self.viewCollection.push(
+                    new SearchResultView({
+                        model: new SearchModel({
+                            name: 'Show More',
+                            record_type: 'show-more-taxa'
+                        })
+                    })
+                )
+            }
+
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
+        },
+        fetchMoreTaxa: function () {
+            var self = this;
+            var siteResultUrl = this.taxaResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreSites;
+            $.ajax({
+                url: siteResultUrl,
+                success: function (data) {
+                    var taxaData = data['data'];
+                    for (var i = 0; i < taxaData.length; i++) {
+                        var searchModel = new SearchModel({
+                            id: taxaData[i]['taxon_id'],
+                            count: taxaData[i]['total'],
+                            name: taxaData[i]['name'],
+                            highlight: taxaData[i]['name'],
+                            record_type: 'taxa'
+                        });
+                        var searchResultView = new SearchResultView({
+                            model: searchModel
+                        });
+                        self.viewCollection.push(searchResultView);
+                    }
+                    if (data['has_next']) {
+                        self.viewCollection.push(new SearchResultView({
+                            model: new SearchModel({
+                            name: 'Show More',
+                            record_type: 'show-more-taxa'
+                            })
+                        }));
+                        self.pageMoreTaxa += 1;
+                    } else {
+                        self.pageMoreTaxa = 2
+                    }
+                }
+            })
         },
         fetchMoreSites: function (page) {
             var self = this;
@@ -293,8 +360,15 @@ define([
                         self.viewCollection.push(searchResultView);
                     }
                     if (data['has_next']) {
+                        let showMoreButton = new SearchModel({
+                            name: 'Show More',
+                            record_type: 'show-more-site'
+                        });
+                        let showMoreSiteView = new SearchResultView({
+                            model: showMoreButton
+                        });
+                        self.viewCollection.push(showMoreSiteView);
                         self.pageMoreSites += 1;
-                        self.fetchMoreSites()
                     } else {
                         self.pageMoreSites = 2
                     }

@@ -44,8 +44,22 @@
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row module-filters" style="display: none;"
-                 data-toggle="tooltip" data-placement="top">
+            <div style="display: none;"
+                 data-toggle="tooltip" data-placement="top" class="module-filters-wrapper">
+                <div class="module-filters row"></div>
+                <hr class="module-hr"/>
+                <div class="form-check module-checkbox-wrapper">
+                    <input type="checkbox" class="form-check-input" id="abiotic-data-filter">
+                    <label class="form-check-label" for="abiotic-data-filter">Abiotic Data</label>
+                </div>
+                <div class="button-filter-wrapper button-filter-module">
+                    <button class="apply-filter"><i class="fa fa-check"
+                                                    aria-hidden="true"></i> Apply
+                    </button>
+                    <button class="clear-filter clear-filter-module"><i class="fa fa-times"
+                                                    aria-hidden="true"></i> Clear
+                    </button>
+                </div>
             </div>
         {% endif %}
 

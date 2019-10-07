@@ -39,6 +39,7 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
+            'click .clear-filter-module': 'clearFilterModule',
             'click .clear-filter': 'clearFilter',
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
@@ -60,6 +61,7 @@ define([
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
             Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
             Shared.Dispatcher.on('search:showMoreSites', this.showMoreSites, this);
+            Shared.Dispatcher.on('search:showMoreTaxa', this.showMoreTaxa, this);
         },
         render: function () {
             var self = this;
@@ -415,7 +417,16 @@ define([
             }
             filterParameters['ecologicalCategory'] = ecologicalConditions;
 
-            self.highlightPanel('.module-filters', filterParameters['modules'] !== '');
+            // Abiotic data
+            var abioticData = false;
+            if ($('#abiotic-data-filter').is(':checked')) {
+                abioticData = true;
+                filterParameters['abioticData'] = 'True';
+            } else {
+                filterParameters['abioticData'] = '';
+            }
+
+            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || abioticData);
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -453,6 +464,7 @@ define([
                 && !filterParameters['spatialFilter']
                 && !filterParameters['ecologicalCategory']
                 && !filterParameters['sourceCollection']
+                && !filterParameters['abioticData']
                 && !filterParameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -485,11 +497,20 @@ define([
                 this.search(searchValue);
             }
         },
+        clearFilterModule: function () {
+            this.clearClickedModuleSpecies();
+            if (filterParameters.hasOwnProperty('modules')) {
+                filterParameters['modules'] = '';
+            }
+            $('#abiotic-data-filter').prop('checked', false);
+        },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
+            $('#abiotic-data-filter').prop('checked', false);
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
             this.searchInput.val('');
+            this.searchResultCollection.clearSearchRequest();
             $('.clear-filter').click();
             Shared.Router.clearSearch();
             $('.map-search-result').hide();
@@ -766,6 +787,14 @@ define([
                 self.initialSelectedModules = allFilters['modules'].split(',');
             }
 
+            // Abiotic data
+            if (allFilters.hasOwnProperty('abioticData')) {
+                filterParameters['abioticData'] = allFilters['abioticData'];
+                if (filterParameters['abioticData'] === 'True') {
+                    $('#abiotic-data-filter').prop('checked', true);
+                }
+            }
+
             if (allFilters.hasOwnProperty('ecologicalCategory')) {
                 self.selectedEcologicalConditions = JSON.parse(allFilters['ecologicalCategory']);
                 $.each(self.selectedEcologicalConditions, function (index, ecologicalCondition) {
@@ -775,6 +804,9 @@ define([
         },
         showMoreSites: function () {
             this.searchResultCollection.fetchMoreSites();
+        },
+        showMoreTaxa: function () {
+            this.searchResultCollection.fetchMoreTaxa();
         },
         onModuleSpeciesClicked: function (e) {
             let $element = $(e.currentTarget);

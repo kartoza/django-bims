@@ -67,21 +67,8 @@ class LocationSiteOverviewData(object):
             group_data[self.MODULE] = group.id
 
             biodiversity_data[group.name] = group_data
-
-            all_parent_taxa = list(group.taxonomies.all().values_list(
-                'id', flat=True
-            ))
-            parent = 'taxonomy__'
-            module_query = {}
-            module_or_condition = Q()
-            module_query['taxonomy__id__in'] = all_parent_taxa
-            for i in range(6):  # species to class
-                parent += 'parent__'
-                module_query[parent + 'in'] = all_parent_taxa
-            for key, value in module_query.items():
-                module_or_condition |= Q(**{key: value})
             group_records = collection_results.filter(
-                module_or_condition
+                module_group=group
             )
 
             group_records_id = list(group_records.values_list('id', flat=True))
