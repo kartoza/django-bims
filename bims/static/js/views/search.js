@@ -39,6 +39,7 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
+            'click .clear-filter-module': 'clearFilterModule',
             'click .clear-filter': 'clearFilter',
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
@@ -496,6 +497,13 @@ define([
                 this.search(searchValue);
             }
         },
+        clearFilterModule: function () {
+            this.clearClickedModuleSpecies();
+            if (filterParameters.hasOwnProperty('modules')) {
+                filterParameters['modules'] = '';
+            }
+            $('#abiotic-data-filter').prop('checked', false);
+        },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
             $('#abiotic-data-filter').prop('checked', false);
@@ -777,6 +785,14 @@ define([
             if (allFilters.hasOwnProperty('modules')) {
                 filterParameters['modules'] = allFilters['modules'];
                 self.initialSelectedModules = allFilters['modules'].split(',');
+            }
+
+            // Abiotic data
+            if (allFilters.hasOwnProperty('abioticData')) {
+                filterParameters['abioticData'] = allFilters['abioticData'];
+                if (filterParameters['abioticData'] === 'True') {
+                    $('#abiotic-data-filter').prop('checked', true);
+                }
             }
 
             if (allFilters.hasOwnProperty('ecologicalCategory')) {
