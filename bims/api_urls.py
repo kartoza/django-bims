@@ -65,6 +65,7 @@ from bims.api_views.source_collection import SourceCollectionList
 from bims.api_views.site_code import GetSiteCode
 from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
 from bims.api_views.chemical_record import ChemicalRecordDownloader
+from bims.api_views.taxa_search_result import TaxaSearchResult
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -171,6 +172,9 @@ urlpatterns = [
     url(r'^site-search-result/$',
         SiteSearchResult.as_view(),
         name='site-search-result'),
+    url(r'^taxa-search-result/$',
+        TaxaSearchResult.as_view(),
+        name='taxa-search-result'),
     url(r'^get-site-by-coord/$',
         SiteByCoord.as_view(), name='get-site-by-coord'),
     url(r'^module-list/$',

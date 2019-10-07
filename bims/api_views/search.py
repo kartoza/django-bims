@@ -16,7 +16,6 @@ from bims.models import (
     UserBoundary,
     SEARCH_RESULTS,
     SEARCH_PROCESSING,
-    TaxonGroup,
     Taxonomy,
     Endemism,
     LIST_SOURCE_REFERENCES,

@@ -60,6 +60,7 @@ define([
             Shared.Dispatcher.on('search:checkSearchCollection', this.checkSearch, this);
             Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
             Shared.Dispatcher.on('search:showMoreSites', this.showMoreSites, this);
+            Shared.Dispatcher.on('search:showMoreTaxa', this.showMoreTaxa, this);
         },
         render: function () {
             var self = this;
@@ -787,6 +788,9 @@ define([
         },
         showMoreSites: function () {
             this.searchResultCollection.fetchMoreSites();
+        },
+        showMoreTaxa: function () {
+            this.searchResultCollection.fetchMoreTaxa();
         },
         onModuleSpeciesClicked: function (e) {
             let $element = $(e.currentTarget);
