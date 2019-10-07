@@ -3,7 +3,6 @@
 
 """
 from django.contrib.gis.db import models
-from bims.models import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
@@ -29,7 +28,7 @@ class TaxonGroup(models.Model):
     )
 
     taxonomies = models.ManyToManyField(
-        Taxonomy,
+        'bims.Taxonomy',
         blank=True
     )
 

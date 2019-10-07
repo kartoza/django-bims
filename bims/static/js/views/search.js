@@ -415,7 +415,16 @@ define([
             }
             filterParameters['ecologicalCategory'] = ecologicalConditions;
 
-            self.highlightPanel('.module-filters', filterParameters['modules'] !== '');
+            // Abiotic data
+            var abioticData = false;
+            if ($('#abiotic-data-filter').is(':checked')) {
+                abioticData = true;
+                filterParameters['abioticData'] = 'True';
+            } else {
+                filterParameters['abioticData'] = '';
+            }
+
+            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || abioticData);
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -453,6 +462,7 @@ define([
                 && !filterParameters['spatialFilter']
                 && !filterParameters['ecologicalCategory']
                 && !filterParameters['sourceCollection']
+                && !filterParameters['abioticData']
                 && !filterParameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -487,9 +497,11 @@ define([
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
+            $('#abiotic-data-filter').prop('checked', false);
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
             this.searchInput.val('');
+            this.searchResultCollection.clearSearchRequest();
             $('.clear-filter').click();
             Shared.Router.clearSearch();
             $('.map-search-result').hide();

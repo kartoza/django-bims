@@ -73,7 +73,8 @@ class SearchProcess(models.Model):
             if (
                     isinstance(param, unicode) or
                     isinstance(param, int) or
-                    isinstance(param, date)
+                    isinstance(param, date) or
+                    param == 'BioBaseData'
             ):
                 formatted_param = '\'' + str(param) + '\''
             elif isinstance(param, list):

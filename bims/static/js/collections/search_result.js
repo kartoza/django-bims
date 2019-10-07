@@ -25,6 +25,7 @@ define([
         processID: 0,
         pageMoreSites: 2,
         extent: [],
+        searchXHR: null,
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -64,7 +65,16 @@ define([
 
             this.searchPanel = searchPanel;
             this.searchPanel.showSearchLoading();
+            this.status = '';
             this.getSearchResults();
+        },
+        clearSearchRequest: function () {
+            if (!this.searchXHR) {
+                return false;
+            }
+            this.status = 'abort';
+            this.searchXHR.abort();
+            this.searchXHR = null;
         },
         hideAll: function (e) {
             let $target = $(e.target);
@@ -85,7 +95,14 @@ define([
         },
         getSearchResults: function () {
             var self = this;
-            return this.fetch({
+            if (this.searchXHR) {
+                this.searchXHR.abort();
+                this.searchXHR = null;
+            }
+            if (this.status === 'abort') {
+                return false;
+            }
+            this.searchXHR = this.fetch({
                 success: function () {
                     Shared.CurrentState.SEARCH = true;
                 },
@@ -106,7 +123,8 @@ define([
                         }, timeout);
                     }
                 }
-            })
+            });
+            return this.searchXHR;
         },
         parse: function (response) {
             if (response.hasOwnProperty('records')) {
@@ -294,7 +312,6 @@ define([
                     }
                     if (data['has_next']) {
                         self.pageMoreSites += 1;
-                        self.fetchMoreSites()
                     } else {
                         self.pageMoreSites = 2
                     }

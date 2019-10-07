@@ -2,6 +2,7 @@ from datetime import date
 import json
 import operator
 import hashlib
+import ast
 from django.db.models import Q, Count, F, Value
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
@@ -29,6 +30,7 @@ from bims.utils.api_view import BimsApiView
 
 
 MAX_PAGINATED_SITES = 20
+MAX_PAGINATED_RECORDS = 50
 
 
 class SearchAPIView(BimsApiView):
@@ -53,6 +55,9 @@ class SearchAPIView(BimsApiView):
                     results['sites'] = results['sites'][:MAX_PAGINATED_SITES]
                 if 'records' in results:
                     results['total_unique_taxa'] = len(results['records'])
+                    results['records'] = (
+                        results['records'][:MAX_PAGINATED_RECORDS]
+                    )
                 results['sites_raw_query'] = search_process.process_id
                 return Response(results)
 
@@ -235,6 +240,17 @@ class Search(object):
         return self.parse_request_json('ecologicalCategory')
 
     @property
+    def abiotic_data(self):
+        _abiotic_data = self.get_request_data('abioticData')
+        if _abiotic_data:
+            try:
+                return ast.literal_eval(_abiotic_data)
+            except ValueError:
+                return False
+        else:
+            return False
+
+    @property
     def modules(self):
         modules_query = self.get_request_data('modules')
         if modules_query:
@@ -331,28 +347,6 @@ class Search(object):
             filters.update(validation_filter)
 
         source_collection_filters = []
-        if self.modules:
-            taxon_groups = TaxonGroup.objects.filter(
-                pk__in=self.modules
-            )
-            all_parent_taxa = list(
-                taxon_groups.values_list('taxonomies', flat=True))
-            source_collection_filters = list(
-                taxon_groups.values_list(
-                    'source_collection', flat=True
-                ).exclude(source_collection__isnull=True)
-            )
-            parent = 'taxonomy__'
-            module_query = {}
-            module_or_condition = Q()
-            module_query['taxonomy__id__in'] = all_parent_taxa
-            for i in range(6):  # species to class
-                parent += 'parent__'
-                module_query[parent + 'in'] = all_parent_taxa
-            for key, value in module_query.items():
-                module_or_condition |= Q(**{key: value})
-            if module_or_condition:
-                bio = bio.filter(module_or_condition)
 
         filters['taxonomy__isnull'] = False
         if self.site_ids:
@@ -443,6 +437,26 @@ class Search(object):
                 bio = bio.filter(site__geometry_point__intersects=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
+
+        if self.modules:
+            if len(self.modules) > 1:
+                module_filter = []
+                for taxon_group in self.modules:
+                    module_filter.append(
+                        bio.filter(
+                            module_group__id=taxon_group
+                        ).values_list('site_id'))
+                intersections = module_filter[0].intersection(
+                    *module_filter[1:]
+                )
+                bio = bio.filter(site_id__in=intersections)
+            else:
+                bio = bio.filter(
+                    module_group__id=self.modules[0]
+                )
+
+        if self.abiotic_data:
+            bio = bio.filter(additional_data__BioBaseData=self.abiotic_data)
 
         self.location_sites_raw_query = bio.distinct('site').values(
             'site_id',

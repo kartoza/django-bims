@@ -57,8 +57,6 @@ web:
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} up -d web
-	@docker-compose ${ARGS} up -d firefox
-	@docker-compose ${ARGS} up -d firefox-debug
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container
