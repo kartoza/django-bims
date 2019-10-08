@@ -32,5 +32,11 @@ class SamplingMethod(models.Model):
         blank=True
     )
 
+    taxon_group = models.ManyToManyField(
+        'bims.TaxonGroup',
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.sampling_method

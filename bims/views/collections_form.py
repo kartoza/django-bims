@@ -20,7 +20,10 @@ from bims.models import (
     LocationType,
     TaxonGroup,
     SiteImage,
-    LocationContext
+    LocationContext,
+    BIOTOPE_TYPE_SPECIFIC,
+    BIOTOPE_TYPE_BROAD,
+    BIOTOPE_TYPE_SUBSTRATUM
 )
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 
@@ -35,26 +38,27 @@ RIVER_CATCHMENT_ORDER = [
 ]
 
 
-class FishFormView(TemplateView, SessionFormMixin):
+class CollectionFormView(TemplateView, SessionFormMixin):
     """View for fish form"""
-    template_name = 'fish_form_page.html'
+    template_name = 'collections_form_page.html'
     location_site = None
-    session_identifier = 'fish-form'
+    session_identifier = 'collection-form'
+    taxon_group_name = ''
 
-    def all_fishes(self, fish_parents):
+    def all_species(self, species_parents):
         """
-        Get all fishes
-        :param fish_parents: list of fish parent id
+        Get all taxon
+        :param species_parents: list of species parent id
         :return: array of taxa id
         """
-        fish_list = []
-        fishes = Taxonomy.objects.filter(
-            parent__in=fish_parents
+        species_list = []
+        species = Taxonomy.objects.filter(
+            parent__in=species_parents
         )
-        if fishes:
-            fish_list = list(fishes.values_list('id', flat=True))
-            fish_list.extend(self.all_fishes(fishes))
-        return fish_list
+        if species:
+            species_list = list(species.values_list('id', flat=True))
+            species_list.extend(self.all_species(species))
+        return species_list
 
     def taxa_from_river_catchment(self):
         """
@@ -62,10 +66,10 @@ class FishFormView(TemplateView, SessionFormMixin):
         :return: list of taxa
         """
         river_catchment_query = {}
-        fish_group, created = TaxonGroup.objects.get_or_create(
-            name='Fish'
+        taxon_group, created = TaxonGroup.objects.get_or_create(
+            name=self.taxon_group_name
         )
-        all_fishes = self.all_fishes(fish_group.taxonomies.all())
+        all_species = self.all_species(taxon_group.taxonomies.all())
         location_contexts = LocationContext.objects.filter(
             site=self.location_site
         )
@@ -90,7 +94,7 @@ class FishFormView(TemplateView, SessionFormMixin):
                     rank=F('biological_collection_record__taxonomy__rank')
                 ).distinct('taxon_name').filter(
                     taxon_id__isnull=False,
-                    taxon_id__in=all_fishes,
+                    taxon_id__in=all_species,
                 ).order_by(
                     'taxon_name'
                 )
@@ -98,7 +102,7 @@ class FishFormView(TemplateView, SessionFormMixin):
         return taxa_list
 
     def get_context_data(self, **kwargs):
-        context = super(FishFormView, self).get_context_data(**kwargs)
+        context = super(CollectionFormView, self).get_context_data(**kwargs)
         if not self.location_site:
             return context
         context['geoserver_public_location'] = get_key(
@@ -116,11 +120,33 @@ class FishFormView(TemplateView, SessionFormMixin):
                 'reference_category').values(
                 name=F('reference_category'))
         )
-        context['biotope_list'] = list(
+        context['taxon_group_name'] = self.taxon_group_name
+        taxon_group = TaxonGroup.objects.filter(
+            name=self.taxon_group_name
+        )
+        context['broad_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__name__icontains='fish',
-                taxon_group__category='SPECIES_MODULE').values(
-                'name', 'description', 'display_order'
+                taxon_group__in=taxon_group,
+                biotope_type=BIOTOPE_TYPE_BROAD
+            ).values(
+                'id', 'name', 'description', 'display_order'
+            ).order_by('display_order')
+        )
+        context['specific_biotope_list'] = list(
+            Biotope.objects.filter(
+                taxon_group__in=taxon_group,
+                biotope_type=BIOTOPE_TYPE_SPECIFIC
+            ).values(
+                'id', 'name', 'description', 'display_order'
+            ).order_by('display_order')
+        )
+
+        context['substratum_list'] = list(
+            Biotope.objects.filter(
+                taxon_group__in=taxon_group,
+                biotope_type=BIOTOPE_TYPE_SUBSTRATUM
+            ).values(
+                'id', 'name', 'description', 'display_order'
             ).order_by('display_order')
         )
 
@@ -152,22 +178,49 @@ class FishFormView(TemplateView, SessionFormMixin):
         else:
             raise Http404()
 
-        return super(FishFormView, self).get(request, *args, **kwargs)
+        return super(CollectionFormView, self).get(request, *args, **kwargs)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         date_string = request.POST.get('date', None)
         owner_id = request.POST.get('owner_id', '').strip()
         biotope_id = request.POST.get('biotope', None)
+        specific_biotope_id = request.POST.get('specific_biotope', None)
+        substratum_id = request.POST.get('substratum', None)
+        sampling_method_id = request.POST.get('sampling_method', None)
+        abundance_type = request.POST.get('abundance_type', None)
         reference = request.POST.get('study_reference', '')
         reference_category = request.POST.get('reference_category', '')
+
         biotope = None
+        specific_biotope = None
+        substratum = None
+        sampling_method = None
+
         if biotope_id:
             biotope = Biotope.objects.get(
                 id=biotope_id
             )
+        if specific_biotope_id:
+            specific_biotope = Biotope.objects.get(
+                id=specific_biotope_id
+            )
+        if substratum_id:
+            substratum = Biotope.objects.get(
+                id=substratum_id
+            )
+        if sampling_method_id:
+            sampling_method = SamplingMethod.objects.get(
+                id=sampling_method_id
+            )
+        sampling_effort = '{effort} {type}'.format(
+            effort=self.request.POST.get('sampling_effort', ''),
+            type=self.request.POST.get('sampling_effort_type', '')
+        ).strip()
+
         collection_date = parse(date_string)
         post_data = request.POST.dict()
+
 
         # Create or get location site
         site_name = post_data.get('site_name', '')
@@ -220,27 +273,16 @@ class FishFormView(TemplateView, SessionFormMixin):
         for taxon in taxa_id_list:
             observed_key = '{}-observed'.format(taxon)
             abundance_key = '{}-abundance'.format(taxon)
-            sampling_method_key = '{}-sampling-method'.format(
-                taxon
-            )
             taxonomy = Taxonomy.objects.get(
                 id=taxon
             )
-            sampling_method_id = post_data[sampling_method_key]
-            sampling_effort = '{effort} {type}'.format(
-                effort=post_data[
-                    '{}-sampling-effort'.format(taxon)],
-                type=post_data[
-                    '{}-sampling-effort-type'.format(taxon)]
-            )
             try:
                 if post_data[observed_key] == 'True':
-                    sampling_method = None
-                    if sampling_method_id:
-                        sampling_method = SamplingMethod.objects.get(
-                            id=sampling_method_id
-                        )
                     abundance = post_data[abundance_key]
+                    if abundance:
+                        abundance = float(abundance)
+                    else:
+                        abundance = 0.0
                     collection_record, status = (
                         BiologicalCollectionRecord.objects.get_or_create(
                             collection_date=collection_date,
@@ -252,9 +294,12 @@ class FishFormView(TemplateView, SessionFormMixin):
                             abundance_number=abundance,
                             owner=owner,
                             biotope=biotope,
+                            specific_biotope=specific_biotope,
+                            substratum=substratum,
                             reference=reference,
                             reference_category=reference_category,
-                            sampling_effort=sampling_effort
+                            sampling_effort=sampling_effort,
+                            abundance_type=abundance_type
                         )
                     )
                     collection_record_ids.append(collection_record.id)
@@ -272,7 +317,26 @@ class FishFormView(TemplateView, SessionFormMixin):
             'edited_at': int(time.mktime(datetime.now().timetuple())),
             'records': collection_record_ids,
             'location_site': self.location_site.name,
-            'form': 'fish-form'
+            'form': self.session_identifier
         })
-        url = reverse('source-reference-form') + '?session=' + session_uuid
+        url = '{base_url}?session={session}&identifier={identifier}'.format(
+            base_url=reverse('source-reference-form'),
+            session=session_uuid,
+            identifier=self.session_identifier
+        )
         return HttpResponseRedirect(url)
+
+
+class FishFormView(CollectionFormView):
+    session_identifier = 'fish-form'
+    taxon_group_name = 'Fish'
+
+
+class InvertFormView(CollectionFormView):
+    session_identifier = 'invert-form'
+    taxon_group_name = 'Inverterbrates'
+
+
+class AlgaeFormView(CollectionFormView):
+    session_identifier = 'algae-form'
+    taxon_group_name = 'Algae'

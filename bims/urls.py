@@ -40,7 +40,11 @@ from bims.views.autocomplete_search import (
     site_autocomplete
 )
 from bims.views.proxy import proxy_request
-from bims.views.fish_form import FishFormView
+from bims.views.collections_form import (
+    FishFormView,
+    InvertFormView,
+    AlgaeFormView
+)
 from bims.views.location_site import (
     LocationSiteFormView,
     LocationSiteFormUpdateView,
@@ -103,6 +107,8 @@ urlpatterns = [
         name='location-site-autocomplete-search'),
     url(r'^bims_proxy/(?P<path>.*)', proxy_request),
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
+    url(r'^invert-form/$', InvertFormView.as_view(), name='invert-form'),
+    url(r'^algae-form/$', AlgaeFormView.as_view(), name='algae-form'),
     url(r'^source-reference-form/$', SourceReferenceView.as_view(),
         name='source-reference-form'),
     url(r'^source-reference/database/',

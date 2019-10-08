@@ -91,6 +91,11 @@ class BiologicalCollectionManager(models.Manager):
         return self.get_queryset().source_references()
 
 
+ABUNDANCE_TYPE_NUMBER = 'number'
+ABUNDANCE_TYPE_PERCENTAGE = 'percentage'
+ABUNDANCE_TYPE_DENSITY = 'density'
+
+
 class BiologicalCollectionRecord(AbstractValidation):
     """Biological collection model."""
     CATEGORY_CHOICES = (
@@ -101,6 +106,12 @@ class BiologicalCollectionRecord(AbstractValidation):
     HABITAT_CHOICES = (
         ('euryhaline', 'Euryhaline'),
         ('freshwater', 'Freshwater'),
+    )
+
+    ABUNDANCE_TYPE_CHOICES = (
+        (ABUNDANCE_TYPE_NUMBER, 'Number'),
+        (ABUNDANCE_TYPE_PERCENTAGE, 'Percentage'),
+        (ABUNDANCE_TYPE_DENSITY, 'Density'),
     )
 
     site = models.ForeignKey(
@@ -234,10 +245,33 @@ class BiologicalCollectionRecord(AbstractValidation):
         null=True
     )
 
+    abundance_type = models.CharField(
+        max_length=50,
+        choices=ABUNDANCE_TYPE_CHOICES,
+        default=ABUNDANCE_TYPE_NUMBER,
+        blank=True
+    )
+
     biotope = models.ForeignKey(
         'bims.Biotope',
         null=True,
         blank=True,
+        on_delete=models.SET_NULL
+    )
+
+    specific_biotope = models.ForeignKey(
+        'bims.Biotope',
+        null=True,
+        blank=True,
+        related_name='specific_biotope',
+        on_delete=models.SET_NULL
+    )
+
+    substratum = models.ForeignKey(
+        'bims.Biotope',
+        null=True,
+        blank=True,
+        related_name='biotope_substratum',
         on_delete=models.SET_NULL
     )
 

@@ -19,6 +19,7 @@
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
+        const taxonGroupName = '{{ taxon_group_name }}';
     </script>
 
 {% endblock %}
@@ -30,7 +31,7 @@
         <input type="hidden" id="site-id" name="site-id" value="{{ site_id }}">
         <div class="body-form container">
             <div class="header">
-                Add fish data for site
+                Add {{ taxon_group_name }} data for site
                 <span id="site-identifier">
                 {% if location_site_code %}{{ location_site_code }} {% else %}
                     {{ location_site_name }}{% endif %}
@@ -155,15 +156,76 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Biotope</label>
+                       class="col-sm-2 col-form-label col-form-label">Broad Biotope</label>
                 <div class="col-sm-10">
                     <select class="form-control"
-                            name="biotope" id="biotope">
+                            name="biotope" id="broad-biotope">
                         <option value=""> Not specified</option>
-                        {% for biotope in biotope_list %}
+                        {% for biotope in broad_biotope_list %}
                             <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
                         {% endfor %}
                     </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Specific Biotope</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="specific_biotope" id="specific-biotope">
+                        <option value=""> Not specified</option>
+                        {% for biotope in specific_biotope_list %}
+                            <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Substratum</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="substratum" id="substratum">
+                        <option value=""> Not specified</option>
+                        {% for biotope in substratum_list %}
+                            <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Sampling Method</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="sampling_method">
+                        <option value=""> Not specified</option>
+                        {% for sampling_method in sampling_method_list %}
+                            <option value="{{ sampling_method.id }}"> {{ sampling_method.sampling_method }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Sampling Effort</label>
+                <div class="col-sm-10">
+                    <div class="row">
+                        <div class="col-4">
+                            <input type="number" min="0"
+                                   name="sampling_effort"
+                                   class="form-control"
+                                   style="width: 100%">
+                        </div>
+                        <div class="col-8">
+                            <select class="form-control"
+                                    name="sampling_effort_type">
+                                <option value=""> Not specified</option>
+                                <option value="min"> Time (min)</option>
+                                <option value="meter"> Area (m)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="form-group row">
@@ -185,11 +247,19 @@
             <table class="table table-sm">
                 <thead>
                 <tr>
-                    <th scope="col" width="300">Taxa</th>
-                    <th scope="col">Observed</th>
-                    <th scope="col" width="200">Abundance</th>
-                    <th scope="col">Sampling Method</th>
-                    <th scope="col" width="320">Sampling Effort</th>
+                    <th scope="col" style="padding-bottom: 12px;" width="300">Taxa</th>
+                    <th scope="col" style="padding-bottom: 12px;">Observed</th>
+                    <th scope="col">
+                        <div class="pull-left" style="padding-top: 10px; padding-right: 10px;"> Abundance </div>
+                        <div class="pull-left">
+                         <select class="form-control "
+                                    name="abundance_type">
+                                <option value="number"> Number </option>
+                                <option value="percentage"> Percentage Abundance </option>
+                                <option value="density"> Density (m<sup>2</sup>) </option>
+                         </select>
+                        </div>
+                    </th>
                 </tr>
                 </thead>
                 <tbody class="taxon-table-body">
@@ -222,28 +292,6 @@
                                    class="form-control taxon-abundance"
                                    placeholder="0">
                         </td>
-                        <td class="sampling-method-container">
-                            <select class="form-control"
-                                    name="{{ taxon.taxon_id }}-sampling-method">
-                                <option value=""> Not specified</option>
-                                {% for sampling_method in sampling_method_list %}
-                                    <option value="{{ sampling_method.id }}"> {{ sampling_method.sampling_method }} </option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        <td class="sampling-effort-container">
-                            <input type="number" min="0"
-                                   name="{{ taxon.taxon_id }}-sampling-effort"
-                                   class="form-control pull-left"
-                                   style="width: 100px">
-                            <select class="form-control pull-right"
-                                    name="{{ taxon.taxon_id }}-sampling-effort-type"
-                                    style="width: 200px">
-                                <option value=""> Not specified</option>
-                                <option value="min"> Time (min)</option>
-                                <option value="meter"> Area (m)</option>
-                            </select>
-                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -264,7 +312,7 @@
                         Confirm Submit
                     </div>
                     <div class="modal-body">
-                        Are you sure you want to submit the Fish form and go to the next form?
+                        Are you sure you want to submit the {{ taxon_group_name }} form and go to the next form?
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default"
