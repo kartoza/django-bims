@@ -143,8 +143,6 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
             self.object.site = location_site
             self.object.save()
 
-            self.object.documents.clear()
-
             # reconnect signals
             signals.post_save.connect(
                 location_site_post_save_handler,

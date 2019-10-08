@@ -20,7 +20,7 @@ let taxaIdList = [];
 let taxonAutocompleteHandler = {
     source: function (request, response) {
         $.ajax({
-            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term) + '&exclude=' + taxaIdList.join() + '&taxonGroup=Fish',
+            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term) + '&exclude=' + taxaIdList.join() + '&taxonGroup=' + taxonGroupName,
             type: 'get',
             dataType: 'json',
             success: function (data) {

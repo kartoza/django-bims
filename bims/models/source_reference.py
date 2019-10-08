@@ -128,9 +128,17 @@ class SourceReference(PolymorphicModel):
         }
         if source:
             model_fields['source'] = source
-        source_reference, created = _SourceModel.objects.get_or_create(
-            **model_fields
-        )
+        if not category:
+            source_reference = SourceReference.objects.create(**model_fields)
+            return source_reference
+        try:
+            source_reference, created = _SourceModel.objects.get_or_create(
+                **model_fields
+            )
+        except _SourceModel.MultipleObjectsReturned:
+            source_reference = _SourceModel.objects.filter(
+                **model_fields
+            )[0]
         return source_reference
 
 
