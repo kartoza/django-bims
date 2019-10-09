@@ -856,6 +856,7 @@ define([
             let overview = siteDetailsWrapper.find('#overview');
             let orderedOverview = {};
             orderedOverview['FBIS Site Code'] = data['site_details']['overview']['FBIS Site Code'];
+            orderedOverview['Original Site Code'] = data['site_details']['overview']['Original Site Code'];
             orderedOverview['Site coordinates'] = data['site_details']['overview']['Site coordinates'];
             orderedOverview['Site description'] = data['site_details']['overview']['Site description'];
             overview.html(this.renderTableFromTitlesValuesLists(orderedOverview));
