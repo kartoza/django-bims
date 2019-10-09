@@ -153,9 +153,11 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         sampling_method_lower_list = []
         context['sampling_method_list'] = []
         sampling_method_list = list(
-            SamplingMethod.objects.all().values(
+            SamplingMethod.objects.filter(
+                taxon_group__in=taxon_group
+            ).values(
                 'id', 'sampling_method'
-            ).order_by(F('normalisation_factor').asc(nulls_first=True))
+            ).order_by('order')
         )
         for sampling_method in sampling_method_list:
             sampling_method_name = (
