@@ -38,5 +38,10 @@ class SamplingMethod(models.Model):
         blank=True
     )
 
+    order = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.sampling_method
