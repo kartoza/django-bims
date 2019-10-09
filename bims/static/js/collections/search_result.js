@@ -293,7 +293,7 @@ define([
             }
 
             // Add show more button for taxa list
-            if (self.recordsData.length < self.totalRecords) {
+            if (self.recordsData.length < self.totalTaxa) {
                 self.viewCollection.push(
                     new SearchResultView({
                         model: new SearchModel({
