@@ -67,6 +67,8 @@
                     </div>
                 </div>
             {% endif %}
+            <div class="alert alert-danger" id="form-alert" role="alert" style="display: none">
+            </div>
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-1 col-form-label col-form-label">Latitude*</label>
@@ -86,6 +88,29 @@
                 </div>
             </div>
             <div class="form-group row">
+                <label for="river_name" class="col-sm-2 col-form-label">
+                    River Name
+                </label>
+                <div class="col-sm-6">
+                    <input type="text" name="river_name" id="river_name" class="form-control form-control-sm" value="{{ river_name }}" readonly>
+                </div>
+                <div class="update-taxon-container col-sm-2">
+                    <button id="fetch-river-name" type="button"
+                            class="btn btn-default" style="width: 250px;" disabled>
+                        Fetch River Name
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="original_site_code"
+                       class="col-sm-2 col-form-label col-form-label">Original River Name</label>
+                <div class="col-sm-6">
+                    <input type="text" name="original_river_name" id="original_river_name"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{% if legacy_river_name %}{{ legacy_river_name }}{% else %}{% endif %}" >
+                </div>
+            </div>
+            <div class="form-group row">
                 <label for="site_name"
                        class="col-sm-2 col-form-label col-form-label">Site
                     Code*</label>
@@ -97,27 +122,24 @@
                         The following standard has been adopted for naming site code:
                         Secondary catchment code, 1st four letters of river name, 1st five letters of location. E.g. X2CROC-VELOR (Crocodile River @ Veloren Vallei Nature Reserve)
                     </small>
-                    <input type="hidden" name="river" id="river">
                     <input type="hidden" name="catchment_geocontext" id="catchment_geocontext">
                 </div>
                 <div class="update-taxon-container col-sm-2">
                     <button id="update-site-code" type="button"
-                            class="btn btn-default" disabled>
+                            class="btn btn-default" style="width: 250px;" disabled>
                         Generate site code
                     </button>
                 </div>
             </div>
-            {% if site_id %}
             <div class="form-group row">
-                <label for="site_name"
+                <label for="legacy_site_code"
                        class="col-sm-2 col-form-label col-form-label">Original Site Code</label>
                 <div class="col-sm-6">
-                    <input type="text" name="site_code" id="site_code"
+                    <input type="text" name="legacy_site_code" id="legacy_site_code"
                            class="form-control form-control-sm"
-                           placeholder="" value="{% if legacy_site_code %}{{ legacy_site_code }}{% else %}-{% endif %}" disabled>
+                           placeholder="" value="{% if legacy_site_code %}{{ legacy_site_code }}{% else %}{% endif %}" >
                 </div>
             </div>
-            {% endif %}
             <div class="form-group row">
                 <label for="site_name"
                        class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>

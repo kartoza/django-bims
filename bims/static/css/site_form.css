@@ -34,10 +34,6 @@ body {
     margin-top: 2px;
 }
 
-#update-site-code, #fetch-geomorphological-zone {
-    margin-left: -10px;
-}
-
 .submit-holder {
     text-align: center;
 }

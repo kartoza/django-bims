@@ -95,6 +95,10 @@ class LocationSite(DocumentLinksMixin):
         null=True,
         blank=True,
     )
+    legacy_river_name = models.CharField(
+        max_length=100,
+        blank=True
+    )
 
     location_context_document = JSONField(
         verbose_name='Document for location context as JSON.',
