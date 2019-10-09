@@ -66,6 +66,7 @@ from bims.api_views.site_code import GetSiteCode
 from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
 from bims.api_views.chemical_record import ChemicalRecordDownloader
 from bims.api_views.taxa_search_result import TaxaSearchResult
+from bims.api_views.river_name import GetRiverName
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -139,6 +140,8 @@ urlpatterns = [
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-site-code/$',
         GetSiteCode.as_view(), name='get-site-code'),
+    url(r'^get-river-name/$',
+        GetRiverName.as_view(), name='get-river-name'),
     url(r'^get-geomorphological-zone/$',
         GetGeomorphologicalZone.as_view(), name='get-geomorphological-zone'),
     url(r'^get-bio-records/$',

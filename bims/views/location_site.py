@@ -59,11 +59,16 @@ class LocationSiteFormView(TemplateView):
             owner = None
         latitude = request.POST.get('latitude', None)
         longitude = request.POST.get('longitude', None)
+        legacy_site_code = request.POST.get('legacy_site_code', '')
         refined_geomorphological_zone = request.POST.get(
             'refined_geomorphological_zone',
             None
         )
-        river_name = request.POST.get('river', None)
+        river_name = request.POST.get('river_name', None)
+        original_river_name = request.POST.get('original_river_name', '')
+        if not river_name:
+            river_name = original_river_name
+
         site_code = request.POST.get('site_code', None)
         site_description = request.POST.get('site_description', None)
         catchment_geocontext = request.POST.get('catchment_geocontext', None)
@@ -105,7 +110,9 @@ class LocationSiteFormView(TemplateView):
             'site_description': site_description,
             'geometry_point': geometry_point,
             'location_type': location_type,
-            'site_code': site_code
+            'site_code': site_code,
+            'legacy_river_name': original_river_name,
+            'legacy_site_code': legacy_site_code
         }
         location_site = self.update_or_create_location_site(
             post_dict
@@ -201,9 +208,14 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['allow_to_edit'] = self.allow_to_edit()
         context_data['site_id'] = self.location_site.id
         context_data['legacy_site_code'] = self.location_site.legacy_site_code
+        context_data['legacy_river_name'] = (
+            self.location_site.legacy_river_name
+        )
         if self.location_site.owner:
             context_data['fullname'] = self.location_site.owner.get_full_name()
             context_data['user_id'] = self.location_site.owner.id
+        if self.location_site.river:
+            context_data['river_name'] = self.location_site.river.name
         return context_data
 
     def allow_to_edit(self):

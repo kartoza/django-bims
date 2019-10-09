@@ -4,6 +4,20 @@ let markerSource = null;
 let validator = $('#site-form').validate({
     submitHandler: function(form) {
         let siteCode = $('#site_code').val();
+        let formAlert = $('#form-alert');
+        formAlert.html('');
+        formAlert.hide();
+
+        // river name
+        let riverName = $('#river_name').val();
+        let originalRiverName = $('#original_river_name').val();
+
+        if (!riverName && !originalRiverName) {
+            formAlert.show();
+            formAlert.html('River name is required.');
+            return false;
+        }
+
         // Check length
         if (siteCode.length !== 12) {
             showSiteCodeError();
@@ -71,6 +85,7 @@ $(function () {
     map.addLayer(biodiversityTileLayer);
     $('#update-coordinate').click(updateCoordinateHandler);
     $('#update-site-code').click(updateSiteCode);
+    $('#fetch-river-name').click(fetchRiverName);
     $('#fetch-geomorphological-zone').click(fetchGeomorphologicalZone);
 
     if (locationSiteLat && locationSiteLong) {
@@ -100,7 +115,6 @@ let updateSiteCode = (e) => {
     let longitude = $('#longitude').val();
     let button = $('#update-site-code');
     let siteCodeInput = $('#site_code');
-    let riverInput = $('#river');
     let catchmentInput = $('#catchment_geocontext');
     let buttonLabel = button.html();
 
@@ -117,9 +131,30 @@ let updateSiteCode = (e) => {
         success: function (data) {
             siteCodeInput.prop('disabled', false);
             siteCodeInput.val(data['site_code']);
-            riverInput.val(data['river']);
             catchmentInput.val(JSON.stringify(data['catchment']));
             document.getElementById('update-site-code').disabled = false;
+            button.html(buttonLabel);
+        }
+    });
+};
+
+let fetchRiverName = (e) => {
+    let latitude = $('#latitude').val();
+    let longitude = $('#longitude').val();
+    let riverInput = $('#river_name');
+    let button = $('#fetch-river-name');
+    let url = '/api/get-river-name/?lon=' + longitude + '&lat=' + latitude;
+    let buttonLabel = button.html();
+    console.log(url);
+
+    document.getElementById('fetch-river-name').disabled = true;
+    button.html('Fetching...');
+
+    $.ajax({
+        url: url,
+        success: function (data) {
+            riverInput.val(data['river']);
+            document.getElementById('fetch-river-name').disabled = false;
             button.html(buttonLabel);
         }
     });
@@ -248,6 +283,7 @@ let addMarkerToMap = (lat, lon, zoomToMap = true) => {
     if (allowToEdit) {
         document.getElementById('update-site-code').disabled = false;
         document.getElementById('fetch-geomorphological-zone').disabled = false;
+        document.getElementById('fetch-river-name').disabled = false;
     }
 };
 
