@@ -115,6 +115,8 @@ class FbisBiobaseSiteImporter(FbisPostgresImporter):
 
         if river:
             location_site.river = river
+        location_site.legacy_river_name = self.get_row_value('RiverName')
+        location_site.legacy_site_code = self.get_row_value('SiteCode')
 
         # Get user if exist
         user_ctype = ContentType.objects.get_for_model(

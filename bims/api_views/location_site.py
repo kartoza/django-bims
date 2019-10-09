@@ -2,6 +2,7 @@
 import ast
 import json
 import os
+from collections import OrderedDict
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count, Value, Case, When
 from django.db.models.functions import ExtractYear
@@ -538,6 +539,7 @@ class LocationSitesSummary(APIView):
             site_river = location_site.river.name
         overview = dict()
         overview['FBIS Site Code'] = location_site.site_code
+        overview['Original Site Code'] = location_site.legacy_site_code
         overview['Site coordinates'] = (
             'Longitude: {long}, Latitude: {lat}'.format(
                 long=self.parse_string(location_site.longitude),
@@ -553,8 +555,9 @@ class LocationSitesSummary(APIView):
                 location_site.name
             )
 
-        river_and_geo = dict()
+        river_and_geo = OrderedDict()
         river_and_geo['River'] = site_river
+        river_and_geo['Original River Name'] = location_site.legacy_river_name
 
         river_and_geo['Geomorphological zone'] = (
             location_context.value_from_key(
