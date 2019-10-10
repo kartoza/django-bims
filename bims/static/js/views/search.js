@@ -94,6 +94,15 @@ define([
                 },
                 select: function (event, ui) {
                     var itemValue = ui['item']['value'];
+                    var source = ui['item']['source'];
+                    // Check if source contain taxonomy rank
+                    if (source.toLowerCase().includes('taxonomy rank')) {
+                        let sources = source.split(':');
+                        if (sources.length > 1) {
+                            filterParameters['rank'] = sources[1].trim();
+                            console.log(filterParameters);
+                        }
+                    }
                     self.search(itemValue);
                 }
             }).autocomplete("instance")._renderItem = function( ul, item ) {
@@ -793,6 +802,11 @@ define([
                 if (filterParameters['abioticData'] === 'True') {
                     $('#abiotic-data-filter').prop('checked', true);
                 }
+            }
+
+            // Rank
+            if (allFilters.hasOwnProperty('rank')) {
+                filterParameters['rank'] = allFilters['rank'];
             }
 
             if (allFilters.hasOwnProperty('ecologicalCategory')) {
