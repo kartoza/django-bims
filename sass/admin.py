@@ -70,7 +70,9 @@ class SassTaxonAdmin(admin.ModelAdmin):
         'taxon',
         'score',
         'taxon_sass_4',
-        'taxon_sass_5'
+        'taxon_sass_5',
+        'display_order_sass_4',
+        'display_order_sass_5'
     )
 
     search_fields = (
