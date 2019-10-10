@@ -1091,7 +1091,7 @@ define([
                     if(keys[i] === 'DOI/URL' && document){
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
                     } else if (keys[i] === 'DOI/URL') {
-                        itemDiv.append(`<a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a>`);
+                        itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
                     } else {
                         itemDiv.append('<td>' + source[keys[i]] + '</td>')
                     }
