@@ -42,8 +42,10 @@ class FbisImporter(object):
         ctype = ContentType.objects.get_for_model(model)
         if not uuid:
             uuid = self.get_row_value(column, self.current_row)
+            if uuid:
+                uuid = uuid.upper()
         objects = FbisUUID.objects.filter(
-            uuid=uuid,
+            uuid__icontains=uuid,
             content_type=ctype
         )
         if objects.exists():
