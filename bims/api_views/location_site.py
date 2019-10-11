@@ -342,7 +342,7 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id,
             'is_multi_sites': is_multi_sites,
             'is_sass_exists': is_sass_exists,
-            'is_chem_exists': len(list_chems) > 0
+            'is_chem_exists': len(list_chems) > 1
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)
