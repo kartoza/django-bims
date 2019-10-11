@@ -104,7 +104,7 @@ class SearchProcess(models.Model):
             cursor = connection.cursor()
             try:
                 sql = (
-                    'DROP VIEW IF EXISTS "{view_name}"'.
+                    'DROP VIEW IF EXISTS {view_name}'.
                     format(
                         view_name=self.process_id
                     ))
