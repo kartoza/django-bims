@@ -45,7 +45,6 @@ from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from sass.models.chem import Chem
 
 
 class LocationSiteList(APIView):
@@ -294,55 +293,35 @@ class LocationSitesSummary(APIView):
         source_references = collection_with_references.source_references()
 
         list_chems = {}
-        is_chem_exists = False
         if site_id:
-            chems = ChemicalRecord.objects.filter(location_site_id=site_id)
-            list_chems_code = (
-                list(
-                    chems.values_list(
-                        'chem__chem_code').distinct('chem__chem_code')))
+            list_chems_code = [
+                'COND',
+                'TEMP',
+                'pH',
+                'DO'
+            ]
+            chems = ChemicalRecord.objects.filter(
+                location_site_id=site_id
+            )
             x_label = []
             for chem in list_chems_code:
-                chem_name = (
-                    chem[0].lower().replace(
-                        'max', '').replace('min', '').replace('-n', ''))
-                chem_name = chem_name.upper()
-
-                qs = chems.filter(chem__chem_code=chem[0]).order_by('date')
+                chem_name = chem.lower().replace('-n', '').upper()
+                qs = chems.filter(chem__chem_code=chem).order_by('date')
+                if not qs:
+                    continue
                 value = ChemicalRecordsSerializer(qs, many=True)
-                chem_data = None
-                try:
-                    chem_data = Chem.objects.get(chem_code=chem[0])
-                except Chem.MultipleObjectsReturned:
-                    queries = Chem.objects.filter(chem_code=chem[0])
-                    for query in queries:
-                        if query.chem_unit:
-                            chem_data = query
-                    if not chem_data:
-                        chem_data = queries.first()
-
                 data = {
-                    'unit': chem_data.chem_unit,
-                    'name': chem_data.chem_description,
+                    'unit': qs[0].chem.chem_unit,
+                    'name': qs[0].chem.chem_description,
                     'values': value.data
                 }
-
-                list_show_chem = [
-                    'electrical conductivity',
-                    'ph',
-                    'dissolved oxygen',
-                    'temperature',
-                ]
-                if chem_data.chem_description.lower().replace(
-                        '_', ' ') in list_show_chem:
-                    for val in value.data:
-                        if val['str_date'] not in x_label:
-                            x_label.append(val['str_date'])
-                    try:
-                        list_chems[chem_name].append({chem[0]: data})
-                    except KeyError:
-                        list_chems[chem_name] = [{chem[0]: data}]
-                is_chem_exists = True
+                for val in value.data:
+                    if val['str_date'] not in x_label:
+                        x_label.append(val['str_date'])
+                try:
+                    list_chems[chem_name].append({chem: data})
+                except KeyError:
+                    list_chems[chem_name] = [{chem: data}]
             list_chems['x_label'] = x_label
 
         response_data = {
@@ -363,7 +342,7 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id,
             'is_multi_sites': is_multi_sites,
             'is_sass_exists': is_sass_exists,
-            'is_chem_exists': is_chem_exists
+            'is_chem_exists': len(list_chems) > 0
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)
