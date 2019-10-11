@@ -1,4 +1,3 @@
-let collectionsWithAbundace = 0;
 let oldLat = location_site_lat;
 let oldLon = location_site_long;
 
@@ -7,12 +6,9 @@ let taxonAbundanceOnChange = function (e) {
     if (value) {
         if (value > 0) {
             $(e.target).parent().parent().find('.observed').prop('checked', true);
-            collectionsWithAbundace += 1;
             return true;
         }
     }
-    $(e.target).parent().parent().find('.observed').prop('checked', false);
-    collectionsWithAbundace -= 1;
 };
 
 let taxaIdList = [];
@@ -68,19 +64,6 @@ let taxonAutocompleteHandler = {
         tdTaxonAbundance.append(taxonAbundanceInput);
         $parent.append(tdTaxonAbundance);
         taxonAbundanceInput.change(taxonAbundanceOnChange);
-
-        let samplingMethodContainer = $($('#sampling-method-container').html());
-        samplingMethodContainer.attr('name', u.item.value + '-sampling-method');
-        let samplingMethodTd = $('<td>');
-        samplingMethodTd.append(samplingMethodContainer);
-        samplingMethodTd.appendTo($parent);
-
-        let samplingEffortContainer = $($('#sampling-effort-container').html());
-        $(samplingEffortContainer[0]).attr('name', u.item.value + '-sampling-effort');
-        $(samplingEffortContainer[2]).attr('name', u.item.value + '-sampling-effort-type');
-        let samplingEffortTd = $('<td>');
-        samplingEffortTd.append(samplingEffortContainer);
-        samplingEffortTd.appendTo($parent);
     }
 };
 
@@ -354,7 +337,7 @@ $(function () {
                 $input.unbind();
             }
         });
-        if (collectionsWithAbundace === 0) {
+        if ($('.observed:checkbox:checked').length === 0) {
             isError = true;
             alertMessage = 'You must at least add one collection data';
         } else {
