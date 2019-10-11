@@ -463,10 +463,13 @@ class Search(object):
                 site__in=sites_with_abiotic
             ).select_related()
 
-        self.location_sites_raw_query = bio.distinct('site').values(
+        self.location_sites_raw_query = LocationSite.objects.filter(
+            id__in=bio.values('site_id')
+        ).annotate(site_id=F('id')).values(
             'site_id',
-            'site__geometry_point',
-            'site__name').query.sql_with_params()
+            'geometry_point',
+            'name'
+        ).query.sql_with_params()
 
         self.collection_records = bio
         return self.collection_records
