@@ -19,6 +19,7 @@ from bims.models import (
     Taxonomy,
     Endemism,
     LIST_SOURCE_REFERENCES,
+    LocationSite
 )
 from bims.tasks.search import search_task
 from sass.models import (
@@ -477,12 +478,20 @@ class Search(object):
                 )
 
         if self.abiotic_data:
-            bio = bio.filter(additional_data__BioBaseData=self.abiotic_data)
+            sites_with_abiotic = LocationSite.objects.filter(
+                chemical_collection_record__isnull=False
+            )
+            bio = bio.filter(
+                site__in=sites_with_abiotic
+            ).select_related()
 
-        self.location_sites_raw_query = bio.distinct('site').values(
+        self.location_sites_raw_query = LocationSite.objects.filter(
+            id__in=bio.values('site_id')
+        ).annotate(site_id=F('id')).values(
             'site_id',
-            'site__geometry_point',
-            'site__name').query.sql_with_params()
+            'geometry_point',
+            'name'
+        ).query.sql_with_params()
 
         self.collection_records = bio
         return self.collection_records

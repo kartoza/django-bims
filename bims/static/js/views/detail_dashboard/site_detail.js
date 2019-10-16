@@ -470,7 +470,7 @@ define([
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let random_number = Math.random() * 1000000;
-            let this_title = `FWBD-Dashboard-Export-{${random_number}}`;
+            let this_title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '');
             if (element.length > 0)
                 this.downloadElement(this_title, element);
         },
@@ -1063,7 +1063,7 @@ define([
             let order = ['Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
             let orderedDataSources = [];
             for (var j=0; j<dataSources.length; j++) {
-                orderedDataSources.push({})
+                orderedDataSources.push({});
                 for (var i = 0; i < order.length; i++) {
                     orderedDataSources[j][order[i]] = dataSources[j][order[i]];
                 }
@@ -1090,7 +1090,9 @@ define([
 
                     if(keys[i] === 'DOI/URL' && document){
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
-                    }else {
+                    } else if (keys[i] === 'DOI/URL') {
+                        itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
+                    } else {
                         itemDiv.append('<td>' + source[keys[i]] + '</td>')
                     }
                 }

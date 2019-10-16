@@ -19,13 +19,13 @@ class Command(BaseCommand):
         view_name = 'default_location_site_cluster'
 
         query = (
-            'SELECT DISTINCT ON (bims_biologicalcollectionrecord.site_id) '
-            'bims_biologicalcollectionrecord.site_id, '
-            'bims_locationsite.geometry_point, bims_locationsite.name FROM '
-            'bims_biologicalcollectionrecord JOIN bims_locationsite ON '
-            'bims_biologicalcollectionrecord.site_id = bims_locationsite.id '
-            'WHERE bims_biologicalcollectionrecord.taxonomy_id '
-            'IS NOT NULL AND bims_biologicalcollectionrecord.validated = true;'
+            'SELECT bims_locationsite.id AS site_id,'
+            'bims_locationsite.geometry_point, bims_locationsite.name '
+            'FROM bims_locationsite '
+            'WHERE bims_locationsite.id IN'
+            '(SELECT U0.site_id AS Col1 FROM '
+            'bims_biologicalcollectionrecord U0 '
+            'WHERE (U0.validated = True))'
         )
         empty_view_name = settings.BIMS_PREFERENCES.get(
             'empty_location_site_cluster'

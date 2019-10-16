@@ -1,38 +1,39 @@
 import json
-from datetime import datetime
 
 from django.contrib.auth import get_user_model
 
-from scripts.importer.fbis_importer import FbisImporter
+from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
 from bims.models import Profile
 from bims.utils.logger import log
 
 
-class FbisUserSassValidationImporter(FbisImporter):
+class FbisUserSassValidationImporter(FbisPostgresImporter):
 
     content_type_model = get_user_model()
-    table_name = 'UserSASSValidation'
+    table_name = '"UserSASSValidation"'
 
     def process_row(self, row, index):
-        valid_from = datetime.strptime(
-            self.get_row_value('ValidFrom'),
-            '%m/%d/%y %H:%M:%S'
-        )
-        valid_to = datetime.strptime(
-            self.get_row_value('ValidTo'),
-            '%m/%d/%y %H:%M:%S'
-        )
+        valid_from = self.get_row_value('validfrom')
+        valid_to = self.get_row_value('validto')
         user = self.get_object_from_uuid(
-            column='UserID',
+            column='userid',
             model=get_user_model()
         )
-        status = self.get_row_value('Status')
+        status = self.get_row_value('status')
         if user:
             profile, created = Profile.objects.get_or_create(
                 user=user
             )
-            profile.sass_accredited_date_from = valid_from
-            profile.sass_accredited_date_to = valid_to
+            if not profile.sass_accredited_date_from:
+                profile.sass_accredited_date_from = valid_from
+            else:
+                if valid_from.date() > profile.sass_accredited_date_from:
+                    profile.sass_accredited_date_from = valid_from
+            if not profile.sass_accredited_date_to:
+                profile.sass_accredited_date_to = valid_to
+            else:
+                if valid_to.date() > profile.sass_accredited_date_to:
+                    profile.sass_accredited_date_to = valid_to
             try:
                 json_data = json.loads(profile.data)
                 json_data['sass_accredited_status'] = status

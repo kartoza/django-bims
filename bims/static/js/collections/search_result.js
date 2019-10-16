@@ -198,7 +198,7 @@ define([
                 '<div class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> TAXA ' +
                 '(<span id="taxa-list-number"></span>) ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="taxa-detail-dashboard-button-wrapper"></span></div>' +
                 '<div id="taxa-list" class="search-results-section"></div>' +
                 '</div>');
 
@@ -260,6 +260,16 @@ define([
                     $dashboardButton.click(function () {
                         Shared.Dispatcher.trigger('siteDetail:show', siteId, siteName);
                     });
+                }
+
+                if (this.recordsData.length === 1) {
+                    let $taxaDashboardButton = $('<span class="badge badge-primary">Taxon Overview</span>');
+                    $searchResultsWrapper.find('.taxa-detail-dashboard-button-wrapper').append($taxaDashboardButton);
+                    $taxaDashboardButton.click(function () {
+                        Shared.Dispatcher.trigger(
+                            'taxonDetail:show', self.recordsData[0]['taxon_id'], self.recordsData[0]['name'], null);
+                    });
+
                 }
             } else {
                 Shared.Dispatcher.trigger('map:clearAllLayers');
