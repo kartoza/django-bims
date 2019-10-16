@@ -130,6 +130,7 @@ class CollectionDownloader(GetCollectionAbstract):
             })
 
         # Filename
+        site_id = self.request.GET.get('siteId')
         search_uri = self.request.build_absolute_uri()
 
         not_needed_params = [
@@ -148,13 +149,27 @@ class CollectionDownloader(GetCollectionAbstract):
             query_count = site_queryset.count()
 
         today_date = datetime.date.today()
-        filename = md5(
-            '%s%s%s' % (
-                search_uri,
-                query_count,
-                today_date)
-        ).hexdigest()
-        filename += '.csv'
+
+        if not site_id or site_id == '':
+            filters = self.request.GET
+            title = ''
+            for key, value in filters.iteritems():
+                if value and value != '' and value != [] and value != '[]':
+                    filter_title = key + '=' + value + '-'
+                    title += filter_title
+            if title != '':
+                title = title[:-1]
+                filename = title + '.csv'
+            else:
+                filename = md5(
+                    '%s%s%s' % (
+                        search_uri,
+                        query_count,
+                        today_date)
+                ).hexdigest()
+                filename += '.csv'
+        else:
+            filename = site_id + '.csv'
 
         # Check if filename exists
         folder = 'csv_processed'

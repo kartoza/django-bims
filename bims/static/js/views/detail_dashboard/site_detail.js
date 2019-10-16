@@ -470,7 +470,7 @@ define([
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let random_number = Math.random() * 1000000;
-            let this_title = `FWBD-Dashboard-Export-{${random_number}}`;
+            let this_title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '');
             if (element.length > 0)
                 this.downloadElement(this_title, element);
         },
