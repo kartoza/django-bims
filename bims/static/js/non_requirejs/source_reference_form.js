@@ -158,7 +158,7 @@ $(function () {
 
     // submit
     let form = $('#source-reference-form');
-    let $alertDiv = $('.alert-danger');
+    let $alertDiv = $('#form-alert');
     $('#submit').click((event) => {
         $alertDiv.hide();
         let alertMessage = null;

@@ -119,6 +119,10 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
 
         try:
             category = data['reference_category']
+            if category == 'no-source':
+                note = data['note']
+                if note == '':
+                    return HttpResponseBadRequest('Note is empty')
             session_data = self.get_session_data(self.request)
             try:
                 records = session_data['records']
