@@ -3,6 +3,7 @@ let $studyReference = $('#study-reference');
 let $databaseReference = $('#database-reference');
 let $notesReference = $('#notes-reference');
 let $referenceCategory = $('#reference-category');
+let $notes = $('#notes-reference');
 
 let showReferenceRow = ($row) => {
     $($row.closest('.references-row')).removeClass('hidden');
@@ -67,6 +68,11 @@ let categoryValidation = (value) => {
         case 'document':
             if (!$studyReference.val()) {
                 return 'Study reference is not selected yet.';
+            }
+            break;
+        case 'no-source':
+            if (!$notes.val()) {
+                return 'Notes is empty.';
             }
             break;
     }

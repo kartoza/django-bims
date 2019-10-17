@@ -130,7 +130,7 @@
                     <label for="reference-category"
                            class="col-sm-2 col-form-label col-form-label"><b>Reference Category</b></label>
                     <div class="col-sm-10">
-                        <select id="reference-category" class="form-control" name="reference_category">
+                        <select id="reference-category" class="form-control" name="reference_category" onchange="$('.alert').hide(); $('.error').hide()">
                             <option value=""> Not specified</option>
                             <option value="database"> Database</option>
                             <option value="bibliography"> Peer-reviewed scientific article</option>
