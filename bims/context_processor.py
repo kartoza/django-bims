@@ -3,7 +3,7 @@
 Our custom context processors
 """
 import ast
-
+import os
 from django.conf import settings
 from bims.utils.get_key import get_key
 
@@ -120,5 +120,17 @@ def custom_navbar_url(request):
         context['title_bims_long'] = settings.TITLE_BIMS_LONG
     except AttributeError:
         context['title_bims_long'] = None
+
+    path_commit_file = '.commit.txt'
+    commit_file = os.path.isfile(path_commit_file)
+    if commit_file:
+        with open(path_commit_file) as file:
+            context['commit_id'] = file.readline()
+
+    path_branch_file = '.branch.txt'
+    branch_file = os.path.isfile(path_branch_file)
+    if branch_file:
+        with open(path_branch_file) as file:
+            context['branch_name'] = file.readline()
 
     return context
