@@ -50,6 +50,9 @@
             </div>
             {% endif %}
         </div>
+    {% if commit_id and branch_name %}
+        <div class="row git-info">Checked out from commit: <span class="git-item">{{ commit_id }}</span>, branch: <span class="git-item">{{ branch_name }}</span></div>
+    {% endif %}
     </div>
     </section>
     </div>
