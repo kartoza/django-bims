@@ -324,7 +324,6 @@ class Search(object):
 
         if self.ecological_category:
             collection_record_model = SiteVisitTaxon
-        # http://0.0.0.0:63302/api/search-v2/?taxon=&search=Ephemeroptera&rank=Order&siteId=&collector=&category=&yearFrom=&yearTo=&months=&boundary=&userBoundary=&referenceCategory=&spatialFilter=&reference=&endemic=&conservationStatus=[]&modules=&validated=[%22validated%22]&sourceCollection=[%22fbis%22]&abioticData=&ecologicalCategory=&cached=False&background=False
         rank = self.get_request_data('rank')
         bio = None
         if rank:
@@ -345,9 +344,10 @@ class Search(object):
                 biologicalcollectionrecord__isnull=False
             ).distinct('id')
             bio = collection_record_model.objects.filter(
-                taxonomy__id__in=list(taxa_list_with_collection.values_list('id', flat=True))
+                taxonomy__id__in=list(
+                    taxa_list_with_collection.values_list('id', flat=True))
             )
-        elif self.search_query or not bio:
+        elif self.search_query and not bio:
             bio = collection_record_model.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
                 Q(taxonomy__scientific_name__icontains=self.search_query) |

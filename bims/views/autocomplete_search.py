@@ -10,6 +10,7 @@ from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
 from bims.models.taxon_group import TaxonGroup
 from sass.models.river import River
+from bims.enums import TaxonomicRank
 
 
 def autocomplete(request):
@@ -55,10 +56,16 @@ def autocomplete(request):
     )
 
     # Taxonomy with rank
+    taxonomic_ranks = [
+        TaxonomicRank.ORDER.name,
+        TaxonomicRank.GENUS.name,
+        TaxonomicRank.FAMILY.name,
+        TaxonomicRank.SUPERFAMILY.name,
+    ]
     taxonomy_suggestions = Taxonomy.objects.filter(
         canonical_name__icontains=q,
-        **taxonomy_additional_filters
-    ).distinct('id').annotate(
+        rank__in=taxonomic_ranks,
+    ).distinct('canonical_name').annotate(
         taxon_id=F('id'),
         suggested_name=F('canonical_name'),
         source=Concat(Value('Taxonomy Rank : '), 'rank')
