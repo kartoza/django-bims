@@ -100,8 +100,9 @@ define([
                         let sources = source.split(':');
                         if (sources.length > 1) {
                             filterParameters['rank'] = sources[1].trim();
-                            console.log(filterParameters);
                         }
+                    } else {
+                        filterParameters['rank'] = '';
                     }
                     self.search(itemValue);
                 }
