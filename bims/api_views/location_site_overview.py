@@ -61,6 +61,8 @@ class LocationSiteOverviewData(object):
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         )
+        if collection_results.count() > 0:
+            collection_results[0].save()
         for group in groups:
             group_data = dict()
             group_data[self.GROUP_ICON] = group.logo.name

@@ -33,6 +33,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.parameters['sourceCollection'] = '';
             this.parameters['ecologicalCategory'] = '';
             this.parameters['abioticData'] = '';
+            this.parameters['rank'] = '';
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }

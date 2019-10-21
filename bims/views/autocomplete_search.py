@@ -1,7 +1,8 @@
 import simplejson as json
 from django.http import HttpResponse
 from django.conf import settings
-from django.db.models import Q, F
+from django.db.models import Q, F, Value, CharField
+from django.db.models.functions import Concat
 from django.apps import apps
 from bims.models.vernacular_name import VernacularName
 from bims.models.taxonomy import Taxonomy
@@ -9,6 +10,7 @@ from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
 from bims.models.taxon_group import TaxonGroup
 from sass.models.river import River
+from bims.enums import TaxonomicRank
 
 
 def autocomplete(request):
@@ -38,17 +40,37 @@ def autocomplete(request):
     if len(q) < 3:
         return HttpResponse([])
 
+    # Collection name
     suggestions = list(
         Taxonomy.objects.filter(
             canonical_name__icontains=q,
             biologicalcollectionrecord__validated=True,
             **taxonomy_additional_filters
         ).distinct('id').
-        annotate(taxon_id=F('id'), suggested_name=F('canonical_name')).
-        values('taxon_id', 'suggested_name')[:10]
+        annotate(
+            taxon_id=F('id'),
+            suggested_name=F('canonical_name'),
+            source=Value('record name', CharField())
+        ).
+        values('taxon_id', 'suggested_name', 'source')[:10]
     )
-    for suggestion in suggestions:
-        suggestion['source'] = 'taxonomy'
+
+    # Taxonomy with rank
+    taxonomic_ranks = [
+        TaxonomicRank.ORDER.name,
+        TaxonomicRank.GENUS.name,
+        TaxonomicRank.FAMILY.name,
+        TaxonomicRank.SUPERFAMILY.name,
+    ]
+    taxonomy_suggestions = Taxonomy.objects.filter(
+        canonical_name__icontains=q,
+        rank__in=taxonomic_ranks,
+    ).distinct('canonical_name').annotate(
+        taxon_id=F('id'),
+        suggested_name=F('canonical_name'),
+        source=Concat(Value('Taxonomy Rank : '), 'rank')
+    ).values('taxon_id', 'suggested_name', 'source')[:10]
+    suggestions.extend(list(taxonomy_suggestions))
 
     if len(suggestions) < 10:
         vernacular_names = list(
