@@ -67,7 +67,8 @@ from bims.models import (
     SiteSetting,
     BimsDocument,
     ChemicalRecord,
-    LocationContext
+    LocationContext,
+    Chem
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -696,6 +697,14 @@ class ChemicalRecordAdmin(admin.ModelAdmin):
     )
 
 
+class ChemAdmin(admin.ModelAdmin):
+    list_display = (
+        'chem_code',
+        'chem_description',
+        'chem_unit',
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -740,6 +749,7 @@ admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
+admin.site.register(Chem, ChemAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

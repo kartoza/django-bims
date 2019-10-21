@@ -40,3 +40,4 @@ from bims.models.source_reference import *  # noqa
 from bims.models.bims_document import *  # noqa
 from bims.models.chemical_record import *  # noqa
 from bims.models.location_context import *  # noqa
+from bims.models.chem import *  # noqa
