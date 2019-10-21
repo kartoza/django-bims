@@ -26,7 +26,7 @@ class Command(BaseCommand):
         if not taxa:
             log('Taxa not found')
             return
-        if taxa.count == 1:
+        if taxa.count() == 1:
             log('No duplication found')
             return
         log('Taxa found : %s' % taxa.count())
