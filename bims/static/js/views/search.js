@@ -128,7 +128,7 @@ define([
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
 
-            filterParameters['sortBy'] = this.currentSort;
+            filterParameters['orderBy'] = this.currentSort;
 
             $.ajax({
                 type: 'GET',
@@ -452,7 +452,7 @@ define([
             filterParameters['search'] = searchValue;
 
             // Sort value
-            filterParameters['sortBy'] = self.currentSort;
+            filterParameters['orderBy'] = self.currentSort;
 
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -825,7 +825,7 @@ define([
 
             // Sort by
             if (allFilters.hasOwnProperty('orderBy')) {
-                filterParameters['sortBy'] = allFilters['orderBy'];
+                filterParameters['orderBy'] = allFilters['orderBy'];
                 self.currentSort = allFilters['orderBy'];
                 let sortByElement = self.$el.find('#sortby-select');
                 if (self.currentSort !== sortByElement.val()) {
