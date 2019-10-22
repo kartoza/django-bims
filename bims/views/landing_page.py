@@ -2,7 +2,6 @@
 from django.views.generic import TemplateView
 from bims.models.carousel_header import CarouselHeader
 from bims.views.prometheus_monitor import PrometheusCounter
-from bims.utils.summary import get_landing_page_summary
 
 
 class LandingPageView(PrometheusCounter, TemplateView):
