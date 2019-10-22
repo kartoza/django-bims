@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date', models.DateField()),
                 ('value', models.FloatField(blank=True, null=True)),
-                ('chem', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='chemical_collection_record', to='sass.Chem')),
+                ('chem', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='chemical_collection_record', to='bims.Chem')),
                 ('location_site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='chemical_collection_record', to='bims.LocationSite')),
             ],
         ),
