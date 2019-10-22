@@ -23,9 +23,11 @@ class ChemicalRecord(models.Model):
     )
 
     chem = models.ForeignKey(
-        'sass.Chem',
+        'bims.Chem',
         models.CASCADE,
         related_name='chemical_collection_record',
+        null=True,
+        blank=True
     )
 
     additional_data = JSONField(

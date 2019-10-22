@@ -1,5 +1,5 @@
 import sqlite3
-from sass.models import Chem
+from bims.models import Chem
 from sass.enums.chem_unit import ChemUnit
 from scripts.importer.fbis_importer import FbisImporter
 

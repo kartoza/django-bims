@@ -44,5 +44,5 @@ class Chem(models.Model):
         return self.chem_code
 
     class Meta:
-        verbose_name_plural = "Chemistry records"
-        verbose_name = "Chemistry record"
+        verbose_name_plural = "Chemistry units"
+        verbose_name = "Chemistry unit"

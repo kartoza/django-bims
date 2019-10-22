@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('chem_value', models.FloatField(blank=True, null=True)),
                 ('comment', models.CharField(blank=True, max_length=255, null=True)),
                 ('max_detectable_limit', models.IntegerField(blank=True, null=True)),
-                ('chem', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sass.Chem')),
+                ('chem', models.IntegerField()),
                 ('site_visit', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sass.SiteVisit')),
             ],
         ),

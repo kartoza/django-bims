@@ -9,7 +9,7 @@ class SiteVisitChem(models.Model):
     )
 
     chem = models.ForeignKey(
-        'sass.Chem',
+        'bims.Chem',
         null=False,
         blank=False
     )

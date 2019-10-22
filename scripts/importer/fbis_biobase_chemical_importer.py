@@ -3,7 +3,7 @@ from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
 from bims.models import (
     ChemicalRecord, LocationSite, SourceReferenceBibliography
 )
-from sass.models import Chem
+from bims.models import Chem
 
 
 class FbisBiobaseChemicalImporter(FbisPostgresImporter):
