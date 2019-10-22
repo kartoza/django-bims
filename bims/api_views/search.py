@@ -118,11 +118,11 @@ class Search(object):
 
     def extent(self):
         # Get extent from collection results
-        if not self.collection_records:
+        if self.collection_records.count() < 1:
             return []
-        extent = self.collection_records.aggregate(
-            extent=Extent('site__geometry_point')
-        )
+        extent = LocationSite.objects.filter(
+            id__in=self.collection_records.values('site')
+        ).aggregate(extent=Extent('geometry_point'))
         return list(extent['extent'])
 
     @property
