@@ -22,7 +22,7 @@ class LandingPageView(PrometheusCounter, TemplateView):
         self.increase_landing_page_view()
         carousel_headers = CarouselHeader.objects.all()
         context['headers'] = []
-        context['summaries'] = get_landing_page_summary()
+        context['summaries'] = []
         for header in carousel_headers:
             context['headers'].append({
                 'file': header.banner,
