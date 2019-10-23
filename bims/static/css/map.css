@@ -298,7 +298,7 @@ html, body, .map, .map-wrapper, #map-container {
 .map-search-result {
     margin-left: 366px !important;
     padding-bottom: 0;
-    min-height: 209px;
+    min-height: 255px;
 }
 
 .map-search-result .search-box {
@@ -2731,4 +2731,14 @@ div:hover::-webkit-scrollbar {
 
 .badge-primary {
     background-color: #00a592 !important;
+}
+
+.sortby-wrapper {
+    padding: 10px;
+    margin-bottom: 0 !important;
+}
+
+.sortby-wrapper > .form-control {
+    font-size: 10pt;
+    height: 30px !important;
 }
