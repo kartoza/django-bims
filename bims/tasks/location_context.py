@@ -96,6 +96,13 @@ SPATIAL_GROUP_UPDATED_NAMES = {
     'eco_region_2': 'SA Ecoregion Level 2'
 }
 
+LAYER_NAMES = {
+    'surface_swsas': 'surface_strategic_water_source_2017',
+    'nfepa_rivers_fepas_2011': 'rivers_nfepa',
+    'water_management_area': 'water_management_areas',
+    GEO_CLASS_GROUP: 'geoclass'
+}
+
 
 @shared_task(name='bims.tasks.generate_spatial_scale_filter', queue='update')
 @single_instance_task(60 * 10)
@@ -136,10 +143,14 @@ def generate_spatial_scale_filter(file_path=None):
                     if i['query'].split(' ')[0].isdigit()
                     else i['query'])
             )
+            layer_name = group
+            if layer_name in LAYER_NAMES:
+                layer_name = LAYER_NAMES[layer_name]
             spatial_tree_children = {
                 'key': group,
                 'name': location_contexts[0].name,
-                'value': spatial_tree_value_sorted
+                'value': spatial_tree_value_sorted,
+                'layer_name': layer_name
             }
             spatial_tree_data['children'].append(spatial_tree_children)
 

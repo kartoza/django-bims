@@ -520,6 +520,7 @@ define([
             $('#abiotic-data-filter').prop('checked', false);
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
+            this.spatialFilterView.clearLayers();
             this.searchInput.val('');
             this.searchResultCollection.clearSearchRequest();
             $('.clear-filter').click();

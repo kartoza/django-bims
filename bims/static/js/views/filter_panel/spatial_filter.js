@@ -11,6 +11,7 @@ define([
         template: _.template($('#spatial-filter-panel').html()),
         selectedPoliticalRegions: [],
         selectedSpatialFilters: [],
+        selectedSpatialFilterLayers: {},
         politicalBoundaryInputName: 'political-boundary-value',
         riverCatchmentInputName: 'river-catchment-value',
         layerGroup: null,
@@ -210,6 +211,8 @@ define([
                 var _isChecked = isChecked;
                 dataValue = 'value,' + data[i]['key'] + ',' + data[i]['query'];
 
+                let dataLayerName = '';
+
                 if (data[i].hasOwnProperty('query')) {
                     label = data[i]['query'];
                     dataName = data[i]['query'];
@@ -218,6 +221,7 @@ define([
                     label = data[i]['name'];
                     dataName = data[i]['key'];
                     dataValue = 'group,' + dataName;
+                    dataLayerName = `data-layer-name="${data[i]['layer_name']}"`;
                 }
                 if (selectedArray.includes(dataValue.toString())) {
                     _isChecked = true;
@@ -229,7 +233,7 @@ define([
                 var $item = $('<div class="boundary-item"></div>');
                 $item.append('<input class="boundary-item-input" type="checkbox" ' +
                     'data-level="' + level + '" name="' + dataName + '" ' +
-                    'value="' + dataValue + '" ' + checked + '>');
+                    'value="' + dataValue + '" ' + checked + ' ' + dataLayerName + '>');
                 $item.append('<label> ' + label + '</label>');
                 wrapper.append($item);
 
@@ -237,6 +241,45 @@ define([
                     $item.append('<i class="fa fa-plus-square-o pull-right" ' +
                         'aria-hidden="true"> </i>');
                     self.renderChildTree(data[i]['value'], $item, level + 1, dataName, _isChecked);
+                }
+            }
+        },
+        addSelectedSpatialFilterLayer: function ($checkbox) {
+            let level = $checkbox.data('level');
+            let values = $checkbox.val().split(',');
+            let key = values[1];
+            let value = '';
+            if (level === 2) {
+                 let $wrapper = $('.spatial-filter-container');
+                 value = values[2];
+                 $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
+            }
+            let layerName = $checkbox.data('layer-name');
+            if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
+                this.selectedSpatialFilterLayers[layerName].push(value);
+            } else {
+                this.selectedSpatialFilterLayers[layerName] = [value];
+            }
+        },
+        removeSelectedSpatialFilterLayer: function ($checkbox) {
+            let level = $checkbox.data('level');
+            let values = $checkbox.val().split(',');
+            let key = values[1];
+            let value = '';
+            if (level === 2) {
+                 let $wrapper = $('.spatial-filter-container');
+                 value = values[2];
+                 $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
+            }
+            let layerName = $checkbox.data('layer-name');
+            if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
+                if (this.selectedSpatialFilterLayers[layerName].length <= 1) {
+                    delete this.selectedSpatialFilterLayers[layerName];
+                } else {
+                    let index = this.selectedSpatialFilterLayers[layerName].indexOf(value);
+                    if (index > -1) {
+                        this.selectedSpatialFilterLayers[layerName].splice(index, 1);
+                    }
                 }
             }
         },
@@ -248,6 +291,7 @@ define([
             var level = $target.data('level');
             if ($target.is(':checked')) {
                 this.addSelectedValue(targetName, value);
+                this.addSelectedSpatialFilterLayer($target);
                 var $children = $wrapper.children().find('input:checkbox:not(:checked)');
                 $children.prop('checked', true);
                 var $checkedChildren = $wrapper.children().find('input:checkbox:checked');
@@ -256,6 +300,7 @@ define([
                     this.removeSelectedValue(targetName, childrenValue);
                 }
             } else {
+                this.removeSelectedSpatialFilterLayer($target);
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
@@ -444,9 +489,15 @@ define([
             var target = $(e.target);
             target.closest('.row').find('input:checkbox:checked').prop('checked', false);
             this.clearAllSelected(e);
+            this.clearLayers();
             if (Shared.CurrentState.SEARCH) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }
+        },
+        clearLayers: function () {
+            Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
+            this.layerGroup = new ol.layer.Group();
+            this.selectedSpatialFilterLayers = {};
         },
         highlight: function (state) {
             if (state) {
@@ -456,53 +507,44 @@ define([
             }
         },
         showLayersInMap: function () {
-            if (this.selectedSpatialFilters.length < 1) {
+            if (this.selectedSpatialFilterLayers.length < 1) {
                 return true;
             }
-            let keys = [];
-            let values = [];
-            let cqlFilters = "(";
-            for (var i=0; i < this.selectedSpatialFilters.length; i++) {
-                let filters = this.selectedSpatialFilters[i].split(',');
-                console.log(filters);
-                keys.push(filters[1]);
-                values.push(filters[2]);
-                cqlFilters += "'"+ filters[2] +"'";
-                if (i < this.selectedSpatialFilters.length - 1) {
-                    cqlFilters += ",";
-                }
-            }
-            cqlFilters += ")";
-            console.log(cqlFilters);
-            console.log(keys);
-            if (keys[0] !== 'water_management_area') {
-                return false;
-            }
-            let key = keys[0] + 's';
-            let url = 'https://maps.kartoza.com/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&layers=kartoza%3Awater_management_areas&format=image%2Fpng&WIDTH=256&HEIGHT=256&CRS=EPSG%3A3857&STYLES=&BBOX=2426417.0258846357%2C-4070118.8821290657%2C2465552.784366646%2C-4030983.1236470556';
-            let wmsUrl = 'https://maps.kartoza.com/geoserver/wms';
-            let wmsFormat = 'image/png';
-            let wmsLayer = 'kartoza:water_management_areas';
-            let options = {
-                url: wmsUrl,
-                params: {
-                    layers: wmsLayer,
-                    format: wmsFormat,
-                    cql_filter: "name in " + cqlFilters
-                }
-            };
-            this.layerGroup.getLayers().clear();
+            let self = this;
             Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
-            if (this.layerGroup.getLayers().getLength() > 0) {
-                this.layerGroup.getLayers().pop();
-                console.log(this.layerGroup.getLayers().getLength());
-            }
-            let layer = new ol.layer.Tile({
-                source: new ol.source.TileWMS(options)
+            let wmsUrl = 'https://maps.kartoza.com/geoserver/wms';
+            let wmsFormat = 'image/png';
+
+            $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
+                let cqlFilters = "(";
+                for (let i=0; i < selectedLayer.length; i++) {
+                    cqlFilters += "'"+ selectedLayer[i] +"'";
+                    if (i < selectedLayer.length - 1) {
+                        cqlFilters += ",";
+                    }
+                }
+                cqlFilters += ")";
+                let wmsLayer = 'kartoza:' + key;
+                if (key === 'geoclass') {
+                    cqlFilters = "description in " + cqlFilters;
+                } else {
+                    cqlFilters = "name in " + cqlFilters;
+                }
+                let options = {
+                    url: wmsUrl,
+                    params: {
+                        layers: wmsLayer,
+                        format: wmsFormat,
+                        cql_filter: cqlFilters
+                    }
+                };
+                let layer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS(options)
+                });
+                self.layerGroup.getLayers().getArray().push(layer);
             });
-            this.layerGroup.getLayers().getArray().push(layer);
         },
         subPanelClicked: function (e) {
             var $panel = $($(e.target).next().get(0));
