@@ -13,7 +13,6 @@ from sass.models import (
     TaxonAbundance,
     SassValidationStatus,
     SiteVisitTaxon,
-    SiteVisitChem,
     SassEcologicalCategory,
     SassEcologicalCondition,
     SiteVisitEcologicalCondition,
@@ -128,22 +127,6 @@ class SiteVisitTaxonAdmin(admin.ModelAdmin):
     )
 
 
-class SiteVisitChemAdmin(admin.ModelAdmin):
-    list_display = (
-        'site_visit',
-        'chem',
-        'chem_value',
-    )
-
-    list_filter = (
-        'chem',
-    )
-
-    raw_id_fields = (
-        'site_visit',
-    )
-
-
 class SassEcologicalCategoryAdmin(admin.ModelAdmin):
     list_display = (
         'category',
@@ -190,7 +173,6 @@ admin.site.register(TaxonAbundance, TaxonAbundanceAdmin)
 admin.site.register(SiteVisitBiotopeTaxon, SiteVisitBiotopeTaxonAdmin)
 admin.site.register(SassValidationStatus, SassValidationStatusAdmin)
 admin.site.register(SiteVisitTaxon, SiteVisitTaxonAdmin)
-admin.site.register(SiteVisitChem, SiteVisitChemAdmin)
 admin.site.register(SassEcologicalCategory, SassEcologicalCategoryAdmin)
 admin.site.register(SassEcologicalCondition, SassEcologicalConditionAdmin)
 admin.site.register(
