@@ -100,7 +100,8 @@ LAYER_NAMES = {
     'surface_swsas': 'surface_strategic_water_source_2017',
     'nfepa_rivers_fepas_2011': 'rivers_nfepa',
     'water_management_area': 'water_management_areas',
-    GEO_CLASS_GROUP: 'geoclass'
+    GEO_CLASS_GROUP: 'geoclass',
+    'national_cba_layer': 'cba_national_mview',
 }
 
 
