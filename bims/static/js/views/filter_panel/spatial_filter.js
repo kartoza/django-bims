@@ -13,6 +13,7 @@ define([
         selectedSpatialFilters: [],
         politicalBoundaryInputName: 'political-boundary-value',
         riverCatchmentInputName: 'river-catchment-value',
+        layerGroup: null,
         topLevel: 2,
         events: {
             'click .close-button': 'close',
@@ -110,6 +111,9 @@ define([
                 }
 
             });
+
+            this.layerGroup = new ol.layer.Group();
+            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
 
             return this;
         },
@@ -450,6 +454,55 @@ define([
             } else {
                 this.$el.find('.subtitle').removeClass('filter-panel-selected');
             }
+        },
+        showLayersInMap: function () {
+            if (this.selectedSpatialFilters.length < 1) {
+                return true;
+            }
+            let keys = [];
+            let values = [];
+            let cqlFilters = "(";
+            for (var i=0; i < this.selectedSpatialFilters.length; i++) {
+                let filters = this.selectedSpatialFilters[i].split(',');
+                console.log(filters);
+                keys.push(filters[1]);
+                values.push(filters[2]);
+                cqlFilters += "'"+ filters[2] +"'";
+                if (i < this.selectedSpatialFilters.length - 1) {
+                    cqlFilters += ",";
+                }
+            }
+            cqlFilters += ")";
+            console.log(cqlFilters);
+            console.log(keys);
+            if (keys[0] !== 'water_management_area') {
+                return false;
+            }
+            let key = keys[0] + 's';
+            let url = 'https://maps.kartoza.com/geoserver/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&layers=kartoza%3Awater_management_areas&format=image%2Fpng&WIDTH=256&HEIGHT=256&CRS=EPSG%3A3857&STYLES=&BBOX=2426417.0258846357%2C-4070118.8821290657%2C2465552.784366646%2C-4030983.1236470556';
+            let wmsUrl = 'https://maps.kartoza.com/geoserver/wms';
+            let wmsFormat = 'image/png';
+            let wmsLayer = 'kartoza:water_management_areas';
+            let options = {
+                url: wmsUrl,
+                params: {
+                    layers: wmsLayer,
+                    format: wmsFormat,
+                    cql_filter: "name in " + cqlFilters
+                }
+            };
+            this.layerGroup.getLayers().clear();
+            Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
+            this.layerGroup = new ol.layer.Group();
+            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
+            if (this.layerGroup.getLayers().getLength() > 0) {
+                this.layerGroup.getLayers().pop();
+                console.log(this.layerGroup.getLayers().getLength());
+            }
+            let layer = new ol.layer.Tile({
+                source: new ol.source.TileWMS(options)
+            });
+            this.layerGroup.getLayers().getArray().push(layer);
         },
         subPanelClicked: function (e) {
             var $panel = $($(e.target).next().get(0));

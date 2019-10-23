@@ -400,6 +400,7 @@ define([
             var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
             filterParameters['spatialFilter'] = spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters);
             this.spatialFilterView.highlight(spatialFilters.length !== 0);
+            this.spatialFilterView.showLayersInMap();
 
             // Validation filter
             var validationFilter = [];

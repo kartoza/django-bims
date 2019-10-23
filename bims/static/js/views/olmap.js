@@ -91,6 +91,8 @@ define([
             Shared.Dispatcher.on('map:boundaryEnabled', this.boundaryEnabled, this);
             Shared.Dispatcher.on('map:zoomToDefault', this.zoomToDefault, this);
             Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
+            Shared.Dispatcher.on('map:addLayer', this.addLayer, this);
+            Shared.Dispatcher.on('map:removeLayer', this.removeLayer, this);
             Shared.Dispatcher.on('map:updateBiodiversityLayerParams', this.updateBiodiversityLayerParams, this);
             Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
@@ -542,6 +544,13 @@ define([
             this.map.addOverlay(this.popup);
             this.layers.addLayersToMap(this.map);
             this.initExtent = this.getCurrentBbox();
+        },
+        removeLayer: function (layer) {
+            this.map.removeLayer(layer);
+        },
+        addLayer: function (layer) {
+            this.map.getLayers().insertAt(0, layer);
+            // this.map.addLayer(layer);
         },
         reloadXHR: function () {
             this.previousZoom = -1;
