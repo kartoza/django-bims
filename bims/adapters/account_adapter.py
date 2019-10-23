@@ -18,7 +18,7 @@ class AccountAdapter(LocalAccountAdapter):
         return map_path
 
     def clean_password(self, password, user=None):
-        if re.match(r'^(?=.*?\d)(?=.*?[A-Z])(?=.*?[a-z])[A-Za-z\d]{6,}$',
+        if re.match(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{6,}$',
                     password):
             return password
         else:
