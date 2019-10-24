@@ -50,7 +50,7 @@ def autocomplete(request):
         annotate(
             taxon_id=F('id'),
             suggested_name=F('canonical_name'),
-            source=Value('record name', CharField())
+            source=Value('Taxonomic Rank: Taxon', CharField())
         ).
         values('taxon_id', 'suggested_name', 'source')[:10]
     )
