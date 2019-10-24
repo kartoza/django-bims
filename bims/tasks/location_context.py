@@ -53,12 +53,17 @@ SPATIAL_FILTER_GROUPS = OrderedDict([
             'eco_region_2'
         ]
     }),
-    ('Critical Biodiversity Area (CBA)', {
-        'key': 'cba',
+    ('Critical Biodiversity Area (CBA) National', {
+        'key': 'cba_national',
         'groups': [
             'national_cba_layer',
             'national_esa',
             'npa_layer',
+        ]
+    }),
+    ('Critical Biodiversity Area (CBA) Provincial', {
+        'key': 'cba_provincial',
+        'groups': [
             'limpopo_cba',
             'free_state_cba',
             'gauteng_cba',
