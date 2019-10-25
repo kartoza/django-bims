@@ -1,0 +1,208 @@
+version: "2"
+catalog:
+  name: "LEDET BIMS"
+  description: "LEDET's Biodiversity Information Management System."
+  version: ledet
+  uuid: kartoza-djangobims-1
+  questions:
+    #- variable: SMB_PATH
+    #  label: SMB/CIFS network file share path. e.g. //u1234562.your-storagebox.de/backup
+    #  required: true
+    #  default:
+    #  type: "string"
+    #- variable: SMB_USER
+    #  label: SMB/CIFS network file share username.
+    #  required: true
+    #  default: docker
+    #  type: "string"
+    #- variable: SMB_PASSWORD
+    #  label: SMB/CIFS network file share password.
+    #  required: true
+    #  default: docker
+    #  type: "password"
+    - variable: UWSGI_IMAGE
+      label: Image used for UWSGI container e.g. kartoza/ledet_uwsgi:latest
+      required: true
+      default: ""
+      type: "string"
+    - variable: POSTGRES_DB
+      label: PostgreSQL db to create.
+      required: true
+      default: gis
+      type: "string"
+    - variable: POSTGRES_USER
+      label: PostgrsSQL superuser account to create.
+      required: true
+      default: docker
+      type: "string"
+    - variable: POSTGRES_PASS
+      label: PostgreSQL superuser password to create.
+      required: true
+      default: docker
+      type: "string"
+    - variable: POSTGRES_HBA_RANGE
+      label: "Database allowed hosts"
+      description: "PostgreSQL pg_hba (host based authentication) address range from which connections should be allowed. See http://rancher.com/docs/rancher/latest/en/rancher-services/networking/#differences-from-previous-releases for the network range that Rancher uses."
+      required: true
+      default: 10.42.0.0/16
+      type: "string"
+    - variable: ADMIN_EMAIL
+      label: "Administrator email"
+      description: "Primary contact email for the site e.g. 'bob@foo.com'."
+      required: true
+      default: ""
+      type: "string"
+    - variable: GEOSERVER_ADMIN_PASSWORD
+      label: GeoServer admin password to create.
+      required: true
+      default: admingeoserver
+      type: "string"
+    - variable: SITE_URL
+      label: "Site URL"
+      description: "Primary URL for the site e.g. 'foo.com' (do not include http:// and doesn't end with /). Also do not use quotes."
+      required: true
+      default: ""
+      type: "string"
+    - variable: WEBSERVER_PORT
+      description: "Website port"
+      label: "Port on which the site should be served. Typically 80"
+      required: true
+      default: 80
+      type: "int"
+    - variable: DJANGO_ALLOWED_HOSTS
+      label: "Django allowed hosts"
+      description: "Comma separated, quoted list of hosts that django will allow e.g. 'foo.com','bar.com'. The SITE_URL will automatically be added to the allowed hosts list so you can leave this blank if needed."
+      required: false
+      default: ""
+      type: "string"
+    - variable: SERVER_NAME
+      label: "Server name"
+      description: "Domain name of the server e.g. 'staging.kartoza.com'."
+      required: true
+      default: ""
+      type: "string"
+    - variable: BTSYNC_DB_SECRET
+      label: "Database backups key"
+      description: "Resilio sync read/write key for syncing database backups"
+      required: false
+      default:
+      type: "string"
+    - variable: BTSYNC_MEDIA_SECRET
+      label: "Media backups key"
+      description: "Resilio sync read/write key for syncing geonode media backups"
+      required: false
+      default:
+      type: "string"
+    - variable: GEOCONTEXT_URL
+      label: "GeoContext URL"
+      description: "Full URL for GeoContext service (include http:// and ends with /)."
+      required: true
+      default: "https://geocontext.kartoza.com"
+      type: "string"
+    - variable: GEOCONTEXT_COLLECTION_KEY
+      label: "GeoContext Collection Key"
+      description: "A key to specify which collection that wants to be retrieved from GeoContext."
+      required: true
+      default: "climate"
+      type: "string"
+    - variable: IUCN_API_KEY
+      label: "IUCN Api Key"
+      description: "IUCN Api Key"
+      required: false
+      default: ""
+      type: "string"
+    - variable: BING_MAP_KEY
+      label: "Bing Map Key"
+      description: "Token key for bing map"
+      required: false
+      default: ""
+      type: "string"
+    - variable: MAP_TILER_KEY
+      label: "Map Tiler Key"
+      description: "Key for map tiler"
+      required: false
+      default: ""
+      type: "string"
+    - variable: GOOGLE_ANALYTIC_KEY
+      label: "Google Analytic Key (Optional)"
+      required: false
+      default: ""
+      type: "string"
+services:
+  smtp:
+    scale: 1
+    start_on_create: true
+  web:
+    scale: 1
+    start_on_create: true
+    health_check:
+      response_timeout: 2000
+      healthy_threshold: 2
+      port: 80
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      request_line: 'GET "/" "HTTP/1.1\r\nHost: ${SITE_URL}"'
+      reinitializing_timeout: 60000
+  lb:
+    scale: 1
+    start_on_create: true
+    lb_config:
+      certs: []
+      port_rules:
+        - hostname: ${SITE_URL}
+          priority: 1
+          protocol: http
+          service: web
+          source_port: 80
+          target_port: 80
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 42
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  uwsgi:
+    scale: 1
+    start_on_create: true
+  rabbitmq:
+    scale: 1
+    start_on_create: true
+  db:
+    scale: 1
+    start_on_create: true
+  cache:
+    scale: 1
+    start_on_create: true
+  worker:
+    scale: 2
+    start_on_create: true
+  messaging-worker:
+    scale: 1
+    start_on_create: true
+  dbbackups:
+    scale: 1
+    start_on_create: true
+  mediabackup:
+    scale: 1
+    start_on_create: true
+  dbrestore:
+    scale: 1
+    # We don't want to run until explicitly requested by the user
+    start_on_create: false
+  collectstatic:
+    scale: 1
+    start_on_create: true
+  migrate:
+    scale: 1
+    start_on_create: true
+  geonode-db-backups:
+    scale: 1
+    start_on_create: true
+  ipt:
+    scale: 1
+    start_on_create: true
