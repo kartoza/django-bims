@@ -461,6 +461,7 @@ show-commit-and-branch:
 	@echo "--------------------------"
 	@git rev-parse HEAD > .commit.txt
 	@git rev-parse --abbrev-ref HEAD > .branch.txt
+	@git describe --tags > .tag.txt
 
 # --------------- help --------------------------------
 
