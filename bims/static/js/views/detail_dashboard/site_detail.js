@@ -982,6 +982,8 @@ define([
             this.renderPieChart(bio_data, 'species', 'cons_status', conservation_status_pie_canvas);
             let sampling_method_pie_canvas = document.getElementById('fish-ssdd-sampling-method-pie');
             this.renderPieChart(bio_data, 'species', 'sampling_method', sampling_method_pie_canvas);
+            let biotope_canvas = document.getElementById('fish-ssdd-biotope-pie');
+            this.renderPieChart(bio_data, 'species', 'biotope', biotope_canvas);
         },
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
@@ -1005,6 +1007,7 @@ define([
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     legend: {display: false},
                     title: {display: false},
                     hover: {mode: 'nearest', intersect: false},

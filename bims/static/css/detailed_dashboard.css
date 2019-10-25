@@ -340,3 +340,8 @@ table#filter-history-table {
 .chem-bar-chart {
     margin-bottom: 25px
 }
+
+.col-chart {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+}

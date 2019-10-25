@@ -399,6 +399,7 @@ class LocationSitesSummary(APIView):
         biodiversity_data['species']['cons_status_chart'] = {}
         biodiversity_data['species']['endemism_chart'] = {}
         biodiversity_data['species']['sampling_method_chart'] = {}
+        biodiversity_data['species']['biotope_chart'] = {}
         origin_by_name_data = collection_results.annotate(
             name=Case(When(category='',
                            then=Value('Unspecified')),
@@ -480,6 +481,31 @@ class LocationSitesSummary(APIView):
         biodiversity_data['species']['sampling_method_chart'] = {
             'data': smd_data,
             'keys': smd_keys
+        }
+
+        # Biotope
+        biotopes = collection_results.filter(
+            biotope__isnull=False
+        ).annotate(
+            name=F('biotope__name')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+        biotope_keys = list(biotopes.values_list('name', flat=True))
+        biotope_data = list(biotopes.values_list('count', flat=True))
+        unspecified_biotope = collection_results.filter(
+            biotope__isnull=True
+        ).count()
+        if unspecified_biotope > 0:
+            biotope_data.append(unspecified_biotope)
+            biotope_keys.append('Unspecified')
+        biodiversity_data['species']['biotope_chart'] = {
+            'data': biotope_data,
+            'keys': biotope_keys
         }
 
         return biodiversity_data
