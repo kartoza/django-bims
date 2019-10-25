@@ -21,9 +21,20 @@ from sass.enums.water_turbidity import WaterTurbidity
 from sass.enums.canopy_cover import CanopyCover
 from sass.models.abstract_additional_data import AbstractAdditionalData
 
+EMBEDDEDNESS_1 = '0-25'
+EMBEDDEDNESS_2 = '26-50'
+EMBEDDEDNESS_3 = '51-75'
+EMBEDDEDNESS_4 = '76-100'
+
 
 class SiteVisit(AbstractAdditionalData):
     """Site visit model."""
+    EMBEDDEDNESS_CHOICES = (
+        (EMBEDDEDNESS_1, '0-25'),
+        (EMBEDDEDNESS_2, '26-50'),
+        (EMBEDDEDNESS_3, '51-75'),
+        (EMBEDDEDNESS_4, '76-100')
+    )
 
     location_site = models.ForeignKey(
         LocationSite,
@@ -90,6 +101,13 @@ class SiteVisit(AbstractAdditionalData):
             for status in CanopyCover],
         blank=True,
         null=True
+    )
+
+    embeddedness = models.CharField(
+        max_length=50,
+        choices=EMBEDDEDNESS_CHOICES,
+        blank=True,
+        default=''
     )
 
     average_velocity = models.IntegerField(
