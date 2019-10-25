@@ -1,0 +1,7 @@
+name: Kartoza Biodiversity Information Management System
+description: A platform for storing and sharing biodiversity related data.
+version: 1
+category: GIS
+maintainer: Kartoza (Pty) Ltd. - Dimas Ciputra, dimas@kartoza.com
+license: GPL v3
+projectURL: https://github.com/kartoza/django-bims
