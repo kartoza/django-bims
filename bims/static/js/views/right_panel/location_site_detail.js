@@ -114,7 +114,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             for (var i = 0; i < dataLength; i++) {
                 chart_labels[chartName] += '<div><span style="color:' +
                     backgroundColours[i] + ';">■</span>' +
-                    '<span class="fish-ssdd-legend-title">&nbsp;' +
+                    '<span class="species-ssdd-legend-title">&nbsp;' +
                     dataKeys[i] + '</span></div>'
             }
             var element_name = `#rp-${chartName}-legend`;

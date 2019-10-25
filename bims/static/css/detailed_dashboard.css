@@ -179,19 +179,19 @@
     font-size: 12px;
 }
 
-#fish-ssdd-occurrence-data .col-6.sub-title {
+#species-ssdd-occurrence-data .col-6.sub-title {
     padding: 0.25rem;
     border: 1px solid #d3d4d1;
     font-size: 12px;
     font-weight: 700;
 }
 
-#fish-ssdd-occurrence-data .title-column {
+#species-ssdd-occurrence-data .title-column {
      font-weight: 700;
     overflow-x: hidden;
 }
 
-#fish-ssdd-occurrence-data .col-4 {
+#species-ssdd-occurrence-data .col-4 {
     padding: 0.25rem;
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
@@ -199,7 +199,7 @@
     color: #4a4a4a;
 }
 
-#fish-ssdd-occurrence-data .col-2 {
+#species-ssdd-occurrence-data .col-2 {
     padding: 0.25rem;
     border: 1px solid #d3d4d1;
     padding-left: 0.5rem;
@@ -225,13 +225,13 @@
    height: 0;
 }
 
-.fish-ssdd-titles {
+.ssdd-titles {
     text-align: center;
     font-size: 12px;
     padding: 0.5rem;
 }
 
-.fish-ssdd-legends {
+.species-ssdd-legends {
     font-style: italic;
     font-size: 9px;
     letter-spacing: 0.2px;
@@ -239,7 +239,7 @@
     padding-bottom: 0.5rem;
 }
 
-.fish-ssdd-legends .col-3 {
+.species-ssdd-legends .col-3 {
     padding-left:9%;
 }
 
