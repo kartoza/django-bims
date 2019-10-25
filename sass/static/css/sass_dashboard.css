@@ -232,3 +232,16 @@ body {
 .custom-table td, .custom-table th {
     border-top: 1px solid black !important;
 }
+
+.sass-summary, .sass-info {
+    border: 1px solid #dee2e6;
+}
+
+.sass-summary td, .sass-info td {
+    border-left: 1px solid #dee2e6 !important;
+}
+
+.title-row {
+    text-align: center;
+    background: #bebebe;
+}
