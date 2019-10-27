@@ -50,6 +50,11 @@
             </div>
             {% endif %}
         </div>
+    {% if commit_id and branch_name and not tag_version%}
+        <div class="row git-info">Checked out from commit: <span class="git-item">{{ commit_id }}</span>, branch: <span class="git-item">{{ branch_name }}</span></div>
+    {% elif tag_version %}
+        <div class="row git-info">Version: <span class="git-item"> {{ tag_version }}</span></div>
+    {% endif %}
     </div>
     </section>
     </div>
