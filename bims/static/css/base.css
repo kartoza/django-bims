@@ -287,8 +287,9 @@ h6 {
 
 .git-info {
     font-size: 10pt;
-    margin-top: 10px;
+    margin-top: 18px;
     color: darkgrey;
+    float: right;
 }
 
 .git-item {
