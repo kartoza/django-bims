@@ -132,7 +132,7 @@ def custom_navbar_url(request):
     if branch_file:
         with open(path_branch_file) as file:
             context['branch_name'] = file.readline()
-        if context['branch_name'] != 'develop':
+        if context['branch_name'].strip() != 'develop':
             path_tag_file = '.tag.txt'
             tag_file = os.path.isfile(path_tag_file)
             if tag_file:
