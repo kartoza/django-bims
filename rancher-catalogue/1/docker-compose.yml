@@ -1,0 +1,647 @@
+# Base docker-compose file for rancher in staging environment
+# This file has some specific tweaks for staging environment
+# You can copy this file and paste it when creating a new stack in rancher
+# It will try to sync related files
+
+# Rancher currently only supports up to version 2
+# If you want to use docker-swarm, create another orchestration with version 3
+version: "2"
+volumes:
+  postgis-data:
+  db-backups:
+    #driver: local
+    #driver_opts:
+    #  type: cifs
+    #  o: vers=3.02,mfsymlinks,username=${SMB_USER},password=${SMB_PASSWORD}
+    #  device: "${SMB_PATH}/k-bims/db-backups/"
+  django-media:
+    #  driver_opts:
+    #    type: cifs
+    #    o: vers=3.02,mfsymlinks,username=${SMB_USER},password=${SMB_PASSWORD}
+    #    device: "${SMB_PATH}/k-bims/media/"
+  django-media-backups:
+    #  driver: local
+    #  driver_opts:
+    #    type: cifs
+    #    o: vers=3.02,mfsymlinks,username=${SMB_USER},password=${SMB_PASSWORD}
+    #    device: "${SMB_PATH}/k-bims/media-backups/"
+  django-static:
+    #  driver: local
+    #  driver_opts:
+    #    type: cifs
+    #    o: vers=3.02,mfsymlinks,username=${SMB_USER},password=${SMB_PASSWORD}
+    #    device: "${SMB_PATH}/k-bims/static/"
+  django-reports:
+  django-logs:
+  nginx-logs:
+  nginx-conf-data:
+  geoserver-data-dir:
+  gbif-ipt:
+
+services:
+  smtp:
+    image: catatnight/postfix
+    environment:
+      maildomain: kartoza.com
+      smtp_user: noreply:docker
+    restart: unless-stopped
+
+  cache:
+    image: memcached
+    entrypoint:
+      - memcached
+      - -m 64
+    labels:
+      io.rancher.container.pull_image: always
+
+  nginx-conf-data:
+    image: kartoza/ledet_nginx_conf:latest
+    restart: unless-stopped
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: true
+    environment:
+      ALWAYS_INIT: "True"
+      TARGET: "/etc/nginx/sites-available"
+    volumes:
+      - nginx-conf-data:/config_source
+
+  lb:
+    image: rancher/lb-service-haproxy:v0.7.15
+    ports:
+      - ${WEBSERVER_PORT}:80/tcp
+    labels:
+      io.rancher.container.agent.role: environmentAdmin,agent
+      io.rancher.container.agent_service.drain_provider: "true"
+      io.rancher.container.create_agent: "true"
+
+  web:
+    image: nginx
+    volumes:
+      - django-static:/home/web/static:ro
+      - django-media:/home/web/media:ro
+      - nginx-conf-data:/etc/nginx/sites-available
+      - nginx-logs:/var/log/nginx
+    entrypoint: /etc/nginx/sites-available/docker-entrypoint.sh
+    environment:
+      GEOSERVER_FORWARD: "True"
+    links:
+      - uwsgi:django
+      - geoserver:geoserver
+    command: prod
+    labels:
+      io.rancher.container.pull_image: always
+    restart: unless-stopped
+
+  data-dir-conf:
+    image: geosolutionsit/geoserver_data:2.13.x
+    restart: unless-stopped
+    labels:
+      io.rancher.container.start_once: true
+    volumes:
+      - geoserver-data-dir:/geoserver_data/data
+
+  geoserver:
+    image: geosolutionsit/geoserver-docker:2.13.x
+    restart: unless-stopped
+    links:
+      - db:db
+      - data-dir-conf:data-dir-conf
+      - geonode-db
+    volumes:
+      - geoserver-data-dir:/geoserver_data/data
+    environment:
+      SITEURL: http://${SITE_URL}/
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+
+  elasticsearch:
+    image: elasticsearch:2.4.2
+    environment:
+      cluster.name: docker-cluster
+      bootstrap.memory_lock: "true"
+    labels:
+      io.rancher.container.pull_image: always
+
+  uwsgi: &uwsgi
+    image: ${UWSGI_IMAGE}
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_USERNAME: docker
+      DJANGO_SETTINGS_MODULE: ledet_core.settings.prod_docker
+      RABBITMQ_HOST: rabbitmq
+      VIRTUAL_HOST: ${SITE_URL}
+      VIRTUAL_PORT: "8000"
+      SITE_DOMAIN_NAME: http://${SITE_URL}
+      SITEURL: http://${SITE_URL}/
+      PYTHONPATH: /usr/src/ledet:/usr/src/app:/usr/src/bims:/home/web/django_project
+      HAYSTACK_HOST: elasticsearch
+      GEOCONTEXT_URL: ${GEOCONTEXT_URL}
+      GEOCONTEXT_COLLECTION_KEY: ${GEOCONTEXT_COLLECTION_KEY}
+      CONTACT_US_EMAIL: ${ADMIN_EMAIL}
+      ROOT_URLCONF: ledet_core.urls
+      # In this setting, we access GeoServer using Rancher Load Balancer, so
+      # it will be available from public internet
+      GEOSERVER_PUBLIC_LOCATION: http://${SITE_URL}/geoserver/
+      STATIC_ROOT: /home/web/static
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_USER: docker
+      MEDIA_ROOT: /home/web/media
+      ADMIN_EMAILS: ${ADMIN_EMAIL}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_INSTANCE_NAME: geonode
+      DEFAULT_BACKEND_DATASTORE: datastore
+      IS_CELERY: "False"
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","${SITE_URL}"]'
+      # In this setting, GeoNode needs to access GeoServer from internal network
+      # we use geoserver host name provided by rancher internal dns resolver
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      UWSGI_CMD: uwsgi --ini /usr/src/ledet/uwsgi.conf
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_DATABASE_PASSWORD: docker
+      C_FORCE_ROOT: 1
+      BING_MAP_KEY: ${BING_MAP_KEY}
+      IUCN_API_KEY: ${IUCN_API_KEY}
+      MAP_TILER_KEY: ${MAP_TILER_KEY}
+      SENTRY_KEY: ${SENTRY_KEY}
+      CENTER_POINT_MAP: ${CENTER_POINT_MAP}
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_GEODATABASE_HOST: geonode-db
+      ASYNC_SIGNALS_GEONODE: "True"
+      INSTITUTION_ID_DEFAULT: Bims
+      GOOGLE_ANALYTIC_KEY: ${GOOGLE_ANALYTIC_KEY}
+    entrypoint: /bin/sh
+    command: -c "uwsgi --ini /usr/src/ledet/uwsgi.conf"
+    volumes:
+      - django-static:/home/web/static:rw
+      - django-media:/home/web/media:rw
+      - django-reports:/home/web/reports
+      - django-logs:/var/log/
+      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    links:
+      - geoserver:geoserver
+      - worker:worker
+      - db:db
+      - geonode-db
+    labels:
+      io.rancher.container.pull_image: always
+    restart: unless-stopped
+
+  messaging-worker:
+    image: ${UWSGI_IMAGE}
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_USERNAME: docker
+      DJANGO_SETTINGS_MODULE: core.settings.prod_worker
+      RABBITMQ_HOST: rabbitmq
+      VIRTUAL_HOST: ${SITE_URL}
+      VIRTUAL_PORT: "8000"
+      SITE_DOMAIN_NAME: http://${SITE_URL}
+      SITEURL: http://${SITE_URL}/
+      PYTHONPATH: /usr/src/ledet:/usr/src/app:/usr/src/bims:/home/web/django_project
+      HAYSTACK_HOST: elasticsearch
+      GEOCONTEXT_URL: ${GEOCONTEXT_URL}
+      GEOCONTEXT_COLLECTION_KEY: ${GEOCONTEXT_COLLECTION_KEY}
+      CONTACT_US_EMAIL: ${ADMIN_EMAIL}
+      ROOT_URLCONF: ledet_core.urls
+      # In this setting, we access GeoServer using Rancher Load Balancer, so
+      # it will be available from public internet
+      GEOSERVER_PUBLIC_LOCATION: http://${SITE_URL}/geoserver/
+      STATIC_ROOT: /home/web/static
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_USER: docker
+      MEDIA_ROOT: /home/web/media
+      ADMIN_EMAILS: ${ADMIN_EMAIL}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_INSTANCE_NAME: geonode
+      DEFAULT_BACKEND_DATASTORE: datastore
+      IS_CELERY: "False"
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","${SITE_URL}"]'
+      # In this setting, GeoNode needs to access GeoServer from internal network
+      # we use geoserver host name provided by rancher internal dns resolver
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      UWSGI_CMD: uwsgi --ini /usr/src/ledet/uwsgi.conf
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_DATABASE_PASSWORD: docker
+      C_FORCE_ROOT: 1
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_GEODATABASE_HOST: geonode-db
+      ASYNC_SIGNALS_GEONODE: "True"
+      INSTITUTION_ID_DEFAULT: Bims
+    entrypoint: /bin/sh
+    command: -c "/usr/local/bin/python manage.py runmessaging -i"
+    volumes:
+      - django-static:/home/web/static:rw
+      - django-media:/home/web/media:rw
+      - django-reports:/home/web/reports
+      - django-logs:/var/log/
+      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    links:
+      - cache:cache
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+      - db:db
+      - geonode-db
+    labels:
+      io.rancher.container.pull_image: always
+    restart: unless-stopped
+
+  worker:
+    image: ${UWSGI_IMAGE}
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_USERNAME: docker
+      DJANGO_SETTINGS_MODULE: core.settings.prod_worker
+      RABBITMQ_HOST: rabbitmq
+      VIRTUAL_HOST: ${SITE_URL}
+      VIRTUAL_PORT: "8000"
+      SITE_DOMAIN_NAME: http://${SITE_URL}
+      SITEURL: http://${SITE_URL}/
+      PYTHONPATH: /usr/src/ledet:/usr/src/app:/usr/src/bims:/home/web/django_project
+      HAYSTACK_HOST: elasticsearch
+      GEOCONTEXT_URL: ${GEOCONTEXT_URL}
+      GEOCONTEXT_COLLECTION_KEY: ${GEOCONTEXT_COLLECTION_KEY}
+      CONTACT_US_EMAIL: ${ADMIN_EMAIL}
+      ROOT_URLCONF: ledet_core.urls
+      # In this setting, we access GeoServer using Rancher Load Balancer, so
+      # it will be available from public internet
+      GEOSERVER_PUBLIC_LOCATION: http://${SITE_URL}/geoserver/
+      STATIC_ROOT: /home/web/static
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_USER: docker
+      MEDIA_ROOT: /home/web/media
+      ADMIN_EMAILS: ${ADMIN_EMAIL}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_INSTANCE_NAME: geonode
+      DEFAULT_BACKEND_DATASTORE: datastore
+      IS_CELERY: "False"
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","${SITE_URL}"]'
+      # In this setting, GeoNode needs to access GeoServer from internal network
+      # we use geoserver host name provided by rancher internal dns resolver
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      UWSGI_CMD: uwsgi --ini /usr/src/ledet/uwsgi.conf
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_DATABASE_PASSWORD: docker
+      C_FORCE_ROOT: 1
+      SENTRY_KEY: ${SENTRY_KEY}
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_GEODATABASE_HOST: geonode-db
+      ASYNC_SIGNALS_GEONODE: "True"
+      INSTITUTION_ID_DEFAULT: Bims
+    entrypoint: /bin/sh
+    command: -c "celery worker --app=bims.celery:app -B  -l DEBUG -Q default,geonode,cleanup,email,update"
+    volumes:
+      - django-static:/home/web/static:rw
+      - django-media:/home/web/media:rw
+      - django-reports:/home/web/reports
+      - django-logs:/var/log/
+      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    links:
+      - cache:cache
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+      - db:db
+      - geonode-db
+    labels:
+      io.rancher.container.pull_image: always
+    restart: unless-stopped
+
+  collectstatic:
+    # This container will just run, collect static
+    # and then exit. Restart it again in rancher to
+    # re-collect static resources.
+    # Inherit from the uwsgi container
+    image: ${UWSGI_IMAGE}
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_USERNAME: docker
+      DJANGO_SETTINGS_MODULE: ledet_core.settings.prod_docker
+      RABBITMQ_HOST: rabbitmq
+      VIRTUAL_HOST: ${SITE_URL}
+      VIRTUAL_PORT: "8000"
+      SITE_DOMAIN_NAME: http://${SITE_URL}
+      SITEURL: http://${SITE_URL}/
+      PYTHONPATH: /usr/src/ledet:/usr/src/app:/usr/src/bims:/home/web/django_project
+      HAYSTACK_HOST: elasticsearch
+      GEOCONTEXT_URL: ${GEOCONTEXT_URL}
+      GEOCONTEXT_COLLECTION_KEY: ${GEOCONTEXT_COLLECTION_KEY}
+      CONTACT_US_EMAIL: ${ADMIN_EMAIL}
+      ROOT_URLCONF: ledet_core.urls
+      GEOSERVER_PUBLIC_LOCATION: http://${SITE_URL}/geoserver/
+      STATIC_ROOT: /home/web/static
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_USER: docker
+      MEDIA_ROOT: /home/web/media
+      ADMIN_EMAILS: ${ADMIN_EMAIL}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_INSTANCE_NAME: geonode
+      DEFAULT_BACKEND_DATASTORE: datastore
+      IS_CELERY: "False"
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","${SITE_URL}"]'
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      UWSGI_CMD: uwsgi --ini /usr/src/ledet/uwsgi.conf
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_DATABASE_PASSWORD: docker
+      C_FORCE_ROOT: 1
+      BING_MAP_KEY: ${BING_MAP_KEY}
+      IUCN_API_KEY: ${IUCN_API_KEY}
+      MAP_TILER_KEY: ${MAP_TILER_KEY}
+      SENTRY_KEY: ${SENTRY_KEY}
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_GEODATABASE_HOST: geonode-db
+      ASYNC_SIGNALS_GEONODE: "True"
+      INSTITUTION_ID_DEFAULT: Bims
+    entrypoint: /bin/sh
+    command: -c "python manage.py gruntserver"
+    volumes:
+      - django-static:/home/web/static:rw
+      - django-media:/home/web/media:rw
+      - django-reports:/home/web/reports
+      - django-logs:/var/log/
+    links:
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+      - db:db
+      - geonode-db
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: true
+    restart: unless-stopped
+
+  migrate:
+    # This container will just run, migrations
+    # and then exit. Restart it again in rancher to
+    # rerun migrations.
+    # Inherit from the uwsgi container
+    # We need to migrate accounts (auth) first as it has a reference to user model
+    image: ${UWSGI_IMAGE}
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_USERNAME: docker
+      DJANGO_SETTINGS_MODULE: ledet_core.settings.prod_docker
+      RABBITMQ_HOST: rabbitmq
+      VIRTUAL_HOST: ${SITE_URL}
+      VIRTUAL_PORT: "8000"
+      SITE_DOMAIN_NAME: http://${SITE_URL}
+      SITEURL: http://${SITE_URL}/
+      PYTHONPATH: /usr/src/ledet:/usr/src/app:/usr/src/bims:/home/web/django_project
+      HAYSTACK_HOST: elasticsearch
+      GEOCONTEXT_URL: ${GEOCONTEXT_URL}
+      GEOCONTEXT_COLLECTION_KEY: ${GEOCONTEXT_COLLECTION_KEY}
+      CONTACT_US_EMAIL: ${ADMIN_EMAIL}
+      ROOT_URLCONF: ledet_core.urls
+      GEOSERVER_PUBLIC_LOCATION: http://${SITE_URL}/geoserver/
+      STATIC_ROOT: /home/web/static
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_USER: docker
+      MEDIA_ROOT: /home/web/media
+      ADMIN_EMAILS: ${ADMIN_EMAIL}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_INSTANCE_NAME: geonode
+      DEFAULT_BACKEND_DATASTORE: datastore
+      IS_CELERY: "False"
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","${SITE_URL}"]'
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      UWSGI_CMD: uwsgi --ini /usr/src/ledet/uwsgi.conf
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_DATABASE_PASSWORD: docker
+      C_FORCE_ROOT: 1
+      BING_MAP_KEY: ${BING_MAP_KEY}
+      IUCN_API_KEY: ${IUCN_API_KEY}
+      MAP_TILER_KEY: ${MAP_TILER_KEY}
+      SENTRY_KEY: ${SENTRY_KEY}
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_GEODATABASE_HOST: geonode-db
+      ASYNC_SIGNALS_GEONODE: "True"
+      INSTITUTION_ID_DEFAULT: Bims
+    entrypoint: /bin/sh
+    command: -c "python manage.py makemigrations --noinput;python manage.py migrate auth;python manage.py migrate"
+    volumes:
+      - django-static:/home/web/static:rw
+      - django-media:/home/web/media:rw
+      - django-reports:/home/web/reports
+      - django-logs:/var/log/
+    links:
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+      - db:db
+      - geonode-db
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: true
+    restart: unless-stopped
+
+  update-location-context-documents:
+    # This container will just run, update location context documents for all
+    # location site and then exit. Restart it again in rancher to rerun
+    # the updates.
+    image: ${UWSGI_IMAGE}
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_USERNAME: docker
+      DJANGO_SETTINGS_MODULE: ledet_core.settings.prod_docker
+      RABBITMQ_HOST: rabbitmq
+      VIRTUAL_HOST: ${SITE_URL}
+      VIRTUAL_PORT: "8000"
+      SITE_DOMAIN_NAME: http://${SITE_URL}
+      SITEURL: http://${SITE_URL}/
+      PYTHONPATH: /usr/src/ledet:/usr/src/app:/usr/src/bims:/home/web/django_project
+      HAYSTACK_HOST: elasticsearch
+      GEOCONTEXT_URL: ${GEOCONTEXT_URL}
+      GEOCONTEXT_COLLECTION_KEY: ${GEOCONTEXT_COLLECTION_KEY}
+      CONTACT_US_EMAIL: ${ADMIN_EMAIL}
+      ROOT_URLCONF: ledet_core.urls
+      GEOSERVER_PUBLIC_LOCATION: http://${SITE_URL}/geoserver/
+      STATIC_ROOT: /home/web/static
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_USER: docker
+      MEDIA_ROOT: /home/web/media
+      ADMIN_EMAILS: ${ADMIN_EMAIL}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_ADMIN_PASSWORD}
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_INSTANCE_NAME: geonode
+      DEFAULT_BACKEND_DATASTORE: datastore
+      IS_CELERY: "False"
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","${SITE_URL}"]'
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      UWSGI_CMD: uwsgi --ini /usr/src/ledet/uwsgi.conf
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_DATABASE_PASSWORD: docker
+      C_FORCE_ROOT: 1
+      SENTRY_KEY: ${SENTRY_KEY}
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_GEODATABASE_HOST: geonode-db
+      ASYNC_SIGNALS_GEONODE: "True"
+      INSTITUTION_ID_DEFAULT: Bims
+    entrypoint: /bin/sh
+    command: -c "python manage.py update_location_context_documents"
+    volumes:
+      - django-static:/home/web/static:rw
+      - django-media:/home/web/media:rw
+      - django-reports:/home/web/reports
+      - django-logs:/var/log/
+    links:
+      - db:db
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: true
+    restart: unless-stopped
+
+  rabbitmq:
+    image: library/rabbitmq
+    environment:
+      RABBITMQ_NODENAME: rabbit
+      RABBIT_PASSWORD: rabbit_test_password
+      USER: rabbit_user
+    restart: unless-stopped
+
+  db: &db
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASS=${POSTGRES_PASS}
+      - ALLOW_IP_RANGE=${POSTGRES_HBA_RANGE}
+    volumes:
+      - db-backups:/backups
+      - postgis-data:/sql
+    restart: unless-stopped
+
+  geonode-db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      ALLOW_IP_RANGE: ${POSTGRES_HBA_RANGE}
+      POSTGRES_DB: geonode_data
+      POSTGRES_PASS: docker
+      POSTGRES_USER: docker
+    volumes:
+      - geonode-db-backups:/backups
+      - postgis-data:/sql
+      - sync-data:/raw
+      - pg-data:/var/lib/postgresql
+    restart: unless-stopped
+
+  dbbackups:
+    image: kartoza/pg-backup:9.6
+    hostname: pg-backups
+    environment:
+      DUMPPREFIX: PG_bims
+      PGDATABASE: gis
+      PGHOST: db
+      PGPASSWORD: docker
+      PGPORT: "5432"
+      PGUSER: docker
+    entrypoint:
+      - /bin/bash
+    volumes:
+      - db-backups:/backups
+    command:
+      - /start.sh
+    restart: unless-stopped
+
+  geonode-db-backups:
+    image: kartoza/pg-backup:9.6
+    environment:
+      DUMPPREFIX: PG_bimsgeonode
+      PGDATABASE: geonode_data
+      PGHOST: geonode-db
+      PGPASSWORD: docker
+      PGPORT: "5432"
+      PGUSER: docker
+    entrypoint:
+      - /bin/bash
+    command:
+      - /start.sh
+    volumes:
+      - geonode-db-backups:/backups
+    links:
+      - geonode-db
+    labels:
+      io.rancher.container.pull_image: always
+
+  dbrestore:
+    # This container will just run, a database restore on the latest database backup
+    # and then exit. Restart it again in rancher to
+    # rerun another database restore
+    # Inherit from the db container
+    <<: *db
+    command: bash -c "su - postgres -c 'dropdb gis'; createdb -O ${POSTGRES_USER} -T template_postgis gis; pg_restore /backups/latest.dmp | psql gis"
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: true
+    restart: unless-stopped
+
+  mediabackup:
+    image: kartoza/sftp-backup:1.0
+    volumes:
+      # this folder is used to store local backups from django media
+      - django-media-backups:/backups
+      # this folder is used as target folder/source where the backup comes from
+      # this backup comes from django media
+      - django-media:/media_backup
+    environment:
+      - DUMPPREFIX=MEDIA_bims
+      # reduce frequency because the dump is really big
+      - DAILY=3
+      - MONTHLY=2
+      - YEARLY=1
+      - TARGET_FOLDER=/media_backup
+      - USE_SFTP_BACKUP=False
+    restart: unless-stopped
+
+  btsync-data:
+    # BTSync backups for database dumps
+    image: kartoza/btsync:rancher
+    hostname: btsync-data
+    restart: unless-stopped
+    volumes:
+      - db-backups:/web:rw
+    environment:
+      - SECRET=${BTSYNC_DB_SECRET}
+      - DEVICE=BimsDatabase
+      - STANDBY_MODE=TRUE
+
+  btsync-media:
+    # BTSync backups for django media
+    image: kartoza/btsync:rancher
+    hostname: btsync-media
+    restart: unless-stopped
+    volumes:
+      - django-media:/web:rw
+    environment:
+      - SECRET=${BTSYNC_MEDIA_SECRET}
+      - DEVICE=BimsMedia
+      - STANDBY_MODE=TRUE
+
+  ipt:
+    image: kartoza/gbif_ipt:latest
+    stdin_open: true
+    volumes:
+      - gbif-ipt:/usr/local/ip
+    tty: true
+    links:
+      - db:db
+    labels:
+      io.rancher.container.pull_image: always

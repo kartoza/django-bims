@@ -22,6 +22,11 @@ class EndemismList(APIView):
             'name'
         )
 
+        endemism_list = list(endemism_list)
+
+        if 'Unknown' not in endemism_list:
+            endemism_list.append('Unknown')
+
         return HttpResponse(
             json.dumps(list(endemism_list)),
             content_type='application/json'

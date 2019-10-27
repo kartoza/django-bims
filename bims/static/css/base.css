@@ -284,3 +284,15 @@ h6 {
         max-width: 550px;
     }
 }
+
+.git-info {
+    font-size: 10pt;
+    margin-top: 18px;
+    color: darkgrey;
+    float: right;
+}
+
+.git-item {
+    color: whitesmoke;
+    margin-left: 5px;
+}
