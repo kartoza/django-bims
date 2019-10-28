@@ -300,7 +300,7 @@
                     </div>
                 </div>
                 {# Distribution #}
-                <div class="card" id="fish-ssdd-distribution">
+                <div class="card" id="species-ssdd-distribution">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Distribution
@@ -320,7 +320,7 @@
                     </div>
                 </div>
                 {# Overview #}
-                <div class="card" id="fish-ssdd-overview">
+                <div class="card" id="species-ssdd-overview">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Overview
@@ -332,7 +332,7 @@
                     </div>
                     {# Overview Site details #}
                     <div class="card-body" id="ssdd-overview-wrapper">
-                        <div id="fish-ssdd-site-details">
+                        <div id="species-ssdd-site-details">
                             <div class="col-12 sub-title site-details-header">
                                 Site Details
                             </div>
@@ -359,7 +359,7 @@
                             <div class="col-12"
                                  id="sa-ecoregions"></div>
                         </div>
-                        <div id="fish-ssdd-records-sites">
+                        <div id="species-ssdd-records-sites">
                             <div class="col-12 sub-title site-details-header">
                                 Species and Occurences
                             </div>
@@ -414,7 +414,7 @@
                     </div>
                 </div>
                 {# Occurence Data #}
-                <div class="card" id="fish-ssdd-occurrence-data">
+                <div class="card" id="species-ssdd-occurrence-data">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Occurrence Data
@@ -465,7 +465,7 @@
                 </div>
 
                 {# Data Summary #}
-                <div class="card" id="fish-ssdd-data-summary">
+                <div class="card" id="species-ssdd-data-summary">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Occurrence Charts
@@ -477,138 +477,152 @@
                     </div>
                     <div class="card-body">
                         <div id="data-summary">
-                            <div class="row fish-ssdd-legends">
-                                <div class="col-3 fish-ssdd-legend"
-                                     id="fish-ssdd-origin-legend"></div>
-                                <div class="col-3 fish-ssdd-legend"
-                                     id="fish-ssdd-endemism-legend"></div>
-                                <div class="col-3 fish-ssdd-legend"
-                                     id="fish-ssdd-cons_status-legend"></div>
-                                <div class="col-3 fish-ssdd-legend"
-                                     id="fish-ssdd-sampling_method-legend"></div>
+                            <div class="row species-ssdd-legends">
+                                <div class="col-1"></div>
+                                <div class="col-2 species-ssdd-legend"
+                                     id="species-ssdd-origin-legend"></div>
+                                <div class="col-2 species-ssdd-legend"
+                                     id="species-ssdd-endemism-legend"></div>
+                                <div class="col-2 species-ssdd-legend"
+                                     id="species-ssdd-cons_status-legend"></div>
+                                <div class="col-2 species-ssdd-legend"
+                                     id="species-ssdd-sampling_method-legend"></div>
+                                <div class="col-2 species-ssdd-legend"
+                                     id="species-ssdd-biotope-legend"></div>
+                                <div class="col-1"></div>
                             </div>
                             <div class="row">
-                                <div class="col-3">
-                                    <canvas id="fish-ssdd-origin-pie"></canvas>
+                                <div class="col-1"></div>
+                                <div class="col-2 col-chart">
+                                    <canvas id="species-ssdd-origin-pie"></canvas>
                                 </div>
-                                <div class="col-3">
-                                    <canvas id="fish-ssdd-endemism-pie"></canvas>
+                                <div class="col-2 col-chart">
+                                    <canvas id="species-ssdd-endemism-pie"></canvas>
                                 </div>
-                                <div class="col-3">
-                                    <canvas id="fish-ssdd-conservation-status-pie"></canvas>
+                                <div class="col-2 col-chart">
+                                    <canvas id="species-ssdd-conservation-status-pie"></canvas>
                                 </div>
-                                <div class="col-3">
-                                    <canvas id="fish-ssdd-sampling-method-pie"></canvas>
+                                <div class="col-2 col-chart">
+                                    <canvas id="species-ssdd-sampling-method-pie"></canvas>
                                 </div>
+                                <div class="col-2 col-chart">
+                                    <canvas id="species-ssdd-biotope-pie"></canvas>
+                                </div>
+                                <div class="col-1 col-chart"></div>
                             </div>
                             <div class="row">
-                                <div class="col-3 fish-ssdd-titles">
+                                <div class="col-1"></div>
+                                <div class="col-2 ssdd-titles">
                                     Origin
                                 </div>
-                                <div class="col-3 fish-ssdd-titles">
+                                <div class="col-2 ssdd-titles">
                                     Endemism
                                 </div>
-                                <div class="col-3 fish-ssdd-titles">
+                                <div class="col-2 ssdd-titles">
                                     Conservation Status
                                 </div>
-                                <div class="col-3 fish-ssdd-titles">
+                                <div class="col-2 ssdd-titles">
                                     Sampling Method
                                 </div>
+                                <div class="col-2 ssdd-titles">
+                                    Biotope
+                                </div>
+                                <div class="col-1"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {# Occurrences per year line chart #}
-                <div class="card" id="fish-ssdd-occurrences-line-chart">
+                <div class="card" id="species-ssdd-occurrences-line-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Occurrences
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="fish-ssdd-occurrences-line-chart-canvas">
+                                data-datac="species-ssdd-occurrences-line-chart-canvas">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 fish-ssdd-occurrences-line-chart">
-                            <canvas id="fish-ssdd-occurrences-line-chart-canvas"></canvas>
+                        <div class="col-12 species-ssdd-occurrences-line-chart">
+                            <canvas id="species-ssdd-occurrences-line-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
 
                 {# Occurrences per year line chart #}
-                <div class="card" id="fish-ssdd-taxa-occurrences-bar-chart">
+                <div class="card" id="species-ssdd-taxa-occurrences-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Taxa
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="fish-ssdd-taxa-occurrences-line-chart-canvas">
+                                data-datac="species-ssdd-taxa-occurrences-line-chart-canvas">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 fish-ssdd-taxa-line-chart">
+                        <div class="col-12 species-ssdd-taxa-line-chart">
                             <div class="chart-loading">Fetching...</div>
-                            <canvas id="fish-ssdd-taxa-occurrences-line-chart-canvas"></canvas>
+                            <canvas id="species-ssdd-taxa-occurrences-line-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
 
                 {# origin per year bar chart #}
-                <div class="card" id="fish-ssdd-origin-bar-chart">
+                <div class="card" id="species-ssdd-origin-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Origin
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="fish-ssdd-origin-bar-chart-canvas">
+                                data-datac="species-ssdd-origin-bar-chart-canvas">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 fish-ssdd-origin-bar-chart">
+                        <div class="col-12 species-ssdd-origin-bar-chart">
                             <div class="chart-loading">Fetching...</div>
-                            <canvas id="fish-ssdd-origin-bar-chart-canvas"></canvas>
+                            <canvas id="species-ssdd-origin-bar-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
 
                 {# endemism per year bar chart #}
-                <div class="card" id="fish-ssdd-endemism-bar-chart">
+                <div class="card" id="species-ssdd-endemism-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Endemism
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="fish-ssdd-endemism-bar-chart">
+                                data-datac="species-ssdd-endemism-bar-chart">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 fish-ssdd-endemism-bar-chart">
+                        <div class="col-12 species-ssdd-endemism-bar-chart">
                             <div class="chart-loading">Fetching...</div>
-                            <canvas id="fish-ssdd-endemism-bar-chart-canvas"></canvas>
+                            <canvas id="species-ssdd-endemism-bar-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
 
                 {# cons-status per year bar chart #}
-                <div class="card" id="fish-ssdd-cons-status-bar-chart">
+                <div class="card" id="species-ssdd-cons-status-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Conservation Status
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="fish-ssdd-cons-status-bar-chart-canvas">
+                                data-datac="species-ssdd-cons-status-bar-chart-canvas">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 fish-ssdd-cons-status-bar-chart">
+                        <div class="col-12 species-ssdd-cons-status-bar-chart">
                             <div class="chart-loading">Fetching...</div>
-                            <canvas id="fish-ssdd-cons-status-bar-chart-canvas"></canvas>
+                            <canvas id="species-ssdd-cons-status-bar-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
@@ -624,7 +638,7 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 fish-ssdd-chem-bar-chart" id="fish-ssdd-chem-bar-chart">
+                        <div class="col-12 species-ssdd-chem-bar-chart" id="species-ssdd-chem-bar-chart">
                         </div>
                         <div class="container">
                             <button class="btn btn-info download-chem-csv"

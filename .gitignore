@@ -137,3 +137,6 @@ deployment/ipt
 
 optimized.js
 deployment/geoserver_data
+.branch.txt
+.commit.txt
+.tag.txt

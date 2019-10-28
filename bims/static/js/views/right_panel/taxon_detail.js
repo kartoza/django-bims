@@ -123,9 +123,11 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 style_class = "fbis-rpanel-block";
                 var temp_key = key;
                 //Highlight my selected box with a different colour
-                if (key == data_value) {
+                if (key === data_value || (!data_value && key === 'Unknown')) {
                     style_class += " fbis-rpanel-block-selected";
-                    temp_key = data_title;
+                    if(key === data_value) {
+                        temp_key = data_title;
+                    }
                     if (stretch_selection == true)
                     {
                         style_class += " flex-base-auto";

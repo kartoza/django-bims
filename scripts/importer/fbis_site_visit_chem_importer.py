@@ -1,10 +1,11 @@
-from sass.models import SiteVisitChem, SiteVisit, Chem
+from sass.models import SiteVisit
+from bims.models import ChemicalRecord
 from scripts.importer.fbis_importer import FbisImporter
 
 
 class FbisSiteVisitChemImporter(FbisImporter):
 
-    content_type_model = SiteVisitChem
+    content_type_model = ChemicalRecord
     table_name = 'SiteVisitChem'
     failed = 0
     added = 0
@@ -44,7 +45,7 @@ class FbisSiteVisitChemImporter(FbisImporter):
         (
             site_visit_chem,
             created
-        ) = SiteVisitChem.objects.get_or_create(
+        ) = ChemicalRecord.objects.get_or_create(
             site_visit=site_visit,
             chem=chem,
             chem_value=chem_value,

@@ -500,13 +500,21 @@ class Search(object):
         if not self.collection_records:
             self.process_search()
 
+        # Get order_by
+        order_by = self.get_request_data('orderBy', 'name')
+        valid_order = [
+            'total', '-total', 'name', '-name'
+        ]
+        if order_by not in valid_order:
+            order_by = 'name'
+
         collections = (
             self.collection_records.annotate(
                 name=F('taxonomy__canonical_name'),
                 taxon_id=F('taxonomy_id')).values(
                 'taxon_id', 'name').annotate(
                 total=Count('taxonomy')
-            ).order_by('name')
+            ).order_by(order_by)
         )
 
         sites = (
@@ -515,7 +523,7 @@ class Search(object):
                 site_id=F('site__id')).values(
                 'site_id', 'name').annotate(
                 total=Count('site')
-            ).order_by('name')
+            ).order_by(order_by)
         )
 
         return {

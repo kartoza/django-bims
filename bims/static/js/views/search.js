@@ -34,6 +34,8 @@ define([
         initialSelectedModules: [],
         initialYearFrom: null,
         initialYearTo: null,
+        currentSort: null,
+        defaultSort: 'name',
         events: {
             'keyup #search': 'checkSearch',
             'keypress #search': 'searchEnter',
@@ -47,7 +49,8 @@ define([
             'click #non-native-origin-btn': 'handleNonNativeClicked',
             'click .clear-origin-filter': 'handleClearOriginClicked',
             'click .clear-conservation-filter': 'handleClearConservationClicked',
-            'click .ecological-condition': 'handleEcologicalConditionClicked'
+            'click .ecological-condition': 'handleEcologicalConditionClicked',
+            'change #sortby-select': 'handleSortByChanged'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -124,6 +127,8 @@ define([
 
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
+
+            filterParameters['orderBy'] = this.currentSort;
 
             $.ajax({
                 type: 'GET',
@@ -227,6 +232,11 @@ define([
                     $('#filter-study-reference').chosen({});
                 }
             });
+
+            if (!this.currentSort) {
+                this.currentSort = this.defaultSort;
+                this.$el.find('#sortby-select').change();
+            }
 
             return this;
         },
@@ -441,6 +451,9 @@ define([
 
             // Search value
             filterParameters['search'] = searchValue;
+
+            // Sort value
+            filterParameters['orderBy'] = self.currentSort;
 
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
@@ -812,6 +825,16 @@ define([
                 filterParameters['rank'] = allFilters['rank'];
             }
 
+            // Sort by
+            if (allFilters.hasOwnProperty('orderBy')) {
+                filterParameters['orderBy'] = allFilters['orderBy'];
+                self.currentSort = allFilters['orderBy'];
+                let sortByElement = self.$el.find('#sortby-select');
+                if (self.currentSort !== sortByElement.val()) {
+                    sortByElement.val(self.currentSort).change();
+                }
+            }
+
             if (allFilters.hasOwnProperty('ecologicalCategory')) {
                 self.selectedEcologicalConditions = JSON.parse(allFilters['ecologicalCategory']);
                 $.each(self.selectedEcologicalConditions, function (index, ecologicalCondition) {
@@ -866,7 +889,18 @@ define([
                     $target.addClass('selected');
                 }
             }
-        }
+        },
+        handleSortByChanged: function (e) {
+            let element = $(e.target);
+            this.currentSort = element.val();
+            element.find('option').text(function(i,t){
+                return this.selected ? 'Sort by : ' + t : t.replace('Sort by : ', '');
+            });
+            if (Shared.CurrentState.SEARCH) {
+                // do search
+                this.searchClick();
+            }
+        },
     })
 
 });

@@ -670,14 +670,18 @@ function renderLocationContextTable() {
     let tableData = {
         'Geomorphological zone': '-',
         'Refined Geomorphological zone': refinedGeomorphologicalZone,
-        'Province': '-',
-        'Water Management Area': '-',
-        'Sub Water Management Area': '-',
+        'Catchments': 'title',
         'Primary Catchment': '-',
         'Secondary Catchment': '-',
         'Tertiary Catchment': '-',
         'Quaternary Catchment': '-',
+        'Management Areas': 'title',
+        'Water Management Area': '-',
+        'Sub Water Management Area': '-',
+        'River Management Unit': '-',
+        'Ecoregion and Province': 'title',
         'SA Ecoregion': '-',
+        'Province': '-',
         'National Critical Biodiversity': '-',
     };
     try {
@@ -716,10 +720,16 @@ function renderLocationContextTable() {
     }
 
     $.each(tableData, function (key, value) {
-        $table.append('<tr>\n' +
-            '<th scope="row"> ' + key + ' </th>' +
-            '<td>' + value + '</td>\n' +
-            '</tr>');
+        if(value === 'title'){
+            $table.append('<tr>\n' +
+                '<th class="title-row" colspan="2"> ' + key + ' </th>' +
+                '</tr>');
+        }else {
+            $table.append('<tr>\n' +
+                '<td scope="row"> ' + key + ' </td>' +
+                '<td>' + value + '</td>\n' +
+                '</tr>');
+        }
     });
 }
 

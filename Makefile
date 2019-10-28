@@ -455,6 +455,13 @@ update-ecological-data:
 	@echo "--------------------------"
 	@docker-compose exec uwsgi python manage.py update_ecological_data
 
+show-commit-and-branch:
+	@echo "--------------------------"
+	@echo "Update and show commit ID and branch name of this deployment on display"
+	@echo "--------------------------"
+	@git rev-parse HEAD > .commit.txt
+	@git rev-parse --abbrev-ref HEAD > .branch.txt
+	@git describe --tags --abbrev=0 > .tag.txt
 
 # --------------- help --------------------------------
 
