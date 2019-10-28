@@ -5,7 +5,7 @@ from django.utils import timezone
 class LocationContextQuerySet(models.QuerySet):
     def value_from_key(self, key):
         values = self.filter(
-            key=key
+            group__key=key
         ).values_list(
             'value', flat=True
         )
@@ -17,10 +17,10 @@ class LocationContextQuerySet(models.QuerySet):
     def values_from_group(self, group):
         group_values = dict()
         values = self.filter(
-            group_key=group
+            group__geocontext_group_key=group
         )
         for value in values:
-            group_values[value.key] = value.value
+            group_values[value.group.key] = value.value
         return group_values
 
 
@@ -40,25 +40,16 @@ class LocationContext(models.Model):
         'bims.LocationSite',
         on_delete=models.CASCADE
     )
-    key = models.CharField(
-        max_length=100,
-        blank=True,
-        default=''
-    )
-    name = models.CharField(
-        max_length=255,
-        blank=True,
-        default=''
-    )
     value = models.CharField(
         max_length=255,
         blank=True,
         default=''
     )
-    group_key = models.CharField(
-        max_length=255,
+    group = models.ForeignKey(
+        'bims.LocationContextGroup',
+        null=True,
         blank=True,
-        default=''
+        on_delete=models.CASCADE
     )
     fetch_time = models.DateTimeField(
         default=timezone.now

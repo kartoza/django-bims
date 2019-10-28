@@ -3,11 +3,13 @@ import os
 import json
 from celery import shared_task
 from collections import OrderedDict
-from django.db.models import Case, When, CharField, Value, F
+from django.db.models import F
+from django.utils.text import slugify
 from django.conf import settings
-from bims.models import GEO_CLASS_GROUP, LocationContext
+from bims.models import GEO_CLASS_GROUP, LocationContext, LocationContextFilter
 from bims.utils.celery import single_instance_task
 from bims.utils.logger import log
+
 
 
 SPATIAL_FILTER_GROUPS = OrderedDict([
@@ -114,34 +116,28 @@ LAYER_NAMES = {
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter(file_path=None):
     spatial_tree = []
-    for key, value in SPATIAL_FILTER_GROUPS.iteritems():
+    location_context_filters = LocationContextFilter.objects.all(
+    ).order_by(
+        'display_order',
+    )
+    for location_context_filter in location_context_filters:
         spatial_tree_data = {
-            'key': value['key'],
-            'name': key,
+            'name': location_context_filter.title,
+            'key': slugify(location_context_filter.title),
             'children': []
         }
-        whens = [
-            When(
-                key=k, then=Value(v)
-            ) for k, v in SPATIAL_GROUP_UPDATED_NAMES.iteritems()
-        ]
-        for group in value['groups']:
+        for group in location_context_filter.location_context_groups.all(
+        ).order_by('locationcontextfiltergrouporder__group_display_order'):
             location_contexts = LocationContext.objects.filter(
-                key=group
+                group=group
             ).distinct('value').order_by('value').exclude(value='None')
             if not location_contexts:
                 continue
             spatial_tree_value = list(
-                location_contexts.values(
-                    'key',
-                ).annotate(
-                    name=Case(
-                        *whens,
-                        default='name',
-                        output_field=CharField()
-                    ),
-                    query=F('value')
-                ))
+                location_contexts.annotate(
+                    query=F('value'),
+                    key=F('group__key')
+                ).values('query', 'key'))
             spatial_tree_value_sorted = sorted(
                 spatial_tree_value,
                 key=lambda i: (
@@ -149,12 +145,10 @@ def generate_spatial_scale_filter(file_path=None):
                     if i['query'].split(' ')[0].isdigit()
                     else i['query'])
             )
-            layer_name = group
-            if layer_name in LAYER_NAMES:
-                layer_name = LAYER_NAMES[layer_name]
+            layer_name = group.layer_name
             spatial_tree_children = {
-                'key': group,
-                'name': location_contexts[0].name,
+                'key': group.key,
+                'name': group.name,
                 'value': spatial_tree_value_sorted,
                 'layer_name': layer_name
             }

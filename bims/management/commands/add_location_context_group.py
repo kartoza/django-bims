@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 from bims.models import (
     LocationSite,
-    LocationContext
+    LocationContext,
 )
 from bims.utils.logger import log
 
@@ -89,7 +89,7 @@ class Command(BaseCommand):
                     all_context = list(
                         LocationContext.objects.filter(
                             site=location_site).values_list(
-                            'group_key', flat=True)
+                            'group__key', flat=True)
                     )
                 except (ValueError, TypeError):
                     pass

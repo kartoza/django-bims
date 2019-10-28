@@ -78,16 +78,19 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         location_contexts = LocationContext.objects.filter(site=instance)
 
         monthly_annual_temperature_values = location_contexts.filter(
-            group_key='monthly_mean_daily_average_temperature_group'
+            group__geocontext_group_key=
+            'monthly_mean_daily_average_temperature_group'
         )
 
         monthly_annual_rainfall_values = location_contexts.filter(
-            group_key='rainfall_group'
+            group__geocontext_group_key=
+            'rainfall_group'
         )
 
         for month in months:
             temp_data = (
-                monthly_annual_temperature_values.filter(key__icontains=month)
+                monthly_annual_temperature_values.filter(
+                    group__key__icontains=month)
             )
             if temp_data.exists():
                 site_climate_data['temperature_chart']['values'].append(
@@ -98,7 +101,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             site_climate_data['temperature_chart']['keys'].append(month)
 
             rain_data = (
-                monthly_annual_rainfall_values.filter(key__icontains=month)
+                monthly_annual_rainfall_values.filter(
+                    group__key__icontains=month)
             )
             if rain_data.exists():
                 site_climate_data['rainfall_chart']['values'].append(
