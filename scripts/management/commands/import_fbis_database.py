@@ -121,6 +121,13 @@ class Command(BaseCommand):
             default=None,
             help='Postgres database host'
         )
+        parser.add_argument(
+            '-update_only',
+            '--update_only',
+            dest='update_only',
+            default=False,
+            help='Only update existing data'
+        )
 
     def handle(self, *args, **options):
         # check if file exists
@@ -131,6 +138,7 @@ class Command(BaseCommand):
         postgres_user = options.get('postgres_user', None)
         postgres_password = options.get('postgres_password', None)
         postgres_host = options.get('postgres_host', None)
+        update_only = options.get('update_only', False)
 
         if not sqlite_filename and not postgres_database:
             print('You need to provide a name for sqlite_filename file or '
@@ -150,6 +158,7 @@ class Command(BaseCommand):
                     sqlite_filename,
                     max_row=sqlite_max_row
                 )
+                importer.update_only = update_only
                 if postgres_database:
                     importer.postgres_database = postgres_database
                     importer.postgres_user = postgres_user

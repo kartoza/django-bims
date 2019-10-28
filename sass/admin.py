@@ -27,6 +27,7 @@ class RiverAdmin(admin.ModelAdmin):
 
 class SiteVisitAdmin(ForeignKeyAutocompleteAdmin):
     list_display = (
+        'id',
         'location_site',
         'owner',
         'site_visit_date',
