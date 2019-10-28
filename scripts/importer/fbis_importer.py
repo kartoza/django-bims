@@ -15,6 +15,7 @@ class FbisImporter(object):
     postgres_password = ''
     postgres_host = ''
     postgres_port = 5432
+    update_only = False
 
     def __init__(self, sqlite_filename, max_row = None):
         self.sqlite_filename = sqlite_filename

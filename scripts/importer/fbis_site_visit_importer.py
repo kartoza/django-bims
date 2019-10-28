@@ -1,32 +1,44 @@
-from bims.models import (
-    FbisUUID,
-)
-import sqlite3
+import psycopg2 as driv
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q, signals
 from geonode.people.models import Profile
 from bims.models import LocationSite
-from sass.models import SiteVisit
-from scripts.importer.fbis_importer import FbisImporter
+from sass.models import SiteVisit, site_visit_post_save_handler
+from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
 from sass.enums.canopy_cover import CanopyCover
 from sass.enums.water_level import WaterLevel, WATER_LEVEL_NAME
 from sass.enums.water_turbidity import WaterTurbidity
 from sass.enums.channel_type import ChannelType, CHANNEL_TYPE_NAME
+from bims.models import (
+    FbisUUID,
+)
 
 
-class FbisSiteVisitImporter(FbisImporter):
+class FbisSiteVisitImporter(FbisPostgresImporter):
 
     canopy_cover = {}
     water_level = {}
     water_turbidity = {}
     channel_type = {}
+    embeddedness = {}
     content_type_model = SiteVisit
-    table_name = 'SiteVisit'
+    table_name = 'public."sitevisit"'
 
     def start_processing_rows(self):
-        conn = sqlite3.connect(self.sqlite_filepath)
+        if self.update_only:
+            signals.post_save.disconnect(
+                site_visit_post_save_handler,
+                sender=SiteVisit
+            )
+
+        conn = driv.connect(database=self.postgres_database,
+                            user=self.postgres_user,
+                            password=self.postgres_password,
+                            host=self.postgres_host,
+                            port=self.postgres_port)
         cur = conn.cursor()
-        cur.execute('SELECT * FROM CANOPYCOVER')
+        cur.execute('SELECT * FROM canopycover')
         canopy_cover_rows = cur.fetchall()
         cur.close()
         for canopy_cover in canopy_cover_rows:
@@ -35,7 +47,18 @@ class FbisSiteVisitImporter(FbisImporter):
                     self.canopy_cover[canopy_cover[0]] = canopy
 
         cur = conn.cursor()
-        cur.execute('SELECT * FROM WATERLEVEL')
+        cur.execute('SELECT * FROM embeddedness')
+        embeddedness_rows = cur.fetchall()
+        cur.close()
+        for embeddedness_row in embeddedness_rows:
+            for embeddedness_choice in SiteVisit.EMBEDDEDNESS_CHOICES:
+                if embeddedness_choice[0] == embeddedness_row[1].encode('utf-8'):
+                    self.embeddedness[embeddedness_row[0]] = (
+                        embeddedness_choice
+                    )
+
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM waterlevel')
         water_level_rows = cur.fetchall()
         cur.close()
         for water_level_row in water_level_rows:
@@ -44,7 +67,7 @@ class FbisSiteVisitImporter(FbisImporter):
                     self.water_level[water_level_row[0]] = water_level
 
         cur = conn.cursor()
-        cur.execute('SELECT * FROM WATERTURBIDITY')
+        cur.execute('SELECT * FROM waterturbidity')
         water_turbidity_rows = cur.fetchall()
         cur.close()
         for water_turbidity_row in water_turbidity_rows:
@@ -55,7 +78,7 @@ class FbisSiteVisitImporter(FbisImporter):
                     )
 
         cur = conn.cursor()
-        cur.execute('SELECT * FROM CHANNELTYPE')
+        cur.execute('SELECT * FROM channeltype')
         channel_type_rows = cur.fetchall()
         cur.close()
         for channel_type_row in channel_type_rows:
@@ -68,8 +91,46 @@ class FbisSiteVisitImporter(FbisImporter):
         # Get site id
         site_ctype = ContentType.objects.get_for_model(LocationSite)
         site = None
+
+        if self.update_only:
+            site_visit_ctype = ContentType.objects.get_for_model(SiteVisit)
+            site_visit_uuid = self.get_row_value('sitevisitid')
+            uuids = site_visit_uuid.split('-')
+            uuids[0] = '%s%s' % (uuids[0][4:], uuids[0][:4])
+            uuids[3] = '%s%s' % (uuids[3][2:], uuids[3][:2])
+            uuids[4] = '%s%s%s%s%s%s' % (uuids[4][2:4], uuids[4][:2],
+                                         uuids[4][6:8], uuids[4][4:6],
+                                         uuids[4][10:], uuids[4][8:10])
+            new_uuids = '-'.join(uuids)
+            site_visits = FbisUUID.objects.filter(
+                Q(uuid__icontains=new_uuids) |
+                Q(uuid__icontains=site_visit_uuid),
+                content_type=site_visit_ctype
+            )
+            if not site_visits.exists():
+                print('Site Visit does not exist')
+                return
+            try:
+                site_visit = SiteVisit.objects.get(
+                    id=site_visits[0].object_id
+                )
+            except SiteVisit.DoesNotExist:
+                print('Site Visit does not exist for FBISuuid : %s' %
+                      site_visits[0].id)
+                return
+
+            embeddedness_value = self.get_row_value('embeddednessid', row)
+            if embeddedness_value:
+                site_visit.embeddedness = (
+                    self.embeddedness[embeddedness_value][0]
+                )
+                site_visit.save()
+                print('embeddedness updated for SiteVisit with id : %s'
+                      % site_visit.id)
+            return
+
         sites = FbisUUID.objects.filter(
-            uuid=self.get_row_value('SiteID', row),
+            uuid__icontains=self.get_row_value('siteid', row),
             content_type=site_ctype
         )
         if sites.exists():
