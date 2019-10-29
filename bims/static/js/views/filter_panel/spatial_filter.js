@@ -114,7 +114,7 @@ define([
             });
 
             this.layerGroup = new ol.layer.Group();
-            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
+            Shared.Dispatcher.trigger('map:insertLayerAt', this.layerGroup, 0);
 
             return this;
         },
@@ -513,14 +513,14 @@ define([
             let self = this;
             Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
             this.layerGroup = new ol.layer.Group();
-            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
-            let wmsUrl = 'https://maps.kartoza.com/geoserver/wms';
+            Shared.Dispatcher.trigger('map:insertLayerAt', this.layerGroup, 0);
+            let wmsUrl = '/bims_proxy/https://maps.kartoza.com/geoserver/wms';
             let wmsFormat = 'image/png';
 
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
                 let cqlFilters = "(";
                 for (let i=0; i < selectedLayer.length; i++) {
-                    cqlFilters += "'"+ selectedLayer[i] +"'";
+                    cqlFilters += "\'"+ selectedLayer[i] +"\'";
                     if (i < selectedLayer.length - 1) {
                         cqlFilters += ",";
                     }
@@ -535,9 +535,11 @@ define([
                 let options = {
                     url: wmsUrl,
                     params: {
-                        layers: wmsLayer,
-                        format: wmsFormat,
-                        cql_filter: cqlFilters
+                        LAYERS: wmsLayer,
+                        FORMAT: wmsFormat,
+                        TILED: true,
+                        STYLES: spatialFilterLayerStyle,
+                        CQL_FILTER: encodeURIComponent(cqlFilters)
                     }
                 };
                 let layer = new ol.layer.Tile({

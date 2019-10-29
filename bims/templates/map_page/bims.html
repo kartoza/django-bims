@@ -64,6 +64,7 @@
         const emptyWMSSiteParameter = '{{ bims_preferences.empty_location_site_cluster }}';
         const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};
         const mapDefaultSelectedFilters = '{{ preferences.SiteSetting.map_default_filters | safe}}';
+        const spatialFilterLayerStyle = '{{ preferences.SiteSetting.spatial_filter_layer_style }}';
     </script>
     {% block extra_head %}
 

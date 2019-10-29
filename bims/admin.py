@@ -20,6 +20,7 @@ from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
 from django.utils.html import format_html
+from django.core.urlresolvers import reverse
 
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
@@ -711,11 +712,22 @@ class ChemAdmin(admin.ModelAdmin):
 
 class LocationContextFilterGroupOrderAdmin(admin.ModelAdmin):
     list_display = (
-        'group',
-        'filter',
+        'id',
+        'link_to_group',
+        'link_to_filter',
         'group_display_order',
         'filter_display_order'
     )
+
+    def link_to_group(self, obj):
+        link = reverse('admin:bims_locationcontextgroup_change',
+                       args=[obj.group.id])
+        return format_html('<a href="{}">{}</a>', link, obj.group.name)
+
+    def link_to_filter(self, obj):
+        link = reverse('admin:bims_locationcontextfilter_change',
+                       args=[obj.filter.id])
+        return format_html('<a href="{}">{}</a>', link, obj.filter.title)
 
 
 class LocationContextFilterAdmin(admin.ModelAdmin):

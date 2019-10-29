@@ -174,11 +174,13 @@ define([
                         var liElement = $('<li class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
                             ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</li>');
                         nativeOriginDropdown.append(liElement);
-                        liElement.popover({
-                            content: endemicPopoverData[data[i].toLowerCase()],
-                            trigger: 'hover',
-                            placement: 'top'
-                        })
+                        if (typeof endemicPopoverData[data[i].toLowerCase()] !== 'undefined') {
+                            liElement.popover({
+                                content: endemicPopoverData[data[i].toLowerCase()],
+                                trigger: 'hover',
+                                placement: 'top'
+                            })
+                        }
                     }
                     self.filtersReady['endemism'] = true;
                 }
