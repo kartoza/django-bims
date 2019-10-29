@@ -275,13 +275,13 @@ class Search(object):
                 if spatial_filter_splitted[0] != 'value':
                     continue
                 or_condition |= Q(**{
-                    'site__locationcontext__group__key':
+                    'locationcontext__group__key':
                         spatial_filter_splitted[1],
-                    'site__locationcontext__value': spatial_filter_splitted[2]}
+                    'locationcontext__value': spatial_filter_splitted[2]}
                                   )
             if spatial_filter_groups:
                 or_condition |= Q(**{
-                    'site__locationcontext__group__key__in':
+                    'locationcontext__group__key__in':
                         spatial_filter_groups})
         return or_condition
 
@@ -322,6 +322,7 @@ class Search(object):
         :return: search results
         """
         collection_record_model = BiologicalCollectionRecord
+        filtered_location_sites = None
 
         if self.ecological_category:
             collection_record_model = SiteVisitTaxon
@@ -448,9 +449,16 @@ class Search(object):
             reference_category_filter = reduce(operator.or_, clauses)
             bio = bio.filter(reference_category_filter)
 
-        _spatial_fitler = self.spatial_filter
-        if _spatial_fitler:
-            bio = bio.filter(_spatial_fitler)
+        spatial_filters = self.spatial_filter
+        if spatial_filters:
+            if not filtered_location_sites:
+                filtered_location_sites = LocationSite.objects.filter(
+                    spatial_filters
+                )
+            else:
+                filtered_location_sites = filtered_location_sites.filter(
+                    spatial_filters
+                )
 
         if self.user_boundary:
             user_boundaries = UserBoundary.objects.filter(
@@ -479,11 +487,18 @@ class Search(object):
                 )
 
         if self.abiotic_data:
-            sites_with_abiotic = LocationSite.objects.filter(
-                chemical_collection_record__isnull=False
-            )
+            if not filtered_location_sites:
+                filtered_location_sites = LocationSite.objects.filter(
+                    chemical_collection_record__isnull=False
+                )
+            else:
+                filtered_location_sites = filtered_location_sites.filter(
+                    chemical_collection_record__isnull=False
+                )
+
+        if filtered_location_sites:
             bio = bio.filter(
-                site__in=sites_with_abiotic
+                site__in=filtered_location_sites
             ).select_related()
 
         self.location_sites_raw_query = LocationSite.objects.filter(
