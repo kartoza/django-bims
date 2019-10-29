@@ -256,7 +256,9 @@ define([
             }
             let layerName = $checkbox.data('layer-name');
             if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
-                this.selectedSpatialFilterLayers[layerName].push(value);
+                if (this.selectedSpatialFilterLayers[layerName].indexOf(value) === -1) {
+                    this.selectedSpatialFilterLayers[layerName].push(value);
+                }
             } else {
                 this.selectedSpatialFilterLayers[layerName] = [value];
             }
@@ -266,7 +268,9 @@ define([
             for (let i=0; i < all.length; i++) {
                 let parsed_data = all[0].split(',');
                 if (this.selectedSpatialFilterLayers.hasOwnProperty(parsed_data[1])) {
-                    this.selectedSpatialFilterLayers[parsed_data[1]].push(parsed_data[2]);
+                    if (this.selectedSpatialFilterLayers[parsed_data[1]].indexOf(parsed_data[2]) === -1) {
+                        this.selectedSpatialFilterLayers[parsed_data[1]].push(parsed_data[2]);
+                    }
                 } else {
                     this.selectedSpatialFilterLayers[parsed_data[1]] = [parsed_data[2]];
                 }
