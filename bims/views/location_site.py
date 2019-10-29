@@ -13,7 +13,9 @@ from bims.utils.get_key import get_key
 from bims.enums.geomorphological_zone import (
     GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
 )
-from bims.models import LocationSite, LocationType, LocationContext
+from bims.models import (
+    LocationSite, LocationType, LocationContext, LocationContextGroup
+)
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
 from bims.tasks.location_site import update_location_context
@@ -122,24 +124,34 @@ class LocationSiteFormView(TemplateView):
                 geomorphological_group_geocontext
             )
             for registry in geomorphological_data['service_registry_values']:
+                group, group_created = (
+                    LocationContextGroup.objects.get_or_create(
+                        key=registry['key'],
+                        name=registry['name'],
+                        geocontext_group_key=geomorphological_data['key']
+                    )
+                )
                 LocationContext.objects.get_or_create(
                     site=location_site,
                     value=registry['value'],
-                    key=registry['key'],
-                    name=registry['name'],
-                    group_key=geomorphological_data['key']
+                    group=group
                 )
         if catchment_geocontext:
             catchment_data = json_loads_byteified(
                 catchment_geocontext
             )
             for registry in catchment_data['service_registry_values']:
+                group, group_created = (
+                    LocationContextGroup.objects.get_or_create(
+                        key=registry['key'],
+                        name=registry['name'],
+                        geocontext_group_key=catchment_data['key']
+                    )
+                )
                 LocationContext.objects.get_or_create(
                     site=location_site,
                     value=registry['value'],
-                    key=registry['key'],
-                    name=registry['name'],
-                    group_key=catchment_data['key']
+                    group=group
                 )
         if refined_geomorphological_zone:
             location_site.refined_geomorphological = (
@@ -147,7 +159,7 @@ class LocationSiteFormView(TemplateView):
             )
         geo_class = LocationContext.objects.filter(
             site=location_site,
-            key='geo_class_recoded'
+            group__key='geo_class_recoded'
         )
         if not location_site.creator:
             location_site.creator = self.request.user

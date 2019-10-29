@@ -28,7 +28,8 @@ from bims.models import (
     SourceReferenceBibliography,
     SourceReferenceDatabase,
     DatabaseRecord,
-    LocationContext
+    LocationContext,
+    LocationContextGroup
 )
 
 
@@ -66,6 +67,19 @@ class LocationSiteF(factory.django.DjangoModelFactory):
     )
 
 
+class LocationContextGroupF(factory.django.DjangoModelFactory):
+    """
+    Location context group factory
+    """
+    class Meta:
+        model = LocationContextGroup
+
+    name = factory.Sequence(lambda n: 'name %s' % n)
+    key = factory.Sequence(lambda n: 'key %s' % n)
+    geocontext_group_key = factory.Sequence(lambda n: 'group_key %s' % n)
+    layer_name = factory.Sequence(lambda n: 'layer_name %s' % n)
+
+
 class LocationContextF(factory.django.DjangoModelFactory):
     """
     Location context factory
@@ -74,9 +88,8 @@ class LocationContextF(factory.django.DjangoModelFactory):
         model = LocationContext
 
     site = factory.SubFactory(LocationSiteF)
-    name = factory.Sequence(lambda n: 'name %s' % n)
-    key = factory.Sequence(lambda n: 'key %s' % n)
-    group_key = factory.Sequence(lambda n: 'group_key %s' % n)
+    group = factory.SubFactory(LocationContextGroupF)
+    value = factory.Sequence(lambda n: 'value %s' % n)
 
 
 class IUCNStatusF(factory.django.DjangoModelFactory):

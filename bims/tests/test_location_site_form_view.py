@@ -156,11 +156,11 @@ class TestLocationSiteFormView(TestCase):
         )
         self.assertTrue(
             updated_location_context.filter(
-                key__icontains='catchment_area').exists()
+                group__key__icontains='catchment_area').exists()
         )
         self.assertTrue(
             updated_location_context.filter(
-                key='geo_class_recoded').exists()
+                group__key='geo_class_recoded').exists()
         )
         self.assertTrue(
             updated_location_context.value_from_key('geo_class_recoded') ==
@@ -182,7 +182,7 @@ class TestLocationSiteFormView(TestCase):
         )
         self.assertTrue(
             updated_location_context_2.filter(
-                key__icontains='catchment_area').exists()
+                group__key__icontains='catchment_area').exists()
         )
         self.assertTrue(
             updated_location_context_2.value_from_key('geo_class_recoded') ==
