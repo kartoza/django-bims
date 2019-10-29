@@ -114,7 +114,7 @@ define([
             });
 
             this.layerGroup = new ol.layer.Group();
-            Shared.Dispatcher.trigger('map:insertLayerAt', this.layerGroup, 0);
+            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
 
             return this;
         },
@@ -524,10 +524,9 @@ define([
             let self = this;
             Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
             this.layerGroup = new ol.layer.Group();
-            Shared.Dispatcher.trigger('map:insertLayerAt', this.layerGroup, 0);
+            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
             let wmsUrl = '/bims_proxy/https://maps.kartoza.com/geoserver/wms';
             let wmsFormat = 'image/png';
-            console.log(this.selectedSpatialFilterLayers);
 
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
                 let cqlFilters = "(";
