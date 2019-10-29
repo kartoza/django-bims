@@ -174,11 +174,13 @@ define([
                         var liElement = $('<li class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
                             ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</li>');
                         nativeOriginDropdown.append(liElement);
-                        liElement.popover({
-                            content: endemicPopoverData[data[i].toLowerCase()],
-                            trigger: 'hover',
-                            placement: 'top'
-                        })
+                        if (typeof endemicPopoverData[data[i].toLowerCase()] !== 'undefined') {
+                            liElement.popover({
+                                content: endemicPopoverData[data[i].toLowerCase()],
+                                trigger: 'hover',
+                                placement: 'top'
+                            })
+                        }
                     }
                     self.filtersReady['endemism'] = true;
                 }
@@ -410,6 +412,7 @@ define([
             var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
             filterParameters['spatialFilter'] = spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters);
             this.spatialFilterView.highlight(spatialFilters.length !== 0);
+            this.spatialFilterView.showLayersInMap();
 
             // Validation filter
             var validationFilter = [];
@@ -532,6 +535,7 @@ define([
             $('#abiotic-data-filter').prop('checked', false);
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
+            this.spatialFilterView.clearLayers();
             this.searchInput.val('');
             this.searchResultCollection.clearSearchRequest();
             $('.clear-filter').click();
@@ -794,9 +798,10 @@ define([
                 });
             }
 
-            // River catchment
+            // Sptaial filter
             if (allFilters.hasOwnProperty('spatialFilter')) {
                 this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
+                this.spatialFilterView.addSelectedSpatialFilterLayerFromJSON(allFilters['spatialFilter']);
             }
 
             // Boundary

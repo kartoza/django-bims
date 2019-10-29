@@ -275,12 +275,13 @@ class Search(object):
                 if spatial_filter_splitted[0] != 'value':
                     continue
                 or_condition |= Q(**{
-                    'site__locationcontext__key': spatial_filter_splitted[1],
+                    'site__locationcontext__group__key':
+                        spatial_filter_splitted[1],
                     'site__locationcontext__value': spatial_filter_splitted[2]}
                                   )
             if spatial_filter_groups:
                 or_condition |= Q(**{
-                    'site__locationcontext__key__in':
+                    'site__locationcontext__group__key__in':
                         spatial_filter_groups})
         return or_condition
 

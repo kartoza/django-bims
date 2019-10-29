@@ -2,8 +2,8 @@
 """Settings for when running under docker in development mode."""
 from .dev import *  # noqa
 
-ALLOWED_HOSTS = ['*',
-                 u'0.0.0.0']
+ALLOWED_HOSTS = ['*']
+USE_X_FORWARDED_HOST = True
 
 ADMINS = (
     ('Dimas', 'dimas@kartoza.com'),

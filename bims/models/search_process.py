@@ -135,7 +135,10 @@ class SearchProcess(models.Model):
     def get_file_if_exits(self, finished=True):
         if os.path.exists(self.file_path) and self.finished == finished:
             raw_data = open(self.file_path)
-            return json.load(raw_data)
+            try:
+                return json.load(raw_data)
+            except ValueError:
+                return json.load(raw_data.read())
         else:
             self.finished = False
             self.save()

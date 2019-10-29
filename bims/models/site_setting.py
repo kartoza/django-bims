@@ -39,6 +39,13 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    spatial_filter_layer_style = models.CharField(
+        max_length=100,
+        help_text='Style name for spatial filter layer',
+        default='red_outline',
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

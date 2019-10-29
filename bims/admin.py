@@ -20,6 +20,7 @@ from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
 from django.utils.html import format_html
+from django.core.urlresolvers import reverse
 
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
@@ -68,7 +69,10 @@ from bims.models import (
     BimsDocument,
     ChemicalRecord,
     LocationContext,
-    Chem
+    Chem,
+    LocationContextGroup,
+    LocationContextFilterGroupOrder,
+    LocationContextFilter
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -109,6 +113,7 @@ class HasLocationContextDocument(django_admin.SimpleListFilter):
 
 class LocationContextInline(admin.TabularInline):
     model = LocationContext
+    raw_id_fields = ('group',)
 
 
 class LocationContextAdmin(admin.ModelAdmin):
@@ -705,6 +710,34 @@ class ChemAdmin(admin.ModelAdmin):
     )
 
 
+class LocationContextFilterGroupOrderAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'link_to_group',
+        'link_to_filter',
+        'group_display_order',
+        'filter_display_order'
+    )
+
+    def link_to_group(self, obj):
+        link = reverse('admin:bims_locationcontextgroup_change',
+                       args=[obj.group.id])
+        return format_html('<a href="{}">{}</a>', link, obj.group.name)
+
+    def link_to_filter(self, obj):
+        link = reverse('admin:bims_locationcontextfilter_change',
+                       args=[obj.filter.id])
+        return format_html('<a href="{}">{}</a>', link, obj.filter.title)
+
+
+class LocationContextFilterAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'display_order'
+    )
+    ordering = ('display_order',)
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -750,6 +783,11 @@ admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
+
+admin.site.register(LocationContextGroup)
+admin.site.register(
+    LocationContextFilterGroupOrder, LocationContextFilterGroupOrderAdmin)
+admin.site.register(LocationContextFilter, LocationContextFilterAdmin)
 
 # Hide upload files from geonode in admin
 admin.site.unregister(Upload)

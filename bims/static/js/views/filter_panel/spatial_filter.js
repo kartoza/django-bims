@@ -11,8 +11,10 @@ define([
         template: _.template($('#spatial-filter-panel').html()),
         selectedPoliticalRegions: [],
         selectedSpatialFilters: [],
+        selectedSpatialFilterLayers: {},
         politicalBoundaryInputName: 'political-boundary-value',
         riverCatchmentInputName: 'river-catchment-value',
+        layerGroup: null,
         topLevel: 2,
         events: {
             'click .close-button': 'close',
@@ -111,6 +113,9 @@ define([
 
             });
 
+            this.layerGroup = new ol.layer.Group();
+            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
+
             return this;
         },
         getUserBoundary: function () {
@@ -206,6 +211,8 @@ define([
                 var _isChecked = isChecked;
                 dataValue = 'value,' + data[i]['key'] + ',' + data[i]['query'];
 
+                let dataLayerName = '';
+
                 if (data[i].hasOwnProperty('query')) {
                     label = data[i]['query'];
                     dataName = data[i]['query'];
@@ -214,6 +221,7 @@ define([
                     label = data[i]['name'];
                     dataName = data[i]['key'];
                     dataValue = 'group,' + dataName;
+                    dataLayerName = `data-layer-name="${data[i]['layer_name']}"`;
                 }
                 if (selectedArray.includes(dataValue.toString())) {
                     _isChecked = true;
@@ -225,7 +233,7 @@ define([
                 var $item = $('<div class="boundary-item"></div>');
                 $item.append('<input class="boundary-item-input" type="checkbox" ' +
                     'data-level="' + level + '" name="' + dataName + '" ' +
-                    'value="' + dataValue + '" ' + checked + '>');
+                    'value="' + dataValue + '" ' + checked + ' ' + dataLayerName + '>');
                 $item.append('<label> ' + label + '</label>');
                 wrapper.append($item);
 
@@ -233,6 +241,56 @@ define([
                     $item.append('<i class="fa fa-plus-square-o pull-right" ' +
                         'aria-hidden="true"> </i>');
                     self.renderChildTree(data[i]['value'], $item, level + 1, dataName, _isChecked);
+                }
+            }
+        },
+        addSelectedSpatialFilterLayer: function ($checkbox) {
+            let level = $checkbox.data('level');
+            let values = $checkbox.val().split(',');
+            let key = values[1];
+            let value = '';
+            if (level === 2) {
+                 let $wrapper = $('.spatial-filter-container');
+                 value = values[2];
+                 $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
+            }
+            let layerName = $checkbox.data('layer-name');
+            if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
+                this.selectedSpatialFilterLayers[layerName].push(value);
+            } else {
+                this.selectedSpatialFilterLayers[layerName] = [value];
+            }
+        },
+        addSelectedSpatialFilterLayerFromJSON: function (json_string) {
+            let all = JSON.parse(json_string);
+            for (let i=0; i < all.length; i++) {
+                let parsed_data = all[0].split(',');
+                if (this.selectedSpatialFilterLayers.hasOwnProperty(parsed_data[1])) {
+                    this.selectedSpatialFilterLayers[parsed_data[1]].push(parsed_data[2]);
+                } else {
+                    this.selectedSpatialFilterLayers[parsed_data[1]] = [parsed_data[2]];
+                }
+            }
+        },
+        removeSelectedSpatialFilterLayer: function ($checkbox) {
+            let level = $checkbox.data('level');
+            let values = $checkbox.val().split(',');
+            let key = values[1];
+            let value = '';
+            if (level === 2) {
+                 let $wrapper = $('.spatial-filter-container');
+                 value = values[2];
+                 $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
+            }
+            let layerName = $checkbox.data('layer-name');
+            if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
+                if (this.selectedSpatialFilterLayers[layerName].length <= 1) {
+                    delete this.selectedSpatialFilterLayers[layerName];
+                } else {
+                    let index = this.selectedSpatialFilterLayers[layerName].indexOf(value);
+                    if (index > -1) {
+                        this.selectedSpatialFilterLayers[layerName].splice(index, 1);
+                    }
                 }
             }
         },
@@ -244,6 +302,7 @@ define([
             var level = $target.data('level');
             if ($target.is(':checked')) {
                 this.addSelectedValue(targetName, value);
+                this.addSelectedSpatialFilterLayer($target);
                 var $children = $wrapper.children().find('input:checkbox:not(:checked)');
                 $children.prop('checked', true);
                 var $checkedChildren = $wrapper.children().find('input:checkbox:checked');
@@ -252,6 +311,7 @@ define([
                     this.removeSelectedValue(targetName, childrenValue);
                 }
             } else {
+                this.removeSelectedSpatialFilterLayer($target);
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
@@ -440,9 +500,15 @@ define([
             var target = $(e.target);
             target.closest('.row').find('input:checkbox:checked').prop('checked', false);
             this.clearAllSelected(e);
+            this.clearLayers();
             if (Shared.CurrentState.SEARCH) {
                 Shared.Dispatcher.trigger('search:doSearch');
             }
+        },
+        clearLayers: function () {
+            Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
+            this.layerGroup = new ol.layer.Group();
+            this.selectedSpatialFilterLayers = {};
         },
         highlight: function (state) {
             if (state) {
@@ -450,6 +516,57 @@ define([
             } else {
                 this.$el.find('.subtitle').removeClass('filter-panel-selected');
             }
+        },
+        showLayersInMap: function () {
+            if (this.selectedSpatialFilterLayers.length < 1) {
+                return true;
+            }
+            let self = this;
+            Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
+            this.layerGroup = new ol.layer.Group();
+            Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
+            let wmsUrl = '/bims_proxy/https://maps.kartoza.com/geoserver/wms';
+            let wmsFormat = 'image/png';
+
+            $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
+                let cqlFilters = "(";
+                for (let i=0; i < selectedLayer.length; i++) {
+                    if (!selectedLayer[i]) {
+                        continue;
+                    }
+                    cqlFilters += "\'"+ selectedLayer[i] +"\'";
+                    if (i < selectedLayer.length - 1) {
+                        cqlFilters += ",";
+                    }
+                }
+                cqlFilters += ")";
+                let wmsLayer = 'kartoza:' + key;
+                if (cqlFilters !== "()") {
+                    if (key === 'geoclass') {
+                        cqlFilters = "description in " + cqlFilters;
+                    } else {
+                        cqlFilters = "name in " + cqlFilters;
+                    }
+                } else {
+                    cqlFilters = null;
+                }
+                let options = {
+                    url: wmsUrl,
+                    params: {
+                        LAYERS: wmsLayer,
+                        FORMAT: wmsFormat,
+                        TILED: true,
+                        STYLES: spatialFilterLayerStyle,
+                    }
+                };
+                if (cqlFilters) {
+                    options.params.CQL_FILTER = encodeURIComponent(cqlFilters);
+                }
+                let layer = new ol.layer.Tile({
+                    source: new ol.source.TileWMS(options)
+                });
+                self.layerGroup.getLayers().getArray().push(layer);
+            });
         },
         subPanelClicked: function (e) {
             var $panel = $($(e.target).next().get(0));

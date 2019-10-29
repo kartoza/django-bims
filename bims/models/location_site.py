@@ -20,6 +20,7 @@ from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.search_process import SearchProcess
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
+from bims.models.location_context_group import LocationContextGroup
 
 
 LOGGER = logging.getLogger(__name__)
@@ -261,16 +262,25 @@ class LocationSite(DocumentLinksMixin):
             for geocontext_value in geocontext_data['service_registry_values']:
                 if not geocontext_value['value']:
                     continue
+                location_context_group, group_created = (
+                    LocationContextGroup.objects.get_or_create(
+                        key=geocontext_value['key']
+                    )
+                )
                 location_context, created = (
                     LocationContext.objects.get_or_create(
                         site=self,
-                        key=geocontext_value['key'],
+                        group=location_context_group
                     )
                 )
-                location_context.name = geocontext_value['name']
-                location_context.group_key = geocontext_data['key']
+                location_context_group.name = geocontext_value['name']
+                location_context_group.key = geocontext_value['key']
+                location_context_group.geocontext_group_key = (
+                    geocontext_data['key']
+                )
                 location_context.fetch_time = timezone.now()
                 location_context.value = str(geocontext_value['value'])
+                location_context_group.save()
                 location_context.save()
         except (ValueError, KeyError, TypeError):
             return False, 'Could not format the geocontext data'
@@ -424,23 +434,30 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     # Update refined geomorphological if exist
     if instance.refined_geomorphological:
         try:
+            groups = LocationContextGroup.objects.filter(
+                key='geo_class_recoded'
+            )
+            if not groups.exists():
+                return
+            group = groups[0]
             try:
                 geo_context, created = LocationContext.objects.get_or_create(
                     site=instance,
-                    key='geo_class_recoded',
+                    group=group
                 )
             except LocationContext.MultipleObjectsReturned:
                 LocationContext.objects.filter(
                     site=instance,
-                    key='geo_class_recoded'
+                    group=group
                 ).delete()
                 geo_context = LocationContext.objects.create(
                     site=instance,
-                    key='geo_class_recoded'
+                    group=group
                 )
                 created = True
-            geo_context.name = 'Geomorphological zones'
-            geo_context.group_key = 'geomorphological_group'
+            group.name = 'Geomorphological zones'
+            group.group_key = 'geomorphological_group'
+            group.save()
             if not created:
                 if instance.refined_geomorphological != geo_context.value:
                     if not instance.original_geomorphological:
