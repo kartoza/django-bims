@@ -66,6 +66,10 @@ let filterParametersJSON = {
     'validated': {
         'label': 'Validation Status',
         'type': 'json'
+    },
+    'spatialFilter': {
+        'label': 'Spatial filter',
+        'type': 'spatial_filter'
     }
 };
 
@@ -91,13 +95,29 @@ function renderFilterList($table) {
                 tableData[data['label']] = urlParams[key].split(',');
             } else if (data['type'] === 'string') {
                 tableData[data['label']] = urlParams[key];
+            } else if (data['type'] === 'spatial_filter') {
+                let spatialFilterContainer = $('.spatial-filter-container');
+                let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
+                let table_data = '';
+                $.each(json_data, function (index, spatial_filter) {
+                    let spatial_filter_values = spatial_filter.split(',');
+                    let spatial_filter_name = spatial_filter_values[1];
+                    spatial_filter_name = spatialFilterContainer.find(`input[name ="${spatial_filter_name}"]`).next().html();
+                    let spatial_filter_value = 'All';
+                    if (spatial_filter_values[0] === 'value') {
+                        spatial_filter_value = spatial_filter_values[2];
+                    }
+                    table_data += spatial_filter_name + ' : ' + spatial_filter_value;
+                    table_data += '<br/>';
+                });
+                tableData[data['label']] = table_data;
             } else if (data['type'] === 'unicode') {
                 tableData[data['label']] = decodeURIComponent(urlParams[key]);
             } else if (data['type'] === 'json') {
                 let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
                 try {
                     if (typeof json_data !== 'undefined' && json_data.length > 0) {
-                        tableData[data['label']] = ''
+                        tableData[data['label']] = '';
                         $.each(json_data, function (index, json_label) {
                             if (typeof json_label === 'undefined') {
                                 return true;
