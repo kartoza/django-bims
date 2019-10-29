@@ -798,9 +798,10 @@ define([
                 });
             }
 
-            // River catchment
+            // Sptaial filter
             if (allFilters.hasOwnProperty('spatialFilter')) {
                 this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
+                this.spatialFilterView.addSelectedSpatialFilterLayerFromJSON(allFilters['spatialFilter']);
             }
 
             // Boundary

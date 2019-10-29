@@ -261,6 +261,17 @@ define([
                 this.selectedSpatialFilterLayers[layerName] = [value];
             }
         },
+        addSelectedSpatialFilterLayerFromJSON: function (json_string) {
+            let all = JSON.parse(json_string);
+            for (let i=0; i < all.length; i++) {
+                let parsed_data = all[0].split(',');
+                if (this.selectedSpatialFilterLayers.hasOwnProperty(parsed_data[1])) {
+                    this.selectedSpatialFilterLayers[parsed_data[1]].push(parsed_data[2]);
+                } else {
+                    this.selectedSpatialFilterLayers[parsed_data[1]] = [parsed_data[2]];
+                }
+            }
+        },
         removeSelectedSpatialFilterLayer: function ($checkbox) {
             let level = $checkbox.data('level');
             let values = $checkbox.val().split(',');
@@ -516,10 +527,14 @@ define([
             Shared.Dispatcher.trigger('map:insertLayerAt', this.layerGroup, 0);
             let wmsUrl = '/bims_proxy/https://maps.kartoza.com/geoserver/wms';
             let wmsFormat = 'image/png';
+            console.log(this.selectedSpatialFilterLayers);
 
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
                 let cqlFilters = "(";
                 for (let i=0; i < selectedLayer.length; i++) {
+                    if (!selectedLayer[i]) {
+                        continue;
+                    }
                     cqlFilters += "\'"+ selectedLayer[i] +"\'";
                     if (i < selectedLayer.length - 1) {
                         cqlFilters += ",";
@@ -527,10 +542,14 @@ define([
                 }
                 cqlFilters += ")";
                 let wmsLayer = 'kartoza:' + key;
-                if (key === 'geoclass') {
-                    cqlFilters = "description in " + cqlFilters;
+                if (cqlFilters !== "()") {
+                    if (key === 'geoclass') {
+                        cqlFilters = "description in " + cqlFilters;
+                    } else {
+                        cqlFilters = "name in " + cqlFilters;
+                    }
                 } else {
-                    cqlFilters = "name in " + cqlFilters;
+                    cqlFilters = null;
                 }
                 let options = {
                     url: wmsUrl,
@@ -539,9 +558,11 @@ define([
                         FORMAT: wmsFormat,
                         TILED: true,
                         STYLES: spatialFilterLayerStyle,
-                        CQL_FILTER: encodeURIComponent(cqlFilters)
                     }
                 };
+                if (cqlFilters) {
+                    options.params.CQL_FILTER = encodeURIComponent(cqlFilters);
+                }
                 let layer = new ol.layer.Tile({
                     source: new ol.source.TileWMS(options)
                 });
