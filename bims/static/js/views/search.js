@@ -32,8 +32,6 @@ define([
         initialSelectedSourceCollection: [],
         initialSelectedEndemic: [],
         initialSelectedModules: [],
-        initialYearFrom: null,
-        initialYearTo: null,
         currentSort: null,
         defaultSort: 'name',
         events: {
@@ -767,17 +765,10 @@ define([
             }
 
             // Date
-            if (allFilters.hasOwnProperty('yearFrom')) {
-                self.initialYearFrom = allFilters['yearFrom'];
-            }
-            if (allFilters.hasOwnProperty('yearTo')) {
-                self.initialYearTo = allFilters['yearTo'];
-            }
-
-            if (this.initialYearFrom && this.initialYearTo) {
-                $('#year-from').html(Math.floor(this.initialYearFrom));
-                $('#year-to').html(Math.floor(this.initialYearTo));
-                this.yearSlider.set([this.initialYearFrom, this.initialYearTo]);
+            if (allFilters.hasOwnProperty('yearFrom') && allFilters.hasOwnProperty('yearTo')) {
+                $('#year-from').html(Math.floor(allFilters['yearFrom']));
+                $('#year-to').html(Math.floor(allFilters['yearTo']));
+                this.yearSlider.set([allFilters['yearFrom'], allFilters['yearTo']]);
             }
 
             // Months
