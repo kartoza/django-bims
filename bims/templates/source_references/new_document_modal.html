@@ -63,7 +63,36 @@
                             <textarea id="document-description" type="text" class="form-control form-control-sm" name="description"></textarea>
                         </div>
                     </div>
-                    <div class="form-group row">
+                    <fieldset class="form-group">
+                        <div class="row">
+                            <label class="col-sm-2 col-form-label col-form-label"></label>
+                            <div class="col-sm-10">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="documentRadios" id="upload-file" value="file" checked>
+                                <label class="form-check-label" for="upload-file">
+                                    Upload a file
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="documentRadios" id="provide-url" value="url">
+                                <label class="form-check-label" for="provide-url">
+                                    Provide url
+                                </label>
+                            </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="form-group row" id="url-form" style="display:none;">
+                        <label for="document-title"
+                               class="col-sm-2 col-form-label col-form-label"><b>Url</b></label>
+                        <div class="col-sm-10">
+                            <input id="document-url" type="text" class="form-control form-control-sm" name="doc_url" required>
+                            <div id="document-url-error" class="alert alert-danger" role="alert"
+                                 style="display: none;">Url is required
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row" id="file-form">
                         <label class="col-sm-2 col-form-label col-form-label"></label>
                         <div class="col-sm-10">
                             <input id="document-file" type="file" name="doc_file" accept="{{ ALLOWED_DOC_TYPES }}" required>
@@ -96,6 +125,21 @@
         let $modal = $('#new-document-modal');
         let $error = $('#new-document-modal-error');
         let $yearInput = $('#document-year');
+        let documentMethod = 'file';
+        $('input[type=radio][name=documentRadios]').change(function() {
+            let $urlForm = $('#url-form');
+            let $fileForm = $('#file-form');
+            $('#document-url-error').hide();
+            $('#document-file-error').hide();
+            documentMethod = this.value;
+            if (this.value === 'url') {
+                $urlForm.show();
+                $fileForm.hide();
+            } else {
+                $fileForm.show();
+                $urlForm.hide();
+            }
+        });
         $form.submit(function (e) {
             e.preventDefault();
             $('.alert-danger').hide();
@@ -113,9 +157,25 @@
                 $('#document-title-error').show();
                 return;
             }
-            if (!$('#document-file').val()) {
-                $('#document-file-error').show();
-                return;
+            if (documentMethod === 'file') {
+                if (!$('#document-file').val()) {
+                    $('#document-file-error').show();
+                    return;
+                }
+            } else {
+                let documentUrl = $('#document-url');
+                let documentUrlError = $('#document-url-error');
+                documentUrlError.html('Url is required');
+                if (!documentUrl.val()) {
+                    documentUrlError.show();
+                    return;
+                } else {
+                    if (!isUrlValid(documentUrl.val())) {
+                        documentUrlError.html('Url format is not correct');
+                        documentUrlError.show();
+                        return;
+                    }
+                }
             }
             $modal.find('button').prop('disabled', true);
             $button.find('.label').hide();
