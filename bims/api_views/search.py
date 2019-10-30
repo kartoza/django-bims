@@ -322,7 +322,7 @@ class Search(object):
         :return: search results
         """
         collection_record_model = BiologicalCollectionRecord
-        filtered_location_sites = None
+        filtered_location_sites = LocationSite.objects.none()
 
         if self.ecological_category:
             collection_record_model = SiteVisitTaxon
@@ -496,7 +496,7 @@ class Search(object):
                     chemical_collection_record__isnull=False
                 )
 
-        if filtered_location_sites:
+        if filtered_location_sites.exists():
             bio = bio.filter(
                 site__in=filtered_location_sites
             ).select_related()
