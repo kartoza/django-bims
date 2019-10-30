@@ -33,23 +33,6 @@ class LocationSiteOverviewData(object):
     search_filters = None
     is_sass_exist = False
 
-    def get_all_taxa_children(self, taxa):
-        """
-        Get all children from taxa
-        :param taxa: QuerySet of taxa
-        :return: list all children ids
-        """
-        query = {}
-        parent = ''
-        or_condition = Q()
-        query['id__in'] = list(taxa.values_list('id', flat=True))
-        for i in range(6):  # species to class
-            parent += 'parent__'
-            query[parent + 'in'] = taxa
-        for key, value in query.items():
-            or_condition |= Q(**{key: value})
-        return Taxonomy.objects.filter(or_condition)
-
     def biodiversity_data(self):
         if not self.search_filters:
             return {}
@@ -61,8 +44,6 @@ class LocationSiteOverviewData(object):
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         )
-        if collection_results.count() > 0:
-            collection_results[0].save()
         for group in groups:
             group_data = dict()
             group_data[self.GROUP_ICON] = group.logo.name
@@ -73,10 +54,9 @@ class LocationSiteOverviewData(object):
                 module_group=group
             )
 
-            group_records_id = list(group_records.values_list('id', flat=True))
-            if group_records_id and not self.is_sass_exist:
+            if group_records.exists() and not self.is_sass_exist:
                 self.is_sass_exist = SiteVisitTaxon.objects.filter(
-                    id__in=group_records_id).exists()
+                    id__in=group_records).exists()
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
             group_data[self.GROUP_SITES] = group_records.distinct(
