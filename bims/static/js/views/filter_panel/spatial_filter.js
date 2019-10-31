@@ -15,6 +15,7 @@ define([
         politicalBoundaryInputName: 'political-boundary-value',
         riverCatchmentInputName: 'river-catchment-value',
         layerGroup: null,
+        groupKeyLabel: '__group__',
         topLevel: 2,
         events: {
             'click .close-button': 'close',
@@ -253,6 +254,8 @@ define([
                  let $wrapper = $('.spatial-filter-container');
                  value = values[2];
                  $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
+            } else {
+                value = this.groupKeyLabel;
             }
             let layerName = $checkbox.data('layer-name');
             if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
@@ -267,6 +270,9 @@ define([
             let all = JSON.parse(json_string);
             for (let i=0; i < all.length; i++) {
                 let parsed_data = all[0].split(',');
+                if (parsed_data.length === 2) {
+                    parsed_data.push(this.groupKeyLabel);
+                }
                 if (this.selectedSpatialFilterLayers.hasOwnProperty(parsed_data[1])) {
                     if (this.selectedSpatialFilterLayers[parsed_data[1]].indexOf(parsed_data[2]) === -1) {
                         this.selectedSpatialFilterLayers[parsed_data[1]].push(parsed_data[2]);
@@ -278,24 +284,31 @@ define([
         },
         removeSelectedSpatialFilterLayer: function ($checkbox) {
             let level = $checkbox.data('level');
-            let values = $checkbox.val().split(',');
+            let values = '';
+            try {
+                values = $checkbox.val().split(',');
+            } catch (e) {
+               return false;
+            }
             let key = values[1];
             let value = '';
             if (level === 2) {
                  let $wrapper = $('.spatial-filter-container');
                  value = values[2];
                  $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
+            } else {
+                value = this.groupKeyLabel;
             }
             let layerName = $checkbox.data('layer-name');
             if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
-                if (this.selectedSpatialFilterLayers[layerName].length <= 1) {
-                    delete this.selectedSpatialFilterLayers[layerName];
-                } else {
-                    let index = this.selectedSpatialFilterLayers[layerName].indexOf(value);
-                    if (index > -1) {
-                        this.selectedSpatialFilterLayers[layerName].splice(index, 1);
-                    }
+                // if (this.selectedSpatialFilterLayers[layerName].length <= 1) {
+                //     delete this.selectedSpatialFilterLayers[layerName];
+                // } else {
+                let index = this.selectedSpatialFilterLayers[layerName].indexOf(value);
+                if (index > -1) {
+                    this.selectedSpatialFilterLayers[layerName].splice(index, 1);
                 }
+                //}
             }
         },
         itemInputClicked: function (e) {
@@ -312,25 +325,27 @@ define([
                 var $checkedChildren = $wrapper.children().find('input:checkbox:checked');
                 for (var j = 0; j < $checkedChildren.length; j++) {
                     var childrenValue = $($checkedChildren[j]).val();
+                    this.removeSelectedSpatialFilterLayer($($checkedChildren[j]));
                     this.removeSelectedValue(targetName, childrenValue);
                 }
             } else {
-                this.removeSelectedSpatialFilterLayer($target);
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
                     for (var i = level - 1; i >= 1; i--) {
                         var $checked = $parent.find('input:checkbox:checked[data-level="' + (i + 1) + '"]');
                         $parent = $parent.parent().find('input:checkbox:checked[data-level="' + (i) + '"]').prop('checked', false);
+                        this.removeSelectedSpatialFilterLayer($parent);
                         this.removeSelectedValue(targetName, $parent.val());
-                        for (var j = 0; j < $checked.length; j++) {
-                            var checkedValue = $($checked[j]).val();
+                        for (let j = 0; j < $checked.length; j++) {
+                            let checkedValue = $($checked[j]).val();
+                            this.addSelectedSpatialFilterLayer($($checked[j]));
                             this.addSelectedValue(targetName, checkedValue);
                         }
                         $parent = $parent.parent().parent();
                     }
                 }
-
+                this.removeSelectedSpatialFilterLayer($target);
                 this.removeSelectedValue(targetName, value);
                 $wrapper.children().find('input:checkbox:checked').prop('checked', false);
             }
@@ -533,27 +548,28 @@ define([
             let wmsFormat = 'image/png';
 
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
-                let cqlFilters = "(";
-                for (let i=0; i < selectedLayer.length; i++) {
-                    if (!selectedLayer[i]) {
-                        continue;
+                let cqlFilters = null;
+                if (selectedLayer.length === 0) {
+                    return true;
+                } else if (selectedLayer.length > 0 && selectedLayer[0] !== self.groupKeyLabel) {
+                    cqlFilters = "(";
+                    for (let i=0; i < selectedLayer.length; i++) {
+                        if (!selectedLayer[i]) {
+                            continue;
+                        }
+                        cqlFilters += "\'"+ selectedLayer[i] +"\'";
+                        if (i < selectedLayer.length - 1) {
+                            cqlFilters += ",";
+                        }
                     }
-                    cqlFilters += "\'"+ selectedLayer[i] +"\'";
-                    if (i < selectedLayer.length - 1) {
-                        cqlFilters += ",";
-                    }
-                }
-                cqlFilters += ")";
-                let wmsLayer = 'kartoza:' + key;
-                if (cqlFilters !== "()") {
+                    cqlFilters += ")";
                     if (key === 'geoclass') {
                         cqlFilters = "description in " + cqlFilters;
                     } else {
                         cqlFilters = "name in " + cqlFilters;
                     }
-                } else {
-                    cqlFilters = null;
                 }
+                let wmsLayer = 'kartoza:' + key;
                 let options = {
                     url: wmsUrl,
                     params: {

@@ -55,7 +55,10 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
                 searchControl.click();
             }
             $('#search').val(query);
-            Shared.Dispatcher.trigger('search:checkSearchCollection', true);
+            if (this.searchHistory.length === 0) {
+                Shared.Dispatcher.trigger('search:checkSearchCollection', true);
+            }
+            // Shared.Dispatcher.trigger('search:checkSearchCollection', true);
             this.searchHistory.push(query);
         },
         searchWithFilters: function (query, filters) {

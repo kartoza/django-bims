@@ -790,7 +790,7 @@ define([
             }
 
             // Sptaial filter
-            if (allFilters.hasOwnProperty('spatialFilter')) {
+            if (allFilters.hasOwnProperty('spatialFilter') && firstCall) {
                 this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
                 this.spatialFilterView.addSelectedSpatialFilterLayerFromJSON(allFilters['spatialFilter']);
             }
