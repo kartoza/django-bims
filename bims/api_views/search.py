@@ -362,11 +362,20 @@ class Search(object):
             })
         elif self.search_query and bio is None:
             bio = collection_record_model.objects.filter(
-                Q(original_species_name__icontains=self.search_query) |
-                Q(taxonomy__scientific_name__icontains=self.search_query) |
-                Q(site__site_code__icontains=self.search_query) |
-                Q(site__river__name__icontains=self.search_query)
+                original_species_name__icontains=self.search_query
             )
+            if not bio.exists():
+                bio = collection_record_model.objects.filter(
+                    taxonomy__scientific_name__icontains=self.search_query
+                )
+            if not bio.exists():
+                bio = collection_record_model.objects.filter(
+                    site__site_code__icontains=self.search_query
+                )
+            if not bio.exists():
+                bio = collection_record_model.objects.filter(
+                    site__river__name__icontains=self.search_query
+                )
             if not bio.exists():
                 # Search by vernacular names
                 bio = collection_record_model.objects.filter(
@@ -400,9 +409,6 @@ class Search(object):
                     'taxonomy__iucn_status__category__in':
                         self.conservation_status
                 }
-            )
-            filters['taxonomy__iucn_status__category__in'] = (
-                self.conservation_status
             )
         if self.source_collection:
             for source_collection in self.source_collection:
