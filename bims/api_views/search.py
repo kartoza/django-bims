@@ -96,6 +96,7 @@ class SearchAPIView(BimsApiView):
 class Search(object):
     location_sites_raw_query = ''
     collection_records = None
+    filtered_taxa_records = None
 
     def __init__(self, parameters):
         self.parameters = parameters
@@ -299,6 +300,20 @@ class Search(object):
                 spatial_filter_group_ids.append(spatial_filter)
         return spatial_filter_group_ids
 
+    def filter_taxa_records(self, query_dict):
+        """
+        Filter taxa records
+        :param query_dict: dict of query
+        """
+        if self.filtered_taxa_records is None:
+            self.filtered_taxa_records = Taxonomy.objects.filter(
+                **query_dict
+            )
+        else:
+            self.filtered_taxa_records = self.filtered_taxa_records.filter(
+                **query_dict
+            )
+
     def get_all_taxa_children(self, taxa):
         """
         Get all children from taxa
@@ -341,28 +356,24 @@ class Search(object):
                 ).distinct('id')
                 if not taxa:
                     taxa_children_exist = False
-            taxa_list_with_collection = Taxonomy.objects.filter(
-                id__in=taxa_list,
-                biologicalcollectionrecord__isnull=False
-            ).distinct('id')
-            bio = collection_record_model.objects.filter(
-                taxonomy__id__in=list(
-                    taxa_list_with_collection.values_list('id', flat=True))
-            )
-        elif self.search_query and not bio:
+            self.filter_taxa_records({
+                'id__in': taxa_list,
+                'biologicalcollectionrecord__isnull': False
+            })
+        elif self.search_query and bio is None:
             bio = collection_record_model.objects.filter(
                 Q(original_species_name__icontains=self.search_query) |
                 Q(taxonomy__scientific_name__icontains=self.search_query) |
                 Q(site__site_code__icontains=self.search_query) |
                 Q(site__river__name__icontains=self.search_query)
             )
-            if not bio:
+            if not bio.exists():
                 # Search by vernacular names
                 bio = collection_record_model.objects.filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
-        else:
+        if bio is None:
             bio = collection_record_model.objects.all()
 
         filters = dict()
@@ -384,6 +395,12 @@ class Search(object):
         if self.reference:
             filters['source_reference__in'] = self.reference
         if self.conservation_status:
+            self.filter_taxa_records(
+                {
+                    'taxonomy__iucn_status__category__in':
+                        self.conservation_status
+                }
+            )
             filters['taxonomy__iucn_status__category__in'] = (
                 self.conservation_status
             )
@@ -402,9 +419,15 @@ class Search(object):
                     ).values_list('id', flat=True)
                 ))
             endemism_list = list(set(endemism_list))
-            filters['taxonomy__endemism__in'] = endemism_list
+            self.filter_taxa_records(
+                {
+                    'endemism__in': endemism_list
+                }
+            )
         if self.taxon_id:
-            filters['taxonomy__in'] = self.taxon_id
+            self.filter_taxa_records({
+                'id__in': self.taxon_id
+            })
         if self.boundary:
             boundary = Boundary.objects.filter(id__in=self.boundary)
             if len(boundary) == 0:
@@ -427,6 +450,10 @@ class Search(object):
                     'sitevisitecologicalcondition__'
                     'ecological_condition__category__in']
             ) = self.ecological_category
+
+        if self.filtered_taxa_records is not None:
+            filters['taxonomy__in'] = self.filtered_taxa_records
+
         bio = bio.filter(**filters)
 
         if self.collector:
@@ -501,13 +528,14 @@ class Search(object):
                 site__in=filtered_location_sites
             ).select_related()
 
-        self.location_sites_raw_query = LocationSite.objects.filter(
-            id__in=bio.values('site_id')
-        ).annotate(site_id=F('id')).values(
-            'site_id',
-            'geometry_point',
-            'name'
-        ).query.sql_with_params()
+        if bio.exists():
+            self.location_sites_raw_query = LocationSite.objects.filter(
+                id__in=bio.values('site_id')
+            ).annotate(site_id=F('id')).values(
+                'site_id',
+                'geometry_point',
+                'name'
+            ).query.sql_with_params()
 
         self.collection_records = bio
         return self.collection_records

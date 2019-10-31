@@ -66,6 +66,8 @@ class SearchProcess(models.Model):
         super(SearchProcess, self).delete(*args, **kwargs)
 
     def set_search_raw_query(self, raw_query):
+        if not raw_query:
+            return
         formatted_params = ()
         params = raw_query[1]
         for param in params:
