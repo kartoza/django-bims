@@ -11,53 +11,42 @@ jobs:
     name: Build and Push Docker Django BIMS Image
     runs-on: ubuntu-16.04
     steps:
-    - uses: actions/checkout@v1
-    - name: Login to Docker Hub
-      uses: actions/docker/login@master
-      env: 
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Build the Docker Django Bims Image
-      uses: actions/docker/cli@master
+    - uses: actions/checkout@master
+    - name: Build and Publish the Docker Django Bims Image
+      uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        args: build deployment/production/ --build-arg BIMS_TAG=develop --tag ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
-    - name: Push the Docker Django Bims Image
-      uses: actions/docker/cli@master
-      with:
-        args: push ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+        name: ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+        workdir: deployment/production
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        buildargs: BIMS_TAG=develop
         
   build-freshwaterbiodiversity-image:
     name: Build and Push Docker Freshwaterbiodiversity Image
     needs: build
     runs-on: ubuntu-16.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@master
       with: 
         repository: kartoza/kbims-healthyrivers
         ref: master
         fetch-depth: 1
         path: django-bims/kbims-healthyrivers/
-    - name: Login to Docker Hub
-      uses: actions/docker/login@master
-      env: 
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Build the Docker Freshwaterbiodiversity Image
-      uses: actions/docker/cli@master
+    - name: Build and Publish the Docker Freshwaterbiodiversity Image
+      uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        args: build kbims-healthyrivers/deployment/production/uwsgi/ --build-arg BIMS_TAG=latest --tag ${{ secrets.IMAGE_FRESHWATERBIODIVERSITY_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
-    - name: Push the Docker Freshwaterbiodiversity Image
-      uses: actions/docker/cli@master
-      with:
-        args: push ${{ secrets.IMAGE_FRESHWATERBIODIVERSITY_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
-
+        name: ${{ secrets.IMAGE_FRESHWATERBIODIVERSITY_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}
+        workdir: kbims-healthyrivers/deployment/production/uwsgi
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        buildargs: BIMS_TAG=latest
   
   update-freshwaterbiodiversity-rancher-stacks:
     name: Update Rancher Stacks
     needs: build-freshwaterbiodiversity-image
     runs-on: ubuntu-16.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@master
       with:
         repository: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REPO }}
         ref: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REF }}
