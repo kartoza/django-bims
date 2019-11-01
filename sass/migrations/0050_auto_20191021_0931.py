@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('sass', '0049_auto_20191021_0925'),
+        ('bims', '0193_chem'),
     ]
 
     operations = [
