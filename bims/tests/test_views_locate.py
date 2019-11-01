@@ -5,7 +5,11 @@ import os
 from django.test import SimpleTestCase
 
 from bims.views.locate import (
-    filter_farm_ids, parse_farm_ids, get_farm, parse_farm)  # noqa
+    # filter_farm_ids,
+    parse_farm_ids,
+    get_farm,
+    parse_farm
+)
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
