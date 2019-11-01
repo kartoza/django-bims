@@ -339,13 +339,14 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             if site_image:
                 try:
                     site_image_obj = SiteImage.objects.get(
-                        site=site_visit.location_site
+                        site_visit=site_visit
                     )
                     site_image_obj.image = site_image
                     site_image_obj.save()
                 except SiteImage.DoesNotExist:
                     site_image_obj = SiteImage(
                         site=site_visit.location_site,
+                        site_visit=site_visit,
                         image=site_image
                     )
                     site_image_obj.save()
@@ -611,7 +612,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         context['site_code'] = self.site_code
         try:
             self.site_image = (
-                SiteImage.objects.get(site=self.site_visit.location_site))
+                SiteImage.objects.get(site_visit=self.site_visit))
             context['site_image'] = self.site_image
         except SiteImage.DoesNotExist:
             pass

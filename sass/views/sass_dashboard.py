@@ -339,7 +339,7 @@ class SassDashboardView(TemplateView):
         context['site_id'] = self.location_site.id
         try:
             context['site_image'] = (
-                SiteImage.objects.get(site=self.location_site))
+                SiteImage.objects.filter(site=self.location_site))
         except SiteImage.DoesNotExist:
             pass
         context['original_site_code'] = self.location_site.legacy_site_code

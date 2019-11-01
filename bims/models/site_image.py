@@ -5,6 +5,7 @@
 """
 
 from django.db import models
+from sass.models.site_visit import SiteVisit
 
 
 class SiteImage(models.Model):
@@ -19,4 +20,10 @@ class SiteImage(models.Model):
         upload_to='site_images',
         null=False,
         blank=False
+    )
+
+    site_visit = models.ForeignKey(
+        SiteVisit,
+        null=True,
+        blank=True
     )
