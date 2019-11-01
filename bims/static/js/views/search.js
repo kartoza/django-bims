@@ -229,7 +229,7 @@ define([
                         }
                     }
                     self.filtersReady['study-reference'] = true;
-                    $('#filter-study-reference').chosen({});
+                    $('#filter-study-reference').chosen({search_contains: true});
                 }
             });
 

@@ -2742,3 +2742,7 @@ div:hover::-webkit-scrollbar {
     font-size: 10pt;
     height: 30px !important;
 }
+
+.active-result {
+    height: auto !important;
+}
