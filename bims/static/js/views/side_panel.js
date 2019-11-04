@@ -73,7 +73,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
                 Shared.Dispatcher.trigger('mapControlPanel:validationClosed');
                 this.validationMode = false;
             }
+            Shared.SidePanelOpen = true;
             Shared.Dispatcher.trigger('biodiversityLegend:moveLeft');
+            Shared.Dispatcher.trigger('bugReport:moveLeft');
             this.hideReturnButton();
             $('#geocontext-information-container').hide();
             this.rightPanel.show('slide', {direction: 'right'}, 200);
@@ -116,6 +118,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         closeSidePanel: function (e) {
             Shared.Dispatcher.trigger('searchResult:clicked', null);
             Shared.Dispatcher.trigger('biodiversityLegend:moveRight');
+            Shared.Dispatcher.trigger('bugReport:moveRight');
+            Shared.SidePanelOpen = false;
             this.closeSidePanelAnimation();
             this.hideReturnButton();
             if (this.validationMode) {

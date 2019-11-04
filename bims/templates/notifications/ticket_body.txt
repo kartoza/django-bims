@@ -3,4 +3,4 @@
 ---
 
 User : <a href="http://{{ current_site }}/admin/people/profile/{{ user_id }}">User information </a>
-{{ additional_information }}
+{{ additional_information | safe }}

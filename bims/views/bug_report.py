@@ -48,16 +48,19 @@ class BugReportView(LoginRequiredMixin, View):
         if json_additional_information:
             all_information = json.loads(json_additional_information)
             for information_key in all_information:
+                value = all_information[information_key]
+                if value[:4] != 'http':
+                    value = value.capitalize()
                 additional_information += '{key}: {value}\n'.format(
                     key=information_key.capitalize(),
-                    value=all_information[information_key].capitalize()
+                    value=value
                 )
 
         ticket_body = render_to_string(
             report_template,
             {
                 'user_id': self.request.user.id,
-                'description': description,
+                'description': description.capitalize(),
                 'current_site': Site.objects.get_current(),
                 'additional_information': additional_information
             }

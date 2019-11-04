@@ -132,6 +132,54 @@
     </div>
 </script>
 
+{# Bug report feature #}
+<script type="text/template" id="bug-report">
+    <div class="bug-report-wrapper">
+        <div class="bug-report-panel">
+            <div class="brp-title">
+                FEEDBACK
+                <span class="close-brp-panel"><i class="fa fa-times" aria-hidden="true"></i></span>
+            </div>
+            <div class="alert alert-success success-feedback" role="alert" style="border-radius: 0; display: none; margin-bottom: 0">
+                <b>Thank you!</b> Your feedback has been submitted. Here's your ticket : <span id="ticket-link"></span>
+            </div>
+            <div class="alert alert-danger error-feedback" role="alert" style="border-radius: 0; display: none; margin-bottom: 0">
+                <b>Oops!</b> Something went wrong and we couldn't process your request, please try again later.
+            </div>
+            <div class="brp-type">
+                <select class="custom-select" id="report-type">
+                    <option selected value="bug-report">Bug report</option>
+                    <option value="feature-request">Feature request</option>
+                </select>
+            </div>
+            <div class="brp-summary">
+                <div class="form-group">
+                    <textarea class="form-control" rows="2" id="report-summary" placeholder="Summary"></textarea>
+                </div>
+            </div>
+            <div class="brp-description">
+                <div class="form-group">
+                    <textarea class="form-control" rows="4" id="report-description" placeholder="Detailed description"></textarea>
+                </div>
+            </div>
+            <div class="brp-loading-panel" style="display: none">
+                 <img src="/static/img/small-loading.svg" width="150"
+                 alt="Loading view">
+            </div>
+            <div class="brp-small-text">
+                All issues are public and available through <a href="http://github.com/{{ preferences.SiteSetting.github_feedback_repo }}/issues?q=is%3Aissue+is%3Aopen+label%3Auser-feedback" target="_blank">Github</a>
+            </div>
+            <div class="brp-submit">
+                <button type="button" disabled class="btn btn-outline-dark" id="submit-report-button">Submit</button>
+
+            </div>
+        </div>
+        <div class="bug-report-button">
+            <i class="fa fa-comment" aria-hidden="true"></i>
+        </div>
+    </div>
+</script>
+
 {# Biodiversity legend #}
 <script type="text/template" id="biodiversity-legend">
     <div class="bio-legend-wrapper">
