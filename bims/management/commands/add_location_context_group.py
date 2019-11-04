@@ -69,7 +69,7 @@ class Command(BaseCommand):
         if ignore_not_empty:
             location_sites = location_sites.exclude(
                 reduce(operator.and_, (
-                    Q(locationcontext__group_key=x)
+                    Q(locationcontext__group__geocontext_group_key=x)
                     for x in geocontext_group_keys)
                 ))
 
