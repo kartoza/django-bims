@@ -46,6 +46,20 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    github_feedback_repo = models.CharField(
+        max_length=100,
+        help_text='Github repo for users`s feedback',
+        default='',
+        blank=True
+    )
+
+    github_feedback_token = models.CharField(
+        max_length=100,
+        help_text='Access token for Github feedback repo',
+        default='',
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

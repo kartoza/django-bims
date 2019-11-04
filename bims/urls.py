@@ -51,6 +51,7 @@ from bims.views.location_site import (
     LocationSiteFormDeleteView
 )
 from bims.views.source_reference_form import SourceReferenceView
+from bims.views.bug_report import BugReportView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -126,6 +127,8 @@ urlpatterns = [
     url(r'^location-site-form/delete/(?P<site_id>\d+)/$',
         LocationSiteFormDeleteView.as_view(),
         name='location-site-delete-form'),
+    url(r'^bug-report/$', csrf_exempt(BugReportView.as_view()),
+        name='bug-report'),
 ]
 
 # Api urls

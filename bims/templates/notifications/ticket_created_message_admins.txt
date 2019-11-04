@@ -1,0 +1,8 @@
+{% load i18n %}
+You have received the following notice from {{ current_site }}:
+
+{% trans "A new ticket has been created " %} :
+
+User : {{ username }}
+Ticket summary : {{ summary }}
+Ticket link : https://github.com/{{ github_repo }}/issues/{{ ticket_number }}
