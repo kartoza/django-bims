@@ -267,12 +267,22 @@ class LocationSite(DocumentLinksMixin):
                         key=geocontext_value['key']
                     )
                 )
-                location_context, created = (
-                    LocationContext.objects.get_or_create(
+                try:
+                    location_context, created = (
+                        LocationContext.objects.get_or_create(
+                            site=self,
+                            group=location_context_group,
+                        )
+                    )
+                except LocationContext.MultipleObjectsReturned:
+                    LocationContext.objects.filter(
+                        site=self,
+                        group=location_context_group
+                    ).delete()
+                    location_context = LocationContext.objects.create(
                         site=self,
                         group=location_context_group
                     )
-                )
                 location_context_group.name = geocontext_value['name']
                 location_context_group.key = geocontext_value['key']
                 location_context_group.geocontext_group_key = (
