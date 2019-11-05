@@ -43,7 +43,6 @@
         const collectionCategory = "{{ collection_category|safe }}";
         const csrfmiddlewaretoken = "{{ csrf_token }}";
         const biological_modules = "{{ biological_modules|safe }}";
-        const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const filterFarmIDUrl = '{% url "filter-farm-id" %}';
         const getFarmUrl = '{% url "get-farm" 123456789 %}';
         const hideBimsInfo = {% if hide_bims_info %} true {% else %} false {% endif %};
@@ -65,8 +64,6 @@
         const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};
         const mapDefaultSelectedFilters = '{{ preferences.SiteSetting.map_default_filters | safe}}';
         const spatialFilterLayerStyle = '{{ preferences.SiteSetting.spatial_filter_layer_style }}';
-        const reportUrl = '{% url "bug-report" %}';
-        const githubRepo = '{{ preferences.SiteSetting.github_feedback_repo }}';
     </script>
     {% block extra_head %}
 

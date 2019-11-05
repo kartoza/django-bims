@@ -70,6 +70,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             if (this.isOpen) {
                 return false;
             }
+            Shared.Dispatcher.trigger('bugReport:moveRight');
             this.isOpen = true;
             this.loadingDashboard.show();
 
@@ -396,6 +397,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             if (!this.isOpen) {
                 return false;
             }
+            Shared.Dispatcher.trigger('bugReport:moveLeft');
             this.$el.hide('slide', {
                 direction: 'right'
             }, 300, function () {
