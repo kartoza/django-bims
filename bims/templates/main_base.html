@@ -26,6 +26,9 @@
         gtag('js', new Date());
         gtag('config', '{{ GOOGLE_ANALYTIC_KEY }}');
         const isSiteNoticeAvailable = {% if preferences.SiteSetting.site_notice %}true{% else %}false{% endif %};
+        const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
+        const reportUrl = '{% url "bug-report" %}';
+        const githubRepo = '{{ preferences.SiteSetting.github_feedback_repo }}';
     </script>
 
     <script src="{% static 'js/non_requirejs/cookies.js' %}"></script>
@@ -61,6 +64,13 @@
 
 {% block body_content %} {% endblock %}
 {% block foot %} {% endblock %}
+
+{% if '/map/' not in request.get_full_path %}
+    <link href="{% static "css/bug_report_panel_style.css" %}" rel="stylesheet">
+    <script src="{% static 'js/utils/detect-browser.js' %}"></script>
+    <script src="{% static 'js/non_requirejs/bug_report.js' %}"></script>
+    {% include 'bug_report_template.html' %}
+{% endif %}
 
 </body>
 

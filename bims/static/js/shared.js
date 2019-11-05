@@ -28,6 +28,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Bac
         AdminAreaSelected: [],
         LegendsDisplayed: false,
         GetFeatureRequested: false,
+        SidePanelOpen: false,
         EndemismList: [],
         CurrentState: {
             FETCH_CLUSTERS: false,

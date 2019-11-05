@@ -386,7 +386,7 @@ class SassDashboardView(TemplateView):
         )
         context['geomorphological_group'] = (
             json.dumps(self.location_context.values_from_group(
-                'geomorphological_group'
+                'eco_geo_group'
             ))
         )
         context['use_combined_geo'] = self.use_combined_geo

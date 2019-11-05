@@ -122,6 +122,7 @@ define([
             if (this.isOpen) {
                 return false;
             }
+            Shared.Dispatcher.trigger('bugReport:moveRight');
             var self = this;
             this.isOpen = true;
             this.$el.show('slide', {
@@ -393,6 +394,7 @@ define([
             if (!this.isOpen) {
                 return false;
             }
+            Shared.Dispatcher.trigger('bugReport:moveLeft');
             this.$el.find('#detailed-site-dashboard-wrapper')[0].scrollIntoView();
             var self = this;
             this.$el.hide('slide', {

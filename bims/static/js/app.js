@@ -13,6 +13,7 @@ require.config({
         fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min',
         htmlToCanvas: 'libs/htmlToCanvas/html2canvas.min',
         chosen: 'libs/chosen/chosen.jquery.min',
+        detectBrowser: 'utils/detect-browser',
         'jquery-ui/ui/widget': 'libs/jquery-fileupload/vendor/jquery.ui.widget',
         'jquery.iframe-transport': 'libs/jquery-fileupload/jquery.iframe-transport',
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
