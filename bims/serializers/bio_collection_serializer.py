@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
@@ -6,6 +7,7 @@ from bims.serializers.taxon_serializer import (
     TaxonSerializer,
     TaxonExportSerializer
 )
+from bims.models.source_reference import SourceReferenceBibliography
 from bims.models.iucn_status import IUCNStatus
 
 
@@ -83,6 +85,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     Serializer for biological collection record.
     """
     fbis_site_code = serializers.SerializerMethodField()
+    original_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     river_name = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
@@ -113,6 +116,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_fbis_site_code(self, obj):
         return obj.site.site_code
+
+    def get_original_site_code(self, obj):
+        return obj.site.legacy_site_code
 
     def get_river_name(self, obj):
         if obj.site.river:
@@ -197,6 +203,20 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_collector_or_owner(self, obj):
+        if obj.additional_data:
+            # If this is BioBase data, return a collector name from author of
+            # reference
+            additional_data = json.loads(obj.additional_data)
+            if 'BioBaseData' in additional_data:
+                if isinstance(
+                        obj.source_reference, SourceReferenceBibliography):
+                    source = obj.source_reference.source
+                    author_str = '%(last_name)s %(first_initial)s'
+                    s = ', '.join(
+                        [author_str % a.__dict__ for a in
+                         source.get_authors()])
+                    s = ', and '.join(s.rsplit(', ', 1))  # last author case
+                    return s
         if obj.owner:
             return obj.owner.username.encode('utf8')
         return obj.collector.encode('utf8')
@@ -205,6 +225,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         model = BiologicalCollectionRecord
         fields = [
             'fbis_site_code',
+            'original_site_code',
             'site_description',
             'river_name',
             'latitude',
