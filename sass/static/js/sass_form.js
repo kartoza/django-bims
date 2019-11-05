@@ -195,6 +195,37 @@ function closeSassForm(e) {
     }
 }
 
+function validateImage(image, errorWrapper) {
+    $(errorWrapper).html('');
+    var extension = image.substring(image.lastIndexOf('.') + 1).toLowerCase();
+
+    if (extension === "gif" || extension === "png" || extension === "bmp" || extension === "jpeg" || extension === "jpg") {
+        return true
+    } else {
+        $(errorWrapper).html("Image upload only allows file types of GIF, PNG, JPG, JPEG and BMP.");
+        return false
+    }
+}
+
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+    function renderImage(file){
+        var reader = new FileReader();
+        reader.onload = function(event){
+            var the_url = event.target.result;
+            $('#site_image').attr("src", the_url);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    $('[name="site_image"]').change(function() {
+        var valid = validateImage(this.value, '.error-upload');
+        renderImage(this.files[0])
+    });
+
+} else {
+  $('.error-upload').html('The File APIs are not fully supported in this browser.');
+}
+
 $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);

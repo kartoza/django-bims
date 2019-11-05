@@ -29,6 +29,7 @@ from bims.models.profile import Profile as BimsProfile
 from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
 from bims.models.data_source import DataSource
+from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from sass.models import (
     SiteVisit,
@@ -332,6 +333,26 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             self.request.POST,
             date)
 
+        # upload site image
+        try:
+            site_image = request.FILES['site_image']
+            if site_image:
+                try:
+                    site_image_obj = SiteImage.objects.get(
+                        site_visit=site_visit
+                    )
+                    site_image_obj.image = site_image
+                    site_image_obj.save()
+                except SiteImage.DoesNotExist:
+                    site_image_obj = SiteImage(
+                        site=site_visit.location_site,
+                        site_visit=site_visit,
+                        image=site_image
+                    )
+                    site_image_obj.save()
+        except:
+            pass
+
         # Send email to superusers
         if new_site_visit:
             ctx = {
@@ -589,6 +610,12 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
         context['site_code'] = self.site_code
+        try:
+            self.site_image = (
+                SiteImage.objects.get(site_visit=self.site_visit))
+            context['site_image'] = self.site_image
+        except SiteImage.DoesNotExist:
+            pass
         if self.site_visit:
             context['sass_version'] = self.site_visit.sass_version
 

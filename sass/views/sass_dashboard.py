@@ -10,6 +10,7 @@ from django.db.models import (
 from django.db.models.functions import Cast, Coalesce
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
+from bims.models.site_image import SiteImage
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.api_views.search import Search
 from sass.models import (
@@ -336,6 +337,11 @@ class SassDashboardView(TemplateView):
         ]
         context['site_code'] = self.location_site.site_code
         context['site_id'] = self.location_site.id
+        try:
+            context['site_image'] = (
+                SiteImage.objects.filter(site=self.location_site))
+        except SiteImage.DoesNotExist:
+            pass
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
         site_description = self.location_site.site_description

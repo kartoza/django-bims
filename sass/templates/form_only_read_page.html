@@ -117,6 +117,10 @@
                     <input type="text" class="form-control" id="data-source" name="data-source-name" {% if source_reference %} value="{{ source_reference }}" {% endif %} readonly>
                     <input type="hidden" id="data-source-id" name="data-source-id" {% if source_reference %} value="{{ source_reference.id }}" {% endif %}>
                 </div>
+                <div class="form-group">
+                    <label for="data-source" class="input-label">Site Image :</label>
+                    <img src="{{ site_image.image.url }}" style="width: 100%">
+                </div>
             </div>
         </div>
 

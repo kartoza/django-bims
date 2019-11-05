@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block body_content %}
-    <form action="{{ request.path }}" method="post" id="sass-form">
+    <form action="{{ request.path }}" method="post" id="sass-form" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="body-form container">
         <div class="alert alert-danger frontend-alert" style="display: none;" role="alert">
@@ -104,6 +104,12 @@
                     <label for="data-source" class="input-label">Source Reference :</label>
                     <div style="white-space: nowrap; overflow: auto;">{{ source_reference }}</div>
                     <div><small class="text-muted">To update this value, click the next button to go to the Source Reference form</small></div>
+                </div>
+                <div class="form-group">
+                    <label for="data-source" class="input-label">Site Image :</label>
+                    <img id="site_image" src="{{ site_image.image.url }}" style="width: 100%">
+                    <small class="text-muted">Upload new image: </small><input type="file" name="site_image" accept="image/*">
+                    <br/><small class="error-upload"></small>
                 </div>
                 {% endif %}
             </div>

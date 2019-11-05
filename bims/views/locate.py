@@ -3,6 +3,7 @@
 
 import requests
 from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 from django.contrib.gis.geos import GEOSGeometry
 from django.conf import settings
 from django.http import JsonResponse
@@ -122,8 +123,12 @@ def parse_farm(xml_document):
     :returns: Dictionary that contains envelope, farm id, etc
     :rtype: dict
     """
-    xmldoc = minidom.parseString(xml_document)
+
     feature = {}
+    try:
+        xmldoc = minidom.parseString(xml_document)
+    except ExpatError:
+        return feature
 
     try:
         wfs_xml_feature = xmldoc.getElementsByTagName('gml:featureMember')[0]

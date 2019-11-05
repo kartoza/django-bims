@@ -114,7 +114,7 @@ td.sampled-name {
     margin-bottom: 43px;
 }
 
-.sass-form-close {
+.sass-form-close, .sass-form-upload-btn {
     float: right;
     font-size: 20pt;
     background-color: #526B43;
@@ -123,8 +123,20 @@ td.sampled-name {
     color: #ffffff;
 }
 
-.sass-form-close:hover {
+.sass-form-upload-btn {
+    font-size: 12pt;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.sass-form-close:hover, .sass-form-upload-btn:hover {
     cursor: pointer;
     color: #526B43;
     background-color: #ffffff;
+}
+
+.error-upload {
+    color: darkred;
 }
