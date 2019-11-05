@@ -350,7 +350,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                         image=site_image
                     )
                     site_image_obj.save()
-        except:
+        except:  # noqa
             pass
 
         # Send email to superusers

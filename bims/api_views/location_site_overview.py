@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from django.db.models import F, Value, Case, When, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -38,11 +39,12 @@ class LocationSiteOverviewData(object):
         search = Search(self.search_filters)
         collection_results = search.process_search()
 
-        biodiversity_data = dict()
+        biodiversity_data = OrderedDict()
 
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
-        )
+        ).order_by('display_order')
+
         for group in groups:
             group_data = dict()
             group_data[self.GROUP_ICON] = group.logo.name

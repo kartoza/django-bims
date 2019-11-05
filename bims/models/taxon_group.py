@@ -39,5 +39,10 @@ class TaxonGroup(models.Model):
         blank=True
     )
 
+    display_order = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
     def __unicode__(self):
         return self.name
