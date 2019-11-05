@@ -808,8 +808,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 ::-webkit-scrollbar {
-    width: 7px;
-    display: none;
+    width: 5px;
 }
 
 div:hover::-webkit-scrollbar {
@@ -829,7 +828,7 @@ div:hover::-webkit-scrollbar {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(219, 175, 0, 0.4);
     border-radius: 20px;
 }
 
