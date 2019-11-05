@@ -83,6 +83,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     Serializer for biological collection record.
     """
     fbis_site_code = serializers.SerializerMethodField()
+    original_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     river_name = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
@@ -113,6 +114,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_fbis_site_code(self, obj):
         return obj.site.site_code
+
+    def get_original_site_code(self, obj):
+        return obj.site.legacy_site_code
 
     def get_river_name(self, obj):
         if obj.site.river:
@@ -205,6 +209,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         model = BiologicalCollectionRecord
         fields = [
             'fbis_site_code',
+            'original_site_code',
             'site_description',
             'river_name',
             'latitude',
