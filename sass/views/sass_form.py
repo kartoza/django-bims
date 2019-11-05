@@ -67,7 +67,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
     def __init__(self, *args, **kwargs):
         super(SassFormView, self).__init__(*args, **kwargs)
         taxon_groups = TaxonGroup.objects.filter(
-            name__icontains='Inverterbrates'
+            name__icontains='Invertebrates'
         )
         if taxon_groups.exists():
             self.source_collection = taxon_groups[0].source_collection

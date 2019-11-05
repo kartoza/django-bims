@@ -336,7 +336,7 @@ class FishFormView(CollectionFormView):
 
 class InvertFormView(CollectionFormView):
     session_identifier = 'invert-form'
-    taxon_group_name = 'Inverterbrates'
+    taxon_group_name = 'Invertebrates'
 
 
 class AlgaeFormView(CollectionFormView):
