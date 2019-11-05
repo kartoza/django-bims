@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
@@ -6,6 +7,7 @@ from bims.serializers.taxon_serializer import (
     TaxonSerializer,
     TaxonExportSerializer
 )
+from bims.models.source_reference import SourceReferenceBibliography
 from bims.models.iucn_status import IUCNStatus
 
 
@@ -201,6 +203,20 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_collector_or_owner(self, obj):
+        if obj.additional_data:
+            # If this is BioBase data, return a collector name from author of
+            # reference
+            additional_data = json.loads(obj.additional_data)
+            if 'BioBaseData' in additional_data:
+                if isinstance(
+                        obj.source_reference, SourceReferenceBibliography):
+                    source = obj.source_reference.source
+                    author_str = '%(last_name)s %(first_initial)s'
+                    s = ', '.join(
+                        [author_str % a.__dict__ for a in
+                         source.get_authors()])
+                    s = ', and '.join(s.rsplit(', ', 1))  # last author case
+                    return s
         if obj.owner:
             return obj.owner.username.encode('utf8')
         return obj.collector.encode('utf8')
