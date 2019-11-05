@@ -47,6 +47,12 @@ define([
             this.errorFeedbackDiv = this.$el.find('.error-feedback');
             this.container = $(this.$el.find('.bug-report-wrapper').get(0));
             this.ticketLinkDiv = this.$el.find('#ticket-link');
+            if (!is_logged_in) {
+                this.summaryTextDiv.attr('disabled', true);
+                this.descriptionTextDiv.attr('disabled', true);
+                this.$el.find('#report-type').attr('disabled', true);
+                this.$el.find('.warning-feedback').show();
+            }
             return this;
         },
         moveLeft: function () {

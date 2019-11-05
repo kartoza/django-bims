@@ -146,6 +146,9 @@
             <div class="alert alert-danger error-feedback" role="alert" style="border-radius: 0; display: none; margin-bottom: 0">
                 <b>Oops!</b> Something went wrong and we couldn't process your request, please try again later.
             </div>
+             <div class="alert alert-warning warning-feedback" role="alert" style="border-radius: 0;margin-bottom: 0; font-size: 11pt; display: none">
+                Please <a href="/accounts/login/">login</a> to leave feedback. Alternatively you can use <a href="http://github.com/{{ preferences.SiteSetting.github_feedback_repo }}/issues/new/choose" target="_blank">Github</a>.
+            </div>
             <div class="brp-type">
                 <select class="custom-select" id="report-type">
                     <option selected value="bug-report">Bug report</option>

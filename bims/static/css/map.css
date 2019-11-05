@@ -1725,7 +1725,7 @@ div:hover::-webkit-scrollbar {
 .brp-small-text {
     font-size: 9pt;
     padding: 10px;
-    margin-top: -25px;
+    margin-top: -15px;
     border-top: 1px solid rgba(219, 175, 0, 0.3);
 }
 
