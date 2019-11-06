@@ -141,6 +141,8 @@ class LocationSiteFormView(TemplateView):
                 catchment_geocontext
             )
             for registry in catchment_data['service_registry_values']:
+                if not registry['value']:
+                    continue
                 group, group_created = (
                     LocationContextGroup.objects.get_or_create(
                         key=registry['key'],
