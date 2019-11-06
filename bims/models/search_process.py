@@ -93,8 +93,17 @@ class SearchProcess(models.Model):
     def create_view(self):
         if self.process_id and self.search_raw_query:
             cursor = connection.cursor()
+            try:
+                sql = (
+                    'DROP MATERIALIZED VIEW IF EXISTS "{view_name}"'.
+                    format(
+                        view_name=self.process_id
+                    ))
+                cursor.execute('''%s''' % sql)
+            except (ProgrammingError, DatabaseError):
+                pass
             sql = (
-                'CREATE OR REPLACE VIEW "{view_name}" AS {sql_raw}'.
+                'CREATE MATERIALIZED VIEW "{view_name}" AS {sql_raw}'.
                 format(
                     view_name=self.process_id,
                     sql_raw=self.search_raw_query
@@ -106,7 +115,7 @@ class SearchProcess(models.Model):
             cursor = connection.cursor()
             try:
                 sql = (
-                    'DROP VIEW IF EXISTS {view_name}'.
+                    'DROP MATERIALIZED VIEW IF EXISTS "{view_name}"'.
                     format(
                         view_name=self.process_id
                     ))
