@@ -53,7 +53,7 @@
                 {% else %}
                     <td><a>{{ obj.original_species_name }}</a></td>
                 {% endif %}
-                <td>{{ obj.category }}</td>
+                <td>{% if obj.category == 'indigenous' %}Native{% elif obj.category == 'alien' %}Non-Native{% else %}-{% endif %}</td>
                 <td>{{ obj.collection_date }}</td>
                 <td>{{ obj.owner }}</td>
                 <td class="validate-action"><a onclick="validateObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Validate this object"><i class="fa fa-check-circle"></i></a></td>

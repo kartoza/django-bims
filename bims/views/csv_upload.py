@@ -53,7 +53,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
 
     additional_fields = {
         'present': 'bool',
-        'absent': 'bool',
         'sampling_effort': 'str',
         'reference': 'str',
         'reference_category': 'str',
