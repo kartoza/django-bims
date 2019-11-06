@@ -61,10 +61,6 @@ class SearchProcess(models.Model):
     def save(self, *args, **kwargs):
         super(SearchProcess, self).save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        self.delete_view()
-        super(SearchProcess, self).delete(*args, **kwargs)
-
     def set_search_raw_query(self, raw_query):
         if not raw_query:
             return
@@ -173,5 +169,6 @@ def searchprocess_delete(sender, instance, **kwargs):
     import os
     if sender != SearchProcess:
         return
+    instance.delete_view()
     if os.path.exists(instance.file_path):
         os.remove(instance.file_path)
