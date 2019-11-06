@@ -223,7 +223,7 @@ let updateCoordinate = function (zoomToMap = true) {
                         nearestSiteName = nearestSite['name'];
                     }
                     modal.find('#nearest-site-name').html(nearestSiteName);
-                    modal.find('#existing-site-button').attr('href', '/location-site-form/update/?id=' + nearestSite['id']);
+                    modal.find('#existing-site-button').attr('onClick', 'location.href="/location-site-form/update/?id=' + nearestSite['id'] + '"');
                     modal.modal('show');
                 }
             }
