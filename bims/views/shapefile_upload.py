@@ -182,7 +182,6 @@ def process_shapefiles(request,
     if not additional_fields:
         additional_fields = {
             'present': 'bool',
-            'absent': 'bool'
         }
 
     for shp in shapefiles:

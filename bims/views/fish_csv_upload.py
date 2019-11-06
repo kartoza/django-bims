@@ -15,6 +15,5 @@ class CsvUploadView(BaseCsvUploadView):
     success_url = reverse_lazy('fish:fish-csv-upload')
     additional_fields = {
         'present': 'bool',
-        'absent': 'bool',
         'habitat': 'str'
     }

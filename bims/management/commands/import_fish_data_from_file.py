@@ -63,7 +63,6 @@ class Command(BaseCommand):
 
     additional_fields = {
         'present': 'bool',
-        'absent': 'bool',
         'sampling_effort': 'str',
         'reference': 'str',
         'reference_category': 'str',

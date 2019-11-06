@@ -133,9 +133,6 @@ class BiologicalCollectionRecord(AbstractValidation):
     present = models.BooleanField(
         default=True,
     )
-    absent = models.BooleanField(
-        default=True,
-    )
     collection_date = models.DateField(
         default=timezone.now
     )
