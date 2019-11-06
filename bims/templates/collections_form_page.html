@@ -212,19 +212,20 @@
                 <div class="col-sm-10">
                     <div class="row">
                         <div class="col-4">
+                            <select class="form-control"
+                                    name="sampling_effort_type">
+                                <option value=""> Not specified</option>
+                                <option value="min"> Time (min)</option>
+                                <option value="square_metre"> Area (m&sup2;)</option>
+                            </select>
+                        </div>
+                        <div class="col-8">
                             <input type="number" min="0"
                                    name="sampling_effort"
                                    class="form-control"
                                    style="width: 100%">
                         </div>
-                        <div class="col-8">
-                            <select class="form-control"
-                                    name="sampling_effort_type">
-                                <option value=""> Not specified</option>
-                                <option value="min"> Time (min)</option>
-                                <option value="meter"> Area (m)</option>
-                            </select>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -256,7 +257,7 @@
                                     name="abundance_type">
                                 <option value="number"> Number </option>
                                 <option value="percentage"> Percentage Abundance </option>
-                                <option value="density"> Density (m<sup>2</sup>) </option>
+                                <option value="density"> Density (m&sup2;) </option>
                          </select>
                         </div>
                     </th>
