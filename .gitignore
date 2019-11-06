@@ -134,6 +134,7 @@ deployment/docker-compose.override.yml
 deployment/logs
 deployment/sites-enabled
 deployment/ipt
+*-geoserver-data/
 
 optimized.js
 deployment/geoserver_data
