@@ -1,5 +1,6 @@
 # coding=utf8
 from django.http import Http404
+from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.taxon import Taxon
@@ -8,6 +9,7 @@ from bims.serializers.taxon_serializer import \
     TaxonSerializer, TaxonSimpleSerialializer
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
+from bims.models import TaxonGroup
 from bims.api_views.pagination_api_view import PaginationAPIView
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, process_taxon_identifier
@@ -116,7 +118,7 @@ class TaxonDetail(APIView):
 
         return Response(data)
 
-from bims.models import TaxonGroup
+
 class FindTaxon(APIView):
     """
     Find taxon in gbif and local database
@@ -169,7 +171,7 @@ class FindTaxon(APIView):
 
         return Response(taxon_list)
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+
 class AddNewTaxon(LoginRequiredMixin, APIView):
     """Add new taxon, then return the id of newly created taxon"""
 
@@ -179,8 +181,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             'id': '',
             'taxon_name': '',
         }
+        taxonomy = None
         gbif_key = self.request.POST.get('gbifKey', None)
         taxon_name = self.request.POST.get('taxonName', None)
+        taxon_group = self.request.POST.get('taxonGroup', None)
         rank = self.request.POST.get('rank', None)
         if gbif_key:
             taxonomy = process_taxon_identifier(
@@ -188,7 +192,23 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 fetch_parent=True,
                 get_vernacular=False
             )
+        elif taxon_name and rank:
+            taxonomy, created = Taxonomy.objects.get_or_create(
+                scientific_name=taxon_name,
+                canonical_name=taxon_name,
+                rank=rank
+            )
+            try:
+                taxon_group = TaxonGroup.objects.get(name=taxon_group)
+                if not (
+                    taxon_group.taxonomies.filter(taxonomy=taxonomy).exists()
+                ):
+                    taxon_group.taxonomies.add(taxonomy)
+            except TaxonGroup.DoesNotExist:
+                pass
+        if taxonomy:
             response['status'] = 'ok'
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
+
         return Response(response)

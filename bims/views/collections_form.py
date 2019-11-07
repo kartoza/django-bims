@@ -25,6 +25,7 @@ from bims.models import (
     BIOTOPE_TYPE_BROAD,
     BIOTOPE_TYPE_SUBSTRATUM
 )
+from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 
 logger = logging.getLogger('bims')
@@ -113,6 +114,9 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
         context['taxa'] = self.taxa_from_river_catchment()
+        context['taxon_rank'] = list(
+            rank.name for rank in TaxonomicRank.hierarchy()
+        )
         context['reference_category'] = list(
             BiologicalCollectionRecord.objects.filter(
                 reference_category__isnull=False).exclude(

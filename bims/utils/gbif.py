@@ -1,5 +1,6 @@
 # coding: utf-8
 import requests
+import urllib
 from requests.exceptions import HTTPError
 from pygbif import species
 from bims.models import (
@@ -306,7 +307,7 @@ def search_taxon_identifier(search_query, fetch_parent=True):
 
     return species_detail
 
-import urllib
+
 def suggest_search(query_params):
     """
     Search from gbif using suggestion api

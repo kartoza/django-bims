@@ -406,42 +406,75 @@ $('#add-taxon-button').click(function () {
         type: 'get',
         dataType: 'json',
         success: function (data) {
-            let tableBody = table.find('tbody');
-            tableBody.html('');
-            let gbifImage = '<img src="/static/img/GBIF-2015.png" width="50">';
-            $.each(data, function (index, value) {
-                let source = value['source'];
-                let scientificName = value['scientificName'];
-                let canonicalName = value['canonicalName'];
-                let rank = value['rank'];
-                let key = value['key'];
-
-                if (source === 'gbif') {
-                    source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
-                }
-                let action = (`<button 
-                                type="button" 
-                                onclick="addNewTaxonToObservedList('${canonicalName}',${key})" 
-                                class="btn btn-success"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
-                               </button>`);
-                tableBody.append(`<tr>
-                    <td>${scientificName}</td>
-                    <td>${canonicalName}</td>
-                    <td>${rank}</td>
-                    <td>${source}</td>
-                    <td>${action}</td>
-                </tr>`);
-            });
+            if (data.length > 0) {
+                populateFindTaxonTable(table, data);
+            } else {
+                showNewTaxonForm(taxonName);
+            }
             loading.hide();
-            table.show();
         }
     });
 });
 
-function addNewTaxonToObservedList(name, gbifKey) {
+function showNewTaxonForm(taxonName) {
+    let $taxonForm = $('.new-taxon-form');
+    let $button = $taxonForm.find('.add-new-taxon-btn');
+    let $rank = $taxonForm.find('.new-taxon-rank');
+    let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
+    let $newTaxonNameInput = $('#new-taxon-name');
+    $button.click(function () {
+        $taxonForm.hide();
+        addNewTaxonToObservedList(capitalizedTaxonName, '', $rank.val());
+    });
+    $newTaxonNameInput.val(capitalizedTaxonName);
+    $taxonForm.show();
+}
+
+function populateFindTaxonTable(table, data) {
+    let tableBody = table.find('tbody');
+    tableBody.html('');
+    let gbifImage = '<img src="/static/img/GBIF-2015.png" width="50">';
+    $.each(data, function (index, value) {
+        let source = value['source'];
+        let scientificName = value['scientificName'];
+        let canonicalName = value['canonicalName'];
+        let rank = value['rank'];
+        let key = value['key'];
+        let stored = value['storedLocal'];
+
+        if (source === 'gbif') {
+            source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
+        }
+        if (stored) {
+            stored = '<i class="fa fa-check" aria-hidden="true" style="color: green"></i>';
+        } else {
+            stored = '<i class="fa fa-times" aria-hidden="true" style="color: red"></i>';
+        }
+        stored = `<div style="text-align:center; width: 100%">${stored}</div>`;
+
+        let action = (`<button 
+                        type="button" 
+                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},${rank})" 
+                        class="btn btn-success"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                       </button>`);
+        tableBody.append(`<tr>
+                    <td>${scientificName}</td>
+                    <td>${canonicalName}</td>
+                    <td>${rank}</td>
+                    <td>${source}</td>
+                    <td>${stored}</td>
+                    <td>${action}</td>
+                </tr>`);
+    });
+    table.show();
+}
+
+function addNewTaxonToObservedList(name, gbifKey, rank) {
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,
+        'rank': rank,
+        'taxonGroup': taxonGroupName,
         'csrfmiddlewaretoken': csrfToken
     };
     let table = $('.find-taxon-table');
@@ -483,7 +516,7 @@ function addNewTaxonToObservedList(name, gbifKey) {
             $container.prepend($row);
             taxonAbundanceInput.change(taxonAbundanceOnChange);
             loading.hide();
-            table.show();
+            $('#add-taxon-input').val('');
         }
     });
 

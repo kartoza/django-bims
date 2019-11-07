@@ -402,7 +402,6 @@
                         <div class="row">
                             <div class="col-10">
                                 <input type="text" id="add-taxon-input"
-                                       name="taxon-name"
                                        class="form-control form-control-sm"
                                        value="" placeholder="Taxon name" style="height: 100%;">
                             </div>
@@ -421,10 +420,45 @@
                                 <th scope="col">Canonical Name</th>
                                 <th scope="col">Rank</th>
                                 <th scope="col">Source</th>
+                                <th scope="col">Stored</th>
                                 <th scope="col">Action</th>
                             </tr>
                             </thead>
                             <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="container new-taxon-form" style="margin-top: 15px; display: none">
+                        <div class="alert alert-info" role="alert">
+                            Whilst FBIS will accept taxa that are not listed in GBIF,
+                            you should use the capability only for taxa where the classification is partly unresolved.
+                            <br><br>
+                            Click ADD to add this taxon even though it is not listed in GBIF,
+                            alternatively you can refine your GBIF search to obtain a valid taxon name.
+                        </div>
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th scope="col">Taxon Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+                                    <select class="form-control new-taxon-rank">
+                                        {% for rank in taxon_rank %}
+                                            <option value="{{ rank }}" {% if rank == 'SPECIES' %}selected{% endif %}>{{ rank }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><button
+                                        type="button"
+                                        class="btn btn-success add-new-taxon-btn"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                                </button></td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>

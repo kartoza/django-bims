@@ -17,3 +17,22 @@ class TaxonomicRank(Enum):
     CULTIVAR_GROUP = 'Cultivar Group'
     SUBORDER = 'Sub Order'
     INFRAORDER = 'Infra Order'
+
+    @staticmethod
+    def hierarchy():
+        return [
+            TaxonomicRank.LIFE,
+            TaxonomicRank.DOMAIN,
+            TaxonomicRank.KINGDOM,
+            TaxonomicRank.PHYLUM,
+            TaxonomicRank.CLASS,
+            TaxonomicRank.ORDER,
+            TaxonomicRank.SUBORDER,
+            TaxonomicRank.INFRAORDER,
+            TaxonomicRank.SUPERFAMILY,
+            TaxonomicRank.FAMILY,
+            TaxonomicRank.GENUS,
+            TaxonomicRank.SPECIES,
+            TaxonomicRank.SUBSPECIES,
+            TaxonomicRank.CULTIVAR_GROUP
+        ]
