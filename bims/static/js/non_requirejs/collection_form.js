@@ -378,3 +378,113 @@ $(function () {
     $('#update-coordinate').click(updateCoordinateHandler);
 
 });
+
+$('#add-taxon-input').keyup(function (event) {
+    // Number 13 is the "Enter" key on the keyboard
+    if (event.keyCode === 13) {
+        // Cancel the default action, if needed
+        event.preventDefault();
+        // Trigger the button element with a click
+        $('#add-taxon-button').click();
+    }
+});
+
+$('#add-taxon-button').click(function () {
+    let taxonName = $('#add-taxon-input').val();
+    if (!taxonName) {
+        return false;
+    }
+    // Show loading div
+    let table = $('.find-taxon-table');
+    table.hide();
+    let loading = $('.find-taxon-loading');
+    loading.show();
+
+    // Show response list
+    $.ajax({
+        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroup=${taxonGroupName}`,
+        type: 'get',
+        dataType: 'json',
+        success: function (data) {
+            let tableBody = table.find('tbody');
+            tableBody.html('');
+            let gbifImage = '<img src="/static/img/GBIF-2015.png" width="50">';
+            $.each(data, function (index, value) {
+                let source = value['source'];
+                let scientificName = value['scientificName'];
+                let canonicalName = value['canonicalName'];
+                let rank = value['rank'];
+                let key = value['key'];
+
+                if (source === 'gbif') {
+                    source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
+                }
+                let action = (`<button 
+                                type="button" 
+                                onclick="addNewTaxonToObservedList('${canonicalName}',${key})" 
+                                class="btn btn-success"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                               </button>`);
+                tableBody.append(`<tr>
+                    <td>${scientificName}</td>
+                    <td>${canonicalName}</td>
+                    <td>${rank}</td>
+                    <td>${source}</td>
+                    <td>${action}</td>
+                </tr>`);
+            });
+            loading.hide();
+            table.show();
+        }
+    });
+});
+
+function addNewTaxonToObservedList(name, gbifKey) {
+    let postData = {
+        'gbifKey': gbifKey,
+        'taxonName': name,
+        'csrfmiddlewaretoken': csrfToken
+    };
+    let table = $('.find-taxon-table');
+    table.hide();
+    let loading = $('.find-taxon-loading');
+    loading.show();
+
+    $.ajax({
+        url: `/api/add-new-taxon/`,
+        type: 'POST',
+        data: postData,
+        success: function (data) {
+            $('#addNewTaxonModal').modal('toggle');
+            let $container = $('.taxon-table-body');
+            taxaIdList.push(data['id']);
+            let $row = $('<tr>');
+            $row.html(
+                '<td scope="row" class="taxon-name">' +
+                name +
+                '<input type="hidden" class="taxon-id" value="' + data['id'] + '">' +
+                '</td>');
+            $row.append(
+                '<td>' +
+                '<div class="form-check">' +
+                '<input class="form-check-input observed" type="checkbox"' +
+                ' value="True"' +
+                ' name="' + data['id'] + '-observed">' +
+                ' <label class="form-check-label">' +
+                ' </label>' +
+                '</div>' +
+                '</td>');
+            let taxonAbundanceInput = $('<input type="number" min="0"' +
+                ' name="' + data['id'] + '-abundance"' +
+                ' class="form-control taxon-abundance"' +
+                ' placeholder="0">');
+            let tdTaxonAbundance = $('<td>');
+            tdTaxonAbundance.append(taxonAbundanceInput);
+            $row.append(tdTaxonAbundance);
+            $container.prepend($row);
+            taxonAbundanceInput.change(taxonAbundanceOnChange);
+            loading.hide();
+            table.show();
+        }
+    });
+
+}

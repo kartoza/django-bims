@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
     BoundaryList,
@@ -20,6 +21,8 @@ from bims.api_views.taxon import (
     TaxonDetail,
     TaxonSimpleList,
     TaxonForDocument,
+    FindTaxon,
+    AddNewTaxon
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -183,4 +186,10 @@ urlpatterns = [
     url(r'^module-list/$',
         ModuleList.as_view(),
         name='module-list'),
+    url(r'^find-taxon/$',
+        FindTaxon.as_view(),
+        name='find-taxon'),
+    url(r'^add-new-taxon/$',
+        csrf_exempt(AddNewTaxon.as_view()),
+        name='add-new-taxon'),
 ]

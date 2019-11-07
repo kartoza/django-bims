@@ -134,11 +134,25 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
                     name='PointObservation',
                     allowed_geometry='POINT'
                 )
-                location_site, created = LocationSite.objects.get_or_create(
-                    name=location_site_name,
-                    geometry_point=geometry,
-                    location_type=location_type,
-                )
+                try:
+                    location_site, created = (
+                        LocationSite.objects.get_or_create(
+                            name=location_site_name,
+                            geometry_point=geometry,
+                            location_type=location_type,
+                        )
+                    )
+                except LocationSite.MultipleObjectsReturned:
+                    dupe_sites = LocationSite.objects.filter(
+                        name=location_site_name,
+                        geometry_point=geometry,
+                        location_type=location_type
+                    )
+                    location_site = dupe_sites[0]
+                    BiologicalCollectionRecord.objects.filter(
+                        site__in=dupe_sites
+                    ).update(site=location_site)
+                    dupe_sites.exclude(id=location_site.id).delete()
 
             self.object.site = location_site
             self.object.save()

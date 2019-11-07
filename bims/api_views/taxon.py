@@ -10,6 +10,7 @@ from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.api_views.pagination_api_view import PaginationAPIView
 from bims.enums.taxonomic_rank import TaxonomicRank
+from bims.utils.gbif import suggest_search, process_taxon_identifier
 
 
 class TaxonSimpleList(PaginationAPIView):
@@ -114,3 +115,80 @@ class TaxonDetail(APIView):
             data['common_name'] = str(common_names[0]['name']).capitalize()
 
         return Response(data)
+
+from bims.models import TaxonGroup
+class FindTaxon(APIView):
+    """
+    Find taxon in gbif and local database
+    """
+    limit_default = 20
+
+    def get(self, request, *args):
+        taxon_list = []
+        taxon_key = []
+        phylum_keys = []
+
+        query_dict = request.GET.dict()
+
+        # Find classes to narrow down the results
+        taxon_group = query_dict.get('taxonGroup', None)
+        if taxon_group:
+            del query_dict['taxonGroup']
+            try:
+                taxon_group = TaxonGroup.objects.get(name=taxon_group)
+                phylum_keys = list(taxon_group.taxonomies.filter(
+                    parent__rank=TaxonomicRank.PHYLUM
+                ).values_list('parent__gbif_key', flat=True))
+            except (
+                    TaxonGroup.DoesNotExist,
+                    TaxonGroup.MultipleObjectsReturned):
+                pass
+
+        if 'limit' not in query_dict:
+            # If the limit is not set, we set the default limit to 20
+            query_dict['limit'] = self.limit_default
+        gbif_response = suggest_search(query_dict)
+
+        for gbif in gbif_response:
+            if 'key' not in gbif or 'phylumKey' not in gbif:
+                continue
+            if phylum_keys and gbif['phylumKey'] not in phylum_keys:
+                continue
+            key = gbif['key']
+            if key in taxon_key:
+                continue
+            local = Taxonomy.objects.filter(gbif_key=key).exists()
+            taxon_list.append({
+                'scientificName': gbif['scientificName'],
+                'canonicalName': gbif['canonicalName'],
+                'rank': gbif['rank'],
+                'key': key,
+                'source': 'gbif',
+                'storedLocal': local
+            })
+
+        return Response(taxon_list)
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+class AddNewTaxon(LoginRequiredMixin, APIView):
+    """Add new taxon, then return the id of newly created taxon"""
+
+    def post(self, request, *args):
+        response = {
+            'status': '',
+            'id': '',
+            'taxon_name': '',
+        }
+        gbif_key = self.request.POST.get('gbifKey', None)
+        taxon_name = self.request.POST.get('taxonName', None)
+        rank = self.request.POST.get('rank', None)
+        if gbif_key:
+            taxonomy = process_taxon_identifier(
+                key=gbif_key,
+                fetch_parent=True,
+                get_vernacular=False
+            )
+            response['status'] = 'ok'
+            response['id'] = taxonomy.id
+            response['taxon_name'] = taxonomy.canonical_name
+        return Response(response)
