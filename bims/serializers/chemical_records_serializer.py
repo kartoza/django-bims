@@ -47,4 +47,7 @@ class ChemicalRecordsOneRowSerializer(serializers.ModelSerializer):
         return obj.chem.chem_code
 
     def get_source_references(self, obj):
-        return obj.source_reference.get_source_unicode()
+        try:
+            return obj.source_reference.get_source_unicode()
+        except AttributeError:
+            return '-'
