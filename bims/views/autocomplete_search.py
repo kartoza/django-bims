@@ -192,6 +192,7 @@ def species_autocomplete(request):
             Q(canonical_name__icontains=q) |
             Q(scientific_name__icontains=q)
         ).filter(
+            Q(id__in=taxon_group_species) |
             Q(parent__in=taxon_group_species) |
             Q(parent__parent__in=taxon_group_species) |
             Q(parent__parent__parent__in=taxon_group_species) |

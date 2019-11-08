@@ -476,43 +476,46 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var mediaFound = false;
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
             var this_GBIF_ID = data['gbif_id'];
-            $.get({
-                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + this_GBIF_ID + '&limit=4',
-                dataType: 'json',
-                success: function (data) {
-                    var results = data['results'];
+            if (this_GBIF_ID) {
+                $.get({
+                    url: 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + this_GBIF_ID + '&limit=4',
+                    dataType: 'json',
+                    success: function (data) {
+                        var results = data['results'];
 
-                    var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row row gbif-images-row-fsdd"></div>');
+                        var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row row gbif-images-row-fsdd"></div>');
 
-                    var result = {};
-                    for (let result_id in results) {
-                        var $firstColumnDiv = $('<div class="col-6" "></div>');
-                        result = results[result_id];
-                        if (!result.hasOwnProperty('media')) {
-                            continue;
+                        var result = {};
+                        for (let result_id in results) {
+                            var $firstColumnDiv = $('<div class="col-6" "></div>');
+                            result = results[result_id];
+                            if (!result.hasOwnProperty('media')) {
+                                continue;
+                            }
+                            if (result['media'].length === 0) {
+                                continue;
+                            }
+                            var media = result['media'][0];
+                            if (!media.hasOwnProperty('identifier')) {
+                                continue;
+                            }
+                            mediaFound = true;
+                            if (mediaFound) {
+                                $fetchingInfoDiv.hide();
+                            }
+                            $firstColumnDiv.append('<a target="_blank" href="' + media['references'] + '">' +
+                                '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '" width="100%"/></a>');
+                            $rowWrapper.append($firstColumnDiv);
                         }
-                        if (result['media'].length === 0) {
-                            continue;
+                        $wrapper.append($rowWrapper);
+                        if (!mediaFound) {
+                            $fetchingInfoDiv.html('Media not found');
                         }
-                        var media = result['media'][0];
-                        if (!media.hasOwnProperty('identifier')) {
-                            continue;
-                        }
-                        mediaFound = true;
-                        if (mediaFound) {
-                            $fetchingInfoDiv.hide();
-                        }
-                        $firstColumnDiv.append('<a target="_blank" href="' + media['references'] + '">' +
-                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '" width="100%"/></a>');
-                        $rowWrapper.append($firstColumnDiv);
                     }
-                    $wrapper.append($rowWrapper);
-                    if (!mediaFound) {
-                        $fetchingInfoDiv.html('Media not found');
-                    }
-                }
-            });
-
+                });
+            } else {
+                $fetchingInfoDiv.html('Media not found');
+            }
             return $thirdPartyData;
         },
         renderFBISRPanelBlocks: function (data, stretch_selection = false) {
@@ -548,7 +551,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                  ${temp_key}</div></div>`)
 
             }
-            ;
             result_html += '</div>';
             return result_html;
         },
@@ -575,7 +577,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             return name;
         },
         flatten_arr: function (arr) {
-            self = this;
+            let self = this;
             return arr.reduce(function (flat, toFlatten) {
                 return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
             }, []);

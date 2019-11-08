@@ -296,3 +296,16 @@ h6 {
     color: whitesmoke;
     margin-left: 5px;
 }
+
+@keyframes yellowfade {
+  from {
+    background: yellow;
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.item-highlight {
+  animation: yellowfade 1.5s;
+}

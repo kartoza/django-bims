@@ -385,11 +385,11 @@ $('#add-taxon-input').keyup(function (event) {
         // Cancel the default action, if needed
         event.preventDefault();
         // Trigger the button element with a click
-        $('#add-taxon-button').click();
+        $('#find-taxon-button').click();
     }
 });
 
-$('#add-taxon-button').click(function () {
+$('#find-taxon-button').click(function () {
     let taxonName = $('#add-taxon-input').val();
     if (!taxonName) {
         return false;
@@ -399,6 +399,8 @@ $('#add-taxon-button').click(function () {
     table.hide();
     let loading = $('.find-taxon-loading');
     loading.show();
+    let $newTaxonForm = $('.new-taxon-form');
+    $newTaxonForm.hide();
 
     // Show response list
     $.ajax({
@@ -440,22 +442,23 @@ function populateFindTaxonTable(table, data) {
         let canonicalName = value['canonicalName'];
         let rank = value['rank'];
         let key = value['key'];
+        let taxaId = value['taxaId'];
         let stored = value['storedLocal'];
 
         if (source === 'gbif') {
             source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
+        } else if (source === 'local') {
+            source = fontAwesomeIcon('database');
         }
         if (stored) {
-            stored = '<i class="fa fa-check" aria-hidden="true" style="color: green"></i>';
+            stored = fontAwesomeIcon('check', 'green');
         } else {
-            stored = '<i class="fa fa-times" aria-hidden="true" style="color: red"></i>';
+            stored = fontAwesomeIcon('times', 'red');
         }
-        stored = `<div style="text-align:center; width: 100%">${stored}</div>`;
-
         let action = (`<button 
                         type="button" 
-                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},${rank})" 
-                        class="btn btn-success"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})" 
+                        class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
                        </button>`);
         tableBody.append(`<tr>
                     <td>${scientificName}</td>
@@ -469,7 +472,7 @@ function populateFindTaxonTable(table, data) {
     table.show();
 }
 
-function addNewTaxonToObservedList(name, gbifKey, rank) {
+function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,
@@ -482,42 +485,66 @@ function addNewTaxonToObservedList(name, gbifKey, rank) {
     let loading = $('.find-taxon-loading');
     loading.show();
 
+    if (taxaId) {
+        $('#addNewTaxonModal').modal('toggle');
+        loading.hide();
+        $('#add-taxon-input').val('');
+
+        if (taxaIdList.indexOf(taxaId + '') === -1) {
+            renderNewTaxon(taxaId, name);
+        } else {
+            let div = $('.taxon-table-body').find(`.taxon-id[value="${taxaId}"]`);
+            if (div.length) {
+                div = div.parent().parent();
+                div.scrollHere();
+                div.highlight();
+            }
+        }
+        return true;
+    }
+
     $.ajax({
         url: `/api/add-new-taxon/`,
         type: 'POST',
         data: postData,
         success: function (data) {
             $('#addNewTaxonModal').modal('toggle');
-            let $container = $('.taxon-table-body');
-            taxaIdList.push(data['id']);
-            let $row = $('<tr>');
-            $row.html(
-                '<td scope="row" class="taxon-name">' +
-                name +
-                '<input type="hidden" class="taxon-id" value="' + data['id'] + '">' +
-                '</td>');
-            $row.append(
-                '<td>' +
-                '<div class="form-check">' +
-                '<input class="form-check-input observed" type="checkbox"' +
-                ' value="True"' +
-                ' name="' + data['id'] + '-observed">' +
-                ' <label class="form-check-label">' +
-                ' </label>' +
-                '</div>' +
-                '</td>');
-            let taxonAbundanceInput = $('<input type="number" min="0"' +
-                ' name="' + data['id'] + '-abundance"' +
-                ' class="form-control taxon-abundance"' +
-                ' placeholder="0">');
-            let tdTaxonAbundance = $('<td>');
-            tdTaxonAbundance.append(taxonAbundanceInput);
-            $row.append(tdTaxonAbundance);
-            $container.prepend($row);
-            taxonAbundanceInput.change(taxonAbundanceOnChange);
+            renderNewTaxon(data['id'], name);
             loading.hide();
             $('#add-taxon-input').val('');
         }
     });
+}
 
+// Add new taxon row to the existing taxa list
+function renderNewTaxon(taxonId, taxonName) {
+    let $container = $('.taxon-table-body');
+    taxaIdList.push(taxonId + '');
+    let $row = $('<tr>');
+    $row.html(
+        '<td scope="row" class="taxon-name">' +
+        taxonName +
+        '<input type="hidden" class="taxon-id" value="' + taxonId + '">' +
+        '</td>');
+    $row.append(
+        '<td>' +
+        '<div class="form-check">' +
+        '<input class="form-check-input observed" type="checkbox"' +
+        ' value="True"' +
+        ' name="' + taxonId + '-observed">' +
+        ' <label class="form-check-label">' +
+        ' </label>' +
+        '</div>' +
+        '</td>');
+    let taxonAbundanceInput = $('<input type="number" min="0"' +
+        ' name="' + taxonId + '-abundance"' +
+        ' class="form-control taxon-abundance"' +
+        ' placeholder="0">');
+    let tdTaxonAbundance = $('<td>');
+    tdTaxonAbundance.append(taxonAbundanceInput);
+    $row.append(tdTaxonAbundance);
+    $container.prepend($row);
+    $row.scrollHere();
+    $row.highlight();
+    taxonAbundanceInput.change(taxonAbundanceOnChange);
 }
