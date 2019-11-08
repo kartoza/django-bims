@@ -297,7 +297,7 @@ class LocationSitesSummary(APIView):
             list_chems_code = [
                 'COND',
                 'TEMP',
-                'pH',
+                'PH',
                 'DO'
             ]
             chems = ChemicalRecord.objects.filter(
