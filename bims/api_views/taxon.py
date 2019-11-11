@@ -124,6 +124,13 @@ class FindTaxon(APIView):
     Find taxon in gbif and local database
     """
     limit_default = 20
+    scientific_name = 'scientificName'
+    canonical_name = 'canonicalName'
+    rank = 'rank'
+    key = 'key'
+    taxa_id = 'taxaId'
+    source = 'source'
+    stored_local = 'storedLocal'
 
     def get(self, request, *args):
         taxon_list = []
@@ -165,13 +172,13 @@ class FindTaxon(APIView):
             if taxa.exists():
                 taxa_id = taxa[0].id
             taxon_list.append({
-                'scientificName': gbif['scientificName'],
-                'canonicalName': gbif['canonicalName'],
-                'rank': gbif['rank'],
-                'key': key,
-                'taxaId': taxa_id,
-                'source': 'gbif',
-                'storedLocal': taxa.exists()
+                self.scientific_name: gbif['scientificName'],
+                self.canonical_name: gbif['canonicalName'],
+                self.rank: gbif['rank'],
+                self.key: key,
+                self.taxa_id: taxa_id,
+                self.source: 'gbif',
+                self.stored_local: taxa.exists()
             })
 
         if not taxon_list:
@@ -182,13 +189,13 @@ class FindTaxon(APIView):
             if taxa.exists():
                 for taxon in taxa:
                     taxon_list.append({
-                        'scientificName': taxon.scientific_name,
-                        'canonicalName': taxon.canonical_name,
-                        'rank': taxon.rank,
-                        'key': taxon.gbif_key,
-                        'source': 'local' if not taxon.gbif_key else 'gbif',
-                        'storedLocal': True,
-                        'taxaId': taxon.id,
+                        self.scientific_name: taxon.scientific_name,
+                        self.canonical_name: taxon.canonical_name,
+                        self.rank: taxon.rank,
+                        self.key: taxon.gbif_key,
+                        self.source: 'local' if not taxon.gbif_key else 'gbif',
+                        self.stored_local: True,
+                        self.taxa_id: taxon.id,
                     })
 
         return Response(taxon_list)
