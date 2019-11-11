@@ -7,7 +7,7 @@ from django.db.models import signals
 from bims.tests.model_factories import (
     LocationTypeF,
     LocationSiteF,
-    TaxonF,
+    TaxonomyF,
     IUCNStatusF,
     SurveyF,
     EndemismF,
@@ -308,7 +308,7 @@ class TestTaxonCRUD(TestCase):
         """
         Tests taxon creation
         """
-        model = TaxonF.create()
+        model = TaxonomyF.create()
 
         # check if pk exists
         self.assertTrue(model.pk is not None)
@@ -327,23 +327,23 @@ class TestTaxonCRUD(TestCase):
             category=u'custom iucn status',
             sensitive=True,
         )
-        model = TaxonF.create(
+        model = TaxonomyF.create(
             iucn_status=iucn_status,
             scientific_name=u'custom scientific name',
-            common_name=u'custom common name',
+            canonical_name=u'custom common name',
             author=u'custom author'
         )
 
         self.assertTrue(model.iucn_status.category == 'custom iucn status')
         self.assertTrue(model.scientific_name == 'custom scientific name')
-        self.assertTrue(model.common_name == 'custom common name')
+        self.assertTrue(model.canonical_name == 'custom common name')
         self.assertTrue(model.author == 'custom author')
 
     def test_Taxon_update(self):
         """
         Tests taxon model update
         """
-        model = TaxonF.create()
+        model = TaxonomyF.create()
         iucn_status = IUCNStatusF.create(
             category=u'custom iucn status',
             sensitive=True,
@@ -365,7 +365,7 @@ class TestTaxonCRUD(TestCase):
         """
         Tests taxon model delete
         """
-        model = TaxonF.create()
+        model = TaxonomyF.create()
         model.delete()
 
         # check if deleted

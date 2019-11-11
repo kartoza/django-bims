@@ -9,7 +9,7 @@ from django.utils.timezone import now
 
 from bims.models import Visitor, Pageview
 from bims.conf import TRACK_PAGEVIEWS
-from bims.models import Taxon, BiologicalCollectionRecord, LocationSite
+from bims.models import Taxonomy, BiologicalCollectionRecord, LocationSite
 
 log = logging.getLogger(__file__)
 
@@ -58,7 +58,7 @@ def dashboard(request):
     else:
         pageview_stats = None
 
-    taxon_count = Taxon.objects.count()
+    taxon_count = Taxonomy.objects.count()
     collections_count = \
         BiologicalCollectionRecord.objects.filter(validated=True).count()
     location_site_count = LocationSite.objects.all().count()

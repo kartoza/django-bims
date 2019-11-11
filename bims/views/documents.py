@@ -24,7 +24,7 @@ from geonode.groups.models import GroupProfile
 from geonode.documents.views import DocumentUploadView
 
 from bims.models.bims_document import BimsDocument
-from bims.models.taxon import Taxon
+from bims.models.taxonomy import Taxonomy
 
 logger = logging.getLogger("geonode.documents.views")
 
@@ -69,14 +69,14 @@ class BimsDocumentUploadView(DocumentUploadView):
                 taxon_links = taxon_links.split(',')
                 for taxon_link in taxon_links:
                     try:
-                        taxon = Taxon.objects.get(
+                        taxon = Taxonomy.objects.get(
                                 id=taxon_link
                         )
                         taxon.documents.add(
                                 self.object
                         )
                         taxon.save()
-                    except Taxon.DoesNotExist as e:  # noqa
+                    except Taxonomy.DoesNotExist as e:  # noqa
                         pass
 
         return super(BimsDocumentUploadView, self).form_valid(
@@ -287,7 +287,7 @@ def document_metadata(
                     id=the_document.id
             )
             taxon_links = request.POST.get('taxon-links', None)
-            old_taxon_links = Taxon.objects.filter(
+            old_taxon_links = Taxonomy.objects.filter(
                     documents__id=the_document.id
             )
             for taxon_link in old_taxon_links:
@@ -297,16 +297,7 @@ def document_metadata(
             if taxon_links:
                 taxon_links = taxon_links.split(',')
                 for taxon_link in taxon_links:
-                    try:
-                        taxon = Taxon.objects.get(
-                                id=taxon_link
-                        )
-                        taxon.documents.add(
-                                doc
-                        )
-                        taxon.save()
-                    except Taxon.DoesNotExist as e:  # noqa
-                        pass
+                    pass
 
             if getattr(settings, 'SLACK_ENABLED', False):
                 try:

@@ -11,6 +11,18 @@ from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.vernacular_name import VernacularName
 
 
+class TaxonomyField(models.CharField):
+
+    description = 'A taxonomy field.'
+
+    def __init__(self, taxonomy_key=None, *args, **kwargs):
+        kwargs['max_length'] = 100
+        kwargs['blank'] = True
+        kwargs['default'] = ''
+        self.taxonomy_key = taxonomy_key
+        super(TaxonomyField, self).__init__(*args, **kwargs)
+
+
 class Taxonomy(DocumentLinksMixin):
 
     gbif_key = models.IntegerField(
@@ -99,7 +111,7 @@ class Taxonomy(DocumentLinksMixin):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
-        verbose_name_plural = 'Taxonomies'
+        verbose_name_plural = 'Taxa'
         verbose_name = 'Taxonomy'
 
     def __unicode__(self):
