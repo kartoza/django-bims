@@ -614,6 +614,16 @@ function onDownloadCSVClicked(e) {
     downloadCSV(url, downloadButton);
 }
 
+function onDownloadChemCSVClicked(e) {
+    let downloadButton = $(e.target);
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = '/api/chemical-record/download/?' + queryString;
+    downloadButton.html("Processing...");
+    downloadButton.prop("disabled", true);
+    downloadCSV(url, downloadButton);
+}
+
 function onDownloadSummaryCSVClicked(e) {
     let downloadButton = $(e.target);
     let currentUrl = window.location.href;
@@ -801,6 +811,83 @@ function renderSourceReferences() {
     divWrapper.append(bodyDiv);
 }
 
+function renderChemGraph () {
+    var $chemWrapper = $('#chem-bar-chart-wrapper');
+    $chemWrapper.html('');
+
+    $.each(chemicalRecords, function (key, value) {
+        var id_canvas = key + '-chem-chart';
+        var canvas = '<canvas class="chem-bar-chart" id="' + id_canvas + '"></canvas>';
+        $chemWrapper.append(canvas);
+        var ctx = document.getElementById(id_canvas).getContext('2d');
+        var datasets = [];
+        var yLabel;
+        var xLabelData = [];
+        $.each(value, function (idx, val) {
+            var key_item = Object.keys(val)[0];
+            if(key_item.toLowerCase().indexOf('max') === -1 && key_item.toLowerCase().indexOf('min') === -1){
+                yLabel = val[key_item]['name'] + ' (' + val[key_item]['unit'] + ')'
+            }
+            var value_data = val[key_item]['values'];
+            var graph_data = [];
+            for(var i=0; i<value_data.length; i++){
+                graph_data.push({
+                    y: value_data[i]['value'],
+                    x: value_data[i]['str_date']
+                });
+                xLabelData.push(value_data[i]['str_date'])
+            }
+            datasets.push({
+                label: key_item,
+                data: graph_data,
+                backgroundColor: '#cfdeea',
+                borderColor: '#cfdeea',
+                borderWidth: 2,
+                fill: false
+            })
+        });
+
+        xLabelData.sort(function(a, b) {
+            a = new Date(a);
+            b = new Date(b);
+            return a < b ? -1 : a > b ? 1 : 0;
+        });
+        var _data = {
+            labels: xLabelData,
+            datasets: datasets
+        };
+        var options= {
+            responsive: true,
+            hoverMode: 'index',
+            stacked: false,
+            title: {
+                display: false
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: yLabel
+                    },
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        };
+        var chartConfig = {
+            type: 'bar',
+            data: _data,
+            options: options
+        };
+
+        new Chart(ctx, chartConfig)
+    })
+}
+
 $(function () {
     drawMap();
 
@@ -812,6 +899,7 @@ $(function () {
         renderLocationContextTable();
         renderEcologicalCategoryChart();
         renderMetricsData();
+        renderChemGraph();
         renderSourceReferences();
         if (dateLabels) {
             $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('MMMM D, Y'));
@@ -829,4 +917,5 @@ $(function () {
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
     $('.download-map').click(onDownloadMapClicked);
+    $('.download-chem-as-csv').click(onDownloadChemCSVClicked)
 });

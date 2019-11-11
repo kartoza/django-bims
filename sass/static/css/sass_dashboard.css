@@ -89,7 +89,7 @@ body {
     font-weight: bold;
 }
 
-.download-as-csv, .download-summary-as-csv, .download-latest-as-csv {
+.download-as-csv, .download-summary-as-csv, .download-latest-as-csv, .download-chem-as-csv {
     font-size: 10pt;
     text-transform: none;
     border-radius: 5px;
@@ -244,4 +244,8 @@ body {
 .title-row {
     text-align: center;
     background: #bebebe;
+}
+
+.chem-bar-chart {
+    margin-bottom: 10px;
 }
