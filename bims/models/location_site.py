@@ -435,6 +435,7 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
+    from bims.tasks.location_site import update_location_context
     if not issubclass(sender, LocationSite):
         return
     models.signals.post_save.disconnect(
@@ -482,6 +483,9 @@ def location_site_post_save_handler(sender, instance, **kwargs):
             instance.save()
         except LocationContext.MultipleObjectsReturned:
             pass
+
+    # Update geocontext data
+    update_location_context.delay(instance.id)
 
     models.signals.post_save.connect(
         location_site_post_save_handler

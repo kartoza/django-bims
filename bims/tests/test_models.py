@@ -8,7 +8,6 @@ from bims.tests.model_factories import (
     LocationTypeF,
     LocationSiteF,
     TaxonomyF,
-    TaxonomyF,
     IUCNStatusF,
     SurveyF,
     EndemismF,

@@ -18,7 +18,6 @@ from bims.models import (
 )
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
-from bims.tasks.location_site import update_location_context
 
 
 class LocationSiteFormView(TemplateView):
@@ -181,8 +180,6 @@ class LocationSiteFormView(TemplateView):
             self.success_message,
             extra_tags='location_site_form'
         )
-
-        update_location_context.delay(location_site.id)
 
         return HttpResponseRedirect(
             '{url}?id={id}'.format(
