@@ -19,8 +19,6 @@ from bims.api_views.non_biodiversity_layer import (
 )
 from bims.api_views.taxon import (
     TaxonDetail,
-    TaxonSimpleList,
-    TaxonForDocument,
     FindTaxon,
     AddNewTaxon
 )
@@ -102,10 +100,6 @@ urlpatterns = [
         name='location-sites-coordinate'),
     url(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
-    url(r'^list-taxon/$',
-        TaxonSimpleList.as_view()),
-    url(r'^list-taxon-for-document/(?P<docid>[0-9]+)/$',
-        TaxonForDocument.as_view()),
     url(r'^cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
     url(r'^collection/cluster/$',

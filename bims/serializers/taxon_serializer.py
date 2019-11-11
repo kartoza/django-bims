@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from bims.models import Taxon, Taxonomy
+from bims.models import Taxonomy
 from bims.models.iucn_status import IUCNStatus
 from bims.serializers.document_serializer import DocumentSerializer
 
@@ -95,7 +95,7 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
             return 0
 
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = [
             'id', 'common_name', 'highlighted_common_name',
             'taxon_class', 'record_type',
@@ -105,5 +105,5 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
 
 class TaxonSimpleSerialializer(serializers.ModelSerializer):
     class Meta:
-        model = Taxon
+        model = Taxonomy
         fields = ['id', 'common_name', 'scientific_name']

@@ -3,10 +3,6 @@ import requests
 import urllib
 from requests.exceptions import HTTPError
 from pygbif import species
-from bims.models import (
-    Taxon,
-    TaxonomyField
-)
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
@@ -14,7 +10,7 @@ from bims.enums import TaxonomicRank, TaxonomicStatus
 
 def update_taxa():
     """Get all taxon, then update the data bimsd on the gbif id."""
-    taxa = Taxon.objects.all()
+    taxa = Taxonomy.objects.all()
     if not taxa:
         print('No taxon found')
     for taxon in taxa:
@@ -180,16 +176,8 @@ def update_taxonomy_fields(taxon, response):
     """
     # Iterate through all fields and update the one which is a
     # field from Taxonomy
-    taxon_fields = Taxon._meta.get_fields()
+    taxon_fields = Taxonomy._meta.get_fields()
     for field in taxon_fields:
-        if isinstance(field, TaxonomyField):
-            if field.taxonomy_key in response:
-                setattr(
-                    taxon,
-                    field.get_attname(),
-                    response[field.taxonomy_key])
-            continue
-
         # Set vernacular names
         try:
             if field.get_attname() == 'vernacular_names':

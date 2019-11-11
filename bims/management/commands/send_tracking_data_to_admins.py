@@ -5,7 +5,7 @@ from django.core.mail import mail_admins
 from django.template.loader import get_template
 from django.utils.timezone import now
 from bims.conf import TRACK_PAGEVIEWS
-from bims.models import Taxon, BiologicalCollectionRecord, Visitor, Pageview
+from bims.models import Taxonomy, BiologicalCollectionRecord, Visitor, Pageview
 
 
 class Command(BaseCommand):
@@ -33,7 +33,7 @@ class Command(BaseCommand):
         if options['to']:
             date_to = options['to']
 
-        taxon_count = Taxon.objects.count()
+        taxon_count = Taxonomy.objects.count()
         collections_count = \
             BiologicalCollectionRecord.objects.filter(validated=True).count()
 

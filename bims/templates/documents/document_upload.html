@@ -67,28 +67,7 @@
                     $('input[name=taxon-links]').val(e.val.join());
                 }
             });
-            get_taxon($taxonLinkSelect, '/api/list-taxon/', []);
     });
-
-    function get_taxon(div, url, selected) {
-        $.get(url,
-            function (data) {
-                if (!data.hasOwnProperty('results')) {
-                    return true;
-                }
-                $.each(data.results, function (key, value) {
-                    if ($.inArray(selected, value.id) === -1) {
-                        div.append("<option value='"+value.id+"'>"+value.scientific_name+"</option>");
-                    }
-                });
-                if (data.hasOwnProperty('next')) {
-                    if (data['next']) {
-                        get_taxon(div, data['next'], selected);
-                    }
-                }
-            }
-        );
-    }
 
     $('#upload_form').submit(function(){
       $('#permissions').val(JSON.stringify(permissionsString($('#permission_form'),'base')));

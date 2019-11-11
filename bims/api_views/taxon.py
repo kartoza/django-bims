@@ -3,46 +3,14 @@ from django.http import Http404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bims.models.taxon import Taxon
 from bims.models.taxonomy import Taxonomy
-from bims.serializers.taxon_serializer import \
-    TaxonSerializer, TaxonSimpleSerialializer
-from bims.models.biological_collection_record import \
+from bims.serializers.taxon_serializer import TaxonSerializer
+from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
+)
 from bims.models import TaxonGroup
-from bims.api_views.pagination_api_view import PaginationAPIView
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, process_taxon_identifier
-
-
-class TaxonSimpleList(PaginationAPIView):
-    """
-    Retrieve list of taxon
-    """
-    queryset = Taxon.objects.all().order_by('scientific_name')
-
-    def get(self, request, *args):
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = TaxonSimpleSerialializer(
-                page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        return Response()
-
-
-class TaxonForDocument(APIView):
-    """
-    Retrieve taxon for document
-    """
-    def get(self, request, docid, format=None):
-        taxons = Taxon.objects.filter(
-            documents__id=docid
-        )
-        serializer = TaxonSimpleSerialializer(
-            taxons, many=True
-        )
-        return Response(serializer.data)
 
 
 class TaxonDetail(APIView):

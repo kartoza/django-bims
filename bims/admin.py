@@ -36,7 +36,6 @@ from bims.models import (
     LocationType,
     LocationSite,
     IUCNStatus,
-    Taxon,
     Survey,
     Boundary,
     BoundaryType,
@@ -235,16 +234,6 @@ class IUCNStatusAdmin(admin.ModelAdmin):
                'width: 50px; height: 15px;"></div>' % obj.colour
 
     iucn_colour.allow_tags = True
-
-
-class TaxonAdmin(admin.ModelAdmin):
-    list_display = (
-        'common_name',
-        'author',
-        'iucn_status',
-        'taxon_class',
-        'endemism'
-    )
 
 
 class BoundaryAdmin(admin.ModelAdmin):
@@ -587,6 +576,10 @@ class TaxonIdentifierAdmin(admin.ModelAdmin):
         'scientific_name',
     )
 
+    raw_id_fields = (
+        'parent',
+    )
+
 
 class VernacularNameAdmin(admin.ModelAdmin):
 
@@ -745,7 +738,6 @@ admin.site.register(Profile, CustomUserAdmin)
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
-admin.site.register(Taxon, TaxonAdmin)
 admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)

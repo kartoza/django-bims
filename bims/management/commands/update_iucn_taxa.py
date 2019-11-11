@@ -2,7 +2,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.contrib.gis.db import models
 from bims.utils.iucn import get_iucn_status
-from bims.models.taxon import Taxon
+from bims.models.taxonomy import Taxonomy
 from bims.models.biological_collection_record import (
     collection_post_save_update_cluster,
     collection_post_save_handler
@@ -25,11 +25,11 @@ class Command(BaseCommand):
         # Get collection without taxa record
         taxon_id = options.get('taxon_id')
         if taxon_id:
-            taxons = Taxon.objects.filter(
+            taxa = Taxonomy.objects.filter(
                 pk=taxon_id
             )
         else:
-            taxons = Taxon.objects.all()
+            taxa = Taxonomy.objects.all()
 
         models.signals.post_save.disconnect(
                 collection_post_save_update_cluster,
@@ -37,7 +37,7 @@ class Command(BaseCommand):
         models.signals.post_save.disconnect(
                 collection_post_save_handler,
         )
-        for taxon in taxons:
+        for taxon in taxa:
             print('Update taxon : %s' % taxon.common_name)
             if taxon.species:
                 iucn_status = get_iucn_status(
