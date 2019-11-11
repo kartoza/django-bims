@@ -20,6 +20,7 @@
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const taxonGroupName = '{{ taxon_group_name }}';
+        const csrfToken = '{{ csrf_token }}';
     </script>
 
 {% endblock %}
@@ -99,7 +100,8 @@
                            class="col-sm-2 col-form-label col-form-label">Site
                         Name</label>
                     <div class="col-sm-10">
-                        <input type="text" name="site_name" id="location-site-name"
+                        <input type="text" name="site_name"
+                               id="location-site-name"
                                class="form-control form-control-sm"
                                placeholder="">
                     </div>
@@ -109,7 +111,8 @@
                            class="col-sm-2 col-form-label col-form-label">Site
                         Code</label>
                     <div class="col-sm-10">
-                        <input type="text" name="site_code" id="location-site-code"
+                        <input type="text" name="site_code"
+                               id="location-site-code"
                                class="form-control form-control-sm"
                                placeholder="">
                     </div>
@@ -119,7 +122,8 @@
                            class="col-sm-2 col-form-label col-form-label">Site
                         Description</label>
                     <div class="col-sm-10">
-                        <input type="text" name="site_description" id="location-site-description"
+                        <input type="text" name="site_description"
+                               id="location-site-description"
                                class="form-control form-control-sm"
                                placeholder="">
                     </div>
@@ -127,7 +131,8 @@
             </div>
 
             <div class="separator-line"></div>
-            <input type="hidden" value="" id="taxa-id-list" name="taxa-id-list">
+            <input type="hidden" value="" id="taxa-id-list"
+                   name="taxa-id-list">
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label required-text">Date</label>
@@ -144,19 +149,24 @@
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label required-text">Owner</label>
                 <div class="col-sm-10">
-                    <input type="text" class="form-control form-control-sm" onClick="this.setSelectionRange(0, this.value.length)"
-                           id="owner" placeholder="" name="owner" value="{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{%endif%}"
+                    <input type="text" class="form-control form-control-sm"
+                           onClick="this.setSelectionRange(0, this.value.length)"
+                           id="owner" placeholder="" name="owner" value="{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}"
                            required>
-                    <small class="form-text text-muted">Please select the Owner, if you are the data capturer and not the Owner</small>
+                    <small class="form-text text-muted">Please select the
+                        Owner, if you are the data capturer and not the
+                        Owner</small>
                     <div class="invalid-feedback">
                         Please provide a owner
                     </div>
-                    <input type="hidden" name="owner_id" id="owner_id" value="{{ user.id }}">
+                    <input type="hidden" name="owner_id" id="owner_id"
+                           value="{{ user.id }}">
                 </div>
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Broad Biotope</label>
+                       class="col-sm-2 col-form-label col-form-label">Broad
+                    Biotope</label>
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="biotope" id="broad-biotope">
@@ -169,7 +179,8 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Specific Biotope</label>
+                       class="col-sm-2 col-form-label col-form-label">Specific
+                    Biotope</label>
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="specific_biotope" id="specific-biotope">
@@ -195,7 +206,8 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Sampling Method</label>
+                       class="col-sm-2 col-form-label col-form-label">Sampling
+                    Method</label>
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="sampling_method">
@@ -208,7 +220,8 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Sampling Effort</label>
+                       class="col-sm-2 col-form-label col-form-label">Sampling
+                    Effort</label>
                 <div class="col-sm-10">
                     <div class="row">
                         <div class="col-4">
@@ -216,7 +229,8 @@
                                     name="sampling_effort_type">
                                 <option value=""> Not specified</option>
                                 <option value="min"> Time (min)</option>
-                                <option value="square_metre"> Area (m&sup2;)</option>
+                                <option value="square_metre"> Area (m&sup2;)
+                                </option>
                             </select>
                         </div>
                         <div class="col-8">
@@ -231,100 +245,123 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Site Image</label>
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Image</label>
                 <div class="col-sm-10">
                     <div class="form-group">
                         <div class="input-group input-file">
-                            <input type="file" class="form-control" accept="image/*" name="site-image"
+                            <input type="file" class="form-control"
+                                   accept="image/*" name="site-image"
                                    placeholder='Choose a file...'/>
                         </div>
                     </div>
-            </div>
-            <div class="add-taxon-container">
-                <button id="add-taxon" type="button" class="btn btn-default">
-                    Add taxon
-                </button>
-            </div>
-            <table class="table table-sm">
-                <thead>
-                <tr>
-                    <th scope="col" style="padding-bottom: 12px;" width="300">Taxa</th>
-                    <th scope="col" style="padding-bottom: 12px;">Observed</th>
-                    <th scope="col">
-                        <div class="pull-left" style="padding-top: 10px; padding-right: 10px;"> Abundance </div>
-                        <div class="pull-left">
-                         <select class="form-control "
-                                    name="abundance_type">
-                                <option value="number"> Number </option>
-                                <option value="percentage"> Percentage Abundance </option>
-                                <option value="density"> Density (m&sup2;) </option>
-                         </select>
-                        </div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody class="taxon-table-body">
-                <tr class="find-taxon-container" style="display: none">
-                    <td scope="row">
-                        <input type="text"
-                               class="form-control taxon-input-name">
-                    </td>
-                </tr>
-                {% for taxon in taxa %}
+                </div>
+                <div class="add-taxon-container">
+                    <button id="add-taxon" type="button" class="btn btn-info">
+                        Add taxon
+                    </button>
+                    <button id="add-new-taxon" type="button"
+                            class="btn btn-info" data-toggle="modal"
+                            data-target="#addNewTaxonModal">
+                        Add new taxon
+                    </button>
+                </div>
+                <table class="table table-sm">
+                    <thead>
                     <tr>
-                        <td scope="row"
-                            class="taxon-name">
-                            {{ taxon.taxon_name }}
-                            <input class="taxon-id" type="hidden" value="{{ taxon.taxon_id }}">
-                        </td>
-                        <td>
-                            <div class="form-check">
-                                <input class="form-check-input observed"
-                                       type="checkbox"
-                                       value="True"
-                                       name="{{ taxon.taxon_id }}-observed">
-                                <label class="form-check-label">
-                                </label>
+                        <th scope="col" style="padding-bottom: 12px;"
+                            width="300">Taxa
+                        </th>
+                        <th scope="col" style="padding-bottom: 12px;">
+                            Observed
+                        </th>
+                        <th scope="col">
+                            <div class="pull-left"
+                                 style="padding-top: 10px; padding-right: 10px;">
+                                Abundance
                             </div>
-                        </td>
-                        <td>
-                            <input type="number" min="0"
-                                   name="{{ taxon.taxon_id }}-abundance"
-                                   class="form-control taxon-abundance"
-                                   placeholder="0">
+                            <div class="pull-left">
+                                <select class="form-control "
+                                        name="abundance_type">
+                                    <option value="number"> Number</option>
+                                    <option value="percentage"> Percentage
+                                        Abundance
+                                    </option>
+                                    <option value="density"> Density
+                                        (m&sup2;)
+                                    </option>
+                                </select>
+                            </div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody class="taxon-table-body">
+                    <tr class="find-taxon-container" style="display: none">
+                        <td scope="row">
+                            <input type="text"
+                                   class="form-control taxon-input-name">
                         </td>
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    {% for taxon in taxa %}
+                        <tr>
+                            <td scope="row"
+                                class="taxon-name">
+                                {{ taxon.taxon_name }}
+                                <input class="taxon-id" type="hidden"
+                                       value="{{ taxon.taxon_id }}">
+                            </td>
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input observed"
+                                           type="checkbox"
+                                           value="True"
+                                           name="{{ taxon.taxon_id }}-observed">
+                                    <label class="form-check-label">
+                                    </label>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" min="0"
+                                       name="{{ taxon.taxon_id }}-abundance"
+                                       class="form-control taxon-abundance"
+                                       placeholder="0">
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
 
-        </div>
-        <div class="submit-wrapper">
-            <input type="button" name="btn" id="submitBtn" data-toggle="modal"
-                   data-target="#confirm-submit" class="btn btn-info"
-                   value="Next">
-        </div>
+            </div>
+            <div class="submit-wrapper">
+                <input type="button" name="btn" id="submitBtn"
+                       data-toggle="modal"
+                       data-target="#confirm-submit" class="btn btn-info"
+                       value="Next">
+            </div>
 
-        <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
-             aria-labelledby="myModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        Confirm Submit
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to submit the {{ taxon_group_name }} form and go to the next form?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default"
-                                data-dismiss="modal">Cancel
-                        </button>
-                        <a href="#" id="submit"
-                           class="btn btn-success success">Submit</a>
+            <div class="modal fade" id="confirm-submit" tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            Confirm Submit
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to submit
+                            the {{ taxon_group_name }} form and go to the next
+                            form?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default"
+                                    data-dismiss="modal">Cancel
+                            </button>
+                            <a href="#" id="submit"
+                               class="btn btn-success success">Submit</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
     </form>
 
     <div id="sampling-method-container" style="display: none;">
@@ -350,6 +387,94 @@
             <option value="meter"> Area (m)</option>
         </select>
     </div>
+    <div class="modal fade" tabindex="-1" role="dialog" id="addNewTaxonModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Taxon</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-10">
+                                <input type="text" id="add-taxon-input"
+                                       class="form-control form-control-sm"
+                                       value="" placeholder="Taxon name" style="height: 100%;">
+                            </div>
+                            <div class="col-2">
+                                <button type="button" id="find-taxon-button"
+                                        class="btn btn-info" style="width: 100%;"> Find
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container" style="max-height: 600px; overflow-y: auto">
+                        <table class="table table-sm table-striped find-taxon-table" style="display:none;">
+                            <thead>
+                            <tr>
+                                <th scope="col">Scientific Name</th>
+                                <th scope="col">Canonical Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Source</th>
+                                <th scope="col">Stored</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="container new-taxon-form" style="margin-top: 15px; display: none">
+                        <div class="alert alert-info" role="alert">
+                            Whilst FBIS will accept taxa that are not listed in GBIF,
+                            you should use the capability only for taxa where the classification is partly unresolved.
+                            <br><br>
+                            Click ADD to add this taxon even though it is not listed in GBIF,
+                            alternatively you can refine your GBIF search to obtain a valid taxon name.
+                        </div>
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th scope="col">Taxon Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+                                    <select class="form-control new-taxon-rank">
+                                        {% for rank in taxon_rank %}
+                                            <option value="{{ rank }}" {% if rank == 'SPECIES' %}selected{% endif %}>{{ rank }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><button
+                                        type="button"
+                                        class="btn btn-success add-new-taxon-btn"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                                </button></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="width: 100%; height: 170px; text-align: center;display: none; margin-top: 15px;" class="find-taxon-loading">
+                        <img src="/static/img/small-loading.svg" width="150"
+                             alt="Loading view">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}
 
@@ -360,6 +485,7 @@
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/utils/effect.js' %}"></script>
     <script src="{% static "js/non_requirejs/collection_form.js" %}"></script>
 
 {% endblock %}

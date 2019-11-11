@@ -83,3 +83,12 @@ table td {
     padding-bottom: 10px;
     border-bottom: 1px solid #c6c6c6;
 }
+
+.find-taxon-table {
+    font-size: 11pt;
+    margin-top: 15px;
+}
+
+.find-taxon-modal {
+    width: 650px;
+}

@@ -37,7 +37,8 @@ class Command(BaseCommand):
         while not gbif_key_found and taxa_sample_index < taxa.count():
             taxa_sample = taxa[taxa_sample_index]
             rank = taxa_sample.rank
-            gbif_response = find_species(taxa_sample.scientific_name, rank)
+            gbif_response = find_species(
+                taxa_sample.scientific_name, rank=rank)
             if 'nubKey' in gbif_response:
                 gbif_key_found = True
                 gbif_key = gbif_response['nubKey']

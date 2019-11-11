@@ -64,11 +64,11 @@ define([
                return;
            }
            let width = this.panel.width() + 150;
+           self.moved = true;
            this.container.animate({
                "right": "+=" + width + 'px'
            }, 100, function () {
                // Animation complete
-               self.moved = true;
            })
        },
        moveRight: function () {
@@ -77,11 +77,11 @@ define([
                return;
            }
            let width = this.panel.width() + 150;
+           self.moved = false;
            this.container.animate({
                "right": "-=" + width + "px"
            }, 100, function () {
                // Animation complete
-               self.moved = false;
            })
        },
         textAreaOnChanged: function () {

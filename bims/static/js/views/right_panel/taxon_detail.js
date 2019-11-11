@@ -53,15 +53,14 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
         },
          renderThirdPartyData: function (data) {
             var $thirdPartyData = $('<div>');
-
             var template = _.template($('#third-party-template').html());
             $thirdPartyData.append(template({}));
 
             var $wrapper = $thirdPartyData.find('.third-party-wrapper');
             var mediaFound = false;
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
-
-            $.get({
+            if (this.gbifId) {
+                $.get({
                 url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this.gbifId+'&limit=4',
                 dataType: 'json',
                 success: function (data) {
@@ -98,17 +97,16 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     }
                 }
             });
-
+            } else {
+                $fetchingInfoDiv.html('Media not found');
+            }
             return $thirdPartyData;
         },
-
         renderFBISBlocks: function(data, stretch_selection = false) {
             var $detailWrapper = $('<div class="container-fluid" style="padding-left: 0;"></div>');
             $detailWrapper.append(this.getHtmlForFBISBlocks(data, stretch_selection));
             return $detailWrapper;
         },
-
-
         getHtmlForFBISBlocks: function (new_data_in, stretch_selection) {
             var result_html = '<div class ="fbis-data-flex-block-row">'
             var data_in = new_data_in;
@@ -141,7 +139,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             result_html += '</div>';
             return result_html;
         },
-
         showDetail: function (name, siteDetail, count) {
             var self = this;
             // Render basic information
@@ -197,7 +194,6 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     }
 
                     //Header Table
-
                     $('#third-party-images').click();
                     $('#third-party-images').append(self.renderThirdPartyData(data));
 
@@ -229,18 +225,23 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
 
                     // Set endemic
                     var endemism_block_data = {};
-                    endemism_block_data['value'] = data['endemism'];;
+                    endemism_block_data['value'] = data['endemism'];
                     endemism_block_data['keys'] = Shared.EndemismList;
                     endemism_block_data['value_title'] = data['endemism'];
                     this.endemicInfoList.append(self.renderFBISBlocks(endemism_block_data));
 
                     //Set conservation status
                     var cons_status_block_data = {};
-                    cons_status_block_data['value'] = data['iucn_status_name'];;
+                    cons_status_block_data['value'] = data['iucn_status_name'];
                     cons_status_block_data['keys'] = ['NE', 'DD', 'LC' ,'NT', 'VU', 'EN', 'CR', 'EW', 'EX'];
                     cons_status_block_data['value_title'] = data['iucn_status_name'] + ' (' + data['iucn_status_full_name'] + ')';
                     this.conservationStatusList.append(self.renderFBISBlocks(cons_status_block_data, true));
 
+                    if (!data['iucn_redlist_id']) {
+                        $('.iucn-species-page-link').hide();
+                    } else {
+                        $('.iucn-species-page-link').show();
+                    }
                 },
                 error: function (req, err) {
 

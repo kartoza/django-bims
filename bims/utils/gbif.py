@@ -1,5 +1,6 @@
 # coding: utf-8
 import requests
+import urllib
 from requests.exceptions import HTTPError
 from pygbif import species
 from bims.models import (
@@ -82,22 +83,26 @@ def get_children(key):
         return None
 
 
-def find_species(original_species_name, rank=None):
+def find_species(original_species_name, rank=None, returns_all=False):
     """
     Find species from gbif with lookup query.
     :param original_species_name: the name of species we want to find
     :param rank: taxonomy rank
+    :param returns_all: returns all response
     :return: List of species
     """
     print('Find species : %s' % original_species_name)
     try:
         response = species.name_lookup(
             q=original_species_name,
-            limit=10,
-            rank=rank
+            limit=20,
+            rank=rank,
+            status='ACCEPTED'
         )
         if 'results' in response:
             results = response['results']
+            if returns_all:
+                return results
             for result in results:
                 rank = result.get('rank', '')
                 rank_key = rank.lower() + 'Key'
@@ -202,11 +207,12 @@ def update_taxonomy_fields(taxon, response):
     taxon.save()
 
 
-def process_taxon_identifier(key, fetch_parent=True):
+def process_taxon_identifier(key, fetch_parent=True, get_vernacular=True):
     """
     Get taxon detail
     :param key: gbif key
     :param fetch_parent: whether need to fetch parent, default to True
+    :param get_vernacular: get vernacular names
     :return:
     """
     # Get taxon
@@ -237,29 +243,33 @@ def process_taxon_identifier(key, fetch_parent=True):
                 detail['rank']].name,
         )
         # Get vernacular names
-        vernacular_names = get_vernacular_names(detail['key'])
-        if vernacular_names:
-            print('Found %s vernacular names' % len(
-                vernacular_names['results']))
-            for result in vernacular_names['results']:
-                fields = {}
-                if 'source' in result:
-                    fields['source'] = result['source']
-                if 'language' in result:
-                    fields['language'] = result['language']
-                if 'taxonKey' in result:
-                    fields['taxon_key'] = int(result['taxonKey'])
-                vernacular_name, status = VernacularName.objects.get_or_create(
-                    name=result['vernacularName'],
-                    **fields
-                )
-                taxon_identifier.vernacular_names.add(vernacular_name)
-            taxon_identifier.save()
+        if get_vernacular:
+            vernacular_names = get_vernacular_names(detail['key'])
+            if vernacular_names:
+                print('Found %s vernacular names' % len(
+                    vernacular_names['results']))
+                for result in vernacular_names['results']:
+                    fields = {}
+                    if 'source' in result:
+                        fields['source'] = result['source']
+                    if 'language' in result:
+                        fields['language'] = result['language']
+                    if 'taxonKey' in result:
+                        fields['taxon_key'] = int(result['taxonKey'])
+                    vernacular_name, status = (
+                        VernacularName.objects.get_or_create(
+                            name=result['vernacularName'],
+                            **fields
+                        )
+                    )
+                    taxon_identifier.vernacular_names.add(vernacular_name)
+                taxon_identifier.save()
 
         if 'parentKey' in detail and fetch_parent:
             print('Found parent')
             taxon_identifier.parent = process_taxon_identifier(
-                detail['parentKey']
+                detail['parentKey'],
+                get_vernacular=get_vernacular
             )
             taxon_identifier.save()
     except (KeyError, TypeError) as e:
@@ -296,3 +306,21 @@ def search_taxon_identifier(search_query, fetch_parent=True):
         species_detail = process_taxon_identifier(key, fetch_parent)
 
     return species_detail
+
+
+def suggest_search(query_params):
+    """
+    Search from gbif using suggestion api
+    :param query_params: Query parameter
+    :return: list of taxon
+    """
+    api_url = 'http://api.gbif.org/v1/species/suggest?{param}'.format(
+        param=urllib.urlencode(query_params)
+    )
+    try:
+        response = requests.get(api_url)
+        results = response.json()
+        return results
+    except (HTTPError, KeyError) as e:
+        print(e)
+        return None

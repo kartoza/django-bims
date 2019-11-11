@@ -318,7 +318,7 @@ define([
         },
         fetchMoreTaxa: function () {
             var self = this;
-            var siteResultUrl = this.taxaResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreSites;
+            var siteResultUrl = this.taxaResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreTaxa;
             $.ajax({
                 url: siteResultUrl,
                 success: function (data) {

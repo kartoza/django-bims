@@ -1,5 +1,6 @@
 # coding=utf8
 from django.http import Http404
+from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.taxon import Taxon
@@ -8,8 +9,10 @@ from bims.serializers.taxon_serializer import \
     TaxonSerializer, TaxonSimpleSerialializer
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
+from bims.models import TaxonGroup
 from bims.api_views.pagination_api_view import PaginationAPIView
 from bims.enums.taxonomic_rank import TaxonomicRank
+from bims.utils.gbif import suggest_search, process_taxon_identifier
 
 
 class TaxonSimpleList(PaginationAPIView):
@@ -114,3 +117,125 @@ class TaxonDetail(APIView):
             data['common_name'] = str(common_names[0]['name']).capitalize()
 
         return Response(data)
+
+
+class FindTaxon(APIView):
+    """
+    Find taxon in gbif and local database
+    """
+    limit_default = 20
+    scientific_name = 'scientificName'
+    canonical_name = 'canonicalName'
+    rank = 'rank'
+    key = 'key'
+    taxa_id = 'taxaId'
+    source = 'source'
+    stored_local = 'storedLocal'
+
+    def get(self, request, *args):
+        taxon_list = []
+        taxon_key = []
+        phylum_keys = []
+
+        query_dict = request.GET.dict()
+
+        # Find classes to narrow down the results
+        taxon_group = query_dict.get('taxonGroup', None)
+        taxon_name = query_dict.get('q', None)
+        if taxon_group:
+            del query_dict['taxonGroup']
+            try:
+                taxon_group = TaxonGroup.objects.get(name=taxon_group)
+                phylum_keys = list(taxon_group.taxonomies.filter(
+                    parent__rank=TaxonomicRank.PHYLUM
+                ).values_list('parent__gbif_key', flat=True))
+            except (
+                    TaxonGroup.DoesNotExist,
+                    TaxonGroup.MultipleObjectsReturned):
+                pass
+
+        if 'limit' not in query_dict:
+            # If the limit is not set, we set the default limit to 20
+            query_dict['limit'] = self.limit_default
+        gbif_response = suggest_search(query_dict)
+
+        for gbif in gbif_response:
+            if 'key' not in gbif or 'phylumKey' not in gbif:
+                continue
+            if phylum_keys and gbif['phylumKey'] not in phylum_keys:
+                continue
+            key = gbif['key']
+            if key in taxon_key:
+                continue
+            taxa = Taxonomy.objects.filter(gbif_key=key)
+            taxa_id = ''
+            if taxa.exists():
+                taxa_id = taxa[0].id
+            taxon_list.append({
+                self.scientific_name: gbif['scientificName'],
+                self.canonical_name: gbif['canonicalName'],
+                self.rank: gbif['rank'],
+                self.key: key,
+                self.taxa_id: taxa_id,
+                self.source: 'gbif',
+                self.stored_local: taxa.exists()
+            })
+
+        if not taxon_list:
+            # Find from database
+            taxa = Taxonomy.objects.filter(
+                canonical_name__icontains=taxon_name
+            )
+            if taxa.exists():
+                for taxon in taxa:
+                    taxon_list.append({
+                        self.scientific_name: taxon.scientific_name,
+                        self.canonical_name: taxon.canonical_name,
+                        self.rank: taxon.rank,
+                        self.key: taxon.gbif_key,
+                        self.source: 'local' if not taxon.gbif_key else 'gbif',
+                        self.stored_local: True,
+                        self.taxa_id: taxon.id,
+                    })
+
+        return Response(taxon_list)
+
+
+class AddNewTaxon(LoginRequiredMixin, APIView):
+    """Add new taxon, then return the id of newly created taxon"""
+
+    def post(self, request, *args):
+        response = {
+            'id': '',
+            'taxon_name': '',
+        }
+        taxonomy = None
+        gbif_key = self.request.POST.get('gbifKey', None)
+        taxon_name = self.request.POST.get('taxonName', None)
+        taxon_group = self.request.POST.get('taxonGroup', None)
+        rank = self.request.POST.get('rank', None)
+        if gbif_key:
+            taxonomy = process_taxon_identifier(
+                key=gbif_key,
+                fetch_parent=True,
+                get_vernacular=False
+            )
+        elif taxon_name and rank:
+            taxonomy, created = Taxonomy.objects.get_or_create(
+                scientific_name=taxon_name,
+                canonical_name=taxon_name,
+                rank=rank
+            )
+            try:
+                taxon_group = TaxonGroup.objects.get(name=taxon_group)
+                if not (
+                    taxon_group.taxonomies.filter(taxonomy=taxonomy).exists()
+                ):
+                    taxon_group.taxonomies.add(taxonomy)
+            except TaxonGroup.DoesNotExist:
+                pass
+        if taxonomy:
+            response['id'] = taxonomy.id
+            response['taxon_name'] = taxonomy.canonical_name
+
+        return Response(response)

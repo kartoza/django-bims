@@ -378,3 +378,173 @@ $(function () {
     $('#update-coordinate').click(updateCoordinateHandler);
 
 });
+
+$('#add-taxon-input').keyup(function (event) {
+    // Number 13 is the "Enter" key on the keyboard
+    if (event.keyCode === 13) {
+        // Cancel the default action, if needed
+        event.preventDefault();
+        // Trigger the button element with a click
+        $('#find-taxon-button').click();
+    }
+});
+
+$('#find-taxon-button').click(function () {
+    let taxonName = $('#add-taxon-input').val();
+    if (!taxonName) {
+        return false;
+    }
+    // Show loading div
+    let table = $('.find-taxon-table');
+    table.hide();
+    let loading = $('.find-taxon-loading');
+    loading.show();
+    let $newTaxonForm = $('.new-taxon-form');
+    $newTaxonForm.hide();
+
+    // Show response list
+    $.ajax({
+        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroup=${taxonGroupName}`,
+        type: 'get',
+        dataType: 'json',
+        success: function (data) {
+            if (data.length > 0) {
+                populateFindTaxonTable(table, data);
+            } else {
+                showNewTaxonForm(taxonName);
+            }
+            loading.hide();
+        }
+    });
+});
+
+function showNewTaxonForm(taxonName) {
+    let $taxonForm = $('.new-taxon-form');
+    let $button = $taxonForm.find('.add-new-taxon-btn');
+    let $rank = $taxonForm.find('.new-taxon-rank');
+    let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
+    let $newTaxonNameInput = $('#new-taxon-name');
+    $button.click(function () {
+        $taxonForm.hide();
+        addNewTaxonToObservedList(capitalizedTaxonName, '', $rank.val());
+    });
+    $newTaxonNameInput.val(capitalizedTaxonName);
+    $taxonForm.show();
+}
+
+function populateFindTaxonTable(table, data) {
+    let tableBody = table.find('tbody');
+    tableBody.html('');
+    let gbifImage = '<img src="/static/img/GBIF-2015.png" width="50">';
+    $.each(data, function (index, value) {
+        let source = value['source'];
+        let scientificName = value['scientificName'];
+        let canonicalName = value['canonicalName'];
+        let rank = value['rank'];
+        let key = value['key'];
+        let taxaId = value['taxaId'];
+        let stored = value['storedLocal'];
+
+        if (source === 'gbif') {
+            source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
+        } else if (source === 'local') {
+            source = fontAwesomeIcon('database');
+        }
+        if (stored) {
+            stored = fontAwesomeIcon('check', 'green');
+        } else {
+            stored = fontAwesomeIcon('times', 'red');
+        }
+        let action = (`<button 
+                        type="button" 
+                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})" 
+                        class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
+                       </button>`);
+        tableBody.append(`<tr>
+                    <td>${scientificName}</td>
+                    <td>${canonicalName}</td>
+                    <td>${rank}</td>
+                    <td>${source}</td>
+                    <td>${stored}</td>
+                    <td>${action}</td>
+                </tr>`);
+    });
+    table.show();
+}
+
+function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
+    let postData = {
+        'gbifKey': gbifKey,
+        'taxonName': name,
+        'rank': rank,
+        'taxonGroup': taxonGroupName,
+        'csrfmiddlewaretoken': csrfToken
+    };
+    let table = $('.find-taxon-table');
+    table.hide();
+    let loading = $('.find-taxon-loading');
+    loading.show();
+
+    if (taxaId) {
+        $('#addNewTaxonModal').modal('toggle');
+        loading.hide();
+        $('#add-taxon-input').val('');
+
+        if (taxaIdList.indexOf(taxaId + '') === -1) {
+            renderNewTaxon(taxaId, name);
+        } else {
+            let div = $('.taxon-table-body').find(`.taxon-id[value="${taxaId}"]`);
+            if (div.length) {
+                div = div.parent().parent();
+                div.scrollHere();
+                div.highlight();
+            }
+        }
+        return true;
+    }
+
+    $.ajax({
+        url: `/api/add-new-taxon/`,
+        type: 'POST',
+        data: postData,
+        success: function (data) {
+            $('#addNewTaxonModal').modal('toggle');
+            renderNewTaxon(data['id'], name);
+            loading.hide();
+            $('#add-taxon-input').val('');
+        }
+    });
+}
+
+// Add new taxon row to the existing taxa list
+function renderNewTaxon(taxonId, taxonName) {
+    let $container = $('.taxon-table-body');
+    taxaIdList.push(taxonId + '');
+    let $row = $('<tr>');
+    $row.html(
+        '<td scope="row" class="taxon-name">' +
+        taxonName +
+        '<input type="hidden" class="taxon-id" value="' + taxonId + '">' +
+        '</td>');
+    $row.append(
+        '<td>' +
+        '<div class="form-check">' +
+        '<input class="form-check-input observed" type="checkbox"' +
+        ' value="True"' +
+        ' name="' + taxonId + '-observed">' +
+        ' <label class="form-check-label">' +
+        ' </label>' +
+        '</div>' +
+        '</td>');
+    let taxonAbundanceInput = $('<input type="number" min="0"' +
+        ' name="' + taxonId + '-abundance"' +
+        ' class="form-control taxon-abundance"' +
+        ' placeholder="0">');
+    let tdTaxonAbundance = $('<td>');
+    tdTaxonAbundance.append(taxonAbundanceInput);
+    $row.append(tdTaxonAbundance);
+    $container.prepend($row);
+    $row.scrollHere();
+    $row.highlight();
+    taxonAbundanceInput.change(taxonAbundanceOnChange);
+}
