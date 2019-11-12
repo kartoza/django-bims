@@ -163,19 +163,15 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             }
             return $detailWrapper;
         },
-
         renderClimateData: function (data) {
-            var locationContext = {};
-            var $detailWrapper = $('<div></div>');
-
+            let $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('climate_data')) {
-                var climateDataTemplate = _.template($('#climate-data-template').html());
+                let climateDataTemplate = _.template($('#climate-data-template').html());
                 $detailWrapper.append(climateDataTemplate({
                     'mean_annual_temperature': data['climate_data']['mean_annual_temperature'],
                     'mean_annual_rainfall': data['climate_data']['mean_annual_rainfall']
                 }));
             }
-            ;
             return $detailWrapper;
         },
         createDataSummary: function (data) {
@@ -201,8 +197,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         renderMonthlyLineChart: function (data_in, chartName) {
             if (!(data_in.hasOwnProperty(chartName + '_chart'))) {
                 return false;
-            };
-            var chartConfig = {
+            }
+            let chartConfig = {
                 type: 'line',
                 data: {
                     datasets: [{
@@ -233,16 +229,16 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         yAxes: [{
                             display: true,
                             scaleLabel: {
-                                display: false,
-                                labelString: ''
+                                display: true,
+                                labelString: '(mm)'
                             }
                         }]
                     }
                 }
             };
-            var chartCanvas = document.getElementById(chartName + '_chart');
+            let chartCanvas = document.getElementById(chartName + '_chart');
             chartCanvas = this.resetCanvas(chartCanvas);
-            var ctx = chartCanvas.getContext('2d');
+            let ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
         },
         parseNameFromAliases: function (alias, alias_type, data) {
