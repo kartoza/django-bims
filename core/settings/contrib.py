@@ -62,6 +62,7 @@ INSTALLED_APPS += (
     'sass',
     'rangefilter',
     'preferences',
+    'sorl.thumbnail',
 )
 
 if os.environ.get('RAVEN_CONFIG_DSN'):

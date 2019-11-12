@@ -693,11 +693,11 @@ define([
                     className = 'active'
                 }
                 wrapper.find('.carousel-indicators').append(
-                    '<li data-target="#ssdd-site-image-carousel" data-slide-to="'+ index +'" class="'+ className +'"></li>'
+                    '<li data-target="#ssdd-site-image-carousel" data-slide-to="'+ index +'" class="'+ className +'"/>'
                 );
                 wrapper.find('.carousel-inner').append(
                     '<div class="carousel-item '+ className +'">' +
-                    '  <img src="/uploaded/'+ siteImage +'" style="width: 100%">' +
+                    '  <img alt="" src="' + siteImage + '">' +
                     '</div>'
                 );
             });

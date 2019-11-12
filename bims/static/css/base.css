@@ -309,3 +309,8 @@ h6 {
 .item-highlight {
   animation: yellowfade 1.5s;
 }
+
+.carousel-inner {
+    background-color: rgba(110, 110, 110, 0.34);
+    text-align: center;
+}
