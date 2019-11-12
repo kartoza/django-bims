@@ -1,7 +1,9 @@
 from rest_framework import serializers
 import json
 from django.db.models import Q
-from bims.models import LocationSite, SpatialScale, LocationContext
+from bims.models import (
+    LocationSite, SpatialScale, LocationContext, LocationContextGroup
+)
 from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon, SiteVisit
 
 
@@ -194,7 +196,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     FBIS_site_code = serializers.SerializerMethodField()
     sass_score = serializers.SerializerMethodField()
     number_of_taxa = serializers.SerializerMethodField()
-    aspt = serializers.SerializerMethodField()
+    ASPT = serializers.SerializerMethodField()
     sampling_date = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     sass_version = serializers.SerializerMethodField()
@@ -202,16 +204,17 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     river_name = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
-    time_of_day = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
     study_reference = serializers.SerializerMethodField()
     accredited = serializers.SerializerMethodField()
     geomorphological_zone = serializers.SerializerMethodField()
-    geomorphological_zone_ground_truthed = serializers.SerializerMethodField()
+    refined_geomorphological_zone = serializers.SerializerMethodField()
 
     def get_filter_history(self, obj):
         filter_history = {}
         filters = self.context['filters']
+        if 'siteIdOpen' in filters:
+            del filters['siteIdOpen']
         for filter_key, filter_value in filters.items():
             if filter_key == 'spatialFilter':
                 continue
@@ -225,11 +228,23 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         spatial_filters = filters.get('spatialFilter', None)
         if spatial_filters:
             spatial_filters = json.loads(spatial_filters)
-            spatial_scales = SpatialScale.objects.filter(
-                id__in=spatial_filters
-            )
-            for spatial_scale in spatial_scales:
-                filter_history[spatial_scale.name] = spatial_scale.query
+            for spatial_filter in spatial_filters:
+                # spatial_filters =
+                # ['value,primary_catchment,context_value',
+                # ['group,primary_catchment']
+                filter_values = spatial_filter.split(',')
+                if len(filter_values) < 2:
+                    continue
+                group = LocationContextGroup.objects.filter(
+                    key=filter_values[1]
+                )
+                if not group.exists():
+                    continue
+                group = group[0]
+                if filter_values[0] == 'value' and len(filter_values) > 2:
+                    filter_history[group.name] = filter_values[2]
+                else:
+                    filter_history[group.name] = 'All'
         return filter_history
 
     def get_accredited(self, obj):
@@ -248,12 +263,6 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     def get_study_reference(self, obj):
         return obj['reference']
 
-    def get_time_of_day(self, obj):
-        time = obj['time_of_day']
-        if time:
-            return time.strftime('%H:%M:%S')
-        return '-'
-
     def get_river_name(self, obj):
         return obj['river_name']
 
@@ -270,7 +279,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         return obj['FBIS_site_code']
 
     def get_owner(self, obj):
-        return obj['owner']
+        return obj['full_name']
 
     def get_sass_version(self, obj):
         return obj['sass_version']
@@ -281,7 +290,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     def get_number_of_taxa(self, obj):
         return obj['count']
 
-    def get_aspt(self, obj):
+    def get_ASPT(self, obj):
         return '{0:.2f}'.format(obj['aspt'])
 
     def get_sampling_date(self, obj):
@@ -300,7 +309,7 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
                 'geo_class_recoded'
             )
 
-    def get_geomorphological_zone_ground_truthed(self, obj):
+    def get_refined_geomorphological_zone(self, obj):
         site = LocationSite.objects.get(id=obj['site_id'])
         if site.refined_geomorphological:
             return site.refined_geomorphological
@@ -328,16 +337,15 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
             'site_description',
             'river_name',
             'geomorphological_zone',
-            'geomorphological_zone_ground_truthed',
+            'refined_geomorphological_zone',
             'latitude',
             'longitude',
             'sampling_date',
-            'time_of_day',
             'accredited',
             'sass_version',
             'sass_score',
             'number_of_taxa',
-            'aspt',
+            'ASPT',
             'reference_category',
             'study_reference',
             'owner',
@@ -352,9 +360,9 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
         biotopes_needed = [
             'Stones in current',
             'Stones out of current',
+            'Aquatic vegetation',
             'Marginal vegetation in current',
             'Marginal vegetation out of current',
-            'Aquatic vegetation',
             'Gravel',
             'Sand',
             'Mud'
