@@ -111,6 +111,16 @@
                     <small class="text-muted">Upload new image: </small><input type="file" name="site_image" accept="image/*">
                     <br/><small class="error-upload"></small>
                 </div>
+                {% else %}
+                    <div class="form-group">
+                        <label for="data-source" class="input-label">Site Image
+                            :</label>
+                        <img id="site_image" src="" style="width: 100%">
+                        <small class="text-muted">Upload new
+                            image: </small><input type="file" name="site_image"
+                                                  accept="image/*">
+                        <br/><small class="error-upload"></small>
+                    </div>
                 {% endif %}
             </div>
         </div>
