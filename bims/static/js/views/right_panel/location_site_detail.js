@@ -34,6 +34,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             '#525351'],
         initialize: function () {
             Shared.Dispatcher.on('siteDetail:show', this.show, this);
+            Shared.Dispatcher.on('siteDetail:panelClosed', this.panelClosed, this);
             Shared.Dispatcher.on('siteDetail:updateCurrentSpeciesSearchResult', this.updateCurrentSpeciesSearchResult, this);
         },
         updateCurrentSpeciesSearchResult: function (newList) {
@@ -55,6 +56,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             this.url = '/api/location-site-detail/' + this.apiParameters(this.parameters);
             this.showDetail(name, zoomToObject)
         },
+        panelClosed: function (e) {
+            // function that is called when the panel closed
+            if (!Shared.CurrentState.SEARCH) {
+                Shared.Router.updateUrl('', false);
+            } else {
+                filterParameters['siteIdOpen'] = '';
+            }
+        },
         hideAll: function (e) {
             var className = $(e.target).attr('class');
             var target = $(e.target);
@@ -73,7 +82,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 target.data('visibility', true)
             }
         },
-
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
                 return null;
@@ -120,7 +128,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             var element_name = `#rp-${chartName}-legend`;
             $(element_name).html(chart_labels[chartName]);
         },
-
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('site_detail_info')) {
@@ -292,14 +299,23 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 success: function (data) {
                     self.siteDetailData = data;
                     Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
+
+                    if (Shared.CurrentState.SEARCH) {
+                        filterParameters['siteIdOpen'] = data['id'];
+                    }
+                    let updatedUrl = Shared.UrlUtil.updateUrlParams(window.location.href, 'site', 'siteIdOpen', data['id']);
+                    if (updatedUrl) {
+                        Shared.Router.updateUrl(updatedUrl, false);
+                    }
+
                     if (data['geometry']) {
-                        var feature = {
+                        let feature = {
                             id: data['id'],
                             type: "Feature",
                             geometry: JSON.parse(data['geometry']),
                             properties: {}
                         };
-                        var features = new ol.format.GeoJSON().readFeatures(feature, {
+                        let features = new ol.format.GeoJSON().readFeatures(feature, {
                             featureProjection: 'EPSG:3857'
                         });
                         if (zoomToObject) {

@@ -55,7 +55,9 @@ define([
             this.parent = options.parent;
             this.sidePanel = options.sidePanel;
             this.searchPanel = new SearchPanelView();
-            this.searchResultCollection = new SearchResultCollection();
+            this.searchResultCollection = new SearchResultCollection(
+                this.searchFinished
+            );
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
             Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
@@ -504,6 +506,17 @@ define([
                 self.shouldUpdateUrl = true;
             }
         },
+        searchFinished: function () { // Called when the search is complete
+            if (filterParameters.hasOwnProperty('siteIdOpen')) {
+                // If the filter contains siteIdOpen,
+                // then fetch the site detail for that id
+                if (filterParameters['siteIdOpen']) {
+                    Shared.Dispatcher.trigger(
+                        'siteDetail:show',
+                        filterParameters['siteIdOpen'], '', true);
+                }
+            }
+        },
         searchClick: function () {
             // if (Shared.CurrentState.FETCH_CLUSTERS) {
             //     return true;
@@ -834,6 +847,10 @@ define([
                 $.each(self.selectedEcologicalConditions, function (index, ecologicalCondition) {
                    $(".ecological-condition").find("[data-category='" + ecologicalCondition + "']").addClass('selected');
                 });
+            }
+
+            if (allFilters.hasOwnProperty('siteIdOpen')) {
+                filterParameters['siteIdOpen'] = allFilters['siteIdOpen'];
             }
         },
         showMoreSites: function () {

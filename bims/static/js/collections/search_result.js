@@ -28,6 +28,10 @@ define([
         pageMoreTaxa: 2,
         extent: [],
         searchXHR: null,
+        searchFinishedCallback: null,
+        initialize: function (searchFinishedCallback) {
+            this.searchFinishedCallback = searchFinishedCallback;
+        },
         modelId: function (attrs) {
             return attrs.record_type + "-" + attrs.id;
         },
@@ -96,7 +100,7 @@ define([
             }
         },
         getSearchResults: function () {
-            var self = this;
+            let self = this;
             if (this.searchXHR) {
                 this.searchXHR.abort();
                 this.searchXHR = null;
@@ -109,16 +113,21 @@ define([
                     Shared.CurrentState.SEARCH = true;
                 },
                 complete: function () {
-                    var timeout = 2000;
+                    let timeout = 2000;
+
+                    // initial search should have a small timeout
                     if (self.initialSearch) {
                         timeout = 500;
                         self.initialSearch = false;
                         self.secondSearch = true;
                     }
+
+                    // post initial search can have bigger timeout
                     if (self.secondSearch) {
                         timeout = 1000;
                         self.secondSearch = true;
                     }
+
                     if (self.status === 'processing') {
                         setTimeout(function () {
                             self.getSearchResults()
@@ -215,6 +224,9 @@ define([
             var speciesListName = [];
 
             if (self.status === 'finished' && this.sitesData.length > 0 && this.recordsData.length > 0) {
+                if (this.searchFinishedCallback) {
+                    this.searchFinishedCallback();
+                }
                 Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
                 if (this.extent.length === 4) {
                     Shared.Dispatcher.trigger('map:zoomToExtent', this.extent);

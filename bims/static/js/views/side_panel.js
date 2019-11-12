@@ -119,6 +119,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             Shared.Dispatcher.trigger('searchResult:clicked', null);
             Shared.Dispatcher.trigger('biodiversityLegend:moveRight');
             Shared.Dispatcher.trigger('bugReport:moveRight');
+            Shared.Dispatcher.trigger('siteDetail:panelClosed');
             Shared.SidePanelOpen = false;
             this.closeSidePanelAnimation();
             this.hideReturnButton();
