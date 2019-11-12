@@ -1,7 +1,7 @@
 /*global define*/
 'use strict';
 
-define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Backbone, _, StorageUtil, ColorUtil) {
+define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url'], function (Backbone, _, StorageUtil, ColorUtil, UrlUtil) {
     return {
         SearchURLParametersTemplate: "?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
@@ -11,7 +11,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Bac
             "&spatialFilter=<%= spatialFilter %>" +
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>&sourceCollection=<%= sourceCollection %>" +
-            "&abioticData=<%= abioticData %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>&orderBy=<%= orderBy %>",
+            "&abioticData=<%= abioticData %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>",
         LocationSiteDetailXHRRequest: null,
         MultiSitesOverviewXHRRequest: null,
         TaxonDetailXHRRequest: null,
@@ -22,6 +22,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color'], function (Bac
         FishModuleID: null,
         StorageUtil: new StorageUtil(),
         ColorUtil: new ColorUtil(),
+        UrlUtil: new UrlUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
         PoliticalRegionBoundaries: null,

@@ -9,7 +9,8 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             "search/:query/:filters": "searchWithFilters",
             "search//:filters": "onlyFilters",
             "site-detail/:query": "showSiteDetailedDashboard",
-            "species-detail/:query": "showSpeciesDetailedDashboard"
+            "species-detail/:query": "showSpeciesDetailedDashboard",
+            "site/:params": "showSingleSiteDetail"
         },
         initializeParameters: function () {
             this.parameters['taxon'] = '';
@@ -35,6 +36,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.parameters['abioticData'] = '';
             this.parameters['rank'] = '';
             this.parameters['orderBy'] = '';
+            this.parameters['siteIdOpen'] = '';
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }
@@ -58,7 +60,6 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             if (this.searchHistory.length === 0) {
                 Shared.Dispatcher.trigger('search:checkSearchCollection', true);
             }
-            // Shared.Dispatcher.trigger('search:checkSearchCollection', true);
             this.searchHistory.push(query);
         },
         searchWithFilters: function (query, filters) {
@@ -89,9 +90,18 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.navigate('', false);
             this.toMap();
         },
+        showSingleSiteDetail: function (params) {
+            let siteId = '';
+            if (params) {
+                siteId = params.split('siteIdOpen=')[1];
+            }
+            if (siteId) {
+                siteId = siteId.split('&')[0];
+                Shared.Dispatcher.trigger('siteDetail:show', siteId, '', true);
+            }
+        },
         toMap: function () {
-            var self = this;
-
+            let self = this;
             if (!this.defaultFiltersParam) {
                 $.each(this.defaultSelectedFilters, function (index, selectedFilter) {
                     if (self.parameters.hasOwnProperty(selectedFilter['filter_key'])) {
