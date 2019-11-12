@@ -36,6 +36,7 @@ define([
         vectorLayerFromMainMap: null,
         siteLayerSource: null,
         siteLayerVector: null,
+        siteId: null,
         currentFiltersUrl: '',
         categoryColor: {
             'Native': '#a13447',
@@ -471,10 +472,13 @@ define([
             }
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
-            let random_number = Math.random() * 1000000;
-            let this_title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '');
+
+            let title = button.data('title');
+            if (!title) {
+                title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
+            }
             if (element.length > 0)
-                this.downloadElement(this_title, element);
+                this.downloadElement(title, element);
         },
         downloadChartImage: function (e) {
             let button = $(e.target);
