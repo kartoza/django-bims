@@ -10,6 +10,7 @@ from django.http import Http404, HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
+from sorl.thumbnail import get_thumbnail
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
@@ -271,12 +272,18 @@ class LocationSitesSummary(APIView):
 
         search_process.create_view()
         biodiversity_data = self.get_biodiversity_data(collection_results)
-        site_images = SiteImage.objects.filter(
+        site_images = []
+        site_image_objects = SiteImage.objects.filter(
             site__in=list(
                 collection_results.distinct('site').values_list(
                     'site__id', flat=True))).values_list(
             'image', flat=True
         )
+        for site_image in site_image_objects:
+            site_images.append(
+                get_thumbnail(
+                    site_image, 'x500', crop='center', quality=99).url
+            )
 
         # Check module
         modules = []

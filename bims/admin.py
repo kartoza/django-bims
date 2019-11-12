@@ -670,6 +670,7 @@ class SiteImageAdmin(admin.ModelAdmin):
     )
     raw_id_fields = (
         'site',
+        'site_visit'
     )
 
 
