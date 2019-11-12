@@ -3,9 +3,9 @@ import csv
 import logging
 from celery import shared_task
 from django.db.models import (
-    Case, When, F, Count, Sum, FloatField, Q, Value
+    Case, When, F, Count, Sum, FloatField, Q, Value, CharField
 )
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, Concat
 from bims.api_views.search import Search
 from sass.models import SiteVisitTaxon
 from sass.serializers.sass_data_serializer import SassDataSerializer
@@ -89,7 +89,13 @@ def download_sass_summary_data_task(filename, filters, path_file):
             )
             summary = site_visit_taxa.annotate(
                 sampling_date=F('site_visit__site_visit_date'),
-            ).values('sampling_date').annotate(
+                full_name=Concat(
+                    'site_visit__owner__first_name',
+                    Value(' '),
+                    'site_visit__owner__last_name',
+                    output_field=CharField()
+                )
+            ).values('sampling_date', 'full_name').annotate(
                 count=Count('sass_taxon'),
                 sass_score=Sum(Case(
                     When(
@@ -105,7 +111,6 @@ def download_sass_summary_data_task(filename, filters, path_file):
                     default='site_visit__location_site__name'
                 ),
                 site_id=F('site_visit__location_site__id'),
-                owner=F('site_visit__owner__username'),
                 sass_version=F('site_visit__sass_version'),
                 site_description=F(
                     'site_visit__location_site__site_description'),
@@ -116,7 +121,6 @@ def download_sass_summary_data_task(filename, filters, path_file):
                 ),
                 latitude=F('site_visit__location_site__latitude'),
                 longitude=F('site_visit__location_site__longitude'),
-                time_of_day=F('site_visit__time'),
                 reference=F('reference'),
                 reference_category=F('reference_category'),
             ).annotate(
@@ -135,7 +139,11 @@ def download_sass_summary_data_task(filename, filters, path_file):
 
             # Rename headers
             for header in headers:
-                formatted_headers.append(header.replace('_', ' ').capitalize())
+                header_split = [
+                    word[0].upper() + word[1:] for word in header.split('_')
+                ]
+                header = ' '.join(header_split)
+                formatted_headers.append(header)
 
             with open(path_file, 'wb') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
