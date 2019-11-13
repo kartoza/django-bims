@@ -8,11 +8,14 @@ from django.db.models import (
     IntegerField, Q
 )
 from django.db.models.functions import Cast, Coalesce
+from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
 from bims.models.site_image import SiteImage
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.api_views.search import Search
+from bims.serializers.chemical_records_serializer import \
+    ChemicalRecordsSerializer
 from sass.models import (
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon,
@@ -416,6 +419,39 @@ class SassDashboardView(TemplateView):
                 'water_management_area'
             ))
         )
+
+        list_chems = {}
+        if self.location_site.id:
+            list_chems_code = [
+                'COND',
+                'TEMP',
+                'PH',
+                'DO'
+            ]
+            chems = ChemicalRecord.objects.filter(
+                location_site_id=self.location_site.id
+            )
+            x_label = []
+            for chem in list_chems_code:
+                chem_name = chem.lower().replace('-n', '').upper()
+                qs = chems.filter(chem__chem_code=chem).order_by('date')
+                if not qs:
+                    continue
+                value = ChemicalRecordsSerializer(qs, many=True)
+                data = {
+                    'unit': qs[0].chem.chem_unit,
+                    'name': qs[0].chem.chem_description,
+                    'values': value.data
+                }
+                for val in value.data:
+                    if val['str_date'] not in x_label:
+                        x_label.append(val['str_date'])
+                try:
+                    list_chems[chem_name].append({chem: data})
+                except KeyError:
+                    list_chems[chem_name] = [{chem: data}]
+        context['chemical_records'] = json.dumps(list_chems)
+        context['is_chem_exists'] = len(list_chems) > 1
 
         return context
 

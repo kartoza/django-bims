@@ -50,6 +50,7 @@
             const originalGeomorphologicalZone = '{{ original_geomorphological }}';
             const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
             const sourceReferences = {{ source_references | safe }};
+            const chemicalRecords = {{ chemical_records | safe }};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -346,6 +347,26 @@
                         <center><div class="ecological-legend-info">A: Natural - B: Good - C: Fair - D: Poor - E/F: Seriously/Critically modified</div></center>
                         <div class="ecological-legend-info">Ecological categories are based on interpretation of SASS data using Dallas (2007) SASS data interpretation guidelines</div>
                     </div>
+
+                    {% if is_chem_exists  %}
+                    <div class="vertical-space"></div>
+                    <div class="chart-container" id="chem-chart-wrapper">
+                        <div class="chart-title">Abiotic Data
+                            <i data-download-title="Abiotic Data"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download chart"
+                               class="fa fa-download pull-right download-icon download-chart"></i>
+                        </div>
+                        <div class="col-12 species-ssdd-chem-bar-chart" id="chem-bar-chart-wrapper">
+                        </div>
+                        <div class="container">
+                            <button class="btn btn-info download-chem-as-csv"
+                                    style="width: 100%;">Download as CSV
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="vertical-space"></div>
                     <div class="table-container">
                         <div class="table-title">

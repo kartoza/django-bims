@@ -1,13 +1,12 @@
 function downloadCSV(url, downloadButton) {
-    let self = this;
-    self.downloadCSVXhr = $.get({
+    var downloadCSVXhr = $.get({
         url: url,
         dataType: 'json',
         success: function (data) {
             if (data['status'] !== "success") {
                 if (data['status'] === "failed") {
-                    if (self.downloadCSVXhr) {
-                        self.downloadCSVXhr.abort();
+                    if (downloadCSVXhr) {
+                        downloadCSVXhr.abort();
                     }
                     downloadButton.html('Download as CSV');
                     downloadButton.prop("disabled", false);
@@ -19,13 +18,19 @@ function downloadCSV(url, downloadButton) {
                 }
             } else {
                 var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                var filename;
+                if(data['filename']){
+                    filename = data['filename']
+                }else {
+                    filename = data['message']
+                }
                 if (is_safari) {
                     var a = window.document.createElement('a');
-                    a.href = '/uploaded/csv_processed/' + data['message'];
-                    a.download = data['message'];
+                    a.href = '/uploaded/csv_processed/' + filename;
+                    a.download = filename;
                     a.click();
                 } else {
-                    location.replace('/uploaded/csv_processed/' + data['message']);
+                    location.replace('/uploaded/csv_processed/' + filename);
                 }
 
                 downloadButton.html('Download as CSV');
