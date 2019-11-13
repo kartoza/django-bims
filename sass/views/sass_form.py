@@ -94,7 +94,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 'name', 'id'
             ))
         for biotope_key, biotope_id in biotope_list.iteritems():
-            biotope_key = re.sub(r'\([^)]*\)', '', biotope_key)
+            biotope_key = re.sub(r'\([^)]*\)', '', biotope_key).strip()
             biotope_value = post_dictionary.get(biotope_key, None)
             try:
                 if biotope_value:
