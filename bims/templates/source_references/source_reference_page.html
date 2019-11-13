@@ -236,7 +236,7 @@
                     <label for="notes-reference"
                            class="col-sm-2 col-form-label col-form-label">Notes</label>
                     <div class="col-sm-10">
-                        <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note">{{ additional_context_data.note }}</textarea>
+                        <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note">{% if additional_context_data.note %}{{ additional_context_data.note }}{% endif %}</textarea>
                     </div>
                 </div>
 

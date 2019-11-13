@@ -592,12 +592,13 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 context['comments'] = self.site_visit.comments_or_observations
             if self.site_visit.other_biota:
                 context['other_biota'] = self.site_visit.other_biota
+
+            # Get source reference
             site_visit_taxon = SiteVisitTaxon.objects.filter(
                 site_visit=self.site_visit, source_reference__isnull=False)
             if site_visit_taxon.exists():
-                context['source_reference'] = (
-                    site_visit_taxon[0].source_reference
-                )
+                source_reference = site_visit_taxon[0].source_reference
+                context['source_reference'] = source_reference
         else:
             owner = self.request.user
 
