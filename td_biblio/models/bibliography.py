@@ -3,6 +3,7 @@ __author__ = 'Alison Mukoma <alison@kartoza.com>'
 __copyright__ = 'kartoza.com'
 
 from django.conf import settings
+from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -68,7 +69,17 @@ class AbstractHuman(models.Model):
                 models.Q(first_name__istartswith=self.first_initial[0])
             )
         except User.DoesNotExist:
-            pass
+            username = slugify('{first_name} {last_name}'.format(
+                first_name=self.first_name,
+                last_name=self.last_name
+            )).replace('-', '_')
+            self.user, created = User.objects.get_or_create(
+                username=username
+            )
+            if created:
+                self.user.last_name = self.last_name
+                self.user.first_name = self.first_name
+                self.user.save()
         except User.MultipleObjectsReturned:
             pass
 
