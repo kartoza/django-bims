@@ -298,7 +298,6 @@ html, body, .map, .map-wrapper, #map-container {
 .map-search-result {
     margin-left: 366px !important;
     padding-bottom: 0;
-    min-height: 255px;
 }
 
 .map-search-result .search-box {
