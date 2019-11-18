@@ -365,24 +365,27 @@ class Entry(models.Model):
         author_str = '%(last_name)s %(first_initial)s'
         s = ', '.join([author_str % a.__dict__ for a in self.get_authors()])
         s = ', and '.join(s.rsplit(', ', 1))  # last author case
-        s += ', '
+        s += ' | '
+
+        # Year
+        if self.publication_date:
+            s += '%s | ' % self.publication_date.strftime('%Y')
 
         # Title
-        s += '"%(title)s", ' % self.__dict__
+        s += '"%(title)s" | ' % self.__dict__
 
         # Journal
         if self.journal.abbreviation:
-            s += 'in %(abbreviation)s, ' % self.journal.__dict__
+            s += '%(abbreviation)s ' % self.journal.__dict__
         else:
             # fall back to the real name
-            s += 'in %(name)s, ' % self.journal.__dict__
+            s += '%(name)s ' % self.journal.__dict__
 
         # Misc
         if self.volume and self.pages:
-            s += 'vol. %(volume)s, pp. %(pages)s, ' % self.__dict__
-        if self.publication_date:
-            s += '%s.' % self.publication_date.strftime('%B %Y')
+            s += 'vol. %(volume)s, pp. %(pages)s' % self.__dict__
 
+        s += '.'
         return s
 
     def _get_first_author(self):
