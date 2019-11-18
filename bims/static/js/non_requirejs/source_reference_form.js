@@ -143,6 +143,7 @@ $(function () {
     });
     $('.references-row').addClass('hidden');
     if (referenceCategory) {
+        $referenceCategory.val(referenceCategory.toLowerCase());
         $referenceCategory.find('option').each(function () {
             if ($(this).html().trim().toLowerCase() === referenceCategory.toLowerCase()) {
                 $(this).attr('selected', 'selected');
@@ -151,7 +152,7 @@ $(function () {
                     _id = sourceReferenceDoi;
                 }
                 categoryChanged($(this).val(), _id);
-                return;
+                return true;
             }
         });
     }
