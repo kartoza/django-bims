@@ -14,6 +14,7 @@ CORRECTED_LATITUDE = 'Corrected Latitude'
 CORRECTED_LONGITUDE = 'Corrected Longitude'
 ORIGINAL_SITE_CODE = 'Original Site Code'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
+ORIGINAL_RIVER_NAME = 'Original River Name'
 
 
 class Command(BaseCommand):
@@ -55,6 +56,7 @@ class Command(BaseCommand):
                 if location_sites.count() > 0:
                     location_site = location_sites[0]
                     location_site.refined_geomorphological = row[REFINED_GEO_ZONE]
+                    location_site.legacy_river_name = row[ORIGINAL_RIVER_NAME]
                     try:
                         updated_latitude = float(row[CORRECTED_LATITUDE])
                         updated_longitude = float(row[CORRECTED_LONGITUDE])
