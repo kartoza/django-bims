@@ -148,6 +148,11 @@ class SourceReferenceBibliography(SourceReference):
     document = models.ForeignKey(
         Document, null=True, blank=True, on_delete=models.SET_NULL)
 
+    @staticmethod
+    def create_entry(author_string, journal, date):
+
+        pass
+
     @property
     def reference_type(self):
         return 'Peer-reviewed scientific article'
