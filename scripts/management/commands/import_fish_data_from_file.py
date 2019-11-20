@@ -10,7 +10,7 @@ from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, signals
 from django.utils.text import slugify
 
 from bims.utils.logger import log
@@ -29,7 +29,9 @@ from bims.models import (
     Biotope,
     BIOTOPE_TYPE_BROAD,
     BIOTOPE_TYPE_SPECIFIC,
-    BIOTOPE_TYPE_SUBSTRATUM
+    BIOTOPE_TYPE_SUBSTRATUM,
+    location_site_post_save_handler,
+    collection_post_save_handler,
 )
 from td_biblio.models.bibliography import Entry
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
@@ -65,8 +67,6 @@ SPECIFIC_BIOTOPE = 'Specific biotope'
 SUBSTRATUM = 'Substratum'
 
 # Chemical records
-DEPTH_M = 'Depth (m)'
-NBV = 'Near Bed Velocity (m/s)'
 CONDUCTIVITY = 'Conductivity (mS m-1)'
 PH = 'pH'
 DISSOLVED_OXYGEN_PERCENT = 'Dissolved Oxygen (%)'
@@ -74,6 +74,8 @@ DISSOLVED_OXYGEN_MG = 'Dissolved Oxygen (mg/L)'
 TEMP = 'Temperature (°C)'
 TURBIDITY = 'Turbidity (NTU)'
 
+DEPTH_M = 'Depth (m)'
+NBV = 'Near Bed Velocity (m/s)'
 COLLECTOR_OR_OWNER = 'Collector/Owner'
 CUSTODIAN = 'Institute'
 NUMBER_OF_REPLICATES = 'Number of replicates'
@@ -123,6 +125,22 @@ class Command(BaseCommand):
         log(error_message)
         self.errors.append(error_message)
         self.data_failed += 1
+
+    def disconnect_signals(self):
+        signals.post_save.disconnect(
+            collection_post_save_handler
+        )
+        signals.post_save.disconnect(
+            location_site_post_save_handler
+        )
+
+    def reconnect_signals(self):
+        signals.post_save.connect(
+            collection_post_save_handler
+        )
+        signals.post_save.connect(
+            location_site_post_save_handler
+        )
 
     def source_reference(self, record):
         source_reference = None
@@ -341,23 +359,37 @@ class Command(BaseCommand):
         return collector_list
 
     def chemical_records(self, record, location_site, date):
-        # Temp
-        if record[TEMP]:
-            temp_chem = Chem.objects.filter(
-                chem_code__icontains='temp'
+        chemical_units = {
+            TEMP: 'temperature',
+            CONDUCTIVITY: 'conductivity',
+            PH: 'ph',
+            DISSOLVED_OXYGEN_MG: 'dissolved oxygen',
+            DISSOLVED_OXYGEN_PERCENT: (
+                'dissolved oxygen: % saturation of '
+                'oxygen dissolved in the water'
+            ),
+            TURBIDITY: 'turbidity (ntu scale)',
+        }
+
+        for chem_key in chemical_units:
+            if not record[chem_key]:
+                continue
+            chem = Chem.objects.filter(
+                chem_description__iexact=chemical_units[chem_key]
             )
-            if temp_chem.exists():
-                temp_chem = temp_chem[0]
+            if chem.exists():
+                temp_chem = chem[0]
                 ChemicalRecord.objects.get_or_create(
                     date=date,
                     chem=temp_chem,
-                    value=record[TEMP],
+                    value=record[chem_key],
                     location_site=location_site
                 )
 
     def handle(self, *args, **options):
         source_collection = options.get('source_collection')
         file_name = options.get('csv_file')
+        self.disconnect_signals()
 
         file_path = os.path.join(
             settings.MEDIA_ROOT,
@@ -537,10 +569,6 @@ class Command(BaseCommand):
                         additional_data['number_of_replicates'] = (
                             record[NUMBER_OF_REPLICATES]
                         )
-                    if SUBSTRATUM in record:
-                        additional_data['substratum'] = (
-                            record[SUBSTRATUM]
-                        )
                     if DEPTH_M in record:
                         additional_data['depth_m'] = (
                             record[DEPTH_M]
@@ -554,14 +582,14 @@ class Command(BaseCommand):
                             record[TURBIDITY]
                         )
 
-                    collection_records.notes = record[NOTES]
+                    collection_record.notes = record[NOTES]
                     superusers = get_user_model().objects.filter(
                         is_superuser=True
                     )
-                    collection_records.owner = superusers[0]
-                    collection_records.additional_data = additional_data
-                    collection_records.source_collection = source_collection
-                    collection_records.save()
+                    collection_record.owner = superusers[0]
+                    collection_record.additional_data = additional_data
+                    collection_record.source_collection = source_collection
+                    collection_record.save()
 
                     # update multiple fields
                     BiologicalCollectionRecord.objects.filter(
@@ -610,3 +638,4 @@ class Command(BaseCommand):
         )
         self.summary['error_list'] = self.errors
         log(json.dumps(self.summary))
+        self.reconnect_signals()
