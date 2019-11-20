@@ -22,6 +22,7 @@ from sass.models import (
     SassEcologicalCondition,
     SassEcologicalCategory
 )
+from sass.enums.chem_unit import ChemUnit
 
 
 class SassDashboardView(TemplateView):
@@ -439,7 +440,7 @@ class SassDashboardView(TemplateView):
                     continue
                 value = ChemicalRecordsSerializer(qs, many=True)
                 data = {
-                    'unit': qs[0].chem.chem_unit,
+                    'unit': ChemUnit[qs[0].chem.chem_unit].value,
                     'name': qs[0].chem.chem_description,
                     'values': value.data
                 }

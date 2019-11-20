@@ -13,4 +13,4 @@ class ChemUnit(Enum):
     MG_L = 'mg/l'
     PER_100_ML = 'Per 100ml'
     M = 'm'
-    OC = 'oC'
+    OC = 'deg C'
