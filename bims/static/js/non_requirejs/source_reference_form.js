@@ -126,7 +126,7 @@ $(function () {
         }
         $bibliographyTitle.html('<i>loading</i>');
         $.ajax({
-            url: "/bibliography/api/fetch/by-doi/?q=" + $doiInput.val()
+            url: "/bibliography/api/fetch/by-doi/?q=" + encodeURIComponent($doiInput.val())
         })
             .done(function (data) {
                 $bibliographyReference.val(data['id']);
