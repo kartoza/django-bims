@@ -70,8 +70,8 @@ class AbstractHuman(models.Model):
             )
         except User.DoesNotExist:
             username = slugify('{first_name} {last_name}'.format(
-                first_name=self.first_name,
-                last_name=self.last_name
+                first_name=self.first_name.encode('utf-8'),
+                last_name=self.last_name.encode('utf-8')
             )).replace('-', '_')
             self.user, created = User.objects.get_or_create(
                 username=username
