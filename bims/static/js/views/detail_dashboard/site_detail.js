@@ -1217,7 +1217,11 @@ define([
                 $.each(value, function (idx, val) {
                     var key_item = Object.keys(val)[0];
                     if(key_item.toLowerCase().indexOf('max') === -1 && key_item.toLowerCase().indexOf('min') === -1){
-                        yLabel = val[key_item]['name'] + ' (' + val[key_item]['unit'] + ')'
+                        let unit = '';
+                        if (val[key_item]['name'].toLowerCase() !== 'ph') {
+                            unit = ' (' + val[key_item]['unit'] + ')';
+                        }
+                        yLabel = val[key_item]['name'] + unit;
                     }
                     var value_data = val[key_item]['values'];
                     var graph_data = [];
@@ -1254,6 +1258,9 @@ define([
 					title: {
 						display: false
 					},
+                    legend: {
+                        display: false,
+                    },
 					scales: {
 						yAxes: [{
 						    scaleLabel: {
