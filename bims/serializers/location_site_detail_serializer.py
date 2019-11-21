@@ -1,4 +1,4 @@
-import json
+from django.db.models import Q
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
@@ -11,7 +11,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     Serializer for location site detail.
     """
     geometry = serializers.SerializerMethodField()
-    location_context_document_json = serializers.SerializerMethodField()
+    location_context = serializers.SerializerMethodField()
 
     def get_geometry(self, obj):
         geometry = obj.get_geometry()
@@ -19,9 +19,17 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return obj.get_geometry().json
         return ''
 
-    def get_location_context_document_json(self, obj):
-        if obj.location_context:
-            return json.loads(obj.location_context)
+    def get_location_context(self, obj):
+        location_context = LocationContext.objects.filter(
+            Q(group__geocontext_group_key__icontains='ecoregion') |
+            Q(group__geocontext_group_key__icontains='geo'),
+            site=obj
+        )
+        if location_context:
+            return dict(location_context.values_list(
+                'group__key',
+                'value'
+            ))
         else:
             return {}
 
@@ -32,7 +40,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'name',
             'geometry',
             'location_type',
-            'location_context_document_json',
+            'location_context',
             'refined_geomorphological',
         ]
 
