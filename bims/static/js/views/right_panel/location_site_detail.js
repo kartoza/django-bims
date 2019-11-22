@@ -139,7 +139,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         siteDescription = siteName;
                     }
                 }
-                console.log(data);
                 let geomorphologicalZone = '-';
                 let ecologicalRegion = '-';
                 let ecologicalRegion2 = '-';
