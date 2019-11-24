@@ -21,6 +21,7 @@ from bims.models.search_process import SearchProcess
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup
+from bims.utils.decorator import prevent_recursion
 
 
 LOGGER = logging.getLogger(__name__)
@@ -264,7 +265,8 @@ class LocationSite(DocumentLinksMixin):
                     continue
                 location_context_group, group_created = (
                     LocationContextGroup.objects.get_or_create(
-                        key=geocontext_value['key']
+                        key=geocontext_value['key'],
+                        geocontext_group_key=group_key
                     )
                 )
                 try:
@@ -430,16 +432,13 @@ class LocationSite(DocumentLinksMixin):
         self.__original_longitude = self.longitude
 
 
-@receiver(models.signals.post_save)
+@receiver(models.signals.post_save, sender=LocationSite)
+@prevent_recursion
 def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Update cluster when location site saved
     """
-    if not issubclass(sender, LocationSite):
-        return
-    models.signals.post_save.disconnect(
-        location_site_post_save_handler,
-    )
+    from bims.tasks.location_site import update_location_context
 
     # Update refined geomorphological if exist
     if instance.refined_geomorphological:
@@ -479,10 +478,8 @@ def location_site_post_save_handler(sender, instance, **kwargs):
                 geo_context.save()
             if not instance.original_geomorphological:
                 instance.original_geomorphological = geo_context.value
-            instance.save()
         except LocationContext.MultipleObjectsReturned:
             pass
 
-    models.signals.post_save.connect(
-        location_site_post_save_handler
-    )
+    # Update location context in background
+    update_location_context.delay(instance.id)
