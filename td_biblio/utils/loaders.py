@@ -140,9 +140,11 @@ class BaseLoader(object):
 
         # Authors
         for rank, record_author in enumerate(record['authors']):
+            first_name = record_author['first_name']
+            last_name = record_author['last_name']
             author, _ = Author.objects.get_or_create(
-                first_name=record_author['first_name'],
-                last_name=record_author['last_name'],
+                first_name=first_name,
+                last_name=last_name
             )
 
             AuthorEntryRank.objects.get_or_create(
@@ -205,10 +207,12 @@ class BibTeXLoader(BaseLoader):
         record['authors'] = []
         for author in input['author']:
             splited = author.split(', ')
+            first_name = " ".join(splited[1:])
+            last_name = splited[0]
             record['authors'].append(
                 {
-                    'first_name': " ".join(splited[1:]),
-                    'last_name': splited[0],
+                    'first_name': first_name,
+                    'last_name': last_name
                 }
             )
         return record

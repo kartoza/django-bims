@@ -249,3 +249,7 @@ body {
 .chem-bar-chart {
     margin-bottom: 10px;
 }
+
+#chem-bar-chart-wrapper {
+    margin-top: 20px;
+}

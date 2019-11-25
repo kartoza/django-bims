@@ -46,6 +46,7 @@ from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from sass.enums.chem_unit import ChemUnit
 
 
 class LocationSiteList(APIView):
@@ -318,7 +319,7 @@ class LocationSitesSummary(APIView):
                     continue
                 value = ChemicalRecordsSerializer(qs, many=True)
                 data = {
-                    'unit': qs[0].chem.chem_unit,
+                    'unit': ChemUnit[qs[0].chem.chem_unit].value,
                     'name': qs[0].chem.chem_description,
                     'values': value.data
                 }

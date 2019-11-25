@@ -60,6 +60,14 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    geocontext_keys = models.CharField(
+        max_length=300,
+        help_text='Default location context group keys that will be fetched '
+                  'from Geocontext, separated by commas.',
+        default='political_boundary_group,rainfall_group',
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

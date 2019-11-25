@@ -141,13 +141,15 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 }
                 let geomorphologicalZone = '-';
                 let ecologicalRegion = '-';
+                let ecologicalRegion2 = '-';
                 try {
                     if(data['refined_geomorphological']) {
                         geomorphologicalZone = data['refined_geomorphological'];
                     } else {
-                        geomorphologicalZone = data['location_context_document_json']['context_group_values']['geomorphological_group']['service_registry_values']['geo_class_recoded']['value'];
+                        geomorphologicalZone = data['location_context']['geo_class_recoded'];
                     }
-                    ecologicalRegion = data['location_context_document_json']['context_group_values']['river_ecoregion_group']['service_registry_values']['eco_region_1']['value'];
+                    ecologicalRegion = data['location_context']['eco_region_1'];
+                    ecologicalRegion2 = data['location_context']['eco_region_2'];
                 } catch (err) {
                 }
 
@@ -158,6 +160,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     'site_description': siteDescription,
                     'geomorphological_zone': geomorphologicalZone,
                     'ecological_region': ecologicalRegion,
+                    'ecological_region_2': ecologicalRegion2,
                     'river': data['site_detail_info']['river'],
                 }));
             }

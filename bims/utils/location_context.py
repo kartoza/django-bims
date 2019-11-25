@@ -1,5 +1,11 @@
+import operator
+from django.db.models import Q
 from bims.models.spatial_scale import SpatialScale
 from bims.models.spatial_scale_group import SpatialScaleGroup
+from bims.models.location_site import LocationSite
+from bims.models.location_context import LocationContext
+from bims.utils.logger import log
+from preferences import preferences
 
 
 def array_to_dict(array, key_name='key'):
@@ -80,3 +86,58 @@ def process_spatial_scale_data(location_context_data, group=None):
                     context_group['service_registry_values'],
                     group=spatial_scale_group
                 )
+
+
+def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
+    # Get location context data from GeoContext
+
+    if not group_keys:
+        group_keys = preferences.SiteSetting.geocontext_keys.split(',')
+
+    if site_id:
+        location_sites = LocationSite.objects.filter(id__in=site_id.split(','))
+    else:
+        location_sites = LocationSite.objects.all()
+
+    if only_empty:
+        location_sites = location_sites.exclude(
+            reduce(operator.and_, (
+                Q(locationcontext__group__geocontext_group_key=x)
+                for x in group_keys)
+                   ))
+    num = len(location_sites)
+    i = 1
+
+    if num == 0:
+        log('No locations with applied filters were found')
+        return
+
+    for location_site in location_sites:
+        log('Updating %s of %s, %s' % (i, num, location_site.name))
+        i += 1
+        all_context = None
+        if only_empty:
+            try:
+                all_context = list(
+                    LocationContext.objects.filter(
+                        site=location_site).values_list(
+                        'group__key', flat=True)
+                )
+            except (ValueError, TypeError):
+                pass
+        for group_key in group_keys:
+            if (all_context and
+                    group_key in all_context):
+                log('Context data already exists for {}'.format(
+                    group_key
+                ))
+                continue
+            current_outcome, message = (
+                location_site.add_context_group(group_key))
+            success = current_outcome
+            log('[{status}] [{site_id}] [{group}] - {message}'.format(
+                status='SUCCESS' if success else 'FAILED',
+                site_id=location_site.id,
+                message=message,
+                group=group_key
+            ))
