@@ -503,11 +503,18 @@ class Command(BaseCommand):
                     sampling_method = None
                     if SAMPLING_METHOD in record and record[SAMPLING_METHOD]:
                         if record[SAMPLING_METHOD].lower() != 'unspecified':
-                            sampling_method, sm_created = (
-                                SamplingMethod.objects.get_or_create(
-                                    sampling_method=record[SAMPLING_METHOD]
+                            try:
+                                sampling_method, sm_created = (
+                                    SamplingMethod.objects.get_or_create(
+                                        sampling_method=record[SAMPLING_METHOD]
+                                    )
                                 )
-                            )
+                            except SamplingMethod.MultipleObjectsReturned:
+                                sampling_method = (
+                                    SamplingMethod.objects.filter(
+                                        sampling_method=record[SAMPLING_METHOD]
+                                    )
+                                )[0]
                         optional_records['sampling_method'] = (
                             sampling_method
                         )
