@@ -480,11 +480,15 @@ class Command(BaseCommand):
                     if CATEGORY in record:
                         category = record[CATEGORY].lower()
                     if ORIGIN in record and record[ORIGIN]:
-                        origin_choices = {
-                            v: k for k, v in
-                            BiologicalCollectionRecord.CATEGORY_CHOICES
-                        }
-                        category = origin_choices[record[ORIGIN]]
+                        origin = record[ORIGIN]
+                        if (
+                                'translocated' in origin.lower() or
+                                'non-native' in origin.lower()):
+                            category = 'alien'
+                        elif 'native' == origin.lower():
+                            category = 'native'
+                        else:
+                            category = None
 
                     if HABITAT in record and record[HABITAT]:
                         habitat_choices = {
