@@ -206,6 +206,10 @@
                                placeholder='Choose a file...'/>
                          <input type="hidden" id="id_site_image_delete" name="id_site_image_delete" value="">
                     </div>
+                    <small id="emailHelp" class="form-text text-muted" style="margin-bottom: 10px;">
+                        Click the <b>save</b> button after choosing the file to upload a new image.
+                    </small>
+
                     {% if site_image %}
                     <div id="siteImageCarousel" class="site-image-gallery carousel slide" data-ride="carousel" data-interval="false">
                         <!-- Indicators -->
@@ -221,13 +225,13 @@
                         <div class="carousel-inner">
                             {% for image in site_image %}
                                 {% if forloop.counter0 == 0 %}
-                                    <div class="carousel-item active" data-id="{{ image.id }}">
+                                    <div class="carousel-item active" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
                                         {% thumbnail image.image "x500" crop="center" as im %}
                                             <img src="{{ im.url }}">
                                         {% endthumbnail %}
                                     </div>
                                 {% else %}
-                                    <div class="carousel-item" data-id="{{ image.id }}">
+                                    <div class="carousel-item" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
                                         {% thumbnail image.image "x500" crop="center" as im %}
                                             <img src="{{ im.url }}">
                                         {% endthumbnail %}
@@ -250,7 +254,10 @@
                                   aria-hidden="true"></span>
                             <span class="sr-only">Next</span>
                         </a>
-                        <div class="delete-image-wrapper"><div class="btn btn-danger delete-image-btn">Delete this image</div></div>
+                        <div class="image-buttons-wrapper">
+                            <div class="btn btn-danger delete-image-btn">Delete this image</div>
+                            <div class="btn btn-success open-image-btn">Open image</div>
+                        </div>
                     </div>
                     {% endif %}
                 </div>

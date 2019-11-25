@@ -94,7 +94,7 @@ label.error {
     opacity: 0.8;
 }
 
-.delete-image-wrapper {
+.image-buttons-wrapper {
     position: absolute;
     width: 100%;
     text-align: center;
