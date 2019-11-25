@@ -124,6 +124,13 @@ class Command(BaseCommand):
             default='{}',
             help='Additional data in json format'
         )
+        parser.add_argument(
+            '-oa',
+            '--only-add',
+            dest='only_add',
+            default=False,
+            help='Only process new data'
+        )
 
     def add_to_error_summary(self, error_message, row):
         error_message = '{id} : {error}'.format(
@@ -136,10 +143,12 @@ class Command(BaseCommand):
 
     def disconnect_signals(self):
         signals.post_save.disconnect(
-            collection_post_save_handler
+            collection_post_save_handler,
+            sender=BiologicalCollectionRecord
         )
         signals.post_save.disconnect(
-            location_site_post_save_handler
+            location_site_post_save_handler,
+            sender=LocationSite
         )
 
     def reconnect_signals(self):
@@ -416,6 +425,7 @@ class Command(BaseCommand):
         source_collection = options.get('source_collection')
         file_name = options.get('csv_file')
         json_additional_data = options.get('additional_data')
+        only_add = options.get('only_add')
         try:
             additional_data = json.loads(json_additional_data)
         except ValueError:
@@ -432,6 +442,19 @@ class Command(BaseCommand):
             csv_reader = csv.DictReader(csvfile)
             for index, record in enumerate(csv_reader):
                 try:
+                    uuid_value = None
+                    if UUID in record and record[UUID]:
+                        try:
+                            uuid_value = uuid.UUID(record[UUID]).hex
+                        except ValueError:
+                            pass
+                    if uuid_value:
+                        if BiologicalCollectionRecord.objects.filter(
+                            uuid=uuid_value
+                        ).exists():
+                            if only_add:
+                                continue
+
                     log('Processing : %s' % record[SPECIES_NAME])
                     optional_records = {}
 
@@ -550,29 +573,26 @@ class Command(BaseCommand):
 
                     created = False
                     collection_record = None
-                    if UUID in record and record[UUID]:
-                        try:
-                            uuid_value = uuid.UUID(record[UUID]).hex
-                            collection_records = (
-                                BiologicalCollectionRecord.objects.filter(
-                                    uuid=uuid_value
-                                )
+                    if uuid_value:
+                        collection_records = (
+                            BiologicalCollectionRecord.objects.filter(
+                                uuid=uuid_value
                             )
-                            if collection_records.exists():
-                                collection_records.update(
-                                    site=location_site,
-                                    original_species_name=record[
-                                        SPECIES_NAME
-                                    ],
-                                    collection_date=sampling_date,
-                                    taxonomy=taxonomy,
-                                    **optional_records
-                                )
-                                collection_record = collection_records[0]
-                            else:
-                                optional_records['uuid'] = uuid_value
-                        except ValueError:
-                            print('Bad uuid format')
+                        )
+                        if collection_records.exists():
+                            collection_records.update(
+                                site=location_site,
+                                original_species_name=record[
+                                    SPECIES_NAME
+                                ],
+                                collection_date=sampling_date,
+                                taxonomy=taxonomy,
+                                category=category,
+                                collector=record[COLLECTOR],
+                            )
+                            collection_record = collection_records[0]
+                        else:
+                            optional_records['uuid'] = uuid_value
 
                     if not collection_record:
                         collection_record, created = (
