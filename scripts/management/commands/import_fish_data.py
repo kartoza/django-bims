@@ -32,6 +32,7 @@ from bims.models import (
     BIOTOPE_TYPE_SUBSTRATUM,
     location_site_post_save_handler,
     collection_post_save_handler,
+    SourceReferenceBibliography
 )
 from td_biblio.models.bibliography import Entry
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
@@ -71,7 +72,7 @@ CONDUCTIVITY = 'Conductivity (mS m-1)'
 PH = 'pH'
 DISSOLVED_OXYGEN_PERCENT = 'Dissolved Oxygen (%)'
 DISSOLVED_OXYGEN_MG = 'Dissolved Oxygen (mg/L)'
-TEMP = 'Temperature (°C)'
+TEMP = 'Temperature (deg C)'
 TURBIDITY = 'Turbidity (NTU)'
 
 DEPTH_M = 'Depth (m)'
@@ -81,7 +82,7 @@ CUSTODIAN = 'Institute'
 NUMBER_OF_REPLICATES = 'Number of replicates'
 SAMPLING_DATE = 'Sampling Date'
 UUID = 'UUID'
-COLLECTOR = 'Collector/Assessor'
+COLLECTOR = 'Collector/Owner'
 NOTES = 'Notes'
 REFERENCE = 'Reference'
 REFERENCE_CATEGORY = 'Reference category'
@@ -116,6 +117,13 @@ class Command(BaseCommand):
             default='CFE Fish Data',
             help='Source collection name for this file'
         )
+        parser.add_argument(
+            '-ad',
+            '--additional-data',
+            dest='additional_data',
+            default='{}',
+            help='Additional data in json format'
+        )
 
     def add_to_error_summary(self, error_message, row):
         error_message = '{id} : {error}'.format(
@@ -146,8 +154,9 @@ class Command(BaseCommand):
         source_reference = None
         reference = record[REFERENCE]
         reference_category = record[REFERENCE_CATEGORY]
-        doi = record[DOI]
+        doi = record[DOI].strip()
         document_link = record[DOCUMENT_UPLOAD_LINK]
+        document_id = 0
         document = None
 
         # if there is document link, get the id of the document
@@ -157,7 +166,7 @@ class Command(BaseCommand):
                 document_id = int(doc_split[len(doc_split) - 1])
                 document = Document.objects.get(id=document_id)
             except (ValueError, Document.DoesNotExist):
-                log('Document does not exist')
+                log('Document {} does not exist'.format(document_id))
 
         # if DOI provided, check in bibliography records
         if doi:
@@ -166,12 +175,14 @@ class Command(BaseCommand):
                     doi=doi
                 )
                 try:
-                    source_reference = SourceReference.objects.get(
+                    source_reference = SourceReferenceBibliography.objects.get(
                         source=entry
                     )
-                except SourceReference.DoesNotExist:
-                    source_reference = SourceReference.objects.create(
-                        source=entry
+                except SourceReferenceBibliography.DoesNotExist:
+                    source_reference = (
+                        SourceReferenceBibliography.objects.create(
+                            source=entry
+                        )
                     )
             except Entry.DoesNotExist:
                 doi_loader = DOILoader()
@@ -190,13 +201,15 @@ class Command(BaseCommand):
                     pass
         else:
             if (
-                    'peer-reviewed' in reference_category.lower() or
+                    'peer-reviewed' in reference_category.lower()
+            ):
+                # Peer reviewed
+                # should be bibliography type
+                log('Peer reviewed should have a valid doi')
+            elif (
+                    'published' in reference_category.lower() or
                     'thesis' in reference_category.lower()
             ):
-                # Peer reviewed or thesis reference
-                # should be bibliography type
-                pass
-            elif 'published' in reference_category.lower():
                 # Document
                 if document:
                     source_reference = (
@@ -207,8 +220,10 @@ class Command(BaseCommand):
                         )
                     )
             elif 'database' in reference_category.lower():
-                database_record, dr_created = DatabaseRecord.objects.get_or_create(
-                    name=reference
+                database_record, dr_created = (
+                    DatabaseRecord.objects.get_or_create(
+                        name=reference
+                    )
                 )
                 source_reference = (
                     SourceReference.create_source_reference(
@@ -334,7 +349,7 @@ class Command(BaseCommand):
                     first_name = collector_name_split[1]
                     last_name = collector_name_split[0]
                 else:
-                    first_name = collector_name_split[1]
+                    first_name = collector_name_split[0]
                     last_name = ''
                 try:
                     user = User.objects.get(
@@ -369,6 +384,8 @@ class Command(BaseCommand):
                 'oxygen dissolved in the water'
             ),
             TURBIDITY: 'turbidity (ntu scale)',
+            DEPTH_M: 'depth (m)',
+            NBV: 'near bed velocity (m/s)'
         }
 
         for chem_key in chemical_units:
@@ -378,17 +395,32 @@ class Command(BaseCommand):
                 chem_description__iexact=chemical_units[chem_key]
             )
             if chem.exists():
-                temp_chem = chem[0]
-                ChemicalRecord.objects.get_or_create(
-                    date=date,
-                    chem=temp_chem,
-                    value=record[chem_key],
-                    location_site=location_site
+                chem = chem[0]
+            else:
+                chem_unit = chem_key[chem_key.find('(')+1:chem_key.find(')')]
+                chem_name = chem_key[0:chem_key.find('(')].strip()
+                chem_description = chem_name
+                chem = Chem.objects.create(
+                    chem_code=chem_name,
+                    chem_description=chem_description,
+                    chem_unit=chem_unit
                 )
+            ChemicalRecord.objects.get_or_create(
+                date=date,
+                chem=chem,
+                value=record[chem_key],
+                location_site=location_site
+            )
 
     def handle(self, *args, **options):
         source_collection = options.get('source_collection')
         file_name = options.get('csv_file')
+        json_additional_data = options.get('additional_data')
+        try:
+            additional_data = json.loads(json_additional_data)
+        except ValueError:
+            additional_data = {}
+
         self.disconnect_signals()
 
         file_path = os.path.join(
@@ -505,7 +537,7 @@ class Command(BaseCommand):
 
                     # -- Processing collectors
                     collectors = self.collectors(record)
-                    optional_records['collectors'] = record[COLLECTOR_OR_OWNER]
+                    optional_records['collector'] = record[COLLECTOR_OR_OWNER]
                     if len(collectors) > 0:
                         optional_records['collector_user'] = collectors[0]
 
@@ -536,6 +568,7 @@ class Command(BaseCommand):
                                     taxonomy=taxonomy,
                                     **optional_records
                                 )
+                                collection_record = collection_records[0]
                             else:
                                 optional_records['uuid'] = uuid_value
                         except ValueError:
@@ -555,8 +588,7 @@ class Command(BaseCommand):
                             )
                         )
 
-                    # Additional data
-                    additional_data = {}
+                    # More additional data
                     if CATCH_NUMBER in record:
                         additional_data['catch_per_number'] = (
                             record[CATCH_NUMBER]
@@ -568,18 +600,6 @@ class Command(BaseCommand):
                     if NUMBER_OF_REPLICATES in record:
                         additional_data['number_of_replicates'] = (
                             record[NUMBER_OF_REPLICATES]
-                        )
-                    if DEPTH_M in record:
-                        additional_data['depth_m'] = (
-                            record[DEPTH_M]
-                        )
-                    if NBV in record:
-                        additional_data['near_bed_velocity'] = (
-                            record[NBV]
-                        )
-                    if TURBIDITY in record:
-                        additional_data['turbidity'] = (
-                            record[TURBIDITY]
                         )
 
                     collection_record.notes = record[NOTES]
@@ -593,7 +613,7 @@ class Command(BaseCommand):
 
                     # update multiple fields
                     BiologicalCollectionRecord.objects.filter(
-                        id=collection_records.id
+                        id=collection_record.id
                     ).update(
                         **optional_records
                     )
@@ -617,8 +637,8 @@ class Command(BaseCommand):
                             vernacular_name = VernacularName.objects.filter(
                                 name=common_name
                             )[0]
-                        collection_records.taxonomy.vernacular_names.clear()
-                        collection_records.taxonomy.vernacular_names.add(
+                        collection_record.taxonomy.vernacular_names.clear()
+                        collection_record.taxonomy.vernacular_names.add(
                             vernacular_name)
 
                 except KeyError as e:
