@@ -275,7 +275,7 @@ define([
                 }
 
                 if (this.recordsData.length === 1) {
-                    let $taxaDashboardButton = $('<span class="badge badge-primary">Taxon Overview</span>');
+                    let $taxaDashboardButton = $('<span class="badge badge-primary">Taxon overview</span>');
                     $searchResultsWrapper.find('.taxa-detail-dashboard-button-wrapper').append($taxaDashboardButton);
                     $taxaDashboardButton.click(function () {
                         Shared.Dispatcher.trigger(
