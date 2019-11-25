@@ -14,7 +14,8 @@ from bims.enums.geomorphological_zone import (
     GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
 )
 from bims.models import (
-    LocationSite, LocationType, LocationContext, LocationContextGroup
+    LocationSite, LocationType, LocationContext, LocationContextGroup,
+    SiteImage
 )
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
@@ -33,6 +34,23 @@ class LocationSiteFormView(TemplateView):
             'username': self.request.user.username,
             'user_id': self.request.user.id
         }
+
+    def check_site_images(self, location_site):
+        site_image_file = self.request.FILES.get('site-image', None)
+        if location_site:
+            if site_image_file:
+                SiteImage.objects.get_or_create(
+                    site=location_site,
+                    image=site_image_file
+                )
+        site_image_to_delete = self.request.POST.get(
+            'id_site_image_delete', None)
+        if site_image_to_delete:
+            try:
+                SiteImage.objects.get(id=site_image_to_delete).delete()
+            except SiteImage.DoesNotExist:
+                pass
+
 
     def get_context_data(self, **kwargs):
         context = super(LocationSiteFormView, self).get_context_data(**kwargs)
@@ -118,23 +136,36 @@ class LocationSiteFormView(TemplateView):
         location_site = self.update_or_create_location_site(
             post_dict
         )
+
+        # Flag to indicate new geomorphological data has been
+        # fetched from geocontext
+        geomorphological_fetched = False
         if geomorphological_group_geocontext:
             geomorphological_data = json_loads_byteified(
                 geomorphological_group_geocontext
             )
             for registry in geomorphological_data['service_registry_values']:
-                group, group_created = (
-                    LocationContextGroup.objects.get_or_create(
-                        key=registry['key'],
-                        name=registry['name'],
-                        geocontext_group_key=geomorphological_data['key']
+                if 'key' in registry and 'name' in registry:
+                    group, group_created = (
+                        LocationContextGroup.objects.get_or_create(
+                            key=registry['key'],
+                            name=registry['name'],
+                            geocontext_group_key=geomorphological_data['key']
+                        )
                     )
-                )
-                LocationContext.objects.get_or_create(
-                    site=location_site,
-                    value=registry['value'],
-                    group=group
-                )
+                    LocationContext.objects.get_or_create(
+                        site=location_site,
+                        value=registry['value'],
+                        group=group
+                    )
+                    geomorphological_fetched = True
+                else:
+                    LocationContext.objects.filter(
+                        site=location_site,
+                        group__geocontext_group_key=geomorphological_data[
+                            'key']
+                    ).delete()
+
         if catchment_geocontext:
             catchment_data = json_loads_byteified(
                 catchment_geocontext
@@ -154,10 +185,15 @@ class LocationSiteFormView(TemplateView):
                     value=registry['value'],
                     group=group
                 )
+
         if refined_geomorphological_zone:
             location_site.refined_geomorphological = (
                 refined_geomorphological_zone
             )
+        else:
+            if location_site.refined_geomorphological:
+                location_site.refined_geomorphological = ''
+
         geo_class = LocationContext.objects.filter(
             site=location_site,
             group__key='geo_class_recoded'
@@ -166,14 +202,18 @@ class LocationSiteFormView(TemplateView):
             location_site.creator = self.request.user
         # Set original_geomorphological
         if geo_class.exists():
-            location_site.original_geomorphological = (
-                geo_class[0].value.encode('utf-8')
-            )
+            if geomorphological_fetched:
+                location_site.original_geomorphological = (
+                    geo_class[0].value.encode('utf-8')
+                )
         else:
-            location_site.original_geomorphological = (
-                refined_geomorphological_zone
-            )
+            if not location_site.original_geomorphological:
+                location_site.original_geomorphological = (
+                    refined_geomorphological_zone
+                )
         location_site.save()
+
+        self.check_site_images(location_site)
 
         messages.success(
             self.request,
@@ -221,6 +261,9 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['legacy_site_code'] = self.location_site.legacy_site_code
         context_data['legacy_river_name'] = (
             self.location_site.legacy_river_name
+        )
+        context_data['site_image'] = SiteImage.objects.filter(
+            site=self.location_site
         )
         if self.location_site.owner:
             context_data['fullname'] = self.location_site.owner.get_full_name()

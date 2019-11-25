@@ -1,5 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
+{% load thumbnail %}
 {% block subtitle %}
     Location Site Form
 {% endblock %}
@@ -98,9 +99,9 @@
                 <div class="col-sm-6">
                     <input type="text" name="river_name" id="river_name" class="form-control form-control-sm" value="{{ river_name }}" readonly>
                 </div>
-                <div class="update-taxon-container col-sm-2">
+                <div class="update-taxon-container col-sm-4">
                     <button id="fetch-river-name" type="button"
-                            class="btn btn-default" style="width: 250px;" disabled>
+                            class="btn btn-default" style="width: 100%;" disabled>
                         Fetch River Name
                     </button>
                 </div>
@@ -108,7 +109,7 @@
             <div class="form-group row">
                 <label for="original_site_code"
                        class="col-sm-2 col-form-label col-form-label">Original River Name</label>
-                <div class="col-sm-6">
+                <div class="col-sm-10">
                     <input type="text" name="original_river_name" id="original_river_name"
                            class="form-control form-control-sm"
                            placeholder="" value="{% if legacy_river_name %}{{ legacy_river_name }}{% else %}{% endif %}" >
@@ -128,9 +129,9 @@
                     </small>
                     <input type="hidden" name="catchment_geocontext" id="catchment_geocontext">
                 </div>
-                <div class="update-taxon-container col-sm-2">
+                <div class="update-taxon-container col-sm-4">
                     <button id="update-site-code" type="button"
-                            class="btn btn-default" style="width: 250px;" disabled>
+                            class="btn btn-default" style="width: 100%" disabled>
                         Generate site code
                     </button>
                 </div>
@@ -138,7 +139,7 @@
             <div class="form-group row">
                 <label for="legacy_site_code"
                        class="col-sm-2 col-form-label col-form-label">Original Site Code</label>
-                <div class="col-sm-6">
+                <div class="col-sm-10">
                     <input type="text" name="legacy_site_code" id="legacy_site_code"
                            class="form-control form-control-sm"
                            placeholder="" value="{% if legacy_site_code %}{{ legacy_site_code }}{% else %}{% endif %}" >
@@ -153,9 +154,9 @@
                            placeholder="" value="{{ original_geo_zone }}" readonly>
                     <input type="hidden" name="geomorphological_group_geocontext" id="geomorphological_group_geocontext">
                 </div>
-                <div class="update-taxon-container col-sm-2">
+                <div class="update-taxon-container col-sm-4">
                     <button id="fetch-geomorphological-zone" type="button"
-                            class="btn btn-default" style="width: 250px;" disabled>
+                            class="btn btn-default" style="width: 100%;" disabled>
                         Fetch data
                     </button>
                 </div>
@@ -184,7 +185,7 @@
             </div>
             <div class="form-group row">
                 <label for="site_name"
-                       class="col-sm-2 col-form-label col-form-label">Owner
+                       class="col-sm-2 col-form-label">Owner
                     </label>
                 <div class="col-sm-10">
                     <input type="text" onClick="this.setSelectionRange(0, this.value.length)"
@@ -192,6 +193,66 @@
                            placeholder="" value="{{ fullname }}" id="owner" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} >
                     <small class="form-text text-muted">Please select the Owner, if you are the data capturer and not the Owner</small>
                     <input type="hidden" name="owner" id="owner_id" value="{{ user_id }}">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_image" class="col-2 col-form-label">
+                    Site Image
+                </label>
+                <div class="col-10">
+                    <div class="input-group input-file">
+                        <input type="file" class="form-control"
+                               accept="image/*" name="site-image"
+                               placeholder='Choose a file...'/>
+                         <input type="hidden" id="id_site_image_delete" name="id_site_image_delete" value="">
+                    </div>
+                    {% if site_image %}
+                    <div id="siteImageCarousel" class="site-image-gallery carousel slide" data-ride="carousel" data-interval="false">
+                        <!-- Indicators -->
+                        <ol class="carousel-indicators">
+                            {% for image in site_image %}
+                                {% if forloop.counter0 == 0 %}
+                                    <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}" class="active"></li>
+                                {% else %}
+                                    <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}"></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                        <div class="carousel-inner">
+                            {% for image in site_image %}
+                                {% if forloop.counter0 == 0 %}
+                                    <div class="carousel-item active" data-id="{{ image.id }}">
+                                        {% thumbnail image.image "x500" crop="center" as im %}
+                                            <img src="{{ im.url }}">
+                                        {% endthumbnail %}
+                                    </div>
+                                {% else %}
+                                    <div class="carousel-item" data-id="{{ image.id }}">
+                                        {% thumbnail image.image "x500" crop="center" as im %}
+                                            <img src="{{ im.url }}">
+                                        {% endthumbnail %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <!-- Left and right controls -->
+                        <a class="carousel-control-prev"
+                           href="#siteImageCarousel" role="button"
+                           data-slide="prev">
+                            <span class="carousel-control-prev-icon"
+                                  aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next"
+                           href="#siteImageCarousel" role="button"
+                           data-slide="next">
+                            <span class="carousel-control-next-icon"
+                                  aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                        <div class="delete-image-wrapper"><div class="btn btn-danger delete-image-btn">Delete this image</div></div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="form-group submit-holder">
@@ -205,6 +266,28 @@
                 {% endif %}
             </div>
         </div>
+
+        <div class="modal fade" id="confirm-delete-site-image" tabindex="-1" role="dialog"
+             aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        Confirm Delete
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete the site image?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default"
+                                data-dismiss="modal">Cancel
+                        </button>
+                        <button type="submit" href="#" class="btn btn-danger success">Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </form>
 
     <!-- Modal -->

@@ -89,3 +89,15 @@ label.error {
     color: #526B43;
     background-color: #ffffff;
 }
+
+.delete-image-btn {
+    opacity: 0.8;
+}
+
+.delete-image-wrapper {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 0;
+    padding-top: 10px;
+}
