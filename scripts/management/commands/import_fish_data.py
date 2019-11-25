@@ -355,10 +355,10 @@ class Command(BaseCommand):
                     collector_name += '.'
                 collector_name_split = collector_name.split(',')
                 if len(collector_name_split) > 1:
-                    first_name = collector_name_split[1]
-                    last_name = collector_name_split[0]
+                    first_name = collector_name_split[1][0:30]
+                    last_name = collector_name_split[0][0:30]
                 else:
-                    first_name = collector_name_split[0]
+                    first_name = collector_name_split[0][0:30]
                     last_name = ''
                 try:
                     user = User.objects.get(
@@ -375,8 +375,8 @@ class Command(BaseCommand):
                         username=username
                     )
                     if created:
-                        user.last_name = last_name
-                        user.first_name = first_name
+                        user.last_name = last_name[0:30]
+                        user.first_name = first_name[0:30]
                         user.save()
 
                 collector_list.append(user)
