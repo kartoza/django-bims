@@ -694,23 +694,27 @@ function renderLocationContextTable() {
         'Sub Water Management Area': '-',
         'River Management Unit': '-',
         'Ecoregion and Province': 'title',
-        'SA Ecoregion': '-',
+        'SA Ecoregion Level 1': '-',
+        'SA Ecoregion Level 2': '-',
+        'Freshwater Ecoregion': '-',
         'Province': '-',
-        'National Critical Biodiversity': '-',
     };
     try {
         tableData['Geomorphological zone'] = geomorphologicalGroup['geo_class_recoded'];
-        tableData['SA Ecoregion'] = riverEcoregionGroup['eco_region_1'];
+        tableData['SA Ecoregion Level 1'] = riverEcoregionGroup['eco_region_1'];
+        tableData['SA Ecoregion Level 2'] = riverEcoregionGroup['eco_region_2'];
         tableData['Sub Water Management Area'] = waterManagementAreaGroup['sub_wmas'];
         tableData['Water Management Area'] = waterManagementAreaGroup['water_management_area'];
     } catch (e) {
     }
 
-    if(ecoGeoGroup.hasOwnProperty('national_cba')) {
-        tableData['National Critical Biodiversity'] = ecoGeoGroup['national_cba'];
-    } else {
-        tableData['National Critical Biodiversity'] = '-';
+    let freshwaterEcoregionValue = '-';
+    if(freshwaterEcoregion.hasOwnProperty('feow_hydrosheds')) {
+        if (freshwaterEcoregion['feow_hydrosheds'] !== 'None') {
+            freshwaterEcoregionValue = freshwaterEcoregion['feow_hydrosheds'];
+        }
     }
+    tableData['Freshwater Ecoregion'] = freshwaterEcoregionValue;
 
     if (originalGeomorphologicalZone) {
         tableData['Geomorphological zone'] = originalGeomorphologicalZone;

@@ -42,8 +42,9 @@
             const biotopeRatingLabels = {{ biotope_ratings_chart_data.biotope_labels | safe }};
             const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
             const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
-            const riverEcoregionGroup = {% if eco_geo %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
-            const geomorphologicalGroup = {% if eco_geo %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
+            const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
+            const geomorphologicalGroup = {% if geomorphological_group %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
+            const freshwaterEcoregion = {% if freshwater_ecoregion_of_the_world %}{{ freshwater_ecoregion_of_the_world | safe }}{% else %}[]{% endif %};
             const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
             const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
             const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
