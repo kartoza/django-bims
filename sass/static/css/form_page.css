@@ -9,6 +9,11 @@ body {
     position: relative;
 }
 
+h2 {
+    font-size: 15pt;
+    padding-top: 5px;
+}
+
 .body-form {
     padding-top: 100px;
     padding-bottom: 70px;
@@ -139,4 +144,42 @@ td.sampled-name {
 
 .error-upload {
     color: darkred;
+}
+
+#site-map {
+    width: 100%;
+    max-height: 425px;
+    padding-bottom: 15px;
+}
+
+.required-text {
+    font-weight: bold;
+}
+
+.source-reference-wrapper {
+    border: 1px solid #ced4da;
+    padding: .375rem .75rem;
+    border-radius: .25rem;
+}
+
+.site-image {
+    max-height: 200px;
+    display: none;
+}
+
+.separator-line {
+    border-bottom: 1px solid #b0b0b0;
+    margin-top: -5px;
+    margin-bottom: 20px;
+}
+
+.btn-normal {
+    font-size: 11pt;
+}
+
+.btn {
+    border-radius: 5px !important;
+    padding-left: 30px !important;
+    padding-right: 30px !important;
+    text-transform: capitalize;
 }

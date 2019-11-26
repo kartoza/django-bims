@@ -31,6 +31,7 @@ from bims.models.biotope import Biotope
 from bims.models.data_source import DataSource
 from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
+from bims.utils.get_key import get_key
 from sass.models import (
     SiteVisit,
     SassTaxon,
@@ -61,6 +62,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
     site_visit = SiteVisit.objects.none()
     sass_version = 5
     site_code = ''
+    site_lat = None
+    site_lon = None
     read_only = False
     source_collection = None
     session_identifier = 'sass-form'
@@ -611,6 +614,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
         context['site_code'] = self.site_code
+        context['location_site_lat'] = self.site_lat
+        context['location_site_lon'] = self.site_lon
+        context['geoserver_public_location'] = get_key(
+            'GEOSERVER_PUBLIC_LOCATION')
         try:
             self.site_image = (
                 SiteImage.objects.get(site_visit=self.site_visit))
@@ -637,6 +644,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 pk=site_id
             )
             self.site_code = location_site.site_code
+            self.site_lat = location_site.latitude
+            self.site_lon = location_site.longitude
             if not self.site_code:
                 self.site_code = location_site.name
             self.sass_version = int(request.GET.get('sass_version', 5))
@@ -646,6 +655,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 pk=sass_id
             )
             self.site_code = self.site_visit.location_site.site_code
+            self.site_lat = self.site_visit.location_site.latitude
+            self.site_lon = self.site_visit.location_site.longitude
             if not self.site_code:
                 self.site_code = self.site_visit.location_site.name
             if self.site_visit.sass_version:
@@ -674,6 +685,8 @@ class SassReadFormView(SassFormView):
                 pk=site_id
             )
             self.site_code = location_site.site_code
+            self.site_lat = location_site.latitude
+            self.site_lon = location_site.longitude
             if not self.site_code:
                 self.site_code = location_site.name
             self.sass_version = request.GET.get('sass_version', 5)
@@ -683,6 +696,8 @@ class SassReadFormView(SassFormView):
                 pk=sass_id
             )
             self.site_code = self.site_visit.location_site.site_code
+            self.site_lat = self.site_visit.location_site.latitude
+            self.site_lon = self.site_visit.location_site.longitude
             if not self.site_code:
                 self.site_code = self.site_visit.location_site.name
             if self.site_visit.sass_version:

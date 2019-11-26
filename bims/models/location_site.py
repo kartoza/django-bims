@@ -439,6 +439,8 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     Update cluster when location site saved
     """
     from bims.tasks.location_site import update_location_context
+    if not isinstance(sender, LocationSite):
+        return
 
     # Update refined geomorphological if exist
     if instance.refined_geomorphological:

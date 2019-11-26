@@ -187,9 +187,9 @@ function userInputAutocomplete (inputIdName) {
 function closeSassForm(e) {
     var page_before = window.document.referrer;
     if(page_before === ''){
-        window.location.href = '/map'
+        window.location.href = '/map';
     }else if(page_before.indexOf('source-reference-form') > -1){
-        window.history.go(-2);
+        window.location.href = '/map';
     }else {
         window.history.back();
     }
@@ -212,7 +212,9 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
         var reader = new FileReader();
         reader.onload = function(event){
             var the_url = event.target.result;
-            $('#site_image').attr("src", the_url);
+            let siteImage = $('#site_image');
+            siteImage.show();
+            siteImage.attr("src", the_url);
         };
         reader.readAsDataURL(file);
     }
@@ -231,6 +233,58 @@ $(document).ready(function () {
     let totalTaxaNumber = $.extend({}, biotope_number);
     let totalTaxaScore = $.extend({}, biotope_number);
     $('.sass-form-close').click(closeSassForm);
+
+    // Map creation
+    let markerSource = new ol.source.Vector();
+    let locationSiteCoordinate = ol.proj.transform([
+            parseFloat(location_site_lon),
+            parseFloat(location_site_lat)],
+        'EPSG:4326',
+        'EPSG:3857');
+    let markerStyle = new ol.style.Style({
+        image: new ol.style.Icon(({
+            anchor: [0.5, 46],
+            anchorXUnits: 'fraction',
+            anchorYUnits: 'pixels',
+            opacity: 0.75,
+            src: '/static/img/map-marker.png'
+        }))
+    });
+    let iconFeature = new ol.Feature({
+        geometry: new ol.geom.Point(locationSiteCoordinate),
+    });
+    markerSource.addFeature(iconFeature);
+    let map = new ol.Map({
+        target: 'site-map',
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            }),
+            new ol.layer.Vector({
+                source: markerSource,
+                style: markerStyle,
+            }),
+        ],
+        view: new ol.View({
+            center: locationSiteCoordinate,
+            zoom: 10
+        })
+    });
+    let biodiversityLayersOptions = {
+        url: geoserverPublicUrl + 'wms',
+        params: {
+            LAYERS: locationSiteGeoserverLayer,
+            FORMAT: 'image/png8',
+            viewparams: 'where:' + defaultWMSSiteParameters
+        },
+        ratio: 1,
+        serverType: 'geoserver'
+    };
+    let biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
+    let biodiversityTileLayer = new ol.layer.Image({
+        source: biodiversitySource
+    });
+    map.addLayer(biodiversityTileLayer);
 
     $.each(biotope_number, function (key, value) {
         calculateTaxa(key, totalTaxa, totalTaxaNumber, totalTaxaScore);
