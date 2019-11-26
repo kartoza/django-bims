@@ -668,18 +668,27 @@ class Command(BaseCommand):
                             optional_records['uuid'] = uuid_value
 
                     if not collection_record:
-                        collection_record, created = (
-                            BiologicalCollectionRecord.objects.get_or_create(
-                                site=location_site,
-                                original_species_name=record[
-                                    SPECIES_NAME
-                                ],
-                                collection_date=sampling_date,
-                                taxonomy=taxonomy,
-                                category=category,
-                                collector=record[COLLECTOR],
+                        fields = {
+                            'site': location_site,
+                            'original_species_name': record[SPECIES_NAME],
+                            'collection_date': sampling_date,
+                            'taxonomy': taxonomy,
+                            'category': category,
+                            'collector': record[COLLECTOR]
+                        }
+                        try:
+                            collection_record, created = (
+                                BiologicalCollectionRecord.objects.get_or_create(
+                                    **fields
+                                )
                             )
-                        )
+                        except BiologicalCollectionRecord.MultipleObjectsReturned:
+                            BiologicalCollectionRecord.objects.filter(
+                                **fields
+                            ).delete()
+                            collection_record = BiologicalCollectionRecord.objects.create(
+                                **fields
+                            )
 
                     # More additional data
                     if CATCH_NUMBER in record:
