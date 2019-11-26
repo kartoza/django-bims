@@ -399,6 +399,11 @@ class SassDashboardView(TemplateView):
                 'eco_geo_group'
             ))
         )
+        context['freshwater_ecoregion_of_the_world'] = (
+            json.dumps(self.location_context.values_from_group(
+                'freshwater_ecoregion_of_the_world'
+            ))
+        )
         context['use_combined_geo'] = self.use_combined_geo
         refined_geomorphological = '-'
         if self.location_site.refined_geomorphological:
