@@ -278,11 +278,19 @@ class Command(BaseCommand):
                 )
             else:
                 # Unpublished data
+                reference_name = reference
+                if record[SOURCE_YEAR]:
+                    reference_name += ', ' + record[SOURCE_YEAR]
+                database_record, dr_created = (
+                    DatabaseRecord.objects.get_or_create(
+                        name=reference_name
+                    )
+                )
                 source_reference = (
                     SourceReference.create_source_reference(
                         category=None,
                         source_id=None,
-                        note=reference
+                        note=reference_name
                     )
                 )
         if (
