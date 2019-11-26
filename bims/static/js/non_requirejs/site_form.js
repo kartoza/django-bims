@@ -339,3 +339,14 @@ $('.site-form-close').click(function () {
         window.history.back();
     }
 });
+
+$('.delete-image-btn').click(function () {
+    let imageId = $('#siteImageCarousel .carousel-item.active').data('id');
+    $('#id_site_image_delete').val(imageId);
+    $('#confirm-delete-site-image').modal('show');
+});
+
+$('.open-image-btn').click(function () {
+    let imageUrl = $('#siteImageCarousel .carousel-item.active').data('image-url');
+    window.open(imageUrl,'Image','width=largeImage.stylewidth,height=largeImage.style.height,resizable=1');
+});
