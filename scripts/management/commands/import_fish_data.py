@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys
+import requests
 import os
 import csv
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
@@ -88,6 +89,11 @@ REFERENCE = 'Reference'
 REFERENCE_CATEGORY = 'Reference category'
 DOI = 'DOI'
 DOCUMENT_UPLOAD_LINK = 'Document Upload Link'
+DOCUMENT_URL = 'URL'
+DOCUMENT_TITLE = 'Title'
+DOCUMENT_AUTHOR = 'Author(s)'
+SOURCE_YEAR = 'Year'
+SOURCE = 'Source'
 PRESENT = 'Present'
 COMMON_NAME = 'Common Name'
 
@@ -159,12 +165,13 @@ class Command(BaseCommand):
             location_site_post_save_handler
         )
 
-    def source_reference(self, record):
+    def source_reference(self, record, index):
         source_reference = None
-        reference = record[REFERENCE]
+        reference = record[SOURCE]
         reference_category = record[REFERENCE_CATEGORY]
         doi = record[DOI].strip()
         document_link = record[DOCUMENT_UPLOAD_LINK]
+        document_url = record[DOCUMENT_URL]
         document_id = 0
         document = None
 
@@ -176,6 +183,25 @@ class Command(BaseCommand):
                 document = Document.objects.get(id=document_id)
             except (ValueError, Document.DoesNotExist):
                 log('Document {} does not exist'.format(document_id))
+
+        # if there is document url, get or create document based on url
+        if document_url:
+            document_date = date(
+                year=int(record[SOURCE_YEAR]),
+                month=1,
+                day=1
+            )
+            authors = self.users(record[DOCUMENT_AUTHOR])
+            if len(authors) > 0:
+                author = authors[0]
+            else:
+                author = None
+            document, document_created = Document.objects.get_or_create(
+                doc_url=document_url,
+                date=document_date,
+                title=record[DOCUMENT_TITLE],
+                owner=author
+            )
 
         # if DOI provided, check in bibliography records
         if doi:
@@ -206,15 +232,21 @@ class Command(BaseCommand):
                             note=None
                         )
                     )
-                except DOILoaderError:
-                    pass
+                except (DOILoaderError, requests.exceptions.HTTPError):
+                    self.add_to_error_summary(
+                        'Error fetching DOI : {}'.format(doi),
+                        index
+                    )
         else:
             if (
                     'peer-reviewed' in reference_category.lower()
             ):
                 # Peer reviewed
                 # should be bibliography type
-                log('Peer reviewed should have a valid doi')
+                self.add_to_error_summary(
+                    'Peer reviewed should have a doi',
+                    index
+                )
             elif (
                     'published' in reference_category.lower() or
                     'thesis' in reference_category.lower()
@@ -229,9 +261,12 @@ class Command(BaseCommand):
                         )
                     )
             elif 'database' in reference_category.lower():
+                reference_name = reference
+                if record[SOURCE_YEAR]:
+                    reference_name += ', ' + record[SOURCE_YEAR]
                 database_record, dr_created = (
                     DatabaseRecord.objects.get_or_create(
-                        name=reference
+                        name=reference_name
                     )
                 )
                 source_reference = (
@@ -342,45 +377,57 @@ class Command(BaseCommand):
             )
         return biotope
 
-    def collectors(self, record):
-        collector_list = []
-        collectors = record[COLLECTOR_OR_OWNER]
+    def get_user(self, user_name):
         User = get_user_model()
-        for collector in collectors.split('.,'):
-            for collector_name in collector.split('and'):
-                collector_name = collector_name.strip()
-                if collector_name == '':
-                    continue
-                if collector_name[len(collector_name)-1] != '.':
-                    collector_name += '.'
-                collector_name_split = collector_name.split(',')
-                if len(collector_name_split) > 1:
-                    first_name = collector_name_split[1][0:30]
-                    last_name = collector_name_split[0][0:30]
-                else:
-                    first_name = collector_name_split[0][0:30]
-                    last_name = ''
-                try:
-                    user = User.objects.get(
-                        Q(last_name__iexact=last_name),
-                        Q(first_name__iexact=first_name) |
-                        Q(first_name__istartswith=first_name[0])
-                    )
-                except User.DoesNotExist:
-                    username = slugify('{first_name} {last_name}'.format(
-                        first_name= first_name,
-                        last_name= last_name
-                    )).replace('-', '_')
-                    user, created = User.objects.get_or_create(
-                        username=username
-                    )
-                    if created:
-                        user.last_name = last_name[0:30]
-                        user.first_name = first_name[0:30]
-                        user.save()
+        user_name = user_name.strip()
+        if user_name == '':
+            return None
+        if user_name[len(user_name) - 1] != '.':
+            user_name += '.'
+        user_name_split = user_name.split(',')
+        if len(user_name_split) > 1:
+            first_name = user_name_split[1][0:30]
+            last_name = user_name_split[0][0:30]
+        else:
+            first_name = user_name_split[0][0:30]
+            last_name = ''
+        try:
+            user = User.objects.get(
+                Q(last_name__iexact=last_name),
+                Q(first_name__iexact=first_name) |
+                Q(first_name__istartswith=first_name[0])
+            )
+        except User.DoesNotExist:
+            username = slugify('{first_name} {last_name}'.format(
+                first_name=first_name,
+                last_name=last_name
+            )).replace('-', '_')
+            user, created = User.objects.get_or_create(
+                username=username
+            )
+            if created:
+                user.last_name = last_name[0:30]
+                user.first_name = first_name[0:30]
+                user.save()
+        return user
 
-                collector_list.append(user)
-        return collector_list
+    def users(self, user_string):
+        user_list = []
+        and_username = ''
+        for user_split_1 in user_string.split('.,'):
+            for user_name in user_split_1.split('and'):
+                if '&' in user_name:
+                    and_username = user_name
+                    continue
+                user = self.get_user(user_name)
+                if user and user not in user_list:
+                    user_list.append(user)
+        if and_username:
+            for user_name in and_username.split('&'):
+                user = self.get_user(user_name)
+                if user and user not in user_list:
+                    user_list.append(user)
+        return user_list
 
     def chemical_records(self, record, location_site, date):
         chemical_units = {
@@ -466,7 +513,7 @@ class Command(BaseCommand):
 
                     # -- Processing source reference
                     optional_records['source_reference'] = (
-                        self.source_reference(record)
+                        self.source_reference(record, index)
                     )
 
                     # Custodian field
@@ -570,10 +617,17 @@ class Command(BaseCommand):
                         record[SAMPLING_DATE], '%Y/%m/%d')
 
                     # -- Processing collectors
-                    collectors = self.collectors(record)
+                    collectors = self.users(record[COLLECTOR_OR_OWNER])
                     optional_records['collector'] = record[COLLECTOR_OR_OWNER]
                     if len(collectors) > 0:
                         optional_records['collector_user'] = collectors[0]
+                        # Add owner and creator to location site
+                        # if it doesnt exist yet
+                        if not location_site.owner:
+                            location_site.owner = collectors[0]
+                        if not location_site.creator:
+                            location_site.creator = collectors[0]
+                        location_site.save()
 
                     # -- Processing chemical records
                     self.chemical_records(
