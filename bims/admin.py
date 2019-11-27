@@ -295,7 +295,9 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'site',
         'owner',
-        'taxonomy'
+        'taxonomy',
+        'source_reference',
+        'collector_user'
     )
     list_filter = (
         ('collection_date', DateRangeFilter),
