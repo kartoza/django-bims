@@ -22,6 +22,7 @@ from sass.models import (
     SassEcologicalCondition,
     SassEcologicalCategory
 )
+from sass.enums.chem_unit import ChemUnit
 
 
 class SassDashboardView(TemplateView):
@@ -440,11 +441,18 @@ class SassDashboardView(TemplateView):
             for chem in list_chems_code:
                 chem_name = chem.lower().replace('-n', '').upper()
                 qs = chems.filter(chem__chem_code=chem).order_by('date')
-                if not qs:
+                if not qs.exists():
                     continue
                 value = ChemicalRecordsSerializer(qs, many=True)
+
+                # Get chemical unit
+                try:
+                    chem_unit = ChemUnit[qs[0].chem.chem_unit].value
+                except KeyError:
+                    chem_unit = qs[0].chem.chem_unit
+
                 data = {
-                    'unit': qs[0].chem.chem_unit,
+                    'unit': chem_unit,
                     'name': qs[0].chem.chem_description,
                     'values': value.data
                 }
