@@ -147,6 +147,21 @@ class Command(BaseCommand):
         self.errors.append(error_message)
         self.data_failed += 1
 
+    def parse_date(self, date_string):
+        # Parse date string to date object
+        # Raise value error if date string is not in a valid format
+        sampling_date = None
+        try:
+            sampling_date = datetime.strptime(
+                date_string, '%Y/%m/%d')
+        except ValueError:
+            sampling_date = datetime.strptime(
+                date_string, '%m/%d/%Y')
+        finally:
+            if not sampling_date:
+                raise ValueError('Incorrect Date format')
+            return sampling_date
+
     def disconnect_signals(self):
         signals.post_save.disconnect(
             collection_post_save_handler,
@@ -621,8 +636,9 @@ class Command(BaseCommand):
                             index
                         )
                         continue
-                    sampling_date = datetime.strptime(
-                        record[SAMPLING_DATE], '%Y/%m/%d')
+                    sampling_date = self.parse_date(
+                        record[SAMPLING_DATE]
+                    )
 
                     # -- Processing collectors
                     collectors = self.users(record[COLLECTOR_OR_OWNER])
