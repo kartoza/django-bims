@@ -318,8 +318,13 @@ class LocationSitesSummary(APIView):
                 if not qs:
                     continue
                 value = ChemicalRecordsSerializer(qs, many=True)
+                # Get chemical unit
+                try:
+                    chem_unit = ChemUnit[qs[0].chem.chem_unit].value
+                except KeyError:
+                    chem_unit = qs[0].chem.chem_unit
                 data = {
-                    'unit': ChemUnit[qs[0].chem.chem_unit].value,
+                    'unit': chem_unit,
                     'name': qs[0].chem.chem_description,
                     'values': value.data
                 }
@@ -643,6 +648,8 @@ class LocationSitesSummary(APIView):
         if not string_in:
             return '-'
         else:
+            if isinstance(string_in, unicode):
+                return string_in.decode('utf-8').strip()
             return str(string_in)
 
     def get_number_of_records_and_taxa(self, records_collection):
