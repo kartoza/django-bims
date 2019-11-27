@@ -8,11 +8,18 @@
 {% block head %}
 
     <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
     <link href="{% static "css/form_page.css" %}" rel="stylesheet">
     <link href="{% static "css/jquery.timepicker.min.css" %}" rel="stylesheet">
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script type="text/javascript">
         var isUpdate = {% if is_update %}true{% else %}false{% endif %};
+        const location_site_lat = '{{ location_site_lat }}';
+        const location_site_lon = '{{ location_site_lon }}';
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}'
     </script>
 
 {% endblock %}
@@ -20,7 +27,16 @@
 {% block body_content %}
 
     <div class="body-form container">
-        <h2>View SASS record</h2>
+        <div class="row">
+            <div class="col-lg-9">
+                <h2>View SASS record</h2>
+            </div>
+            <div class="site-code col-lg-3" style="margin-top: 0 !important;">
+                <div class="sass-form-close-container">
+                    <div class="sass-form-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+                </div>
+            </div>
+        </div>
         {% if user.is_superuser or owner == user or collector == user %}
             <a class="btn btn-primary btn-normal" style="margin-bottom: 10px;" href="/sass/update/{{ site_visit_id }}/">Edit</a>
             <div class="btn btn-danger btn-normal" style="margin-bottom: 10px;" data-toggle="modal" data-target="#confirm-submit">Delete</div>
@@ -50,16 +66,89 @@
                 </form>
             </div>
         {% endif %}
-        <div class="site-code pull-right view-only">
-            <div class="sass-form-close-container">
-                <div class="sass-form-close"><i class="fa fa-times" aria-hidden="true"></i></div>
-            </div>
-            Site code/name : {{ site_code }}
-            <br/>
-            Sass version : {{ sass_version }}
+        <div id="site-map"></div>
+
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-1 col-form-label col-form-label">Latitude</label>
+            <input type="text" id="latitude" name="latitude"
+                   class="col-sm-2 form-control form-control-sm"
+                   value="{{ location_site_lat }}" disabled>
+            <label for="date"
+                   class="col-sm-1 col-form-label col-form-label">Longitude</label>
+            <input type="text" id="longitude" name="longitude"
+                   class="col-sm-2 form-control form-control-sm"
+                   value="{{ location_site_lon }}" disabled>
         </div>
+
+        <div class="separator-line"></div>
+
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label required-text">Date</label>
+            <div class="col-sm-10">
+                <input type="text" name="date"
+                       class="form-control form-control-sm" placeholder="" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} readonly>
+            </div>
+        </div>
+
+        <div class="form-group row even-row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label required-text">Owner</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control form-control-sm"
+                       onClick="this.setSelectionRange(0, this.value.length)"
+                        placeholder="" name="owner" value="{% if owner.get_full_name %}{{ owner.get_full_name }}{% else %}{{ owner.username }}{% endif %}"
+                       readonly>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-sm-2"></div>
+            <div class="col-sm-10" style="padding-left: 35px; margin-top: -20px;">
+                <input class="form-check-input" type="radio" {% if accredited %} checked {% endif %} id="accredited" name="accredited" readonly>
+                <label class="form-check-label" for="accredited" style="padding-top: 10px;">
+                    Accredited at the time of collection
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="data-source" class="col-sm-2">Source Reference</label>
+            <div class="col-sm-10">
+                <div class="source-reference-wrapper">
+                    {% if source_reference %}
+                        <div style="font-weight: bold">{{ source_reference.reference_type }}</div>
+                        {% if source_reference.reference_type == 'Published report or thesis' %}
+                            <div>{{ source_reference.source.bimsdocument.author }},
+                                {{ source_reference.source.bimsdocument.year }},
+                                {{ source_reference.source.title }}</div>
+                        {% elif source_reference.reference_type == 'Peer-reviewed scientific article' %}
+                            <div>{{ source_reference }}</div>
+                            {% if source_reference.source.doi %}
+                                <div>DOI : {{ source_reference.source.doi }}</div>
+                            {% endif %}
+                        {% else %}
+                            <div>{{ source_reference }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label for="data-source" class="col-sm-2">Site Image</label>
+            <div class="col-sm-10">
+                {% if site_image %}
+                <img id="site_image" class="site-image" src="{{ site_image.image.url }}" {% if site_image.image.url %} style="display: block" {% endif %}>
+                {% else %}
+                -
+                {% endif %}
+            </div>
+        </div>
+
         <div class="row">
-            <div class="col-lg-9">
+            <div class="col-lg-12">
                 <table class="table table-sm">
                     <thead>
                     <tr>
@@ -96,31 +185,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
-            <div class="col-lg-3">
-                <div class="form-group">
-                    <label for="date" class="input-label">Date :</label>
-                    <input type="text" class="form-control" name="date" {% if date %} value="{{ date|date:'m/d/Y' }}" {% endif %} readonly>
-                </div>
-                <div class="form-group">
-                    <label for="owner" class="input-label">Owner :</label>
-                    <input type="text" class="form-control" id="owner" {% if owner %} value="{% if owner.first_name %}{{ owner.first_name }} {{ owner.last_name }}{% else %}{{ owner.username }}{% endif %}" {% endif %} readonly>
-                </div>
-                <div class="form-check form-group">
-                    <input class="form-check-input" type="radio" disabled {% if accredited %} checked {% endif %} id="accredited" name="accredited">
-                    <label class="form-check-label" for="accredited" style="padding-top: 10px;">
-                        Accredited at the time of collection
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label for="data-source" class="input-label">Source Reference :</label>
-                    <input type="text" class="form-control" id="data-source" name="data-source-name" {% if source_reference %} value="{{ source_reference }}" {% endif %} readonly>
-                    <input type="hidden" id="data-source-id" name="data-source-id" {% if source_reference %} value="{{ source_reference.id }}" {% endif %}>
-                </div>
-                <div class="form-group">
-                    <label for="data-source" class="input-label">Site Image :</label>
-                    <img src="{{ site_image.image.url }}" style="width: 100%">
-                </div>
             </div>
         </div>
 
@@ -274,6 +338,7 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/jquery.timepicker.min.js" %}"></script>
     <script src="{% static "js/sass_form.js" %}"></script>
     <script type="text/javascript">
