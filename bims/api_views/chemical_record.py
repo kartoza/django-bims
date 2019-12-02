@@ -6,6 +6,7 @@ import errno
 from rest_framework.views import APIView
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
+from django.db.models import Q
 from bims.models.chemical_record import ChemicalRecord
 from bims.serializers.chemical_records_serializer import (
     ChemicalRecordsOneRowSerializer)
@@ -80,7 +81,9 @@ class ChemicalRecordDownloader(APIView):
         site_id = request.GET.get('siteId', None)
         if site_id:
             collection_results = (
-                ChemicalRecord.objects.filter(location_site_id=site_id))
+                ChemicalRecord.objects.filter(
+                    Q(location_site_id=site_id) |
+                    Q(survey__site_id=site_id)))
             return self.convert_to_csv(
                 collection_results,
                 ChemicalRecordsOneRowSerializer

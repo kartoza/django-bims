@@ -732,6 +732,18 @@ class LocationContextFilterAdmin(admin.ModelAdmin):
     ordering = ('display_order',)
 
 
+class SurveyAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'site',
+    )
+    list_display = (
+        'id',
+        'site',
+        'date',
+        'validated'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -740,7 +752,7 @@ admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Endemism, EndemismAdmin)
-admin.site.register(Survey)
+admin.site.register(Survey, SurveyAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(Taxonomy, TaxonIdentifierAdmin)
 admin.site.register(TaxonGroup)

@@ -56,7 +56,7 @@
         .col-1 {
             padding-right: 0;
         }
-    
+
         .delete-button {
             width: 100%;
             font-size: 10pt;
@@ -66,14 +66,42 @@
 {% endblock %}
 
 {% block body_content %}
-    <form action="{{ request.path }}" method="post" id="fish-form"
+    <form action="{{ request.path }}" method="post" id="abiotic-form"
           class="needs-validation" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="survey_id" value="{{ survey_id }}">
+        <input type="hidden" name="next" value="{{ next }}" id="next">
+
         <div class="body-form container">
             <div class="dashboard-title">
-                <h2>Add New Abiotic Data</h2>
+                <h2>{% if update_form %}Update{% else %}Add New{% endif %} Abiotic Data</h2>
                 <div class="dashboard-close"><i class="fa fa-times"
                                                 aria-hidden="true"></i></div>
             </div>
+            {% for chemical_record in chemical_records %}
+                <div class="form-group row abiotic-data-container">
+                    <div class="col-6"
+                         style="padding-left: 0; padding-right: 5px;">
+                        <input type="text"
+                               class="form-control form-control-sm chem-input"
+                               value="{{ chemical_record.chem__chem_description }}" placeholder="Abiotic">
+                        <input type="hidden" class="chem-input-id" value="{{ chemical_record.chem__id }}">
+                    </div>
+                    <div class="col-5"
+                         style="padding-right: 0; padding-left: 5px;">
+                        <input type="number"
+                               class="form-control form-control-sm chem-input-value"
+                               placeholder="Value"
+                               value="{{ chemical_record.value }}">
+                    </div>
+                    <div class="col-1">
+                        <button type="button"
+                                class="btn btn-danger delete-button">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
             <div class="form-group row abiotic-data-container">
                 <div class="col-6"
                      style="padding-left: 0; padding-right: 5px;">
@@ -102,6 +130,9 @@
                 </button>
             </div>
         </div>
+
+        {# Placeholder  for abiotic data #}
+        <input type="hidden" name="abiotic_data" id="abiotic-data" value="">
 
         <div class="container" style="text-align: center">
             <div class="submit-wrapper">
@@ -146,6 +177,15 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
 
     <script>
+        const form = $('#abiotic-form');
+
+        $(function () {
+            const params = (new URL(document.location)).searchParams;
+            const next = params.get('next');
+            const $nextElm = $('#next');
+            $nextElm.val(next);
+        });
+
         const autocompleteFunction = {
             source: function (request, response) {
                 $.ajax({
@@ -239,9 +279,9 @@
         }
 
         $('#submit').click((event) => {
-            event.preventDefault();
             const abioticData = getAllAbioticData();
-            alert(JSON.stringify(abioticData, null, 2));
+            $('#abiotic-data').val(JSON.stringify(abioticData));
+            form.submit();
         });
 
         $('.delete-button').click(deleteRowFunction);
