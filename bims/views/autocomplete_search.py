@@ -226,3 +226,33 @@ def site_autocomplete(request):
         data = json.dumps(results)
         mime_type = 'application/json'
         return HttpResponse(data, mime_type)
+
+
+def abiotic_autocomplete(request):
+    """Autocomplete search for abiotic data."""
+    from bims.models import Chem
+    q = request.GET.get('q', '').capitalize()
+    data = []
+    if len(q) > 1:
+        search_qs = Chem.objects.filter(
+            chem_description__istartswith=q).exclude(
+            chem_unit__iexact=''
+        )
+        if not search_qs.exists():
+            search_qs = Chem.objects.filter(
+                chem_description__icontains=q).exclude(
+                chem_unit__iexact=''
+            )
+        if search_qs.exists():
+            search_qs = search_qs.distinct('chem_unit')
+        results = []
+        for r in search_qs:
+            results.append({
+                'id': r.id,
+                'desc': r.chem_description,
+                'text': r.chem_code,
+                'unit': r.chem_unit
+            })
+        data = json.dumps(results)
+    mime_type = 'application/json'
+    return HttpResponse(data, mime_type)
