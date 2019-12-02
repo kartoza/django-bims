@@ -58,12 +58,12 @@ def create_users_from_string(user_string):
             if '&' in user_name:
                 and_username = user_name
                 continue
-            user = get_user(user_name)
+            user = get_user(user_name.strip())
             if user and user not in list_user:
                 list_user.append(user)
     if and_username:
         for user_name in and_username.split('&'):
-            user = get_user(user_name)
+            user = get_user(user_name.strip())
             if user and user not in list_user:
                 list_user.append(user)
     return list_user
