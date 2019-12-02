@@ -232,17 +232,21 @@ def abiotic_autocomplete(request):
     """Autocomplete search for abiotic data."""
     from bims.models import Chem
     q = request.GET.get('q', '').capitalize()
+    exclude = request.GET.get('exclude', '')
+    exclude_list = []
+    if exclude:
+        exclude_list = exclude.split(',')
     data = []
     if len(q) > 1:
         search_qs = Chem.objects.filter(
             chem_description__istartswith=q).exclude(
             chem_unit__iexact=''
-        )
+        ).exclude(id__in=exclude_list)
         if not search_qs.exists():
             search_qs = Chem.objects.filter(
                 chem_description__icontains=q).exclude(
                 chem_unit__iexact=''
-            )
+            ).exclude(id__in=exclude_list)
         if search_qs.exists():
             search_qs = search_qs.distinct('chem_unit')
         results = []

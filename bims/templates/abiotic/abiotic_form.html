@@ -62,6 +62,10 @@
             font-size: 10pt;
         }
 
+        #submitBtn {
+            margin-bottom: 20px;
+        }
+
     </style>
 {% endblock %}
 
@@ -75,8 +79,6 @@
         <div class="body-form container">
             <div class="dashboard-title">
                 <h2>{% if update_form %}Update{% else %}Add New{% endif %} Abiotic Data</h2>
-                <div class="dashboard-close"><i class="fa fa-times"
-                                                aria-hidden="true"></i></div>
             </div>
             {% for chemical_record in chemical_records %}
                 <div class="form-group row abiotic-data-container">
@@ -188,8 +190,12 @@
 
         const autocompleteFunction = {
             source: function (request, response) {
+                const excludeList = $('.chem-input-id').map(function(idx, elem) {
+                    if ($(elem).val())
+                        return $(elem).val();
+                }).get();
                 $.ajax({
-                    url: '/abiotic-autocomplete/?q=' + encodeURIComponent(request.term),
+                    url: `/abiotic-autocomplete/?q=${encodeURIComponent(request.term)}&exclude=${excludeList.join(',')}`,
                     type: 'get',
                     dataType: 'json',
                     success: function (data) {

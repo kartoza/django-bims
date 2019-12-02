@@ -101,3 +101,8 @@ label.error {
     top: 0;
     padding-top: 10px;
 }
+
+.survey a {
+    color: white;
+    font-size: 10pt;
+}

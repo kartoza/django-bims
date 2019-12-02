@@ -15,10 +15,11 @@ from bims.enums.geomorphological_zone import (
 )
 from bims.models import (
     LocationSite, LocationType, LocationContext, LocationContextGroup,
-    SiteImage
+    SiteImage, Survey, ChemicalRecord
 )
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
+from bims.serializers.survey_serializer import SurveySerializer
 
 
 class LocationSiteFormView(TemplateView):
@@ -265,6 +266,18 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['site_image'] = SiteImage.objects.filter(
             site=self.location_site
         )
+
+        if (
+                ChemicalRecord.objects.filter(
+                    survey__site=self.location_site
+                ).exists()):
+            context_data['surveys'] = SurveySerializer(
+                Survey.objects.filter(
+                    site_id=self.location_site,
+                    chemical_collection_record__isnull=False
+                ).distinct().order_by('date'), many=True
+            ).data
+
         if self.location_site.owner:
             context_data['fullname'] = self.location_site.owner.get_full_name()
             context_data['user_id'] = self.location_site.owner.id
