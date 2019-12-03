@@ -36,34 +36,36 @@
         </div>
         {% endif %}
 
-        <div class="row">
-        <div class="col-lg-9">
-        {% if is_update %}
-            <h2>Update SASS record </h2>
-        {% else %}
-            <h2>Add SASS record for site {{ site_code }}</h2>
-        {% endif %}
-        </div>
-        <div class="site-code col-lg-3" style="margin-top: 0 !important;">
-            <div class="sass-form-close-container">
-                <div class="sass-form-close"><i class="fa fa-times" aria-hidden="true"></i></div>
-            </div>
-        </div>
+        <div class="dashboard-title">
+            <h2>
+                {% if is_update %}
+                    Update SASS record for site {{ site_code }}
+                {% else %}
+                    Add SASS record for site {{ site_code }}
+                {% endif %}
+                <div class="site-form-close sass-form-close">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </div>
+            </h2>
         </div>
 
         <div id="site-map"></div>
 
         <div class="form-group row">
             <label for="date"
-                   class="col-sm-1 col-form-label col-form-label">Latitude</label>
-            <input type="text" id="latitude" name="latitude"
-                   class="col-sm-2 form-control form-control-sm"
+                   class="col-sm-2 col-form-label col-form-label">Latitude</label>
+            <div class="col-sm-4">
+                <input type="text" id="latitude" name="latitude"
+                   class="form-control form-control-sm" style="height: 100%"
                    value="{{ location_site_lat }}" disabled>
+            </div>
             <label for="date"
-                   class="col-sm-1 col-form-label col-form-label">Longitude</label>
+                   class="col-sm-2 col-form-label col-form-label" style="text-align: right">Longitude</label>
+            <div class="col-sm-4">
             <input type="text" id="longitude" name="longitude"
-                   class="col-sm-2 form-control form-control-sm"
+                   class="form-control form-control-sm" style="height: 100%;"
                    value="{{ location_site_lon }}" disabled>
+            </div>
         </div>
 
         <div class="separator-line"></div>

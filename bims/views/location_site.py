@@ -256,6 +256,9 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['original_geo_zone'] = (
             self.location_site.original_geomorphological
         )
+        context_data['site_identifier'] = (
+            self.location_site.location_site_identifier
+        )
         context_data['update'] = True
         context_data['allow_to_edit'] = self.allow_to_edit()
         context_data['site_id'] = self.location_site.id

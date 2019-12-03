@@ -1,0 +1,20 @@
+.dashboard-title {
+    border-bottom: 3px solid #1b900d;
+    margin-bottom: 10px;
+}
+
+.site-form-close {
+    float: right;
+    font-size: 20pt;
+    background-color: #526B43;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #ffffff;
+    margin-bottom: 5px;
+}
+
+.site-form-close:hover {
+    cursor: pointer;
+    color: #526B43;
+    background-color: #ffffff;
+}

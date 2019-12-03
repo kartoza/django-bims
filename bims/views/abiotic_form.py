@@ -43,6 +43,10 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
                 )
         if self.survey:
             context['survey_id'] = self.survey.id
+            context['site_code'] = self.survey.site.location_site_identifier
+            context['survey_date'] = self.survey.date.strftime(
+                '%Y-%m-%d'
+            )
         context['update_form'] = self.update_form
         return context
 

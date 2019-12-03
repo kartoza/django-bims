@@ -28,10 +28,6 @@
             margin-right: 0;
         }
 
-        .dashboard-title {
-            border-bottom: 3px solid #1b900d;
-            margin-bottom: 10px;
-        }
 
         .dashboard-close {
             float: right;
@@ -78,7 +74,7 @@
 
         <div class="body-form container">
             <div class="dashboard-title">
-                <h2>{% if update_form %}Update{% else %}Add New{% endif %} Abiotic Data</h2>
+                <h2>{% if update_form %}Update{% else %}Add New{% endif %} Abiotic Data For {{ site_code }} ({{ survey_date }})</h2>
             </div>
             {% for chemical_record in chemical_records %}
                 <div class="form-group row abiotic-data-container">
@@ -127,8 +123,7 @@
             </div>
             <div class="form-group row">
                 <button type="button" class="btn btn-primary"
-                        id="add-more-abiotic-btn">Add More Abiotic
-                    Data
+                        id="add-more-abiotic-btn">Add Abiotic Data
                 </button>
             </div>
         </div>
@@ -182,10 +177,9 @@
         const form = $('#abiotic-form');
 
         $(function () {
-            const params = (new URL(document.location)).searchParams;
-            const next = params.get('next');
+            let url = new URL(document.location).search;
             const $nextElm = $('#next');
-            $nextElm.val(next);
+            $nextElm.val(url.slice(url.indexOf('next') + 5, url.length));
         });
 
         const autocompleteFunction = {
