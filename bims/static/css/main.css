@@ -18,3 +18,9 @@
     color: #526B43;
     background-color: #ffffff;
 }
+
+.hr-normal {
+    max-width: 100%;
+    border-width: 1px;
+    border-color: rgba(0,0,0,.1);
+}

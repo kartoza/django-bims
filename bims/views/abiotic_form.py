@@ -2,10 +2,14 @@ import json
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin
+from bims.serializers.survey_serializer import SurveyDataSerializer
 from bims.models import (
     Survey,
     ChemicalRecord,
-    Chem
+    Chem,
+    SurveyData,
+    SurveyDataOption,
+    SurveyDataValue
 )
 
 
@@ -46,6 +50,13 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
             context['site_code'] = self.survey.site.location_site_identifier
             context['survey_date'] = self.survey.date.strftime(
                 '%Y-%m-%d'
+            )
+            context['survey_data_list'] = (
+                SurveyDataSerializer(
+                    SurveyData.objects.all().order_by(
+                        'display_order'
+                    ), many=True, context={'survey_id': self.survey.id}
+                ).data
             )
         context['update_form'] = self.update_form
         return context
@@ -91,6 +102,35 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
             chemical_records = json.loads(chemical_record_json)
         except ValueError:
             raise Http404('Invalid format of abiotic data')
+
+        # Survey data
+        survey_data_value = []
+        for post_data_key in post_data:
+            if 'survey_data_' in post_data_key:
+                try:
+                    survey_data_id = (
+                        post_data_key.split(
+                            'survey_data_'
+                        )[1]
+                    )
+                    survey_data = SurveyData.objects.get(
+                        id=int(survey_data_id)
+                    )
+                    survey_data_option = SurveyDataOption.objects.get(
+                        id=int(post_data[post_data_key])
+                    )
+                    value, created = SurveyDataValue.objects.get_or_create(
+                        survey=survey,
+                        survey_data=survey_data,
+                        survey_data_option=survey_data_option
+                    )
+                    survey_data_value.append(value.id)
+                except (SurveyData.DoesNotExist, IndexError, ValueError):
+                    continue
+        if survey_data_value:
+            SurveyDataValue.objects.filter(survey=survey).exclude(
+                id__in=survey_data_value
+            ).delete()
 
         updated_record_ids = []
 

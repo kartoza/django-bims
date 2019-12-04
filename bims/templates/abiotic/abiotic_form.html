@@ -76,6 +76,22 @@
             <div class="dashboard-title">
                 <h2>{% if update_form %}Update{% else %}Add New{% endif %} Abiotic Data For {{ site_code }} ({{ survey_date }})</h2>
             </div>
+            {% for survey_data in survey_data_list %}
+                <div class="form-group row">
+                    <label for="survey_data"
+                           class="col-sm-4 col-form-label col-form-label">{{ survey_data.name }}</label>
+                    <div class="col-sm-8">
+                        <select class="form-control"
+                                name="survey_data_{{ survey_data.pk }}">
+                            <option value=""> Not specified</option>
+                            {% for survey_option in survey_data.option_set %}
+                                <option value="{{ survey_option.pk }}" {% if survey_option.selected %}selected{% endif %}> {{ survey_option.option }} </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endfor %}
+            <hr class="hr-normal"/>
             {% for chemical_record in chemical_records %}
                 <div class="form-group row abiotic-data-container">
                     <div class="col-6"
