@@ -37,7 +37,8 @@ from bims.views.autocomplete_search import (
     user_autocomplete,
     data_source_autocomplete,
     species_autocomplete,
-    site_autocomplete
+    site_autocomplete,
+    abiotic_autocomplete
 )
 from bims.views.proxy import proxy_request
 from bims.views.collections_form import (
@@ -52,6 +53,7 @@ from bims.views.location_site import (
 )
 from bims.views.source_reference_form import SourceReferenceView
 from bims.views.bug_report import BugReportView
+from bims.views.abiotic_form import AbioticFormView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -106,6 +108,9 @@ urlpatterns = [
     url(r'^location-site-autocomplete/$',
         site_autocomplete,
         name='location-site-autocomplete-search'),
+    url(r'^abiotic-autocomplete/$',
+        abiotic_autocomplete,
+        name='abiotic-autocomplete-search'),
     url(r'^bims_proxy/(?P<path>.*)', proxy_request),
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
     url(r'^invert-form/$', InvertFormView.as_view(), name='invert-form'),
@@ -129,6 +134,8 @@ urlpatterns = [
         name='location-site-delete-form'),
     url(r'^bug-report/$', csrf_exempt(BugReportView.as_view()),
         name='bug-report'),
+    url(r'^abiotic/$', csrf_exempt(AbioticFormView.as_view()),
+        name='abiotic-form'),
 ]
 
 # Api urls

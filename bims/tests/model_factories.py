@@ -110,17 +110,7 @@ class SurveyF(factory.django.DjangoModelFactory):
         model = Survey
 
     date = timezone.now()
-
-    @factory.post_generation
-    def sites(self, create, extracted, **kwargs):
-        if not create:
-            # Simple build, do nothing.
-            return
-
-        if extracted:
-            # A list of groups were passed in, use them
-            for site in extracted:
-                self.sites.add(site)
+    site = factory.SubFactory(LocationSiteF)
 
 
 class EndemismF(factory.django.DjangoModelFactory):

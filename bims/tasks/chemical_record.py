@@ -3,6 +3,7 @@ import csv
 import logging
 from celery import shared_task
 from hashlib import md5
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,9 @@ def download_chemical_data_to_csv(path_file, site_id):
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            queryset = ChemicalRecord.objects.filter(location_site_id=site_id)
+            queryset = ChemicalRecord.objects.filter(
+                Q(location_site_id=site_id) |
+                Q(survey__site_id=site_id))
             serializer = ChemicalRecordsOneRowSerializer(
                 queryset,
                 many=True

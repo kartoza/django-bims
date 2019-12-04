@@ -25,6 +25,7 @@ from bims.models.location_site import (
     LocationSite,
     location_site_post_save_handler
 )
+from bims.models.survey import Survey
 from bims.models.profile import Profile as BimsProfile
 from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
@@ -242,6 +243,14 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         return updated_site_visit_taxon
 
+    def create_survey(self, collection_date, owner, location_site):
+        """Create a site survey"""
+        return Survey.objects.create(
+            owner=owner,
+            date=collection_date,
+            site=location_site
+        )
+
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
@@ -407,14 +416,23 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             'location_site': site_visit.location_site.name,
             'form': 'sass-form'
         })
-        url = reverse('source-reference-form') + (
+        source_reference_url = reverse('source-reference-form') + (
             '?session={session}&identifier={identifier}&next={next}'.format(
                 session=session_uuid,
                 next=next_url,
                 identifier=self.session_identifier
             )
         )
-        return HttpResponseRedirect(url)
+
+        # Create a survey
+        survey = self.create_survey(date, owner, site_visit.location_site)
+        abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
+            base_url=reverse('abiotic-form'),
+            survey_id=survey.id,
+            next=source_reference_url
+        )
+
+        return HttpResponseRedirect(abiotic_url)
 
 
     def get_biotope_form_data(self):
@@ -590,6 +608,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             context['collector'] = self.site_visit.collector
             context['date'] = self.site_visit.site_visit_date
             context['time'] = self.site_visit.time
+            context['site_identifier'] = (
+                self.site_visit.location_site.location_site_identifier
+            )
+            context['site_id'] = self.site_visit.location_site.id
             owner = self.site_visit.owner
             if self.site_visit.comments_or_observations:
                 context['comments'] = self.site_visit.comments_or_observations

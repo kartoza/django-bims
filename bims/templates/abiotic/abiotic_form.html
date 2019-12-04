@@ -1,0 +1,309 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Abiotic Form
+{% endblock %}
+
+{% block head %}
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+
+        .body-form {
+            padding-top: 100px;
+            padding-bottom: 50px;
+        }
+
+        .header {
+            font-size: 14pt;
+            border-bottom: 1px solid black;
+            margin-bottom: 15px;
+        }
+
+        .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+
+        .dashboard-close {
+            float: right;
+            margin-top: -45px;
+            font-size: 20pt;
+            background-color: #526B43;
+            padding-left: 10px;
+            padding-right: 10px;
+            color: #ffffff;
+        }
+
+        .dashboard-close:hover {
+            cursor: pointer;
+            color: #526B43;
+            background-color: #ffffff;
+        }
+
+        .body-form {
+            min-height: 500px;
+        }
+
+        .col-1 {
+            padding-right: 0;
+        }
+
+        .delete-button {
+            width: 100%;
+            font-size: 10pt;
+        }
+
+        #submitBtn {
+            margin-bottom: 20px;
+        }
+
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <form action="{{ request.path }}" method="post" id="abiotic-form"
+          class="needs-validation" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="survey_id" value="{{ survey_id }}">
+        <input type="hidden" name="next" value="{{ next }}" id="next">
+
+        <div class="body-form container">
+            <div class="dashboard-title">
+                <h2>{% if update_form %}Update{% else %}Add New{% endif %} Abiotic Data For {{ site_code }} ({{ survey_date }})</h2>
+            </div>
+            {% for survey_data in survey_data_list %}
+                <div class="form-group row">
+                    <label for="survey_data"
+                           class="col-sm-4 col-form-label col-form-label">{{ survey_data.name }}</label>
+                    <div class="col-sm-8">
+                        <select class="form-control"
+                                name="survey_data_{{ survey_data.pk }}">
+                            <option value=""> Not specified</option>
+                            {% for survey_option in survey_data.option_set %}
+                                <option value="{{ survey_option.pk }}" {% if survey_option.selected %}selected{% endif %}> {{ survey_option.option }} </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endfor %}
+            <hr class="hr-normal"/>
+            {% for chemical_record in chemical_records %}
+                <div class="form-group row abiotic-data-container">
+                    <div class="col-6"
+                         style="padding-left: 0; padding-right: 5px;">
+                        <input type="text"
+                               class="form-control form-control-sm chem-input"
+                               value="{{ chemical_record.chem__chem_description }}" placeholder="Abiotic">
+                        <input type="hidden" class="chem-input-id" value="{{ chemical_record.chem__id }}">
+                    </div>
+                    <div class="col-5"
+                         style="padding-right: 0; padding-left: 5px;">
+                        <input type="number"
+                               class="form-control form-control-sm chem-input-value"
+                               placeholder="Value"
+                               value="{{ chemical_record.value }}">
+                    </div>
+                    <div class="col-1">
+                        <button type="button"
+                                class="btn btn-danger delete-button">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+            <div class="form-group row abiotic-data-container">
+                <div class="col-6"
+                     style="padding-left: 0; padding-right: 5px;">
+                    <input type="text"
+                           class="form-control form-control-sm chem-input"
+                           value="" placeholder="Abiotic">
+                    <input type="hidden" class="chem-input-id" value="">
+                </div>
+                <div class="col-5"
+                     style="padding-right: 0; padding-left: 5px;">
+                    <input type="number"
+                           class="form-control form-control-sm chem-input-value"
+                           placeholder="Value"
+                           value="">
+                </div>
+                <div class="col-1">
+                    <button type="button" class="btn btn-danger delete-button">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <button type="button" class="btn btn-primary"
+                        id="add-more-abiotic-btn">Add Abiotic Data
+                </button>
+            </div>
+        </div>
+
+        {# Placeholder  for abiotic data #}
+        <input type="hidden" name="abiotic_data" id="abiotic-data" value="">
+
+        <div class="container" style="text-align: center">
+            <div class="submit-wrapper">
+                <input type="button" name="btn" id="submitBtn"
+                       data-toggle="modal"
+                       data-target="#confirm-submit" class="btn btn-info"
+                       value="Next">
+            </div>
+        </div>
+
+        <div class="modal fade" id="confirm-submit" tabindex="-1"
+             role="dialog"
+             aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        Confirm Submit
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to submit
+                        the abiotic form and go to the next
+                        form?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default"
+                                data-dismiss="modal">Cancel
+                        </button>
+                        <a href="#" id="submit"
+                           class="btn btn-success success">Submit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+
+    <script>
+        const form = $('#abiotic-form');
+
+        $(function () {
+            let url = new URL(document.location).search;
+            const $nextElm = $('#next');
+            if (url.indexOf('&next') > -1) {
+                $nextElm.val(url.slice(url.indexOf('next') + 5, url.length));
+            }
+        });
+
+        const autocompleteFunction = {
+            source: function (request, response) {
+                const excludeList = $('.chem-input-id').map(function(idx, elem) {
+                    if ($(elem).val())
+                        return $(elem).val();
+                }).get();
+                $.ajax({
+                    url: `/abiotic-autocomplete/?q=${encodeURIComponent(request.term)}&exclude=${excludeList.join(',')}`,
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.desc,
+                                value: item.id
+                            }
+                        }));
+                    }
+                });
+            },
+            minLength: 2,
+            open: function (event, ui) {
+                setTimeout(function () {
+                    $('.ui-autocomplete').css('z-index', 99);
+                }, 0);
+            },
+            change: function (event, ui) {
+                const $input = $(event.target);
+                const $inputId = $input.next();
+                if (ui.item) {
+                    $inputId.val(ui.item.value);
+                } else {
+                    $input.val('');
+                    $inputId.val(' ');
+                }
+            },
+            select: function (e, u) {
+                e.preventDefault();
+                const $input = $(e.target);
+                $input.val(u.item.label);
+                $input.next().val(u.item.value);
+            }
+        };
+
+        const deleteRowFunction = (event) => {
+            let $row = $($(event.target).parent());
+            while (!$row.hasClass('abiotic-data-container')) {
+                $row = $($row.parent());
+            }
+            $row.remove();
+        };
+
+        $('.chem-input').autocomplete(autocompleteFunction);
+
+        // When add more abiotic button clicked, add new input
+        $('#add-more-abiotic-btn').click(function () {
+            // Get the last existing input container
+            const $existingInput = $('.abiotic-data-container').last();
+            // Clone the div
+            const $clonedInput = $existingInput.clone();
+            $clonedInput.find('input').val('');
+            // Add the cloned div to next last existing one
+            $existingInput.after($clonedInput);
+            bindAutoComplete($clonedInput);
+            bindDeleteFunction($clonedInput);
+            $clonedInput.find('.chem-input').focus();
+        });
+
+        function bindAutoComplete($row) {
+            $($row.find('.chem-input')[0]).autocomplete(autocompleteFunction);
+        }
+
+        function bindDeleteFunction($row) {
+            $($row.find('.delete-button')[0]).click(deleteRowFunction);
+        }
+
+        function getAllAbioticData() {
+            // Get all abiotic data from the html, returns as JSON
+            let $allContainer = $('.abiotic-data-container');
+            let abioticData = {};
+            $.each($allContainer, function (index, container) {
+                const id = $(container).find('.chem-input-id').val();
+                if (!id) {
+                    return true;
+                }
+                let value = $(container).find('.chem-input-value').val();
+                if (!value) {
+                    value = 0;
+                } else {
+                    value = parseFloat(value);
+                }
+                abioticData[id] = value;
+            });
+            return abioticData;
+        }
+
+        $('#submit').click((event) => {
+            const abioticData = getAllAbioticData();
+            $('#abiotic-data').val(JSON.stringify(abioticData));
+            form.submit();
+        });
+
+        $('.delete-button').click(deleteRowFunction);
+
+    </script>
+
+{% endblock %}

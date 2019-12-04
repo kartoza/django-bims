@@ -37,6 +37,9 @@ from bims.models import (
     LocationSite,
     IUCNStatus,
     Survey,
+    SurveyData,
+    SurveyDataOption,
+    SurveyDataValue,
     Boundary,
     BoundaryType,
     Cluster,
@@ -732,6 +735,29 @@ class LocationContextFilterAdmin(admin.ModelAdmin):
     ordering = ('display_order',)
 
 
+class SurveyAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'site',
+    )
+    list_display = (
+        'id',
+        'site',
+        'date',
+        'validated'
+    )
+
+
+class SurveyDataValueAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'survey',
+    )
+    list_display = (
+        'survey',
+        'survey_data',
+        'survey_data_option'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -740,7 +766,10 @@ admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
 admin.site.register(Endemism, EndemismAdmin)
-admin.site.register(Survey)
+admin.site.register(Survey, SurveyAdmin)
+admin.site.register(SurveyData)
+admin.site.register(SurveyDataOption)
+admin.site.register(SurveyDataValue, SurveyDataValueAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(Taxonomy, TaxonIdentifierAdmin)
 admin.site.register(TaxonGroup)

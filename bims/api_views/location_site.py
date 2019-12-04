@@ -301,6 +301,7 @@ class LocationSitesSummary(APIView):
         source_references = collection_with_references.source_references()
 
         list_chems = {}
+        chem_exist = False
         if site_id:
             list_chems_code = [
                 'COND',
@@ -309,9 +310,12 @@ class LocationSitesSummary(APIView):
                 'DO'
             ]
             chems = ChemicalRecord.objects.filter(
-                location_site_id=site_id
+                Q(location_site_id=site_id) |
+                Q(survey__site_id=site_id)
             )
             x_label = []
+            if chems.count() > 0:
+                chem_exist = True
             for chem in list_chems_code:
                 chem_name = chem.lower().replace('-n', '').upper()
                 qs = chems.filter(chem__chem_code=chem).order_by('date')
@@ -355,7 +359,7 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id,
             'is_multi_sites': is_multi_sites,
             'is_sass_exists': is_sass_exists,
-            'is_chem_exists': len(list_chems) > 1
+            'is_chem_exists': chem_exist
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)

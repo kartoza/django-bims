@@ -1,4 +1,5 @@
 import json
+from django.utils import timezone
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import JSONField
 from bims.models import LocationSite, SourceReference
@@ -8,7 +9,8 @@ class ChemicalRecord(models.Model):
 
     date = models.DateField(
         null=False,
-        blank=False
+        blank=False,
+        default=timezone.now
     )
 
     value = models.FloatField(
@@ -19,7 +21,15 @@ class ChemicalRecord(models.Model):
     location_site = models.ForeignKey(
         LocationSite,
         models.CASCADE,
+        null=True,
         related_name='chemical_collection_record',
+    )
+
+    survey = models.ForeignKey(
+        'bims.Survey',
+        models.CASCADE,
+        related_name='chemical_collection_record',
+        null=True,
     )
 
     chem = models.ForeignKey(

@@ -394,7 +394,7 @@ class TestSurveyCRUD(TestCase):
         Tests taxon creation
         """
         model = SurveyF.create(
-                sites=(self.location_site_1, self.location_site_2)
+                site=self.location_site_1
         )
 
         # check if pk exists
@@ -404,17 +404,17 @@ class TestSurveyCRUD(TestCase):
         self.assertTrue(model.date is not None)
 
         # check if sites name exists
-        self.assertTrue(model.sites is not None)
+        self.assertTrue(model.site is not None)
 
     def test_Survey_read(self):
         """
         Survey taxon model read
         """
         survey = SurveyF.create(
-            sites=(self.location_site_1, self.location_site_2)
+            site=self.location_site_1
         )
 
-        self.assertTrue(survey.sites.get(pk=1) == self.location_site_1)
+        self.assertTrue(survey.site == self.location_site_1)
 
     def test_Survey_update(self):
         """
@@ -422,7 +422,7 @@ class TestSurveyCRUD(TestCase):
         """
         model = SurveyF.create()
         new_data = {
-            'sites': (self.location_site_1, self.location_site_2),
+            'site': self.location_site_2,
         }
         model.__dict__.update(new_data)
         model.save()

@@ -159,6 +159,17 @@ class LocationSite(DocumentLinksMixin):
         null=True,
     )
 
+    @property
+    def location_site_identifier(self):
+        """
+        Returns location site code if exist, if not return site name
+        """
+        if self.site_code:
+            return self.site_code
+        if self.legacy_site_code:
+            return self.legacy_site_code
+        return self.name
+
     def location_context_group_values(self, group_name):
         """
         Returns location group data by group name

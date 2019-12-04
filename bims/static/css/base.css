@@ -39,11 +39,9 @@ h6 {
 }
 
 .btn {
-  font-weight: 700;
-  text-transform: uppercase;
-  border: none;
-  border-radius: 300px;
-  font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12pt;
+    text-transform: none;
+    border-radius: 5px;
 }
 
 .btn-xl {

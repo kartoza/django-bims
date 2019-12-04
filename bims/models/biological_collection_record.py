@@ -289,6 +289,13 @@ class BiologicalCollectionRecord(AbstractValidation):
 
     objects = BiologicalCollectionManager()
 
+    survey = models.ForeignKey(
+        'bims.Survey',
+        related_name='biological_collection_record',
+        null=True,
+        on_delete=models.SET_NULL
+    )
+
     @property
     def data_name(self):
         return self.original_species_name

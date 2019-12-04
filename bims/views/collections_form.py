@@ -23,7 +23,8 @@ from bims.models import (
     LocationContext,
     BIOTOPE_TYPE_SPECIFIC,
     BIOTOPE_TYPE_BROAD,
-    BIOTOPE_TYPE_SUBSTRATUM
+    BIOTOPE_TYPE_SUBSTRATUM,
+    Survey
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
@@ -101,6 +102,14 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 )
             )
         return taxa_list
+
+    def create_survey(self, collection_date, owner):
+        """Create a site survey"""
+        return Survey.objects.create(
+            owner=owner,
+            date=collection_date,
+            site=self.location_site
+        )
 
     def get_context_data(self, **kwargs):
         context = super(CollectionFormView, self).get_context_data(**kwargs)
@@ -325,12 +334,23 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             'location_site': self.location_site.name,
             'form': self.session_identifier
         })
-        url = '{base_url}?session={session}&identifier={identifier}'.format(
-            base_url=reverse('source-reference-form'),
-            session=session_uuid,
-            identifier=self.session_identifier
+        source_reference_url = (
+            '{base_url}?session={session}&identifier={identifier}'.format(
+                base_url=reverse('source-reference-form'),
+                session=session_uuid,
+                identifier=self.session_identifier
+            )
         )
-        return HttpResponseRedirect(url)
+
+        # Create a survey
+        survey = self.create_survey(collection_date, owner)
+        abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
+            base_url=reverse('abiotic-form'),
+            survey_id=survey.id,
+            next=source_reference_url
+        )
+
+        return HttpResponseRedirect(abiotic_url)
 
 
 class FishFormView(CollectionFormView):
