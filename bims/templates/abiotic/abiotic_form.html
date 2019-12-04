@@ -195,7 +195,9 @@
         $(function () {
             let url = new URL(document.location).search;
             const $nextElm = $('#next');
-            $nextElm.val(url.slice(url.indexOf('next') + 5, url.length));
+            if (url.indexOf('&next') > -1) {
+                $nextElm.val(url.slice(url.indexOf('next') + 5, url.length));
+            }
         });
 
         const autocompleteFunction = {
