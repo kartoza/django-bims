@@ -1,4 +1,5 @@
 import socket
+import unittest
 from django.conf import settings
 from django.db import IntegrityError
 from django.contrib.auth import (
@@ -28,14 +29,18 @@ class SeleniumTest(LiveServerTestCase):
             cls.url = settings.SITEURL
             cls.selenium.implicitly_wait(5)
         except BaseException:
-            raise Exception('Drivernya : ' + settings.SELENIUM_DRIVER)
+            raise unittest.SkipTest('Error Driver : ' +
+                                    settings.SELENIUM_DRIVER)
         super(SeleniumTest, cls).setUpClass()
 
 
     @classmethod
     def tearDownClass(cls):
         """ Quit selenium driver instance """
-        cls.selenium.quit()
+        try:
+            cls.selenium.quit()
+        except AttributeError:
+            pass
         super(SeleniumTest, cls).tearDownClass()
 
     def create_session_cookie(self, username, password):
