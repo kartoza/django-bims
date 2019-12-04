@@ -41,6 +41,7 @@ from bims.utils.gbif import (
     update_collection_record,
     search_taxon_identifier
 )
+from bims.utils.user import create_users_from_string
 from geonode.documents.models import Document
 
 SPECIES_NAME = 'Taxon'
@@ -206,7 +207,7 @@ class Command(BaseCommand):
                 month=1,
                 day=1
             )
-            authors = self.users(record[DOCUMENT_AUTHOR])
+            authors = create_users_from_string(record[DOCUMENT_AUTHOR])
             if len(authors) > 0:
                 author = authors[0]
             else:
@@ -400,58 +401,6 @@ class Command(BaseCommand):
             )
         return biotope
 
-    def get_user(self, user_name):
-        User = get_user_model()
-        user_name = user_name.strip()
-        if user_name == '':
-            return None
-        if user_name[len(user_name) - 1] != '.':
-            user_name += '.'
-        user_name_split = user_name.split(',')
-        if len(user_name_split) > 1:
-            first_name = user_name_split[1][0:30]
-            last_name = user_name_split[0][0:30]
-        else:
-            first_name = user_name_split[0][0:30]
-            last_name = ''
-        try:
-            user = User.objects.get(
-                Q(last_name__iexact=last_name),
-                Q(first_name__iexact=first_name) |
-                Q(first_name__istartswith=first_name[0])
-            )
-        except User.DoesNotExist:
-            username = slugify('{first_name} {last_name}'.format(
-                first_name=first_name,
-                last_name=last_name
-            )).replace('-', '_')
-            user, created = User.objects.get_or_create(
-                username=username
-            )
-            if created:
-                user.last_name = last_name[0:30]
-                user.first_name = first_name[0:30]
-                user.save()
-        return user
-
-    def users(self, user_string):
-        user_list = []
-        and_username = ''
-        for user_split_1 in user_string.split('.,'):
-            for user_name in user_split_1.split('and'):
-                if '&' in user_name:
-                    and_username = user_name
-                    continue
-                user = self.get_user(user_name)
-                if user and user not in user_list:
-                    user_list.append(user)
-        if and_username:
-            for user_name in and_username.split('&'):
-                user = self.get_user(user_name)
-                if user and user not in user_list:
-                    user_list.append(user)
-        return user_list
-
     def chemical_records(self, record, location_site, date):
         chemical_units = {
             TEMP: 'temperature',
@@ -641,7 +590,7 @@ class Command(BaseCommand):
                     )
 
                     # -- Processing collectors
-                    collectors = self.users(record[COLLECTOR_OR_OWNER])
+                    collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
                     optional_records['collector'] = record[COLLECTOR_OR_OWNER]
                     if len(collectors) > 0:
                         optional_records['collector_user'] = collectors[0]
