@@ -98,7 +98,7 @@
                          style="padding-left: 0; padding-right: 5px;">
                         <input type="text"
                                class="form-control form-control-sm chem-input"
-                               value="{{ chemical_record.chem__chem_description }}" placeholder="Abiotic">
+                               value="{{ chemical_record.chem__chem_description }} ({{ chemical_record.chem__chem_unit }})" placeholder="Abiotic">
                         <input type="hidden" class="chem-input-id" value="{{ chemical_record.chem__id }}">
                     </div>
                     <div class="col-5"
@@ -213,7 +213,7 @@
                     success: function (data) {
                         response($.map(data, function (item) {
                             return {
-                                label: item.desc,
+                                label: `${item.desc} (${item.unit})`,
                                 value: item.id
                             }
                         }));

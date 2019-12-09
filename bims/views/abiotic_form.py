@@ -43,7 +43,10 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
             if self.chemical_records:
                 context['chemical_records'] = (
                     self.chemical_records.values(
-                        'chem__id', 'chem__chem_description', 'value')
+                        'chem__id',
+                        'chem__chem_description',
+                        'chem__chem_unit',
+                        'value')
                 )
         if self.survey:
             context['survey_id'] = self.survey.id
