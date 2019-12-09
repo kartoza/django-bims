@@ -33,23 +33,6 @@
       </div>
     </section>
     </div>
-
-    <section id="about">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 pull-left kartoza-icon">
-                <a href="http://kartoza.com/en/">
-                    <img src="{% static 'img/kartoza-logo-only.png' %}" style="width: 55px">
-                </a>
-            </div>
-            {% if commit_id and branch_name and not tag_version%}
-                <div class="git-info">Commit: <a href="https://github.com/kartoza/django-bims/commit/{{ commit_id }}" target="_blank"> <span class="git-item">{{ commit_id }}</span></a></div>
-            {% elif tag_version %}
-                <div class="git-info">Version: <a href="https://github.com/kartoza/django-bims/releases/tag/{{ tag_version }}" target="_blank"><span class="git-item"> {{ tag_version }}</span></a></div>
-            {% endif %}
-        </div>
-    </div>
-    </section>
     </div>
 {% endblock %}
 
