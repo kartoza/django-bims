@@ -224,27 +224,8 @@ define([
                             var siteId = features[0]['id'].split('.')[1];
                             Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
                         }
-
-                        let url = '';
-                        if (Shared.CurrentState.SEARCH) {
-                            filterParameters['siteId'] = '';
-                            url = '/api/get-site-by-coord/' + self.apiParameters(filterParameters) + '&lon=' + lon + '&lat=' + lat + '&radius=10&search_mode=True';
-                        } else {
-                            url = '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=10'
-                        }
-
-                        self.showMarkerAndRightPanel(features[0]);
-
-                        $.ajax({
-                            url: url,
-                            success: function (data) {
-                                if (self.uploadDataState) {
-                                    self.mapControlPanel.showUploadDataModal(lon, lat, data[0]);
-                                } else if (data.length > 0) {
-                                    Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code'], false, false);
-                                }
-                            }
-                        });
+                        let initialRadius = 5;
+                        self.getSiteByCoordinate(lat, lon, initialRadius);
                     } else {
                         // Check if the feature is single location site marker
                         if (features[0]['id'].includes('location_site_view')) {
@@ -252,6 +233,35 @@ define([
                             Shared.Dispatcher.trigger('siteDetail:show', features[0]['id'].split('.')[1], '');
                         } else {
                             self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, e.coordinate);
+                        }
+                    }
+                }
+            });
+        },
+        getSiteByCoordinate: function (lat, lon, radius) {
+            let url = '';
+            const self = this;
+            const maxRadius = 30;
+            const radiusIncrement = 5;
+            if (Shared.CurrentState.SEARCH) {
+                filterParameters['siteId'] = '';
+                url = '/api/get-site-by-coord/' + self.apiParameters(filterParameters) + '&lon=' + lon + '&lat=' + lat + '&radius=' + radius + '&search_mode=True';
+            } else {
+                url = '/api/get-site-by-coord/?lon=' + lon + '&lat=' + lat + '&radius=' + radius
+            }
+            $.ajax({
+                url: url,
+                success: function (data) {
+                    if (self.uploadDataState) {
+                        self.mapControlPanel.showUploadDataModal(lon, lat, data[0]);
+                    } else if (data.length > 0) {
+                         Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code'], false, false);
+                    } else {
+                        let nextRadius = radius + radiusIncrement;
+                        if (nextRadius < maxRadius) {
+                            self.getSiteByCoordinate(lat, lon, nextRadius);
+                        } else {
+                            Shared.Dispatcher.trigger('siteDetail:closeSidePanel');
                         }
                     }
                 }
