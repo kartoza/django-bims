@@ -30,7 +30,7 @@ jobs:
         repository: kartoza/kbims-healthyrivers
         ref: master
         fetch-depth: 1
-        path: django-bims/kbims-healthyrivers/
+        path: kbims-healthyrivers/
     - name: Build and Publish the Docker Freshwaterbiodiversity Image
       uses: elgohr/Publish-Docker-Github-Action@master
       with:

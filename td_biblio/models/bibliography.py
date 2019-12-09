@@ -208,7 +208,7 @@ class Entry(models.Model):
         through='AuthorEntryRank'
     )
     journal = models.ForeignKey(
-        'Journal', related_name='entries', on_delete=models.CASCADE)
+        'Journal', related_name='entries', on_delete=models.CASCADE, null=True)
     publication_date = models.DateField(_("Publication date"), null=True)
     is_partial_publication_date = models.BooleanField(
         _("Partial publication date?"),
@@ -375,11 +375,12 @@ class Entry(models.Model):
         s += '"%(title)s" | ' % self.__dict__
 
         # Journal
-        if self.journal.abbreviation:
-            s += '%(abbreviation)s ' % self.journal.__dict__
-        else:
-            # fall back to the real name
-            s += '%(name)s ' % self.journal.__dict__
+        if self.journal:
+            if self.journal.abbreviation:
+                s += '%(abbreviation)s ' % self.journal.__dict__
+            else:
+                # fall back to the real name
+                s += '%(name)s ' % self.journal.__dict__
 
         # Misc
         if self.volume and self.pages:
