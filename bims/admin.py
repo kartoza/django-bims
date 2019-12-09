@@ -300,7 +300,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'owner',
         'taxonomy',
         'source_reference',
-        'collector_user'
+        'collector_user',
+        'survey'
     )
     list_filter = (
         ('collection_date', DateRangeFilter),

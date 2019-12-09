@@ -35,7 +35,7 @@ from bims.models import (
     collection_post_save_handler,
     SourceReferenceBibliography
 )
-from td_biblio.models.bibliography import Entry
+from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
 from bims.utils.gbif import (
     update_collection_record,
@@ -107,7 +107,9 @@ class Command(BaseCommand):
     data_added = 0
     data_updated = 0
     data_failed = 0
+    data_duplicated = 0
     errors = []
+    warnings = []
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -139,14 +141,17 @@ class Command(BaseCommand):
             help='Only process new data'
         )
 
-    def add_to_error_summary(self, error_message, row):
+    def add_to_error_summary(self, error_message, row, add_to_error=True):
         error_message = '{id} : {error}'.format(
-            id=row,
+            id=row+2,
             error=error_message
         )
         log(error_message)
-        self.errors.append(error_message)
-        self.data_failed += 1
+        if add_to_error:
+            self.errors.append(error_message)
+            self.data_failed += 1
+        else:
+            self.warnings.append(error_message)
 
     def parse_date(self, date_string):
         # Parse date string to date object
@@ -259,10 +264,44 @@ class Command(BaseCommand):
             ):
                 # Peer reviewed
                 # should be bibliography type
-                self.add_to_error_summary(
-                    'Peer reviewed should have a doi',
-                    index
-                )
+                # If url, title, year, and author(s) exists, crete new entry
+                if record[DOCUMENT_URL] and record[DOCUMENT_TITLE] and record[DOCUMENT_AUTHOR] and record[SOURCE_YEAR]:
+                    entry, _ = Entry.objects.get_or_create(
+                        url=record[DOCUMENT_URL],
+                        title=record[DOCUMENT_TITLE],
+                        publication_date=date(int(record[SOURCE_YEAR]), 1, 1),
+                        is_partial_publication_date=True,
+                        type='article'
+                    )
+                    authors = create_users_from_string(record[DOCUMENT_AUTHOR])
+                    rank = 1
+                    for author in authors:
+                        _author, _ = Author.objects.get_or_create(
+                            first_name=author.first_name,
+                            last_name=author.last_name,
+                            user=author
+                        )
+                        AuthorEntryRank.objects.get_or_create(
+                            author=_author,
+                            entry=entry,
+                            rank=rank
+                        )
+                        rank += 1
+                    try:
+                        source_reference = SourceReferenceBibliography.objects.get(
+                            source=entry
+                        )
+                    except SourceReferenceBibliography.DoesNotExist:
+                        source_reference = (
+                            SourceReferenceBibliography.objects.create(
+                                source=entry
+                            )
+                        )
+                else:
+                    self.add_to_error_summary(
+                        'Peer reviewed should have a doi',
+                        index
+                    )
             elif (
                     'published' in reference_category.lower() or
                     'thesis' in reference_category.lower()
@@ -297,11 +336,6 @@ class Command(BaseCommand):
                 reference_name = reference
                 if record[SOURCE_YEAR]:
                     reference_name += ', ' + record[SOURCE_YEAR]
-                database_record, dr_created = (
-                    DatabaseRecord.objects.get_or_create(
-                        name=reference_name
-                    )
-                )
                 source_reference = (
                     SourceReference.create_source_reference(
                         category=None,
@@ -464,9 +498,13 @@ class Command(BaseCommand):
                     uuid_value = None
                     if UUID in record and record[UUID]:
                         try:
-                            uuid_value = uuid.UUID(record[UUID]).hex
+                            uuid_value = uuid.UUID(record[UUID][0:36]).hex
                         except ValueError:
-                            pass
+                            self.add_to_error_summary(
+                                'Bad UUID format',
+                                index
+                            )
+                            continue
                     if uuid_value:
                         if BiologicalCollectionRecord.objects.filter(
                             uuid=uuid_value
@@ -629,8 +667,6 @@ class Command(BaseCommand):
                                 collector=record[COLLECTOR],
                             )
                             collection_record = collection_records[0]
-                        else:
-                            optional_records['uuid'] = uuid_value
 
                     if not collection_record:
                         fields = {
@@ -647,6 +683,17 @@ class Command(BaseCommand):
                                     **fields
                                 )
                             )
+                            if not created:
+                                if collection_record.uuid and uuid_value:
+                                    if collection_record.uuid != uuid_value:
+                                        self.data_duplicated += 1
+                                        self.add_to_error_summary(
+                                            'Duplicated data',
+                                            index,
+                                            False
+                                        )
+                                        continue
+
                         except BiologicalCollectionRecord.MultipleObjectsReturned:
                             BiologicalCollectionRecord.objects.filter(
                                 **fields
@@ -654,6 +701,7 @@ class Command(BaseCommand):
                             collection_record = BiologicalCollectionRecord.objects.create(
                                 **fields
                             )
+                            created = True
 
                     # More additional data
                     if CATCH_NUMBER in record:
@@ -720,9 +768,11 @@ class Command(BaseCommand):
         self.summary['data_added'] = self.data_added
         self.summary['data_updated'] = self.data_updated
         self.summary['data_failed'] = self.data_failed
+        self.summary['data_duplicated'] = self.data_duplicated
         self.summary['total_processed_data'] = (
-            self.data_added + self.data_updated + self.data_failed
+            self.data_added + self.data_updated + self.data_failed + self.data_duplicated
         )
         self.summary['error_list'] = self.errors
+        self.summary['warning_list'] = self.warnings
         log(json.dumps(self.summary))
         self.reconnect_signals()
