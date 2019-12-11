@@ -56,6 +56,5 @@ jobs:
         rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
       working-directory: kartoza-rancher-scripts
       run: |
-        cd ../kartoza-rancher-scripts
         npm install
         node rancher_scripts.js
