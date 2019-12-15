@@ -274,12 +274,26 @@ class LocationSite(DocumentLinksMixin):
             for geocontext_value in geocontext_data['service_registry_values']:
                 if not geocontext_value['value']:
                     continue
-                location_context_group, group_created = (
-                    LocationContextGroup.objects.get_or_create(
+                try:
+                    location_context_group, group_created = (
+                        LocationContextGroup.objects.get_or_create(
+                            key=geocontext_value['key'],
+                            geocontext_group_key=group_key
+                        )
+                    )
+                except LocationContextGroup.MultipleObjectsReturned:
+                    _groups = LocationContextGroup.objects.filter(
                         key=geocontext_value['key'],
                         geocontext_group_key=group_key
                     )
-                )
+                    _first_group = _groups[0]
+                    _remaining_groups = _groups[1:]
+                    LocationContext.objects.filter(group__in=_groups).update(
+                        group=_first_group
+                    )
+                    for _group in _remaining_groups:
+                        _group.delete()
+                    location_context_group = _first_group
                 try:
                     location_context, created = (
                         LocationContext.objects.get_or_create(

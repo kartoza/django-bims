@@ -93,6 +93,9 @@ def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
 
     if not group_keys:
         group_keys = preferences.SiteSetting.geocontext_keys.split(',')
+    else:
+        if not isinstance(group_keys, list):
+            group_keys = group_keys.split(',')
 
     if site_id:
         location_sites = LocationSite.objects.filter(id__in=site_id.split(','))
