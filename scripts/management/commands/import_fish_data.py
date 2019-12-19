@@ -195,6 +195,7 @@ class Command(BaseCommand):
         document_url = record[DOCUMENT_URL]
         document_id = 0
         document = None
+        source_reference_found = False
 
         # if there is document link, get the id of the document
         if document_link:
@@ -240,6 +241,7 @@ class Command(BaseCommand):
                             source=entry
                         )
                     )
+                source_reference_found = True
             except Entry.DoesNotExist:
                 doi_loader = DOILoader()
                 try:
@@ -254,11 +256,11 @@ class Command(BaseCommand):
                         )
                     )
                 except (DOILoaderError, requests.exceptions.HTTPError):
-                    self.add_to_error_summary(
-                        'Error fetching DOI : {}'.format(doi),
-                        index
-                    )
-        else:
+                    log('{index} Error Fetching DOI : {doi}'.format(
+                        index=index,
+                        doi=doi))
+
+        if not source_reference_found:
             if (
                     'peer-reviewed' in reference_category.lower()
             ):
@@ -266,12 +268,16 @@ class Command(BaseCommand):
                 # should be bibliography type
                 # If url, title, year, and author(s) exists, crete new entry
                 if record[DOCUMENT_URL] and record[DOCUMENT_TITLE] and record[DOCUMENT_AUTHOR] and record[SOURCE_YEAR]:
+                    optional_values = {}
+                    if doi:
+                        optional_values['doi'] = doi
                     entry, _ = Entry.objects.get_or_create(
                         url=record[DOCUMENT_URL],
                         title=record[DOCUMENT_TITLE],
                         publication_date=date(int(record[SOURCE_YEAR]), 1, 1),
                         is_partial_publication_date=True,
-                        type='article'
+                        type='article',
+                        **optional_values
                     )
                     authors = create_users_from_string(record[DOCUMENT_AUTHOR])
                     rank = 1
@@ -572,9 +578,6 @@ class Command(BaseCommand):
                                         sampling_method=record[SAMPLING_METHOD]
                                     )
                                 )[0]
-                        optional_records['sampling_method'] = (
-                            sampling_method
-                        )
 
                     # Sampling effort
                     sampling_effort = ''
@@ -605,15 +608,14 @@ class Command(BaseCommand):
                     )
 
                     # -- Processing Abundance
+                    abundance_type = ''
+                    abundance_number = None
+
                     if record[ABUNDANCE_MEASURE]:
-                        optional_records['abundance_type'] = (
-                            record[ABUNDANCE_MEASURE]
-                        )
+                        abundance_type = record[ABUNDANCE_MEASURE]
                     if record[ABUNDANCE_VALUE]:
                         try:
-                            optional_records['abundance_number'] = (
-                                float(record[ABUNDANCE_VALUE])
-                            )
+                            abundance_number = float(record[ABUNDANCE_VALUE])
                         except ValueError:
                             pass
 
@@ -665,6 +667,9 @@ class Command(BaseCommand):
                                 taxonomy=taxonomy,
                                 category=category,
                                 collector=record[COLLECTOR],
+                                sampling_method=sampling_method,
+                                abundance_type=abundance_type,
+                                abundance_number=abundance_number
                             )
                             collection_record = collection_records[0]
 
@@ -675,8 +680,13 @@ class Command(BaseCommand):
                             'collection_date': sampling_date,
                             'taxonomy': taxonomy,
                             'category': category,
-                            'collector': record[COLLECTOR]
+                            'collector': record[COLLECTOR],
+                            'sampling_method': sampling_method,
+                            'abundance_type': abundance_type,
+                            'abundance_number': abundance_number
                         }
+                        if uuid_value:
+                            fields['uuid'] = uuid_value
                         try:
                             collection_record, created = (
                                 BiologicalCollectionRecord.objects.get_or_create(
