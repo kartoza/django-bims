@@ -23,6 +23,7 @@ from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 class BiologicalCollectionQuerySet(models.QuerySet):
     def source_references(self):
         source_references = []
+        is_doc = False
         for col in self:
             try:
                 title = col.source_reference.source.title
@@ -31,8 +32,12 @@ class BiologicalCollectionQuerySet(models.QuerySet):
 
             if col.source_reference.reference_type == \
                     'Published report or thesis':
-                url = '{}{}'.format(
-                    settings.MEDIA_URL, col.source_reference.source.doc_file)
+                if col.source_reference.source.doc_file:
+                    url = col.source_reference.source.doc_file.url
+                    is_doc = True
+                else:
+                    url = col.source_reference.source.doc_url
+
                 authors = col.source_reference.source.bimsdocument.author
                 pub_year = col.source_reference.source.bimsdocument.year
                 try:
@@ -77,6 +82,7 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 'Title': title,
                 'Source': source,
                 'DOI/URL': url,
+                'is_doc': is_doc,
                 'Notes': note
             }
             source_references.append(item)
