@@ -1069,7 +1069,9 @@ define([
             let ulDiv = $('#metadata-table-list');
             ulDiv.html(' ');
             let dataSources = data['source_references'];
-            let order = ['Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
+            console.log(dataSources);
+            let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
+            let hiddenKeys = ['is_doc']; // Don't show this key in table
             let orderedDataSources = [];
             for (var j=0; j<dataSources.length; j++) {
                 orderedDataSources.push({});
@@ -1082,6 +1084,9 @@ define([
             if(orderedDataSources.length > 0) {
                 var keys = Object.keys(orderedDataSources[0]);
                 for (var i = 0; i < keys.length; i++) {
+                    if (hiddenKeys.includes(keys[i])) {
+                        continue;
+                    }
                     headerDiv.append('<th>' + keys[i] + '</th>')
                 }
             }
@@ -1093,13 +1098,18 @@ define([
                 var keys = Object.keys(source);
                 var document = false;
                 for(var i=0; i<keys.length; i++){
-                    if(source[keys[i]] === 'Published report or thesis'){
-                        document = true
+                    if (keys[i] === 'is_doc') {
+                        if (source[keys[i]]) {
+                            document = true;
+                        }
+                        continue;
                     }
+
+                    console.log(keys[i], document);
 
                     if(keys[i] === 'DOI/URL' && document){
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
-                    } else if (keys[i] === 'DOI/URL') {
+                    } else if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) !== 'http') {
                         itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
                     } else {
                         itemDiv.append('<td>' + source[keys[i]] + '</td>')
