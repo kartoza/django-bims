@@ -1105,8 +1105,6 @@ define([
                         continue;
                     }
 
-                    console.log(keys[i], document);
-
                     if(keys[i] === 'DOI/URL' && document){
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
                     } else if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) !== 'http') {
