@@ -20,6 +20,7 @@ class ChemicalRecordsOneRowSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     chemical_code = serializers.SerializerMethodField()
     source_references = serializers.SerializerMethodField()
+    location_site = serializers.SerializerMethodField()
 
     class Meta:
         model = ChemicalRecord
@@ -51,3 +52,10 @@ class ChemicalRecordsOneRowSerializer(serializers.ModelSerializer):
             return obj.source_reference.get_source_unicode()
         except AttributeError:
             return '-'
+
+    def get_location_site(self, obj):
+        if obj.location_site:
+            return obj.location_site.location_site_identifier
+        elif obj.survey:
+            return obj.survey.site.location_site_identifier
+        return '-'
