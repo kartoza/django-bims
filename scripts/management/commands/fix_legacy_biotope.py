@@ -28,9 +28,19 @@ class Command(CsvCommand):
 
             substratum_name = row['Substratum']
             if substratum_name.lower() == 'sand' or substratum_name.lower() == 'silt/mud/clay':
-                sub, created = Biotope.objects.get_or_create(
-                    name__iexact=substratum_name
-                )
+                try:
+                    sub, created = Biotope.objects.get_or_create(
+                        name__iexact=substratum_name
+                    )
+                except Biotope.MultipleObjectsReturned:
+                    biotopes = Biotope.objects.filter(
+                        name__iexact=substratum_name,
+                    )
+                    if biotopes.filter(biotope_form__isnull=False).exists():
+                        sub = biotopes.filter(biotope_form__isnull=False)[0]
+                    else:
+                        sub = biotopes[0]
+
                 sub.biotope_type = 'substratum'
                 sub.save()
 

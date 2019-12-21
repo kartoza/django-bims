@@ -9,7 +9,7 @@ class SassBiotopeFraction(models.Model):
     """Sass biotope fraction biotope model."""
 
     sass_biotope = models.ForeignKey(
-        'bims.biotope',
+        'bims.Biotope',
         on_delete=models.CASCADE,
         default=None,
         null=True,
