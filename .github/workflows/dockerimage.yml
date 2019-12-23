@@ -20,6 +20,4 @@ jobs:
         rancherAccessKey: ${{ secrets.RANCHER_ACCESS_KEY }}
         rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
       working-directory: kartoza-rancher-scripts
-      run: |
-        npm install
-        node rancher_scripts.js
+      run: npm install
