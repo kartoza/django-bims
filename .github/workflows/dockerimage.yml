@@ -14,10 +14,11 @@ jobs:
       with:
         repository: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REPO }}
         ref: ${{ secrets.KARTOZA_RANCHER_SCRIPT_REF }}
+        path: kartoza-rancher-scripts/
     - uses: actions/setup-node@v1
     - name: npm install, run node script
       env:
         rancherAccessKey: ${{ secrets.RANCHER_ACCESS_KEY }}
         rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
-      working-directory: kartoza-rancher-scripts
+      working-directory: ./kartoza-rancher-scripts
       run: npm install
