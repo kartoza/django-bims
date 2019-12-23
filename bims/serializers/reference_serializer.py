@@ -10,10 +10,14 @@ class ReferenceSerializer(serializers.ModelSerializer):
     journal_abbreviation = serializers.SerializerMethodField()
 
     def get_journal(self, obj):
-        return obj.journal.name
+        if obj.journal:
+            return obj.journal.name
+        return '-'
 
     def get_journal_abbreviation(self, obj):
-        return obj.journal.abbreviation
+        if obj.journal:
+            return obj.journal.abbreviation
+        return '-'
 
     class Meta:
         model = Entry
