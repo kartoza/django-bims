@@ -6,6 +6,40 @@ on:
       - develop
 
 jobs:
+  build:	
+    name: Build and Push Docker Django BIMS Image	
+    runs-on: ubuntu-16.04	
+    steps:	
+    - uses: actions/checkout@master	
+    - name: Build and Publish the Docker Django Bims Image	
+      uses: elgohr/Publish-Docker-Github-Action@master	
+      with:	
+        name: ${{ secrets.IMAGE_DEVELOP_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}	
+        workdir: deployment/production	
+        username: ${{ secrets.DOCKER_USERNAME }}	
+        password: ${{ secrets.DOCKER_PASSWORD }}	
+        buildargs: BIMS_TAG=develop	
+
+  build-freshwaterbiodiversity-image:	
+    name: Build and Push Docker Freshwaterbiodiversity Image	
+    needs: build	
+    runs-on: ubuntu-16.04	
+    steps:	
+    - uses: actions/checkout@master	
+      with: 	
+        repository: kartoza/kbims-healthyrivers	
+        ref: master	
+        fetch-depth: 1	
+        path: kbims-healthyrivers/	
+    - name: Build and Publish the Docker Freshwaterbiodiversity Image	
+      uses: elgohr/Publish-Docker-Github-Action@master	
+      with:	
+        name: ${{ secrets.IMAGE_FRESHWATERBIODIVERSITY_NAME }}:${{ secrets.IMAGE_DEVELOP_VERSION }}	
+        workdir: kbims-healthyrivers/deployment/production/uwsgi	
+        username: ${{ secrets.DOCKER_USERNAME }}	
+        password: ${{ secrets.DOCKER_PASSWORD }}	
+        buildargs: BIMS_TAG=latest
+  
   update-freshwaterbiodiversity-rancher-stacks:
     name: Update Rancher Stacks
     runs-on: ubuntu-16.04
@@ -21,4 +55,6 @@ jobs:
         rancherAccessKey: ${{ secrets.RANCHER_ACCESS_KEY }}
         rancherSecretKey: ${{ secrets.RANCHER_SECRET_KEY }}
       working-directory: ./kartoza-rancher-scripts
-      run: npm install
+      run: |
+        npm install
+        node rancher_scripts.js
