@@ -42,6 +42,7 @@ jobs:
   
   update-freshwaterbiodiversity-rancher-stacks:
     name: Update Rancher Stacks
+    needs: build-freshwaterbiodiversity-image
     runs-on: ubuntu-16.04
     steps:
     - uses: actions/checkout@master
