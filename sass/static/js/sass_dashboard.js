@@ -604,34 +604,44 @@ function renderEcologicalCategoryChart() {
     });
 }
 
+function getCsvName(title, identifier) {
+    if (identifier) {
+        title += ` for ${identifier}`;
+    }
+    return title;
+}
+
 function onDownloadCSVClicked(e) {
     let downloadButton = $(e.target);
+    let csv_name = getCsvName('SASS data', downloadButton.data('identifier'));
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = '/sass/download-sass-data-site/?' + queryString;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton);
+    downloadCSV(url, downloadButton, csv_name);
 }
 
 function onDownloadChemCSVClicked(e) {
     let downloadButton = $(e.target);
+    let csv_name = getCsvName('Chem data', downloadButton.data('identifier'));
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = '/api/chemical-record/download/?' + queryString;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton);
+    downloadCSV(url, downloadButton, csv_name);
 }
 
 function onDownloadSummaryCSVClicked(e) {
     let downloadButton = $(e.target);
+    let csv_name = getCsvName('SASS summary data', downloadButton.data('identifier'));
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = '/sass/download-sass-summary-data/?' + queryString;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton);
+    downloadCSV(url, downloadButton, csv_name);
 }
 
 function onDownloadChartClicked(e) {
@@ -823,7 +833,11 @@ function renderChemGraph () {
         var id_canvas = key + '-chem-chart';
         var canvas = '<canvas class="chem-bar-chart" id="' + id_canvas + '"></canvas>';
         $chemWrapper.append(canvas);
-        var ctx = document.getElementById(id_canvas).getContext('2d');
+        try {
+            var ctx = document.getElementById(id_canvas).getContext('2d');
+        } catch (e) {
+            return true;
+        }
         var datasets = [];
         var yLabel;
         var xLabelData = [];
