@@ -1,4 +1,4 @@
-function downloadCSV(url, downloadButton) {
+function downloadCSV(url, downloadButton, csv_name=null) {
     var downloadCSVXhr = $.get({
         url: url,
         dataType: 'json',
@@ -24,14 +24,14 @@ function downloadCSV(url, downloadButton) {
                 }else {
                     filename = data['message']
                 }
-                if (is_safari) {
-                    var a = window.document.createElement('a');
-                    a.href = '/uploaded/csv_processed/' + filename;
-                    a.download = filename;
-                    a.click();
+                var a = window.document.createElement('a');
+                if (csv_name) {
+                    a.download = csv_name + '.csv';
                 } else {
-                    location.replace('/uploaded/csv_processed/' + filename);
+                    a.download = filename;
                 }
+                a.href = '/uploaded/csv_processed/' + filename;
+                a.click();
 
                 downloadButton.html('Download as CSV');
                 downloadButton.prop("disabled", false);

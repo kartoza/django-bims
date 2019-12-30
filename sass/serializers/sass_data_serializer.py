@@ -2,12 +2,58 @@ from rest_framework import serializers
 import json
 from django.db.models import Q
 from bims.models import (
-    LocationSite, SpatialScale, LocationContext, LocationContextGroup
+    LocationSite, LocationContext, LocationContextGroup
 )
 from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon, SiteVisit
 
 
-class SassDataSerializer(serializers.ModelSerializer):
+class FilterHistorySerializer(object):
+    context = {}
+    ignored_filters = [
+        'siteIdOpen',
+        'orderBy',
+        'modules'
+    ]
+
+    def get_filter_history(self, obj):
+        filter_history = {}
+        filters = self.context['filters']
+        for filter_key, filter_value in filters.items():
+            if filter_key in self.ignored_filters:
+                continue
+            if filter_key == 'spatialFilter':
+                continue
+            if not filter_value:
+                continue
+            try:
+                filter_data = json.loads(filter_value)
+                filter_history[filter_key] = filter_data
+            except ValueError:
+                filter_history[filter_key] = filter_value
+        spatial_filters = filters.get('spatialFilter', None)
+        if spatial_filters:
+            spatial_filters = json.loads(spatial_filters)
+            for spatial_filter in spatial_filters:
+                # spatial_filters =
+                # ['value,primary_catchment,context_value',
+                # ['group,primary_catchment']
+                filter_values = spatial_filter.split(',')
+                if len(filter_values) < 2:
+                    continue
+                group = LocationContextGroup.objects.filter(
+                    key=filter_values[1]
+                )
+                if not group.exists():
+                    continue
+                group = group[0]
+                if filter_values[0] == 'value' and len(filter_values) > 2:
+                    filter_history[group.name] = filter_values[2]
+                else:
+                    filter_history[group.name] = 'All'
+        return filter_history
+
+
+class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
 
     filter_history = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
@@ -48,32 +94,6 @@ class SassDataSerializer(serializers.ModelSerializer):
             'g',
             'site'
         ]
-
-    def get_filter_history(self, obj):
-        filter_history = {}
-        filters = self.context['filters']
-        for filter_key, filter_value in filters.items():
-            if filter_key == 'spatialFilter':
-                continue
-            if not filter_value:
-                continue
-            try:
-                filter_data = json.loads(filter_value)
-                filter_history[filter_key] = filter_data
-            except ValueError:
-                filter_history[filter_key] = filter_value
-        try:
-            spatial_filters = filters['spatialFilter']
-            if spatial_filters:
-                spatial_filters = json.loads(spatial_filters)
-                spatial_scales = SpatialScale.objects.filter(
-                    id__in=spatial_filters
-                )
-                for spatial_scale in spatial_scales:
-                    filter_history[spatial_scale.name] = spatial_scale.query
-        except KeyError:
-            pass
-        return filter_history
 
     def get_FBIS_site_code(self, obj):
         site_code = obj.site_visit.location_site.site_code
@@ -132,10 +152,12 @@ class SassDataSerializer(serializers.ModelSerializer):
         return obj.site_visit.owner.username
 
     def get_sass_taxa(self, obj):
-        if obj.site_visit.sass_version == 4:
+        if obj.sass_taxon.taxon_sass_4:
             return obj.sass_taxon.taxon_sass_4
-        else:
+        elif obj.sass_taxon.taxon_sass_5:
             return obj.sass_taxon.taxon_sass_5
+        else:
+            return obj.sass_taxon.taxon
 
     def get_weight(self, obj):
         if obj.site_visit.sass_version == 4:
@@ -190,7 +212,8 @@ class SassDataSerializer(serializers.ModelSerializer):
         return ''
 
 
-class SassSummaryDataSerializer(serializers.ModelSerializer):
+class SassSummaryDataSerializer(
+    serializers.ModelSerializer, FilterHistorySerializer):
 
     filter_history = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
@@ -209,43 +232,6 @@ class SassSummaryDataSerializer(serializers.ModelSerializer):
     accredited = serializers.SerializerMethodField()
     geomorphological_zone = serializers.SerializerMethodField()
     refined_geomorphological_zone = serializers.SerializerMethodField()
-
-    def get_filter_history(self, obj):
-        filter_history = {}
-        filters = self.context['filters']
-        if 'siteIdOpen' in filters:
-            del filters['siteIdOpen']
-        for filter_key, filter_value in filters.items():
-            if filter_key == 'spatialFilter':
-                continue
-            if not filter_value:
-                continue
-            try:
-                filter_data = json.loads(filter_value)
-                filter_history[filter_key] = filter_data
-            except ValueError:
-                filter_history[filter_key] = filter_value
-        spatial_filters = filters.get('spatialFilter', None)
-        if spatial_filters:
-            spatial_filters = json.loads(spatial_filters)
-            for spatial_filter in spatial_filters:
-                # spatial_filters =
-                # ['value,primary_catchment,context_value',
-                # ['group,primary_catchment']
-                filter_values = spatial_filter.split(',')
-                if len(filter_values) < 2:
-                    continue
-                group = LocationContextGroup.objects.filter(
-                    key=filter_values[1]
-                )
-                if not group.exists():
-                    continue
-                group = group[0]
-                if filter_values[0] == 'value' and len(filter_values) > 2:
-                    filter_history[group.name] = filter_values[2]
-                else:
-                    filter_history[group.name] = 'All'
-        return filter_history
 
     def get_accredited(self, obj):
         site_visit = SiteVisit.objects.get(id=obj['sass_id'])

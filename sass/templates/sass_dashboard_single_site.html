@@ -162,7 +162,7 @@
 
                         <div class="download-container">
                             Download summary data :
-                            <button class="btn btn-info download-summary-as-csv">
+                            <button class="btn btn-info download-summary-as-csv" data-identifier="{{ site_code }}">
                                 Download as CSV
                             </button>
                         </div>
@@ -201,7 +201,7 @@
                         </table>
                         <div class="download-container">
                             Download latest SASS data for this site :
-                            <button class="btn btn-info download-latest-as-csv">
+                            <button class="btn btn-info download-latest-as-csv" data-identifier="{{ site_code }}">
                                 Download as CSV
                             </button>
                         </div>
@@ -241,7 +241,7 @@
                         </table>
                         <div class="download-container">
                             Download all SASS data for this site :
-                            <button class="btn btn-info download-as-csv">
+                            <button class="btn btn-info download-as-csv" data-identifier="{{ site_code }}">
                                 Download as CSV
                             </button>
                         </div>
@@ -362,7 +362,7 @@
                         </div>
                         <div class="container">
                             <button class="btn btn-info download-chem-as-csv"
-                                    style="width: 100%;">Download as CSV
+                                    style="width: 100%;" data-identifier="{{ site_code }}">Download as CSV
                             </button>
                         </div>
                     </div>
@@ -371,7 +371,7 @@
                     <div class="vertical-space"></div>
 
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-12" style="margin-top: 10px;">
                     <div class="table-container">
                         <div class="table-title">
                             Metadata Table
