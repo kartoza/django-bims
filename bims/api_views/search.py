@@ -6,6 +6,7 @@ import ast
 from django.db.models import Q, Count, F, Value
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
+from django.contrib.gis.geos import Polygon
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 
@@ -239,6 +240,14 @@ class Search(object):
     @property
     def ecological_category(self):
         return self.parse_request_json('ecologicalCategory')
+
+    @property
+    def polygon(self):
+        try:
+            polygon_coordinates = self.parse_request_json('polygon')
+            return Polygon(polygon_coordinates)
+        except TypeError:
+            return None
 
     @property
     def abiotic_data(self):
@@ -517,6 +526,16 @@ class Search(object):
             else:
                 bio = bio.filter(
                     module_group__id=self.modules[0]
+                )
+
+        if self.get_request_data('polygon'):
+            if not filtered_location_sites:
+                filtered_location_sites = LocationSite.objects.filter(
+                    geometry_point__within=self.polygon
+                )
+            else:
+                filtered_location_sites = filtered_location_sites.filter(
+                    geometry_point__within=self.polygon
                 )
 
         if self.abiotic_data:
