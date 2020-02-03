@@ -9,21 +9,24 @@ define(
         'views/locate',
         'views/upload_data',
         'views/data_downloader-modal',
-        'views/filter_panel/spatial_filter'
+        'views/filter_panel/spatial_filter',
+        'views/lasso_panel'
     ],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter) {
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter, LassoPanelView) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
             uploadDataActive: false,
             catchmentAreaActive: false,
             searchView: null,
+            lassoPanelView: null,
             locateView: null,
             closedPopover: [],
             validateDataListOpen: false,
             layerSelectorSearchKey: 'layerSelectorSearch',
             events: {
                 'click .search-control': 'searchClicked',
+                'click .lasso-control': 'lassoClicked',
                 'click .filter-control': 'filterClicked',
                 'click .locate-control': 'locateClicked',
                 'click .upload-data': 'uploadDataClicked',
@@ -72,6 +75,7 @@ define(
                     this.resetAllControlState();
                     this.openSpatialFilterPanel();
                     this.closeSearchPanel();
+                    this.closeLassoPanel();
                     this.closeFilterPanel();
                     this.closeLocatePanel();
                     this.closeValidateData();
@@ -86,6 +90,7 @@ define(
                     this.closeSpatialFilterPanel();
                     this.closeSearchPanel();
                     this.closeFilterPanel();
+                    this.closeLassoPanel();
                     this.closeLocatePanel();
                     this.openValidateData();
                 } else {
@@ -98,11 +103,26 @@ define(
                     this.resetAllControlState();
                     this.openSearchPanel();
                     this.closeFilterPanel();
+                    this.closeLassoPanel();
                     this.closeLocatePanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
                 } else {
                     this.closeSearchPanel();
+                }
+            },
+            lassoClicked: function (e) {
+                if(!this.lassoPanelView.isDisplayed()) {
+                    this.hidePopOver($(e.target));
+                    this.resetAllControlState();
+                    this.openLassoPanel();
+                    this.closeSearchPanel();
+                    this.closeFilterPanel();
+                    this.closeLocatePanel();
+                    this.closeSpatialFilterPanel();
+                    this.closeValidateData();
+                } else {
+                    this.closeLassoPanel();
                 }
             },
             filterClicked: function (e) {
@@ -111,6 +131,7 @@ define(
                     this.resetAllControlState();
                     this.openFilterPanel();
                     this.closeSearchPanel();
+                    this.closeLassoPanel();
                     this.closeLocatePanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
@@ -124,6 +145,7 @@ define(
                     this.resetAllControlState();
                     this.openLocatePanel();
                     this.closeSearchPanel();
+                    this.closeLassoPanel();
                     this.closeFilterPanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
@@ -167,6 +189,11 @@ define(
             render: function () {
                 this.$el.html(this.template());
 
+                this.lassoPanelView = new LassoPanelView({
+                    map: this.parent.map
+                });
+                this.$el.append(this.lassoPanelView.render().$el);
+
                 this.searchView = new SearchView({
                     parent: this,
                     sidePanel: this.parent.sidePanelView
@@ -205,6 +232,14 @@ define(
             closeSearchPanel: function () {
                 this.$el.find('.search-control').removeClass('control-panel-selected');
                 this.searchView.hide();
+            },
+            openLassoPanel: function () {
+                this.$el.find('.lasso-control').addClass('control-panel-selected');
+                this.lassoPanelView.show();
+            },
+            closeLassoPanel: function () {
+                this.$el.find('.lasso-control').removeClass('control-panel-selected');
+                this.lassoPanelView.hide();
             },
             openSpatialFilterPanel: function () {
                 this.$el.find('.spatial-filter').addClass('control-panel-selected');

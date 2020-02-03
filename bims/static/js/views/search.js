@@ -55,6 +55,7 @@ define([
             this.parent = options.parent;
             this.sidePanel = options.sidePanel;
             this.searchPanel = new SearchPanelView();
+            this.lassoPanel = this.parent.lassoPanelView;
             this.searchResultCollection = new SearchResultCollection(
                 this.searchFinished
             );
@@ -457,6 +458,9 @@ define([
             // Sort value
             filterParameters['orderBy'] = self.currentSort;
 
+            // Polygon
+            filterParameters['polygon'] = self.lassoPanel.getPolygonCoordinates();
+
             var yearFrom = $('#year-from').html();
             var yearTo = $('#year-to').html();
             var monthSelected = [];
@@ -491,6 +495,7 @@ define([
                 && !filterParameters['ecologicalCategory']
                 && !filterParameters['sourceCollection']
                 && !filterParameters['abioticData']
+                && !filterParameters['polygon']
                 && !filterParameters['boundary']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -568,6 +573,9 @@ define([
             Shared.Dispatcher.trigger('map:refetchRecords');
             $('.subtitle').removeClass('filter-panel-selected');
             Shared.Dispatcher.trigger('map:zoomToDefault');
+
+            // Clear polygon
+            this.lassoPanel.clearLasso();
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {
@@ -840,6 +848,12 @@ define([
                 if (self.currentSort !== sortByElement.val()) {
                     sortByElement.val(self.currentSort).change();
                 }
+            }
+
+            // Polygon
+            if (allFilters.hasOwnProperty('polygon')) {
+                filterParameters['polygon'] = allFilters['polygon'];
+                self.lassoPanel.drawPolygonFromJSON(allFilters['polygon']);
             }
 
             if (allFilters.hasOwnProperty('ecologicalCategory')) {

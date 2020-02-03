@@ -34,7 +34,7 @@ define([
         uploadDataState: false,
         isBoundaryEnabled: false,
         // attributes
-        mapInteractionEnabled: true,
+        mapInteractionEnabled: false,
         previousZoom: 0,
         sidePanelView: null,
         initZoom: 7,
@@ -103,6 +103,7 @@ define([
             Shared.Dispatcher.on('map:closeDetailedDashboard', this.closeDetailedDashboard, this);
             Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
             Shared.Dispatcher.on('map:resetSitesLayer', this.resetSitesLayer, this);
+            Shared.Dispatcher.on('map:toggleMapInteraction', this.toggleMapInteraction, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this);
@@ -161,13 +162,16 @@ define([
         clearPoint: function () {
             this.pointVectorSource.clear();
         },
-        zoomToExtent: function (coordinates) {
+        zoomToExtent: function (coordinates, shouldTransform=true) {
             if (this.isBoundaryEnabled) {
                 this.fetchingRecords();
                 return false;
             }
             this.previousZoom = this.getCurrentZoom();
-            var ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+            let ext = coordinates;
+            if (shouldTransform) {
+                ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
+            }
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [
                     0, $('.right-panel').width(), 0, 250
@@ -179,6 +183,9 @@ define([
         },
         mapClicked: function (e) {
             var self = this;
+            if (this.mapInteractionEnabled) {
+                return;
+            }
             this.layers.highlightVectorSource.clear();
             this.hidePopup();
 
@@ -727,6 +734,9 @@ define([
                 viewparams: 'where:' + defaultWMSSiteParameters
             };
             this.layers.biodiversitySource.updateParams(newParams);
+        },
+        toggleMapInteraction: function (enabled) {
+            this.mapInteractionEnabled = enabled;
         },
         showTaxonDetailedDashboard: function (data) {
             this.taxonDetailDashboard.show(data);
