@@ -37,6 +37,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.parameters['rank'] = '';
             this.parameters['orderBy'] = '';
             this.parameters['siteIdOpen'] = '';
+            this.parameters['polygon'] = '';
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }
