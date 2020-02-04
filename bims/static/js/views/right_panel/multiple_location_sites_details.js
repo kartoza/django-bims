@@ -21,6 +21,10 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             this.originLegends = {};
             this.endemismLegends = {};
             this.consStatusLegends = {};
+            if (filterParameters.hasOwnProperty('siteIdOpen')) {
+                filterParameters['siteIdOpen'] = '';
+                filterParameters['siteId'] = '';
+            }
             this.fetchData();
         },
         hideAll: function (e) {
