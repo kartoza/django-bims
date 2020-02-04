@@ -172,6 +172,7 @@ class CollectionDownloader(GetCollectionAbstract):
             filename = site_id + '.csv'
 
         # Check if filename exists
+        filename = '{}.csv'.format(md5(filename).hexdigest())
         folder = 'csv_processed'
         path_folder = os.path.join(settings.MEDIA_ROOT, folder)
         path_file = os.path.join(path_folder, filename)

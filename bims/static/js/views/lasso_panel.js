@@ -112,6 +112,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             this.stopDrawing();
         },
         drawPolygonFromJSON: function (jsonCoordinates) {
+            if (this.polygonExist) {
+                return;
+            }
             this.polygonCoordinates = JSON.parse(jsonCoordinates);
             let polyCoords = [];
             for (let i in this.polygonCoordinates) {

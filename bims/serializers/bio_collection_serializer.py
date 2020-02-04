@@ -2,12 +2,17 @@ import json
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
+from django.contrib.sites.models import Site
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.taxon_serializer import (
     TaxonSerializer,
     TaxonExportSerializer
 )
-from bims.models.source_reference import SourceReferenceBibliography
+from bims.models.source_reference import (
+    SourceReferenceBibliography,
+    SourceReferenceDocument,
+    SourceReferenceDatabase
+)
 from bims.models.iucn_status import IUCNStatus
 
 
@@ -104,6 +109,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     family = serializers.SerializerMethodField()
     genus = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
+    doi_or_url = serializers.SerializerMethodField()
 
     def get_conservation_status(self, obj):
         if obj.taxonomy.iucn_status:
@@ -131,11 +138,11 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return obj.site.name.encode('utf8')
 
     def get_latitude(self, obj):
-        lat = obj.site.get_centroid().x
+        lat = obj.site.get_centroid().y
         return lat
 
     def get_longitude(self, obj):
-        lon = obj.site.get_centroid().y
+        lon = obj.site.get_centroid().x
         return lon
 
     def get_origin(self, obj):
@@ -221,6 +228,35 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.owner.username.encode('utf8')
         return obj.collector.encode('utf8')
 
+    def get_notes(self, obj):
+        return obj.notes
+
+    def get_doi_or_url(self, obj):
+        if obj.source_reference:
+            url = ''
+            document = None
+            if isinstance(obj.source_reference,
+                          SourceReferenceBibliography):
+                url = obj.source_reference.source.doi
+                if not url and obj.source_reference.document:
+                    document = obj.source_reference.document
+            elif isinstance(obj.source_reference,
+                            SourceReferenceDocument):
+                document = obj.source_reference.source
+            elif isinstance(obj.source_reference,
+                            SourceReferenceDatabase):
+                if obj.source_reference.document:
+                    document = obj.source_reference.document
+            if not url and document:
+                if document.doc_file:
+                    url = ''.join(
+                        [Site.objects.get_current().domain,
+                         document.doc_file.url])
+                else:
+                    url = document.doc_url
+            return url
+        return '-'
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -243,7 +279,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'conservation_status',
             'reference_category',
             'study_reference',
-            'collector_or_owner'
+            'doi_or_url',
+            'collector_or_owner',
+            'notes'
         ]
 
     def to_representation(self, instance):
