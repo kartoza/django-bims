@@ -236,11 +236,14 @@ class SassSummaryDataSerializer(
     def get_accredited(self, obj):
         site_visit = SiteVisit.objects.get(id=obj['sass_id'])
         owner = site_visit.owner
-        if not owner:
-            return 'N'
-        if owner.bims_profile.is_accredited():
-            return 'Y'
-        else:
+        try:
+            if not owner:
+                return 'N'
+            if owner.bims_profile.is_accredited():
+                return 'Y'
+            else:
+                return 'N'
+        except:  # noqa
             return 'N'
 
     def get_reference_category(self, obj):

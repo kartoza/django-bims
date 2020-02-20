@@ -1,4 +1,3 @@
-from datetime import date
 import json
 import operator
 import hashlib
@@ -139,6 +138,19 @@ class Search(object):
     def search_query(self):
         return self.get_request_data('search')
 
+    def is_sass_records_only(self):
+        """Check if the search only for SASS records"""
+        if self.ecological_category:
+            return True
+        validated_values = self.parse_request_json('validated')
+        if validated_values:
+            if (
+                'sass accredited' in validated_values or
+                'non sass accredited' in validated_values
+            ):
+                return True
+        return False
+
     def validation_filter(self):
         """
         Get validation filter
@@ -158,22 +170,6 @@ class Search(object):
             additional_filter['validated'] = True
         elif 'non validated' in validated_values:
             additional_filter['validated'] = False
-
-        if (
-            'sass accredited' in validated_values and
-            'non sass accredited' in validated_values
-        ):
-            pass
-        elif 'sass accredited' in validated_values:
-            additional_filter[
-                'owner__bims_profile__sass_accredited_date_to__gte'] = (
-                date.today()
-            )
-        elif 'non sass accredited' in validated_values:
-            additional_filter[
-                'owner__bims_profile__sass_accredited_date_to__lte'] = (
-                date.today()
-            )
 
         return additional_filter
 
@@ -348,7 +344,7 @@ class Search(object):
         collection_record_model = BiologicalCollectionRecord
         filtered_location_sites = LocationSite.objects.none()
 
-        if self.ecological_category:
+        if self.is_sass_records_only():
             collection_record_model = SiteVisitTaxon
         rank = self.get_request_data('rank')
         bio = None
@@ -470,6 +466,39 @@ class Search(object):
             filters['taxonomy__in'] = self.filtered_taxa_records
 
         bio = bio.filter(**filters)
+
+        # Filter collection record with SASS Accreditation status
+        validated_values = self.parse_request_json('validated')
+        if validated_values:
+            if (
+                'sass accredited' in validated_values and
+                'non sass accredited' in validated_values
+            ):
+                pass
+            elif 'sass accredited' in validated_values:
+                bio = bio.filter(
+                    owner__bims_profile__sass_accredited_date_from__isnull
+                    =False,
+                    owner__bims_profile__sass_accredited_date_to__isnull
+                    =False,
+                    collection_date__gte=F(
+                        'owner__bims_profile__sass_accredited_date_from'),
+                    collection_date__lte=F(
+                        'owner__bims_profile__sass_accredited_date_to')
+                )
+            elif 'non sass accredited' in validated_values:
+                bio = bio.filter(
+                    Q(
+                        owner__bims_profile__sass_accredited_date_from__isnull
+                        =True) |
+                    Q(
+                        owner__bims_profile__sass_accredited_date_to__isnull
+                        =True) |
+                    Q(collection_date__lte=F(
+                        'owner__bims_profile__sass_accredited_date_from')) |
+                    Q(collection_date__gte=F(
+                        'owner__bims_profile__sass_accredited_date_to'))
+                )
 
         if self.collector:
             sass_owners = Profile.objects.annotate(
