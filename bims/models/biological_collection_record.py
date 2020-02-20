@@ -65,12 +65,17 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 try:
                     url = col.source_reference.source.doi
                 except AttributeError:
-                    if col.source_reference.document:
-                        if col.source_reference.document.doc_file:
-                            url = col.source_reference.document.doc_file.url
-                            is_doc = True
+                    if hasattr(col.source_reference, 'document'):
+                        if col.source_reference.document:
+                            if col.source_reference.document.doc_file:
+                                url = (
+                                    col.source_reference.document.doc_file.url
+                                )
+                                is_doc = True
+                            else:
+                                url = col.source_reference.document.doc_url
                         else:
-                            url = col.source_reference.document.doc_url
+                            url = '-'
                     else:
                         url = '-'
 
