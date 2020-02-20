@@ -143,11 +143,12 @@ class Search(object):
         if self.ecological_category:
             return True
         validated_values = self.parse_request_json('validated')
-        if (
+        if validated_values:
+            if (
                 'sass accredited' in validated_values or
                 'non sass accredited' in validated_values
-        ):
-            return True
+            ):
+                return True
         return False
 
     def validation_filter(self):
@@ -468,31 +469,36 @@ class Search(object):
 
         # Filter collection record with SASS Accreditation status
         validated_values = self.parse_request_json('validated')
-        if (
-            'sass accredited' in validated_values and
-            'non sass accredited' in validated_values
-        ):
-            pass
-        elif 'sass accredited' in validated_values:
-            bio = bio.filter(
-                owner__bims_profile__sass_accredited_date_from__isnull=False,
-                owner__bims_profile__sass_accredited_date_to__isnull=False,
-                collection_date__gte=F(
-                    'owner__bims_profile__sass_accredited_date_from'),
-                collection_date__lte=F(
-                    'owner__bims_profile__sass_accredited_date_to')
-            )
-        elif 'non sass accredited' in validated_values:
-            bio = bio.filter(
-                Q(
-                    owner__bims_profile__sass_accredited_date_from__isnull=True
-                ) |
-                Q(owner__bims_profile__sass_accredited_date_to__isnull=True) |
-                Q(collection_date__lte=F(
-                    'owner__bims_profile__sass_accredited_date_from')) |
-                Q(collection_date__gte=F(
-                    'owner__bims_profile__sass_accredited_date_to'))
-            )
+        if validated_values:
+            if (
+                'sass accredited' in validated_values and
+                'non sass accredited' in validated_values
+            ):
+                pass
+            elif 'sass accredited' in validated_values:
+                bio = bio.filter(
+                    owner__bims_profile__sass_accredited_date_from__isnull
+                    =False,
+                    owner__bims_profile__sass_accredited_date_to__isnull
+                    =False,
+                    collection_date__gte=F(
+                        'owner__bims_profile__sass_accredited_date_from'),
+                    collection_date__lte=F(
+                        'owner__bims_profile__sass_accredited_date_to')
+                )
+            elif 'non sass accredited' in validated_values:
+                bio = bio.filter(
+                    Q(
+                        owner__bims_profile__sass_accredited_date_from__isnull
+                        =True) |
+                    Q(
+                        owner__bims_profile__sass_accredited_date_to__isnull
+                        =True) |
+                    Q(collection_date__lte=F(
+                        'owner__bims_profile__sass_accredited_date_from')) |
+                    Q(collection_date__gte=F(
+                        'owner__bims_profile__sass_accredited_date_to'))
+                )
 
         if self.collector:
             sass_owners = Profile.objects.annotate(
