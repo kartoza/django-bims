@@ -27,7 +27,7 @@ class FbisUserSassValidationImporter(FbisPostgresImporter):
             if not profile.sass_accredited_date_from:
                 profile.sass_accredited_date_from = valid_from
             else:
-                if valid_from.date() > profile.sass_accredited_date_from:
+                if valid_from.date() < profile.sass_accredited_date_from:
                     profile.sass_accredited_date_from = valid_from
             if not profile.sass_accredited_date_to:
                 profile.sass_accredited_date_to = valid_to
