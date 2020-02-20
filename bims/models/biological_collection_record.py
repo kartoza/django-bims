@@ -68,7 +68,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                     if hasattr(col.source_reference, 'document'):
                         if col.source_reference.document:
                             if col.source_reference.document.doc_file:
-                                url = col.source_reference.document.doc_file.url
+                                url = (
+                                    col.source_reference.document.doc_file.url
+                                )
                                 is_doc = True
                             else:
                                 url = col.source_reference.document.doc_url
