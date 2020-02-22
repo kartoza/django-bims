@@ -246,11 +246,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         return updated_site_visit_taxon
 
-    def create_or_get_survey(self, site_visit_taxa):
+    def create_or_get_survey(self, site_visit, site_visit_taxa):
         """Get or create a site survey"""
         survey = None
         # Check duplicate data
-        site_visit = site_visit_taxa[0].site_visit
         existing_surveys = Survey.objects.filter(
             owner=site_visit.owner,
             date=site_visit.site_visit_date,
@@ -265,7 +264,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             ).exclude(id=survey.id).delete()
         elif existing_surveys.count() == 1:
             survey = existing_surveys[0]
-        if not survey:
+        if not survey and site_visit_taxa:
             surveys = list(
                 site_visit_taxa.values_list(
                     'survey', flat=True).distinct('survey')
@@ -278,11 +277,12 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
         else:
             survey = Survey.objects.create(
-                owner=site_visit_taxa[0].owner,
-                date=site_visit_taxa[0].collection_date,
-                site=site_visit_taxa[0].site
+                owner=site_visit.owner,
+                date=site_visit.site_visit_date,
+                site=site_visit.location_site
             )
-            site_visit_taxa.update(survey=survey)
+            if site_visit_taxa:
+                site_visit_taxa.update(survey=survey)
             return survey
 
     @method_decorator(login_required)
@@ -460,6 +460,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         # Get or create a survey
         survey = self.create_or_get_survey(
+            site_visit,
             SiteVisitTaxon.objects.filter(id__in=site_visit_taxon_ids)
         )
         abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
