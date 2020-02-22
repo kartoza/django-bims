@@ -1,5 +1,6 @@
 import json
 from django.views.generic import TemplateView
+from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin
 from bims.serializers.survey_serializer import SurveyDataSerializer
@@ -9,7 +10,8 @@ from bims.models import (
     Chem,
     SurveyData,
     SurveyDataOption,
-    SurveyDataValue
+    SurveyDataValue,
+    BiologicalCollectionRecord
 )
 
 
@@ -33,6 +35,11 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
         if Survey.objects.filter(
             owner=self.request.user,
             id=survey_id
+        ).exists():
+            return True
+        if BiologicalCollectionRecord.objects.filter(
+            Q(owner=self.request.user) |
+            Q(collector_user=self.request.user)
         ).exists():
             return True
         return False
@@ -145,6 +152,20 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
                 chem_unit = Chem.objects.get(
                     id=chem_unit
                 )
+                existing_chemical_records = ChemicalRecord.objects.filter(
+                    chem=chem_unit,
+                    survey=survey,
+                    date=survey.date
+                )
+                if existing_chemical_records.count() > 1:
+                    # This shouldn't be happening, but just in case
+                    chemical_record = existing_chemical_records[0]
+                    ChemicalRecord.objects.filter(
+                        id__in=existing_chemical_records
+                    ).exclude(
+                        id=chemical_record.id
+                    ).delete()
+
                 record, created = ChemicalRecord.objects.get_or_create(
                     chem=chem_unit,
                     survey=survey,
