@@ -2,6 +2,31 @@ let map = null;
 let svgCanvases = {};
 let chemSvgCanvases = {};
 
+function createFakeChart(key, chartConfig, displayLegend = true, additionalLegendConfiguration = null) {
+    // To convert the chart to svg;
+    chartConfig.options['animation'] = false;
+    chartConfig.options['responsive'] = false;
+    chartConfig.options['legend'] = {
+        'labels': {
+            'fontSize': 20,
+            'boxWidth': 20
+        },
+        'display': displayLegend
+    };
+    if (additionalLegendConfiguration) {
+        let legend = chartConfig.options['legend'];
+        for (let key in additionalLegendConfiguration) {
+            if (legend.hasOwnProperty(key)) {
+                legend[key] = Object.assign({}, legend[key], additionalLegendConfiguration[key]);
+            } else {
+                legend[key] = additionalLegendConfiguration[key];
+            }
+        }
+    }
+    svgCanvases[key] = C2S(600, 600);
+    new Chart(svgCanvases[key], chartConfig);
+}
+
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
     map = new ol.Map({
@@ -131,42 +156,23 @@ function renderSASSSummaryChart() {
         };
     }
 
-    let sassScoreChart = new Chart($('#sass-score-chart'), {
+    let chartConfig = {
         type: 'bar',
         data: data,
         options: optionsFunction('SASS Scores')
-    });
-    let svgOptions = optionsFunction('SASS Scores');
-    svgOptions['animation'] = false;
-    svgOptions['responsive'] = false;
-    svgOptions['legend'] = {
-        'labels': {
-            'fontSize': 20,
-            'boxWidth': 20
-        },
-        'display': false
     };
-    svgCanvases['SASS-scores'] = C2S(800, 800);
-    new Chart(svgCanvases['SASS-scores'], {
-        type: 'bar',
-        data: data,
-        options: svgOptions
-    });
+    new Chart($('#sass-score-chart'), chartConfig);
+    createFakeChart('SASS-scores', chartConfig, false);
 
-    let taxaNumberChart = new Chart($('#taxa-numbers-chart'), {
+    chartConfig = {
         type: 'bar',
         data: taxaNumberData,
         options: optionsFunction('Number of Taxa')
-    });
-    svgCanvases['number-of-taxa'] = C2S(800, 800);
-    svgOptions['scales'] = scalesOptionFunction('Number of Taxa');
-    new Chart(svgCanvases['number-of-taxa'], {
-        type: 'bar',
-        data: taxaNumberData,
-        options: svgOptions
-    });
+    };
+    new Chart($('#taxa-numbers-chart'), chartConfig);
+    createFakeChart('number-of-taxa', chartConfig, false);
 
-    let asptChart = new Chart($('#aspt-chart'), {
+    chartConfig = {
         type: 'bar',
         data: asptData,
         options: {
@@ -183,14 +189,9 @@ function renderSASSSummaryChart() {
                 display: false
             }
         }
-    });
-    svgOptions['scales'] = scalesOptionFunction('ASPT');
-    svgCanvases['ASPT'] = C2S(800, 800);
-    new Chart(svgCanvases['ASPT'], {
-        type: 'bar',
-        data: asptData,
-        options: svgOptions
-    });
+    };
+    new Chart($('#aspt-chart'), chartConfig);
+    createFakeChart('ASPT', chartConfig, false);
 }
 
 function renderSASSTaxonPerBiotope() {
@@ -353,27 +354,13 @@ function renderSensitivityChart() {
             'Highly Tolerant'
         ],
     };
-    let sensitivityChart = new Chart($('#sensitivity-chart'), {
+    let chartConfig = {
         type: 'pie',
         data: data,
         options: options
-    });
-
-    options['animation'] = false;
-    options['responsive'] = false;
-    options['legend'] = {
-        'labels': {
-            'fontSize': 20,
-            'boxWidth': 20
-        },
     };
-    svgCanvases['proportion-of-sensitive'] = C2S(800, 800);
-    new Chart(svgCanvases['proportion-of-sensitive'], {
-        type: 'pie',
-        data: data,
-        options: options
-    });
-
+    new Chart($('#sensitivity-chart'), chartConfig);
+    createFakeChart('proportion-of-sensitive', chartConfig);
     let latestIndex = dateLabels.length - 1;
     $('#sc-latest-sass-record').html('(<a href="/sass/view/' + sassIds[latestIndex] + '">' + dateLabels[latestIndex] + '</a>)');
 }
@@ -448,32 +435,16 @@ function renderBiotopeRatingsChart() {
         });
     });
 
-    let biotopeRatingsChart = new Chart(ctx, {
+    let chartConfig = {
         type: 'horizontalBar',
         data: {
             labels: labels,
             datasets: datasetsList
         },
         options: barOptions_stacked,
-    });
-
-    barOptions_stacked['animation'] = false;
-    barOptions_stacked['responsive'] = false;
-    barOptions_stacked['legend'] = {
-        'labels': {
-            'fontSize': 20,
-            'boxWidth': 20
-        },
     };
-    svgCanvases['biotope-ratings'] = C2S(800, 800);
-    new Chart(svgCanvases['biotope-ratings'], {
-        type: 'horizontalBar',
-        data: {
-            labels: labels,
-            datasets: datasetsList
-        },
-        options: barOptions_stacked,
-    });
+    new Chart(ctx, chartConfig);
+    createFakeChart('biotope-ratings', chartConfig, true);
 }
 
 function hexToRgb(hex) {
@@ -659,14 +630,22 @@ function renderEcologicalCategoryChart() {
     for (let key in scatterDatasets) {
         dataSets.unshift(scatterDatasets[key]);
     }
-
-    let ecologicalChart = new Chart(canvasChart, {
+    let chartConfig = {
         type: "bar",
         labels: [],
         data: {
             datasets: dataSets
         },
         options: options
+    };
+    new Chart(canvasChart, chartConfig);
+    createFakeChart('ecological-category', chartConfig, true, {
+        reverse: true,
+        labels: {
+            filter: function (item, chart) {
+                return !item.text.includes('hide');
+            }
+        }
     });
 }
 
@@ -1035,7 +1014,7 @@ function renderChemGraph () {
             },
         };
 
-        chemSvgCanvases[yLabel] = C2S(800, 800);
+        chemSvgCanvases[yLabel] = C2S(600, 600);
         new Chart(chemSvgCanvases[yLabel], {
             type: 'bar',
             data: _data,
