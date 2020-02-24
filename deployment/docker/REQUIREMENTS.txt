@@ -63,3 +63,4 @@ django-admin-rangefilter==0.4.0
 django-preferences==1.0.0
 PyGithub==1.44
 sorl-thumbnail==12.5.0
+svglib==0.9.3
