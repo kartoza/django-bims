@@ -300,9 +300,10 @@
                     <div class="chart-container">
                         <div class="chart-title">SASS charts
                             <i data-download-title="SASS charts"
+                               data-download-chart="SASS-scores,number-of-taxa,ASPT"
                                data-toggle="tooltip" data-placement="left"
                                title="Download charts"
-                               class="fa fa-download pull-right download-icon download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <canvas id="sass-score-chart"></canvas>
                         <canvas id="taxa-numbers-chart"></canvas>
@@ -320,9 +321,10 @@
                                 Proportion of sensitive to tolerant taxa
                             </span>
                             <i data-download-title="Proportion of sensitive to tolerant taxa"
+                               data-download-chart="proportion-of-sensitive"
                                data-toggle="tooltip" data-placement="left"
                                title="Download chart"
-                               class="fa fa-download pull-right download-icon download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <canvas id="sensitivity-chart"></canvas>
                         <p style="padding-top: 15px; font-size: 11pt; margin-bottom: 0px; text-align: center">
@@ -334,9 +336,10 @@
                     <div class="chart-container">
                         <div class="chart-title">Biotope ratings
                             <i data-download-title="Biotope ratings"
+                               data-download-chart="biotope-ratings"
                                data-toggle="tooltip" data-placement="left"
                                title="Download chart"
-                               class="fa fa-download pull-right download-icon download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <canvas id="biotope-ratings-chart"></canvas>
                     </div>
@@ -354,9 +357,10 @@
                     <div class="chart-container" id="chem-chart-wrapper">
                         <div class="chart-title">Abiotic Data
                             <i data-download-title="Abiotic Data"
+                               data-download-chart="chem-graph"
                                data-toggle="tooltip" data-placement="left"
                                title="Download chart"
-                               class="fa fa-download pull-right download-icon download-chart"></i>
+                               class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <div class="col-12 species-ssdd-chem-bar-chart" id="chem-bar-chart-wrapper">
                         </div>
@@ -449,6 +453,7 @@
     <script src="{% static "js/libs/moment.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/libs/canvas2svg.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/sass_dashboard.js" %}"></script>
     <script src="{% static "js/sass_dashboard_close.js" %}"></script>

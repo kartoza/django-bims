@@ -70,4 +70,5 @@ def svg_to_pdf(request):
     svg_canvas.save()
     svg_file.close()
     os.unlink(svg_file.name)
-    return HttpResponse('OK')
+    return HttpResponse(
+        path_file.replace(settings.MEDIA_ROOT, settings.MEDIA_URL))

@@ -1,4 +1,6 @@
 let map = null;
+let svgCanvases = {};
+let chemSvgCanvases = {};
 
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
@@ -134,11 +136,34 @@ function renderSASSSummaryChart() {
         data: data,
         options: optionsFunction('SASS Scores')
     });
+    let svgOptions = optionsFunction('SASS Scores');
+    svgOptions['animation'] = false;
+    svgOptions['responsive'] = false;
+    svgOptions['legend'] = {
+        'labels': {
+            'fontSize': 20,
+            'boxWidth': 20
+        },
+        'display': false
+    };
+    svgCanvases['SASS-scores'] = C2S(800, 800);
+    new Chart(svgCanvases['SASS-scores'], {
+        type: 'bar',
+        data: data,
+        options: svgOptions
+    });
 
     let taxaNumberChart = new Chart($('#taxa-numbers-chart'), {
         type: 'bar',
         data: taxaNumberData,
         options: optionsFunction('Number of Taxa')
+    });
+    svgCanvases['number-of-taxa'] = C2S(800, 800);
+    svgOptions['scales'] = scalesOptionFunction('Number of Taxa');
+    new Chart(svgCanvases['number-of-taxa'], {
+        type: 'bar',
+        data: taxaNumberData,
+        options: svgOptions
     });
 
     let asptChart = new Chart($('#aspt-chart'), {
@@ -158,6 +183,13 @@ function renderSASSSummaryChart() {
                 display: false
             }
         }
+    });
+    svgOptions['scales'] = scalesOptionFunction('ASPT');
+    svgCanvases['ASPT'] = C2S(800, 800);
+    new Chart(svgCanvases['ASPT'], {
+        type: 'bar',
+        data: asptData,
+        options: svgOptions
     });
 }
 
@@ -326,6 +358,22 @@ function renderSensitivityChart() {
         data: data,
         options: options
     });
+
+    options['animation'] = false;
+    options['responsive'] = false;
+    options['legend'] = {
+        'labels': {
+            'fontSize': 20,
+            'boxWidth': 20
+        },
+    };
+    svgCanvases['proportion-of-sensitive'] = C2S(800, 800);
+    new Chart(svgCanvases['proportion-of-sensitive'], {
+        type: 'pie',
+        data: data,
+        options: options
+    });
+
     let latestIndex = dateLabels.length - 1;
     $('#sc-latest-sass-record').html('(<a href="/sass/view/' + sassIds[latestIndex] + '">' + dateLabels[latestIndex] + '</a>)');
 }
@@ -401,6 +449,24 @@ function renderBiotopeRatingsChart() {
     });
 
     let biotopeRatingsChart = new Chart(ctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: labels,
+            datasets: datasetsList
+        },
+        options: barOptions_stacked,
+    });
+
+    barOptions_stacked['animation'] = false;
+    barOptions_stacked['responsive'] = false;
+    barOptions_stacked['legend'] = {
+        'labels': {
+            'fontSize': 20,
+            'boxWidth': 20
+        },
+    };
+    svgCanvases['biotope-ratings'] = C2S(800, 800);
+    new Chart(svgCanvases['biotope-ratings'], {
         type: 'horizontalBar',
         data: {
             labels: labels,
@@ -642,6 +708,56 @@ function onDownloadSummaryCSVClicked(e) {
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
     downloadCSV(url, downloadButton, csv_name);
+}
+
+function onDownloadChartNewClicked(e) {
+    let target = $(e.target);
+    let chemGraph = false;
+    let title = target.data('download-title');
+    let charts = target.data('download-chart').split(',');
+    let canvases = svgCanvases;
+    if (charts[0] === 'chem-graph') {
+        charts = Object.keys(chemSvgCanvases);
+        canvases = chemSvgCanvases;
+        title = '';
+        chemGraph = true;
+    } else {
+        if (charts.length > 1) {
+            title +=  ' - ';
+        }
+    };
+    let maxRetry = 10;
+    let retry = 0;
+    while (!target.hasClass('chart-container') && retry < maxRetry)  {
+        target = target.parent();
+        retry += 1;
+    }
+    for (let i=0; i < charts.length; i++) {
+        let chart = charts[i];
+        let svg = canvases[chart].getSerializedSvg(true);
+        let chartTitle = title;
+        if (charts.length > 0) {
+            chartTitle += chart.replace(/-/g, ' ').charAt(0).toUpperCase() + chart.replace(/-/g, ' ').slice(1);
+        }
+        if (chemGraph) {
+            chartTitle = chartTitle.replace('/', ' per ');
+        }
+        $.ajax({
+            type: 'POST',
+            url: '/svg_to_pdf/',
+            data: {
+                'svg': svg,
+                'title': chartTitle
+            },
+            success: function (response) {
+                let urls = response.split('/');
+                let link = document.createElement('a');
+                link.href = response;
+                link.download = urls[urls.length - 1];
+                link.dispatchEvent(new MouseEvent('click'))
+            }
+        });
+    }
 }
 
 function onDownloadChartClicked(e) {
@@ -909,8 +1025,23 @@ function renderChemGraph () {
             options: options
         };
 
-        new Chart(ctx, chartConfig)
-    })
+        new Chart(ctx, chartConfig);
+        options['animation'] = false;
+        options['responsive'] = false;
+        options['legend'] = {
+            'labels': {
+                'fontSize': 20,
+                'boxWidth': 20
+            },
+        };
+
+        chemSvgCanvases[yLabel] = C2S(800, 800);
+        new Chart(chemSvgCanvases[yLabel], {
+            type: 'bar',
+            data: _data,
+            options: options
+        });
+    });
 }
 
 $(function () {
@@ -941,6 +1072,7 @@ $(function () {
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart').click(onDownloadChartClicked);
+    $('.download-chart-new').click(onDownloadChartNewClicked);
     $('.download-map').click(onDownloadMapClicked);
     $('.download-chem-as-csv').click(onDownloadChemCSVClicked)
 });
