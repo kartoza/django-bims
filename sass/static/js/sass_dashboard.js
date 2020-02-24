@@ -736,7 +736,7 @@ function onDownloadChartNewClicked(e) {
         let chart = charts[i];
         let svg = canvases[chart].getSerializedSvg(true);
         let chartTitle = title;
-        if (charts.length > 0) {
+        if (charts.length > 1) {
             chartTitle += chart.replace(/-/g, ' ').charAt(0).toUpperCase() + chart.replace(/-/g, ' ').slice(1);
         }
         if (chemGraph) {
