@@ -279,7 +279,10 @@
         function getAllAbioticData() {
             // Get all abiotic data from the html, returns as JSON
             let $allContainer = $('.abiotic-data-container');
-            let abioticData = {};
+            let result = {
+                abioticData: {},
+                error: ''
+            };
             $.each($allContainer, function (index, container) {
                 const id = $(container).find('.chem-input-id').val();
                 if (!id) {
@@ -291,14 +294,23 @@
                 } else {
                     value = parseFloat(value);
                 }
-                abioticData[id] = value;
+                if (result.abioticData.hasOwnProperty(id)) {
+                    result.error = 'Duplicate abiotic units are not allowed';
+                    return result;
+                }
+                result.abioticData[id] = value;
             });
-            return abioticData;
+            return result;
         }
 
         $('#submit').click((event) => {
-            const abioticData = getAllAbioticData();
-            $('#abiotic-data').val(JSON.stringify(abioticData));
+            const result = getAllAbioticData();
+            if (result.error) {
+                alert(result.error);
+                $('#confirm-submit').modal('toggle');
+                return false;
+            }
+            $('#abiotic-data').val(JSON.stringify(result.abioticData));
             form.submit();
         });
 

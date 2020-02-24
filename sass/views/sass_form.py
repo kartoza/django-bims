@@ -26,6 +26,7 @@ from bims.models.location_site import (
     location_site_post_save_handler
 )
 from bims.models.survey import Survey
+from bims.models.chemical_record import ChemicalRecord
 from bims.models.profile import Profile as BimsProfile
 from bims.models.taxonomy import Taxonomy
 from bims.models.biotope import Biotope
@@ -222,6 +223,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.notes = 'from sass'
                 site_visit_taxon.collection_date = date
                 site_visit_taxon.taxon_abundance = taxon_abundance
+                site_visit_taxon.owner = site_visit.owner
+                site_visit_taxon.collector_user = site_visit.collector
 
                 if created:
                     site_visit.owner = self.request.user
@@ -243,13 +246,44 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         return updated_site_visit_taxon
 
-    def create_survey(self, collection_date, owner, location_site):
-        """Create a site survey"""
-        return Survey.objects.create(
-            owner=owner,
-            date=collection_date,
-            site=location_site
-        )
+    def create_or_get_survey(self, site_visit, site_visit_taxa):
+        """Get or create a site survey"""
+        survey = None
+        # Check duplicate data
+        existing_surveys = Survey.objects.filter(
+            owner=site_visit.owner,
+            date=site_visit.site_visit_date,
+            site=site_visit.location_site)
+        if existing_surveys.count() > 1:
+            survey = existing_surveys[0]
+            ChemicalRecord.objects.filter(
+                survey__in=existing_surveys
+            ).update(survey=survey)
+            Survey.objects.filter(
+                id__in=existing_surveys
+            ).exclude(id=survey.id).delete()
+        elif existing_surveys.count() == 1:
+            survey = existing_surveys[0]
+        if not survey and site_visit_taxa:
+            surveys = list(
+                site_visit_taxa.values_list(
+                    'survey', flat=True).distinct('survey')
+            )
+            if len(surveys) > 0:
+                survey = surveys[0]
+        if survey:
+            return Survey.objects.get(
+                id=survey.id
+            )
+        else:
+            survey = Survey.objects.create(
+                owner=site_visit.owner,
+                date=site_visit.site_visit_date,
+                site=site_visit.location_site
+            )
+            if site_visit_taxa:
+                site_visit_taxa.update(survey=survey)
+            return survey
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -424,8 +458,11 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
         )
 
-        # Create a survey
-        survey = self.create_survey(date, owner, site_visit.location_site)
+        # Get or create a survey
+        survey = self.create_or_get_survey(
+            site_visit,
+            SiteVisitTaxon.objects.filter(id__in=site_visit_taxon_ids)
+        )
         abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
             base_url=reverse('abiotic-form'),
             survey_id=survey.id,
