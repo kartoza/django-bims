@@ -2,7 +2,7 @@ import os
 import hashlib
 from tempfile import NamedTemporaryFile
 from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPDF, renderPM
+from reportlab.graphics import renderPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from django.conf import settings
