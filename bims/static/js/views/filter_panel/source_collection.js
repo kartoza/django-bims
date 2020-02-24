@@ -50,7 +50,7 @@ define([
                 }
                 label = label.charAt(0).toUpperCase() + label.slice(1);
                 if ($.inArray(data[i].get('source_collection'), this.parent.initialSelectedSourceCollection) > -1) {
-                    checked = 'checked';
+                    checked = 'checked disabled';
                 }
                 let dataSourceCaption = '';
                 if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase())) {
