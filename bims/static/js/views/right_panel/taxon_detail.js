@@ -140,15 +140,15 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             return result_html;
         },
         showDetail: function (name, siteDetail, count) {
-            var self = this;
+            let self = this;
             // Render basic information
-            var $detailWrapper = $('<div></div>');
+            let $detailWrapper = $('<div></div>');
             $detailWrapper.append(
                 '<div id="species-detail" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> Species details ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
-            var $overviewPanelTitle = $('<div><img src="/static/img/fish-2-grey.png" style="width:36px;">&nbsp;Overview</div>');
+            let $overviewPanelTitle = $('<div>&nbsp;Loading...</div>');
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
@@ -177,6 +177,15 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
+                    // Render header
+                    let icon = '/static/img/fish-2-grey.png';
+                    let taxonGroup = data['taxon_group'];
+                    if (taxonGroup.hasOwnProperty('logo')) {
+                        icon = '/uploaded/' + taxonGroup['logo'];
+                    }
+                    let $overviewPanelTitle = $(`<div><img src="${icon}" style="width:36px;padding-bottom: 8px; margin-right: 10px;">&nbsp;Overview</div>`);
+                    Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', $overviewPanelTitle);
+
                     self.gbifId = data['gbif_key'];
                     if(self.count > 0) {
                         data['count'] = self.count;

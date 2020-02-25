@@ -43,7 +43,6 @@ class TaxonDetail(APIView):
     def get(self, request, pk, format=None):
         taxon = self.get_object(pk)
 
-
         serializer = TaxonSerializer(taxon)
         data = serializer.data
 
