@@ -200,14 +200,6 @@ define([
                         $('#species-ssdd-site-details').hide();
                         $('#ssdd-chem-chart-wrapper').hide();
                         self.createMultiSiteDetails(data);
-                        let sassDashboardButton = $('#sass-dashboard-button');
-                        sassDashboardButton.show();
-                        if (!data['is_sass_exists']) {
-                            sassDashboardButton.addClass('disabled');
-                        } else {
-                            let sassLink = '/sass/dashboard-multi-sites/' + self.currentFiltersUrl;
-                            sassDashboardButton.attr('href', sassLink);
-                        }
                         dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                     } else {
                         $('#species-ssdd-site-details').show();
