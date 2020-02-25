@@ -10,7 +10,7 @@ from bims.models.validation import AbstractValidation
 
 
 class Survey(AbstractValidation):
-    """Survey model."""
+    """Survey model, this behaves like a site_visit but for general use."""
     site = models.ForeignKey(
         LocationSite,
         models.CASCADE,

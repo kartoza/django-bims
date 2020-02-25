@@ -1,0 +1,267 @@
+[
+  {
+    "model": "bims.SurveyData",
+    "pk": 1,
+    "fields": {
+      "name": "Water surface width",
+      "display_order": 0
+    }
+  },
+  {
+    "model": "bims.SurveyData",
+    "pk": 2,
+    "fields": {
+      "name": "Water level",
+      "display_order": 1
+    }
+  },
+  {
+    "model": "bims.SurveyData",
+    "pk": 3,
+    "fields": {
+      "name": "Water turbidity",
+      "display_order": 2
+    }
+  },
+  {
+    "model": "bims.SurveyData",
+    "pk": 4,
+    "fields": {
+      "name": "Canopy cover",
+      "display_order": 3
+    }
+  },
+  {
+    "model": "bims.SurveyData",
+    "pk": 5,
+    "fields": {
+      "name": "Embeddedness",
+      "display_order": 4
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 1,
+    "fields": {
+      "survey_data": 1,
+      "option": "<1 m",
+      "display_order": 0
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 2,
+    "fields": {
+      "survey_data": 1,
+      "option": "1-2 m",
+      "display_order": 1
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 3,
+    "fields": {
+      "survey_data": 1,
+      "option": "2-5 m",
+      "display_order": 2
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 4,
+    "fields": {
+      "survey_data": 1,
+      "option": "5-10 m",
+      "display_order": 3
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 5,
+    "fields": {
+      "survey_data": 1,
+      "option": "10-20 m",
+      "display_order": 4
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 6,
+    "fields": {
+      "survey_data": 1,
+      "option": "20-50 m",
+      "display_order": 5
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 7,
+    "fields": {
+      "survey_data": 1,
+      "option": "50-100 m",
+      "display_order": 6
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 8,
+    "fields": {
+      "survey_data": 1,
+      "option": ">100 m",
+      "display_order": 7
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 9,
+    "fields": {
+      "survey_data": 2,
+      "option": "Dry",
+      "display_order": 1
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 10,
+    "fields": {
+      "survey_data": 2,
+      "option": "Isolated pools",
+      "display_order": 2
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 11,
+    "fields": {
+      "survey_data": 2,
+      "option": "Low flow",
+      "display_order": 3
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 12,
+    "fields": {
+      "survey_data": 2,
+      "option": "Moderate flow",
+      "display_order": 4
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 13,
+    "fields": {
+      "survey_data": 2,
+      "option": "High flow",
+      "display_order": 5
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 14,
+    "fields": {
+      "survey_data": 2,
+      "option": "Flood",
+      "display_order": 6
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 15,
+    "fields": {
+      "survey_data": 3,
+      "option": "Clear",
+      "display_order": 1
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 16,
+    "fields": {
+      "survey_data": 3,
+      "option": "Discoloured",
+      "display_order": 2
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 17,
+    "fields": {
+      "survey_data": 3,
+      "option": "Opaque",
+      "display_order": 3
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 18,
+    "fields": {
+      "survey_data": 3,
+      "option": "Silty",
+      "display_order": 4
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 19,
+    "fields": {
+      "survey_data": 4,
+      "option": "Open",
+      "display_order": 1
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 20,
+    "fields": {
+      "survey_data": 4,
+      "option": "Closed",
+      "display_order": 2
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 21,
+    "fields": {
+      "survey_data": 4,
+      "option": "Partially Open",
+      "display_order": 3
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 22,
+    "fields": {
+      "survey_data": 5,
+      "option": "0-25",
+      "display_order": 1
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 23,
+    "fields": {
+      "survey_data": 5,
+      "option": "26-50",
+      "display_order": 2
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 24,
+    "fields": {
+      "survey_data": 5,
+      "option": "51-75",
+      "display_order": 3
+    }
+  },
+  {
+    "model": "bims.SurveyDataOption",
+    "pk": 25,
+    "fields": {
+      "survey_data": 5,
+      "option": "76-100",
+      "display_order": 4
+    }
+  }
+]
