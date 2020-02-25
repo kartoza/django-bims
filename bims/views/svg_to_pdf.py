@@ -49,7 +49,12 @@ def svg_to_pdf(request):
     max_width, max_height = A4
     svg_canvas = canvas.Canvas(path_file, pagesize=A4)
     drawing = svg2rlg(svg_file.name)
-    drawing_scale = max_width / drawing.width
+    svg_width = request.POST.get('svgWidth', None)
+    if svg_width:
+        svg_width = float(svg_width)
+    else:
+        svg_width = drawing.width
+    drawing_scale = max_width / svg_width
     if drawing_scale > 1:
         drawing_scale = 1
     scaled_drawing = scale(drawing, scaling_factor=drawing_scale)
