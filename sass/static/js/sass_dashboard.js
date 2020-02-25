@@ -691,6 +691,12 @@ function onDownloadSummaryCSVClicked(e) {
 
 function onDownloadChartNewClicked(e) {
     let target = $(e.target);
+    if (target.hasClass('processing')) {
+        return;
+    } else {
+        target.addClass('processing');
+    }
+    let downloadedCharts = 0;
     let chemGraph = false;
     let title = target.data('download-title');
     let charts = target.data('download-chart').split(',');
@@ -704,7 +710,7 @@ function onDownloadChartNewClicked(e) {
         if (charts.length > 1) {
             title +=  ' - ';
         }
-    };
+    }
     let maxRetry = 10;
     let retry = 0;
     while (!target.hasClass('chart-container') && retry < maxRetry)  {
@@ -714,6 +720,8 @@ function onDownloadChartNewClicked(e) {
     for (let i=0; i < charts.length; i++) {
         let chart = charts[i];
         let svg = canvases[chart].getSerializedSvg(true);
+        let width = canvases[chart].width;
+        let height = canvases[chart].height;
         let chartTitle = title;
         if (charts.length > 1) {
             chartTitle += chart.replace(/-/g, ' ').charAt(0).toUpperCase() + chart.replace(/-/g, ' ').slice(1);
@@ -726,14 +734,20 @@ function onDownloadChartNewClicked(e) {
             url: '/svg_to_pdf/',
             data: {
                 'svg': svg,
-                'title': chartTitle
+                'title': chartTitle,
+                'svgHeight': height,
+                'svgWidth': width,
             },
             success: function (response) {
                 let urls = response.split('/');
                 let link = document.createElement('a');
                 link.href = response;
                 link.download = urls[urls.length - 1];
-                link.dispatchEvent(new MouseEvent('click'))
+                link.dispatchEvent(new MouseEvent('click'));
+                downloadedCharts += 1;
+                if (downloadedCharts === i + 1) {
+                    $(e.target).removeClass('processing');
+                }
             }
         });
     }
