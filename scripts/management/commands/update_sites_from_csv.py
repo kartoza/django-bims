@@ -15,6 +15,7 @@ CORRECTED_LONGITUDE = 'Corrected Longitude'
 ORIGINAL_SITE_CODE = 'Original Site Code'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
 ORIGINAL_RIVER_NAME = 'Original River Name'
+FBIS_SITE_CODE = 'FBIS Site Code'
 
 
 class Command(BaseCommand):
@@ -50,30 +51,44 @@ class Command(BaseCommand):
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 # Search LocationSite with the same original latitude and longitude
-                location_sites = LocationSite.objects.filter(
-                    legacy_site_code=row[ORIGINAL_SITE_CODE]
-                )
+                if ORIGINAL_SITE_CODE in row:
+                    location_sites = LocationSite.objects.filter(
+                        legacy_site_code=row[ORIGINAL_SITE_CODE]
+                    )
+                    site_code = ORIGINAL_SITE_CODE
+                elif FBIS_SITE_CODE in row:
+                    location_sites = LocationSite.objects.filter(
+                        site_code=row[FBIS_SITE_CODE]
+                    )
+                    site_code = FBIS_SITE_CODE
+                else:
+                    not_updated.append(row[site_code])
+                    continue
                 if location_sites.count() > 0:
                     location_site = location_sites[0]
-                    location_site.refined_geomorphological = row[REFINED_GEO_ZONE]
                     location_site.legacy_river_name = row[ORIGINAL_RIVER_NAME]
-                    try:
-                        updated_latitude = float(row[CORRECTED_LATITUDE])
-                        updated_longitude = float(row[CORRECTED_LONGITUDE])
-                    except ValueError:
-                        not_updated.append(row[ORIGINAL_SITE_CODE])
-                        continue
-                    if (
+
+                    if REFINED_GEO_ZONE in row:
+                        location_site.refined_geomorphological = row[REFINED_GEO_ZONE]
+
+                    if CORRECTED_LATITUDE in row and CORRECTED_LONGITUDE in row:
+                        try:
+                            updated_latitude = float(row[CORRECTED_LATITUDE])
+                            updated_longitude = float(row[CORRECTED_LONGITUDE])
+                        except ValueError:
+                            not_updated.append(row[site_code])
+                            continue
+                        if (
                             location_site.latitude != updated_latitude or
                             location_site.longitude != updated_longitude):
-                        location_site.latitude = updated_latitude
-                        location_site.longitude = updated_longitude
-                        log('Lat lon updated')
+                            location_site.latitude = updated_latitude
+                            location_site.longitude = updated_longitude
+                            log('Lat lon updated')
                     location_site.save()
                     log('Location site {} updated'.format(
-                        location_site.legacy_site_code))
+                        row[site_code]))
                 else:
-                    not_updated.append(row[ORIGINAL_SITE_CODE])
+                    not_updated.append(row[site_code])
 
         log('Not updated : {}'.format(','.join(not_updated)))
         # Reconnect signals
