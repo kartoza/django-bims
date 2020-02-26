@@ -11,6 +11,14 @@ from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
 
 
+def get_species_group(species):
+    """Query taxon_group for species group then return the queryset results"""
+    return TaxonGroup.objects.filter(
+        category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+        name__icontains=species
+    )
+
+
 class ModuleSummary(APIView):
     """
     Summary for species module created in TaxonGroup
@@ -23,10 +31,7 @@ class ModuleSummary(APIView):
         Returns fish summary
         :return: dict of fish summary
         """
-        fish_group = TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            name__icontains=self.FISH_KEY
-        )
+        fish_group = get_species_group(self.FISH_KEY)
         if fish_group.count() == 0:
             return {}
         fish_group = fish_group[0]
@@ -64,10 +69,7 @@ class ModuleSummary(APIView):
         Returns invertebrate summary
         :return: dict of invertebrate summary
         """
-        invert_group = TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            name__icontains=self.INVERTEBRATE_KEY
-        )
+        invert_group = get_species_group(self.INVERTEBRATE_KEY)
         if invert_group.count() == 0:
             return {}
         invert_group = invert_group[0]
