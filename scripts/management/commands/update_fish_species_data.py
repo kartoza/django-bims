@@ -17,16 +17,19 @@ class Command(BaseCommand):
     file_name = 'SA Master fish species list_15 Nov 2019_FINAL.csv'
 
     def handle(self, *args, **options):
+        dev_folder = '/home/web/django_project'
         folder_name = 'data'
+        if os.path.exists(dev_folder):
+            root = dev_folder
+        else:
+            root = '/usr/src/bims'
         csv_file_path = os.path.join(
-            os.path.abspath(os.path.dirname(__name__)),
+            root,
             'scripts/static/{folder}/{filename}'.format(
                 folder=folder_name,
                 filename=self.file_name
             )
         )
-
-        # Disconnect all related signals
         not_updated = []
 
         # Delete all vernacular names
