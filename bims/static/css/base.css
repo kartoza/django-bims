@@ -312,3 +312,7 @@ h6 {
     background-color: rgba(110, 110, 110, 0.34);
     text-align: center;
 }
+
+.metadata-table {
+    word-break: break-word;
+}
