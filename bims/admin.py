@@ -671,13 +671,22 @@ class SamplingMethodAdmin(admin.ModelAdmin):
 
 class SiteImageAdmin(admin.ModelAdmin):
     list_display = (
-        'site',
+        'get_site_code',
         'image'
     )
     raw_id_fields = (
         'site',
         'site_visit'
     )
+    search_fields = (
+        'site__site_code',
+        'site__legacy_site_code'
+    )
+
+    def get_site_code(self, obj):
+        return obj.site.location_site_identifier
+    get_site_code.short_description = 'Site'
+    get_site_code.admin_order_field = 'site__site_code'
 
 
 class BimsDocumentInline(admin.StackedInline):

@@ -23,6 +23,27 @@
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
         const siteId = '{{ site_id }}';
     </script>
+    <style>
+        .carousel {
+            height: 500px
+        }
+        .carousel-inner, .carousel-item {
+            height: 100% !important;
+        }
+
+        .carousel-item img {
+            max-height: 100%;
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+        }
+    </style>
 
 {% endblock %}
 
@@ -247,17 +268,29 @@
                             {% for image in site_image %}
                                 {% if forloop.counter0 == 0 %}
                                     <div class="carousel-item active" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
-                                        {% thumbnail image.image "x500" crop="center" as im %}
-                                            <img src="{{ im.url }}">
-                                        {% endthumbnail %}
-                                    </div>
                                 {% else %}
                                     <div class="carousel-item" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
-                                        {% thumbnail image.image "x500" crop="center" as im %}
-                                            <img src="{{ im.url }}">
-                                        {% endthumbnail %}
-                                    </div>
                                 {% endif %}
+                                {% if image.image|is_portrait %}
+                                    {% thumbnail image.image "x500" crop="center" as thumb %}
+                                        <a href="/uploaded/{{ image.image }}"
+                                            target="_blank"><img
+                                            src="{{ thumb.url }}"
+                                            height="{{ thumb.height }}"
+                                            width="{{ thumb.width }}"/>
+                                        </a>
+                                    {% endthumbnail %}
+                                {% else %}
+                                    {% thumbnail image.image "500" crop="center" as thumb %}
+                                        <a href="/uploaded/{{ image.image }}"
+                                            target="_blank"><img
+                                            src="{{ thumb.url }}"
+                                            height="{{ thumb.height }}"
+                                            width="{{ thumb.width }}"/>
+                                        </a>
+                                    {% endthumbnail %}
+                                {% endif %}
+                                </div>
                             {% endfor %}
                         </div>
                         <!-- Left and right controls -->
