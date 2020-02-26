@@ -1,5 +1,6 @@
 let map = null;
 let markerSource = null;
+let riversLayer = 'https://maps.kartoza.com/geoserver/wms';
 
 let validator = $('#site-form').validate({
     submitHandler: function(form) {
@@ -56,6 +57,20 @@ $(function () {
         ],
         view: mapView
     });
+
+    let options = {
+        url: 'https://maps.kartoza.com/geoserver/wms',
+        params: {
+            layers: 'kartoza:sa_rivers',
+            format: 'image/png'
+        }
+    };
+
+    let riverLayer = new ol.layer.Tile({
+        source: new ol.source.TileWMS(options)
+    });
+
+    map.addLayer(riverLayer);
 
     map.on('click', function (e) {
         let coords = ol.proj.toLonLat(e.coordinate);

@@ -764,7 +764,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 url: `/bims_proxy/http://maps.kartoza.com/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
                 dataType: `xml`,
                 success: function (response) {
-                    console.log(response);
                     var xml_response, parser, xmlDoc;
                     xml_response = response['documentElement']['innerHTML'];
                     xml_response = xml_response.replace(/[\r\n]*/g, "");
