@@ -25,11 +25,12 @@ class TaxonSerializer(serializers.ModelSerializer):
             taxonomy=obj.id,
         ).values_list('module_group', flat=True)
         if taxon_module.exists():
-            module = TaxonGroup.objects.filter(id__in=taxon_module)[0]
-            return {
-                'logo': module.logo.name,
-                'name': module.name
-            }
+            module = TaxonGroup.objects.filter(id__in=taxon_module)
+            if module.exists():
+                return {
+                    'logo': module[0].logo.name,
+                    'name': module[0].name
+                }
         return {}
 
     def get_iucn_status_sensitive(self, obj):

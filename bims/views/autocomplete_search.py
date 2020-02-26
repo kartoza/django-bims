@@ -236,6 +236,7 @@ def abiotic_autocomplete(request):
     exclude_list = []
     if exclude:
         exclude_list = exclude.split(',')
+        exclude_list = filter(None, exclude_list)
     data = []
     if len(q) > 1:
         search_qs = Chem.objects.filter(
