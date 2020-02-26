@@ -416,18 +416,16 @@ define([
             this.spatialFilterView.showLayersInMap();
 
             // Validation filter
-            var validationFilter = [];
-            var validated = true;
+            let validationFilter = [];
+            let validated = '';
             $('[name=filter-validation]:checked').each(function () {
                 validationFilter.push($(this).attr('value'));
             });
             if (validationFilter.length > 0) {
                 validated = JSON.stringify(validationFilter);
                 self.highlightPanel('.validation-filter-row', true);
-            } else if (validationFilter.length === 0) {
-                $('#filter-validation-error').show();
+            } else {
                 self.highlightPanel('.validation-filter-row', false);
-                return;
             }
             filterParameters['validated'] = validated;
 
@@ -559,8 +557,6 @@ define([
             $('.map-search-result').hide();
             this.searchPanel.clearSidePanel();
             this.clearClickedOriginButton();
-            $('#filter-validation-validated').prop('checked', true);
-            $('#filter-validation-error').hide();
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
