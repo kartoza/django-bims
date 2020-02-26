@@ -23,8 +23,7 @@ class Command(BaseCommand):
             'WHERE bims_locationsite.id IN'
             '(SELECT U0.site_id AS Col1 FROM '
             'bims_biologicalcollectionrecord U0 '
-            'WHERE (U0.validated = True '
-            'AND U0.source_collection IN (\'fbis\')))'
+            'WHERE (U0.source_collection IN (\'fbis\')))'
         )
         cursor = connection.cursor()
         cursor.execute('''%s''' % self.create_sql_query(
