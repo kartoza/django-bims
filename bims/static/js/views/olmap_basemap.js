@@ -26,7 +26,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                     'OpenStreetMap contributors</a>';
             }
             return this.getVectorTileMapBoxStyle(
-                '/bims_proxy/https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                '/bims_proxy/https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
                 styleUrl,
                 'openmaptiles',
                 attributions
@@ -37,18 +37,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 'OpenStreetMap</a> contributors; Tiles &copy; ' +
                 '<a href="http://KlokanTech.com">KlokanTech</a>\n';
             var openMapTiles = this.getOpenMapTilesTile('/static/mapbox-style/klokantech-terrain-gl-style.json');
-            var contours = this.getVectorTileMapBoxStyle(
-                '/bims_proxy/https://maps.tilehosting.com/data/contours/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
-                '/static/mapbox-style/klokantech-terrain-gl-style.json',
-                'contours',
-                attributions
-            );
-            var hillshading = new ol.layer.Tile({
-                opacity: 0.1,
-                source: new ol.source.XYZ({
-                    url: '/bims_proxy/https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=' + mapTilerKey
-                })
-            });
             return new ol.layer.Group({
                 title: 'Terrain',
                 layers: [openMapTiles,]

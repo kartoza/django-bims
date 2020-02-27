@@ -309,10 +309,47 @@ h6 {
 }
 
 .carousel-inner {
-    background-color: rgba(110, 110, 110, 0.34);
+    background-color: white;
     text-align: center;
 }
 
 .metadata-table {
     word-break: break-word;
 }
+
+.carousel-control-next, .carousel-control-prev {
+    color: grey;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  height: 100px;
+  width: 100px;
+  outline: black;
+  background-size: 100%, 100%;
+  border: 0;
+  background-image: none;
+}
+
+.carousel-control-next-icon:after
+{
+  content: '>';
+  font-size: 55px;
+  color: #1b900d;
+}
+
+.carousel-control-prev-icon:after {
+  content: '<';
+  font-size: 55px;
+  color: #1b900d;
+}
+
+.carousel-indicators li {
+    position: relative;
+    background-color: #d2d2d2;
+}
+
+.carousel-indicators .active {
+    background-color: #1b900d;
+}
+

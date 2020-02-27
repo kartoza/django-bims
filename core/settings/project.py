@@ -80,7 +80,8 @@ PROXY_ALLOWED_HOSTS = (
     '.openstreetmap.org.za',
     '.uni-heidelberg.de',
     '.openstreetmap.org',
-    '.tilehosting.com'
+    '.tilehosting.com',
+    '.maptiler.com'
 )
 
 PROXY_ALLOWED_HOSTS_ENV = os.environ.get('PROXY_ALLOWED_HOSTS', None)

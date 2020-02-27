@@ -4,7 +4,6 @@ from django.conf import settings
 from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Concat
 from django.apps import apps
-from bims.models.vernacular_name import VernacularName
 from bims.models.taxonomy import Taxonomy
 from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
@@ -71,20 +70,6 @@ def autocomplete(request):
         source=Concat(Value('Taxonomy Rank : '), 'rank')
     ).values('taxon_id', 'suggested_name', 'source')[:10]
     suggestions.extend(list(taxonomy_suggestions))
-
-    if len(suggestions) < 10:
-        vernacular_names = list(
-            VernacularName.objects.filter(
-                name__icontains=q,
-                taxonomy__biologicalcollectionrecord__validated=True,
-                **vernacular_additional_filters
-            ).distinct('id').
-            annotate(taxon_id=F('taxonomy__id'), suggested_name=F('name')).
-            values('taxon_id', 'suggested_name')[:10]
-        )
-        for vernacular_name in vernacular_names:
-            vernacular_name['source'] = 'common name'
-        suggestions.extend(vernacular_names)
 
     if len(suggestions) < 10:
         sites = list(
