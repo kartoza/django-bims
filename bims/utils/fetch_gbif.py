@@ -1,6 +1,7 @@
 import logging
 from bims.utils.gbif import (
-    get_children, find_species, get_species, get_vernacular_names
+    get_children, find_species, get_species, get_vernacular_names,
+    gbif_name_suggest
 )
 from bims.models import Taxonomy, VernacularName, BiologicalCollectionRecord
 from bims.enums import TaxonomicRank, TaxonomicStatus
@@ -43,10 +44,11 @@ def merge_taxa_data(gbif_key, excluded_taxon):
         taxon.delete()
 
 
-def create_or_update_taxonomy(gbif_data):
+def create_or_update_taxonomy(gbif_data, fetch_vernacular_names=True):
     """
     Create or update taxonomy data from gbif response data
     :param gbif_data: gbif response data
+    :param fetch_vernacular_names: should fetch vernacular names
     """
     try:
         species_key = gbif_data['nubKey']
@@ -82,32 +84,37 @@ def create_or_update_taxonomy(gbif_data):
         )
     else:
         taxonomy = taxa[0]
+    if 'authorship' in gbif_data:
+        taxonomy.author = gbif_data['authorship']
     taxonomy.gbif_key = species_key
+    taxonomy.gbif_data = gbif_data
     merge_taxa_data(species_key, taxonomy)
 
-    vernacular_names = get_vernacular_names(species_key)
-    if vernacular_names:
-        print('Found %s vernacular names' % len(
-            vernacular_names['results']))
-        for result in vernacular_names['results']:
-            fields = {}
-            if 'source' in result:
-                fields['source'] = result['source']
-            if 'language' in result:
-                fields['language'] = result['language']
-            if 'taxonKey' in result:
-                fields['taxon_key'] = int(result['taxonKey'])
-            try:
-                vernacular_name, status = VernacularName.objects.get_or_create(
-                    name=result['vernacularName'],
-                    **fields
-                )
-            except VernacularName.MultipleObjectsReturned:
-                vernacular_name = VernacularName.objects.filter(
-                    name=result['vernacularName'],
-                    **fields
-                )[0]
-            taxonomy.vernacular_names.add(vernacular_name)
+    if fetch_vernacular_names:
+        vernacular_names = get_vernacular_names(species_key)
+        if vernacular_names:
+            print('Found %s vernacular names' % len(
+                vernacular_names['results']))
+            for result in vernacular_names['results']:
+                fields = {}
+                if 'source' in result:
+                    fields['source'] = result['source']
+                if 'language' in result:
+                    fields['language'] = result['language']
+                if 'taxonKey' in result:
+                    fields['taxon_key'] = int(result['taxonKey'])
+                try:
+                    vernacular_name, status = (
+                        VernacularName.objects.get_or_create(
+                            name=result['vernacularName'],
+                            **fields
+                        ))
+                except VernacularName.MultipleObjectsReturned:
+                    vernacular_name = VernacularName.objects.filter(
+                        name=result['vernacularName'],
+                        **fields
+                    )[0]
+                taxonomy.vernacular_names.add(vernacular_name)
     taxonomy.save()
     return taxonomy
 
@@ -117,7 +124,9 @@ def fetch_all_species_from_gbif(
     taxonomic_rank=None,
     gbif_key=None,
     parent=None,
-    should_get_children=True):
+    should_get_children=True,
+    fetch_vernacular_names=False,
+    use_name_lookup=True):
     """
     Get species detail and all species lower rank
     :param species: species name
@@ -125,6 +134,8 @@ def fetch_all_species_from_gbif(
     :param gbif_key: gbif key
     :param parent: taxonomy parent
     :param should_get_children: fetch children or not
+    :param fetch_vernacular_names: fetch vernacular names or not
+    :param use_name_lookup: use name_lookup to search species
     :return:
     """
     if gbif_key:
@@ -137,7 +148,13 @@ def fetch_all_species_from_gbif(
             species=species,
             rank=taxonomic_rank
         ))
-        species_data = find_species(species, taxonomic_rank)
+        if use_name_lookup:
+            species_data = find_species(species, taxonomic_rank)
+        else:
+            species_data = gbif_name_suggest(
+                q=species,
+                rank=taxonomic_rank
+            )
 
     # if species not found then return nothing
     if not species_data:
@@ -145,7 +162,7 @@ def fetch_all_species_from_gbif(
         return None
 
     # Check if nubKey same with the key
-    # if not then fetch the species with the nubKey to get better data
+    # if not then fetch the species with the nubKey to get a better data
     if 'nubKey' in species_data:
         if gbif_key:
             temp_key = gbif_key
@@ -157,7 +174,7 @@ def fetch_all_species_from_gbif(
     logger.debug(species_data)
     if not species_data:
         return None
-    taxonomy = create_or_update_taxonomy(species_data)
+    taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names)
     if not taxonomy:
         logger.error('Taxonomy not updated/created')
         return None

@@ -1,0 +1,7 @@
+#--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
+FROM frolvlad/alpine-python3:latest
+MAINTAINER Dimas Ciputra <dimas@kartoza.com>
+
+RUN apk add --update --no-cache g++ gcc libxslt-dev
+RUN python -m pip install -U --force-reinstall pip
+RUN pip3 install svglib

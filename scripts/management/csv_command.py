@@ -19,7 +19,7 @@ class CsvCommand(BaseCommand):
     def handle(self, *args, **options):
         csv_file_name = options.get('csv_file', None)
         csv_file_path = os.path.join(
-            settings.MEDIA_ROOT,
+            self.csv_root_folder,
             csv_file_name
         )
         if not csv_file_name or not os.path.exists(csv_file_path):
@@ -32,3 +32,8 @@ class CsvCommand(BaseCommand):
     def csv_dict_reader(self, csv_reader):
         # Read csv file
         raise NotImplementedError
+
+    @property
+    def csv_root_folder(self):
+        # Return root folder of csv
+        return settings.MEDIA_ROOT

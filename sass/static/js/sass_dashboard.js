@@ -7,10 +7,6 @@ function createFakeChart(key, chartConfig, displayLegend = true, additionalLegen
     chartConfig.options['animation'] = false;
     chartConfig.options['responsive'] = false;
     chartConfig.options['legend'] = {
-        'labels': {
-            'fontSize': 20,
-            'boxWidth': 20
-        },
         'display': displayLegend
     };
     if (additionalLegendConfiguration) {

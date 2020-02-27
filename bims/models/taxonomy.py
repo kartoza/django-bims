@@ -1,3 +1,4 @@
+import json
 from django.db import models
 from django.dispatch import receiver
 
@@ -9,6 +10,7 @@ from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
 from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.vernacular_name import VernacularName
+from django.contrib.postgres.fields import JSONField
 
 
 class TaxonomyField(models.CharField):
@@ -106,6 +108,25 @@ class Taxonomy(DocumentLinksMixin):
         null=True,
         blank=True
     )
+
+    gbif_data = JSONField(
+        null=True,
+        blank=True
+    )
+
+    def save(self, *args, **kwargs):
+        max_allowed = 10
+        attempt = 0
+        is_dictionary = False
+        while not is_dictionary and attempt < max_allowed:
+            if not self.gbif_data:
+                break
+            if isinstance(self.gbif_data, dict):
+                is_dictionary = True
+            else:
+                self.gbif_data = json.loads(self.gbif_data)
+                attempt += 1
+        super(Taxonomy, self).save(*args, **kwargs)
 
     # noinspection PyClassicStyleClass
     class Meta:
