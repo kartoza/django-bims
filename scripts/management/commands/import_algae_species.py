@@ -36,7 +36,7 @@ class Command(CsvCommand):
         errors = []
         success = []
 
-        index = 1
+        index = 2
 
         for row in csv_reader:
             try:
@@ -52,10 +52,22 @@ class Command(CsvCommand):
                     if taxonomy:
                         success.append(taxonomy.id)
                     else:
-                        errors.append({
-                            'row': index,
-                            'error': 'Taxonomy not found'
-                        })
+                        # Try again with lookup
+                        logger.debug('Use different method')
+                        taxonomy = fetch_all_species_from_gbif(
+                            species=row[TAXON],
+                            taxonomic_rank=row[TAXON_RANK],
+                            should_get_children=False,
+                            fetch_vernacular_names=False,
+                            use_name_lookup=True
+                        )
+                        if not taxonomy:
+                            errors.append({
+                                'row': index,
+                                'error': 'Taxonomy not found'
+                            })
+                        else:
+                            success.append(taxonomy.id)
                 else:
                     # Find genus
                     parent = fetch_all_species_from_gbif(
