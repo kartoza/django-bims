@@ -13,7 +13,7 @@ def load_fixture(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0214_load_survey_data'),
+        ('bims', '0215_taxonomy_gbif_data'),
     ]
 
     operations = [
