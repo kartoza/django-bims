@@ -97,6 +97,10 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     longitude = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
     sampling_date = serializers.SerializerMethodField()
+    sampling_method = serializers.SerializerMethodField()
+    broad_biotope = serializers.SerializerMethodField()
+    specific_biotope = serializers.SerializerMethodField()
+    substratum = serializers.SerializerMethodField()
     taxon_name = serializers.SerializerMethodField()
     collector_or_owner = serializers.SerializerMethodField()
     study_reference = serializers.SerializerMethodField()
@@ -257,6 +261,26 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return url
         return '-'
 
+    def get_sampling_method(self, obj):
+        if obj.sampling_method:
+            return obj.sampling_method.sampling_method.capitalize()
+        return obj.sampling_method_string
+
+    def get_broad_biotope(self, obj):
+        if obj.biotope:
+            return obj.biotope.name.capitalize()
+        return '-'
+
+    def get_specific_biotope(self, obj):
+        if obj.specific_biotope:
+            return obj.specific_biotope.name.capitalize()
+        return '-'
+
+    def get_substratum(self, obj):
+        if obj.substratum:
+            return obj.substratum.name.capitalize()
+        return '-'
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -267,6 +291,10 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'sampling_date',
+            'sampling_method',
+            'broad_biotope',
+            'specific_biotope',
+            'substratum',
             'phylum',
             'class_name',
             'order',
