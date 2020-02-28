@@ -312,3 +312,14 @@ def suggest_search(query_params):
     except (HTTPError, KeyError) as e:
         print(e)
         return None
+
+
+def gbif_name_suggest(**kwargs):
+    # Wrapper for pygbif name_suggest function
+    response = species.name_suggest(**kwargs)
+    if len(response) == 0:
+        return None
+    species_data = response[0]
+    if 'taxonomicStatus' not in species_data and 'status' in species_data:
+        species_data['taxonomicStatus'] = species_data['status']
+    return species_data
