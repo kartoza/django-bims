@@ -63,6 +63,7 @@ INSTALLED_APPS += (
     'rangefilter',
     'preferences',
     'sorl.thumbnail',
+    'ckeditor'
 )
 
 if os.environ.get('RAVEN_CONFIG_DSN'):
