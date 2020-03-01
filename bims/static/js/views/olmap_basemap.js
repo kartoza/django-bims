@@ -1,23 +1,25 @@
 define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Backbone, _, $, ol, OlMapboxStyle) {
     return Backbone.View.extend({
         getVectorTileMapBoxStyle: function (url, styleUrl, layerName, attributions) {
-            var tilegrid = ol.tilegrid.createXYZ({tileSize: 512, maxZoom: 14});
-            var layer = new ol.layer.VectorTile({
+            let tileGrid = ol.tilegrid.createXYZ({tileSize: 512, maxZoom: 14});
+            let layer = new ol.layer.VectorTile({
                 source: new ol.source.VectorTile({
                     attributions: attributions,
                     format: new ol.format.MVT(),
-                    tileGrid: tilegrid,
+                    tileGrid: tileGrid,
                     tilePixelRatio: 8,
                     url: url
                 })
             });
-            fetch(styleUrl).then(function (response) {
-                response.json().then(function (glStyle) {
-                    OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
+            if (styleUrl) {
+                fetch(styleUrl).then(function (response) {
+                    response.json().then(function (glStyle) {
+                        OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
+                        });
                     });
                 });
-            });
-            return layer
+            }
+            return layer;
         },
         getOpenMapTilesTile: function (styleUrl, attributions) {
             if (!attributions) {
@@ -40,6 +42,25 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             return new ol.layer.Group({
                 title: 'Terrain',
                 layers: [openMapTiles,]
+            });
+        },
+        getKartozaBaseMap: function () {
+            let baseMapLayer = new ol.layer.Tile({
+                source: new ol.source.TileWMS({
+                    url: 'https://maps.kartoza.com/mapproxy/service',
+                    params: {
+                        'layers': 'basemap',
+                        'uppercase': true,
+                        'transparent': true,
+                        'continuousWorld': true,
+                        'opacity': 1.0,
+                        'SRS': 'EPSG:3857'
+                    }
+                })
+            });
+            return new ol.layer.Group({
+                title: 'Terrain',
+                layers: [baseMapLayer,]
             });
         },
         getPositronBasemap: function () {
@@ -117,9 +138,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             }
             baseSourceLayers.push(toposheet);
 
-            if(bingMapKey) {
-                baseSourceLayers.push(this.getKlokantechTerrainBasemap());
-            }
+            baseSourceLayers.push(this.getKartozaBaseMap());
 
             $.each(baseSourceLayers, function (index, layer) {
                 layer.set('type', 'base');
