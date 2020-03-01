@@ -17,7 +17,7 @@ class CsvCommand(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        csv_file_name = options.get('csv_file', None)
+        csv_file_name = self.csv_file_name(options)
         csv_file_path = os.path.join(
             self.csv_root_folder,
             csv_file_name
@@ -32,6 +32,10 @@ class CsvCommand(BaseCommand):
     def csv_dict_reader(self, csv_reader):
         # Read csv file
         raise NotImplementedError
+
+    def csv_file_name(self, options):
+        # Return name of the csv file
+        return options.get('csv_file', None)
 
     @property
     def csv_root_folder(self):

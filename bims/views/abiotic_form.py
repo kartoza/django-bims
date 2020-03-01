@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from django.db.models import Q
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin
+from sass.enums.chem_unit import ChemUnit
 from bims.serializers.survey_serializer import SurveyDataSerializer
 from bims.models import (
     Survey,
@@ -48,13 +49,17 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
         context = super(AbioticFormView, self).get_context_data(**kwargs)
         if self.update_form:
             if self.chemical_records:
-                context['chemical_records'] = (
-                    self.chemical_records.values(
-                        'chem__id',
-                        'chem__chem_description',
-                        'chem__chem_unit',
-                        'value')
-                )
+                context['chemical_records'] = []
+                for chemical_record in self.chemical_records:
+                    context['chemical_records'].append({
+                        'id': chemical_record.chem.id,
+                        'description': chemical_record.chem.chem_description,
+                        'unit': ChemUnit[chemical_record.chem.chem_unit].value,
+                        'max': chemical_record.chem.maximum,
+                        'min': chemical_record.chem.minimum,
+                        'value': chemical_record.value
+                    })
+
         if self.survey:
             context['survey_id'] = self.survey.id
             context['site_code'] = self.survey.site.location_site_identifier
@@ -69,6 +74,7 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
                 ).data
             )
         context['update_form'] = self.update_form
+        context['CHEM_UNITS'] = ChemUnit.__members__
         return context
 
     def get(self, request, *args, **kwargs):

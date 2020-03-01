@@ -98,15 +98,18 @@
                          style="padding-left: 0; padding-right: 5px;">
                         <input type="text"
                                class="form-control form-control-sm chem-input"
-                               value="{{ chemical_record.chem__chem_description }} ({{ chemical_record.chem__chem_unit }})" placeholder="Abiotic">
-                        <input type="hidden" class="chem-input-id" value="{{ chemical_record.chem__id }}">
+                               value="{{ chemical_record.description }} ({{ chemical_record.unit }})" placeholder="Abiotic">
+                        <input type="hidden" class="chem-input-id" value="{{ chemical_record.id }}">
                     </div>
                     <div class="col-5"
                          style="padding-right: 0; padding-left: 5px;">
                         <input type="number"
                                class="form-control form-control-sm chem-input-value"
                                placeholder="Value"
-                               value="{{ chemical_record.value }}">
+                               onchange="handleValueChange(this)"
+                               value="{{ chemical_record.value }}"
+                                max="{{ chemical_record.max }}"
+                                min="{{ chemical_record.min }}">
                     </div>
                     <div class="col-1">
                         <button type="button"
@@ -129,6 +132,9 @@
                     <input type="number"
                            class="form-control form-control-sm chem-input-value"
                            placeholder="Value"
+                           onchange="handleValueChange(this);"
+                           min=0
+                           max=0
                            value="">
                 </div>
                 <div class="col-1">
@@ -214,7 +220,9 @@
                         response($.map(data, function (item) {
                             return {
                                 label: `${item.desc} (${item.unit})`,
-                                value: item.id
+                                value: item.id,
+                                minimum: item.minimum,
+                                maximum: item.maximum
                             }
                         }));
                     }
@@ -241,6 +249,9 @@
                 const $input = $(e.target);
                 $input.val(u.item.label);
                 $input.next().val(u.item.value);
+                const $inputValue = $input.parent().parent().find('.chem-input-value');
+                $inputValue.attr('max', u.item.maximum);
+                $inputValue.attr('min', u.item.minimum);
             }
         };
 
@@ -315,6 +326,13 @@
         });
 
         $('.delete-button').click(deleteRowFunction);
+
+        function handleValueChange(input) {
+            const max = parseFloat($(input).attr('max'));
+            const min = parseFloat($(input).attr('min'));
+            if (input.value < min) input.value = min;
+            if (input.value > max) input.value = max;
+        }
 
     </script>
 

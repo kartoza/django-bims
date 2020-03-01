@@ -10,6 +10,7 @@ from bims.models.data_source import DataSource
 from bims.models.taxon_group import TaxonGroup
 from sass.models.river import River
 from bims.enums import TaxonomicRank
+from sass.enums.chem_unit import ChemUnit
 
 
 def autocomplete(request):
@@ -225,7 +226,9 @@ def abiotic_autocomplete(request):
     data = []
     if len(q) > 1:
         search_qs = Chem.objects.filter(
-            chem_description__istartswith=q).exclude(
+            chem_description__istartswith=q,
+            show_in_abiotic_list=True
+        ).exclude(
             chem_unit__iexact=''
         ).exclude(id__in=exclude_list)
         if not search_qs.exists():
@@ -241,7 +244,9 @@ def abiotic_autocomplete(request):
                 'id': r.id,
                 'desc': r.chem_description,
                 'text': r.chem_code,
-                'unit': r.chem_unit
+                'unit': ChemUnit[r.chem_unit].value,
+                'minimum': r.minimum,
+                'maximum': r.maximum
             })
         data = json.dumps(results)
     mime_type = 'application/json'

@@ -716,6 +716,17 @@ class ChemAdmin(admin.ModelAdmin):
         'chem_code',
         'chem_description',
         'chem_unit',
+        'show_in_abiotic_list',
+        'minimum',
+        'maximum'
+    )
+    list_filter = (
+        'show_in_abiotic_list',
+        'chem_unit'
+    )
+    search_fields = (
+        'chem_code',
+        'chem_description'
     )
 
 
