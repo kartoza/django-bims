@@ -9,7 +9,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0216_update_default_fbis_site_view'),
+        ('bims', '0214_load_survey_data'),
     ]
 
     operations = [

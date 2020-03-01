@@ -13,7 +13,7 @@ def load_fixture(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0215_update_fish_species_data'),
+        ('bims', '0216_update_fish_species_data'),
     ]
 
     operations = [
