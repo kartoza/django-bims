@@ -1,0 +1,161 @@
+Biobase or Rivers Database_Description,Code,FBIS_Unit,FBIS_Name,Retain variable in FBIS abiotic list,Serve legacy data only as CSV,Minimum,Maximum
+Alkalinity as Calcium Carbonate,CaCO3,mg/l,Alkalinity - total,Yes,,0,500
+Alkalinity as Calcium Carbonate (maximum),CACO3MAX,mg/l,,No,Yes,,
+Alkalinity as Calcium Carbonate (minimum),CACO3MIN,mg/l,,No,Yes,,
+Aluminium - Acid extractable,AL-H,mg/l,,No,Yes,,
+Aluminium - Dissolved,AL-DISS,mg/l,,No,Yes,,
+Aluminium concentration,AL,mg/l,Aluminium,Yes,,0.02,320
+Ammonia nitrogen,NH4-N,mg/l,Nitrogen - ammonia,Yes,,0,10
+Ammonia nitrogen (maximum),NH4MAX,mg/l,,No,Yes,,
+Ammonia nitrogen (minimum),NH4MIN,mg/l,,No,Yes,,
+Arsenic,AS,mg/l,Arsenic,Yes,,0.03,0.5
+Arsenic - Acid extractable,AS-H,mg/l,,No,Yes,,
+Arsenic - Dissolved,AS-DISS,mg/l,,No,Yes,,
+Barium,BA,mg/l,Barium,Yes,,0,0.5
+Barium - Acid extractable,BA-H,mg/l,,No,Yes,,
+Barium - Dissolved,BA-DISS,mg/l,,No,Yes,,
+Beryllium,BE,mg/l,Beryllium,Yes,,0,0.01
+Beryllium - Acic extractable,BE-H,mg/l,,No,Yes,,
+Beryllium - Dissolved,BE-DISS,mg/l,,No,Yes,,
+Bicarbonate,HCO3,mg/l,Bicarbonate,Yes,,0,500
+Biological Oxygen Demand,BOD,mg/l (5 days),Biological oxygen demand,Yes,,0,600
+Biological Oxygen Demand (maximum),BODMAX,mg/l (5 days),,No,Yes,,
+Biological Oxygen Demand (minimum),BODMIN,mg/l (5 days),,No,Yes,,
+Boron,B,mg/l,Boron,Yes,,0,0.5
+Boron - Acid extractable,B-H,mg/l,,No,Yes,,
+Boron - Dissolved,B-DISS,mg/l,,No,Yes,,
+Cadmium,CD,mg/l,Cadmium,Yes,,0,0.15
+Cadmium - Acid extractable,CD-H,mg/l,,No,Yes,,
+Cadmium - Dissolved,CD-DISS,mg/l,,No,Yes,,
+Calcium,CA,mg/l,Calcium,Yes,,0,500
+Calcium (maximum),CAMAX,mg/l,,No,Yes,,
+Calcium (minimum),CAMIN,mg/l,,No,Yes,,
+Carbonate,CO3,mg/l,Carbonate,Yes,,0,500
+Chemical Oxygen Demand,COD,mg/l,Chemical oxygen demand,Yes,,0,1500
+Chloride,CL,mg/l,Chloride,Yes,,0,1000
+Chloride (maximum),CLMAX,mg/l,,No,Yes,,
+Chloride (minimum),CLMIN,mg/l,,No,Yes,,
+Chlorophyll a,CHLA,mg/l,Chlorophyll a,Yes,,1,300
+Chromium,CR,mg/l,Chromium,Yes,,0,0.5
+Chromium - Acid extractable,CR-H,mg/l,,No,Yes,,
+Chromium - Dissolved,CR-DISS,mg/l,,No,Yes,,
+Cobolt,CO,mg/l,Cobolt,Yes,,0,0.05
+Cobolt - Acid extractable,CO-H,mg/l,,No,Yes,,
+Cobolt - Dissolved,CO-DISS,mg/l,,No,Yes,,
+Colour,COL,APHA units,Colour,Yes,,0,500
+Colour (maximum),COLMAX,APHA units,,No,Yes,,
+Colour (minimum),COLMIN,APHA units,,No,Yes,,
+Conductivity,COND,mS/m,Conductivity,Yes,,1,500
+Conductivity (maximum),CONDMAX,mS/m,,No,Yes,,
+Conductivity (minimum),CONDMIN,mS/m,,No,Yes,,
+Copper,CU,mg/l,Copper,Yes,,0,0.1
+Copper - Acid extractable,CU-H,mg/l,,No,Yes,,
+Copper - Dissolved,CU-DISS,mg/l,,No,Yes,,
+Depth,,m,Depth,Yes,,0,4
+Dissolved inorganic nitrogen,DIN,mg/l,Nitrogen - dissolved inorganic ,Yes,,0,15
+Dissolved organic carbon,DOC,mg/l,Carbon - dissolved organic,Yes,,0,120
+Dissolved organic nitrogen,DON,mg/l,Nitrogen - dissolved organic ,Yes,,0,15
+Dissolved oxygen,DO,mg/l,Oxygen - dissolved,Yes,,1,15
+Dissolved Oxygen: % saturation of oxygen dissolved in the water,DOPER,%,Oxygen - dissolved: percentage saturation,Yes,,10,150
+Fluoride,F,mg/l,Fluoride,Yes,,0.1,5
+Free carbon dioxide/carbonic acid,FREE CO2,mg/l,,No,Yes,,
+Iron,FE,mg/l,Iron,Yes,,0,50
+Iron - Acid extractable,FE-H,mg/l,,No,Yes,,
+Iron - Dissolved,FE-DISS,mg/l,,No,Yes,,
+Iron (maximum),FEMAX,mg/l,,No,Yes,,
+Iron (minimum),FEMIN,mg/l,,No,Yes,,
+Kjeldahl nitrogen,KJN,mg/l,Nitrogen - kjeldahl,Yes,,0.04,1
+Lead,PB,mg/l,Lead,Yes,,0,0.15
+Lead - Acid extractable,PB-H,mg/l,,No,Yes,,
+Lead - Dissolved,PB-DISS,mg/l,,No,Yes,,
+Magnesium,MG,mg/l,Magnesium,Yes,,0.1,150
+Magnesium (maximum),MGMAX,mg/l,,No,Yes,,
+Magnesium (minimum),MGMIN,mg/l,,No,Yes,,
+Manganese,MN,mg/l,Manganese,Yes,,0,20
+Manganese - Acid extractable,MN-H,mg/l,,No,Yes,,
+Manganese - Dissolved,MN-DISS,mg/l,,No,Yes,,
+Mercury,HG,mg/l,Mercury,Yes,,0.01,1
+Mercury - Acid extractable,HG-H,mg/l,,No,Yes,,
+Molybdenum,MO,mg/l,Molybdenum,Yes,,0.01,0.5
+Molybdenum - Acid extractable,MO-H,mg/l,,No,Yes,,
+Molybdenum - Dissolved,MO-DISS,mg/l,,No,Yes,,
+Near bed velocity,,mg/s,Near bed velocity,Yes,,0,2
+Nickel,NI,mg/l,Nickel,Yes,,0,1
+Nickel - Acid extractable,NI-H,mg/l,,No,Yes,,
+Nickel - Dissolved,NI-DISS,mg/l,,No,Yes,,
+Nitrate nitrogen,NO3-N,mg/l,Nitrogen - nitrate ,Yes,,0,1
+Nitrate nitrogen (maximum),NO3MAX,mg/l,,No,Yes,,
+Nitrate nitrogen (minimum),NO3MIN,mg/l,,No,Yes,,
+Nitrate nitrogen + nitrite nitrogen,NO3+NO2-N,mg/l,Nitrogen - nitrate + nitrite ,Yes,,0.04,5
+Nitrite nitrogen,NO2-N,mg/l,Nitrogen - nitrite,Yes,,0,0.5
+Nitrite nitrogen (maximum),NO2MAX,mg/l,,No,Yes,,
+Nitrite nitrogen (minimum),NO2MIN,mg/l,,No,Yes,,
+Nitrogen – combined,(NH4+NO3+NO2)-N,mg/l,Nitrogen - dissolved inorganic ,Yes,,0,15
+Organic fraction in TSS,ORGS,mg/l,Total dissolved solids - organics,Yes,,0,100
+Orthophosphate,PO4-P,mg/l,Phosphorus - soluble reactive ,Yes,,0.01,1
+Particulate organic matter,POM,mg/l,Particulate organic matter,Yes,,1,5000
+pH,PH,pH unit,pH,Yes,,2,10
+pH (maximum),PHMAX,pH units,,No,Yes,,
+pH (minimum),PHMIN,pH units,,No,Yes,,
+Phenols,PHEN,mg/l,Phenols,Yes,,0,0.1
+Phenolthalein alkalinity,PHALK,meq/l,Alkalinity - phenolthalein,Yes,,0,500
+Potassium,K,mg/l,Potassium,Yes,,0,100
+Potassium (maximum),KMAX,mg/l,,No,Yes,,
+Potassium (minimum),KMIN,mg/l,,No,Yes,,
+Salinity,SALINITY,%,Salinity,Yes,,0,100
+Secchi Depth,SD,m,Secchi depth,Yes,,0.01,10
+Silica,SI,mg/l,Silica,Yes,,0.01,35
+Silica (maximum),SIMAX,mg/l,,No,Yes,,
+Silica (minimum),SIMIN,mg/l,,No,Yes,,
+Silicates,SI,mg/l,,No,Yes,,
+Sodium,NA,mg/l,Sodium,Yes,,1,500
+Sodium (maximum),NAMAX,mg/l,,No,Yes,,
+Sodium (minimum),NAMIN,mg/l,,No,Yes,,
+Soluble reactive phosphorus (often assumed = PO4-P),SRP,mg/l,Phosphorus - soluble reactive ,Yes,,0.01,1
+Soluble reactive sulphate (maximum),SRPMAX,mg/l,,No,Yes,,
+Soluble reactive sulphate (minimum),SRPMIN,mg/l,,No,Yes,,
+Strontium,SR,mg/l,Strontium,Yes,,0,5
+Strontium - Acid extractable,SR-H,mg/l,,No,Yes,,
+Strontium - Dissolved,SR-DISS,mg/l,,No,Yes,,
+Submerged macrophytes,,%,Submerged macrophytes,Yes,,0,100
+Sulphate,SO4,mg/l,Sulphate,Yes,,0.01,2000
+Sulphate (maximum),SO4MAX,mg/l,,No,Yes,,
+Sulphate (minimum),SO4MIN,mg/l,,No,Yes,,
+Temperature,TEMP,degrees C,Temperature,Yes,,0,40
+Temperature (maximum),TMAX,degrees C,,No,Yes,,
+Temperature (minimum),TMIN,degrees C,,No,Yes,,
+Titanium,TI,mg/l,Titanium,Yes,,0,0.1
+Titanium - Acid extractable,TI-H,mg/l,,No,Yes,,
+Titanium - Dissolved,TI-DISS,mg/l,,No,Yes,,
+Total alkalinity,TAL,meq/l,Alkalinity - total,Yes,,0.01,5
+Total alkalinity (maximum),TALMAX,meq/l,,No,Yes,,
+Total alkalinity (minimum),TALMIN,meq/l,,No,Yes,,
+Total dissolved solids,TDS,mg/l,Total dissolved solids,Yes,,1,5000
+Total dissolved solids (maximum),TDSMAX,mg/l,,No,Yes,,
+Total dissolved solids (minimum),TDSMIN,mg/l,,No,Yes,,
+Total inorganic carbon,TIC,mg/l,Carbon - total inorganic,Yes,,0,120
+Total nitrogen,TOT-N,mg/l,Nitrogen - total,Yes,,0,15
+Total organic carbon,TOC,mg/l,Carbon - total organic,Yes,,0,120
+Total organics in TSS,TORGS,mg/l,Total dissolved solids - organics,Yes,,1,5000
+Total organics in TSS – percentage,TORGS,%,Total dissolved solids - organic fraction (%),Yes,,0,100
+Total phosphorus,TOT-P,mg/l,Phosphorus - total,Yes,,0.01,0.5
+Total suspended solids,TSS,mg/l,Total suspended solids,Yes,,0,50
+Total suspended solids (maximum),TSSMAX,mg/l,,No,Yes,,
+Total suspended solids (minimum),TSSMIN,mg/l,,No,Yes,,
+Turbidity (maximum),TURBMAX,NTU,,No,Yes,,
+Turbidity (minimum),TURBMIN,NTU,,No,Yes,,
+Turbidity (NTU scale),TURBIDITY,NTU,Turbidity,Yes,,0,100
+Turbidity (silica scale),TURBS (SIO2),mg/l,,No,Yes,,
+Turbidity (silica scale) (maximum),TURBSMAX (SIO2),mg/l,,No,Yes,,
+Turbidity (silica scale) (minimum),TURBSMIN (SIO2),mg/l,,No,Yes,,
+Undercut bank,,%,Undercut bank,Yes,,0,100
+Vanadium,V,mg/l,Vanadium,Yes,,0,0.1
+Vanadium - Acid extractable,V-H,mg/l,,No,Yes,,
+Vanadium - Dissolved,V-DISS,mg/l,,No,Yes,,
+Woody debris,,%,Woody debris,Yes,,0,100
+Zinc,ZN,mg/l,Zinc,Yes,,0,1.5
+Zinc - Acid extractable,ZN-H,mg/l,,No,Yes,,
+Zinc - Dissolved,ZN-DISS,mg/l,,No,Yes,,
+Zirconium,ZR,mg/l,Zirconium,Yes,,0,0.05
+Zirconium - Acid extractable,ZR-H,mg/l,,No,Yes,,
+Zirconium - Dissolved,ZR-DISS,mg/l,,No,Yes,,
