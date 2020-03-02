@@ -50,6 +50,7 @@ LATITUDE = 'Latitude'
 LONGITUDE = 'Longitude'
 LOCATION_SITE = 'River'
 ORIGINAL_SITE_CODE = 'Original Site Code'
+ORIGINAL_RIVER_NAME = 'Original river name'
 FBIS_SITE_CODE = 'FBIS Site Code'
 SITE_DESCRIPTION = 'Site description'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
@@ -97,6 +98,9 @@ SOURCE_YEAR = 'Year'
 SOURCE = 'Source'
 PRESENT = 'Present'
 COMMON_NAME = 'Common Name'
+WATER_LEVEL = 'Water Level'
+WATER_TURBIDITY = 'Water Turbidity'
+
 
 
 class Command(BaseCommand):

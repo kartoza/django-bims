@@ -40,6 +40,10 @@ class Chem(models.Model):
         blank=True
     )
 
+    show_in_abiotic_list = models.BooleanField(
+        default=False
+    )
+
     def __unicode__(self):
         return self.chem_code
 

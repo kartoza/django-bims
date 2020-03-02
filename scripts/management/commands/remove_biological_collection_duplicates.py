@@ -5,8 +5,9 @@ from bims.models import BiologicalCollectionRecord
 
 
 class Command(BaseCommand):
-    # Update location sites to use
-    # legacy site codes if they have correct format
+    """
+    Remove duplicated biological collection records
+    """
 
     def handle(self, *args, **options):
         qs = BiologicalCollectionRecord.objects.annotate(
