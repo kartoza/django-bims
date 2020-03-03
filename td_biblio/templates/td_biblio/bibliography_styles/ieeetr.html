@@ -68,5 +68,15 @@
     </span>
     <!-- /Publication date -->
 
+    <span class="doi">
+        DOI : {{ entry.doi }}
+    </span>
+
+    {% if request.user.is_superuser %}
+        <a href="/admin/td_biblio/entry/{{ entry.id }}/change/" class="btn btn-warning" style="font-size: 8pt">
+            Edit in admin page
+        </a>
+    {% endif %}
+
 </div>
 <!-- ./article -->
