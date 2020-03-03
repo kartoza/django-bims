@@ -8,7 +8,6 @@ from bims.utils.gbif import *
 logger = logging.getLogger('bims')
 
 IN_GBIF = 'In GBIF'
-TAXON_RANK = 'Taxon rank'
 TAXON = 'Taxon'
 SPECIES = 'Species'
 GENUS = 'Genus'
@@ -18,6 +17,7 @@ IN_SA = 'In SA'
 COMMENTS = 'Comments'
 DIVISION = 'Division'
 GROWTH_FORM = 'Growth Form'
+SUB_SPECIES = 'SubSpecies'
 
 
 class Command(CsvCommand):
@@ -50,25 +50,35 @@ class Command(CsvCommand):
             )
         )
 
-    def additional_data(self, row):
+    def additional_data(self, taxonomy, row):
+        """
+        Import additional data from CSV into taxonomy.
+        :param taxonomy: Taxonomy object
+        :param row: data row from csv
+        """
         data = dict()
 
         # -- Division
-        data[DIVISION] = row[DIVISION]
+        if DIVISION in row:
+            data[DIVISION] = row[DIVISION]
 
         # -- Growth Form
-        data[GROWTH_FORM] = row[GROWTH_FORM]
+        if GROWTH_FORM in row:
+            data[GROWTH_FORM] = row[GROWTH_FORM]
 
         # -- Comments
-        data[COMMENTS] = row[COMMENTS]
+        if COMMENTS in row:
+            data[COMMENTS] = row[COMMENTS]
 
         # -- In SA
-        data[IN_SA] = row[IN_SA]
+        if IN_SA in row:
+            data[IN_SA] = row[IN_SA]
 
         # -- Import date
         data['Import Date'] = self.import_date
 
-        return data
+        taxonomy.additional_data = data
+        taxonomy.save()
 
     def csv_dict_reader(self, csv_reader):
         errors = []
@@ -79,36 +89,46 @@ class Command(CsvCommand):
         for row in csv_reader:
             try:
                 print('---------')
-                taxonomy = None
-                if row[IN_GBIF] == 'Yes':
-                    # Fetch from gbif
+                # Get rank
+                if row[SUB_SPECIES]:
+                    rank = SUB_SPECIES
+                elif row[SPECIES]:
+                    rank = SPECIES
+                elif row[GENUS]:
+                    rank = GENUS
+                else:
+                    rank = FAMILY
+
+                # Fetch from gbif
+                taxonomy = fetch_all_species_from_gbif(
+                    species=row[TAXON],
+                    taxonomic_rank=rank,
+                    should_get_children=False,
+                    fetch_vernacular_names=False,
+                    use_name_lookup=False
+                )
+                if taxonomy:
+                    success.append(taxonomy.id)
+                else:
+                    # Try again with lookup
+                    logger.debug('Use different method')
                     taxonomy = fetch_all_species_from_gbif(
                         species=row[TAXON],
-                        taxonomic_rank=row[TAXON_RANK],
+                        taxonomic_rank=rank,
                         should_get_children=False,
                         fetch_vernacular_names=False,
-                        use_name_lookup=False
+                        use_name_lookup=True
                     )
-                    if taxonomy:
-                        success.append(taxonomy.id)
+                    if not taxonomy:
+                        errors.append({
+                            'row': index,
+                            'error': 'Taxonomy not found'
+                        })
                     else:
-                        # Try again with lookup
-                        logger.debug('Use different method')
-                        taxonomy = fetch_all_species_from_gbif(
-                            species=row[TAXON],
-                            taxonomic_rank=row[TAXON_RANK],
-                            should_get_children=False,
-                            fetch_vernacular_names=False,
-                            use_name_lookup=True
-                        )
-                        if not taxonomy:
-                            errors.append({
-                                'row': index,
-                                'error': 'Taxonomy not found'
-                            })
-                        else:
-                            success.append(taxonomy.id)
-                else:
+                        success.append(taxonomy.id)
+
+                # Data from GBIF couldn't be found, so add it manually
+                if not taxonomy:
                     # Find genus
                     parent = fetch_all_species_from_gbif(
                         species=row[GENUS],
@@ -135,15 +155,16 @@ class Command(CsvCommand):
                         taxonomy, create = Taxonomy.objects.get_or_create(
                             scientific_name=row[TAXON],
                             canonical_name=row[TAXON],
-                            rank=TaxonomicRank[row[TAXON_RANK].upper()].name,
+                            rank=TaxonomicRank[rank.upper()].name,
                             parent=parent
                         )
                         success.append(taxonomy.id)
+
                 if taxonomy:
-                    taxonomy.additional_data = self.additional_data(
+                    self.additional_data(
+                        taxonomy,
                         row
                     )
-                    taxonomy.save()
             except Exception as e:  # noqa
                 print(str(e))
                 errors.append({
