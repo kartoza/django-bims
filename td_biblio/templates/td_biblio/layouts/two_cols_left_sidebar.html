@@ -1,9 +1,8 @@
 {% extends "_layouts/base.html" %}
 
-{% load static from staticfiles %}
+{% load static %}
 
 {% block content %}
-
 <div id="content-wrapper">
     <div id="left-sidebar" class="{% block left_sidebar_class %}{% endblock left_sidebar_class %}">
         {% block left_sidebar_extras %}{% endblock left_sidebar_extras %}
@@ -17,4 +16,5 @@
 {% endblock content %}
 
 {% block javascripts %}
+<script src="{% static 'td_biblio/javascripts/td_biblio.js' %}"></script>
 {% endblock javascripts %}

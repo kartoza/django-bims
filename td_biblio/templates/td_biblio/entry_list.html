@@ -1,5 +1,4 @@
 {% extends "td_biblio/layouts/two_cols_left_sidebar.html" %}
-{% load static from staticfiles %}
 {% load i18n %}
 
 {% block page_title %}{% trans "Publications" %}{% endblock page_title %}
@@ -11,19 +10,6 @@
 <h3>{% trans "Metrics" %}</h3>
 
 <div id="publications-stats">
-    <!-- Google Fonts -->
-    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
-    <!-- CSS Reset -->
-    <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
-    <!-- Milligram CSS minified -->
-    <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
-    <!-- Override styles -->
-    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
-    <style>
-             body {
-                   margin-top: 8%;
-             }
-        </style>
     <table>
         <tr class="metric">
             <td>{% trans "Publications" %}</td>
@@ -75,23 +61,37 @@
         {% endfor %}
     </select>
 
-    <label for="filter-collection">{% trans "Collection" %}</label>
-    <select name="collection" id="filter-collection">
+    <label for="filter-doi-exist">{% trans "DOI exists" %}</label>
+    <select name="doi_exist" id="filter-doi-exist">
         <option value="">
             {% trans "All" %}
         </option>
-        {% for collection in publication_collections %}
-        <option value="{{ collection.id }}" {% if collection.id == current_publication_collection %}selected="selected"{% endif %}>
-            {{ collection.name }}
+        <option value="True" {% if current_doi_filter != '' and current_doi_filter %}selected="selected"{% endif %}>
+            True
         </option>
-        {% endfor %}
+        <option value="False" {% if current_doi_filter != '' and not current_doi_filter %}selected="selected"{% endif %}>
+            False
+        </option>
     </select>
-</form>
+
+    {% if current_publication_year or current_publication_author or current_query_search or current_doi_filter != '' %}
+        <a href="/bibliography/" class="btn btn-success" style="width: 100%; margin-top: 10px;" >Reset filters</a>
+    {% endif %}
+
 {% endblock left_sidebar_extras %}
 
 {% block main_content %}
+    <div class="row">
+        <div class="col-10" style="padding: 0;">
+            <input type="text" placeholder="Search.." name="q" id="search-input" value="{{ current_query_search }}">
+        </div>
+        <div class="col-2" style="padding: 0">
+            <button id="search" style="width: 100%" type="submit"><i class="fa fa-search"></i></button>
+        </div>
+    </div>
+</form>
 
-        <h2>{% trans "Publications" %}</h2>
+<h2>{% trans "Publications" %}</h2>
 
         {% if perms.td_biblio.can_add_bibliograpy_entry %}
         <div class="import-message">
@@ -102,22 +102,23 @@
         </div>
         {% endif %}
 
-        {% include "td_biblio/partials/publication_list_by_year.html" with publications=entry_list %}
+{% include "td_biblio/partials/publication_list_by_year.html" with publications=entry_list %}
 
-        {% if is_paginated %}
-        <div class="pagination-centered">
+{% if is_paginated %}
+<div class="pagination-centered">
 
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                <li class="arrow"><a href="?page={{ page_obj.previous_page_number }}" class="pagination">&laquo;</a></li>
-                {% endif %}
-                <li class="current">
-                    <a href="">{{ page_obj.number }}</a>
-                    {{ page_obj.start_index }} - {{ page_obj.end_index }}</li>
-                {% if page_obj.has_next %}
-                <li class="arrow"><a href="?page={{ page_obj.next_page_number }}" class="pagination">&raquo;</a></li>
-                {% endif %}
-            </ul>
-        </div>
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="arrow"><a href="?page={{ page_obj.previous_page_number }}" class="pagination">&laquo;</a></li>
         {% endif %}
+        <li class="current">
+            <a href="">{{ page_obj.number }}</a>
+            {{ page_obj.start_index }} - {{ page_obj.end_index }}</li>
+        {% if page_obj.has_next %}
+        <li class="arrow"><a href="?page={{ page_obj.next_page_number }}" class="pagination">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endif %}
+
 {% endblock main_content %}

@@ -4,12 +4,14 @@ __copyright__ = 'kartoza.com'
 
 import datetime
 import logging
+import ast
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import FormView, ListView
+from django.db.models import Q
 
 from td_biblio.exceptions import DOILoaderError, PMIDLoaderError
 from td_biblio.forms.bibliography import EntryBatchImportForm
@@ -50,14 +52,13 @@ class EntryListView(ListView):
     """Entry list view"""
     model = Entry
     paginate_by = 20
-    template_name = 'td_biblio/entry_list.html'
+    template_name = '../templates/td_biblio/entry_list.html'
 
     def get(self, request, *args, **kwargs):
         """Check GET request parameters validity and store them"""
 
         # -- Publication year
         year = self.request.GET.get('year', None)
-        print(year)
 
         # Is it an integer?
         if year:
@@ -81,6 +82,20 @@ class EntryListView(ListView):
             self.current_publication_collection = int(collection)
         else:
             self.current_publication_collection = ''
+
+        # -- Search query
+        search = self.request.GET.get('q', None)
+        if search:
+            self.query_search = search
+        else:
+            self.query_search = ''
+
+        # -- DOI exist
+        doi_exist = self.request.GET.get('doi_exist', '')
+        try:
+            self.doi_exist = ast.literal_eval(doi_exist)
+        except SyntaxError:
+            self.doi_exist = ''
 
         return super(EntryListView, self).get(request, *args, **kwargs)
 
@@ -106,8 +121,26 @@ class EntryListView(ListView):
         # Base queryset
         qs = super(EntryListView, self).get_queryset()
 
+        qs = qs.filter(**filters)
+
+        # Query search
+        if self.query_search:
+            qs = qs.filter(
+                Q(journal__name__icontains=self.query_search) |
+                Q(journal__abbreviation__icontains=self.query_search) |
+                Q(title__icontains=self.query_search)
+            )
+
+
+        # Doi exist
+        if self.doi_exist != '':
+            if not self.doi_exist:
+                qs = qs.filter(doi='')
+            else:
+                qs = qs.exclude(doi='')
+
         # Return filtered queryset
-        return qs.filter(**filters)
+        return qs
 
     def get_context_data(self, **kwargs):
         """
@@ -151,6 +184,10 @@ class EntryListView(ListView):
         ctx['current_publication_collection'] = \
             self.current_publication_collection  # noqa
 
+        # Search query
+        ctx['current_query_search'] = self.query_search
+        ctx['current_doi_filter'] = self.doi_exist
+
         return ctx
 
 
@@ -159,7 +196,7 @@ class EntryBatchImportView(LoginRequiredMixin,
                            FormView):
 
     form_class = EntryBatchImportForm
-    template_name = 'td_biblio/entry_import.html'
+    template_name = '../templates/td_biblio/entry_import.html'
     success_url = reverse_lazy('td_biblio:entry_list')
 
     def form_valid(self, form):

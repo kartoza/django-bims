@@ -88,6 +88,7 @@ try:
         absolute_path('core', 'base_templates'),
         absolute_path('bims', 'templates'),
         absolute_path('sass', 'templates'),
+        absolute_path('td_biblio', 'templates'),
     ] + TEMPLATES[0]['DIRS']
 
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
@@ -109,6 +110,7 @@ except KeyError:
                 absolute_path('core', 'base_templates'),
                 absolute_path('bims', 'templates'),
                 absolute_path('sass', 'templates'),
+                absolute_path('td_biblio', 'templates'),
             ],
             'APP_DIRS': True,
             'OPTIONS': {
@@ -144,6 +146,7 @@ STATICFILES_DIRS = [
     absolute_path('bims', 'static'),
     absolute_path('sass', 'static'),
     absolute_path('scripts', 'static'),
+    absolute_path('td_biblio', 'static'),
 ] + STATICFILES_DIRS
 
 MIDDLEWARE_CLASSES += (
