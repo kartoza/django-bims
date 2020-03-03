@@ -110,6 +110,7 @@
                                value="{{ chemical_record.value }}"
                                 max="{{ chemical_record.max }}"
                                 min="{{ chemical_record.min }}">
+                        <small class="form-text text-muted input-value-help">Min = {{ chemical_record.min }}, Max = {{ chemical_record.max }}</small>
                     </div>
                     <div class="col-1">
                         <button type="button"
@@ -136,6 +137,7 @@
                            min=0
                            max=0
                            value="">
+                    <small class="form-text text-muted input-value-help"></small>
                 </div>
                 <div class="col-1">
                     <button type="button" class="btn btn-danger delete-button">
@@ -250,8 +252,10 @@
                 $input.val(u.item.label);
                 $input.next().val(u.item.value);
                 const $inputValue = $input.parent().parent().find('.chem-input-value');
+                $inputValue.val('');
                 $inputValue.attr('max', u.item.maximum);
                 $inputValue.attr('min', u.item.minimum);
+                $inputValue.parent().find('.input-value-help').html(`Min = ${u.item.minimum}, Max = ${u.item.maximum}`);
             }
         };
 
@@ -301,7 +305,8 @@
                 }
                 let value = $(container).find('.chem-input-value').val();
                 if (!value) {
-                    value = 0;
+                    result.error = 'Missing abiotic value';
+                    return result;
                 } else {
                     value = parseFloat(value);
                 }
