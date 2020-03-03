@@ -170,6 +170,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True,
         related_name='%(class)s_collector_user'
     )
+    analyst = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        help_text='The person that did the analysis',
+        null=True,
+        blank=True,
+        related_name='%(class)s_analyst'
+    )
     notes = models.TextField(
         blank=True,
         default='',

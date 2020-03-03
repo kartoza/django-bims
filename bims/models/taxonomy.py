@@ -110,22 +110,38 @@ class Taxonomy(DocumentLinksMixin):
     )
 
     gbif_data = JSONField(
+        verbose_name='Json data from gbif',
         null=True,
         blank=True
     )
 
-    def save(self, *args, **kwargs):
+    additional_data = JSONField(
+        verbose_name='Additional json data',
+        null=True,
+        blank=True
+    )
+
+    def save_json_data(self, json_field):
         max_allowed = 10
         attempt = 0
         is_dictionary = False
+        json_data = {}
+        if not json_field:
+            return json_data
         while not is_dictionary and attempt < max_allowed:
-            if not self.gbif_data:
+            if not json_field:
                 break
-            if isinstance(self.gbif_data, dict):
+            if isinstance(json_field, dict):
                 is_dictionary = True
+                json_data = json_field
             else:
-                self.gbif_data = json.loads(self.gbif_data)
+                json_data = json.loads(json_field)
                 attempt += 1
+        return json_data
+
+    def save(self, *args, **kwargs):
+        self.gbif_data = self.save_json_data(self.gbif_data)
+        self.additional_data = self.save_json_data(self.additional_data)
         super(Taxonomy, self).save(*args, **kwargs)
 
     # noinspection PyClassicStyleClass
@@ -213,6 +229,9 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
         generate_permission(instance.scientific_name)
 
     if instance.is_species and not instance.iucn_status:
+        print('Fetch IUCN Status - {}'.format(
+            instance.scientific_name
+        ))
         iucn_status = get_iucn_status(
             species_name=instance.scientific_name
         )

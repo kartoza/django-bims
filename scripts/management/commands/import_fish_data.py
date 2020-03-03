@@ -157,6 +157,14 @@ class Command(BaseCommand):
         else:
             self.warnings.append(error_message)
 
+    def import_additional_data(self, collection_record, record):
+        """
+        Override this to import additional data to collection_record.
+        :param collection_record: BiologicalCollectionRecord object
+        :param record: csv record
+        """
+        pass
+
     def parse_date(self, date_string):
         # Parse date string to date object
         # Raise value error if date string is not in a valid format
@@ -769,6 +777,12 @@ class Command(BaseCommand):
                         collection_record.taxonomy.vernacular_names.clear()
                         collection_record.taxonomy.vernacular_names.add(
                             vernacular_name)
+
+                    # Import more additional data
+                    self.import_additional_data(
+                        collection_record,
+                        record
+                    )
 
                 except KeyError as e:
                     self.add_to_error_summary(
