@@ -74,7 +74,8 @@ from bims.models import (
     Chem,
     LocationContextGroup,
     LocationContextFilterGroupOrder,
-    LocationContextFilter
+    LocationContextFilter,
+    AlgaeData
 )
 
 from bims.conf import TRACK_PAGEVIEWS
@@ -781,6 +782,25 @@ class SurveyDataValueAdmin(admin.ModelAdmin):
     )
 
 
+class AlgaeDataAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'biological_collection_record',
+    )
+    list_display = (
+        'biological_collection_record',
+        'curation_process',
+        'indicator_chl_a',
+        'chl_a',
+        'indicator_asdm',
+        'asdm',
+        'ai'
+    )
+    list_filter = (
+        'indicator_chl_a',
+        'indicator_asdm'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -841,6 +861,8 @@ admin.site.unregister(UploadFile)
 # Rerender geonode document admin
 admin.site.unregister(Document)
 admin.site.register(Document, BimsDocumentAdmin)
+
+admin.site.register(AlgaeData, AlgaeDataAdmin)
 
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)

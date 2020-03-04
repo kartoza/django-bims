@@ -22,6 +22,12 @@ class Survey(AbstractValidation):
         default=timezone.now
     )
 
+    embeddedness = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
     @property
     def data_name(self):
         if not self.site:
