@@ -17,7 +17,6 @@ IN_SA = 'In SA'
 COMMENTS = 'Comments'
 DIVISION = 'Division'
 GROWTH_FORM = 'Growth Form'
-SUB_SPECIES = 'SubSpecies'
 
 
 class Command(CsvCommand):
@@ -33,7 +32,7 @@ class Command(CsvCommand):
 
     def csv_file_name(self, options):
         self.import_date = options.get('import_date', None)
-        return 'Algae Master Species List_FINAL.csv'
+        return 'SA Algal Master List FBISv3_3 Mar 2020.csv'
 
     @property
     def csv_root_folder(self):
@@ -90,9 +89,7 @@ class Command(CsvCommand):
             try:
                 print('---------')
                 # Get rank
-                if row[SUB_SPECIES]:
-                    rank = SUB_SPECIES
-                elif row[SPECIES]:
+                if row[SPECIES]:
                     rank = SPECIES
                 elif row[GENUS]:
                     rank = GENUS
