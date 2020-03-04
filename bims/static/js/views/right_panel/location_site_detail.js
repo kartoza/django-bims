@@ -433,19 +433,17 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 let $formRowContainer = $('<td>');
                 $formRowContainer.append($formButton);
                 $formRow.append($formRowContainer);
-                if (buttonName.toLowerCase() !== 'invertebrates' && buttonName.toLowerCase() !== 'fish') {
-                    $formButton.addClass('disabled');
-                } else {
-                    $formButton.click(function () {
-                        let url = '#';
-                        if (buttonName.toLowerCase() === 'fish') {
-                            url = '/fish-form/?siteId=' + self.siteId;
-                        } else if (buttonName.toLowerCase() === 'invertebrates') {
-                            url = '/invert-form/?siteId=' + self.siteId;
-                        }
-                        window.location = url;
-                    });
-                }
+                $formButton.click(function () {
+                    let url = '#';
+                    if (buttonName.toLowerCase() === 'fish') {
+                        url = '/fish-form/?siteId=' + self.siteId;
+                    } else if (buttonName.toLowerCase() === 'invertebrates') {
+                        url = '/invert-form/?siteId=' + self.siteId;
+                    } else if (buttonName.toLowerCase() === 'algae') {
+                        url = '/algae-form/?siteId=' + self.siteId;
+                    }
+                    window.location = url;
+                });
 
                 let $originColumn = $('<td class="overview-data"></td>');
                 let $originCanvas = $('<canvas class="overview-chart"></canvas>');

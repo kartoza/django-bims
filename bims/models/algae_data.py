@@ -28,23 +28,11 @@ class AlgaeData(models.Model):
         verbose_name='Biomass Indicator: Chl A'
     )
 
-    chl_a = models.FloatField(
-        null=True,
-        blank=True,
-        verbose_name='Chlorophyll a: benthic'
-    )
-
-    indicator_asdm = models.CharField(
+    indicator_afdm = models.CharField(
         max_length=100,
         blank=True,
         default='',
         verbose_name='Biomass Indicator: Ash Free Dry Mass'
-    )
-
-    asdm = models.FloatField(
-        null=True,
-        blank=True,
-        verbose_name='Ash Free Dry Mass'
     )
 
     ai = models.FloatField(

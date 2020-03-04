@@ -47,7 +47,6 @@ class TaxonDetail(APIView):
         data = serializer.data
 
         records = BiologicalCollectionRecord.objects.filter(
-            validated=True,
             taxonomy=taxon
         )
 

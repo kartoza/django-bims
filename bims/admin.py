@@ -790,14 +790,12 @@ class AlgaeDataAdmin(admin.ModelAdmin):
         'biological_collection_record',
         'curation_process',
         'indicator_chl_a',
-        'chl_a',
-        'indicator_asdm',
-        'asdm',
+        'indicator_afdm',
         'ai'
     )
     list_filter = (
         'indicator_chl_a',
-        'indicator_asdm'
+        'indicator_afdm'
     )
 
 

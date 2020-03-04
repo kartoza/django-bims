@@ -53,8 +53,16 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
                 for chemical_record in self.chemical_records:
                     context['chemical_records'].append({
                         'id': chemical_record.chem.id,
-                        'description': chemical_record.chem.chem_description,
-                        'unit': ChemUnit[chemical_record.chem.chem_unit].value,
+                        'description': (
+                            chemical_record.chem.chem_description
+                            if chemical_record.chem.chem_description else
+                            chemical_record.chem.chem_code
+                        ),
+                        'unit': (
+                            ChemUnit[chemical_record.chem.chem_unit].value
+                            if chemical_record.chem.chem_unit else
+                            '-'
+                        ),
                         'max': chemical_record.chem.maximum,
                         'min': chemical_record.chem.minimum,
                         'value': chemical_record.value

@@ -86,6 +86,8 @@ NO3_NO2_N = 'NO3+NO2-N'
 NO2_N = 'NO2-N'
 NO3_N = 'NO3-N'
 TIN = 'TIN'
+AFDM = 'AFDM'
+CHLA_B = 'CHLA-B'
 
 DEPTH_M = 'Depth'
 NBV = 'Near Bed Velocity'
@@ -504,7 +506,9 @@ class Command(BaseCommand):
             NO3_NO2_N: NO3_NO2_N,
             NO2_N: NO2_N,
             NO3_N: NO3_N,
-            TIN: TIN
+            TIN: TIN,
+            CHLA_B: CHLA_B,
+            AFDM: AFDM
         }
 
         for chem_key in chemical_units:
