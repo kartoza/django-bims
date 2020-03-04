@@ -3,25 +3,16 @@ from django.utils.text import slugify
 from django.db.models import Q
 
 
-def get_user(user_name):
+def get_user_from_name(first_name, last_name):
     """
-    Get or create User object from username
-    :param user_name: string of username
+    Get or create a User from first name and last name
+    :param first_name: first name of the user
+    :param last_name: last name of the user
     :return: User object
     """
-    User = get_user_model()
-    user_name = user_name.strip()
-    if user_name == '':
+    if not first_name:
         return None
-    if user_name[len(user_name) - 1] != '.':
-        user_name += '.'
-    user_name_split = user_name.split(',')
-    if len(user_name_split) > 1:
-        first_name = user_name_split[1][0:30]
-        last_name = user_name_split[0][0:30]
-    else:
-        first_name = user_name_split[0][0:30]
-        last_name = ''
+    User = get_user_model()
     try:
         user = User.objects.get(
             Q(last_name__iexact=last_name),
@@ -36,11 +27,31 @@ def get_user(user_name):
         user, created = User.objects.get_or_create(
             username=username
         )
-        if created:
-            user.last_name = last_name[0:30]
-            user.first_name = first_name[0:30]
-            user.save()
+    user.last_name = last_name[0:30]
+    user.first_name = first_name[0:30]
+    user.save()
     return user
+
+
+def get_user(user_name):
+    """
+    Get or create User object from username
+    :param user_name: string of username
+    :return: User object
+    """
+    user_name = user_name.split(' ')
+    if len(user_name) > 1:
+        last_name = user_name[len(user_name) - 1]
+        first_name = ' '.join(user_name[0:len(user_name) - 1])
+    else:
+        first_name = user_name[0]
+        last_name = ''
+    first_name = first_name[0:30]
+    last_name = last_name[0:30]
+    return get_user_from_name(
+        first_name,
+        last_name
+    )
 
 
 def create_users_from_string(user_string):
@@ -53,7 +64,7 @@ def create_users_from_string(user_string):
     """
     list_user = []
     and_username = ''
-    for user_split_1 in user_string.split('.,'):
+    for user_split_1 in user_string.split(','):
         for user_name in user_split_1.split('and'):
             if '&' in user_name:
                 and_username = user_name

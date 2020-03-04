@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
 import requests
 import os
 import csv
@@ -12,7 +11,6 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q, signals
-from django.utils.text import slugify
 
 from bims.utils.logger import log
 from bims.models import (
@@ -33,24 +31,26 @@ from bims.models import (
     BIOTOPE_TYPE_SUBSTRATUM,
     location_site_post_save_handler,
     collection_post_save_handler,
-    SourceReferenceBibliography
+    SourceReferenceBibliography,
+    Survey,
+    SurveyData,
+    SurveyDataOption,
+    SurveyDataValue
 )
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
-from bims.utils.gbif import (
-    update_collection_record,
-    search_taxon_identifier
-)
+from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.utils.user import create_users_from_string
 from geonode.documents.models import Document
+from bims.models.taxonomy import taxonomy_pre_save_handler
 
 SPECIES_NAME = 'Taxon'
 TAXON_RANK = 'Taxon rank'
 LATITUDE = 'Latitude'
 LONGITUDE = 'Longitude'
-LOCATION_SITE = 'River'
+LOCATION_SITE = 'Original River Name'
 ORIGINAL_SITE_CODE = 'Original Site Code'
-ORIGINAL_RIVER_NAME = 'Original river name'
+ORIGINAL_RIVER_NAME = 'Original River Name'
 FBIS_SITE_CODE = 'FBIS Site Code'
 SITE_DESCRIPTION = 'Site description'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
@@ -61,8 +61,8 @@ HABITAT = 'Habitat'
 SAMPLING_METHOD = 'Sampling method'
 SAMPLING_EFFORT = 'Sampling effort'
 SAMPLING_EFFORT_VALUE = 'Sampling effort value'
-ABUNDANCE_MEASURE = 'Abundance measure'
-ABUNDANCE_VALUE = 'Abundance value'
+ABUNDANCE_MEASURE = 'Abundance Measure'
+ABUNDANCE_VALUE = 'Abundance Value'
 CATCH_NUMBER = 'Catch/number'
 CATCH_PER_UNIT = 'Catch Per Unit Effort (CPUE)'
 # HYDRAULIC_BIOTOPE = 'Hydraulic biotope'
@@ -71,17 +71,26 @@ SPECIFIC_BIOTOPE = 'Specific biotope'
 SUBSTRATUM = 'Substratum'
 
 # Chemical records
-CONDUCTIVITY = 'Conductivity (mS m-1)'
-PH = 'pH'
-DISSOLVED_OXYGEN_PERCENT = 'Dissolved Oxygen (%)'
-DISSOLVED_OXYGEN_MG = 'Dissolved Oxygen (mg/L)'
-TEMP = 'Temperature (deg C)'
-TURBIDITY = 'Turbidity (NTU)'
+TEMP = 'TEMP'
+CONDUCTIVITY = 'COND'
+PH = 'PH'
+DISSOLVED_OXYGEN_PERCENT = 'DOPER'
+DISSOLVED_OXYGEN_MG = 'DO'
+TURBIDITY = 'TURBIDITY'
+ORTHOPHOSPHATE = 'SRP'
+TOT = 'TOT-P'
+SILICA = 'SI'
+NH4_N = 'NH4-N'
+NH3_N = 'NH3-N'
+NO3_NO2_N = 'NO3+NO2-N'
+NO2_N = 'NO2-N'
+NO3_N = 'NO3-N'
+TIN = 'TIN'
 
-DEPTH_M = 'Depth (m)'
-NBV = 'Near Bed Velocity (m/s)'
+DEPTH_M = 'Depth'
+NBV = 'Near Bed Velocity'
 COLLECTOR_OR_OWNER = 'Collector/Owner'
-CUSTODIAN = 'Institute'
+CUSTODIAN = 'Collector/Owner Institute'
 NUMBER_OF_REPLICATES = 'Number of replicates'
 SAMPLING_DATE = 'Sampling Date'
 UUID = 'UUID'
@@ -98,9 +107,11 @@ SOURCE_YEAR = 'Year'
 SOURCE = 'Source'
 PRESENT = 'Present'
 COMMON_NAME = 'Common Name'
+
+# Abiotic categorical values
 WATER_LEVEL = 'Water Level'
 WATER_TURBIDITY = 'Water Turbidity'
-
+EMBEDDEDNESS = 'Embeddedness'
 
 
 class Command(BaseCommand):
@@ -114,6 +125,7 @@ class Command(BaseCommand):
     data_duplicated = 0
     errors = []
     warnings = []
+    survey = None
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -188,6 +200,10 @@ class Command(BaseCommand):
         signals.post_save.disconnect(
             location_site_post_save_handler,
             sender=LocationSite
+        )
+        signals.pre_save.disconnect(
+            taxonomy_pre_save_handler,
+            sender=Taxonomy
         )
 
     def reconnect_signals(self):
@@ -384,20 +400,37 @@ class Command(BaseCommand):
         # Find existing taxonomy
         taxa = Taxonomy.objects.filter(
             Q(scientific_name__icontains=record[SPECIES_NAME]) |
-            Q(canonical_name__icontains=record[SPECIES_NAME])
+            Q(canonical_name__icontains=record[SPECIES_NAME]),
+            rank=record[TAXON_RANK].upper()
         )
         if taxa.exists():
             # if exist, use the first one
             taxonomy = taxa[0]
         else:
             # if not exist, search from gbif
-            taxonomy = search_taxon_identifier(record[SPECIES_NAME])
+            # Fetch from gbif
+            taxonomy = fetch_all_species_from_gbif(
+                species=record[SPECIES_NAME],
+                taxonomic_rank=record[TAXON_RANK].upper(),
+                should_get_children=False,
+                fetch_vernacular_names=False,
+                use_name_lookup=False
+            )
+            if not taxonomy:
+                # Try again with lookup
+                taxonomy = fetch_all_species_from_gbif(
+                    species=record[SPECIES_NAME],
+                    taxonomic_rank=record[TAXON_RANK].upper(),
+                    should_get_children=False,
+                    fetch_vernacular_names=False,
+                    use_name_lookup=True
+                )
             if not taxonomy:
                 # if there is no record from gbif, create one
                 taxonomy = Taxonomy.objects.create(
                     scientific_name=record[SPECIES_NAME],
                     canonical_name=record[SPECIES_NAME],
-                    rank=record[TAXON_RANK]
+                    rank=record[TAXON_RANK].upper()
                 )
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
@@ -455,42 +488,46 @@ class Command(BaseCommand):
 
     def chemical_records(self, record, location_site, date):
         chemical_units = {
-            TEMP: 'temperature',
-            CONDUCTIVITY: 'conductivity',
-            PH: 'ph',
-            DISSOLVED_OXYGEN_MG: 'dissolved oxygen',
-            DISSOLVED_OXYGEN_PERCENT: (
-                'dissolved oxygen: % saturation of '
-                'oxygen dissolved in the water'
-            ),
-            TURBIDITY: 'turbidity (ntu scale)',
-            DEPTH_M: 'depth (m)',
-            NBV: 'near bed velocity (m/s)'
+            TEMP: TEMP,
+            CONDUCTIVITY: CONDUCTIVITY,
+            PH: PH,
+            DISSOLVED_OXYGEN_MG: DISSOLVED_OXYGEN_MG,
+            DISSOLVED_OXYGEN_PERCENT: DISSOLVED_OXYGEN_PERCENT,
+            TURBIDITY: TURBIDITY,
+            DEPTH_M: DEPTH_M,
+            NBV: NBV,
+            ORTHOPHOSPHATE: ORTHOPHOSPHATE,
+            TOT: TOT,
+            SILICA: SILICA,
+            NH3_N: NH3_N,
+            NH4_N: NH4_N,
+            NO3_NO2_N: NO3_NO2_N,
+            NO2_N: NO2_N,
+            NO3_N: NO3_N,
+            TIN: TIN
         }
 
         for chem_key in chemical_units:
-            if not record[chem_key]:
+            chem_value = record[chem_key].strip()
+            if not chem_value:
                 continue
             chem = Chem.objects.filter(
-                chem_description__iexact=chemical_units[chem_key]
+                chem_code__iexact=chemical_units[chem_key]
             )
             if chem.exists():
                 chem = chem[0]
             else:
-                chem_unit = chem_key[chem_key.find('(')+1:chem_key.find(')')]
-                chem_name = chem_key[0:chem_key.find('(')].strip()
-                chem_description = chem_name
                 chem = Chem.objects.create(
-                    chem_code=chem_name,
-                    chem_description=chem_description,
-                    chem_unit=chem_unit
+                    chem_code=chemical_units[chem_key],
                 )
-            ChemicalRecord.objects.get_or_create(
+            chem_record, _ = ChemicalRecord.objects.get_or_create(
                 date=date,
                 chem=chem,
-                value=record[chem_key],
-                location_site=location_site
+                location_site=location_site,
+                survey=self.survey
             )
+            chem_record.value = chem_value
+            chem_record.save()
 
     def handle(self, *args, **options):
         source_collection = options.get('source_collection')
@@ -533,22 +570,61 @@ class Command(BaseCommand):
                     log('Processing : %s' % record[SPECIES_NAME])
                     optional_records = {}
 
+                    if record[SAMPLING_DATE].lower() == 'unspecified':
+                        self.add_to_error_summary(
+                            'Unspecified date -> Next row',
+                            index
+                        )
+                        continue
+                    sampling_date = self.parse_date(
+                        record[SAMPLING_DATE]
+                    )
+
                     # -- Processing Taxonomy
                     taxonomy = self.taxonomy(record)
 
                     # -- Processing LocationSite
                     location_site = self.location_site(record)
 
+                    # -- Get or create a survey
+                    self.survey, _ = Survey.objects.get_or_create(
+                        site=location_site,
+                        date=sampling_date
+                    )
+                    all_survey_data = {
+                        WATER_LEVEL: 'Water level',
+                        WATER_TURBIDITY: 'Water turbidity',
+                        EMBEDDEDNESS: 'Embeddedness'
+                    }
+                    for survey_data_key in all_survey_data:
+                        if survey_data_key in record and record[survey_data_key]:
+                            survey_data, _ = SurveyData.objects.get_or_create(
+                                name=all_survey_data[survey_data_key]
+                            )
+                            survey_option = SurveyDataOption.objects.filter(
+                                option__iexact=record[survey_data_key].strip(),
+                                survey_data=survey_data
+                            )
+                            if not survey_option.exists():
+                                survey_option = SurveyDataOption.objects.create(
+                                    options=record[survey_data_key].strip(),
+                                    survey_data=survey_data
+                                )
+                            else:
+                                survey_option = survey_option[0]
+                            if survey_option:
+                                SurveyDataValue.objects.get_or_create(
+                                    survey=self.survey,
+                                    survey_data=survey_data,
+                                    survey_data_option=survey_option,
+                                )
+
                     # -- Processing source reference
                     optional_records['source_reference'] = (
                         self.source_reference(record, index)
                     )
 
-                    # Custodian field
-                    if CUSTODIAN in record:
-                        optional_records['institution_id'] = (
-                            record[CUSTODIAN]
-                        )
+                    # Custodian field)
                     if PRESENT in record:
                         optional_records['present'] = bool(record[PRESENT])
                     category = ''
@@ -593,10 +669,10 @@ class Command(BaseCommand):
 
                     # Sampling effort
                     sampling_effort = ''
-                    if record[SAMPLING_EFFORT_VALUE]:
-                        sampling_effort += record[SAMPLING_EFFORT_VALUE]
+                    if SAMPLING_EFFORT_VALUE in record and record[SAMPLING_EFFORT_VALUE]:
+                        sampling_effort += record[SAMPLING_EFFORT_VALUE] + ' '
                     if record[SAMPLING_EFFORT]:
-                        sampling_effort += ' ' + record[SAMPLING_EFFORT]
+                        sampling_effort += record[SAMPLING_EFFORT]
                     optional_records['sampling_effort'] = sampling_effort
 
                     # -- Processing biotope
@@ -631,16 +707,6 @@ class Command(BaseCommand):
                         except ValueError:
                             pass
 
-                    if record[SAMPLING_DATE].lower() == 'unspecified':
-                        self.add_to_error_summary(
-                            'Unspecified date -> Next row',
-                            index
-                        )
-                        continue
-                    sampling_date = self.parse_date(
-                        record[SAMPLING_DATE]
-                    )
-
                     # -- Processing collectors
                     collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
                     optional_records['collector'] = record[COLLECTOR_OR_OWNER]
@@ -653,6 +719,9 @@ class Command(BaseCommand):
                         if not location_site.creator:
                             location_site.creator = collectors[0]
                         location_site.save()
+                        for collector in collectors:
+                            collector.organization = record[CUSTODIAN]
+                            collector.save()
 
                     # -- Processing chemical records
                     self.chemical_records(

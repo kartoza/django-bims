@@ -43,3 +43,4 @@ from bims.models.chem import *  # noqa
 from bims.models.location_context_filter import *  # noqa
 from bims.models.location_context_filter_group_order import *  # noqa
 from bims.models.location_context_group import *  # noqa
+from bims.models.algae_data import *  # noqa
