@@ -18,3 +18,4 @@ class ChemUnit(Enum):
     OC = 'degrees C'
     APHA_UNITS = 'APHA units'
     MG_S = 'mg/s'
+    MG_M2 = 'mg/m2'
