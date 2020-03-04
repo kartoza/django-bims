@@ -800,6 +800,7 @@ class AlgaeDataAdmin(admin.ModelAdmin):
         'indicator_asdm'
     )
 
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
