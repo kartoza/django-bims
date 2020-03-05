@@ -784,10 +784,10 @@ class SurveyDataValueAdmin(admin.ModelAdmin):
 
 class AlgaeDataAdmin(admin.ModelAdmin):
     raw_id_fields = (
-        'biological_collection_record',
+        'survey',
     )
     list_display = (
-        'biological_collection_record',
+        'survey',
         'curation_process',
         'indicator_chl_a',
         'indicator_afdm',

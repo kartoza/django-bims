@@ -8,10 +8,10 @@ from django.db import models
 
 class AlgaeData(models.Model):
 
-    biological_collection_record = models.ForeignKey(
-        'bims.BiologicalCollectionRecord',
-        null=False,
-        blank=False,
+    survey = models.ForeignKey(
+        'bims.Survey',
+        null=True,
+        blank=True,
         related_name='algae_data'
     )
 

@@ -276,6 +276,14 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {# ------ ALGAE BIOMASS FORM ------- #}
+            {% if taxon_group_name == 'Algae' %}
+                {% include 'collections_form_layouts/algae_biomass.html' %}
+            {% endif %}
+
+            <div class="form-group rowa">
                 <div class="add-taxon-container">
                     <button id="add-taxon" type="button" class="btn btn-info">
                         Add taxon

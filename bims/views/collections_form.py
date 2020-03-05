@@ -24,10 +24,12 @@ from bims.models import (
     BIOTOPE_TYPE_SPECIFIC,
     BIOTOPE_TYPE_BROAD,
     BIOTOPE_TYPE_SUBSTRATUM,
-    Survey
+    Survey,
+    Chem, ChemicalRecord
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
+from bims.models.algae_data import AlgaeData
 
 logger = logging.getLogger('bims')
 
@@ -46,6 +48,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     location_site = None
     session_identifier = 'collection-form'
     taxon_group_name = ''
+    survey = None
 
     def all_species(self, species_parents):
         """
@@ -103,13 +106,39 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             )
         return taxa_list
 
-    def create_survey(self, collection_date, owner):
-        """Create a site survey"""
-        return Survey.objects.create(
+    def create_or_get_survey(self, collection_date, owner):
+        """Create or get a site survey"""
+        surveys = Survey.objects.filter(
             owner=owner,
             date=collection_date,
+            collector_user=self.request.user,
             site=self.location_site
         )
+        if surveys.exists():
+            survey = surveys[0]
+            if surveys.count() > 1:
+                # Merge survey
+                ChemicalRecord.objects.filter(
+                    survey__in=surveys).update(
+                    survey=survey
+                )
+                BiologicalCollectionRecord.objects.filter(
+                    survey__in=surveys).update(
+                    survey=survey
+                )
+                AlgaeData.objects.filter(
+                    survey__in=surveys).update(
+                    survey=survey
+                )
+                surveys.exclude(id=survey.id).delete()
+        else:
+            survey = Survey.objects.create(
+                owner=owner,
+                date=collection_date,
+                site=self.location_site,
+                collector_user=self.request.user
+            )
+        return survey
 
     def get_context_data(self, **kwargs):
         context = super(CollectionFormView, self).get_context_data(**kwargs)
@@ -194,6 +223,13 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             raise Http404()
 
         return super(CollectionFormView, self).get(request, *args, **kwargs)
+
+    def extra_post(self, post):
+        """
+        Override this method to process the POST request.
+        :param post: POST request
+        """
+        return
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -284,6 +320,9 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         taxa_id_list = post_data.get('taxa-id-list', '').split(',')
         taxa_id_list = filter(None, taxa_id_list)
 
+        # Create a survey
+        self.survey = self.create_or_get_survey(collection_date, owner)
+
         collection_record_ids = []
         for taxon in taxa_id_list:
             observed_key = '{}-observed'.format(taxon)
@@ -314,7 +353,8 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                             reference=reference,
                             reference_category=reference_category,
                             sampling_effort=sampling_effort,
-                            abundance_type=abundance_type
+                            abundance_type=abundance_type,
+                            survey=self.survey
                         )
                     )
                     collection_record_ids.append(collection_record.id)
@@ -343,12 +383,13 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         )
 
         # Create a survey
-        survey = self.create_survey(collection_date, owner)
         abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
             base_url=reverse('abiotic-form'),
-            survey_id=survey.id,
+            survey_id=self.survey.id,
             next=source_reference_url
         )
+
+        self.extra_post(request.POST)
 
         return HttpResponseRedirect(abiotic_url)
 
@@ -366,3 +407,56 @@ class InvertFormView(CollectionFormView):
 class AlgaeFormView(CollectionFormView):
     session_identifier = 'algae-form'
     taxon_group_name = 'Algae'
+
+    def extra_post(self, post):
+        """
+        Override this method to process the POST request.
+        :param post: POST request
+        """
+        curation_process = post.get('curation_process', None)
+        indicator_chl_a = post.get('indicator_chl_a', None)
+        indicator_afdm = post.get('indicator_afdm', None)
+        ai = post.get('ai', '')
+        if not ai:
+            ai = None
+        algae_data = AlgaeData.objects.filter(
+            survey=self.survey
+        )
+        if algae_data.exists():
+            if algae_data.count() > 1:
+                algae_data.exclude(id=algae_data[0].id).delete()
+        else:
+            AlgaeData.objects.create(survey=self.survey)
+            algae_data = AlgaeData.objects.filter(survey=self.survey)
+        algae_data.update(
+            curation_process=curation_process,
+            indicator_afdm=indicator_afdm,
+            indicator_chl_a=indicator_chl_a,
+            ai=ai
+        )
+
+        # -- Biomass chemical records
+        chem_units = {}
+        chl_a = post.get('chl_a', None)
+        if chl_a:
+            chem_units['CHLA-B'] = chl_a
+        afdm = post.get('afdm', None)
+        if afdm:
+            chem_units['AFDM'] = afdm
+        for chem_unit in chem_units:
+            chem = Chem.objects.filter(
+                chem_code__iexact=chem_unit
+            )
+            if chem.exists():
+                chem = chem[0]
+            else:
+                chem = Chem.objects.create(
+                    chem_code=chem_unit
+                )
+            chem_record, _ = ChemicalRecord.objects.get_or_create(
+                date=self.survey.date,
+                chem=chem,
+                location_site=self.survey.site,
+                survey=self.survey,
+                value=chem_units[chem_unit]
+            )

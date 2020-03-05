@@ -22,6 +22,21 @@ class AbstractValidation(models.Model):
         blank=True,
         null=True,
     )
+    collector_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        help_text='The user object of the actual capturer/collector '
+                  'of this data',
+        null=True,
+        blank=True,
+        related_name='%(class)s_collector_user'
+    )
+    analyst = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        help_text='The person that did the analysis',
+        null=True,
+        blank=True,
+        related_name='%(class)s_analyst'
+    )
 
     validated = models.BooleanField(
         default=False

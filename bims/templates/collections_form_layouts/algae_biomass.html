@@ -1,0 +1,60 @@
+
+<h5 style="font-weight: bolder">Biomass</h5>
+<table class="table table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Indicators</th>
+        <th scope="col">Sampling location</th>
+        <th scope="col">Measurement (mg/m2)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row" style="vertical-align: middle">Chl A</th>
+        <td>
+            <select class="form-control"
+                    name="indicator_chl_a">
+                <option value=""> Not specified
+                </option>
+                <option value="Whole stone">
+                    Whole stone
+                </option>
+                <option value="Soft bottom">
+                    Soft bottom
+                </option>
+                <option value="In situ">
+                     In site
+                </option>
+            </select>
+        </td>
+        <td>
+             <input type="number" min="0" class="form-control" name="chl_a"/>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row" style="vertical-align: middle">AFDM</th>
+        <td>
+            <select class="form-control"
+                    name="indicator_afdm">
+                <option value=""> Not specified
+                </option>
+                <option value="Whole stone">
+                    Whole stone
+                </option>
+                <option value="Soft bottom">
+                    Soft bottom
+                </option>
+            </select>
+        </td>
+        <td>
+            <input type="number" min="0" class="form-control" name="afdm"/>
+        </td>
+    </tr>
+    <tr>
+        <th colspan="2" scope="row" style="vertical-align: middle">Autotrophic Index (AI)</th>
+        <td >
+             <input type="number" min="0" class="form-control taxon-abundance" name="ai"/>
+        </td>
+    </tr>
+    </tbody>
+</table>
