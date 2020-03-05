@@ -38,6 +38,7 @@ define([
         siteLayerVector: null,
         siteId: null,
         currentFiltersUrl: '',
+        chartConfigs: [],
         categoryColor: {
             'Native': '#a13447',
             'Non-Native': '#00a99d',
@@ -464,8 +465,19 @@ define([
             }
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
+            let chartDownloaded = 0;
 
-            let title = button.data('title');
+            let titles = button.data('title').split(',');
+            let chartNames = button.data('chart').split(',');
+            for (let i=0; i<chartNames.length; i++) {
+                if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
+                    svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
+                    chartDownloaded += 1;
+                }
+            }
+            if (chartDownloaded === chartNames.length) {
+                return;
+            }
             if (!title) {
                 title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
             }
@@ -612,6 +624,7 @@ define([
             };
             chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
+            this.chartConfigs[chartName] = chartConfig;
             return new ChartJs(ctx, chartConfig);
         },
         fetchChartData: function (chartContainer, baseUrl, callback) {
@@ -987,7 +1000,7 @@ define([
                 '#18A090',
                 '#A2CE89',
                 '#4E6440',
-                '#525351']
+                '#525351'];
             var chartConfig = {
                 type: 'pie',
                 data: {
@@ -1009,12 +1022,13 @@ define([
             chartCanvas = this.resetCanvas(chartCanvas);
             var ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
+            this.chartConfigs[chartName + '_pie'] = chartConfig;
 
             // Render chart labels
             var dataKeys = data[speciesType][chartName + '_chart']['keys'];
             var dataLength = dataKeys.length;
             var chart_labels = {};
-            chart_labels[chartName] = ''
+            chart_labels[chartName] = '';
             for (var i = 0; i < dataLength; i++) {
                 chart_labels[chartName] += '<div><span style="color:' +
                     backgroundColours[i] + ';">■</span>' +
@@ -1055,7 +1069,6 @@ define([
             let ulDiv = $('#metadata-table-list');
             ulDiv.html(' ');
             let dataSources = data['source_references'];
-            console.log(dataSources);
             let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
             let hiddenKeys = ['is_doc']; // Don't show this key in table
             let orderedDataSources = [];
