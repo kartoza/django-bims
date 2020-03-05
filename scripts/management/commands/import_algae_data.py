@@ -9,9 +9,7 @@ ANALYST = 'Analyst'
 ANALYST_INSTITUTE = 'Analyst Institute'
 CURATION_PROCESS = 'Curation process'
 INDICATOR_CHL_A = 'Biomass Indicator: Chl A'
-CHL_A = 'Chlorophyll a: benthic'
 INDICATOR_AFDM = 'Biomass Indicator: AFDM'
-AFDM = 'AFDM'
 AI = 'Autotrophic Index (AI)'
 
 
@@ -30,11 +28,7 @@ class Command(FishCommand):
         )
         algae_data.curation_process = record[CURATION_PROCESS]
         algae_data.indicator_chl_a = record[INDICATOR_CHL_A]
-        if record[CHL_A]:
-            algae_data.chl_a = record[CHL_A]
-        algae_data.indicator_asdm = record[INDICATOR_AFDM]
-        if record[AFDM]:
-            algae_data.asdm = record[AFDM]
+        algae_data.indicator_afdm = record[INDICATOR_AFDM]
         if record[AI]:
             algae_data.ai = record[AI]
         algae_data.save()

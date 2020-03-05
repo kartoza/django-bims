@@ -228,6 +228,9 @@
                                 <option value="min"> Time (min)</option>
                                 <option value="square_metre"> Area (m&sup2;)
                                 </option>
+                                {% if taxon_group_name == 'Algae' %}
+                                    <option value="replicates"> Replicates </option>
+                                {% endif %}
                             </select>
                         </div>
                         <div class="col-8">
@@ -240,6 +243,26 @@
                     </div>
                 </div>
             </div>
+            {% if taxon_group_name == 'Algae' %}
+                <div class="form-group row">
+                    <label for="date"
+                           class="col-sm-2 col-form-label col-form-label">Curation
+                        Process</label>
+                    <div class="col-sm-10">
+                        <select class="form-control"
+                                name="curation_process">
+                            <option value=""> Not specified
+                            </option>
+                            <option value="Acid cleaned (diatoms)">
+                                Acid cleaned (diatoms)
+                            </option>
+                            <option value="Preserved lugols">
+                                Preserved lugols
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Site
@@ -253,6 +276,14 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {# ------ ALGAE BIOMASS FORM ------- #}
+            {% if taxon_group_name == 'Algae' %}
+                {% include 'collections_form_layouts/algae_biomass.html' %}
+            {% endif %}
+
+            <div class="form-group rowa">
                 <div class="add-taxon-container">
                     <button id="add-taxon" type="button" class="btn btn-info">
                         Add taxon

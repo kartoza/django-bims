@@ -4,6 +4,7 @@ from scripts.management.csv_command import CsvCommand
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.utils.logger import log
 from bims.utils.gbif import *
+from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
 
 logger = logging.getLogger('bims')
 
@@ -75,6 +76,18 @@ class Command(CsvCommand):
 
         # -- Import date
         data['Import Date'] = self.import_date
+
+        # -- Add Genus to Algae taxon group
+        taxon_group, _ = TaxonGroup.objects.get_or_create(
+            name='Algae',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+        )
+        if taxonomy.rank == 'SPECIES' and taxonomy.parent:
+            taxon_group.taxonomies.add(taxonomy.parent)
+        elif taxonomy.rank == 'SUBSPECIES' and taxonomy.parent and taxonomy.parent.parent:
+            taxon_group.taxonomies.add(taxonomy.parent.parent)
+        else:
+            taxon_group.taxonomies.add(taxonomy)
 
         taxonomy.additional_data = data
         taxonomy.save()
