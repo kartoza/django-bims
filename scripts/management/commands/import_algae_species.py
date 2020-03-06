@@ -1,10 +1,12 @@
 import os
 import logging
+from django.db.models import signals
 from scripts.management.csv_command import CsvCommand
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.utils.logger import log
 from bims.utils.gbif import *
 from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
+from bims.models.taxonomy import taxonomy_pre_save_handler
 
 logger = logging.getLogger('bims')
 
@@ -14,8 +16,6 @@ SPECIES = 'Species'
 GENUS = 'Genus'
 FAMILY = 'Family'
 ORDER = 'Order'
-IN_SA = 'In SA'
-COMMENTS = 'Comments'
 DIVISION = 'Division'
 GROWTH_FORM = 'Growth Form'
 
@@ -66,14 +66,6 @@ class Command(CsvCommand):
         if GROWTH_FORM in row:
             data[GROWTH_FORM] = row[GROWTH_FORM]
 
-        # -- Comments
-        if COMMENTS in row:
-            data[COMMENTS] = row[COMMENTS]
-
-        # -- In SA
-        if IN_SA in row:
-            data[IN_SA] = row[IN_SA]
-
         # -- Import date
         data['Import Date'] = self.import_date
 
@@ -93,6 +85,10 @@ class Command(CsvCommand):
         taxonomy.save()
 
     def csv_dict_reader(self, csv_reader):
+        signals.pre_save.disconnect(
+            taxonomy_pre_save_handler,
+            sender=Taxonomy
+        )
         errors = []
         success = []
 
@@ -109,14 +105,26 @@ class Command(CsvCommand):
                 else:
                     rank = FAMILY
 
-                # Fetch from gbif
-                taxonomy = fetch_all_species_from_gbif(
-                    species=row[TAXON],
-                    taxonomic_rank=rank,
-                    should_get_children=False,
-                    fetch_vernacular_names=False,
-                    use_name_lookup=False
+                taxa = Taxonomy.objects.filter(
+                    canonical_name__iexact=row[TAXON],
+                    rank=rank.upper()
                 )
+                taxonomy = None
+                if taxa.exists():
+                    taxonomy = taxa[0]
+                    logger.debug('{} already exists in the system'.format(
+                        row[TAXON]
+                    ))
+
+                if not taxonomy:
+                    # Fetch from gbif
+                    taxonomy = fetch_all_species_from_gbif(
+                        species=row[TAXON],
+                        taxonomic_rank=rank,
+                        should_get_children=False,
+                        fetch_vernacular_names=False,
+                        use_name_lookup=False
+                    )
                 if taxonomy:
                     success.append(taxonomy.id)
                 else:
