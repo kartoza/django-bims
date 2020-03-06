@@ -1,5 +1,5 @@
 from scripts.management.commands.import_algae_species import Command as BaseCommand
-from bims.models import Endemism
+from bims.models import Endemism, TaxonGroup, TaxonomicGroupCategory
 
 
 ENDEMISM = 'Endemism'
@@ -33,7 +33,19 @@ class Command(BaseCommand):
 
         # -- Import date
         data['Import Date'] = self.import_date
-
         taxonomy.additional_data = data
 
+        # -- Add Genus to Algae taxon group
+        taxon_group, _ = TaxonGroup.objects.get_or_create(
+            name='Invertebrates',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+        )
+        if taxonomy.rank == 'SPECIES' and taxonomy.parent:
+            taxon_group.taxonomies.add(taxonomy.parent)
+        elif taxonomy.rank == 'SUBSPECIES' and taxonomy.parent and taxonomy.parent.parent:
+            taxon_group.taxonomies.add(taxonomy.parent.parent)
+        else:
+            taxon_group.taxonomies.add(taxonomy)
+
+        taxonomy.additional_data = data
         taxonomy.save()
