@@ -1217,7 +1217,6 @@
     }
 
     ctx.prototype.addEventListener =  function(type, listener, eventListenerOptions) {
-        console.log("canvas2svg.addEventListener() not implemented.")
     }
 
     //add options for alternative namespace

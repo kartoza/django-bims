@@ -14,6 +14,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         objectDataByYear: 'object_data_by_year',
         yearsArray: 'years_array',
         isOpen: false,
+        chartConfigs: {},
         events: {
             'click .close-dashboard': 'closeDashboard',
             'click #export-taxasite-map': 'exportTaxasiteMap',
@@ -249,17 +250,17 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 }
             };
 
-
             var objectDatasets = [{
                 data: recordsOverTimeData,
-                backgroundColor: 'rgba(222, 210, 65, 1)'
+                backgroundColor: 'rgba(222, 210, 65, 1)',
+                label: data['taxon']
             }];
-
             this.taxaRecordsTimelineGraphChart = self.createTimelineGraph(
                 self.taxaRecordsTimelineGraphCanvas,
                 recordsOverTimeLabels,
                 objectDatasets,
-                recordsOptions);
+                recordsOptions,
+                'taxon_occurrences');
             this.displayTaxonomyRank(data['taxonomy_rank']);
 
             if (!this.mapTaxaSite) {
@@ -337,6 +338,19 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let title = button.data('title');
+            let chartDownloaded = 0;
+            let titles = button.data('title').split(',');
+            let chartNames = button.data('chart').split(',');
+            for (let i=0; i<chartNames.length; i++) {
+                if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
+                    svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
+                    chartDownloaded += 1;
+                }
+            }
+            if (chartDownloaded === chartNames.length) {
+                return;
+            }
+
             if (!title) {
                 title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
             }
@@ -410,16 +424,17 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 Shared.Router.clearSearch();
             });
         },
-        createTimelineGraph: function (canvas, labels, dataset, options) {
-            var chart = new ChartJs(canvas, {
+        createTimelineGraph: function (canvas, labels, dataset, options, chartTitle = '') {
+            let chartConfig = {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: dataset
                 },
                 options: options
-            });
-
+            };
+            var chart = new ChartJs(canvas, chartConfig)
+            this.chartConfigs[chartTitle] = chartConfig;
 
             return chart;
         },

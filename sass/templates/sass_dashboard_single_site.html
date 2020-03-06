@@ -328,7 +328,7 @@
                             <i data-download-title="SASS charts"
                                data-download-chart="SASS-scores,number-of-taxa,ASPT"
                                data-toggle="tooltip" data-placement="left"
-                               title="Download charts"
+                               title="Download charts as svg which you can drag and drop to excel or word"
                                class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <canvas id="sass-score-chart"></canvas>
@@ -349,7 +349,7 @@
                             <i data-download-title="Proportion of sensitive to tolerant taxa"
                                data-download-chart="proportion-of-sensitive"
                                data-toggle="tooltip" data-placement="left"
-                               title="Download chart"
+                               title="Download chart as svg which you can drag and drop to excel or word"
                                class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <canvas id="sensitivity-chart"></canvas>
@@ -364,7 +364,7 @@
                             <i data-download-title="Biotope ratings"
                                data-download-chart="biotope-ratings"
                                data-toggle="tooltip" data-placement="left"
-                               title="Download chart"
+                               title="Download chart as svg which you can drag and drop to excel or word"
                                class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <canvas id="biotope-ratings-chart"></canvas>
@@ -375,7 +375,7 @@
                             <i data-download-title="Ecological category"
                                data-download-chart="ecological-category"
                                data-toggle="tooltip" data-placement="left"
-                               title="Download chart"
+                               title="Download chart as svg which you can drag and drop to excel or word"
                                class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <div class="ecological-chart-header">-</div>
@@ -391,7 +391,7 @@
                             <i data-download-title="Abiotic Data"
                                data-download-chart="chem-graph"
                                data-toggle="tooltip" data-placement="left"
-                               title="Download chart"
+                               title="Download chart as svg which you can drag and drop to excel or word"
                                class="fa fa-download pull-right download-icon download-chart-new"></i>
                         </div>
                         <div class="col-12 species-ssdd-chem-bar-chart" id="chem-bar-chart-wrapper">
@@ -487,6 +487,7 @@
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/libs/canvas2svg.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/utils/svg_download.js" %}"></script>
     <script src="{% static "js/sass_dashboard.js" %}"></script>
     <script src="{% static "js/sass_dashboard_close.js" %}"></script>
 

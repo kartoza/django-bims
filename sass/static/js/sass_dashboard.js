@@ -1,27 +1,6 @@
 let map = null;
-let svgCanvases = {};
-let chemSvgCanvases = {};
-
-function createFakeChart(key, chartConfig, displayLegend = true, additionalLegendConfiguration = null) {
-    // To convert the chart to svg;
-    chartConfig.options['animation'] = false;
-    chartConfig.options['responsive'] = false;
-    chartConfig.options['legend'] = {
-        'display': displayLegend
-    };
-    if (additionalLegendConfiguration) {
-        let legend = chartConfig.options['legend'];
-        for (let key in additionalLegendConfiguration) {
-            if (legend.hasOwnProperty(key)) {
-                legend[key] = Object.assign({}, legend[key], additionalLegendConfiguration[key]);
-            } else {
-                legend[key] = additionalLegendConfiguration[key];
-            }
-        }
-    }
-    svgCanvases[key] = C2S(600, 600);
-    new Chart(svgCanvases[key], chartConfig);
-}
+let chartConfigs = {};
+let listChemChartNames = [];
 
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
@@ -158,7 +137,7 @@ function renderSASSSummaryChart() {
         options: optionsFunction('SASS Scores')
     };
     new Chart($('#sass-score-chart'), chartConfig);
-    createFakeChart('SASS-scores', chartConfig, false);
+    chartConfigs['SASS-scores'] = chartConfig;
 
     chartConfig = {
         type: 'bar',
@@ -166,7 +145,7 @@ function renderSASSSummaryChart() {
         options: optionsFunction('Number of Taxa')
     };
     new Chart($('#taxa-numbers-chart'), chartConfig);
-    createFakeChart('number-of-taxa', chartConfig, false);
+    chartConfigs['number-of-taxa'] = chartConfig;
 
     chartConfig = {
         type: 'bar',
@@ -187,7 +166,7 @@ function renderSASSSummaryChart() {
         }
     };
     new Chart($('#aspt-chart'), chartConfig);
-    createFakeChart('ASPT', chartConfig, false);
+    chartConfigs['ASPT'] = chartConfig;
 }
 
 function renderSASSTaxonPerBiotope() {
@@ -356,7 +335,9 @@ function renderSensitivityChart() {
         options: options
     };
     new Chart($('#sensitivity-chart'), chartConfig);
-    createFakeChart('proportion-of-sensitive', chartConfig);
+    chartConfigs['proportion-of-sensitive'] = chartConfig;
+
+    // createFakeChart('proportion-of-sensitive', chartConfig);
     let latestIndex = dateLabels.length - 1;
     $('#sc-latest-sass-record').html('(<a href="/sass/view/' + sassIds[latestIndex] + '">' + dateLabels[latestIndex] + '</a>)');
 }
@@ -440,7 +421,7 @@ function renderBiotopeRatingsChart() {
         options: barOptions_stacked,
     };
     new Chart(ctx, chartConfig);
-    createFakeChart('biotope-ratings', chartConfig, true);
+    chartConfigs['biotope-ratings'] = chartConfig;
 }
 
 function hexToRgb(hex) {
@@ -635,14 +616,7 @@ function renderEcologicalCategoryChart() {
         options: options
     };
     new Chart(canvasChart, chartConfig);
-    createFakeChart('ecological-category', chartConfig, true, {
-        reverse: true,
-        labels: {
-            filter: function (item, chart) {
-                return !item.text.includes('hide');
-            }
-        }
-    });
+    chartConfigs['ecological-category'] = chartConfig;
 }
 
 function getCsvName(title, identifier) {
@@ -692,16 +666,11 @@ function onDownloadChartNewClicked(e) {
     } else {
         target.addClass('processing');
     }
-    let downloadedCharts = 0;
-    let chemGraph = false;
     let title = target.data('download-title');
     let charts = target.data('download-chart').split(',');
-    let canvases = svgCanvases;
     if (charts[0] === 'chem-graph') {
-        charts = Object.keys(chemSvgCanvases);
-        canvases = chemSvgCanvases;
+        charts = listChemChartNames;
         title = '';
-        chemGraph = true;
     } else {
         if (charts.length > 1) {
             title +=  ' - ';
@@ -715,62 +684,13 @@ function onDownloadChartNewClicked(e) {
     }
     for (let i=0; i < charts.length; i++) {
         let chart = charts[i];
-        let svg = canvases[chart].getSerializedSvg(true);
-        let width = canvases[chart].width;
-        let height = canvases[chart].height;
         let chartTitle = title;
         if (charts.length > 1) {
             chartTitle += chart.replace(/-/g, ' ').charAt(0).toUpperCase() + chart.replace(/-/g, ' ').slice(1);
         }
-        if (chemGraph) {
-            chartTitle = chartTitle.replace('/', ' per ');
-        }
-        $.ajax({
-            type: 'POST',
-            url: '/svg_to_pdf/',
-            data: {
-                'svg': svg,
-                'title': chartTitle,
-                'svgHeight': height,
-                'svgWidth': width,
-            },
-            success: function (response) {
-                let urls = response.split('/');
-                let link = document.createElement('a');
-                link.href = response;
-                link.download = urls[urls.length - 1];
-                link.dispatchEvent(new MouseEvent('click'));
-                downloadedCharts += 1;
-                if (downloadedCharts === i + 1) {
-                    $(e.target).removeClass('processing');
-                }
-            }
-        });
+        svgChartDownload(chartConfigs[chart], chartTitle);
+        $(e.target).removeClass('processing');
     }
-}
-
-function onDownloadChartClicked(e) {
-    let wrapper = $(this).parent().parent();
-    let button = $(this);
-    let title = $(this).data('download-title');
-    let $logo = $('.logo').clone();
-    button.hide();
-    $(wrapper).css({"padding-bottom": "55px"});
-    $(wrapper).append($logo.removeClass('hide-logo'));
-    let container = $(wrapper);
-    html2canvas(wrapper, {
-        scale: 1,
-        dpi: 144,
-        onrendered: function (canvas) {
-            $logo.remove();
-            container.css({"padding-bottom": "5px"});
-            button.show();
-            let link = document.createElement('a');
-            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-            link.download = title + '.png';
-            link.click();
-        }
-    })
 }
 
 function onDownloadMapClicked(e) {
@@ -1015,21 +935,8 @@ function renderChemGraph () {
         };
 
         new Chart(ctx, chartConfig);
-        options['animation'] = false;
-        options['responsive'] = false;
-        options['legend'] = {
-            'labels': {
-                'fontSize': 20,
-                'boxWidth': 20
-            },
-        };
-
-        chemSvgCanvases[yLabel] = C2S(600, 600);
-        new Chart(chemSvgCanvases[yLabel], {
-            type: 'bar',
-            data: _data,
-            options: options
-        });
+        chartConfigs[yLabel] = chartConfig;
+        listChemChartNames.push(yLabel);
     });
 }
 
@@ -1060,7 +967,6 @@ $(function () {
     });
 
     $('[data-toggle="tooltip"]').tooltip();
-    $('.download-chart').click(onDownloadChartClicked);
     $('.download-chart-new').click(onDownloadChartNewClicked);
     $('.download-map').click(onDownloadMapClicked);
     $('.download-chem-as-csv').click(onDownloadChemCSVClicked)

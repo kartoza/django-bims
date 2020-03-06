@@ -147,6 +147,9 @@
 
 {% block foot %}
     <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/canvas2svg.js" %}"></script>
+    <script src="{% static "js/utils/svg_download.js" %}"></script>
+
     {% grunt_module "map_view" %}
 
 {% endblock %}
