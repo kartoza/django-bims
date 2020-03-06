@@ -4,7 +4,9 @@ function svgChartDownload(chartConfig, title) {
     // Create c2s chart, download it
     chartConfig.options['animation'] = false;
     chartConfig.options['responsive'] = false;
-    chartConfig.options['legend'] = {display: true};
+    if (!chartConfig.options.hasOwnProperty('legend')) {
+        chartConfig.options['legend'] = {display: true};
+    }
     chartConfig.options['title'] = {
         display: true,
         text: title,
