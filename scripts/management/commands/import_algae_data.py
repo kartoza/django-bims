@@ -23,9 +23,15 @@ class Command(FishCommand):
         :param record: csv record
         """
         # -- Algae data
-        algae_data, _ = AlgaeData.objects.get_or_create(
-            biological_collection_record=collection_record
-        )
+        try:
+            algae_data, _ = AlgaeData.objects.get_or_create(
+                survey=self.survey
+            )
+        except AlgaeData.MultipleObjectsReturned:
+            algae_data = AlgaeData.objects.filter(
+                survey=self.survey
+            )[0]
+            print('Duplicated algae data')
         algae_data.curation_process = record[CURATION_PROCESS]
         algae_data.indicator_chl_a = record[INDICATOR_CHL_A]
         algae_data.indicator_afdm = record[INDICATOR_AFDM]
