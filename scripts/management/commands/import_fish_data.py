@@ -715,6 +715,12 @@ class Command(BaseCommand):
 
                     if record[ABUNDANCE_MEASURE]:
                         abundance_type = record[ABUNDANCE_MEASURE]
+                        if 'count' in abundance_type:
+                            abundance_type = 'number'
+                        elif 'density' in abundance_type:
+                            abundance_type = 'density'
+                        elif 'percentage' in abundance_type:
+                            abundance_type = 'percentage'
                     if record[ABUNDANCE_VALUE]:
                         try:
                             abundance_number = float(record[ABUNDANCE_VALUE])
@@ -829,14 +835,11 @@ class Command(BaseCommand):
                     collection_record.owner = superusers[0]
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
+                    collection_record.survey = self.survey
+                    for field in optional_records:
+                        setattr(
+                            collection_record, field, optional_records[field])
                     collection_record.save()
-
-                    # update multiple fields
-                    BiologicalCollectionRecord.objects.filter(
-                        id=collection_record.id
-                    ).update(
-                        **optional_records
-                    )
 
                     if not created:
                         self.data_updated += 1
