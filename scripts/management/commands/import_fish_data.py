@@ -480,12 +480,22 @@ class Command(BaseCommand):
         if (
                 record[biotope_record_type] and
                 record[biotope_record_type].lower() != 'unspecified'):
-            biotope, biotope_created = (
-                Biotope.objects.get_or_create(
+            try:
+                biotope, biotope_created = (
+                    Biotope.objects.get_or_create(
+                        biotope_type=biotope_type,
+                        name=record[biotope_record_type]
+                    )
+                )
+            except Biotope.MultipleObjectsReturned:
+                biotopes = Biotope.objects.filter(
                     biotope_type=biotope_type,
                     name=record[biotope_record_type]
                 )
-            )
+                if biotopes.filter(display_order__isnull=False).exists():
+                    biotope = biotopes.filter(display_order__isnull=False)[0]
+                else:
+                    biotope = biotopes[0]
         return biotope
 
     def chemical_records(self, record, location_site, date):
