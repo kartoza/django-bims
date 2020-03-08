@@ -54,7 +54,7 @@ class SassTaxon(AbstractAdditionalData):
     )
 
     def __unicode__(self):
-        return self.taxon.scientific_name
+        return self.taxon.canonical_name
 
     class Meta:
         verbose_name_plural = "SASS taxa"
