@@ -416,9 +416,8 @@ class BiologicalCollectionRecord(AbstractValidation):
         return False
 
     def __unicode__(self):
-        label = '{species} - {collector} - {date}'.format(
+        label = '{species} - {date}'.format(
             species=self.original_species_name,
-            collector=self.collector,
             date=self.collection_date
         )
         return label

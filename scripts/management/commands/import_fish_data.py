@@ -286,10 +286,13 @@ class Command(BaseCommand):
                         )
                     )
                     source_reference_found = True
-                except (DOILoaderError, requests.exceptions.HTTPError):
-                    log('{index} Error Fetching DOI : {doi}'.format(
-                        index=index,
-                        doi=doi))
+                except (DOILoaderError, requests.exceptions.HTTPError, Entry.DoesNotExist):
+                    self.add_to_error_summary(
+                        'Error Fetching DOI : {doi}'.format(
+                            doi=doi
+                        ),
+                        index
+                    )
 
         if not source_reference_found:
             if (
@@ -792,7 +795,6 @@ class Command(BaseCommand):
                             'collection_date': sampling_date,
                             'taxonomy': taxonomy,
                             'category': category,
-                            'collector': record[COLLECTOR],
                             'sampling_method': sampling_method,
                             'abundance_type': abundance_type,
                             'abundance_number': abundance_number
@@ -805,6 +807,7 @@ class Command(BaseCommand):
                                     **fields
                                 )
                             )
+                            collection_record.collector = record[COLLECTOR]
                             if not created:
                                 if collection_record.uuid and uuid_value:
                                     if collection_record.uuid != uuid_value:
@@ -840,7 +843,6 @@ class Command(BaseCommand):
                         )
 
                     collection_record.notes = record[NOTES]
-
                     collection_record.owner = superusers[0]
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
