@@ -61,8 +61,8 @@ HABITAT = 'Habitat'
 SAMPLING_METHOD = 'Sampling method'
 SAMPLING_EFFORT = 'Sampling effort'
 SAMPLING_EFFORT_VALUE = 'Sampling effort value'
-ABUNDANCE_MEASURE = 'Abundance Measure'
-ABUNDANCE_VALUE = 'Abundance Value'
+ABUNDANCE_MEASURE = 'Abundance measure'
+ABUNDANCE_VALUE = 'Abundance value'
 CATCH_NUMBER = 'Catch/number'
 CATCH_PER_UNIT = 'Catch Per Unit Effort (CPUE)'
 # HYDRAULIC_BIOTOPE = 'Hydraulic biotope'
@@ -522,6 +522,8 @@ class Command(BaseCommand):
         }
 
         for chem_key in chemical_units:
+            if chem_key not in record:
+                continue
             chem_value = record[chem_key].strip()
             if not chem_value:
                 continue
@@ -600,11 +602,35 @@ class Command(BaseCommand):
                     # -- Processing LocationSite
                     location_site = self.location_site(record)
 
+                    # -- Processing collectors
+                    collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
+                    optional_records['collector'] = record[COLLECTOR_OR_OWNER]
+                    if len(collectors) > 0:
+                        optional_records['collector_user'] = collectors[0]
+                        # Add owner and creator to location site
+                        # if it doesnt exist yet
+                        if not location_site.owner:
+                            location_site.owner = collectors[0]
+                        if not location_site.creator:
+                            location_site.creator = collectors[0]
+                        location_site.save()
+                        for collector in collectors:
+                            collector.organization = record[CUSTODIAN]
+                            collector.save()
+
+                    # -- Get superuser as owner
+                    superusers = get_user_model().objects.filter(
+                        is_superuser=True
+                    )
+
                     # -- Get or create a survey
                     self.survey, _ = Survey.objects.get_or_create(
                         site=location_site,
-                        date=sampling_date
+                        date=sampling_date,
+                        collector_user=collectors[0] if len(collectors) > 0 else None,
+                        owner=superusers[0]
                     )
+
                     all_survey_data = {
                         WATER_LEVEL: 'Water level',
                         WATER_TURBIDITY: 'Water turbidity',
@@ -714,7 +740,7 @@ class Command(BaseCommand):
                     abundance_number = None
 
                     if record[ABUNDANCE_MEASURE]:
-                        abundance_type = record[ABUNDANCE_MEASURE]
+                        abundance_type = record[ABUNDANCE_MEASURE].lower()
                         if 'count' in abundance_type:
                             abundance_type = 'number'
                         elif 'density' in abundance_type:
@@ -726,22 +752,6 @@ class Command(BaseCommand):
                             abundance_number = float(record[ABUNDANCE_VALUE])
                         except ValueError:
                             pass
-
-                    # -- Processing collectors
-                    collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
-                    optional_records['collector'] = record[COLLECTOR_OR_OWNER]
-                    if len(collectors) > 0:
-                        optional_records['collector_user'] = collectors[0]
-                        # Add owner and creator to location site
-                        # if it doesnt exist yet
-                        if not location_site.owner:
-                            location_site.owner = collectors[0]
-                        if not location_site.creator:
-                            location_site.creator = collectors[0]
-                        location_site.save()
-                        for collector in collectors:
-                            collector.organization = record[CUSTODIAN]
-                            collector.save()
 
                     # -- Processing chemical records
                     self.chemical_records(
@@ -829,9 +839,7 @@ class Command(BaseCommand):
                         )
 
                     collection_record.notes = record[NOTES]
-                    superusers = get_user_model().objects.filter(
-                        is_superuser=True
-                    )
+
                     collection_record.owner = superusers[0]
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
