@@ -201,7 +201,7 @@ class Entry(models.Model):
     )
 
     # Base fields
-    title = models.CharField(_("Title"), max_length=255)
+    title = models.CharField(_("Title"), max_length=355)
     authors = models.ManyToManyField(
         'Author',
         related_name='entries',

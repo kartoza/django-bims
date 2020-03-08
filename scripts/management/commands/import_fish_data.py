@@ -285,6 +285,7 @@ class Command(BaseCommand):
                             note=None
                         )
                     )
+                    source_reference_found = True
                 except (DOILoaderError, requests.exceptions.HTTPError):
                     log('{index} Error Fetching DOI : {doi}'.format(
                         index=index,
