@@ -238,21 +238,24 @@ class Command(BaseCommand):
 
         # if there is document url, get or create document based on url
         if document_url:
-            document_date = date(
-                year=int(record[SOURCE_YEAR]),
-                month=1,
-                day=1
-            )
+            document_fields = {
+                'doc_url': document_url,
+                'title': record[DOCUMENT_TITLE],
+            }
+            if record[SOURCE_YEAR]:
+                document_fields['date'] = date(
+                    year=int(record[SOURCE_YEAR]),
+                    month=1,
+                    day=1
+                )
             authors = create_users_from_string(record[DOCUMENT_AUTHOR])
             if len(authors) > 0:
                 author = authors[0]
             else:
                 author = None
+            document_fields['owner'] = author
             document, document_created = Document.objects.get_or_create(
-                doc_url=document_url,
-                date=document_date,
-                title=record[DOCUMENT_TITLE],
-                owner=author
+                **document_fields
             )
 
         # if DOI provided, check in bibliography records
@@ -293,6 +296,16 @@ class Command(BaseCommand):
                         ),
                         index
                     )
+                except Entry.MultipleObjectsReturned:
+                    entry = Entry.objects.filter(doi__iexact=doi)[0]
+                    source_reference = (
+                        SourceReference.create_source_reference(
+                            category='bibliography',
+                            source_id=entry.id,
+                            note=None
+                        )
+                    )
+                    source_reference_found = True
 
         if not source_reference_found:
             if (
@@ -438,6 +451,8 @@ class Command(BaseCommand):
                     canonical_name=record[SPECIES_NAME],
                     rank=record[TAXON_RANK].upper()
                 )
+        if taxonomy and record[SPECIES_NAME] not in taxonomy.canonical_name:
+            taxonomy.canonical_name = record[SPECIES_NAME]
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
             taxonomy.endemism = endemism
