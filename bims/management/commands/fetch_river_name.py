@@ -69,6 +69,6 @@ class Command(BaseCommand):
             # Allocate site code
             if allocate_site_code:
                 allocate_site_codes_from_river(
-                    update_site_code=update_site_codes,
+                    update_site_code=True,
                     location_id=location_site.id
                 )
