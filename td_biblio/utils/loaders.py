@@ -142,16 +142,30 @@ class BaseLoader(object):
         for rank, record_author in enumerate(record['authors']):
             first_name = record_author['first_name']
             last_name = record_author['last_name']
-            author, _ = Author.objects.get_or_create(
-                first_name=first_name,
-                last_name=last_name
-            )
+            try:
+                author, _ = Author.objects.get_or_create(
+                    first_name=first_name,
+                    last_name=last_name
+                )
+            except Author.MultipleObjectsReturned:
+                authors = Author.objects.filter(
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                author = authors[0]
+                AuthorEntryRank.objects.filter(
+                    author__in=authors
+                ).update(author=author)
+                authors.exclude(id=author.id).delete()
 
-            AuthorEntryRank.objects.get_or_create(
-                entry=entry,
-                author=author,
-                rank=rank,
-            )
+            try:
+                AuthorEntryRank.objects.get_or_create(
+                    entry=entry,
+                    author=author,
+                    rank=rank,
+                )
+            except AuthorEntryRank.MultipleObjectsReturned:
+                pass
         logger.debug("(New) Entry imported with success: {}".format(entry))
 
     def save_records(self):
