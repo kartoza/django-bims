@@ -61,8 +61,8 @@ HABITAT = 'Habitat'
 SAMPLING_METHOD = 'Sampling method'
 SAMPLING_EFFORT = 'Sampling effort'
 SAMPLING_EFFORT_VALUE = 'Sampling effort value'
-ABUNDANCE_MEASURE = 'Abundance Measure'
-ABUNDANCE_VALUE = 'Abundance Value'
+ABUNDANCE_MEASURE = 'Abundance measure'
+ABUNDANCE_VALUE = 'Abundance value'
 CATCH_NUMBER = 'Catch/number'
 CATCH_PER_UNIT = 'Catch Per Unit Effort (CPUE)'
 # HYDRAULIC_BIOTOPE = 'Hydraulic biotope'
@@ -76,7 +76,7 @@ CONDUCTIVITY = 'COND'
 PH = 'PH'
 DISSOLVED_OXYGEN_PERCENT = 'DOPER'
 DISSOLVED_OXYGEN_MG = 'DO'
-TURBIDITY = 'TURBIDITY'
+TURBIDITY = 'TURB'
 ORTHOPHOSPHATE = 'SRP'
 TOT = 'TOT-P'
 SILICA = 'SI'
@@ -159,12 +159,14 @@ class Command(BaseCommand):
             help='Only process new data'
         )
 
-    def add_to_error_summary(self, error_message, row, add_to_error=True):
+    def add_to_error_summary(self, error_message, row, add_to_error=True, only_log=False):
         error_message = '{id} : {error}'.format(
             id=row+2,
             error=error_message
         )
         log(error_message)
+        if only_log:
+            return
         if add_to_error:
             self.errors.append(error_message)
             self.data_failed += 1
@@ -238,21 +240,24 @@ class Command(BaseCommand):
 
         # if there is document url, get or create document based on url
         if document_url:
-            document_date = date(
-                year=int(record[SOURCE_YEAR]),
-                month=1,
-                day=1
-            )
+            document_fields = {
+                'doc_url': document_url,
+                'title': record[DOCUMENT_TITLE],
+            }
+            if record[SOURCE_YEAR]:
+                document_fields['date'] = date(
+                    year=int(record[SOURCE_YEAR]),
+                    month=1,
+                    day=1
+                )
             authors = create_users_from_string(record[DOCUMENT_AUTHOR])
             if len(authors) > 0:
                 author = authors[0]
             else:
                 author = None
+            document_fields['owner'] = author
             document, document_created = Document.objects.get_or_create(
-                doc_url=document_url,
-                date=document_date,
-                title=record[DOCUMENT_TITLE],
-                owner=author
+                **document_fields
             )
 
         # if DOI provided, check in bibliography records
@@ -285,10 +290,25 @@ class Command(BaseCommand):
                             note=None
                         )
                     )
-                except (DOILoaderError, requests.exceptions.HTTPError):
-                    log('{index} Error Fetching DOI : {doi}'.format(
-                        index=index,
-                        doi=doi))
+                    source_reference_found = True
+                except (DOILoaderError, requests.exceptions.HTTPError, Entry.DoesNotExist):
+                    self.add_to_error_summary(
+                        'Error Fetching DOI : {doi}'.format(
+                            doi=doi,
+                        ),
+                        index,
+                        only_log=True
+                    )
+                except Entry.MultipleObjectsReturned:
+                    entry = Entry.objects.filter(doi__iexact=doi)[0]
+                    source_reference = (
+                        SourceReference.create_source_reference(
+                            category='bibliography',
+                            source_id=entry.id,
+                            note=None
+                        )
+                    )
+                    source_reference_found = True
 
         if not source_reference_found:
             if (
@@ -334,10 +354,7 @@ class Command(BaseCommand):
                             )
                         )
                 else:
-                    self.add_to_error_summary(
-                        'Peer reviewed should have a doi',
-                        index
-                    )
+                    raise ValueError('Peer reviewed should have a DOI')
             elif (
                     'published' in reference_category.lower() or
                     'thesis' in reference_category.lower()
@@ -434,6 +451,8 @@ class Command(BaseCommand):
                     canonical_name=record[SPECIES_NAME],
                     rank=record[TAXON_RANK].upper()
                 )
+        if taxonomy and record[SPECIES_NAME] not in taxonomy.canonical_name:
+            taxonomy.canonical_name = record[SPECIES_NAME]
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
             taxonomy.endemism = endemism
@@ -480,12 +499,22 @@ class Command(BaseCommand):
         if (
                 record[biotope_record_type] and
                 record[biotope_record_type].lower() != 'unspecified'):
-            biotope, biotope_created = (
-                Biotope.objects.get_or_create(
+            try:
+                biotope, biotope_created = (
+                    Biotope.objects.get_or_create(
+                        biotope_type=biotope_type,
+                        name=record[biotope_record_type]
+                    )
+                )
+            except Biotope.MultipleObjectsReturned:
+                biotopes = Biotope.objects.filter(
                     biotope_type=biotope_type,
                     name=record[biotope_record_type]
                 )
-            )
+                if biotopes.filter(display_order__isnull=False).exists():
+                    biotope = biotopes.filter(display_order__isnull=False)[0]
+                else:
+                    biotope = biotopes[0]
         return biotope
 
     def chemical_records(self, record, location_site, date):
@@ -512,6 +541,8 @@ class Command(BaseCommand):
         }
 
         for chem_key in chemical_units:
+            if chem_key not in record:
+                continue
             chem_value = record[chem_key].strip()
             if not chem_value:
                 continue
@@ -590,11 +621,35 @@ class Command(BaseCommand):
                     # -- Processing LocationSite
                     location_site = self.location_site(record)
 
+                    # -- Processing collectors
+                    collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
+                    optional_records['collector'] = record[COLLECTOR_OR_OWNER]
+                    if len(collectors) > 0:
+                        optional_records['collector_user'] = collectors[0]
+                        # Add owner and creator to location site
+                        # if it doesnt exist yet
+                        if not location_site.owner:
+                            location_site.owner = collectors[0]
+                        if not location_site.creator:
+                            location_site.creator = collectors[0]
+                        location_site.save()
+                        for collector in collectors:
+                            collector.organization = record[CUSTODIAN]
+                            collector.save()
+
+                    # -- Get superuser as owner
+                    superusers = get_user_model().objects.filter(
+                        is_superuser=True
+                    )
+
                     # -- Get or create a survey
                     self.survey, _ = Survey.objects.get_or_create(
                         site=location_site,
-                        date=sampling_date
+                        date=sampling_date,
+                        collector_user=collectors[0] if len(collectors) > 0 else None,
+                        owner=superusers[0]
                     )
+
                     all_survey_data = {
                         WATER_LEVEL: 'Water level',
                         WATER_TURBIDITY: 'Water turbidity',
@@ -704,28 +759,18 @@ class Command(BaseCommand):
                     abundance_number = None
 
                     if record[ABUNDANCE_MEASURE]:
-                        abundance_type = record[ABUNDANCE_MEASURE]
+                        abundance_type = record[ABUNDANCE_MEASURE].lower()
+                        if 'count' in abundance_type:
+                            abundance_type = 'number'
+                        elif 'density' in abundance_type:
+                            abundance_type = 'density'
+                        elif 'percentage' in abundance_type:
+                            abundance_type = 'percentage'
                     if record[ABUNDANCE_VALUE]:
                         try:
                             abundance_number = float(record[ABUNDANCE_VALUE])
                         except ValueError:
                             pass
-
-                    # -- Processing collectors
-                    collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
-                    optional_records['collector'] = record[COLLECTOR_OR_OWNER]
-                    if len(collectors) > 0:
-                        optional_records['collector_user'] = collectors[0]
-                        # Add owner and creator to location site
-                        # if it doesnt exist yet
-                        if not location_site.owner:
-                            location_site.owner = collectors[0]
-                        if not location_site.creator:
-                            location_site.creator = collectors[0]
-                        location_site.save()
-                        for collector in collectors:
-                            collector.organization = record[CUSTODIAN]
-                            collector.save()
 
                     # -- Processing chemical records
                     self.chemical_records(
@@ -765,7 +810,6 @@ class Command(BaseCommand):
                             'collection_date': sampling_date,
                             'taxonomy': taxonomy,
                             'category': category,
-                            'collector': record[COLLECTOR],
                             'sampling_method': sampling_method,
                             'abundance_type': abundance_type,
                             'abundance_number': abundance_number
@@ -778,6 +822,7 @@ class Command(BaseCommand):
                                     **fields
                                 )
                             )
+                            collection_record.collector = record[COLLECTOR]
                             if not created:
                                 if collection_record.uuid and uuid_value:
                                     if collection_record.uuid != uuid_value:
@@ -813,20 +858,14 @@ class Command(BaseCommand):
                         )
 
                     collection_record.notes = record[NOTES]
-                    superusers = get_user_model().objects.filter(
-                        is_superuser=True
-                    )
                     collection_record.owner = superusers[0]
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
+                    collection_record.survey = self.survey
+                    for field in optional_records:
+                        setattr(
+                            collection_record, field, optional_records[field])
                     collection_record.save()
-
-                    # update multiple fields
-                    BiologicalCollectionRecord.objects.filter(
-                        id=collection_record.id
-                    ).update(
-                        **optional_records
-                    )
 
                     if not created:
                         self.data_updated += 1

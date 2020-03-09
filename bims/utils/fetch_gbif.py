@@ -5,7 +5,7 @@ from bims.utils.gbif import (
 )
 from bims.models import Taxonomy, VernacularName, BiologicalCollectionRecord
 from bims.enums import TaxonomicRank, TaxonomicStatus
-from sass.models import SiteVisitBiotopeTaxon, SiteVisitTaxon
+from sass.models import SiteVisitBiotopeTaxon, SiteVisitTaxon, SassTaxon
 
 logger = logging.getLogger('bims')
 
@@ -18,30 +18,33 @@ def merge_taxa_data(gbif_key, excluded_taxon):
     taxa = Taxonomy.objects.filter(
         gbif_key=gbif_key
     ).exclude(id=excluded_taxon.id)
-    if len(taxa) <= 1:
+    if taxa.count() <= 1:
         return
 
     logger.info('Merging %s data' % len(taxa))
 
-    for taxon in taxa[1:]:
-        BiologicalCollectionRecord.objects.filter(
-            taxonomy=taxon
-        ).update(
-            taxonomy=excluded_taxon
-        )
-        SiteVisitTaxon.objects.filter(
-            taxonomy=taxon
-        ).update(
-            taxonomy=excluded_taxon
-        )
-        SiteVisitBiotopeTaxon.objects.filter(
-            taxon=taxon
-        ).update(
-            taxon=taxon
-        )
+    BiologicalCollectionRecord.objects.filter(
+        taxonomy__in=taxa
+    ).update(
+        taxonomy=excluded_taxon
+    )
+    SiteVisitTaxon.objects.filter(
+        taxonomy__in=taxa
+    ).update(
+        taxonomy=excluded_taxon
+    )
+    SiteVisitBiotopeTaxon.objects.filter(
+        taxon__in=taxa
+    ).update(
+        taxon=excluded_taxon
+    )
+    SassTaxon.objects.filter(
+        taxon__in=taxa
+    ).update(
+        taxon=excluded_taxon
+    )
 
-    for taxon in taxa[1:]:
-        taxon.delete()
+    taxa.delete()
 
 
 def create_or_update_taxonomy(gbif_data, fetch_vernacular_names=True):

@@ -25,6 +25,10 @@ class NonBiodiversityLayer(OrderedModel):
     default_visibility = models.BooleanField(
         default=False
     )
+    get_feature_format = models.TextField(
+        max_length=100,
+        default='text/plain'
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:
