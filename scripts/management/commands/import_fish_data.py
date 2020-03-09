@@ -159,12 +159,14 @@ class Command(BaseCommand):
             help='Only process new data'
         )
 
-    def add_to_error_summary(self, error_message, row, add_to_error=True):
+    def add_to_error_summary(self, error_message, row, add_to_error=True, only_log=False):
         error_message = '{id} : {error}'.format(
             id=row+2,
             error=error_message
         )
         log(error_message)
+        if only_log:
+            return
         if add_to_error:
             self.errors.append(error_message)
             self.data_failed += 1
@@ -292,9 +294,10 @@ class Command(BaseCommand):
                 except (DOILoaderError, requests.exceptions.HTTPError, Entry.DoesNotExist):
                     self.add_to_error_summary(
                         'Error Fetching DOI : {doi}'.format(
-                            doi=doi
+                            doi=doi,
                         ),
-                        index
+                        index,
+                        only_log=True
                     )
                 except Entry.MultipleObjectsReturned:
                     entry = Entry.objects.filter(doi__iexact=doi)[0]
@@ -351,10 +354,7 @@ class Command(BaseCommand):
                             )
                         )
                 else:
-                    self.add_to_error_summary(
-                        'Peer reviewed should have a doi',
-                        index
-                    )
+                    raise ValueError('Peer reviewed should have a DOI')
             elif (
                     'published' in reference_category.lower() or
                     'thesis' in reference_category.lower()

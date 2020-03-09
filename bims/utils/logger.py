@@ -15,7 +15,11 @@ def log(message, log_type='info', caller=None):
     if not caller:
         caller = inspect.stack()[1][3]
     logger_function = getattr(logger, log_type)
+    try:
+        message = message.encode('utf-8')
+    except ValueError:
+        message = message
     logger_function('{caller} : {message}'.format(
         caller=caller,
-        message=message.encode('utf-8')
+        message=message
     ))
