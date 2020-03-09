@@ -1,6 +1,6 @@
 # coding=utf-8
 """Get river name for location sites"""
-
+import ast
 from django.core.management.base import BaseCommand
 from django.db.models import F
 from bims.models.location_site import (
@@ -30,11 +30,20 @@ class Command(BaseCommand):
             default=False,
             help='Restore legacy site code'
         )
+        parser.add_argument(
+            '-u',
+            '--update-site-codes',
+            dest='update_site_codes',
+            default='True',
+            help='Should also update existing site codes')
+
 
     def handle(self, *args, **options):
         clear_site_code = options.get('clear_site_code')
         restore_legacy_site_code = options.get('restore_legacy_site_code')
-
+        update_site_codes = ast.literal_eval(
+            options.get('update_site_codes')
+        )
         if clear_site_code:
             location_site_to_clear = LocationSite.objects.filter(
                 river__isnull=False
@@ -71,6 +80,6 @@ class Command(BaseCommand):
             index += 1
             # Allocate site code
             allocate_site_codes_from_river(
-                update_site_code=True,
+                update_site_code=update_site_codes,
                 location_id=location_site.id
             )

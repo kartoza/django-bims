@@ -37,7 +37,7 @@ def fetch_river_name(latitude, longitude):
 def allocate_site_codes_from_river(update_site_code=True, location_id=None):
     """
     Allocate site codes to the existing location site
-    :param update_site_code: should also update existed site code
+    :param update_site_code: should also update existing site codes
     :param location_id: location id to allocate site codes, if None, allocate
     all site
     """
