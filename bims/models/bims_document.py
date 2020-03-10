@@ -31,3 +31,11 @@ class BimsDocument(models.Model):
                 if not silent:
                     raise e
         self.save()
+
+    def save(self, *args, **kwargs):
+        if self.document.metadata_author:
+            self.author = self.document.metadata_author.get_full_name()
+        if not self.year and self.document.date:
+            self.year = self.document.date.year
+
+        super(BimsDocument, self).save(*args, **kwargs)
