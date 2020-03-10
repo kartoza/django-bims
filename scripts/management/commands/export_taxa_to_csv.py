@@ -12,6 +12,16 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
 
+    taxon_rank = [
+        'KINGDOM',
+        'PHYLUM',
+        'CLASS',
+        'ORDER',
+        'FAMILY',
+        'GENUS',
+        'SPECIES'
+    ]
+
     def add_arguments(self, parser):
         parser.add_argument(
             '-g',
@@ -71,12 +81,30 @@ class Command(BaseCommand):
                 csv_file, delimiter=',', quotechar='"',
                 quoting=csv.QUOTE_MINIMAL)
             writer.writerow([
-                'Rank', 'Taxon', 'Scientific name & Authority', 'GBIF url'])
+                'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus',
+                'Species', 'Taxon', 'Scientific name & Authority', 'GBIF url'])
             for taxon in taxa:
-                writer.writerow([
-                    taxon.rank,
-                    taxon.canonical_name,
-                    taxon.scientific_name.encode('utf-8'),
-                    'https://gbif.org/species/{}'.format(taxon.gbif_key) if
-                    taxon.gbif_key else '-'
-                ])
+                data = {}
+
+                current_taxon = taxon
+                if current_taxon.rank in self.taxon_rank:
+                    data[current_taxon.rank] = taxon.canonical_name
+                while current_taxon.parent:
+                    current_taxon = current_taxon.parent
+                    if current_taxon.rank in self.taxon_rank:
+                        data[current_taxon.rank] = (
+                            current_taxon.canonical_name.encode('utf-8')
+                        )
+
+                # sort by rank
+                csv_data = []
+                for rank in self.taxon_rank:
+                    csv_data.append(data[rank] if rank in data else '-')
+
+                csv_data.append(taxon.canonical_name.encode('utf-8'))
+                csv_data.append(taxon.scientific_name.encode('utf-8'))
+                csv_data.append('https://gbif.org/species/{}'.format(
+                    taxon.gbif_key) if
+                    taxon.gbif_key else '-')
+
+                writer.writerow(csv_data)

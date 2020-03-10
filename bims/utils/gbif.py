@@ -1,6 +1,7 @@
 # coding: utf-8
 import requests
 import urllib
+import simplejson
 from requests.exceptions import HTTPError
 from pygbif import species
 from bims.models.taxonomy import Taxonomy
@@ -37,7 +38,7 @@ def get_species(gbif_id):
         response = requests.get(api_url)
         json_result = response.json()
         return json_result
-    except (HTTPError, KeyError) as e:
+    except (HTTPError, KeyError, simplejson.errors.JSONDecodeError) as e:
         print(e)
         return None
 
@@ -55,7 +56,7 @@ def get_vernacular_names(species_id):
         response = requests.get(api_url)
         json_result = response.json()
         return json_result
-    except (HTTPError, KeyError) as e:
+    except (HTTPError, KeyError, simplejson.errors.JSONDecodeError) as e:
         print(e)
         return None
 
