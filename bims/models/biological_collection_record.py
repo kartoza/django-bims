@@ -18,6 +18,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.models.bims_document import BimsDocument
 
 
 class BiologicalCollectionQuerySet(models.QuerySet):
@@ -37,9 +38,11 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                     is_doc = True
                 else:
                     url = col.source_reference.source.doc_url
-
-                authors = col.source_reference.source.bimsdocument.author
-                pub_year = col.source_reference.source.bimsdocument.year
+                bims_document, _ = BimsDocument.objects.get_or_create(
+                    document=col.source_reference.source
+                )
+                authors = bims_document.author
+                pub_year = bims_document.year
                 try:
                     source = json.loads(
                         col.source_reference.source.supplemental_information
