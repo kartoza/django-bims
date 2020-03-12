@@ -570,11 +570,13 @@ class Search(object):
         if self.abiotic_data:
             if not filtered_location_sites:
                 filtered_location_sites = LocationSite.objects.filter(
-                    survey__chemical_collection_record__isnull=False
+                    Q(survey__chemical_collection_record__isnull=False) |
+                    Q(chemical_collection_record__isnull=False)
                 )
             else:
                 filtered_location_sites = filtered_location_sites.filter(
-                    survey__chemical_collection_record__isnull=False
+                    Q(survey__chemical_collection_record__isnull=False) |
+                    Q(chemical_collection_record__isnull=False)
                 )
 
         if filtered_location_sites.exists():
