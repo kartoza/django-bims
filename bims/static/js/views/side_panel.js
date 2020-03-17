@@ -22,6 +22,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             Shared.Dispatcher.on('sidePanel:clearSidePanel', this.clearSidePanel, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelHtml', this.updateSidePanelHtml, this);
             Shared.Dispatcher.on('sidePanel:fillSidePanelHtml', this.fillSidePanelHtml, this);
+            Shared.Dispatcher.on('sidePanel:addContentWithTab', this.addContentWithTab, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
             Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
 
@@ -145,6 +146,13 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
         },
         appendSidePanelContent: function (htmlData) {
             $('#content-panel').append(htmlData);
+        },
+        addContentWithTab: function (title, contentData) {
+            const tabPanelTemplate = _.template($('#tab-panel-template').html());
+            $('#content-panel').append(tabPanelTemplate({
+                'titleName': title,
+                'content': contentData
+            }));
         },
         clearSidePanel: function () {
             $('#content-panel').html('');

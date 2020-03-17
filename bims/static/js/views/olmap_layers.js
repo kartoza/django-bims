@@ -99,7 +99,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             map.addLayer(self.highlightPinnedVector);
 
             // ---------------------------------
-            // HIGHLIGHT LAYER
+            // HIGHLIGHT LAYER -- MARKER
             // ---------------------------------
             self.highlightVectorSource = new ol.source.Vector();
             self.highlightVector = new ol.layer.Vector({
@@ -236,8 +236,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         var options = {
                             url: '/bims_proxy/' + encodeURI(value.wms_url),
                             params: {
+                                name: value.name,
                                 layers: value.wms_layer_name,
-                                format: value.wms_format
+                                format: value.wms_format,
+                                getFeatureFormat: value.get_feature_format
                             }
                         };
 
@@ -399,7 +401,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (selected) {
                 if ($legendElement.length > 0) {
                     $legendElement.show();
-                    Shared.Dispatcher.trigger('map:showMapLegends');
+                    let legendDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
+                    if (legendDisplayed !== false || typeof legendDisplayed === 'undefined') {
+                        Shared.Dispatcher.trigger('map:showMapLegends');
+                    }
                 }
             } else {
                 $legendElement.hide();
@@ -611,7 +616,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 self.initializeLayerSelector();
             }
         },
-        showFeatureInfo: function (coordinate) {
+        showFeatureInfo: function (lon, lat, siteExist = false) {
+            // Show feature info from lon and lat
+            // Lon and lat coordinates are in EPSG:3857 format
+
+            lon = parseFloat(lon);
+            lat = parseFloat(lat);
+            const coordinate = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+
             if (Shared.GetFeatureRequested) {
                 Shared.GetFeatureRequested = false;
                 Shared.Dispatcher.trigger('map:hidePopup');
@@ -623,10 +635,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
                 return;
             }
-            var that = this;
-            var lastCoordinate = coordinate;
-            var view = this.map.getView();
-            var featuresInfo = {};
+            const that = this;
+            const view = this.map.getView();
+            let lastCoordinate = coordinate;
+            let featuresInfo = {};
+
             Shared.GetFeatureRequested = true;
             Shared.Dispatcher.trigger('map:showPopup', coordinate,
                 '<div class="info-popup popup-loading"> Fetching... </div>');
@@ -636,12 +649,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
                 if (layer['layer'].getVisible()) {
                     try {
-                        var queryLayer = layer['layer'].getSource().getParams()['layers'];
-                        var layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
+                        const getFeatureFormat = layer['layer'].getSource().getParams()['getFeatureFormat'];
+                        const layerName = layer['layer'].getSource().getParams()['name'];
+                        const queryLayer = layer['layer'].getSource().getParams()['layers'];
+                        let layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
                             coordinate,
                             view.getResolution(),
                             view.getProjection(),
-                            {'INFO_FORMAT': 'text/plain'}
+                            {'INFO_FORMAT': getFeatureFormat}
                         );
                         layerSource += '&QUERY_LAYERS=' + queryLayer;
 
@@ -656,10 +671,25 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 if (coordinate !== lastCoordinate || !data) {
                                     return;
                                 }
-                                var linesData = data.split("\n");
-                                var properties = {};
 
-                                //reformat plain text to be dictionary
+                                // If the feature is html type, then open the sidepanel to show the data
+                                if (getFeatureFormat === 'text/html') {
+                                    if (!siteExist) {
+                                        let marker = new ol.Feature({
+                                            geometry: new ol.geom.Point(
+                                                ol.proj.fromLonLat([lon, lat])
+                                            ),
+                                        });
+                                        Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
+                                        Shared.Dispatcher.trigger('map:switchHighlight', [marker], true);
+                                    }
+                                    Shared.Dispatcher.trigger('sidePanel:addContentWithTab', layerName, data);
+                                    return true;
+                                }
+                                let linesData = data.split("\n");
+                                let properties = {};
+
+                                // reformat plain text to be dictionary
                                 // because qgis can't support info format json
                                 $.each(linesData, function (index, string) {
                                     var couple = string.split(' = ');
@@ -687,7 +717,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
             });
             Promise.all(Shared.GetFeatureXHRRequest).then(() => {
-                that.renderFeaturesInfo(featuresInfo, coordinate);
+                if (Object.keys(featuresInfo).length > 0) {
+                    that.renderFeaturesInfo(featuresInfo, coordinate);
+                } else {
+                    Shared.Dispatcher.trigger('map:closePopup');
+                }
                 Shared.GetFeatureXHRRequest = [];
             }).catch((err) => {
                 if (Shared.GetFeatureXHRRequest.length > 0) {
