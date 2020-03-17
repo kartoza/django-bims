@@ -1,4 +1,5 @@
 import json
+import uuid
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
@@ -89,9 +90,12 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     """
     Serializer for biological collection record.
     """
+    uuid = serializers.SerializerMethodField()
+    original_river_name = serializers.SerializerMethodField()
     fbis_site_code = serializers.SerializerMethodField()
     original_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
+    refined_geomorphological_zone = serializers.SerializerMethodField()
     river_name = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     longitude = serializers.SerializerMethodField()
@@ -101,7 +105,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     broad_biotope = serializers.SerializerMethodField()
     specific_biotope = serializers.SerializerMethodField()
     substratum = serializers.SerializerMethodField()
-    taxon_name = serializers.SerializerMethodField()
+    taxon = serializers.SerializerMethodField()
     collector_or_owner = serializers.SerializerMethodField()
     study_reference = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
@@ -112,9 +116,50 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     order = serializers.SerializerMethodField()
     family = serializers.SerializerMethodField()
     genus = serializers.SerializerMethodField()
+    kingdom = serializers.SerializerMethodField()
+    taxon_rank = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
     doi_or_url = serializers.SerializerMethodField()
+    sampling_effort = serializers.SerializerMethodField()
+    sampling_effort_value = serializers.SerializerMethodField()
+    abundance_measure = serializers.SerializerMethodField()
+    abundance_value = serializers.SerializerMethodField()
+
+    def get_abundance_measure(self, obj):
+        if obj.abundance_type:
+            return obj.get_abundance_type_display()
+        return '-'
+
+    def get_abundance_value(self, obj):
+        if obj.abundance_number:
+            return obj.abundance_number
+        return '-'
+
+    def get_uuid(self, obj):
+        if obj.uuid:
+            return str(uuid.UUID(obj.uuid))
+        return '-'
+
+    def get_original_river_name(self, obj):
+        if obj.site.legacy_river_name:
+            return obj.site.legacy_river_name
+        return '-'
+
+    def get_refined_geomorphological_zone(self, obj):
+        if obj.site.refined_geomorphological:
+            return obj.site.refined_geomorphological
+        return '-'
+
+    def get_sampling_effort(self, obj):
+        if obj.sampling_effort:
+            return ' '.join(obj.sampling_effort.split(' ')[1:])
+        return '-'
+
+    def get_sampling_effort_value(self, obj):
+        if obj.sampling_effort:
+            return obj.sampling_effort.split(' ')[0]
+        return '-'
 
     def get_conservation_status(self, obj):
         if obj.taxonomy.iucn_status:
@@ -172,40 +217,59 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         else:
             return '-'
 
-    def get_taxon_name(self, obj):
-        if obj.taxonomy.scientific_name:
-            return obj.taxonomy.scientific_name.encode('utf-8')
-        return '-'
-
-    def get_class_name(self, obj):
-        if obj.taxonomy.class_name:
-            return obj.taxonomy.class_name.encode('utf-8')
-        return '-'
-
-    def get_phylum(self, obj):
-        if obj.taxonomy.phylum_name:
-            return obj.taxonomy.phylum_name.encode('utf-8')
-        return '-'
-
-    def get_order(self, obj):
-        if obj.taxonomy.order_name:
-            return obj.taxonomy.order_name.encode('utf-8')
-        return '-'
-
-    def get_family(self, obj):
-        if obj.taxonomy.family_name:
-            return obj.taxonomy.family_name.encode('utf-8')
-        return '-'
-
-    def get_genus(self, obj):
-        if obj.taxonomy.genus_name:
-            return obj.taxonomy.genus_name.encode('utf-8')
-        return '-'
-
-    def get_species(self, obj):
+    def get_taxon(self, obj):
         if obj.original_species_name:
             return obj.original_species_name.encode('utf-8')
         return '-'
+
+    def get_class_name(self, obj):
+        class_name = obj.taxonomy.class_name
+        if class_name:
+            return class_name.encode('utf-8')
+        return '-'
+
+    def get_phylum(self, obj):
+        phylum_name = obj.taxonomy.phylum_name
+        if phylum_name:
+            return phylum_name.encode('utf-8')
+        return '-'
+
+    def get_order(self, obj):
+        order_name = obj.taxonomy.order_name
+        if order_name:
+            return order_name.encode('utf-8')
+        return '-'
+
+    def get_family(self, obj):
+        family_name = obj.taxonomy.family_name
+        if family_name:
+            return family_name.encode('utf-8')
+        return '-'
+
+    def get_genus(self, obj):
+        genus_name = obj.taxonomy.genus_name
+        if genus_name:
+            return genus_name.encode('utf-8')
+        return '-'
+
+    def get_species(self, obj):
+        species_name = obj.taxonomy.species_name
+        if species_name:
+            genus_name = obj.taxonomy.genus_name
+            if genus_name:
+                species_name = species_name.replace(genus_name, '')
+            return species_name.encode('utf-8').strip()
+        return '-'
+
+    def get_kingdom(self, obj):
+        kingdom_name = obj.taxonomy.kingdom_name
+        if kingdom_name:
+            return kingdom_name.encode('utf-8')
+        return '-'
+
+    def get_taxon_rank(self, obj):
+        taxon_rank = obj.taxonomy.get_rank_display()
+        return taxon_rank if taxon_rank else '-'
 
     def get_reference_category(self, obj):
         if obj.source_reference:
@@ -284,24 +348,33 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
-            'fbis_site_code',
-            'original_site_code',
-            'site_description',
+            'uuid',
+            'original_river_name',
             'river_name',
+            'original_site_code',
+            'fbis_site_code',
+            'site_description',
+            'refined_geomorphological_zone',
             'latitude',
             'longitude',
             'sampling_date',
-            'sampling_method',
-            'broad_biotope',
-            'specific_biotope',
-            'substratum',
+            'kingdom',
             'phylum',
             'class_name',
             'order',
             'family',
             'genus',
             'species',
-            'taxon_name',
+            'taxon',
+            'taxon_rank',
+            'sampling_method',
+            'sampling_effort',
+            'sampling_effort_value',
+            'abundance_measure',
+            'abundance_value',
+            'broad_biotope',
+            'specific_biotope',
+            'substratum',
             'origin',
             'endemism',
             'conservation_status',

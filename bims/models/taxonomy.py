@@ -183,6 +183,14 @@ class Taxonomy(DocumentLinksMixin):
         return ''
 
     @property
+    def kingdom_name(self):
+        if self.rank != TaxonomicRank.KINGDOM.name and self.parent:
+            return self.parent.kingdom_name
+        elif self.rank == TaxonomicRank.KINGDOM.name:
+            return self.canonical_name
+        return ''
+
+    @property
     def phylum_name(self):
         if self.rank != TaxonomicRank.PHYLUM.name and self.parent:
             return self.parent.phylum_name
@@ -211,6 +219,14 @@ class Taxonomy(DocumentLinksMixin):
         if self.rank != TaxonomicRank.GENUS.name and self.parent:
             return self.parent.genus_name
         elif self.rank == TaxonomicRank.GENUS.name:
+            return self.canonical_name
+        return ''
+
+    @property
+    def species_name(self):
+        if self.rank != TaxonomicRank.SPECIES.name and self.parent:
+            return self.parent.species_name
+        elif self.rank == TaxonomicRank.SPECIES.name:
             return self.canonical_name
         return ''
 
