@@ -6,6 +6,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         siteId: null,
         siteName: null,
         siteDetailData: null,
+        features: null,
         charts: [],
         originLegends: {},
         endemismLegends: {},
@@ -47,8 +48,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             this.siteId = id;
             this.siteName = name;
             this.zoomToObject = zoomToObject;
-            if (typeof addMarker === 'undefined') {
-                this.addMarker = true;
+            if (typeof addMarker === 'undefined' || addMarker === null) {
+                this.addMarker = false;
             }
             this.parameters = filterParameters;
             this.parameters['siteId'] = id;
@@ -317,6 +318,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         let features = new ol.format.GeoJSON().readFeatures(feature, {
                             featureProjection: 'EPSG:3857'
                         });
+
+                        // Show marker
                         if (zoomToObject) {
                             Shared.Dispatcher.trigger('map:switchHighlight', features, !zoomToObject);
                         } else {
@@ -343,6 +346,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     self.renderMonthlyLineChart(data['climate_data'], 'rainfall');
 
                     Shared.LocationSiteDetailXHRRequest = null;
+
+                    // Features other than default site data exist, show the feature info
+                    let siteCoordinates = data['site_detail_info']['site_coordinates'].split(',');
+                    let lon = siteCoordinates[0].trim();
+                    let lat = siteCoordinates[1].trim();
+                    Shared.Dispatcher.trigger('layers:showFeatureInfo', lon, lat, true);
                 },
                 error: function (req, err) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelHtml', {});

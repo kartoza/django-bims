@@ -81,6 +81,7 @@ define([
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
+            Shared.Dispatcher.on('map:closePopup', this.hidePopup, this);
             Shared.Dispatcher.on('map:closeHighlight', this.closeHighlight, this);
             Shared.Dispatcher.on('map:addHighlightFeature', this.addHighlightFeature, this);
             Shared.Dispatcher.on('map:switchHighlight', this.switchHighlight, this);
@@ -182,7 +183,8 @@ define([
             }
         },
         mapClicked: function (e) {
-            var self = this;
+            // Event handler when the map is clicked
+            const self = this;
             if (this.mapInteractionEnabled) {
                 return;
             }
@@ -195,57 +197,66 @@ define([
             let lat = lonlat[1];
 
             let layer = this.layers.layers['Sites'];
-            let view = this.map.getView();
-            let queryLayer = layer['layer'].getSource().getParams()['LAYERS'];
-            let layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
-                e.coordinate,
-                view.getResolution(),
-                view.getProjection(),
-                {'INFO_FORMAT': 'application/json'}
-            );
-            layerSource += '&QUERY_LAYERS=' + queryLayer;
-            $.ajax({
-                type: 'POST',
-                url: '/get_feature/',
-                data: {
-                    'layerSource': layerSource
-                },
-                success: function (data) {
-                    let objectData = JSON.parse(data);
-                    let features = objectData['features'];
-                    if (features.length === 0) {
-                        self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, e.coordinate);
-                        return;
-                    }
-                    let count = features[0]['properties']['count'];
-                    if (count > 1) {
-                        self.zoomToCoordinates(
-                            e.coordinate,
-                            self.getCurrentZoom() + 2
-                        );
-                    } else if (count === 1) {
+            let siteVisible = layer['layer'].getVisible();
 
-                        // Check if the feature is single location site marker
-                        if (features[0]['id'].includes('location_site_view')) {
-                            // Get location site id
-                            var siteId = features[0]['id'].split('.')[1];
-                            Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
+            // If default bims site layer is visible then check whether user click on the
+            // site point or not
+            if (siteVisible) {
+                let view = this.map.getView();
+                let queryLayer = layer['layer'].getSource().getParams()['LAYERS'];
+                let layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
+                    e.coordinate,
+                    view.getResolution(),
+                    view.getProjection(),
+                    {'INFO_FORMAT': 'application/json'}
+                );
+                layerSource += '&QUERY_LAYERS=' + queryLayer;
+                $.ajax({
+                    type: 'POST',
+                    url: '/get_feature/',
+                    data: {
+                        'layerSource': layerSource
+                    },
+                    success: function (data) {
+                        let objectData = JSON.parse(data);
+                        let features = objectData['features'];
+                        if (features.length === 0) {
+                            self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
+                            return;
                         }
-                        let initialRadius = 5;
-                        self.getSiteByCoordinate(lat, lon, initialRadius);
-                    } else {
-                        // Check if the feature is single location site marker
-                        if (features[0]['id'].includes('location_site_view')) {
-                            // Get location site id
-                            Shared.Dispatcher.trigger('siteDetail:show', features[0]['id'].split('.')[1], '');
+                        let count = features[0]['properties']['count'];
+                        if (count > 1) {
+                            self.zoomToCoordinates(
+                                e.coordinate,
+                                self.getCurrentZoom() + 2
+                            );
+                        } else if (count === 1) {
+                            // Check if the feature is a single location site point
+                            if (features[0]['id'].includes('location_site_view')) {
+                                // Get location site id
+                                const siteId = features[0]['id'].split('.')[1];
+                                Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
+                            }
+                            let initialRadius = 5;
+                            self.getSiteByCoordinate(lat, lon, initialRadius, function () {
+                                self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, true);
+                            });
                         } else {
-                            self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, e.coordinate);
+                            // Check if the feature is single location site marker
+                            if (features[0]['id'].includes('location_site_view')) {
+                                // Get location site id
+                                Shared.Dispatcher.trigger('siteDetail:show', features[0]['id'].split('.')[1], '');
+                            } else {
+                                self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
+            }
         },
-        getSiteByCoordinate: function (lat, lon, radius) {
+        getSiteByCoordinate: function (lat, lon, radius, callback = null) {
             let url = '';
             const self = this;
             const maxRadius = 30;
@@ -263,10 +274,13 @@ define([
                         self.mapControlPanel.showUploadDataModal(lon, lat, data[0]);
                     } else if (data.length > 0) {
                          Shared.Dispatcher.trigger('siteDetail:show', data[0]['id'], data[0]['site_code'], false, false);
+                         if (callback && typeof callback === 'function') {
+                             callback();
+                         }
                     } else {
                         let nextRadius = radius + radiusIncrement;
                         if (nextRadius < maxRadius) {
-                            self.getSiteByCoordinate(lat, lon, nextRadius);
+                            self.getSiteByCoordinate(lat, lon, nextRadius, callback);
                         } else {
                             Shared.Dispatcher.trigger('siteDetail:closeSidePanel');
                         }
@@ -274,33 +288,23 @@ define([
                 }
             });
         },
-        showMarkerAndRightPanel: function (feature) {
-            var _feature = new ol.format.GeoJSON().readFeatures(feature, {
-                featureProjection: 'EPSG:4326'
-            });
-            this.switchHighlight(_feature, true);
-            Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i> Loading...');
-        },
-        showFeature: function (features, lon, lat, coordinate) {
+        showFeature: function (features, lon, lat, siteExist = false) {
             let featuresClickedResponseData = [];
-            let self = this;
+            const self = this;
             // Point of interest flag
-            var poiFound = false;
-            var featuresData = '';
-
+            let poiFound = false;
+            let featuresData = '';
             if (features) {
                 $.each(features, function (index, feature) {
-                    var geometry = feature.getGeometry();
-                    var geometryType = geometry.getType();
+                    const geometry = feature.getGeometry();
+                    const geometryType = geometry.getType();
 
                     if (geometryType === 'Point') {
-                        featuresClickedResponseData = self.featureClicked(feature, self.uploadDataState);
+                        featuresClickedResponseData = self.featureClicked(
+                            feature, self.uploadDataState);
                         poiFound = featuresClickedResponseData[0];
                         featuresData = featuresClickedResponseData[1];
-
-                        var coordinates = geometry.getCoordinates();
-                        self.zoomToCoordinates(coordinates);
+                        self.zoomToCoordinates(geometry.getCoordinates());
                         // increase zoom level if it is clusters
                         if (feature.getProperties()['count'] &&
                             feature.getProperties()['count'] > 1) {
@@ -315,13 +319,12 @@ define([
                     }
                 });
             }
-
             if (self.uploadDataState && !poiFound) {
                 // Show modal upload if in upload mode
                 self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
             } else if (!self.uploadDataState && !poiFound) {
                 // Show feature info
-                Shared.Dispatcher.trigger('layers:showFeatureInfo', coordinate)
+                Shared.Dispatcher.trigger('layers:showFeatureInfo', lon, lat, siteExist);
             }
         },
         featureClicked: function (feature, uploadDataState) {
@@ -378,6 +381,10 @@ define([
             }
         },
         showMapLegends: function (showTooltip) {
+            let legendsDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
+            if (!legendsDisplayed) {
+                Shared.StorageUtil.setItem('legendsDisplayed', true);
+            }
             if (Shared.LegendsDisplayed === true) {
                 return true;
             }
@@ -396,6 +403,10 @@ define([
             }
         },
         hideMapLegends: function (showTooltip) {
+            let legendsDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
+            if (typeof legendsDisplayed === 'undefined' || legendsDisplayed === true) {
+                Shared.StorageUtil.setItem('legendsDisplayed', false);
+            }
             if (Shared.LegendsDisplayed === false) {
                 return true;
             }
@@ -559,7 +570,7 @@ define([
             this.popup = new ol.Overlay({
                 element: document.getElementById('popup'),
                 positioning: 'bottom-center',
-                offset: [0, 0]
+                offset: [0, -10]
             });
             this.map.addOverlay(this.popup);
             this.layers.addLayersToMap(this.map);
