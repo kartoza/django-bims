@@ -19,7 +19,7 @@ var popup = new ol.Overlay({
 map.addOverlay(popup);
 
 var lastLayer = undefined;
-function zoomToObject(lat, lng, pk) {
+function zoomToObject(lat, lng) {
     map.getView().setCenter(ol.proj.transform([lat, lng], 'EPSG:4326', 'EPSG:3857'));
     map.getView().setZoom(6);
     if(lastLayer !== undefined){
@@ -54,20 +54,19 @@ function zoomToObject(lat, lng, pk) {
     });
     lastLayer = vectorLayer;
     map.addLayer(vectorLayer);
+}
 
+function showDetail(pk) {
     $.ajax({
         url: '/api/get-bio-object/',
         data: {'pk': pk},
         success: function (data) {
-            var keywords = ['id', 'owner', 'original_species_name', 'category', 'collection_date', 'collector', 'notes'];
-            $('#popup').html('');
-            $('#popup').html('<table></table>');
-            for(var key in data){
-                if(keywords.indexOf(key) > -1) {
-                    $('#popup').append('<tr><td>' + key + '</td><td>' + data[key] + '</td></tr>')
-                }
+            const $detailModal = $('#detailModal');
+            $detailModal.find('.modal-body').html('<table></table>');
+            for (var key in data) {
+                $detailModal.find('.modal-body').append(`<tr><td class="capitalize">${key.replace(/_/g, ' ')}</td><td>${data[key]}</td></tr>`);
             }
-            popup.setPosition(ol.proj.transform([lat, lng], 'EPSG:4326', 'EPSG:3857'));
+            $detailModal.modal();
         }
     });
 }
@@ -95,14 +94,45 @@ $(document).ready(function () {
 });
 
 function validateObject(pk) {
+    const modal = $('#confirmValidateModal');
+    modal.modal('show');
+    modal.data('id', pk);
+}
+
+$('#validateBtn').click(function () {
+    const modal = $('#confirmValidateModal');
+    const id = modal.data('id');
     $.ajax({
         url: validateUrl,
-        data: {'pk': pk},
+        data: {'pk': id},
         success: function () {
             location.reload()
         }
-    });
+    })
+});
+
+function rejectObject(pk) {
+    const modal = $('#confirmRejectModal');
+    modal.find('.rejection-message').val('');
+    modal.modal('show');
+    modal.data('id', pk);
 }
+
+$('#rejectBtn').click(function () {
+    const modal = $('#confirmRejectModal');
+    const id = modal.data('id');
+    const rejectionMessage = modal.find('.rejection-message');
+     $.ajax({
+        url: rejectUrl,
+        data: {
+            'pk': id,
+            'rejection_message': rejectionMessage.val()
+        },
+        success: function () {
+            location.reload()
+        }
+    })
+});
 
 function sendEmailValidation(pk) {
     $.ajax({
@@ -116,8 +146,14 @@ function sendEmailValidation(pk) {
 }
 
 function dynamicInputFilter(that) {
-    $('.input-options').hide().val('');
-    $('.' + that.value).show();
+    const $inputOptions = $('.input-options');
+    $inputOptions.hide().val('');
+    $inputOptions.parent().hide();
+    if (that.value) {
+        const $input = $('.' + that.value);
+        $input.parent().show();
+        $input.show()
+    }
 }
 
 $('input[name=filter_result]').click(function () {
