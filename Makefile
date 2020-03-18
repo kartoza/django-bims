@@ -335,7 +335,7 @@ gruntserver:
 	@echo "------------------------------------------------------------------"
 	@echo "Run grunt"
 	@echo "------------------------------------------------------------------"
-	@docker-compose run --rm uwsgi python manage.py gruntserver
+	@docker-compose exec uwsgi bash -c "python manage.py gruntserver"
 
 generate-boundaries:
 	@echo
