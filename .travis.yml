@@ -45,10 +45,10 @@ install:
   - until make sync; do echo "Retrying"; sleep 5; done
   # Show container status
   - docker-compose ps
+  - make gruntserver
 
 script:
   - make flake8-check
-  - make gruntserver
   - make coverage-django-test-selenium ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
 
 after_success:
