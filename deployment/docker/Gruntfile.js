@@ -9,8 +9,7 @@ module.exports = function(grunt) {
                 options: {
                     optimize: 'none',
                     out: function(text, sourceMapText) {
-                        let contents = terser.minify(text, terserOptions).code();
-                        grunt.file.write('/home/web/django_project/bims/static/js/optimized.js', contents);
+                        grunt.file.write('/home/web/django_project/bims/static/js/optimized.js', text);
                     },
                     baseUrl: '/home/web/django_project/bims/static/js',
                     mainConfigFile: '/home/web/django_project/bims/static/js/app.js',
