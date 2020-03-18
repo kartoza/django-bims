@@ -1,14 +1,3 @@
-const terserOptions = {
-    compress: {
-        passes: 3,
-    },
-    ecma: 8,
-    output: {
-        beautify: false,
-    },
-    toplevel: true,
-};
-
 module.exports = function(grunt) {
 
     // Project configuration.
@@ -20,7 +9,6 @@ module.exports = function(grunt) {
                 options: {
                     optimize: 'none',
                     out: function(text, sourceMapText) {
-                        const terser = require('terser');
                         let contents = terser.minify(text, terserOptions).code();
                         grunt.file.write('/home/web/django_project/bims/static/js/optimized.js', contents);
                     },
@@ -30,14 +18,25 @@ module.exports = function(grunt) {
                     include: ['app.js'],
                 }
             }
+        },
+        terser: {
+            options: {
+                compress: true,
+            },
+            main: {
+                files: {
+                    '/home/web/django_project/bims/static/js/optimized.js': ['/home/web/django_project/bims/static/js/optimized.js'],
+                }
+            }
         }
 
     });
 
     // Load plugins here.
+    grunt.loadNpmTasks('grunt-terser');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
 
     // Register tasks here.
-    grunt.registerTask('default', ['requirejs']);
+    grunt.registerTask('default', ['requirejs', 'terser']);
 };
