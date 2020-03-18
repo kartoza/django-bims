@@ -9,10 +9,10 @@ module.exports = function(grunt) {
                 options: {
                     optimize: 'none',
                     out: function(text, sourceMapText) {
-                        grunt.file.write('/home/web/django_project/bims/static/js/optimized.js', text);
+                        grunt.file.write('/usr/src/bims/bims/static/js/optimized.js', text);
                     },
-                    baseUrl: '/home/web/django_project/bims/static/js',
-                    mainConfigFile: '/home/web/django_project/bims/static/js/app.js',
+                    baseUrl: '/usr/src/bims/bims/static/js',
+                    mainConfigFile: '/usr/src/bims/bims/static/js/app.js',
                     name: 'libs/almond/almond',
                     include: ['app.js'],
                 }
@@ -24,7 +24,7 @@ module.exports = function(grunt) {
             },
             main: {
                 files: {
-                    '/home/web/django_project/bims/static/js/optimized.js': ['/home/web/django_project/bims/static/js/optimized.js'],
+                    '/usr/src/bims/bims/static/js/optimized.js': ['/usr/src/bims/bims/static/js/optimized.js'],
                 }
             }
         }
