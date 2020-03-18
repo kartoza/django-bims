@@ -43,12 +43,12 @@ install:
   - make up-travis
   # Wait until database migrations ready
   - until make sync; do echo "Retrying"; sleep 5; done
-  - make gruntserver
   # Show container status
   - docker-compose ps
 
 script:
   - make flake8-check
+  - make gruntserver
   - make coverage-django-test-selenium ARGS="--log-level ERROR" CMD_ARGS="--verbosity 3"
 
 after_success:
