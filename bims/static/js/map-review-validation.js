@@ -122,12 +122,33 @@ $('#rejectBtn').click(function () {
     const modal = $('#confirmRejectModal');
     const id = modal.data('id');
     const rejectionMessage = modal.find('.rejection-message');
-     $.ajax({
+    $.ajax({
         url: rejectUrl,
         data: {
             'pk': id,
             'rejection_message': rejectionMessage.val()
         },
+        success: function () {
+            location.reload()
+        }
+    })
+});
+
+function deleteObject(pk) {
+    const modal = $('#confirmDeleteModal');
+    modal.modal('show');
+    modal.data('id', pk);
+}
+
+$('#deleteBtn').click(function () {
+    const modal = $('#confirmDeleteModal');
+    const id = modal.data('id');
+    let url = deleteDataUrl;
+    url = url.replace('0', id);
+    url += '?next=' + currentUrl;
+    $.ajax({
+        url: url,
+        type: 'POST',
         success: function () {
             location.reload()
         }

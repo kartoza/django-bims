@@ -33,7 +33,7 @@ tr:nth-child(odd) {background: #f5f5f5}
 }
 
 
-.edit-action:hover a {
+.edit-action a:hover {
     color: darkblue;
 }
 
