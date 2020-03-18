@@ -55,6 +55,7 @@ from bims.views.source_reference_form import SourceReferenceView
 from bims.views.bug_report import BugReportView
 from bims.views.abiotic_form import AbioticFormView
 from bims.views.svg_to_pdf import svg_to_pdf
+from bims.api_views.delete_collection_data import CollectionDeleteApiView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -137,7 +138,10 @@ urlpatterns = [
         name='bug-report'),
     url(r'^abiotic/$', csrf_exempt(AbioticFormView.as_view()),
         name='abiotic-form'),
-    url(r'^svg_to_pdf/$', csrf_exempt(svg_to_pdf), name='svg-to-pdf')
+    url(r'^svg_to_pdf/$', csrf_exempt(svg_to_pdf), name='svg-to-pdf'),
+    url(r'^collection/delete/(?P<col_id>\d+)/$',
+        CollectionDeleteApiView.as_view(),
+        name='collection-delete'),
 ]
 
 # Api urls

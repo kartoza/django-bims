@@ -22,24 +22,57 @@
         <hr/>
     </div>
     <div class="container" style="margin-bottom: 15px">
+        <div class="form-group">
         <div class="filter"> <span>Filter by</span>
-            <select id="filter-select" onchange="dynamicInputFilter(this)">
-                <option value=""></option>
-                <option value="original_species_name">original species name</option>
-                <option value="collection_date">collection date</option>
-                <option value="owner">owner</option>
-            </select>
-            <input type="text" class="input-options original_species_name" name="original_species_name" style="display: none">
-            <input type="date" class="input-options collection_date" name="date_from" style="display: none"><span class="input-options collection_date" style="display: none"> to </span><input type="date" class="input-options collection_date" name="date_to" style="display: none">
-            <input type="text" class="input-options owner" name="owner" style="display: none">
-            <span><input type="button" name="filter_result" value="Go"></span>
-        </div>
+            <div class="row">
+                <div class="col-5">
+                    <select id="filter-select"
+                            onchange="dynamicInputFilter(this)"
+                            class="form-control">
+                        <option value=""></option>
+                        <option value="original_species_name">
+                            Original species name
+                        </option>
+                        <option value="collection_date">
+                            Collection date
+                        </option>
+                        <option value="owner">
+                            Owner
+                        </option>
+                    </select>
+                </div>
+                <div class="col-5" style="display: none">
+                    <input type="text"
+                           class="input-options original_species_name form-control"
+                           name="original_species_name" style="display: none">
+                    <input type="date"
+                           class="input-options collection_date"
+                           name="date_from" style="display: none"><span
+                        class="input-options collection_date"
+                        style="display: none"> to </span><input type="date"
+                                                                class="input-options collection_date"
+                                                                name="date_to"
+                                                                style="display: none">
+                    <input type="text" class="input-options owner form-control"
+                           name="owner" style="display: none">
+                </div>
+                <div class="col-2">
+                    <input class="btn btn-default" type="button" name="filter_result" value="Go" style="float: left; width: 50px;">
+                </div>
+            </div>
+        </div></div>
     </div>
     <div class="container">
     <div class="row">
-    <div class="col-lg-7">
+    <div class="col-lg-12">
+        <div id="map" class="map"></div>
+    </div>
+    </div>
+    <div class="row">
+    <div class="col-lg-12">
     <table class="table table-striped">
         <tr>
+            <th>FBIS Site Code</th>
             <th>Original Species Name</th>
             <th>Category</th>
             <th>Collection Date</th>
@@ -48,21 +81,26 @@
         </tr>
         {% for obj in biorecords %}
             <tr>
+                <td><a onclick="zoomToObject({{ obj.site.geometry_point.x }}, {{ obj.site.geometry_point.y }})" class="site-link" data-toggle="tooltip" title="Show data in the map">{{ obj.site.site_code }}</a></td>
                 {% if obj.site.geometry_point %}
-                    <td><a onclick="zoomToObject({{ obj.site.geometry_point.x }}, {{ obj.site.geometry_point.y }}, {{ obj.pk }})" class="site-link">{{ obj.original_species_name }}</a></td>
+                    <td><a onclick="showDetail({{ obj.pk }})" class="site-link" data-toggle="tooltip" title="Get detail data">{{ obj.original_species_name }}</a></td>
                 {% else %}
                     <td><a>{{ obj.original_species_name }}</a></td>
                 {% endif %}
                 <td>{% if obj.category == 'indigenous' %}Native{% elif obj.category == 'alien' %}Non-Native{% else %}-{% endif %}</td>
                 <td>{{ obj.collection_date }}</td>
-                <td>{{ obj.owner }}</td>
-                <td class="validate-action"><a onclick="validateObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Validate this object"><i class="fa fa-check-circle"></i></a></td>
+                <td>{{ obj.owner.get_full_name }}</td>
+                <td>
+                    <span class="validate-action">
+                        <a onclick="validateObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Validate this data"><i class="fa fa-check-circle"></i></a>
+                    </span>
+                    <span class="reject-action">
+                        <a onclick="rejectObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Reject this data"><i class="fa fa-times-circle"></i></a>
+                    </span>
+                </td>
             </tr>
         {% endfor %}
     </table>
-    </div>
-    <div class="col-lg-5">
-        <div id="map" class="map" style="height: 100%"></div>
     </div>
     <div id="popup"></div>
     </div>
@@ -94,10 +132,80 @@
     {% endif %}
     </div>
 
+    <div class="modal fade" tabindex="-1" role="dialog" id="confirmValidateModal" data-id="">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Validate Data</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to validate this data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="validateBtn">
+                        Validate
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="confirmRejectModal" data-id="">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Data</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>What is the reason for rejecting this data?</p>
+                    <div class="form-group">
+                        <input class="form-control rejection-message">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="rejectBtn">
+                         Reject
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <div class="modal fade" tabindex="-1" role="dialog" id="detailModal" data-id="">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail Collection</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
     <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
     <script>
         var validateUrl = '{% url "validate-object" %}';
+        var rejectUrl = '{% url "reject-collection-data" %}';
         var customUrl = '{{ custom_url }}';
         var pageUrl = '/nonvalidated-list/';
     </script>

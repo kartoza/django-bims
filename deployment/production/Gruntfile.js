@@ -1,3 +1,15 @@
+const terserOptions = {
+    compress: {
+        passes: 3,
+    },
+    ecma: 8,
+    output: {
+        beautify: false,
+    },
+    toplevel: true,
+};
+
+
 module.exports = function(grunt) {
 
     // Project configuration.
@@ -9,9 +21,9 @@ module.exports = function(grunt) {
                 options: {
                     optimize: 'none',
                     out: function(text, sourceMapText) {
-                        var UglifyJS = require('uglify-es'),
-                        uglified = UglifyJS.minify(text);
-                        grunt.file.write('/usr/src/bims/bims/static/js/optimized.js', uglified.code);
+                        const terser = require('terser');
+                        let contents = terser.minify(text, terserOptions).code();
+                        grunt.file.write('/usr/src/bims/bims/static/js/optimized.js', contents);
                     },
                     baseUrl: '/usr/src/bims/bims/static/js',
                     mainConfigFile: '/usr/src/bims/bims/static/js/app.js',
@@ -25,7 +37,6 @@ module.exports = function(grunt) {
 
     // Load plugins here.
     grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.loadNpmTasks('grunt-contrib-uglify-es');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
 
     // Register tasks here.

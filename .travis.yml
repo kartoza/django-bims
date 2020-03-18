@@ -43,9 +43,9 @@ install:
   - make up-travis
   # Wait until database migrations ready
   - until make sync; do echo "Retrying"; sleep 5; done
-  - make gruntserver
   # Show container status
   - docker-compose ps
+  - make gruntserver
 
 script:
   - make flake8-check

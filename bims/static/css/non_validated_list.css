@@ -23,7 +23,17 @@ tr:nth-child(odd) {background: #f5f5f5}
     color: #1b900d;
 }
 
-.edit-action:hover a {
+.reject-action {
+    text-align: center;
+    color: #8a5f5d
+}
+
+.reject-action:hover {
+    color: #8a2000;
+}
+
+
+.edit-action a:hover {
     color: darkblue;
 }
 
@@ -100,7 +110,7 @@ select {
 }
 
 #map {
-    min-height: 500px;
+    height: 300px;
 }
 
 .ol-zoom {
@@ -150,4 +160,29 @@ select {
     padding-left: 15px;
     padding-right: 15px;
     font-size: 11pt;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl {
+        max-width: 1140px;
+    }
+}
+
+@media (min-width: 992px) {
+    .modal-lg, .modal-xl {
+        max-width: 800px;
+    }
+}
+
+.modal-body {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.capitalize {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    padding-right: 20px;
+    text-transform: capitalize;
 }

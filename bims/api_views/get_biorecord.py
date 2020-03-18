@@ -11,7 +11,7 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.iucn_status import IUCNStatus
 from bims.serializers.bio_collection_serializer import (
     BioCollectionSerializer,
-    BioCollectionDetailSerializer,
+    BioCollectionOneRowSerializer
 )
 from bims.utils.search_process import (
     get_or_create_search_process,
@@ -26,8 +26,8 @@ class GetBioRecordDetail(LoginRequiredMixin, APIView):
     def get(self, request):
         object_pk = request.GET.get('pk', None)
         try:
-            object = BiologicalCollectionRecord.objects.get(pk=object_pk)
-            serializer = BioCollectionDetailSerializer(object)
+            bio = BiologicalCollectionRecord.objects.get(pk=object_pk)
+            serializer = BioCollectionOneRowSerializer(bio)
             return Response(serializer.data)
         except BiologicalCollectionRecord.DoesNotExist:
             return HttpResponse(
