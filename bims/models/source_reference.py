@@ -54,6 +54,11 @@ class SourceReference(PolymorphicModel):
     """ Source reference model """
     note = models.TextField(
         null=True, blank=True)
+    source_name = models.CharField(
+        blank=True,
+        default='',
+        max_length=512
+    )
 
     @property
     def reference_type(self):

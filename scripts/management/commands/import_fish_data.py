@@ -407,6 +407,10 @@ class Command(BaseCommand):
                 not isinstance(source_reference.source, Document)):
             source_reference.document = document
             source_reference.save()
+
+        if reference:
+            source_reference.source_name = reference
+
         return source_reference
 
     def taxonomy(self, record):
