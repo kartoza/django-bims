@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import ast
 from django.core.management.base import BaseCommand
-from bims.scripts.import_fish_species_from_file import (
-    import_fish_species_from_file
+from bims.scripts.import_fish_occurrences_from_gbif import (
+    import_fish_occurrences_from_gbif
 )
 
 
@@ -14,14 +14,14 @@ class Command(BaseCommand):
             '-i',
             '--import-occurrences',
             dest='import_occurrences',
-            default=True,
+            default=False,
             help='Should also import occurrences from gbif')
 
         parser.add_argument(
             '-o',
             '--update-origin',
             dest='update_origin',
-            default=True,
+            default=False,
             help='Update collection origin')
 
     def handle(self, *args, **options):
@@ -38,4 +38,4 @@ class Command(BaseCommand):
         except ValueError:
             update_origin = False
 
-        import_fish_species_from_file(import_occurrences, update_origin)
+        import_fish_occurrences_from_gbif(import_occurrences, update_origin)

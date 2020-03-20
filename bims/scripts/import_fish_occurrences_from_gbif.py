@@ -23,7 +23,7 @@ ENDEMISM_KEY = 'Endemism'
 logger = logging.getLogger('bims')
 
 
-def import_fish_species_from_file(
+def import_fish_occurrences_from_gbif(
     import_occurrences=False,
     update_origin=False,
     fish_file=FISH_FILE):

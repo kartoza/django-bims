@@ -107,7 +107,8 @@ def find_species(original_species_name, rank=None, returns_all=False):
                     'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
                     if result['taxonomicStatus'] == 'ACCEPTED' or \
-                        result['taxonomicStatus'] == 'SYNONYM':
+                        result['taxonomicStatus'] == 'SYNONYM' or \
+                        result['taxonomicStatus'] == 'DOUBTFUL':
                         return result
     except HTTPError:
         print('Species not found')
