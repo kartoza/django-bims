@@ -408,8 +408,14 @@ class Command(BaseCommand):
             source_reference.document = document
             source_reference.save()
 
-        if reference:
+        if reference and source_reference:
             source_reference.source_name = reference
+        elif reference and not source_reference:
+            self.add_to_error_summary(
+                'Reference {} is not created'.format(
+                    reference
+                ),
+                index)
 
         return source_reference
 
