@@ -1,50 +1,106 @@
 import logging
+from django.db.models.fields.related import ForeignObjectRel
+from django.db.models import Q
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
     gbif_name_suggest
 )
-from bims.models import Taxonomy, VernacularName, BiologicalCollectionRecord
+from bims.models import Taxonomy, VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
-from sass.models import SiteVisitBiotopeTaxon, SiteVisitTaxon, SassTaxon
 
 logger = logging.getLogger('bims')
 
 
-def merge_taxa_data(gbif_key, excluded_taxon):
+def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
     """
     If there are more than one data with same gbif key,
     then merge those data
     """
-    taxa = Taxonomy.objects.filter(
-        gbif_key=gbif_key
-    ).exclude(id=excluded_taxon.id)
+    if not excluded_taxon:
+        return
+    if taxa_list:
+        taxa = taxa_list
+    else:
+        taxa = Taxonomy.objects.filter(
+            gbif_key=gbif_key
+        ).exclude(id=excluded_taxon.id)
+
     if taxa.count() < 1:
         return
 
     logger.info('Merging %s data' % len(taxa))
 
-    BiologicalCollectionRecord.objects.filter(
-        taxonomy__in=taxa
-    ).update(
-        taxonomy=excluded_taxon
-    )
-    SiteVisitTaxon.objects.filter(
-        taxonomy__in=taxa
-    ).update(
-        taxonomy=excluded_taxon
-    )
-    SiteVisitBiotopeTaxon.objects.filter(
-        taxon__in=taxa
-    ).update(
-        taxon=excluded_taxon
-    )
-    SassTaxon.objects.filter(
-        taxon__in=taxa
-    ).update(
-        taxon=excluded_taxon
-    )
+    links = [
+        rel.get_accessor_name() for rel in excluded_taxon._meta.get_fields() if
+        issubclass(type(rel), ForeignObjectRel)
+    ]
+
+    if links:
+        for taxon in taxa:
+            logger.info('----- {} -----'.format(str(taxon)))
+            for link in links:
+                try:
+                    objects = getattr(taxon, link).all()
+                    if objects.count() > 0:
+                        print('Updating {obj} for User : {user}'.format(
+                            obj=str(objects.model._meta.label),
+                            user=str(taxon)
+                        ))
+                        update_dict = {
+                            getattr(taxon, link).field.name: excluded_taxon
+                        }
+                        objects.update(**update_dict)
+                except Exception as e:  # noqa
+                    continue
+            logger.info(''.join(['-' for i in range(len(str(taxon)) + 12)]))
 
     taxa.delete()
+
+
+def check_taxa_duplicates(taxon_name, taxon_rank):
+    """
+    Check for taxa duplicates, then merge if found
+    :param taxon_name: Name of the taxon to check
+    :param taxon_rank: Rank of the taxon to check
+    :return: Merged taxonomy
+    """
+    taxon_rank = taxon_rank.strip().upper()
+    taxon_name = taxon_name.strip()
+    taxa = Taxonomy.objects.filter(
+        Q(scientific_name__istartswith=taxon_name) |
+        Q(canonical_name__iexact=taxon_name),
+        rank=taxon_rank
+    )
+    if not taxa.count() > 1:
+        return
+    preferred_taxon = taxa[0]
+    preferred_taxon_gbif_data = get_species(preferred_taxon.gbif_key)
+    for taxon in taxa[1:]:
+        gbif_data = get_species(taxon.gbif_key)
+        if 'issues' in gbif_data and len(gbif_data['issues']) > 0:
+            continue
+        if 'nubKey' not in gbif_data:
+            continue
+        if (
+            'taxonomicStatus' in gbif_data and
+            gbif_data['taxonomicStatus'] != 'ACCEPTED'
+        ):
+            continue
+        if 'key' not in preferred_taxon_gbif_data:
+            preferred_taxon = taxon
+            continue
+        if (
+            'key' in gbif_data and
+            gbif_data['key'] > preferred_taxon_gbif_data['key']
+        ):
+            continue
+        preferred_taxon = taxon
+
+    merge_taxa_data(
+        taxa_list=taxa.exclude(id=preferred_taxon.id),
+        excluded_taxon=preferred_taxon
+    )
+    return preferred_taxon
 
 
 def create_or_update_taxonomy(gbif_data, fetch_vernacular_names=True):

@@ -39,7 +39,9 @@ from bims.models import (
 )
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
-from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+from bims.utils.fetch_gbif import (
+    fetch_all_species_from_gbif, check_taxa_duplicates
+)
 from bims.utils.user import create_users_from_string
 from geonode.documents.models import Document
 from bims.models.taxonomy import taxonomy_pre_save_handler
@@ -416,40 +418,58 @@ class Command(BaseCommand):
                 )
             )
         # -- Processing taxon species --
+        species_name = record[SPECIES_NAME].strip()
+        taxon_rank = record[TAXON_RANK].upper().strip()
         # Find existing taxonomy
         taxa = Taxonomy.objects.filter(
-            Q(scientific_name__icontains=record[SPECIES_NAME]) |
-            Q(canonical_name__icontains=record[SPECIES_NAME]),
-            rank=record[TAXON_RANK].upper()
+            Q(scientific_name__istartswith=species_name) |
+            Q(canonical_name__iexact=species_name),
+            rank=taxon_rank,
+            taxonomic_status='ACCEPTED'
         )
+        if not taxa.exists():
+            taxa = Taxonomy.objects.filter(
+                Q(scientific_name__istartswith=species_name) |
+                Q(canonical_name__iexact=species_name),
+                rank=taxon_rank
+            )
         if taxa.exists():
-            # if exist, use the first one
-            taxonomy = taxa[0]
+            try:
+                if taxa.count() > 1:
+                    taxonomy = check_taxa_duplicates(
+                        species_name,
+                        taxon_rank
+                    )
+                else:
+                    taxonomy = taxa[0]
+            except Exception as e: #  noqa
+                taxonomy = taxa[0]
+                print(str(e))
         else:
             # if not exist, search from gbif
             # Fetch from gbif
             taxonomy = fetch_all_species_from_gbif(
-                species=record[SPECIES_NAME],
-                taxonomic_rank=record[TAXON_RANK].upper(),
+                species=species_name,
+                taxonomic_rank=taxon_rank,
                 should_get_children=False,
                 fetch_vernacular_names=False,
-                use_name_lookup=False
+                use_name_lookup=True
             )
             if not taxonomy:
                 # Try again with lookup
                 taxonomy = fetch_all_species_from_gbif(
-                    species=record[SPECIES_NAME],
-                    taxonomic_rank=record[TAXON_RANK].upper(),
+                    species=species_name,
+                    taxonomic_rank=taxon_rank,
                     should_get_children=False,
                     fetch_vernacular_names=False,
-                    use_name_lookup=True
+                    use_name_lookup=False
                 )
             if not taxonomy:
                 # if there is no record from gbif, create one
                 taxonomy = Taxonomy.objects.create(
-                    scientific_name=record[SPECIES_NAME],
-                    canonical_name=record[SPECIES_NAME],
-                    rank=record[TAXON_RANK].upper()
+                    scientific_name=species_name,
+                    canonical_name=species_name,
+                    rank=taxon_rank
                 )
         if taxonomy and record[SPECIES_NAME] not in taxonomy.canonical_name:
             taxonomy.canonical_name = record[SPECIES_NAME]
@@ -466,6 +486,7 @@ class Command(BaseCommand):
         )
         site_description = record[SITE_DESCRIPTION]
         refined_geo = record[REFINED_GEO_ZONE]
+        legacy_river_name = record[ORIGINAL_RIVER_NAME]
         record_point = Point(
             float(record[LONGITUDE]),
             float(record[LATITUDE]))
@@ -491,6 +512,8 @@ class Command(BaseCommand):
             location_site.site_description = site_description
         if refined_geo:
             location_site.refined_geomorphological = refined_geo
+        if legacy_river_name:
+            location_site.legacy_river_name = legacy_river_name
         location_site.save()
         return location_site
 
