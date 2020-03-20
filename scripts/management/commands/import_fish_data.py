@@ -265,9 +265,12 @@ class Command(BaseCommand):
         # if DOI provided, check in bibliography records
         if doi:
             try:
-                entry = Entry.objects.get(
-                    doi=doi
-                )
+                try:
+                    entry = Entry.objects.get(
+                        doi=doi
+                    )
+                except Entry.MultipleObjectsReturned:
+                    entry = Entry.objects.filter(doi=doi)[0]
                 try:
                     source_reference = SourceReferenceBibliography.objects.get(
                         source=entry
