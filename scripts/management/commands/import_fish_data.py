@@ -361,7 +361,7 @@ class Command(BaseCommand):
                 else:
                     raise ValueError('Peer reviewed should have a DOI')
             elif (
-                    'published' in reference_category.lower() or
+                    reference_category.lower().startswith('published') or
                     'thesis' in reference_category.lower()
             ):
                 # Document
