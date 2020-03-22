@@ -421,6 +421,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 self.clearDashboard();
                 self.loadingDashboard.hide();
                 self.dashboardTitleContainer.html('&nbsp;');
+                filterParameters['taxon'] = '';
                 Shared.Router.clearSearch();
             });
         },

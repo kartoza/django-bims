@@ -50,8 +50,14 @@ define([
                 }
                 label = label.charAt(0).toUpperCase() + label.slice(1);
                 if ($.inArray(data[i].get('source_collection'), this.parent.initialSelectedSourceCollection) > -1) {
-                    checked = 'checked disabled';
+                    checked = 'checked';
                 }
+
+                // If source_collection called fbis is first, then set it disabled
+                if (data[i].get('source_collection') === 'fbis' && i === 0) {
+                    checked += ' disabled';
+                }
+
                 let dataSourceCaption = '';
                 if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase())) {
                     dataSourceCaption = '<br/><small class="text-muted">'+ this.dataSourceCaptions[label.toLowerCase()] +'</small>';
@@ -72,7 +78,7 @@ define([
         getSelected: function () {
             var selected = [];
             this.$el.find('input:checked').each(function () {
-                selected.push($(this).val())
+                selected.push(encodeURIComponent($(this).val()));
             });
             return selected;
         },
