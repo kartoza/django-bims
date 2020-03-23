@@ -9,6 +9,7 @@ from django.conf import settings
 from polymorphic.models import PolymorphicModel
 from td_biblio.models.bibliography import Entry
 from geonode.documents.models import Document
+from bims.helpers.remove_duplicates import remove_duplicates
 
 
 class SourceIsNotFound(Exception):
@@ -134,7 +135,14 @@ class SourceReference(PolymorphicModel):
         if source:
             model_fields['source'] = source
         if not category:
-            source_reference = SourceReference.objects.create(**model_fields)
+            try:
+                source_reference, _ = SourceReference.objects.get_or_create(
+                    **model_fields)
+            except SourceReference.MultipleObjectsReturned:
+                source_reference = remove_duplicates(
+                    SourceReference.objects.filter(
+                        **model_fields
+                    ))
             return source_reference
         try:
             source_reference, created = _SourceModel.objects.get_or_create(
