@@ -1,3 +1,4 @@
+import json
 import logging
 import inspect
 
@@ -19,6 +20,8 @@ def log(message, log_type='info', caller=None):
         message = message.encode('utf-8')
     except ValueError:
         message = message
+    except AttributeError:
+        message = json.dumps(message)
     logger_function('{caller} : {message}'.format(
         caller=caller,
         message=message
