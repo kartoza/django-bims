@@ -187,6 +187,14 @@ def species_autocomplete(request):
         ).exclude(
             id__in=exclude_list
         ).distinct('canonical_name')
+        if not search_qs.exists():
+            search_qs = Taxonomy.objects.filter(
+                Q(canonical_name__icontains=q) |
+                Q(scientific_name__icontains=q),
+                biologicalcollectionrecord__module_group=taxon_group
+            ).exclude(
+                id__in=exclude_list
+            ).distinct('canonical_name')
         results = []
         for r in search_qs:
             results.append({

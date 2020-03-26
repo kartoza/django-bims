@@ -5,14 +5,27 @@
     <tr>
         <th scope="col">Indicators</th>
         <th scope="col">Sampling location</th>
-        <th scope="col">Measurement (mg/m2)</th>
+        <th scope="col">Measurement</th>
     </tr>
     </thead>
     <tbody>
     <tr>
-        <th scope="row" style="vertical-align: middle">Chl A</th>
+        <th scope="row" style="vertical-align: middle">
+            <div class="row">
+                <div class="col-4" style="padding-top: 10px;">
+                    Chl A
+                </div>
+                <div class="col-8">
+                    <select class="form-control biomass-indicator" name="chl_type" id="chl_type">
+                        <option value="CHLA-B" data-hide="CHLA-W">CHLA-B</option>
+                        <option value="CHLA-W" data-hide="CHLA-B">CHLA-W</option>
+                    </select>
+                </div>
+            </div>
+        </th>
+
         <td>
-            <select class="form-control"
+            <select class="form-control CHLA-B"
                     name="indicator_chl_a">
                 <option value=""> Not specified
                 </option>
@@ -23,31 +36,86 @@
                     Soft bottom
                 </option>
                 <option value="In situ">
-                     In site
+                    In situ
+                </option>
+                <option value="Artificial substrate">
+                    Artificial substrate
+                </option>
+            </select>
+             <select class="form-control CHLA-W"
+                    name="indicator_chl_a" style="display: none">
+                <option value=""> Not specified
+                </option>
+                <option value="Water column">
+                    Water column
                 </option>
             </select>
         </td>
+
         <td>
-             <input type="number" min="0" class="form-control" name="chl_a"/>
+            <div class="row">
+                <div class="col-10">
+                    <input type="number" min="0" class="form-control"
+                           name="chl_a"/>
+                </div>
+                <div class="col-2">
+                    <span class="measurement CHLA-B">mg/m2</span>
+                    <span class="measurement CHLA-W"
+                          style="display: none">mg/L</span>
+                </div>
+            </div>
         </td>
     </tr>
     <tr>
-        <th scope="row" style="vertical-align: middle">AFDM</th>
+        <th scope="row" style="vertical-align: middle">
+            <div class="row">
+                <div class="col-4" style="padding-top: 10px;">
+                     AFDM
+                </div>
+                <div class="col-8">
+                    <select class="form-control biomass-indicator" name="afdm_type">
+                        <option value="AFDM-B" data-hide="AFDM-W">AFDM-B</option>
+                        <option value="AFDM-W" data-hide="AFDM-B">AFDM-W</option>
+                    </select>
+                </div>
+            </div>
+        </th>
         <td>
-            <select class="form-control"
+            <select class="form-control AFDM-B"
                     name="indicator_afdm">
                 <option value=""> Not specified
                 </option>
-                <option value="Whole stone">
-                    Whole stone
+                <option value="Whole cobble">
+                    Whole cobble
                 </option>
                 <option value="Soft bottom">
                     Soft bottom
                 </option>
+                <option value="Artificial substrate">
+                    Artificial substrate
+                </option>
+            </select>
+            <select class="form-control AFDM-W"
+                    name="indicator_afdm" style="display: none">
+                <option value=""> Not specified
+                </option>
+                <option value="Water column">
+                    Water column
+                </option>
             </select>
         </td>
         <td>
-            <input type="number" min="0" class="form-control" name="afdm"/>
+             <div class="row">
+                <div class="col-10">
+                    <input type="number" min="0" class="form-control"
+                           name="afdm"/>
+                </div>
+                <div class="col-2">
+                    <span class="measurement AFDM-B">mg/m2</span>
+                    <span class="measurement AFDM-W"
+                          style="display: none">mg/L</span>
+                </div>
+            </div>
         </td>
     </tr>
     <tr>
@@ -58,3 +126,17 @@
     </tr>
     </tbody>
 </table>
+
+<script type="text/javascript">
+
+    function biomassIndicatorChanged () {
+        let classToHide = this.options[this.selectedIndex].getAttribute('data-hide');
+        for (let el of document.querySelectorAll(`.${classToHide}`)) el.style.display = 'none';
+        for (let el of document.querySelectorAll(`.${this.value}`)) el.style.display = 'block';
+    }
+
+    [].forEach.call(document.querySelectorAll('.biomass-indicator'), function (el) {
+       el.onchange = biomassIndicatorChanged;
+    });
+
+</script>
