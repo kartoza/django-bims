@@ -437,12 +437,14 @@ class AlgaeFormView(CollectionFormView):
 
         # -- Biomass chemical records
         chem_units = {}
+        chl_type = post.get('chl_type', None)
+        afdm_type = post.get('afdm_type', None)
         chl_a = post.get('chl_a', None)
-        if chl_a:
-            chem_units['CHLA-B'] = chl_a
+        if chl_type and chl_a:
+            chem_units[chl_type] = chl_a
         afdm = post.get('afdm', None)
-        if afdm:
-            chem_units['AFDM'] = afdm
+        if afdm_type and afdm:
+            chem_units[afdm_type] = afdm
         for chem_unit in chem_units:
             chem = Chem.objects.filter(
                 chem_code__iexact=chem_unit

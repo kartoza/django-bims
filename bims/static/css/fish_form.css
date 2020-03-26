@@ -92,3 +92,8 @@ table td {
 .find-taxon-modal {
     width: 650px;
 }
+
+.measurement {
+    float: left;
+    padding-top: 10px;
+}
