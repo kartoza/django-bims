@@ -402,6 +402,29 @@ class SassAccreditedStatusFilter(SimpleListFilter):
         return queryset
 
 
+class UserHasEmailFilter(SimpleListFilter):
+    title = 'User has email address'
+    parameter_name = 'user_has_email'
+
+    def lookups(self, request, model_admin):
+        return [
+            (True, 'Yes'),
+            (False, 'No')
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'False':
+            return queryset.filter(
+                models.Q(email__isnull=True) |
+                models.Q(email='')
+            )
+        elif self.value() == 'True':
+            return queryset.filter(
+                email__isnull=False
+            ).exclude(email='')
+        return queryset
+
+
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
@@ -431,6 +454,7 @@ class CustomUserAdmin(ProfileAdmin):
         'last_name',
         'is_staff',
         'is_active',
+        'signed_up',
         'sass_accredited_status'
     )
     list_filter = (
@@ -438,7 +462,8 @@ class CustomUserAdmin(ProfileAdmin):
         'is_superuser',
         'is_active',
         'groups',
-        SassAccreditedStatusFilter
+        SassAccreditedStatusFilter,
+        UserHasEmailFilter,
     )
 
     def sass_accredited_status(self, obj):
@@ -458,6 +483,25 @@ class CustomUserAdmin(ProfileAdmin):
                 return true_response
         except BimsProfile.DoesNotExist:
             return '-'
+
+    def signed_up(self, obj):
+        false_response = format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+        true_response = format_html(
+            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        if not obj.email:
+            return false_response
+        if obj.last_login:
+            return true_response
+        try:
+            profile_data = json.loads(
+                obj.bims_profile.data
+            )
+            if 'DateModified' in profile_data:
+                return false_response
+        except (ValueError, BimsProfile.DoesNotExist):
+            pass
+        return true_response
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
