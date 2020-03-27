@@ -5,7 +5,7 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.conf import settings
-from bims.models import Taxonomy, TaxonGroup
+from bims.models import Taxonomy, TaxonGroup, BiologicalCollectionRecord
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,12 @@ class Command(BaseCommand):
         if identifier:
             identifiers = identifier.split('=')
             filters[identifiers[0]] = identifiers[1]
-            taxa = taxa.filter(additional_data__contains=filters)
+            bio = BiologicalCollectionRecord.objects.filter(
+                additional_data__contains=filters
+            )
+            taxa = Taxonomy.objects.filter(
+                id__in=bio.values('taxonomy')
+            )
 
         csv_path = os.path.join(settings.MEDIA_ROOT, 'taxa_csv')
         if not os.path.exists(csv_path) : os.mkdir(csv_path)
