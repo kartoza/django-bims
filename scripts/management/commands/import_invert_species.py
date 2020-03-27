@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def csv_file_name(self, options):
         self.import_date = options.get('import_date', None)
-        return 'SA Invertebrate Master List FBISv3_03 Mar 2020.csv'
+        return 'SA Invertebrate Master List FBISv3_27 Mar 2020.csv'
 
     def additional_data(self, taxonomy, row):
         """
@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
         # -- Endemism
         if ENDEMISM in row and row[ENDEMISM]:
-            endemism = Endemism.objects.get_or_create(
+            endemism, _ = Endemism.objects.get_or_create(
                 name=row[ENDEMISM]
             )
             taxonomy.endemism = endemism

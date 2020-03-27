@@ -175,6 +175,14 @@ class Taxonomy(DocumentLinksMixin):
         return Taxonomy.objects.filter(or_condition)
 
     @property
+    def taxon_class(self):
+        if self.rank != TaxonomicRank.CLASS.name and self.parent:
+            return self.parent.taxon_class
+        if self.rank == TaxonomicRank.CLASS.name:
+            return self
+        return None
+
+    @property
     def class_name(self):
         if self.rank != TaxonomicRank.CLASS.name and self.parent:
             return self.parent.class_name

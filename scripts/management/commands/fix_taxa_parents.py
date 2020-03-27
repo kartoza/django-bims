@@ -38,10 +38,18 @@ class Command(BaseCommand):
             default='',
             help='Identifier for filters'
         )
+        parser.add_argument(
+            '-ti',
+            '--taxa-identifier',
+            dest='taxa_identifier',
+            default='',
+            help='Identifier for taxa filters'
+        )
 
     def handle(self, *args, **options):
         taxon_group = options.get('taxon_group')
         identifier = options.get('identifier')
+        taxa_identifiers = options.get('taxa_identifier')
         signals.pre_save.disconnect(
             taxonomy_pre_save_handler,
             sender=Taxonomy
@@ -72,7 +80,11 @@ class Command(BaseCommand):
             taxa = Taxonomy.objects.filter(or_condition)
         else:
             taxa = Taxonomy.objects.all()
-        if identifier:
+        if taxa_identifiers:
+            identifiers = identifier.split('=')
+            filters[identifiers[0]] = identifiers[1]
+            taxa = Taxonomy.objects.filter(additional_data__contains=filters)
+        elif identifier:
             identifiers = identifier.split('=')
             filters[identifiers[0]] = identifiers[1]
             bio = BiologicalCollectionRecord.objects.filter(
