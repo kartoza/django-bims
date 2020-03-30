@@ -47,7 +47,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
         getKartozaBaseMap: function () {
             let baseMapLayer = new ol.layer.Tile({
                 source: new ol.source.TileWMS({
-                    url: 'https://maps.kartoza.com/mapproxy/service',
+                    url: '/bims_proxy/https://maps.kartoza.com/mapproxy/service',
                     params: {
                         'layers': 'basemap',
                         'uppercase': true,
