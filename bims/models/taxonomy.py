@@ -47,6 +47,13 @@ class Taxonomy(DocumentLinksMixin):
         blank=True
     )
 
+    legacy_canonical_name = models.CharField(
+        verbose_name='Legacy Canonical Name',
+        max_length=255,
+        blank=True,
+        default=''
+    )
+
     rank = models.CharField(
         verbose_name='Taxonomic Rank',
         max_length=50,
