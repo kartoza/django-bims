@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from scripts.management.commands.import_fish_data import Command as FishCommand
+from scripts.management.commands.import_collection_data import Command as FishCommand
 from bims.models.algae_data import AlgaeData
 from bims.utils.user import create_users_from_string
 

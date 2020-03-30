@@ -1,6 +1,6 @@
 import logging
 from django.db.models.fields.related import ForeignObjectRel
-from django.db.models import Q
+from django.db.models import Q, Min
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
     gbif_name_suggest
@@ -73,10 +73,20 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
     )
     if not taxa.count() > 1:
         return
-    preferred_taxon = taxa[0]
-    preferred_taxon_gbif_data = get_species(preferred_taxon.gbif_key)
+    preferred_taxon = taxa.values('gbif_key', 'id').annotate(
+        Min('gbif_key')).order_by('gbif_key')[0]
+    preferred_taxon_gbif_data = get_species(preferred_taxon['gbif_key'])
+    preferred_taxon = Taxonomy.objects.get(
+        id=preferred_taxon['id']
+    )
     for taxon in taxa[1:]:
         gbif_data = get_species(taxon.gbif_key)
+        if not preferred_taxon_gbif_data:
+            preferred_taxon = taxon
+            preferred_taxon_gbif_data = gbif_data
+            continue
+        if not gbif_data:
+            continue
         if 'issues' in gbif_data and len(gbif_data['issues']) > 0:
             continue
         if 'nubKey' not in gbif_data:
@@ -88,6 +98,7 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
             continue
         if 'key' not in preferred_taxon_gbif_data:
             preferred_taxon = taxon
+            preferred_taxon_gbif_data = gbif_data
             continue
         if (
             'key' in gbif_data and
@@ -95,6 +106,7 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
         ):
             continue
         preferred_taxon = taxon
+        preferred_taxon_gbif_data = gbif_data
 
     merge_taxa_data(
         taxa_list=taxa.exclude(id=preferred_taxon.id),

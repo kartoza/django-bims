@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
+import ast
 import os
 import csv
 import json
@@ -61,7 +62,7 @@ CATEGORY = 'Category'
 ORIGIN = 'Origin'
 HABITAT = 'Habitat'
 SAMPLING_METHOD = 'Sampling method'
-SAMPLING_EFFORT = 'Sampling effort'
+SAMPLING_EFFORT = 'Sampling effort measure'
 SAMPLING_EFFORT_VALUE = 'Sampling effort value'
 ABUNDANCE_MEASURE = 'Abundance measure'
 ABUNDANCE_VALUE = 'Abundance value'
@@ -159,6 +160,13 @@ class Command(BaseCommand):
             dest='only_add',
             default=False,
             help='Only process new data'
+        )
+        parser.add_argument(
+            '-so',
+            '--sites-only',
+            dest='sites_only',
+            default='False',
+            help='Only ingest sites'
         )
 
     def add_to_error_summary(self, error_message, row, add_to_error=True, only_log=False):
@@ -606,6 +614,12 @@ class Command(BaseCommand):
         json_additional_data = options.get('additional_data')
         only_add = options.get('only_add')
         try:
+            sites_only = ast.literal_eval(
+                options.get('sites_only')
+            )
+        except ValueError:
+            sites_only = False
+        try:
             additional_data = json.loads(json_additional_data)
         except ValueError:
             additional_data = {}
@@ -622,6 +636,13 @@ class Command(BaseCommand):
             for index, record in enumerate(csv_reader):
                 try:
                     uuid_value = None
+
+                    # -- Processing LocationSite
+                    location_site = self.location_site(record)
+                    if sites_only:
+                        log('Importing sites data : %s' % str(location_site))
+                        continue
+
                     if UUID in record and record[UUID]:
                         try:
                             uuid_value = uuid.UUID(record[UUID][0:36]).hex
@@ -653,9 +674,6 @@ class Command(BaseCommand):
 
                     # -- Processing Taxonomy
                     taxonomy = self.taxonomy(record)
-
-                    # -- Processing LocationSite
-                    location_site = self.location_site(record)
 
                     # -- Processing collectors
                     collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])

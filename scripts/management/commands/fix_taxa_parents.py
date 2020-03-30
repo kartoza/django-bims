@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
 from django.core.management.base import BaseCommand
-from django.db.models import Q
+from django.db.models import Q, signals
 from bims.models import Taxonomy, TaxonGroup
-from bims.utils.fetch_gbif import fetch_all_species_from_gbif, merge_taxa_data
+from bims.utils.fetch_gbif import (
+    fetch_all_species_from_gbif, merge_taxa_data, check_taxa_duplicates
+)
+from bims.models import BiologicalCollectionRecord, taxonomy_pre_save_handler
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +38,22 @@ class Command(BaseCommand):
             default='',
             help='Identifier for filters'
         )
+        parser.add_argument(
+            '-ti',
+            '--taxa-identifier',
+            dest='taxa_identifier',
+            default='',
+            help='Identifier for taxa filters'
+        )
 
     def handle(self, *args, **options):
         taxon_group = options.get('taxon_group')
         identifier = options.get('identifier')
-
+        taxa_identifier = options.get('taxa_identifier')
+        signals.pre_save.disconnect(
+            taxonomy_pre_save_handler,
+            sender=Taxonomy
+        )
         filters = dict()
         taxonomies = []
         if taxon_group:
@@ -47,6 +61,7 @@ class Command(BaseCommand):
                 name__iexact=taxon_group,
                 category='SPECIES_MODULE'
             )
+            taxon_group = taxon_groups[0]
             for group in taxon_groups:
                 taxonomies.extend(
                     list(group.taxonomies.values_list('id', flat=True)))
@@ -65,10 +80,30 @@ class Command(BaseCommand):
             taxa = Taxonomy.objects.filter(or_condition)
         else:
             taxa = Taxonomy.objects.all()
-        if identifier:
+        if taxa_identifier:
+            taxa_identifiers = taxa_identifier.split('=')
+            filters[taxa_identifiers[0]] = taxa_identifiers[1]
+            taxa = Taxonomy.objects.filter(additional_data__contains=filters)
+        elif identifier:
             identifiers = identifier.split('=')
             filters[identifiers[0]] = identifiers[1]
-            taxa = taxa.filter(additional_data__contains=filters)
+            bio = BiologicalCollectionRecord.objects.filter(
+                additional_data__contains=filters
+            )
+            bio_taxa = Taxonomy.objects.filter(
+                id__in=bio.values('taxonomy')
+            )
+            for taxon in bio_taxa:
+                taxon_class = taxon.taxon_class
+                if taxon_class and not taxon_group.taxonomies.filter(
+                    id=taxon_class.id
+                ).exists():
+                    print('Add {taxon} to {group}'.format(
+                        taxon=taxon_class,
+                        group=taxon_group
+                    ))
+                    taxon_group.taxonomies.add(taxon_class)
+            taxa = bio_taxa
 
         max_try = 10
         for taxon in taxa:
@@ -76,12 +111,19 @@ class Command(BaseCommand):
             current_try = 0
             while current_taxon.rank != 'KINGDOM' and current_try < max_try:
                 print(current_taxon)
+                # Check for duplicates
+                check_taxa_duplicates(
+                    taxon_name=current_taxon.canonical_name,
+                    taxon_rank=current_taxon.rank
+                )
                 if current_taxon:
                     try:
                         if not current_taxon.parent:
                             # Try fetch parent of taxon
                             print('fetch parent')
                             fetch_all_species_from_gbif(
+                                species=current_taxon.canonical_name.strip(),
+                                taxonomic_rank=current_taxon.rank,
                                 gbif_key=current_taxon.gbif_key,
                                 parent=None,
                                 should_get_children=False
@@ -112,16 +154,7 @@ class Command(BaseCommand):
                                 break
                         else:
                             current_taxon = current_taxon.parent
-                        _taxon = Taxonomy.objects.filter(
-                            gbif_key=current_taxon.gbif_key,
-                        )
-                        if _taxon.count() > 1:
-                            if _taxon.filter(parent__isnull=False).exists():
-                                _taxon = _taxon.filter(parent__isnull=False)
-                            merge_taxa_data(
-                                current_taxon.gbif_key,
-                                _taxon[0]
-                            )
+
                     except Taxonomy.DoesNotExist:
                         pass
                 else:

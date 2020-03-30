@@ -1,29 +1,16 @@
 # coding=utf-8
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from bims.models.source_reference import SourceReference
 from bims.serializers.reference_serializer import ReferenceSerializer
 from td_biblio.models import Entry
 from bims.api_views.pagination_api_view import PaginationAPIView
+from bims.tasks.source_reference import get_source_reference_filter
 
 
 class ReferenceList(APIView):
     """Return list of reference"""
     def get(self, request, *args):
-        references = SourceReference.objects.filter(
-            biologicalcollectionrecord__isnull=False,
-            biologicalcollectionrecord__validated=True
-        ).distinct('id')
-        results = []
-        for reference in references:
-            results.append(
-                {
-                    'id': reference.id,
-                    'reference': str(reference.source),
-                    'type': reference.reference_type
-                }
-            )
-        return Response(results)
+        return Response(get_source_reference_filter())
 
 
 class ReferenceEntryList(PaginationAPIView):

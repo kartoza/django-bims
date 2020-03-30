@@ -1,6 +1,6 @@
 import os
 import logging
-from django.db.models import signals
+from django.db.models import signals, Q
 from scripts.management.csv_command import CsvCommand
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.utils.logger import log
@@ -25,7 +25,7 @@ class Command(CsvCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '-d',
-            '--import-data',
+            '--import-date',
             dest='import_date',
             default=None,
             help='Date of the import'
@@ -96,6 +96,7 @@ class Command(CsvCommand):
 
         for row in csv_reader:
             try:
+                taxon_name = row[TAXON].strip()
                 print('---------')
                 # Get rank
                 if row[SPECIES]:
@@ -106,24 +107,25 @@ class Command(CsvCommand):
                     rank = FAMILY
 
                 taxa = Taxonomy.objects.filter(
-                    canonical_name__iexact=row[TAXON],
+                    Q(canonical_name__iexact=taxon_name) |
+                    Q(legacy_canonical_name__iexact=taxon_name),
                     rank=rank.upper()
                 )
                 taxonomy = None
                 if taxa.exists():
                     taxonomy = taxa[0]
                     logger.debug('{} already exists in the system'.format(
-                        row[TAXON]
+                        taxon_name
                     ))
 
                 if not taxonomy:
                     # Fetch from gbif
                     taxonomy = fetch_all_species_from_gbif(
-                        species=row[TAXON],
+                        species=taxon_name,
                         taxonomic_rank=rank,
                         should_get_children=False,
                         fetch_vernacular_names=False,
-                        use_name_lookup=False
+                        use_name_lookup=True
                     )
                 if taxonomy:
                     success.append(taxonomy.id)
@@ -131,11 +133,11 @@ class Command(CsvCommand):
                     # Try again with lookup
                     logger.debug('Use different method')
                     taxonomy = fetch_all_species_from_gbif(
-                        species=row[TAXON],
+                        species=taxon_name,
                         taxonomic_rank=rank,
                         should_get_children=False,
                         fetch_vernacular_names=False,
-                        use_name_lookup=True
+                        use_name_lookup=False
                     )
                     if not taxonomy:
                         errors.append({
@@ -166,19 +168,20 @@ class Command(CsvCommand):
                         errors.append({
                             'row': index,
                             'error': 'Parent not found {}'.format(
-                                row[TAXON]
+                                taxon_name
                             )
                         })
                     else:
                         taxonomy, create = Taxonomy.objects.get_or_create(
-                            scientific_name=row[TAXON],
-                            canonical_name=row[TAXON],
+                            scientific_name=taxon_name,
+                            canonical_name=taxon_name,
                             rank=TaxonomicRank[rank.upper()].name,
                             parent=parent
                         )
                         success.append(taxonomy.id)
 
                 if taxonomy:
+                    taxonomy.legacy_canonical_name = taxon_name
                     self.additional_data(
                         taxonomy,
                         row
