@@ -550,22 +550,23 @@
              data-content="Locate Options">
             <i class="fa fa-location-arrow" aria-hidden="true"></i>
         </div>
-        {% if user.is_authenticated %}
-            {% if perms.bims.can_upload_csv or perms.bims.can_add_single_occurrence %}
-                <div class="upload-data sub-control-panel" data-toggle="popover"
-                     data-placement="right" data-trigger="hover"
-                     data-content="Capture Single Occurrence">
-                    <i class="fa fa-crosshairs" aria-hidden="true"></i>
-                </div>
-            {% endif %}
-        {% endif %}
-        {% if can_validate %}
-            <div class="validate-data sub-control-panel" data-toggle="popover"
-                 data-placement="right" data-trigger="hover"
-                 data-content="Validate Data">
-                <i class="fa fa-check" aria-hidden="true"></i>
-            </div>
-        {% endif %}
+{# COMMENTED FOR NOW #}
+{#        {% if user.is_authenticated %}#}
+{#            {% if perms.bims.can_upload_csv or perms.bims.can_add_single_occurrence %}#}
+{#                <div class="upload-data sub-control-panel" data-toggle="popover"#}
+{#                     data-placement="right" data-trigger="hover"#}
+{#                     data-content="Capture Single Occurrence">#}
+{#                    <i class="fa fa-crosshairs" aria-hidden="true"></i>#}
+{#                </div>#}
+{#            {% endif %}#}
+{#        {% endif %}#}
+{#        {% if can_validate %}#}
+{#            <div class="validate-data sub-control-panel" data-toggle="popover"#}
+{#                 data-placement="right" data-trigger="hover"#}
+{#                 data-content="Validate Data">#}
+{#                <i class="fa fa-check" aria-hidden="true"></i>#}
+{#            </div>#}
+{#        {% endif %}#}
         {% if bims_preferences.enable_download_data_from_map %}
         <div id="download-control" class="download-control sub-control-panel"
         data-toggle="popover"

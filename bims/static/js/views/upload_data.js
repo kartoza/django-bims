@@ -27,7 +27,7 @@ define(['backbone', 'underscore', 'jquery', 'shared', 'ol', 'collections/referen
             this.parent = options.parent;
             this.map = options.map;
             this.referenceEntryList = new ReferenceEntry();
-            this.fetchReferenceList(1);
+            // this.fetchReferenceList(1);
         },
         addNewSite: function (e) {
             var locationSiteInput = $('#ud_location_site');

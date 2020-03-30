@@ -6,10 +6,12 @@
 from collections import OrderedDict
 from django.db import models
 from django.conf import settings
+from django.dispatch import receiver
 from polymorphic.models import PolymorphicModel
 from td_biblio.models.bibliography import Entry
 from geonode.documents.models import Document
 from bims.helpers.remove_duplicates import remove_duplicates
+from bims.utils.decorator import prevent_recursion
 
 
 class SourceIsNotFound(Exception):
@@ -253,3 +255,20 @@ LIST_SOURCE_REFERENCES = OrderedDict([
     (SourceReferenceDocument().reference_type, SourceReferenceDocument),
     (SourceReference().reference_type, SourceReference),
 ])
+
+
+@receiver(models.signals.post_save, sender=SourceReferenceDatabase)
+@receiver(models.signals.post_save, sender=SourceReferenceBibliography)
+@receiver(models.signals.post_save, sender=SourceReference)
+@receiver(models.signals.post_save, sender=SourceReferenceDocument)
+@prevent_recursion
+def source_reference_post_save_handler(sender, instance, **kwargs):
+    from bims.tasks.source_reference import generate_source_reference_filter
+    import os
+    from django.conf import settings
+    file_name = 'spatial_scale_filter_list.txt'
+    file_path = os.path.join(
+        settings.MEDIA_ROOT,
+        file_name
+    )
+    generate_source_reference_filter.delay(file_path)

@@ -33,7 +33,6 @@ class Command(BaseCommand):
 
         # -- Import date
         data['Import Date'] = self.import_date
-        taxonomy.additional_data = data
 
         # -- Add Genus to Algae taxon group
         taxon_group, _ = TaxonGroup.objects.get_or_create(
