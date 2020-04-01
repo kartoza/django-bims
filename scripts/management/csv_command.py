@@ -17,6 +17,7 @@ class CsvCommand(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        self.init(options)
         csv_file_name = self.csv_file_name(options)
         csv_file_path = os.path.join(
             self.csv_root_folder,
@@ -28,6 +29,9 @@ class CsvCommand(BaseCommand):
 
         with open(csv_file_path) as csv_file:
             self.csv_dict_reader(csv.DictReader(csv_file))
+
+    def init(self, options):
+        return
 
     def csv_dict_reader(self, csv_reader):
         # Read csv file

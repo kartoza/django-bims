@@ -610,26 +610,45 @@ class EndemismAdmin(admin.ModelAdmin):
     )
 
 
-class TaxonIdentifierAdmin(admin.ModelAdmin):
+class TaxonomyAdmin(admin.ModelAdmin):
 
     list_display = (
-        'gbif_key',
+        'canonical_name',
+        'link_to_gbif',
         'scientific_name',
         'rank',
-        'parent'
+        'parent',
+        'import_date',
+        'taxonomic_status',
+        'legacy_canonical_name',
+        'verified'
     )
 
     list_filter = (
         'rank',
+        'verified',
+        'import_date',
+        'taxonomic_status',
     )
 
     search_fields = (
         'scientific_name',
+        'canonical_name',
+        'legacy_canonical_name',
     )
 
     raw_id_fields = (
         'parent',
     )
+
+    def link_to_gbif(self, obj):
+        if obj.gbif_key:
+            link = 'https://gbif.org/species/{}'.format(obj.gbif_key)
+            label = obj.gbif_key
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>', link, label)
+        else:
+            return '-'
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
@@ -856,7 +875,7 @@ admin.site.register(SurveyData)
 admin.site.register(SurveyDataOption)
 admin.site.register(SurveyDataValue, SurveyDataValueAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
-admin.site.register(Taxonomy, TaxonIdentifierAdmin)
+admin.site.register(Taxonomy, TaxonomyAdmin)
 admin.site.register(TaxonGroup)
 
 admin.site.register(Boundary, BoundaryAdmin)

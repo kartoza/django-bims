@@ -1,6 +1,7 @@
 import json
 from django.db import models
 from django.dispatch import receiver
+from django.utils import timezone
 
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
@@ -8,7 +9,6 @@ from bims.models.iucn_status import IUCNStatus
 from bims.models.endemism import Endemism
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
-from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.models.vernacular_name import VernacularName
 from django.contrib.postgres.fields import JSONField
 
@@ -25,12 +25,17 @@ class TaxonomyField(models.CharField):
         super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
-class Taxonomy(DocumentLinksMixin):
+class Taxonomy(models.Model):
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
         null=True,
         blank=True
+    )
+
+    verified = models.BooleanField(
+        help_text='The data has been verified',
+        default=False
     )
 
     scientific_name = models.CharField(
@@ -126,6 +131,12 @@ class Taxonomy(DocumentLinksMixin):
         verbose_name='Additional json data',
         null=True,
         blank=True
+    )
+
+    import_date = models.DateField(
+        default=timezone.now,
+        blank=True,
+        null=True,
     )
 
     def save_json_data(self, json_field):
