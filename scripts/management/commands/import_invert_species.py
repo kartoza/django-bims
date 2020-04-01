@@ -1,4 +1,4 @@
-from scripts.management.commands.import_algae_species import Command as BaseCommand
+from scripts.management.commands.import_species import Command as BaseCommand
 from bims.models import Endemism, TaxonGroup, TaxonomicGroupCategory
 
 
@@ -9,7 +9,6 @@ ORIGIN = 'Origin'
 class Command(BaseCommand):
 
     def csv_file_name(self, options):
-        self.import_date = options.get('import_date', None)
         return 'SA Invertebrate Master List FBISv3_27 Mar 2020.csv'
 
     def additional_data(self, taxonomy, row):
@@ -30,9 +29,6 @@ class Command(BaseCommand):
         # -- Origin
         if row[ORIGIN]:
             data[ORIGIN] = row[ORIGIN]
-
-        # -- Import date
-        data['Import Date'] = self.import_date
 
         # -- Add Genus to Algae taxon group
         taxon_group, _ = TaxonGroup.objects.get_or_create(

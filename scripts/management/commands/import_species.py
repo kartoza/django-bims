@@ -1,0 +1,449 @@
+import os
+import ast
+import csv
+import logging
+from django.db.models import signals, Q
+from django.utils.dateparse import parse_date
+from django.conf import settings
+from scripts.management.csv_command import CsvCommand
+from bims.utils.fetch_gbif import (
+    fetch_all_species_from_gbif, check_taxa_duplicates, check_taxon_parent
+)
+from bims.utils.logger import log
+from bims.utils.gbif import *
+from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
+from bims.models.taxonomy import taxonomy_pre_save_handler
+
+logger = logging.getLogger('bims')
+
+IN_GBIF = 'In GBIF'
+TAXON = 'Taxon'
+SPECIES = 'Species'
+GENUS = 'Genus'
+FAMILY = 'Family'
+ORDER = 'Order'
+CLASS = 'Class'
+PHYLUM = 'Phylum'
+KINGDOM = 'Kingdom'
+DIVISION = 'Division'
+GROWTH_FORM = 'Growth Form'
+SCIENTIFIC_NAME = 'Scientific name and authority'
+
+TAXON_RANKS = [
+    PHYLUM,
+    CLASS,
+    ORDER,
+    FAMILY,
+    GENUS,
+]
+ALL_TAXON_RANKS = [
+    'KINGDOM',
+    'PHYLUM',
+    'CLASS',
+    'ORDER',
+    'FAMILY',
+    'GENUS',
+    'SPECIES'
+]
+
+
+class Command(CsvCommand):
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-d',
+            '--import-date',
+            dest='import_date',
+            default=None,
+            help='Date of the import (YYYY-MM-DD)'
+        )
+        parser.add_argument(
+            '-c',
+            '--check-data',
+            dest='check_only',
+            default='False',
+            help='Checking the data only'
+        )
+        parser.add_argument(
+            '-m',
+            '--import-missing',
+            dest='missing_only',
+            default='False',
+            help='Only ingest missing data'
+        )
+        parser.add_argument(
+            '-e',
+            '--export-to-csv',
+            dest='csv_name',
+            default='',
+            help='Export to csv name'
+        )
+
+    def init(self, options):
+        self.import_date = options.get('import_date', None)
+        try:
+            self.check_only = ast.literal_eval(
+                options.get('check_only')
+            )
+        except ValueError:
+            self.check_only = False
+        try:
+            self.missing_only = ast.literal_eval(
+                options.get('missing_only')
+            )
+        except ValueError:
+            self.missing_only = False
+        self.csv_name = options.get('csv_name')
+
+    def csv_file_name(self, options):
+        return 'SA Algal Master List FBISv3_3 Mar 2020.csv'
+
+    @property
+    def csv_root_folder(self):
+        dev_folder = '/home/web/django_project'
+        folder_name = 'data'
+        if os.path.exists(dev_folder):
+            root = dev_folder
+        else:
+            root = '/usr/src/bims'
+        return os.path.join(
+            root,
+            'scripts/static/{}/'.format(
+                folder_name
+            )
+        )
+
+    def row_value(self, row, key):
+        """
+        Get row value by key
+        :param row: row data
+        :param key: key
+        :return: row value
+        """
+        row_value = row[key]
+        row_value = row_value.replace('\xc2\xa0', ' ')
+        row_value = row_value.strip()
+        return row_value
+
+    def get_taxonomy(self, taxon_name, scientific_name, rank):
+        """
+        Get taxonomy from database and gbif
+        :param taxon_name: name of the taxon
+        :param scientific_name: scientific name of the taxon
+        :param rank: rank of the taxon
+        :return: taxonomy object
+        """
+        taxon_data = Taxonomy.objects.filter(
+            Q(canonical_name__iexact=taxon_name) |
+            Q(legacy_canonical_name__iexact=taxon_name),
+            rank=rank
+        )
+        if not taxon_data.exists():
+            parent = fetch_all_species_from_gbif(
+                species=taxon_name,
+                taxonomic_rank=rank,
+                should_get_children=False,
+                fetch_vernacular_names=False
+            )
+            if parent:
+                if taxon_name.lower() not in parent.scientific_name.lower():
+                    parent.scientific_name = scientific_name
+                    parent.legacy_canonical_name = taxon_name
+                    parent.canonical_name = taxon_name
+                    parent.gbif_key = ''
+                    parent.gbif_data = {}
+                    parent.save()
+            else:
+                parent, _ = Taxonomy.objects.get_or_create(
+                    canonical_name=taxon_name,
+                    scientific_name=scientific_name,
+                    legacy_canonical_name=taxon_name
+                )
+        else:
+            parent = taxon_data[0]
+        return parent
+
+    def get_parent(self, row, current_rank=GENUS):
+        taxon = self.get_taxonomy(
+            row[current_rank],
+            row[current_rank],
+            current_rank.upper()
+        )
+        if not taxon.gbif_key or not taxon.parent:
+            ranks = TAXON_RANKS
+            ranks.remove(current_rank)
+            if len(ranks) > 0:
+                parent = self.get_parent(row, ranks[len(ranks)-1])
+                taxon.parent = parent
+                taxon.save()
+        return taxon
+
+    def additional_data(self, taxonomy, row):
+        """
+        Import additional data from CSV into taxonomy.
+        :param taxonomy: Taxonomy object
+        :param row: data row from csv
+        """
+        data = dict()
+
+        # -- Division
+        if DIVISION in row:
+            data[DIVISION] = self.row_value(row, DIVISION)
+
+        # -- Growth Form
+        if GROWTH_FORM in row:
+            data[GROWTH_FORM] = self.row_value(row, GROWTH_FORM)
+
+        # -- Add Genus to Algae taxon group
+        taxon_group, _ = TaxonGroup.objects.get_or_create(
+            name='Algae',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+        )
+        if taxonomy.rank == 'SPECIES' and taxonomy.parent:
+            taxon_group.taxonomies.add(taxonomy.parent)
+        elif taxonomy.rank == 'SUBSPECIES' and taxonomy.parent and taxonomy.parent.parent:
+            taxon_group.taxonomies.add(taxonomy.parent.parent)
+        else:
+            taxon_group.taxonomies.add(taxonomy)
+
+        taxonomy.additional_data = data
+        taxonomy.save()
+
+    def csv_dict_reader(self, csv_reader):
+        signals.pre_save.disconnect(
+            taxonomy_pre_save_handler,
+            sender=Taxonomy
+        )
+        errors = []
+        success = []
+        csv_data = []
+
+        index = 1
+
+        for row in csv_reader:
+            index += 1
+            taxon_name = self.row_value(row, TAXON)
+            scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
+                               if row[SCIENTIFIC_NAME]
+                               else taxon_name)
+            scientific_name = scientific_name.strip()
+            # Get rank
+            if row[SPECIES]:
+                rank = SPECIES
+            elif row[GENUS]:
+                rank = GENUS
+            elif row[FAMILY]:
+                rank = FAMILY
+            elif row[ORDER]:
+                rank = ORDER
+            elif row[CLASS]:
+                rank = CLASS
+            elif row[PHYLUM]:
+                rank = PHYLUM
+            else:
+                rank = KINGDOM
+            taxa = Taxonomy.objects.filter(
+                Q(canonical_name__iexact=taxon_name) |
+                Q(legacy_canonical_name__iexact=taxon_name),
+                rank=rank.upper()
+            )
+            print('---------')
+            ids = []
+
+            if self.check_only:
+                print('Checking data {}'.format(taxon_name))
+                if not taxa.exists():
+                    errors.append(
+                        'Missing taxon {taxon} - {row}'.format(
+                            taxon=taxon_name,
+                            row=index
+                        )
+                    )
+                else:
+                    if taxa.count() > 1:
+                        errors.append(
+                            'Duplicate taxa for {taxon} - {row}'.format(
+                                taxon=taxon_name,
+                                row=index
+                            )
+                        )
+                        check_taxa_duplicates(
+                            taxon_name,
+                            rank
+                        )
+                    if taxa[0].id not in ids:
+                        ids.append(taxa[0].id)
+                    else:
+                        errors.append(
+                            'Duplicate ids for {taxon} - {row}'.format(
+                                taxon=taxon_name,
+                                row=index
+                            )
+                        )
+                continue
+
+            try:
+                taxonomy = None
+                if self.missing_only and taxa.exists():
+                    logger.debug(
+                        'Skip ingesting existing data {}'.format(taxon_name))
+                    continue
+                if taxa.exists():
+                    taxonomy = taxa[0]
+                    logger.debug('{} already in the system'.format(
+                        taxon_name
+                    ))
+                suspicious_gbif_data = False
+                if taxonomy:
+                    gbif_key = taxonomy.gbif_key
+                    if gbif_key:
+                        gbif_key = int(gbif_key)
+                        if (
+                                (gbif_key > 10000000 and
+                                not taxonomy.verified) or
+                                taxonomy.taxonomic_status == 'SYNONYM'
+                        ):
+                            taxonomy = None
+                if suspicious_gbif_data:
+                    logger.debug(
+                        'Suspicious data found, re-fetching'
+                    )
+                if not taxonomy:
+                    # Fetch from gbif
+                    taxonomy = fetch_all_species_from_gbif(
+                        species=taxon_name,
+                        taxonomic_rank=rank,
+                        should_get_children=False,
+                        fetch_vernacular_names=False,
+                        use_name_lookup=False
+                    )
+                if taxonomy:
+                    success.append(taxonomy.id)
+                else:
+                    # Try again with lookup
+                    logger.debug('Use different method')
+                    taxonomy = fetch_all_species_from_gbif(
+                        species=taxon_name,
+                        taxonomic_rank=rank,
+                        should_get_children=False,
+                        fetch_vernacular_names=False,
+                        use_name_lookup=True
+                    )
+                    if not taxonomy:
+                        errors.append({
+                            'row': index,
+                            'error': 'Taxonomy not found'
+                        })
+                    else:
+                        success.append(taxonomy.id)
+
+                # Validate data
+                if taxonomy:
+                    if (taxon_name not in taxonomy.scientific_name and
+                        taxon_name.lower().strip() !=
+                        taxonomy.canonical_name.lower().strip() and
+                        taxon_name.lower() != taxonomy.legacy_canonical_name.lower()
+                    ):
+                        taxonomy = None
+                    else:
+                        if not taxonomy.parent:
+                            taxonomy.parent = self.get_parent(row)
+
+                # Data from GBIF couldn't be found, so add it manually
+                if not taxonomy:
+                    parent = self.get_parent(row)
+                    if not parent:
+                        errors.append({
+                            'row': index,
+                            'error': 'Parent not found {}'.format(
+                                taxon_name
+                            )
+                        })
+                    else:
+                        # Taxonomy not found, create one
+                        taxonomy, _ = Taxonomy.objects.get_or_create(
+                            scientific_name=scientific_name,
+                            canonical_name=taxon_name,
+                            rank=TaxonomicRank[rank.upper()].name,
+                            parent=parent
+                        )
+                        success.append(taxonomy.id)
+
+                # -- Finish
+                if taxonomy:
+                    if taxonomy.parent:
+                        check_taxon_parent(taxonomy)
+                    # Merge taxon with same canonical name
+                    legacy_canonical_name = taxonomy.legacy_canonical_name
+                    check_taxa_duplicates(
+                        taxon_name,
+                        taxonomy.rank
+                    )
+                    if taxonomy.canonical_name != legacy_canonical_name:
+                        taxonomy.legacy_canonical_name = legacy_canonical_name
+                    # -- Import date
+                    taxonomy.import_date = parse_date(self.import_date)
+                    self.additional_data(
+                        taxonomy,
+                        row
+                    )
+
+                    # Add to csv data
+                    if self.csv_name:
+                        csv_data.append(
+                            self.process_csv_data(taxonomy)
+                        )
+
+            except Exception as e:  # noqa
+                print(str(e))
+                errors.append({
+                    'row': index,
+                    'error': str(e)
+                })
+
+        if len(errors) > 0: logger.debug(errors)
+        log('----')
+        if len(success) > 0: logger.debug(success)
+        if self.csv_name:
+            self.export_to_csv(csv_data)
+
+    def process_csv_data(self, taxon):
+        data = {}
+        current_taxon = taxon
+        if current_taxon.rank in ALL_TAXON_RANKS:
+            data[current_taxon.rank] = taxon.canonical_name
+        while current_taxon.parent:
+            current_taxon = current_taxon.parent
+            if current_taxon.rank in ALL_TAXON_RANKS:
+                data[current_taxon.rank] = (
+                    current_taxon.canonical_name.encode('utf-8')
+                )
+
+        # sort by rank
+        csv_data = []
+        for rank in ALL_TAXON_RANKS:
+            csv_data.append(data[rank] if rank in data else '-')
+
+        csv_data.append(taxon.canonical_name.encode('utf-8'))
+        csv_data.append(taxon.scientific_name.encode('utf-8'))
+        csv_data.append('https://gbif.org/species/{}'.format(
+            taxon.gbif_key) if
+                        taxon.gbif_key else '-')
+        return csv_data
+
+    def export_to_csv(self, csv_data):
+        csv_path = os.path.join(settings.MEDIA_ROOT, 'taxa_csv')
+        if not os.path.exists(csv_path): os.mkdir(csv_path)
+        csv_file_path = os.path.join(csv_path, '{t}.csv'.format(
+            t=self.csv_name
+        ))
+        with open(csv_file_path, mode='w') as csv_file:
+            writer = csv.writer(
+                csv_file, delimiter=',', quotechar='"',
+                quoting=csv.QUOTE_MINIMAL)
+            writer.writerow([
+                'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus',
+                'Species', 'Taxon', 'Scientific name & Authority', 'GBIF url'])
+
+            for data in csv_data:
+                writer.writerow(data)

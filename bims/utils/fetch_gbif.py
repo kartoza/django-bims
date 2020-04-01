@@ -1,4 +1,5 @@
 import logging
+import json
 from django.db.models.fields.related import ForeignObjectRel
 from django.db.models import Q, Min
 from bims.utils.gbif import (
@@ -67,13 +68,17 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
     taxon_rank = taxon_rank.strip().upper()
     taxon_name = taxon_name.strip()
     taxa = Taxonomy.objects.filter(
-        Q(scientific_name__istartswith=taxon_name) |
-        Q(canonical_name__iexact=taxon_name),
+        Q(canonical_name__iexact=taxon_name) |
+        Q(legacy_canonical_name__iexact=taxon_name),
         rank=taxon_rank
     )
     if not taxa.count() > 1:
         return
-    preferred_taxon = taxa.values('gbif_key', 'id').annotate(
+    preferred_taxa = taxa
+    accepted_taxa = taxa.filter(taxonomic_status='ACCEPTED')
+    if accepted_taxa.exists():
+        preferred_taxa = accepted_taxa
+    preferred_taxon = preferred_taxa.values('gbif_key', 'id').annotate(
         Min('gbif_key')).order_by('gbif_key')[0]
     preferred_taxon_gbif_data = get_species(preferred_taxon['gbif_key'])
     preferred_taxon = Taxonomy.objects.get(
@@ -86,6 +91,10 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
             preferred_taxon_gbif_data = gbif_data
             continue
         if not gbif_data:
+            continue
+        if gbif_data['taxonomicStatus'] == 'ACCEPTED':
+            preferred_taxon_gbif_data = gbif_data
+            preferred_taxon = taxon
             continue
         if 'issues' in gbif_data and len(gbif_data['issues']) > 0:
             continue
@@ -115,12 +124,15 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
     return preferred_taxon
 
 
-def create_or_update_taxonomy(gbif_data, fetch_vernacular_names=True):
+def create_or_update_taxonomy(
+        gbif_data,
+        fetch_vernacular_names=False):
     """
     Create or update taxonomy data from gbif response data
     :param gbif_data: gbif response data
     :param fetch_vernacular_names: should fetch vernacular names
     """
+    taxa = None
     try:
         species_key = gbif_data['nubKey']
     except KeyError:
@@ -138,14 +150,19 @@ def create_or_update_taxonomy(gbif_data, fetch_vernacular_names=True):
         return None
     canonical_name = gbif_data['canonicalName']
     scientific_name = gbif_data['scientificName']
-    taxa = Taxonomy.objects.filter(
-        scientific_name=scientific_name,
-        canonical_name=canonical_name,
-        taxonomic_status=TaxonomicStatus[
-            gbif_data['taxonomicStatus']].name,
-        rank=rank,
-    )
+    if 'oldKey' in gbif_data:
+        taxa = Taxonomy.objects.filter(
+            gbif_key=gbif_data['oldKey']
+        )
     if not taxa:
+        taxa = Taxonomy.objects.filter(
+            scientific_name=scientific_name,
+            canonical_name=canonical_name,
+            taxonomic_status=TaxonomicStatus[
+                gbif_data['taxonomicStatus']].name,
+            rank=rank,
+        )
+    if not taxa.exists():
         taxonomy = Taxonomy.objects.create(
             scientific_name=scientific_name,
             canonical_name=canonical_name,
@@ -154,12 +171,19 @@ def create_or_update_taxonomy(gbif_data, fetch_vernacular_names=True):
             rank=rank,
         )
     else:
+        taxa.update(
+            scientific_name=scientific_name,
+            canonical_name=canonical_name,
+            taxonomic_status=TaxonomicStatus[
+                gbif_data['taxonomicStatus']].name,
+            rank=rank,
+        )
         taxonomy = taxa[0]
     if 'authorship' in gbif_data:
         taxonomy.author = gbif_data['authorship']
     taxonomy.gbif_key = species_key
     taxonomy.gbif_data = gbif_data
-    merge_taxa_data(species_key, taxonomy)
+    check_taxa_duplicates(taxonomy.canonical_name, rank)
 
     if fetch_vernacular_names:
         vernacular_names = get_vernacular_names(species_key)
@@ -195,7 +219,7 @@ def fetch_all_species_from_gbif(
     taxonomic_rank=None,
     gbif_key=None,
     parent=None,
-    should_get_children=True,
+    should_get_children=False,
     fetch_vernacular_names=False,
     use_name_lookup=True):
     """
@@ -232,15 +256,33 @@ def fetch_all_species_from_gbif(
         logger.error('Species not found')
         return None
 
-    # Check if nubKey same with the key
+    legacy_name = species_data['canonicalName']
+
+    # Check if nubKey is identical with the key
     # if not then fetch the species with the nubKey to get a better data
-    if 'nubKey' in species_data:
+    rank_key = None
+    if taxonomic_rank:
+        rank_key = '{}Key'.format(taxonomic_rank.lower())
+    if 'nubKey' in species_data or rank_key:
         if gbif_key:
             temp_key = gbif_key
         else:
             temp_key = species_data['key']
-        if species_data['nubKey'] != temp_key:
-            species_data = get_species(species_data['nubKey'])
+        if 'nubKey' in species_data:
+            nub_key = species_data['nubKey']
+            if nub_key != temp_key:
+                old_key = nub_key
+                species_data = get_species(nub_key)
+                species_data['oldKey'] = old_key
+        else:
+            if rank_key in species_data:
+                old_key = species_data['key']
+                species_data = get_species(species_data[rank_key])
+                species_data['oldKey'] = old_key
+
+    # Check if there is accepted key
+    if 'acceptedKey' in species_data:
+        species_data = get_species(species_data['acceptedKey'])
 
     logger.debug(species_data)
     if not species_data:
@@ -272,6 +314,8 @@ def fetch_all_species_from_gbif(
                 taxonomy.save()
 
     if not should_get_children:
+        taxonomy.legacy_canonical_name = legacy_name
+        taxonomy.save()
         return taxonomy
 
     if species_key and scientific_name:
@@ -290,3 +334,87 @@ def fetch_all_species_from_gbif(
                 parent=taxonomy
             )
         return taxonomy
+
+
+def update_taxa_synonym(taxa_id):
+    """
+    Get the accepted data from synonym.
+    :param taxa_id: id of the taxa
+    :return: accepted taxa
+    """
+    logger.debug('Update taxon synonym')
+    try:
+        taxon = Taxonomy.objects.get(id=taxa_id)
+    except Taxonomy.DoesNotExist:
+        logger.info('Taxonomy not found')
+        return None
+
+    if taxon.taxonomic_status != 'SYNONYM':
+        logger.debug('Taxon is not synonym')
+        return None
+
+    gbif_data = {}
+    if taxon.gbif_data:
+        gbif_data = json.loads(taxon.gbif_data)
+
+    if 'acceptedKey' not in gbif_data:
+        gbif_data = get_species(taxon.gbif_key)
+
+    if 'acceptedKey' in gbif_data:
+        key = gbif_data['acceptedKey']
+        accepted_gbif_data = get_species(key)
+        accepted_gbif_data['oldKey'] = taxon.gbif_key
+        legacy_name = (
+            taxon.legacy_canonical_name if
+            taxon.legacy_canonical_name else
+            taxon.canonical_name
+        )
+        accepted_taxonomy = create_or_update_taxonomy(accepted_gbif_data)
+        check_taxa_duplicates(legacy_name, accepted_taxonomy.rank)
+        return accepted_taxonomy
+    else:
+        logger.info('Could not found accepted taxon')
+        return None
+
+
+def check_taxon_parent(taxonomy):
+    """
+    Check if parent of the taxonomy is identical with one from gbif
+    :param taxonomy: Taxonomy object
+    :return: taxonomy
+    """
+    logger.debug('Check taxon parent')
+    if not taxonomy.gbif_key:
+        logger.debug('Gbif key not found')
+        return
+    gbif_data = get_species(taxonomy.gbif_key)
+
+    parent_key_found = True
+    fetch_parent = False
+
+    if not 'parentKey' in gbif_data:
+        logger.debug('Missing parent key')
+        parent_key_found = False
+        fetch_parent = True
+
+    current_parent = taxonomy.parent
+    if current_parent and parent_key_found:
+        current_parent_gbif_key = current_parent.gbif_key
+        if current_parent_gbif_key != int(gbif_data['parentKey']):
+            fetch_parent = True
+        else:
+            logger.debug('Taxon parent is correct')
+
+    if fetch_parent:
+        if parent_key_found:
+            logger.debug('Updating parent')
+            parents = Taxonomy.objects.filter(gbif_key=gbif_data['parentKey'])
+            if parents.exists():
+                taxonomy.parent = parents[0]
+            else:
+                parent = fetch_all_species_from_gbif(
+                    gbif_key=gbif_data['parentKey']
+                )
+                taxonomy.parent = parent
+            taxonomy.save()
+    return taxonomy
