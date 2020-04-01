@@ -443,15 +443,15 @@ class Command(BaseCommand):
         taxon_rank = record[TAXON_RANK].upper().strip()
         # Find existing taxonomy
         taxa = Taxonomy.objects.filter(
-            Q(scientific_name__istartswith=species_name) |
-            Q(canonical_name__iexact=species_name),
+            Q(canonical_name__iexact=species_name) |
+            Q(legacy_canonical_name__iexact=species_name),
             rank=taxon_rank,
             taxonomic_status='ACCEPTED'
         )
         if not taxa.exists():
             taxa = Taxonomy.objects.filter(
-                Q(scientific_name__istartswith=species_name) |
-                Q(canonical_name__iexact=species_name),
+                Q(canonical_name__iexact=species_name) |
+                Q(legacy_canonical_name__iexact=species_name),
                 rank=taxon_rank
             )
         if taxa.exists():
@@ -490,6 +490,7 @@ class Command(BaseCommand):
                 taxonomy = Taxonomy.objects.create(
                     scientific_name=species_name,
                     canonical_name=species_name,
+                    legacy_canonical_name=species_name,
                     rank=taxon_rank
                 )
         if taxonomy and record[SPECIES_NAME] not in taxonomy.canonical_name:
