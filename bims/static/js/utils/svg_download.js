@@ -1,7 +1,10 @@
-let c2s = C2S(1000, 600);
-
 function svgChartDownload(chartConfig, title) {
     // Create c2s chart, download it
+    let browserZoomLevel = Math.round(window.devicePixelRatio * 100);
+    let canvasScale = 100 / browserZoomLevel;
+    let c2s = C2S(1000 , 600 );
+    c2s.scale(canvasScale, canvasScale);
+
     chartConfig.options['animation'] = false;
     chartConfig.options['responsive'] = false;
     if (!chartConfig.options.hasOwnProperty('legend')) {
