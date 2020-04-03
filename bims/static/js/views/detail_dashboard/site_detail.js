@@ -460,6 +460,7 @@ define([
         },
         downloadElementEvent: function (button_el) {
             let button = $(button_el.target);
+            let title;
             if (!button.hasClass('btn')) {
                 button = button.parent();
             }
@@ -722,7 +723,7 @@ define([
                         return;
                     }
                     self.$el.find('.species-ssdd-taxa-line-chart').show();
-                    this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'occurrences_line', chartCanvas);
+                    this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'taxa_stacked_bar', chartCanvas);
                 }
             )
         },
@@ -832,6 +833,7 @@ define([
                 }
             };
             chartCanvas = this.resetCanvas(chartCanvas);
+            this.chartConfigs[chartName] = chartConfig;
             var ctx = chartCanvas.getContext('2d');
             ctx.height = '200px';
             new ChartJs(ctx, chartConfig);
