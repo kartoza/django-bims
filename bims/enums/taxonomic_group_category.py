@@ -14,3 +14,6 @@ class TaxonomicGroupCategory(Enum):
 
     # Category for SASS Taxon Group Weight
     SASS_TAXON_GROUP = 'SASS Taxon Group'
+
+    # Division group
+    DIVISION_GROUP = 'Division Group'
