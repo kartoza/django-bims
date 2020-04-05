@@ -184,30 +184,7 @@ class Command(CsvCommand):
         :param taxonomy: Taxonomy object
         :param row: data row from csv
         """
-        data = dict()
-
-        # -- Division
-        if DIVISION in row:
-            data[DIVISION] = self.row_value(row, DIVISION)
-
-        # -- Growth Form
-        if GROWTH_FORM in row:
-            data[GROWTH_FORM] = self.row_value(row, GROWTH_FORM)
-
-        # -- Add Genus to Algae taxon group
-        taxon_group, _ = TaxonGroup.objects.get_or_create(
-            name='Algae',
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name
-        )
-        if taxonomy.rank == 'SPECIES' and taxonomy.parent:
-            taxon_group.taxonomies.add(taxonomy.parent)
-        elif taxonomy.rank == 'SUBSPECIES' and taxonomy.parent and taxonomy.parent.parent:
-            taxon_group.taxonomies.add(taxonomy.parent.parent)
-        else:
-            taxon_group.taxonomies.add(taxonomy)
-
-        taxonomy.additional_data = data
-        taxonomy.save()
+        pass
 
     def csv_dict_reader(self, csv_reader):
         signals.pre_save.disconnect(
@@ -382,7 +359,8 @@ class Command(CsvCommand):
                     if taxonomy.canonical_name != legacy_canonical_name:
                         taxonomy.legacy_canonical_name = legacy_canonical_name
                     # -- Import date
-                    taxonomy.import_date = parse_date(self.import_date)
+                    if self.import_date:
+                        taxonomy.import_date = parse_date(self.import_date)
                     self.additional_data(
                         taxonomy,
                         row

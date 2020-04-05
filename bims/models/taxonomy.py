@@ -192,6 +192,16 @@ class Taxonomy(models.Model):
             or_condition |= models.Q(**{key: value})
         return Taxonomy.objects.filter(or_condition)
 
+    def parent_by_rank(self, rank):
+        taxon = self
+        current_rank = taxon.rank
+        while current_rank != rank and taxon.parent:
+            taxon = taxon.parent
+            current_rank = taxon.rank
+        if current_rank == rank:
+            return taxon
+        return None
+
     @property
     def taxon_class(self):
         if self.rank != TaxonomicRank.CLASS.name and self.parent:

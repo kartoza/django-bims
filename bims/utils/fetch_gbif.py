@@ -392,7 +392,7 @@ def check_taxon_parent(taxonomy):
     parent_key_found = True
     fetch_parent = False
 
-    if not 'parentKey' in gbif_data:
+    if 'parentKey' not in gbif_data:
         logger.debug('Missing parent key')
         parent_key_found = False
         fetch_parent = True
