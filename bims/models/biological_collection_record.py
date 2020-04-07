@@ -333,13 +333,9 @@ class BiologicalCollectionRecord(AbstractValidation):
                     preferences.SiteSetting.default_data_source
                 )
                 self.save()
-        if self.taxonomy:
+        if self.taxonomy and not self.module_group:
             # Get taxon group if exists
             taxonomies = [self.taxonomy.id]
-            taxonomy_parent = self.taxonomy.parent
-            while taxonomy_parent:
-                taxonomies.append(taxonomy_parent.id)
-                taxonomy_parent = taxonomy_parent.parent
             taxon_groups = TaxonGroup.objects.filter(
                 taxonomies__in=taxonomies,
                 category=TaxonomicGroupCategory.SPECIES_MODULE.name,

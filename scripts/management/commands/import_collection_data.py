@@ -36,7 +36,8 @@ from bims.models import (
     Survey,
     SurveyData,
     SurveyDataOption,
-    SurveyDataValue
+    SurveyDataValue,
+    TaxonGroup
 )
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
@@ -122,6 +123,8 @@ EMBEDDEDNESS = 'Embeddedness'
 class Command(BaseCommand):
     """Import fish data from file"""
     file_name = 'CFR.Fish.csv'
+    group_key = ''
+    group = None
 
     summary = {}
     data_added = 0
@@ -167,6 +170,13 @@ class Command(BaseCommand):
             dest='sites_only',
             default='False',
             help='Only ingest sites'
+        )
+        parser.add_argument(
+            '-g',
+            '--group',
+            dest='group_key',
+            default='',
+            help='Module group name'
         )
 
     def add_to_error_summary(self, error_message, row, add_to_error=True, only_log=False):
@@ -494,11 +504,13 @@ class Command(BaseCommand):
                     rank=taxon_rank
                 )
         if taxonomy and record[SPECIES_NAME] not in taxonomy.canonical_name:
-            taxonomy.canonical_name = record[SPECIES_NAME]
+            taxonomy.legacy_canonical_name = record[SPECIES_NAME]
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
             taxonomy.endemism = endemism
             taxonomy.save()
+        if self.group:
+            self.group.taxonomies.add(taxonomy)
         return taxonomy
 
     def location_site(self, record):
@@ -614,6 +626,15 @@ class Command(BaseCommand):
         file_name = options.get('csv_file')
         json_additional_data = options.get('additional_data')
         only_add = options.get('only_add')
+        if not self.group_key:
+            self.group_key = options.get('group_key')
+        if self.group_key:
+            try:
+                self.group = (
+                    TaxonGroup.objects.get(name__iexact=self.group_key)
+                )
+            except TaxonGroup.DoesNotExist:
+                self.group = None
         try:
             sites_only = ast.literal_eval(
                 options.get('sites_only')
@@ -917,6 +938,8 @@ class Command(BaseCommand):
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
                     collection_record.survey = self.survey
+                    if self.group:
+                        collection_record.module_group = self.group
                     for field in optional_records:
                         setattr(
                             collection_record, field, optional_records[field])
