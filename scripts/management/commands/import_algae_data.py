@@ -1,6 +1,4 @@
-from django.contrib.auth import get_user_model
-from django.db.models import Q
-from scripts.management.commands.import_collection_data import Command as FishCommand
+from scripts.management.commands.import_collection_data import Command as BaseCommand
 from bims.models.algae_data import AlgaeData
 from bims.utils.user import create_users_from_string
 
@@ -13,8 +11,9 @@ INDICATOR_AFDM = 'Biomass Indicator: AFDM'
 AI = 'Autotrophic Index (AI)'
 
 
-class Command(FishCommand):
+class Command(BaseCommand):
     file_name = ''
+    group_key = 'algae'
 
     def import_additional_data(self, collection_record, record):
         """

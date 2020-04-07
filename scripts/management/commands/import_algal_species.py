@@ -53,22 +53,9 @@ class Command(BaseCommand):
                 category=TaxonomicGroupCategory.DIVISION_GROUP.name
             )
 
-        all_taxon_ranks = copy.deepcopy(ALL_TAXON_RANKS)
-        all_taxon_ranks.remove('KINGDOM')
-
-        parent = None
-        for taxon_rank in all_taxon_ranks:
-            parent = taxonomy.parent_by_rank(taxon_rank)
-            if parent:
-                break
-        if parent:
-            taxon_group.taxonomies.add(parent)
-            if division_group:
-                division_group.taxonomies.add(parent)
-        else:
-            taxon_group.taxonomies.add(taxonomy)
-            if division_group:
-                division_group.taxonomies.add(taxonomy)
+        taxon_group.taxonomies.add(taxonomy)
+        if division_group:
+            division_group.taxonomies.add(taxonomy)
 
         taxonomy.additional_data = data
         taxonomy.save()

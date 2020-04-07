@@ -13,10 +13,14 @@ from sass.models.site_visit import SiteVisit
 
 def get_species_group(species):
     """Query taxon_group for species group then return the queryset results"""
-    return TaxonGroup.objects.filter(
+    taxon_group = TaxonGroup.objects.filter(
         category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         name__icontains=species
     )
+    if taxon_group.exists():
+        return taxon_group[0]
+    else:
+        return None
 
 
 class ModuleSummary(APIView):
@@ -25,6 +29,7 @@ class ModuleSummary(APIView):
     """
     FISH_KEY = 'fish'
     INVERTEBRATE_KEY = 'invert'
+    ALGAE_KEY = 'algae'
 
     def fish_data(self):
         """
@@ -32,23 +37,13 @@ class ModuleSummary(APIView):
         :return: dict of fish summary
         """
         fish_group = get_species_group(self.FISH_KEY)
-        if fish_group.count() == 0:
+        if not fish_group:
             return {}
-        fish_group = fish_group[0]
-        taxa = fish_group.taxonomies.all()
-
-        all_taxa = list(taxa.values_list('id', flat=True))
-        for taxon in taxa:
-            children = taxon.get_all_children()
-            children = children.filter(
-                biologicalcollectionrecord__isnull=False
-            ).distinct()
-            all_taxa.extend(list(children.values_list('id', flat=True)))
         collections = BiologicalCollectionRecord.objects.filter(
-            taxonomy__in=all_taxa
+            module_group=fish_group
         )
         fish_summary = dict(
-            collections.annotate(
+            collections.exclude(category__exact='').annotate(
                 value=Case(When(category__isnull=False,
                                 then=F('category')),
                            default=Value('Unspecified'))
@@ -56,6 +51,11 @@ class ModuleSummary(APIView):
                 count=Count('value')
             ).values_list('value', 'count')
         )
+        unspecified = collections.filter(category__exact='').count()
+        if 'Unspecified' in fish_summary:
+            fish_summary['Unspecified'] += unspecified
+        else:
+            fish_summary['Unspecified'] = unspecified
         fish_summary[
             'total'] = collections.count()
         fish_summary[
@@ -70,22 +70,10 @@ class ModuleSummary(APIView):
         :return: dict of invertebrate summary
         """
         invert_group = get_species_group(self.INVERTEBRATE_KEY)
-        if invert_group.count() == 0:
+        if not invert_group:
             return {}
-        invert_group = invert_group[0]
-        taxa = invert_group.taxonomies.all()
-        all_taxa = list(taxa.values_list('id', flat=True))
-        taxa = Taxonomy.objects.filter(
-            Q(id__in=all_taxa) |
-            Q(parent__in=all_taxa) |
-            Q(parent__parent__in=all_taxa) |
-            Q(parent__parent__parent__in=all_taxa) |
-            Q(parent__parent__parent__parent__in=all_taxa) |
-            Q(parent__parent__parent__parent__parent__in=all_taxa)
-        )
-
         collections = BiologicalCollectionRecord.objects.filter(
-            taxonomy__in=taxa
+            module_group=invert_group
         )
         invert_summary = dict()
         invert_summary[
@@ -117,8 +105,21 @@ class ModuleSummary(APIView):
         invert_summary['total_sass'] = SiteVisit.objects.all().count()
         return invert_summary
 
+    def algae_data(self):
+        species_group = get_species_group(self.ALGAE_KEY)
+        algae_summary = {}
+        if not species_group:
+            return {}
+        collections = BiologicalCollectionRecord.objects.filter(
+            module_group=species_group
+        )
+        algae_summary['total'] = collections.count()
+        algae_summary['total_site'] = collections.distinct('site').count()
+        return algae_summary
+
     def get(self, request, *args):
         response_data = dict()
         response_data[self.FISH_KEY] = self.fish_data()
         response_data[self.INVERTEBRATE_KEY] = self.invertebrate_data()
+        response_data[self.ALGAE_KEY] = self.algae_data()
         return Response(response_data)
