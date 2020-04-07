@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from bims.models import Taxonomy, BiologicalCollectionRecord
 from bims.models.iucn_status import IUCNStatus
-from bims.serializers.document_serializer import DocumentSerializer
 from bims.models.taxon_group import TaxonGroup
 
 
@@ -15,7 +14,6 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_colour = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
     taxon_group = serializers.SerializerMethodField()
-    documents = DocumentSerializer(many=True)
 
     def get_record_type(self, obj):
         return 'bio'
