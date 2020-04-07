@@ -1,10 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count, F, Case, When, Value, Q
+from django.db.models import Count, F, Case, When, Value
 from bims.models import (
     TaxonGroup,
-    BiologicalCollectionRecord,
-    Taxonomy
+    BiologicalCollectionRecord
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.models.site_visit_taxon import SiteVisitTaxon
