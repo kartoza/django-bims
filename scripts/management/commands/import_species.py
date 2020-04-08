@@ -200,9 +200,12 @@ class Command(CsvCommand):
         for row in csv_reader:
             index += 1
             taxon_name = self.row_value(row, TAXON)
-            scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
-                               if row[SCIENTIFIC_NAME]
-                               else taxon_name)
+            if SCIENTIFIC_NAME in row:
+                scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
+                                if row[SCIENTIFIC_NAME]
+                                else taxon_name)
+            else:
+                scientific_name = taxon_name
             scientific_name = scientific_name.strip()
             # Get rank
             if row[SPECIES]:
