@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ast
 from django.core.management.base import BaseCommand
 from scripts.importer.fbis_user_importer import FbisUserImporter
 from scripts.importer.fbis_site_importer import FbisSiteImporter
@@ -128,6 +129,13 @@ class Command(BaseCommand):
             default=False,
             help='Only update existing data'
         )
+        parser.add_argument(
+            '-om',
+            '--only-missing',
+            dest='only_missing',
+            default='False',
+            help='Add missing data only'
+        )
 
     def handle(self, *args, **options):
         # check if file exists
@@ -139,6 +147,12 @@ class Command(BaseCommand):
         postgres_password = options.get('postgres_password', None)
         postgres_host = options.get('postgres_host', None)
         update_only = options.get('update_only', False)
+        try:
+            only_missing = ast.literal_eval(
+                options.get('only_missing')
+            )
+        except ValueError:
+            only_missing = False
 
         if not sqlite_filename and not postgres_database:
             print('You need to provide a name for sqlite_filename file or '
@@ -159,6 +173,7 @@ class Command(BaseCommand):
                     max_row=sqlite_max_row
                 )
                 importer.update_only = update_only
+                importer.only_missing = only_missing
                 if postgres_database:
                     importer.postgres_database = postgres_database
                     importer.postgres_user = postgres_user

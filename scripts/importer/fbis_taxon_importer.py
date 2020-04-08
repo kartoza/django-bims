@@ -1,4 +1,5 @@
-from bims.models import TaxonGroup
+from django.db.models import Q
+from bims.models import TaxonGroup, Taxonomy
 from sass.models import SassTaxon
 from scripts.importer.fbis_importer import FbisImporter
 from bims.utils.gbif import search_taxon_identifier
@@ -9,7 +10,22 @@ class FbisTaxonImporter(FbisImporter):
     content_type_model = SassTaxon
     table_name = 'Taxon'
 
+    def finish_processing_rows(self):
+        print('New Data total : {}'.format(len(self.new_data)))
+        print('New Data : {}'.format(self.new_data))
+        print('Failed Total : {}'.format(len(self.failed_messages)))
+        print('Failed Messages : {}'.format(self.failed_messages))
+
     def process_row(self, row, index):
+        taxon = self.get_object_from_uuid(
+            column='TaxonID',
+            model=SassTaxon
+        )
+
+        if self.only_missing and taxon:
+            print('{} already exist'.format(taxon))
+            return
+
         taxon_name = self.get_row_value('TaxonName')
         taxon_name = taxon_name.split(' ')[0]
         taxon_name = taxon_name.split('(')[0]
@@ -19,10 +35,25 @@ class FbisTaxonImporter(FbisImporter):
             TaxonGroup
         )
 
-        taxonomy = search_taxon_identifier(taxon_name)
+        # Check existing taxonomy
+        taxa = Taxonomy.objects.filter(
+            Q(canonical_name__icontains=taxon_name) |
+            Q(legacy_canonical_name__icontains=taxon_name)
+        )
+
+        if taxa.exists():
+            taxonomy = taxa[0]
+        else:
+            taxonomy = search_taxon_identifier(taxon_name)
 
         if not taxonomy:
-            return
+            # Create one
+            taxonomy = Taxonomy.objects.create(
+                scientific_name=taxon_name,
+                legacy_canonical_name=taxon_name,
+                canonical_name=taxon_name,
+                rank='FAMILY'
+            )
 
         air_breather_value = self.get_row_value(
             'AirBreather',
@@ -51,6 +82,9 @@ class FbisTaxonImporter(FbisImporter):
                 return_none_if_empty=True
             )
         )
+
+        if created:
+            self.new_data.append(taxon_sass.id)
 
         biobase_id = self.get_row_value('BioBaseID')
         if biobase_id:
