@@ -149,7 +149,8 @@ class BiologicalCollectionRecord(AbstractValidation):
         max_length=50,
         choices=CATEGORY_CHOICES,
         blank=True,
-        default=''
+        default='',
+        help_text='Origin'
     )
     present = models.BooleanField(
         default=True,
