@@ -34,10 +34,6 @@ from bims.models.algae_data import AlgaeData
 logger = logging.getLogger('bims')
 
 RIVER_CATCHMENT_ORDER = [
-    'quinary_catchment_area',
-    'quaternary_catchment_area',
-    'tertiary_catchment_area',
-    'secondary_catchment_area',
     'primary_catchment_area',
 ]
 
@@ -50,20 +46,17 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     taxon_group_name = ''
     survey = None
 
-    def all_species(self, species_parents):
+    def all_species(self, taxon_group):
         """
         Get all taxon
-        :param species_parents: list of species parent id
+        :param taxon_group: taxon group object
         :return: array of taxa id
         """
-        species_list = []
-        species = Taxonomy.objects.filter(
-            parent__in=species_parents
-        )
-        if species:
-            species_list = list(species.values_list('id', flat=True))
-            species_list.extend(self.all_species(species))
-        return species_list
+        return Taxonomy.objects.filter(
+            id__in=BiologicalCollectionRecord.objects.filter(
+                module_group=taxon_group
+            ).distinct('taxonomy').values_list('taxonomy')
+        ).values_list('id', flat=True)
 
     def taxa_from_river_catchment(self):
         """
@@ -74,7 +67,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         taxon_group, created = TaxonGroup.objects.get_or_create(
             name=self.taxon_group_name
         )
-        all_species = self.all_species(taxon_group.taxonomies.all())
+        all_species = self.all_species(taxon_group)
         location_contexts = LocationContext.objects.filter(
             site=self.location_site
         )
