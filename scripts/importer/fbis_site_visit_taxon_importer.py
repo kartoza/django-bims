@@ -6,6 +6,9 @@ from easyaudit.signals.model_signals import pre_save as easyaudit_presave
 from geonode.people.models import Profile
 from sass.models import SiteVisitTaxon, SiteVisit, SassTaxon, TaxonAbundance
 from scripts.importer.fbis_importer import FbisImporter
+from bims.models import (
+    TaxonGroup, collection_post_save_handler
+)
 
 
 class FbisSiteVisitTaxonImporter(FbisImporter):
@@ -41,6 +44,10 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
         signals.pre_save.disconnect(
             easyaudit_presave,
             dispatch_uid='easy_audit_signals_pre_save'
+        )
+        signals.pre_save.disconnect(
+            collection_post_save_handler,
+            sender=SiteVisitTaxon
         )
 
     def finish_processing_rows(self):
@@ -143,12 +150,18 @@ class FbisSiteVisitTaxonImporter(FbisImporter):
             self.table_colums = self.temp_table_columns
 
         try:
+            taxon_groups = TaxonGroup.objects.filter(name__icontains='invert')
+            if taxon_groups.exists():
+                taxon_group = taxon_groups[0]
+            else:
+                taxon_group = None
             site_visit_taxon, created = SiteVisitTaxon.objects.get_or_create(
                 site=site_visit.location_site,
                 collection_date=collection_date,
                 taxonomy=sass_taxon.taxon,
                 taxon_abundance=taxon_abundance,
-                site_visit=site_visit
+                site_visit=site_visit,
+                module_group=taxon_group,
             )
             site_visit_taxon.collector = user.username
             site_visit_taxon.owner = user
