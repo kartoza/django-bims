@@ -17,6 +17,7 @@ class FbisSiteImporter(FbisImporter):
 
     content_type_model = LocationSite
     table_name = 'Site'
+    failed = 0
 
     def __init__(self, sqlite_filename, max_row=None):
         super(FbisSiteImporter, self).__init__(sqlite_filename, max_row)
@@ -39,8 +40,20 @@ class FbisSiteImporter(FbisImporter):
         signals.post_save.connect(
             location_site_post_save_handler,
         )
+        print('New Data total : {}'.format(len(self.new_data)))
+        print('New Data : {}'.format(self.new_data))
+        print('Failed Total : {}'.format(self.failed))
+        print('Failed Messages : {}'.format(self.failed_messages))
 
     def process_row(self, row, index):
+        site = self.get_object_from_uuid(
+            column='SiteID',
+            model=LocationSite
+        )
+
+        if self.only_missing and site:
+            print('{} already exist'.format(site))
+            return
 
         # Get river
         river = None
@@ -55,6 +68,10 @@ class FbisSiteImporter(FbisImporter):
 
         lon = self.get_row_value('LongitudeGIS', row)
         lat = self.get_row_value('LatitudeGIS', row)
+        if not lon:
+            lon = 0
+        if not lat:
+            lat = 0
         try:
             record_point = Point(float(lon), float(lat))
         except ValueError as e:
@@ -71,7 +88,10 @@ class FbisSiteImporter(FbisImporter):
                 geometry_point=record_point,
                 location_type=self.location_type
             )
+            if created:
+                self.new_data.append(location_site.id)
         except DataError as e:
+            self.failed_messages.append(str(e))
             print(e)
             return
 

@@ -5,7 +5,7 @@ from django.db.models import Q, signals
 from geonode.people.models import Profile
 from bims.models import LocationSite
 from sass.models import SiteVisit, site_visit_post_save_handler
-from scripts.importer.fbis_postgres_importer import FbisPostgresImporter
+from scripts.importer.fbis_importer import FbisImporter
 from sass.enums.canopy_cover import CanopyCover
 from sass.enums.water_level import WaterLevel, WATER_LEVEL_NAME
 from sass.enums.water_turbidity import WaterTurbidity
@@ -15,7 +15,7 @@ from bims.models import (
 )
 
 
-class FbisSiteVisitImporter(FbisPostgresImporter):
+class FbisSiteVisitImporter(FbisImporter):
 
     canopy_cover = {}
     water_level = {}
@@ -23,7 +23,13 @@ class FbisSiteVisitImporter(FbisPostgresImporter):
     channel_type = {}
     embeddedness = {}
     content_type_model = SiteVisit
-    table_name = 'public."sitevisit"'
+    table_name = 'SiteVisit'
+
+    def finish_processing_rows(self):
+        print('New Data total : {}'.format(len(self.new_data)))
+        print('New Data : {}'.format(self.new_data))
+        print('Failed Total : {}'.format(len(self.failed_messages)))
+        print('Failed Messages : {}'.format(self.failed_messages))
 
     def start_processing_rows(self):
         if self.update_only:
@@ -31,8 +37,10 @@ class FbisSiteVisitImporter(FbisPostgresImporter):
                 site_visit_post_save_handler,
                 sender=SiteVisit
             )
-
-        conn = driv.connect(database=self.postgres_database,
+        if self.is_sqlite:
+            conn = self.create_connection()
+        else:
+            conn = driv.connect(database=self.postgres_database,
                             user=self.postgres_user,
                             password=self.postgres_password,
                             host=self.postgres_host,
@@ -88,9 +96,17 @@ class FbisSiteVisitImporter(FbisPostgresImporter):
                     self.channel_type[channel_type_row[0]] = channel_type
 
     def process_row(self, row, index):
+        site_visit = self.get_object_from_uuid(
+            column='SiteVisitID',
+            model=SiteVisit
+        )
+
+        if self.only_missing and site_visit:
+            print('{} already exist'.format(site_visit))
+            return
+
         # Get site id
         site_ctype = ContentType.objects.get_for_model(LocationSite)
-        site = None
 
         if self.update_only:
             site_visit_ctype = ContentType.objects.get_for_model(SiteVisit)
@@ -129,26 +145,32 @@ class FbisSiteVisitImporter(FbisPostgresImporter):
                       % site_visit.id)
             return
 
-        sites = FbisUUID.objects.filter(
-            uuid__icontains=self.get_row_value('siteid', row),
-            content_type=site_ctype
+        site = self.get_object_from_uuid(
+            column='SiteID',
+            model=LocationSite
         )
-        if sites.exists():
-            site = sites[0].content_object
+        if not site:
+            sites = FbisUUID.objects.filter(
+                uuid__icontains=self.get_row_value('SiteID', row),
+                content_type=site_ctype
+            )
+            if sites.exists():
+                site = sites[0].content_object
         if not site:
             print('Missing Site')
+            self.failed_messages.append('Missing site {}'.format(row))
             return
 
         user_ctype = ContentType.objects.get_for_model(
             Profile
         )
-        assessor = None
+        owner = None
         users = FbisUUID.objects.filter(
             uuid=self.get_row_value('AssessorID', row),
             content_type=user_ctype
         )
         if users.exists():
-            assessor = users[0].content_object
+            owner = users[0].content_object
 
         water_level_value = self.get_row_value('WaterLevelID', row)
         water_level = None
@@ -171,7 +193,6 @@ class FbisSiteVisitImporter(FbisPostgresImporter):
                 self.get_row_value('SiteVisit', row),
                 '%m/%d/%y %H:%M:%S'
             ),
-            assessor=assessor,
             water_level=water_level,
             water_turbidity=water_turbidity,
             canopy_cover=canopy_cover,
@@ -180,6 +201,11 @@ class FbisSiteVisitImporter(FbisPostgresImporter):
             discharge=self.get_row_value('Discharge', row, True),
             sass_version=self.get_row_value('SASSDataVersion', row, True)
         )
+
+        site_visit.owner = owner
+
+        if created:
+            self.new_data.append(site_visit.id)
 
         site_visit.additional_data = {
             'CanopyCoverComment': self.get_row_value(
