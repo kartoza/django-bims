@@ -21,6 +21,7 @@ from django.contrib.flatpages.models import FlatPage
 from django.db import models
 from django.utils.html import format_html
 from django.core.urlresolvers import reverse
+from django.contrib import messages
 
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
@@ -77,7 +78,7 @@ from bims.models import (
     LocationContextFilter,
     AlgaeData
 )
-
+from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
 
@@ -640,6 +641,32 @@ class TaxonomyAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'parent',
     )
+
+    actions = ['merge_taxa']
+
+    def merge_taxa(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 taxon', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified taxon', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified taxon',
+                messages.ERROR)
+            return
+        merge_taxa_data(
+            excluded_taxon=verified[0],
+            taxa_list=queryset.exclude(id=verified[0].id)
+        )
+        self.message_user(request, 'Taxa has been merged')
+
+    merge_taxa.short_description = 'Merge taxa'
 
     def link_to_gbif(self, obj):
         if obj.gbif_key:
