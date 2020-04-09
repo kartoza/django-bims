@@ -62,6 +62,16 @@
             margin-bottom: 20px;
         }
 
+        .abiotic-data-container {
+            padding-top: 10px;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .measured {
+            background-color: rgba(0, 128, 0, 0.2);
+        }
+
     </style>
 {% endblock %}
 
@@ -93,63 +103,37 @@
             {% endfor %}
             <hr class="hr-normal"/>
             {% for chemical_record in chemical_records %}
-                <div class="form-group row abiotic-data-container">
+                <div class="form-group row abiotic-data-container {% if chemical_record.chem_record_id %}measured{% endif %}">
                     <div class="col-6"
                          style="padding-left: 0; padding-right: 5px;">
                         <input type="text"
                                class="form-control form-control-sm chem-input"
-                               value="{{ chemical_record.description }} ({{ chemical_record.unit }})" placeholder="Abiotic">
-                        <input type="hidden" class="chem-input-id" value="{{ chemical_record.id }}">
+                               value="{{ chemical_record.description }} ({{ chemical_record.unit }})" placeholder="Abiotic" readonly>
+                        {% if chemical_record.chem_record_id %}<input type="hidden" class="chem-record-id" value="{{ chemical_record.chem_record_id }}"> {% endif %}
+                        {% if chemical_record.chem_unit %}<input type="hidden" class="chem-input-id" value="{{ chemical_record.chem_unit }}"> {% endif %}
+                    </div>
+                    <div class="col-1">
+                         <div class="form-check" style="padding-top: 5px;">
+                             <input type="checkbox" class="form-check-input measured-check" {% if chemical_record.chem_record_id %} checked {% endif %}
+                                    id="measured-{{ chemical_record.chem_unit }}">
+                             <label class="form-check-label"
+                                    for="measured-{{ chemical_record.chem_unit }}">Measured</label>
+                         </div>
                     </div>
                     <div class="col-5"
-                         style="padding-right: 0; padding-left: 5px;">
+                         style="padding-right: 0; padding-left: 30px;">
                         <input type="number"
                                class="form-control form-control-sm chem-input-value"
                                placeholder="Value"
                                onchange="handleValueChange(this)"
-                               value="{{ chemical_record.value }}"
+                               value="{% if chemical_record.value %}{{ chemical_record.value }}{% else %}{{ chemical_record.min }}{% endif %}"
+                               %
                                 max="{{ chemical_record.max }}"
                                 min="{{ chemical_record.min }}">
                         <small class="form-text text-muted input-value-help">Min = {{ chemical_record.min }}, Max = {{ chemical_record.max }}</small>
                     </div>
-                    <div class="col-1">
-                        <button type="button"
-                                class="btn btn-danger delete-button">
-                            Delete
-                        </button>
-                    </div>
                 </div>
             {% endfor %}
-            <div class="form-group row abiotic-data-container">
-                <div class="col-6"
-                     style="padding-left: 0; padding-right: 5px;">
-                    <input type="text"
-                           class="form-control form-control-sm chem-input"
-                           value="" placeholder="Abiotic">
-                    <input type="hidden" class="chem-input-id" value="">
-                </div>
-                <div class="col-5"
-                     style="padding-right: 0; padding-left: 5px;">
-                    <input type="number"
-                           class="form-control form-control-sm chem-input-value"
-                           placeholder="Value"
-                           onchange="handleValueChange(this);"
-                           min=0
-                           max=0
-                           value="">
-                    <small class="form-text text-muted input-value-help"></small>
-                </div>
-                <div class="col-1">
-                    <button type="button" class="btn btn-danger delete-button">
-                        Delete
-                    </button>
-                </div>
-            </div>
-            <div class="form-group row">
-                <button type="button" class="btn btn-primary"
-                        id="add-more-abiotic-btn">Add Abiotic Data
-                </button>
-            </div>
         </div>
 
         {# Placeholder  for abiotic data #}
@@ -205,6 +189,21 @@
             const $nextElm = $('#next');
             if (url.indexOf('&next') > -1) {
                 $nextElm.val(url.slice(url.indexOf('next') + 5, url.length));
+            }
+        });
+
+        $('.measured-check').change(function(e) {
+            let $target = $(e.target);
+            let measured = $(this).is(":checked");
+            let maxTry = 10;
+            let currentTry = 0;
+            while (!$target.hasClass('abiotic-data-container') && currentTry < maxTry) {
+                $target = $target.parent();
+            }
+            if (measured) {
+                $target.addClass('measured');
+            } else {
+                $target.removeClass('measured');
             }
         });
 
@@ -293,7 +292,7 @@
 
         function getAllAbioticData() {
             // Get all abiotic data from the html, returns as JSON
-            let $allContainer = $('.abiotic-data-container');
+            let $allContainer = $('.measured');
             let result = {
                 abioticData: {},
                 error: ''

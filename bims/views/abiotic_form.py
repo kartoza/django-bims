@@ -47,26 +47,35 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(AbioticFormView, self).get_context_data(**kwargs)
-        if self.update_form:
-            if self.chemical_records:
-                context['chemical_records'] = []
-                for chemical_record in self.chemical_records:
-                    context['chemical_records'].append({
-                        'id': chemical_record.chem.id,
-                        'description': (
-                            chemical_record.chem.chem_description
-                            if chemical_record.chem.chem_description else
-                            chemical_record.chem.chem_code
-                        ),
-                        'unit': (
-                            ChemUnit[chemical_record.chem.chem_unit].value
-                            if chemical_record.chem.chem_unit else
-                            '-'
-                        ),
-                        'max': chemical_record.chem.maximum,
-                        'min': chemical_record.chem.minimum,
-                        'value': chemical_record.value
-                    })
+        context['chemical_records'] = []
+        for chem in Chem.objects.filter(
+                show_in_abiotic_list=True
+        ).order_by('chem_description'):
+            value = 0
+            record_id = None
+            if self.update_form:
+                chem_data = self.chemical_records.filter(chem=chem)
+                if chem_data.exists():
+                    chem_data = chem_data[0]
+                    value = chem_data.value
+                    record_id = chem_data.id
+            try:
+                chem_unit = ChemUnit[chem.chem_unit].value
+            except KeyError:
+                chem_unit = chem.chem_unit
+            context['chemical_records'].append({
+                'chem_unit': chem.id,
+                'chem_record_id': record_id,
+                'description': (
+                    chem.chem_description
+                    if chem.chem_description else
+                    chem.chem_code
+                ),
+                'unit': chem_unit,
+                'max': chem.maximum,
+                'min': chem.minimum,
+                'value': value
+            })
 
         if self.survey:
             context['survey_id'] = self.survey.id
@@ -98,7 +107,7 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
             self.survey.save()
         _chemical_records = ChemicalRecord.objects.filter(
             survey=self.survey
-        ).order_by('-id')
+        )
         if _chemical_records.exists():
             self.chemical_records = _chemical_records
             self.update_form = True
