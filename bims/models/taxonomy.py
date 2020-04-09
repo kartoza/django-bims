@@ -54,7 +54,7 @@ class Taxonomy(models.Model):
 
     legacy_canonical_name = models.CharField(
         verbose_name='Legacy Canonical Name',
-        max_length=255,
+        max_length=500,
         blank=True,
         default=''
     )
