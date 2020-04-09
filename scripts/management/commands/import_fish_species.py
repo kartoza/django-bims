@@ -48,9 +48,14 @@ class Command(BaseCommand):
             categories = dict(IUCNStatus.CATEGORY_CHOICES)
             for iucn_category in categories:
                 if categories[iucn_category].lower() == row[CONSERVATION_STATUS].lower().strip():
-                    iucn = IUCNStatus.objects.get(
-                        category=iucn_category
-                    )
+                    try:
+                        iucn = IUCNStatus.objects.get(
+                            category=iucn_category
+                        )
+                    except IUCNStatus.DoesNotExist:
+                        iucn = IUCNStatus.objects.get(
+                            category='DD'
+                        )
                     taxonomy.iucn_status = iucn
 
         # -- Add species to Fish taxon group

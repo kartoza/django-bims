@@ -28,6 +28,7 @@ KINGDOM = 'Kingdom'
 DIVISION = 'Division'
 GROWTH_FORM = 'Growth Form'
 SCIENTIFIC_NAME = 'Scientific name and authority'
+FORMER_SPECIES_NAME = 'Former scientific name'
 
 TAXON_RANKS = [
     PHYLUM,
@@ -135,7 +136,7 @@ class Command(CsvCommand):
         """
         taxon_data = Taxonomy.objects.filter(
             Q(canonical_name__iexact=taxon_name) |
-            Q(legacy_canonical_name__iexact=taxon_name),
+            Q(legacy_canonical_name__icontains=taxon_name),
             rank=rank
         )
         if not taxon_data.exists():
@@ -224,7 +225,7 @@ class Command(CsvCommand):
                 rank = KINGDOM
             taxa = Taxonomy.objects.filter(
                 Q(canonical_name__iexact=taxon_name) |
-                Q(legacy_canonical_name__iexact=taxon_name),
+                Q(legacy_canonical_name__icontains=taxon_name),
                 rank=rank.upper()
             )
             print('---------')
@@ -277,12 +278,8 @@ class Command(CsvCommand):
                 if taxonomy:
                     gbif_key = taxonomy.gbif_key
                     if gbif_key:
-                        gbif_key = int(gbif_key)
-                        if (
-                                (gbif_key > 10000000 and
-                                not taxonomy.verified) or
-                                taxonomy.taxonomic_status == 'SYNONYM'
-                        ):
+                        if taxonomy.taxonomic_status == 'SYNONYM':
+                            suspicious_gbif_data = True
                             taxonomy = None
                 if suspicious_gbif_data:
                     logger.debug(
@@ -322,7 +319,7 @@ class Command(CsvCommand):
                     if (taxon_name not in taxonomy.scientific_name and
                         taxon_name.lower().strip() !=
                         taxonomy.canonical_name.lower().strip() and
-                        taxon_name.lower() != taxonomy.legacy_canonical_name.lower()
+                        taxon_name.lower() not in taxonomy.legacy_canonical_name.lower()
                     ):
                         taxonomy = None
                     else:
@@ -355,11 +352,18 @@ class Command(CsvCommand):
                         check_taxon_parent(taxonomy)
                     # Merge taxon with same canonical name
                     legacy_canonical_name = taxonomy.legacy_canonical_name
-                    check_taxa_duplicates(
+                    preferred_taxon = check_taxa_duplicates(
                         taxon_name,
                         taxonomy.rank
                     )
-                    if taxonomy.canonical_name != legacy_canonical_name:
+                    if preferred_taxon:
+                        taxonomy = preferred_taxon
+                    if FORMER_SPECIES_NAME in row:
+                        former_species_name = row[FORMER_SPECIES_NAME]
+                        if len(former_species_name) > 500:
+                            former_species_name = former_species_name[:500]
+                        taxonomy.legacy_canonical_name = former_species_name
+                    elif taxonomy.canonical_name not in legacy_canonical_name:
                         taxonomy.legacy_canonical_name = legacy_canonical_name
                     # -- Import date
                     if self.import_date:

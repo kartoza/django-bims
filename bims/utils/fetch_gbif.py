@@ -69,7 +69,7 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
     taxon_name = taxon_name.strip()
     taxa = Taxonomy.objects.filter(
         Q(canonical_name__iexact=taxon_name) |
-        Q(legacy_canonical_name__iexact=taxon_name),
+        Q(legacy_canonical_name__icontains=taxon_name),
         rank=taxon_rank
     )
     if not taxa.count() > 1:
@@ -179,11 +179,13 @@ def create_or_update_taxonomy(
             rank=rank,
         )
         taxonomy = taxa[0]
+    preferred_taxon = check_taxa_duplicates(taxonomy.canonical_name, rank)
+    if preferred_taxon:
+        taxonomy = preferred_taxon
     if 'authorship' in gbif_data:
         taxonomy.author = gbif_data['authorship']
     taxonomy.gbif_key = species_key
     taxonomy.gbif_data = gbif_data
-    check_taxa_duplicates(taxonomy.canonical_name, rank)
 
     if fetch_vernacular_names:
         vernacular_names = get_vernacular_names(species_key)
@@ -314,7 +316,13 @@ def fetch_all_species_from_gbif(
                 taxonomy.save()
 
     if not should_get_children:
-        taxonomy.legacy_canonical_name = legacy_name
+        if taxonomy.legacy_canonical_name:
+            legacy_canonical_name = taxonomy.legacy_canonical_name
+            if legacy_name not in legacy_canonical_name:
+                legacy_canonical_name += ';' + legacy_name
+        else:
+            legacy_canonical_name = legacy_name
+        taxonomy.legacy_canonical_name = legacy_canonical_name
         taxonomy.save()
         return taxonomy
 

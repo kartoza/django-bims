@@ -24,7 +24,7 @@ class Command(CsvCommand):
             original_species_name = original_species_name.strip()
             taxa = Taxonomy.objects.filter(
                 Q(canonical_name__iexact=original_species_name) |
-                Q(legacy_canonical_name__iexact=original_species_name)
+                Q(legacy_canonical_name__icontains=original_species_name)
             )
             if not taxa.exists():
                 # Check if original species name has weird character
@@ -32,7 +32,7 @@ class Command(CsvCommand):
                     canonical_name = original_species_name.split(' ')[0]
                     taxa = Taxonomy.objects.filter(
                         Q(canonical_name__iexact=canonical_name) |
-                        Q(legacy_canonical_name__iexact=canonical_name)
+                        Q(legacy_canonical_name__icontains=canonical_name)
                     )
 
             if taxa.exists():
