@@ -9,7 +9,7 @@ ORIGIN = 'Origin'
 class Command(BaseCommand):
 
     def csv_file_name(self, options):
-        return 'SA Invertebrate Master List FBISv3_27 Mar 2020.csv'
+        return 'invert_master_list.csv'
 
     def additional_data(self, taxonomy, row):
         """
@@ -30,17 +30,12 @@ class Command(BaseCommand):
         if row[ORIGIN]:
             data[ORIGIN] = row[ORIGIN]
 
-        # -- Add Genus to Algae taxon group
+        # -- Add species to invert taxon group
         taxon_group, _ = TaxonGroup.objects.get_or_create(
-            name='Invertebrates',
+            name__icontains='invertebrate',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         )
-        if taxonomy.rank == 'SPECIES' and taxonomy.parent:
-            taxon_group.taxonomies.add(taxonomy.parent)
-        elif taxonomy.rank == 'SUBSPECIES' and taxonomy.parent and taxonomy.parent.parent:
-            taxon_group.taxonomies.add(taxonomy.parent.parent)
-        else:
-            taxon_group.taxonomies.add(taxonomy)
+        taxon_group.taxonomies.add(taxonomy)
 
         taxonomy.additional_data = data
         taxonomy.save()
