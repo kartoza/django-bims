@@ -96,6 +96,9 @@ def find_species(original_species_name, rank=None, returns_all=False):
             rank=rank,
             status='ACCEPTED'
         )
+        accepted_data = None
+        synonym_data = None
+        other_data = None
         if 'results' in response:
             results = response['results']
             if returns_all:
@@ -106,10 +109,29 @@ def find_species(original_species_name, rank=None, returns_all=False):
                 key_found = (
                     'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
-                    if result['taxonomicStatus'] == 'ACCEPTED' or \
-                        result['taxonomicStatus'] == 'SYNONYM' or \
-                        result['taxonomicStatus'] == 'DOUBTFUL':
-                        return result
+                    if result['taxonomicStatus'] == 'ACCEPTED':
+                        if accepted_data:
+                            if result['key'] < accepted_data['key']:
+                                accepted_data = result
+                        else:
+                            accepted_data = result
+                    if result['taxonomicStatus'] == 'SYNONYM':
+                        if synonym_data:
+                            if result['key'] < synonym_data['key']:
+                                synonym_data = result
+                        else:
+                            synonym_data = result
+                    else:
+                        if other_data:
+                            if result['key'] < other_data['key']:
+                                other_data = result
+                        else:
+                            other_data = result
+        if accepted_data:
+            return accepted_data
+        if synonym_data:
+            return synonym_data
+        return other_data
     except HTTPError:
         print('Species not found')
 

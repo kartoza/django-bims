@@ -454,14 +454,14 @@ class Command(BaseCommand):
         # Find existing taxonomy
         taxa = Taxonomy.objects.filter(
             Q(canonical_name__iexact=species_name) |
-            Q(legacy_canonical_name__iexact=species_name),
+            Q(legacy_canonical_name__icontains=species_name),
             rank=taxon_rank,
             taxonomic_status='ACCEPTED'
         )
         if not taxa.exists():
             taxa = Taxonomy.objects.filter(
                 Q(canonical_name__iexact=species_name) |
-                Q(legacy_canonical_name__iexact=species_name),
+                Q(legacy_canonical_name__icontains=species_name),
                 rank=taxon_rank
             )
         if taxa.exists():
@@ -503,7 +503,7 @@ class Command(BaseCommand):
                     legacy_canonical_name=species_name,
                     rank=taxon_rank
                 )
-        if taxonomy and record[SPECIES_NAME] not in taxonomy.canonical_name:
+        if taxonomy and record[SPECIES_NAME] not in str(taxonomy.canonical_name):
             taxonomy.legacy_canonical_name = record[SPECIES_NAME]
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
@@ -693,6 +693,9 @@ class Command(BaseCommand):
                     sampling_date = self.parse_date(
                         record[SAMPLING_DATE]
                     )
+
+                    record[SPECIES_NAME] = record[SPECIES_NAME].replace('\xa0', ' ')
+                    record[SPECIES_NAME] = record[SPECIES_NAME].replace('\xc2', '')
 
                     # -- Processing Taxonomy
                     taxonomy = self.taxonomy(record)
