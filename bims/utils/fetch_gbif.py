@@ -279,8 +279,9 @@ def fetch_all_species_from_gbif(
         else:
             if rank_key in species_data:
                 old_key = species_data['key']
-                species_data = get_species(species_data[rank_key])
-                species_data['oldKey'] = old_key
+                if old_key != species_data[rank_key]:
+                    species_data = get_species(species_data[rank_key])
+                    species_data['oldKey'] = old_key
 
     # Check if there is accepted key
     if 'acceptedKey' in species_data:
