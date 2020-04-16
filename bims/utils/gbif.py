@@ -80,21 +80,32 @@ def get_children(key):
         return None
 
 
-def find_species(original_species_name, rank=None, returns_all=False):
+def find_species(
+        original_species_name,
+        rank=None,
+        returns_all=False,
+        **classifier):
     """
     Find species from gbif with lookup query.
     :param original_species_name: the name of species we want to find
     :param rank: taxonomy rank
     :param returns_all: returns all response
+    :param classifier: rank classifier
     :return: List of species
     """
+    key_lists = [
+        'kingdom',
+        'phylum',
+        'class',
+        'order',
+        'family'
+    ]
     print('Find species : %s' % original_species_name)
     try:
         response = species.name_lookup(
             q=original_species_name,
-            limit=20,
-            rank=rank,
-            status='ACCEPTED'
+            limit=50,
+            rank=rank
         )
         accepted_data = None
         synonym_data = None
@@ -104,8 +115,24 @@ def find_species(original_species_name, rank=None, returns_all=False):
             if returns_all:
                 return results
             for result in results:
+                if classifier:
+                    classifier_found = True
+                    for key, value in classifier.items():
+                        if value:
+                            classifier_found = False
+                            if key == 'class_name':
+                                key = 'class'
+                            if key not in result:
+                                continue
+                            if value.lower() == result[key].lower():
+                                classifier_found = True
+                    if not classifier_found:
+                        continue
                 rank = result.get('rank', '')
-                rank_key = rank.lower() + 'Key'
+                if rank in key_lists:
+                    rank_key = rank.lower() + 'Key'
+                else:
+                    rank_key = 'key'
                 key_found = (
                     'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
