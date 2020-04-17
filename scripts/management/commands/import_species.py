@@ -21,6 +21,8 @@ IN_GBIF = 'In GBIF'
 TAXON = 'Taxon'
 SPECIES = 'Species'
 GENUS = 'Genus'
+SUBFAMILY = 'SubFamily'
+SUBSPECIES = 'SubSpecies'
 FAMILY = 'Family'
 ORDER = 'Order'
 CLASS = 'Class'
@@ -37,6 +39,7 @@ TAXON_RANKS = [
     CLASS,
     ORDER,
     FAMILY,
+    SUBFAMILY,
     GENUS,
 ]
 ALL_TAXON_RANKS = [
@@ -46,7 +49,8 @@ ALL_TAXON_RANKS = [
     'ORDER',
     'FAMILY',
     'GENUS',
-    'SPECIES'
+    'SPECIES',
+    'SUBSPECIES'
 ]
 
 
@@ -266,10 +270,14 @@ class Command(CsvCommand):
                 scientific_name = taxon_name
             scientific_name = scientific_name.strip()
             # Get rank
-            if self.row_value(row, SPECIES):
+            if self.row_value(row, SUBSPECIES):
+                rank = SUBSPECIES
+            elif self.row_value(row, SPECIES):
                 rank = SPECIES
             elif self.row_value(row, GENUS):
                 rank = GENUS
+            elif self.row_value(row, SUBFAMILY):
+                rank = SUBFAMILY
             elif self.row_value(row, FAMILY):
                 rank = FAMILY
             elif self.row_value(row, ORDER):
