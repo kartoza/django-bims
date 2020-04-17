@@ -10,6 +10,7 @@ class TaxonomicRank(Enum):
     SUPERFAMILY = 'Super Family'
     ORDER = 'Order'
     CLASS = 'Class'
+    SUBCLASS = 'Sub Class'
     PHYLUM = 'Phylum'
     KINGDOM = 'Kingdom'
     DOMAIN = 'Domain'

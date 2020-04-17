@@ -22,6 +22,8 @@ TAXON = 'Taxon'
 SPECIES = 'Species'
 GENUS = 'Genus'
 SUBFAMILY = 'SubFamily'
+SUBORDER = 'SubOrder'
+SUBCLASS = 'SubClass'
 SUBSPECIES = 'SubSpecies'
 FAMILY = 'Family'
 ORDER = 'Order'
@@ -37,17 +39,24 @@ TAXON_RANKS = [
     KINGDOM,
     PHYLUM,
     CLASS,
+    SUBCLASS,
     ORDER,
+    SUBORDER,
     FAMILY,
     SUBFAMILY,
     GENUS,
+    SPECIES,
+    SUBSPECIES
 ]
 ALL_TAXON_RANKS = [
     'KINGDOM',
     'PHYLUM',
     'CLASS',
+    'SUBCLASS',
     'ORDER',
+    'SUBORDER',
     'FAMILY',
+    'SUBFAMILY',
     'GENUS',
     'SPECIES',
     'SUBSPECIES'
@@ -171,7 +180,8 @@ class Command(CsvCommand):
                 parent, _ = Taxonomy.objects.get_or_create(
                     canonical_name=taxon_name,
                     scientific_name=scientific_name,
-                    legacy_canonical_name=taxon_name
+                    legacy_canonical_name=taxon_name,
+                    rank=rank.upper()
                 )
         else:
             parent = taxon_data[0]
@@ -189,12 +199,14 @@ class Command(CsvCommand):
         max_try = 10
         current_try = 1
         while parent and current_try < max_try:
+            parent_rank = self.parent_rank(taxon.rank)
+            if 'SUB' in parent_rank:
+                parent_rank = self.parent_rank(parent_rank)
             try:
-                csv_data = self.row_value(row, str(parent.rank).capitalize())
+                csv_data = self.row_value(row, parent_rank.capitalize())
             except KeyError:
                 parent = parent.parent
                 continue
-            parent_rank = self.parent_rank(taxon.rank)
             if (
                     csv_data not in parent.canonical_name and
                     csv_data not in parent.legacy_canonical_name or
@@ -274,7 +286,7 @@ class Command(CsvCommand):
                 scientific_name = taxon_name
             scientific_name = scientific_name.strip()
             # Get rank
-            rank = self.row_value(row, 'Taxon rank')
+            rank = self.row_value(row, 'Taxon Rank')
             if not rank:
                 if self.row_value(row, SUBSPECIES):
                     rank = SUBSPECIES
@@ -397,11 +409,11 @@ class Command(CsvCommand):
                         taxonomy = None
                     else:
                         if not taxonomy.parent:
-                            taxonomy.parent = self.get_parent(row)
+                            taxonomy.parent = self.get_parent(row, rank)
 
                 # Data from GBIF couldn't be found, so add it manually
                 if not taxonomy:
-                    parent = self.get_parent(row)
+                    parent = self.get_parent(row, rank)
                     if not parent:
                         errors.append({
                             'row': index,
