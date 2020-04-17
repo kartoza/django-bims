@@ -186,9 +186,6 @@ def create_or_update_taxonomy(
             rank=rank,
         )
         taxonomy = taxa[0]
-    preferred_taxon = check_taxa_duplicates(taxonomy.canonical_name, rank)
-    if preferred_taxon:
-        taxonomy = preferred_taxon
     if 'authorship' in gbif_data:
         taxonomy.author = gbif_data['authorship']
     taxonomy.gbif_key = species_key

@@ -16,6 +16,7 @@ RANK_KEYS = [
     'family'
 ]
 
+
 def update_taxa():
     """Get all taxon, then update the data bimsd on the gbif id."""
     taxa = Taxonomy.objects.all()
@@ -100,13 +101,6 @@ def find_species(
     :param classifier: rank classifier
     :return: List of species
     """
-    key_lists = [
-        'kingdom',
-        'phylum',
-        'class',
-        'order',
-        'family'
-    ]
     print('Find species : %s' % original_species_name)
     try:
         response = species.name_lookup(

@@ -473,13 +473,7 @@ class Command(BaseCommand):
             )
         if taxa.exists():
             try:
-                if taxa.count() > 1:
-                    taxonomy = check_taxa_duplicates(
-                        species_name,
-                        taxon_rank
-                    )
-                else:
-                    taxonomy = taxa[0]
+                taxonomy = taxa[0]
             except Exception as e: #  noqa
                 taxonomy = taxa[0]
                 print(str(e))

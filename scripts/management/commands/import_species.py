@@ -410,12 +410,6 @@ class Command(CsvCommand):
                     # Merge taxon with same canonical name
                     legacy_canonical_name = taxonomy.legacy_canonical_name
                     legacy_canonical_name = legacy_canonical_name.replace('\\xa0', '')
-                    preferred_taxon = check_taxa_duplicates(
-                        taxon_name,
-                        taxonomy.rank
-                    )
-                    if preferred_taxon:
-                        taxonomy = preferred_taxon
                     if FORMER_SPECIES_NAME in row:
                         former_species_name = self.row_value(
                             row, FORMER_SPECIES_NAME)
