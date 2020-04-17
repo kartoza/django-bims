@@ -43,9 +43,9 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
                 try:
                     objects = getattr(taxon, link).all()
                     if objects.count() > 0:
-                        print('Updating {obj} for User : {user}'.format(
+                        print('Updating {obj} for : {taxon}'.format(
                             obj=str(objects.model._meta.label),
-                            user=str(taxon)
+                            taxon=str(taxon)
                         ))
                         update_dict = {
                             getattr(taxon, link).field.name: excluded_taxon
@@ -150,6 +150,16 @@ def create_or_update_taxonomy(
         return None
     canonical_name = gbif_data['canonicalName']
     scientific_name = gbif_data['scientificName']
+    taxonomic_status = ''
+    if 'taxonomicStatus' in gbif_data:
+        taxonomic_status = gbif_data['taxonomicStatus']
+    elif 'status' in gbif_data:
+        taxonomic_status = gbif_data['status']
+    try:
+        taxonomic_status = TaxonomicStatus[
+            taxonomic_status].name
+    except KeyError:
+        taxonomic_status = ''
     if 'oldKey' in gbif_data:
         taxa = Taxonomy.objects.filter(
             gbif_key=gbif_data['oldKey']
@@ -158,24 +168,21 @@ def create_or_update_taxonomy(
         taxa = Taxonomy.objects.filter(
             scientific_name=scientific_name,
             canonical_name=canonical_name,
-            taxonomic_status=TaxonomicStatus[
-                gbif_data['taxonomicStatus']].name,
+            taxonomic_status=taxonomic_status,
             rank=rank,
         )
     if not taxa.exists():
         taxonomy = Taxonomy.objects.create(
             scientific_name=scientific_name,
             canonical_name=canonical_name,
-            taxonomic_status=TaxonomicStatus[
-                gbif_data['taxonomicStatus']].name,
+            taxonomic_status=taxonomic_status,
             rank=rank,
         )
     else:
         taxa.update(
             scientific_name=scientific_name,
             canonical_name=canonical_name,
-            taxonomic_status=TaxonomicStatus[
-                gbif_data['taxonomicStatus']].name,
+            taxonomic_status=taxonomic_status,
             rank=rank,
         )
         taxonomy = taxa[0]
@@ -223,7 +230,8 @@ def fetch_all_species_from_gbif(
     parent=None,
     should_get_children=False,
     fetch_vernacular_names=False,
-    use_name_lookup=True):
+    use_name_lookup=True,
+    **classifier):
     """
     Get species detail and all species lower rank
     :param species: species name
@@ -243,10 +251,14 @@ def fetch_all_species_from_gbif(
     else:
         logger.info('Fetching {species} - {rank}'.format(
             species=species,
-            rank=taxonomic_rank
+            rank=taxonomic_rank,
         ))
         if use_name_lookup:
-            species_data = find_species(species, taxonomic_rank)
+            species_data = find_species(
+                original_species_name=species,
+                rank=taxonomic_rank,
+                returns_all=False,
+                **classifier)
         else:
             species_data = gbif_name_suggest(
                 q=species,
@@ -258,7 +270,7 @@ def fetch_all_species_from_gbif(
         logger.error('Species not found')
         return None
 
-    legacy_name = species_data['canonicalName']
+    legacy_name = species
 
     # Check if nubKey is identical with the key
     # if not then fetch the species with the nubKey to get a better data

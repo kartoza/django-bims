@@ -1,17 +1,17 @@
 import os
 import ast
 import csv
+import re
 import logging
 from django.db.models import signals, Q
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from scripts.management.csv_command import CsvCommand
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif, check_taxa_duplicates, check_taxon_parent
+    fetch_all_species_from_gbif, check_taxa_duplicates
 )
 from bims.utils.logger import log
 from bims.utils.gbif import *
-from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
 from bims.models.taxonomy import taxonomy_pre_save_handler
 
 logger = logging.getLogger('bims')
@@ -122,8 +122,11 @@ class Command(CsvCommand):
         :return: row value
         """
         row_value = row[key]
-        row_value = row_value.replace('\xc2\xa0', ' ')
+        row_value = row_value.replace('\xa0', ' ')
+        row_value = row_value.replace('\xc2', '')
+        row_value = row_value.replace('\\xa0', '')
         row_value = row_value.strip()
+        row_value = re.sub(' +', ' ', row_value)
         return row_value
 
     def get_taxonomy(self, taxon_name, scientific_name, rank):
@@ -164,15 +167,50 @@ class Command(CsvCommand):
             parent = taxon_data[0]
         return parent
 
+    def validate_parents(self, taxon, row):
+        """
+        Validating parent data from taxon,
+        cross-check between parents of the database and parents of CSV.
+        If the parent has a different value, update to the correct parent.
+        :param taxon: Taxonomy object
+        :param row: csv row data
+        """
+        parent = taxon.parent
+        while parent:
+            try:
+                csv_data = self.row_value(row, str(parent.rank).capitalize())
+            except KeyError:
+                parent = parent.parent
+                continue
+            parent_rank = self.parent_rank(taxon.rank)
+            if (
+                    csv_data not in parent.canonical_name and
+                    csv_data not in parent.legacy_canonical_name or
+                    str(parent.rank).upper() != parent_rank
+            ):
+                print('Different parent for {}'.format(str(taxon)))
+                parent_taxon = self.get_parent(
+                    row, current_rank=parent_rank.capitalize())
+                print('Updated to {}'.format(str(parent_taxon)))
+                taxon.parent = parent_taxon
+                taxon.save()
+            taxon = parent
+            parent = parent.parent
+        print('Parents has been validated')
+
     def get_parent(self, row, current_rank=GENUS):
         taxon = self.get_taxonomy(
-            row[current_rank],
-            row[current_rank],
+            self.row_value(row, current_rank),
+            self.row_value(row, current_rank),
             current_rank.upper()
         )
         if not taxon.gbif_key or not taxon.parent:
             ranks = TAXON_RANKS
-            ranks.remove(current_rank)
+            try:
+                ranks.remove(current_rank)
+            except ValueError as e:
+                print(current_rank)
+                return
             if len(ranks) > 0:
                 parent = self.get_parent(row, ranks[len(ranks)-1])
                 taxon.parent = parent
@@ -186,6 +224,13 @@ class Command(CsvCommand):
         :param row: data row from csv
         """
         pass
+
+    def rank_classifier(self):
+        """
+        If we just want to return species with Kingdom animalia,
+        return '{"kingdom": "animalia"}'
+        """
+        return {}
 
     def csv_dict_reader(self, csv_reader):
         signals.pre_save.disconnect(
@@ -203,23 +248,23 @@ class Command(CsvCommand):
             taxon_name = self.row_value(row, TAXON)
             if SCIENTIFIC_NAME in row:
                 scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
-                                if row[SCIENTIFIC_NAME]
+                                if self.row_value(row, SCIENTIFIC_NAME)
                                 else taxon_name)
             else:
                 scientific_name = taxon_name
             scientific_name = scientific_name.strip()
             # Get rank
-            if row[SPECIES]:
+            if self.row_value(row, SPECIES):
                 rank = SPECIES
-            elif row[GENUS]:
+            elif self.row_value(row, GENUS):
                 rank = GENUS
-            elif row[FAMILY]:
+            elif self.row_value(row, FAMILY):
                 rank = FAMILY
-            elif row[ORDER]:
+            elif self.row_value(row, ORDER):
                 rank = ORDER
-            elif row[CLASS]:
+            elif self.row_value(row, CLASS):
                 rank = CLASS
-            elif row[PHYLUM]:
+            elif self.row_value(row, PHYLUM):
                 rank = PHYLUM
             else:
                 rank = KINGDOM
@@ -292,7 +337,8 @@ class Command(CsvCommand):
                         taxonomic_rank=rank,
                         should_get_children=False,
                         fetch_vernacular_names=False,
-                        use_name_lookup=False
+                        use_name_lookup=True,
+                        **self.rank_classifier()
                     )
                 if taxonomy:
                     success.append(taxonomy.id)
@@ -304,7 +350,8 @@ class Command(CsvCommand):
                         taxonomic_rank=rank,
                         should_get_children=False,
                         fetch_vernacular_names=False,
-                        use_name_lookup=True
+                        use_name_lookup=False,
+                        **self.rank_classifier()
                     )
                     if not taxonomy:
                         errors.append({
@@ -348,10 +395,9 @@ class Command(CsvCommand):
 
                 # -- Finish
                 if taxonomy:
-                    if taxonomy.parent:
-                        check_taxon_parent(taxonomy)
                     # Merge taxon with same canonical name
                     legacy_canonical_name = taxonomy.legacy_canonical_name
+                    legacy_canonical_name = legacy_canonical_name.replace('\\xa0', '')
                     preferred_taxon = check_taxa_duplicates(
                         taxon_name,
                         taxonomy.rank
@@ -359,12 +405,13 @@ class Command(CsvCommand):
                     if preferred_taxon:
                         taxonomy = preferred_taxon
                     if FORMER_SPECIES_NAME in row:
-                        former_species_name = row[FORMER_SPECIES_NAME]
+                        former_species_name = self.row_value(
+                            row, FORMER_SPECIES_NAME)
                         if len(former_species_name) > 500:
                             former_species_name = former_species_name[:500]
-                        taxonomy.legacy_canonical_name = former_species_name
-                    elif taxonomy.canonical_name not in legacy_canonical_name:
-                        taxonomy.legacy_canonical_name = legacy_canonical_name
+                        if former_species_name not in legacy_canonical_name:
+                            legacy_canonical_name += ';' + former_species_name
+                    taxonomy.legacy_canonical_name = legacy_canonical_name[:700]
                     # -- Import date
                     if self.import_date:
                         taxonomy.import_date = parse_date(self.import_date)
@@ -378,6 +425,12 @@ class Command(CsvCommand):
                         csv_data.append(
                             self.process_csv_data(taxonomy)
                         )
+
+                # -- Validate parents
+                self.validate_parents(
+                    taxon=taxonomy,
+                    row=row
+                )
 
             except Exception as e:  # noqa
                 print(str(e))
@@ -432,3 +485,14 @@ class Command(CsvCommand):
 
             for data in csv_data:
                 writer.writerow(data)
+
+    def parent_rank(self, rank):
+        """
+        Return rank of parent
+        :param rank: current rank
+        :return: rank of parent
+        """
+        try:
+            return ALL_TAXON_RANKS[ALL_TAXON_RANKS.index(rank.upper())-1]
+        except KeyError:
+            return 'KINGDOM'

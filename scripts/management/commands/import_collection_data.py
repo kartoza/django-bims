@@ -178,6 +178,13 @@ class Command(BaseCommand):
             default='',
             help='Module group name'
         )
+        parser.add_argument(
+            '-ft',
+            '--find-taxon',
+            dest='find_taxon',
+            default='True',
+            help='Should also find the taxon from gbif'
+        )
 
     def add_to_error_summary(self, error_message, row, add_to_error=True, only_log=False):
         error_message = '{id} : {error}'.format(
@@ -437,7 +444,7 @@ class Command(BaseCommand):
 
         return source_reference
 
-    def taxonomy(self, record):
+    def taxonomy(self, record, index):
         # if an endemism name exist in the row, check the endemism record
         # from database, if it exists, use that,
         # otherwise create a new one
@@ -477,32 +484,39 @@ class Command(BaseCommand):
                 taxonomy = taxa[0]
                 print(str(e))
         else:
-            # if not exist, search from gbif
-            # Fetch from gbif
-            taxonomy = fetch_all_species_from_gbif(
-                species=species_name,
-                taxonomic_rank=taxon_rank,
-                should_get_children=False,
-                fetch_vernacular_names=False,
-                use_name_lookup=True
-            )
-            if not taxonomy:
-                # Try again with lookup
+            if self.find_taxon:
+                # if not exist, search from gbif
+                # Fetch from gbif
                 taxonomy = fetch_all_species_from_gbif(
                     species=species_name,
                     taxonomic_rank=taxon_rank,
                     should_get_children=False,
                     fetch_vernacular_names=False,
-                    use_name_lookup=False
+                    use_name_lookup=True
                 )
-            if not taxonomy:
-                # if there is no record from gbif, create one
-                taxonomy = Taxonomy.objects.create(
-                    scientific_name=species_name,
-                    canonical_name=species_name,
-                    legacy_canonical_name=species_name,
-                    rank=taxon_rank
+                if not taxonomy:
+                    # Try again with lookup
+                    taxonomy = fetch_all_species_from_gbif(
+                        species=species_name,
+                        taxonomic_rank=taxon_rank,
+                        should_get_children=False,
+                        fetch_vernacular_names=False,
+                        use_name_lookup=False
+                    )
+                if not taxonomy:
+                    # if there is no record from gbif, create one
+                    taxonomy = Taxonomy.objects.create(
+                        scientific_name=species_name,
+                        canonical_name=species_name,
+                        legacy_canonical_name=species_name,
+                        rank=taxon_rank
+                    )
+            else:
+                self.add_to_error_summary(
+                    'Taxonomy not found',
+                    index
                 )
+                return None
         if taxonomy and record[SPECIES_NAME] not in str(taxonomy.canonical_name):
             taxonomy.legacy_canonical_name = record[SPECIES_NAME]
         # update the taxonomy endemism if different or empty
@@ -626,6 +640,8 @@ class Command(BaseCommand):
         file_name = options.get('csv_file')
         json_additional_data = options.get('additional_data')
         only_add = options.get('only_add')
+        self.find_taxon = ast.literal_eval(
+            options.get('find_taxon'))
         if not self.group_key:
             self.group_key = options.get('group_key')
         if self.group_key:
@@ -698,7 +714,9 @@ class Command(BaseCommand):
                     record[SPECIES_NAME] = record[SPECIES_NAME].replace('\xc2', '')
 
                     # -- Processing Taxonomy
-                    taxonomy = self.taxonomy(record)
+                    taxonomy = self.taxonomy(record, index)
+                    if not taxonomy:
+                        continue
 
                     # -- Processing collectors
                     collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])

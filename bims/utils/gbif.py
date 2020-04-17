@@ -8,6 +8,13 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
 
+RANK_KEYS = [
+    'kingdom',
+    'phylum',
+    'class',
+    'order',
+    'family'
+]
 
 def update_taxa():
     """Get all taxon, then update the data bimsd on the gbif id."""
@@ -129,7 +136,7 @@ def find_species(
                     if not classifier_found:
                         continue
                 rank = result.get('rank', '')
-                if rank in key_lists:
+                if rank.lower() in RANK_KEYS:
                     rank_key = rank.lower() + 'Key'
                 else:
                     rank_key = 'key'
@@ -370,7 +377,38 @@ def gbif_name_suggest(**kwargs):
     response = species.name_suggest(**kwargs)
     if len(response) == 0:
         return None
-    species_data = response[0]
-    if 'taxonomicStatus' not in species_data and 'status' in species_data:
-        species_data['taxonomicStatus'] = species_data['status']
-    return species_data
+    accepted_data = None
+    synonym_data = None
+    other_data = None
+    for result in response:
+        rank = result.get('rank', '')
+        if rank.lower() in RANK_KEYS:
+            rank_key = rank.lower() + 'Key'
+        else:
+            rank_key = 'key'
+        key_found = (
+                'nubKey' in result or rank_key in result)
+        if key_found and 'status' in result:
+            if result['status'] == 'ACCEPTED':
+                if accepted_data:
+                    if result['key'] < accepted_data['key']:
+                        accepted_data = result
+                else:
+                    accepted_data = result
+            if result['status'] == 'SYNONYM':
+                if synonym_data:
+                    if result['key'] < synonym_data['key']:
+                        synonym_data = result
+                else:
+                    synonym_data = result
+            else:
+                if other_data:
+                    if result['key'] < other_data['key']:
+                        other_data = result
+                else:
+                    other_data = result
+    if accepted_data:
+        return accepted_data
+    if synonym_data:
+        return synonym_data
+    return other_data
