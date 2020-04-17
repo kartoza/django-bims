@@ -2,6 +2,7 @@ import os
 import ast
 import csv
 import re
+import copy
 import logging
 from django.db.models import signals, Q
 from django.utils.dateparse import parse_date
@@ -31,6 +32,7 @@ SCIENTIFIC_NAME = 'Scientific name and authority'
 FORMER_SPECIES_NAME = 'Former scientific name'
 
 TAXON_RANKS = [
+    KINGDOM,
     PHYLUM,
     CLASS,
     ORDER,
@@ -176,7 +178,9 @@ class Command(CsvCommand):
         :param row: csv row data
         """
         parent = taxon.parent
-        while parent:
+        max_try = 10
+        current_try = 1
+        while parent and current_try < max_try:
             try:
                 csv_data = self.row_value(row, str(parent.rank).capitalize())
             except KeyError:
@@ -196,6 +200,14 @@ class Command(CsvCommand):
                 taxon.save()
             taxon = parent
             parent = parent.parent
+            if taxon.rank.upper() != 'KINGDOM' and not parent:
+                parent = self.get_parent(
+                    row, current_rank=taxon.rank.capitalize()
+                )
+                if parent:
+                    taxon.parent = parent
+                    taxon.save()
+            current_try += 1
         print('Parents has been validated')
 
     def get_parent(self, row, current_rank=GENUS):
@@ -204,10 +216,10 @@ class Command(CsvCommand):
             self.row_value(row, current_rank),
             current_rank.upper()
         )
-        if not taxon.gbif_key or not taxon.parent:
-            ranks = TAXON_RANKS
+        if not taxon.gbif_key or not taxon.parent or taxon.parent.rank != 'KINGDOM':
+            ranks = copy.copy(TAXON_RANKS)
             try:
-                ranks.remove(current_rank)
+                ranks = ranks[:ranks.index(current_rank)]
             except ValueError as e:
                 print(current_rank)
                 return
