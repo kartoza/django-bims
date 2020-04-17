@@ -1,5 +1,5 @@
 from django.core.management import BaseCommand
-from bims.utils.gbif import find_species
+from bims.utils.gbif import find_species, gbif_name_suggest
 
 
 class Command(BaseCommand):
@@ -43,11 +43,13 @@ class Command(BaseCommand):
         if not species:
             print('Need species name')
 
-        species_data = find_species(
-            original_species_name=species,
-            rank=rank,
-            kingdom=kingdom,
-            class_name=class_name
-        )
+        species_data = gbif_name_suggest(q=species)
+
+        # species_data = find_species(
+        #     original_species_name=species,
+        #     rank=rank,
+        #     kingdom=kingdom,
+        #     class_name=class_name
+        # )
 
         print(species_data)

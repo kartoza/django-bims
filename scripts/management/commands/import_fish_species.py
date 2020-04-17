@@ -16,6 +16,9 @@ class Command(BaseCommand):
     def csv_file_name(self, options):
         return 'fish_master_list.csv'
 
+    def rank_classifier(self):
+        return {'kingdom': 'Animalia'}
+
     def additional_data(self, taxonomy, row):
         """
         Import additional data from CSV into taxonomy.
