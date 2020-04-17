@@ -100,6 +100,13 @@ def find_species(
     :param classifier: rank classifier
     :return: List of species
     """
+    key_lists = [
+        'kingdom',
+        'phylum',
+        'class',
+        'order',
+        'family'
+    ]
     print('Find species : %s' % original_species_name)
     try:
         response = species.name_lookup(
