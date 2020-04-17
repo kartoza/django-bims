@@ -127,12 +127,16 @@ class Command(CsvCommand):
         :param key: key
         :return: row value
         """
-        row_value = row[key]
-        row_value = row_value.replace('\xa0', ' ')
-        row_value = row_value.replace('\xc2', '')
-        row_value = row_value.replace('\\xa0', '')
-        row_value = row_value.strip()
-        row_value = re.sub(' +', ' ', row_value)
+        row_value = ''
+        try:
+            row_value = row[key]
+            row_value = row_value.replace('\xa0', ' ')
+            row_value = row_value.replace('\xc2', '')
+            row_value = row_value.replace('\\xa0', '')
+            row_value = row_value.strip()
+            row_value = re.sub(' +', ' ', row_value)
+        except KeyError:
+            pass
         return row_value
 
     def get_taxonomy(self, taxon_name, scientific_name, rank):
@@ -270,24 +274,26 @@ class Command(CsvCommand):
                 scientific_name = taxon_name
             scientific_name = scientific_name.strip()
             # Get rank
-            if self.row_value(row, SUBSPECIES):
-                rank = SUBSPECIES
-            elif self.row_value(row, SPECIES):
-                rank = SPECIES
-            elif self.row_value(row, GENUS):
-                rank = GENUS
-            elif self.row_value(row, SUBFAMILY):
-                rank = SUBFAMILY
-            elif self.row_value(row, FAMILY):
-                rank = FAMILY
-            elif self.row_value(row, ORDER):
-                rank = ORDER
-            elif self.row_value(row, CLASS):
-                rank = CLASS
-            elif self.row_value(row, PHYLUM):
-                rank = PHYLUM
-            else:
-                rank = KINGDOM
+            rank = self.row_value(row, 'Taxon rank')
+            if not rank:
+                if self.row_value(row, SUBSPECIES):
+                    rank = SUBSPECIES
+                elif self.row_value(row, SPECIES):
+                    rank = SPECIES
+                elif self.row_value(row, GENUS):
+                    rank = GENUS
+                elif self.row_value(row, SUBFAMILY):
+                    rank = SUBFAMILY
+                elif self.row_value(row, FAMILY):
+                    rank = FAMILY
+                elif self.row_value(row, ORDER):
+                    rank = ORDER
+                elif self.row_value(row, CLASS):
+                    rank = CLASS
+                elif self.row_value(row, PHYLUM):
+                    rank = PHYLUM
+                else:
+                    rank = KINGDOM
             taxa = Taxonomy.objects.filter(
                 Q(canonical_name__iexact=taxon_name) |
                 Q(legacy_canonical_name__icontains=taxon_name),
