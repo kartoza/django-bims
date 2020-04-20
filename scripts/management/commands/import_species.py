@@ -4,7 +4,7 @@ import csv
 import re
 import copy
 import logging
-from django.db.models import signals, Q
+from django.db.models import signals
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from scripts.management.csv_command import CsvCommand
@@ -157,8 +157,7 @@ class Command(CsvCommand):
         :return: taxonomy object
         """
         taxon_data = Taxonomy.objects.filter(
-            Q(canonical_name__iexact=taxon_name) |
-            Q(legacy_canonical_name__icontains=taxon_name),
+            canonical_name__iexact=taxon_name,
             rank=rank
         )
         if not taxon_data.exists():
@@ -204,6 +203,8 @@ class Command(CsvCommand):
                 parent_rank = self.parent_rank(parent_rank)
             try:
                 csv_data = self.row_value(row, parent_rank.capitalize())
+                if parent_rank.capitalize() == SPECIES:
+                    csv_data = self.row_value(row, GENUS) + ' ' + csv_data
             except KeyError:
                 parent = parent.parent
                 continue
@@ -231,9 +232,14 @@ class Command(CsvCommand):
         print('Parents has been validated')
 
     def get_parent(self, row, current_rank=GENUS):
+        taxon_name = self.row_value(row, current_rank)
+        if not taxon_name:
+            return None
+        if current_rank == SPECIES:
+            taxon_name = self.row_value(row, GENUS) + ' ' + taxon_name
         taxon = self.get_taxonomy(
-            self.row_value(row, current_rank),
-            self.row_value(row, current_rank),
+            taxon_name,
+            taxon_name,
             current_rank.upper()
         )
         if not taxon.gbif_key or not taxon.parent or taxon.parent.rank != 'KINGDOM':
@@ -245,8 +251,9 @@ class Command(CsvCommand):
                 return
             if len(ranks) > 0:
                 parent = self.get_parent(row, ranks[len(ranks)-1])
-                taxon.parent = parent
-                taxon.save()
+                if parent:
+                    taxon.parent = parent
+                    taxon.save()
         return taxon
 
     def additional_data(self, taxonomy, row):
@@ -288,6 +295,8 @@ class Command(CsvCommand):
             # Get rank
             rank = self.row_value(row, 'Taxon Rank')
             if not rank:
+                rank = self.row_value(row, 'Taxon rank')
+            if not rank:
                 if self.row_value(row, SUBSPECIES):
                     rank = SUBSPECIES
                 elif self.row_value(row, SPECIES):
@@ -307,8 +316,7 @@ class Command(CsvCommand):
                 else:
                     rank = KINGDOM
             taxa = Taxonomy.objects.filter(
-                Q(canonical_name__iexact=taxon_name) |
-                Q(legacy_canonical_name__icontains=taxon_name),
+                canonical_name__iexact=taxon_name,
                 rank=rank.upper()
             )
             print('---------')

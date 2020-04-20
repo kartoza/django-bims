@@ -689,6 +689,23 @@ class Command(BaseCommand):
                             uuid=uuid_value
                         ).exists():
                             if only_add:
+                                bio = (
+                                    BiologicalCollectionRecord.objects.filter(
+                                        uuid=uuid_value
+                                    )[0]
+                                )
+                                bio_additional_data = bio.additional_data
+                                try:
+                                    bio_additional_data = json.loads(
+                                        bio_additional_data
+                                    )
+                                except ValueError:
+                                    bio_additional_data = {}
+                                for key in additional_data:
+                                    bio_additional_data[key] = additional_data[
+                                        key]
+                                bio.additional_data = bio_additional_data
+                                bio.save()
                                 continue
 
                     log('Processing : %s' % record[SPECIES_NAME])
