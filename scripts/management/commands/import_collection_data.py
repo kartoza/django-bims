@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
 import ast
+import re
 import os
 import csv
 import json
@@ -456,7 +457,12 @@ class Command(BaseCommand):
                 )
             )
         # -- Processing taxon species --
-        species_name = record[SPECIES_NAME].strip()
+        species_name = record[SPECIES_NAME]
+        species_name = species_name.replace('\xa0', ' ')
+        species_name = species_name.replace('\xc2', '')
+        species_name = species_name.replace('\\xa0', '')
+        species_name = species_name.strip()
+        species_name = re.sub(' +', ' ', species_name)
         taxon_rank = record[TAXON_RANK].upper().strip()
         # Find existing taxonomy
         taxa = Taxonomy.objects.filter(
@@ -507,7 +513,7 @@ class Command(BaseCommand):
                     )
             else:
                 self.add_to_error_summary(
-                    'Taxonomy not found',
+                    'Taxonomy not found {}'.format(species_name),
                     index
                 )
                 return None

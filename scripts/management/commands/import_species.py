@@ -172,7 +172,7 @@ class Command(CsvCommand):
                     parent.scientific_name = scientific_name
                     parent.legacy_canonical_name = taxon_name
                     parent.canonical_name = taxon_name
-                    parent.gbif_key = ''
+                    parent.gbif_key = None
                     parent.gbif_data = {}
                     parent.save()
             else:
@@ -195,7 +195,7 @@ class Command(CsvCommand):
         :param row: csv row data
         """
         parent = taxon.parent
-        max_try = 10
+        max_try = 15
         current_try = 1
         while parent and current_try < max_try:
             parent_rank = self.parent_rank(taxon.rank)
@@ -208,6 +208,10 @@ class Command(CsvCommand):
             except KeyError:
                 parent = parent.parent
                 continue
+            while not csv_data and current_try < max_try:
+                parent_rank = self.parent_rank(parent_rank)
+                csv_data = self.row_value(row, parent_rank.capitalize())
+                current_try += 1
             if (
                     csv_data not in parent.canonical_name and
                     csv_data not in parent.legacy_canonical_name or
@@ -365,17 +369,6 @@ class Command(CsvCommand):
                     logger.debug('{} already in the system'.format(
                         taxon_name
                     ))
-                suspicious_gbif_data = False
-                if taxonomy:
-                    gbif_key = taxonomy.gbif_key
-                    if gbif_key:
-                        if taxonomy.taxonomic_status == 'SYNONYM':
-                            suspicious_gbif_data = True
-                            taxonomy = None
-                if suspicious_gbif_data:
-                    logger.debug(
-                        'Suspicious data found, re-fetching'
-                    )
                 if not taxonomy:
                     # Fetch from gbif
                     taxonomy = fetch_all_species_from_gbif(
@@ -471,6 +464,10 @@ class Command(CsvCommand):
                     taxon=taxonomy,
                     row=row
                 )
+
+                if taxonomy.canonical_name != taxon_name:
+                    taxonomy.canonical_name = taxon_name
+                    taxonomy.save()
 
             except Exception as e:  # noqa
                 print(str(e))
