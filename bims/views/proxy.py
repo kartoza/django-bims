@@ -20,7 +20,8 @@ def proxy_request(request, path):
             parameters.extend(['%s=%s' % (
                 key, urllib.quote(val)) for val in value_list])
         else:
-            parameters.extend(['%s=%s' % (key, val) for val in value_list])
+            parameters.extend(
+                ['%s=%s' % (key, urllib.quote(val)) for val in value_list])
 
     if parameters:
         path += '?' + '&'.join(parameters)
