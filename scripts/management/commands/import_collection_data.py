@@ -201,6 +201,17 @@ class Command(BaseCommand):
         else:
             self.warnings.append(error_message)
 
+    def row_value(self, row, key):
+        value = ''
+        if key in row and row[key]:
+            value = row[key]
+            value = value.replace('\xa0', ' ')
+            value = value.replace('\xc2', '')
+            value = value.replace('\\xa0', '')
+            value = value.strip()
+            value = re.sub(' +', ' ', value)
+        return value
+
     def import_additional_data(self, collection_record, record):
         """
         Override this to import additional data to collection_record.
@@ -248,11 +259,11 @@ class Command(BaseCommand):
 
     def source_reference(self, record, index):
         source_reference = None
-        reference = record[SOURCE]
-        reference_category = record[REFERENCE_CATEGORY]
-        doi = record[DOI].strip()
-        document_link = record[DOCUMENT_UPLOAD_LINK]
-        document_url = record[DOCUMENT_URL]
+        reference = self.row_value(record, SOURCE)
+        reference_category = self.row_value(record, REFERENCE_CATEGORY)
+        doi = self.row_value(record, DOI)
+        document_link = self.row_value(record, DOCUMENT_UPLOAD_LINK)
+        document_url = self.row_value(record, DOCUMENT_URL)
         document_id = 0
         document = None
         source_reference_found = False
