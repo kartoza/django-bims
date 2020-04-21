@@ -281,15 +281,15 @@ class Command(BaseCommand):
         if document_url:
             document_fields = {
                 'doc_url': document_url,
-                'title': record[DOCUMENT_TITLE],
+                'title': self.row_value(record, DOCUMENT_TITLE),
             }
-            if record[SOURCE_YEAR]:
+            if self.row_value(record, SOURCE_YEAR):
                 document_fields['date'] = date(
-                    year=int(record[SOURCE_YEAR]),
+                    year=int(self.row_value(record, SOURCE_YEAR)),
                     month=1,
                     day=1
                 )
-            authors = create_users_from_string(record[DOCUMENT_AUTHOR])
+            authors = create_users_from_string(self.row_value(record, DOCUMENT_AUTHOR))
             if len(authors) > 0:
                 author = authors[0]
             else:
@@ -359,19 +359,24 @@ class Command(BaseCommand):
                 # Peer reviewed
                 # should be bibliography type
                 # If url, title, year, and author(s) exists, crete new entry
-                if record[DOCUMENT_URL] and record[DOCUMENT_TITLE] and record[DOCUMENT_AUTHOR] and record[SOURCE_YEAR]:
+                if (
+                        self.row_value(record, DOCUMENT_URL) and
+                        self.row_value(record, DOCUMENT_TITLE) and
+                        self.row_value(record, DOCUMENT_AUTHOR) and
+                        self.row_value(record, SOURCE_YEAR)
+                ):
                     optional_values = {}
                     if doi:
                         optional_values['doi'] = doi
                     entry, _ = Entry.objects.get_or_create(
-                        url=record[DOCUMENT_URL],
-                        title=record[DOCUMENT_TITLE],
-                        publication_date=date(int(record[SOURCE_YEAR]), 1, 1),
+                        url=self.row_value(record, DOCUMENT_URL),
+                        title=self.row_value(record, DOCUMENT_TITLE),
+                        publication_date=date(int(self.row_value(record, SOURCE_YEAR)), 1, 1),
                         is_partial_publication_date=True,
                         type='article',
                         **optional_values
                     )
-                    authors = create_users_from_string(record[DOCUMENT_AUTHOR])
+                    authors = create_users_from_string(self.row_value(record, DOCUMENT_AUTHOR))
                     rank = 1
                     for author in authors:
                         _author, _ = Author.objects.get_or_create(
@@ -412,8 +417,8 @@ class Command(BaseCommand):
                     )
             elif 'database' in reference_category.lower():
                 reference_name = reference
-                if record[SOURCE_YEAR]:
-                    reference_name += ', ' + record[SOURCE_YEAR]
+                if self.row_value(record, SOURCE_YEAR):
+                    reference_name += ', ' + self.row_value(record, SOURCE_YEAR)
                 database_record, dr_created = (
                     DatabaseRecord.objects.get_or_create(
                         name=reference_name
@@ -429,8 +434,8 @@ class Command(BaseCommand):
             else:
                 # Unpublished data
                 reference_name = reference
-                if record[SOURCE_YEAR]:
-                    reference_name += ', ' + record[SOURCE_YEAR]
+                if self.row_value(record, SOURCE_YEAR):
+                    reference_name += ', ' + self.row_value(record, SOURCE_YEAR)
                 source_reference = (
                     SourceReference.create_source_reference(
                         category=None,
@@ -461,20 +466,15 @@ class Command(BaseCommand):
         # from database, if it exists, use that,
         # otherwise create a new one
         endemism = None
-        if ENDEMISM in record and record[ENDEMISM]:
+        if ENDEMISM in record and self.row_value(record, ENDEMISM):
             endemism, endemism_created = (
                 Endemism.objects.get_or_create(
-                    name=record[ENDEMISM]
+                    name=self.row_value(record, ENDEMISM)
                 )
             )
         # -- Processing taxon species --
-        species_name = record[SPECIES_NAME]
-        species_name = species_name.replace('\xa0', ' ')
-        species_name = species_name.replace('\xc2', '')
-        species_name = species_name.replace('\\xa0', '')
-        species_name = species_name.strip()
-        species_name = re.sub(' +', ' ', species_name)
-        taxon_rank = record[TAXON_RANK].upper().strip()
+        species_name = self.row_value(record, SPECIES_NAME)
+        taxon_rank = self.row_value(record, TAXON_RANK).upper().strip()
         # Find existing taxonomy
         taxa = Taxonomy.objects.filter(
             Q(canonical_name__iexact=species_name) |
@@ -528,8 +528,8 @@ class Command(BaseCommand):
                     index
                 )
                 return None
-        if taxonomy and record[SPECIES_NAME] not in str(taxonomy.canonical_name):
-            taxonomy.legacy_canonical_name = record[SPECIES_NAME]
+        if taxonomy and self.row_value(record, SPECIES_NAME) not in str(taxonomy.canonical_name):
+            taxonomy.legacy_canonical_name = self.row_value(record, SPECIES_NAME)
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
             taxonomy.endemism = endemism
@@ -543,20 +543,20 @@ class Command(BaseCommand):
             name='PointObservation',
             allowed_geometry='POINT'
         )
-        site_description = record[SITE_DESCRIPTION]
-        refined_geo = record[REFINED_GEO_ZONE]
-        legacy_river_name = record[ORIGINAL_RIVER_NAME]
+        site_description = self.row_value(record, SITE_DESCRIPTION)
+        refined_geo = self.row_value(record, REFINED_GEO_ZONE)
+        legacy_river_name = self.row_value(record, ORIGINAL_RIVER_NAME)
         record_point = Point(
-            float(record[LONGITUDE]),
-            float(record[LATITUDE]))
+            float(self.row_value(record, LONGITUDE)),
+            float(self.row_value(record, LATITUDE)))
         # Create or get location site
-        legacy_site_code = record[ORIGINAL_SITE_CODE]
+        legacy_site_code = self.row_value(record, ORIGINAL_SITE_CODE)
         try:
             location_site, status = (
                 LocationSite.objects.get_or_create(
                     location_type=location_type,
                     geometry_point=record_point,
-                    name=record[LOCATION_SITE],
+                    name=self.row_value(record, LOCATION_SITE),
                     legacy_site_code=legacy_site_code
                 )
             )
@@ -564,7 +564,7 @@ class Command(BaseCommand):
             location_site = LocationSite.objects.filter(
                 location_type=location_type,
                 geometry_point=record_point,
-                name=record[LOCATION_SITE],
+                name=self.row_value(record, LOCATION_SITE),
                 legacy_site_code=legacy_site_code
             )[0]
         if site_description:
@@ -579,19 +579,19 @@ class Command(BaseCommand):
     def biotope(self, record, biotope_record_type, biotope_type):
         biotope = None
         if (
-                record[biotope_record_type] and
-                record[biotope_record_type].lower() != 'unspecified'):
+                self.row_value(record, biotope_record_type) and
+                self.row_value(record, biotope_record_type).lower() != 'unspecified'):
             try:
                 biotope, biotope_created = (
                     Biotope.objects.get_or_create(
                         biotope_type=biotope_type,
-                        name=record[biotope_record_type]
+                        name=self.row_value(record, biotope_record_type)
                     )
                 )
             except Biotope.MultipleObjectsReturned:
                 biotopes = Biotope.objects.filter(
                     biotope_type=biotope_type,
-                    name=record[biotope_record_type]
+                    name=self.row_value(record, biotope_record_type)
                 )
                 if biotopes.filter(display_order__isnull=False).exists():
                     biotope = biotopes.filter(display_order__isnull=False)[0]
@@ -625,7 +625,7 @@ class Command(BaseCommand):
         for chem_key in chemical_units:
             if chem_key not in record:
                 continue
-            chem_value = record[chem_key].strip()
+            chem_value = self.row_value(record, chem_key).strip()
             if not chem_value:
                 continue
             chem = Chem.objects.filter(
@@ -692,9 +692,9 @@ class Command(BaseCommand):
                         log('Importing sites data : %s' % str(location_site))
                         continue
 
-                    if UUID in record and record[UUID]:
+                    if UUID in record and self.row_value(record, UUID):
                         try:
-                            uuid_value = uuid.UUID(record[UUID][0:36]).hex
+                            uuid_value = uuid.UUID(self.row_value(record, UUID)[0:36]).hex
                         except ValueError:
                             self.add_to_error_summary(
                                 'Bad UUID format',
@@ -725,21 +725,18 @@ class Command(BaseCommand):
                                 bio.save()
                                 continue
 
-                    log('Processing : %s' % record[SPECIES_NAME])
+                    log('Processing : %s' % self.row_value(record, SPECIES_NAME))
                     optional_records = {}
 
-                    if record[SAMPLING_DATE].lower() == 'unspecified':
+                    if self.row_value(record, SAMPLING_DATE).lower() == 'unspecified':
                         self.add_to_error_summary(
                             'Unspecified date -> Next row',
                             index
                         )
                         continue
                     sampling_date = self.parse_date(
-                        record[SAMPLING_DATE]
+                        self.row_value(record, SAMPLING_DATE)
                     )
-
-                    record[SPECIES_NAME] = record[SPECIES_NAME].replace('\xa0', ' ')
-                    record[SPECIES_NAME] = record[SPECIES_NAME].replace('\xc2', '')
 
                     # -- Processing Taxonomy
                     taxonomy = self.taxonomy(record, index)
@@ -747,8 +744,8 @@ class Command(BaseCommand):
                         continue
 
                     # -- Processing collectors
-                    collectors = create_users_from_string(record[COLLECTOR_OR_OWNER])
-                    optional_records['collector'] = record[COLLECTOR_OR_OWNER]
+                    collectors = create_users_from_string(self.row_value(record, COLLECTOR_OR_OWNER))
+                    optional_records['collector'] = self.row_value(record, COLLECTOR_OR_OWNER)
                     if len(collectors) > 0:
                         optional_records['collector_user'] = collectors[0]
                         # Add owner and creator to location site
@@ -759,7 +756,7 @@ class Command(BaseCommand):
                             location_site.creator = collectors[0]
                         location_site.save()
                         for collector in collectors:
-                            collector.organization = record[CUSTODIAN]
+                            collector.organization = self.row_value(record, CUSTODIAN)
                             collector.save()
 
                     # -- Get superuser as owner
@@ -781,17 +778,17 @@ class Command(BaseCommand):
                         EMBEDDEDNESS: 'Embeddedness'
                     }
                     for survey_data_key in all_survey_data:
-                        if survey_data_key in record and record[survey_data_key]:
+                        if survey_data_key in record and self.row_value(record, survey_data_key):
                             survey_data, _ = SurveyData.objects.get_or_create(
                                 name=all_survey_data[survey_data_key]
                             )
                             survey_option = SurveyDataOption.objects.filter(
-                                option__iexact=record[survey_data_key].strip(),
+                                option__iexact=self.row_value(record, survey_data_key).strip(),
                                 survey_data=survey_data
                             )
                             if not survey_option.exists():
                                 survey_option = SurveyDataOption.objects.create(
-                                    options=record[survey_data_key].strip(),
+                                    options=self.row_value(record, survey_data_key).strip(),
                                     survey_data=survey_data
                                 )
                             else:
@@ -810,12 +807,12 @@ class Command(BaseCommand):
 
                     # Custodian field)
                     if PRESENT in record:
-                        optional_records['present'] = bool(record[PRESENT])
+                        optional_records['present'] = bool(self.row_value(record, PRESENT))
                     category = ''
                     if CATEGORY in record:
-                        category = record[CATEGORY].lower()
-                    if ORIGIN in record and record[ORIGIN]:
-                        origin = record[ORIGIN]
+                        category = self.row_value(record, CATEGORY).lower()
+                    if ORIGIN in record and self.row_value(record, ORIGIN):
+                        origin = self.row_value(record, ORIGIN)
                         if (
                                 'translocated' in origin.lower() or
                                 'non-native' in origin.lower()):
@@ -825,38 +822,38 @@ class Command(BaseCommand):
                         else:
                             category = None
 
-                    if HABITAT in record and record[HABITAT]:
+                    if HABITAT in record and self.row_value(record, HABITAT):
                         habitat_choices = {
                             v: k for k, v in
                             BiologicalCollectionRecord.HABITAT_CHOICES
                         }
                         optional_records['collection_habitat'] = (
-                            habitat_choices[record[HABITAT]]
+                            habitat_choices[self.row_value(record, HABITAT)]
                         )
 
                     # Sampling method
                     sampling_method = None
-                    if SAMPLING_METHOD in record and record[SAMPLING_METHOD]:
-                        if record[SAMPLING_METHOD].lower() != 'unspecified':
+                    if SAMPLING_METHOD in record and self.row_value(record, SAMPLING_METHOD):
+                        if self.row_value(record, SAMPLING_METHOD).lower() != 'unspecified':
                             try:
                                 sampling_method, sm_created = (
                                     SamplingMethod.objects.get_or_create(
-                                        sampling_method=record[SAMPLING_METHOD]
+                                        sampling_method=self.row_value(record, SAMPLING_METHOD)
                                     )
                                 )
                             except SamplingMethod.MultipleObjectsReturned:
                                 sampling_method = (
                                     SamplingMethod.objects.filter(
-                                        sampling_method=record[SAMPLING_METHOD]
+                                        sampling_method=self.row_value(record, SAMPLING_METHOD)
                                     )
                                 )[0]
 
                     # Sampling effort
                     sampling_effort = ''
-                    if SAMPLING_EFFORT_VALUE in record and record[SAMPLING_EFFORT_VALUE]:
-                        sampling_effort += record[SAMPLING_EFFORT_VALUE] + ' '
-                    if record[SAMPLING_EFFORT]:
-                        sampling_effort += record[SAMPLING_EFFORT]
+                    if SAMPLING_EFFORT_VALUE in record and self.row_value(record, SAMPLING_EFFORT_VALUE):
+                        sampling_effort += self.row_value(record, SAMPLING_EFFORT_VALUE) + ' '
+                    if self.row_value(record, SAMPLING_EFFORT):
+                        sampling_effort += self.row_value(record, SAMPLING_EFFORT)
                     optional_records['sampling_effort'] = sampling_effort
 
                     # -- Processing biotope
@@ -883,17 +880,17 @@ class Command(BaseCommand):
                     abundance_type = ''
                     abundance_number = None
 
-                    if record[ABUNDANCE_MEASURE]:
-                        abundance_type = record[ABUNDANCE_MEASURE].lower()
+                    if self.row_value(record, ABUNDANCE_MEASURE):
+                        abundance_type = self.row_value(record, ABUNDANCE_MEASURE).lower()
                         if 'count' in abundance_type:
                             abundance_type = 'number'
                         elif 'density' in abundance_type:
                             abundance_type = 'density'
                         elif 'percentage' in abundance_type:
                             abundance_type = 'percentage'
-                    if record[ABUNDANCE_VALUE]:
+                    if self.row_value(record, ABUNDANCE_VALUE):
                         try:
-                            abundance_number = float(record[ABUNDANCE_VALUE])
+                            abundance_number = float(self.row_value(record, ABUNDANCE_VALUE))
                         except ValueError:
                             pass
 
@@ -915,13 +912,14 @@ class Command(BaseCommand):
                         if collection_records.exists():
                             collection_records.update(
                                 site=location_site,
-                                original_species_name=record[
+                                original_species_name=self.row_value(
+                                    record,
                                     SPECIES_NAME
-                                ],
+                                ),
                                 collection_date=sampling_date,
                                 taxonomy=taxonomy,
                                 category=category,
-                                collector=record[COLLECTOR],
+                                collector=self.row_value(record, COLLECTOR),
                                 sampling_method=sampling_method,
                                 abundance_type=abundance_type,
                                 abundance_number=abundance_number
@@ -931,7 +929,7 @@ class Command(BaseCommand):
                     if not collection_record:
                         fields = {
                             'site': location_site,
-                            'original_species_name': record[SPECIES_NAME],
+                            'original_species_name': self.row_value(record, SPECIES_NAME),
                             'collection_date': sampling_date,
                             'taxonomy': taxonomy,
                             'category': category,
@@ -947,7 +945,7 @@ class Command(BaseCommand):
                                     **fields
                                 )
                             )
-                            collection_record.collector = record[COLLECTOR]
+                            collection_record.collector = self.row_value(record, COLLECTOR)
                             if not created:
                                 if collection_record.uuid and uuid_value:
                                     if collection_record.uuid != uuid_value:
@@ -971,18 +969,18 @@ class Command(BaseCommand):
                     # More additional data
                     if CATCH_NUMBER in record:
                         additional_data['catch_per_number'] = (
-                            record[CATCH_NUMBER]
+                            self.row_value(record, CATCH_NUMBER)
                         )
                     if CATCH_PER_UNIT in record:
                         additional_data['catch_per_unit_effort'] = (
-                            record[CATCH_PER_UNIT]
+                            self.row_value(record, CATCH_PER_UNIT)
                         )
                     if NUMBER_OF_REPLICATES in record:
                         additional_data['number_of_replicates'] = (
-                            record[NUMBER_OF_REPLICATES]
+                            self.row_value(record, NUMBER_OF_REPLICATES)
                         )
 
-                    collection_record.notes = record[NOTES]
+                    collection_record.notes = self.row_value(record, NOTES)
                     collection_record.owner = superusers[0]
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
@@ -1000,8 +998,8 @@ class Command(BaseCommand):
                         self.data_added += 1
 
                     # Update common names
-                    if COMMON_NAME in record and record[COMMON_NAME]:
-                        common_name = record[COMMON_NAME]
+                    if COMMON_NAME in record and self.row_value(record, COMMON_NAME) :
+                        common_name = self.row_value(record, COMMON_NAME)
                         try:
                             vernacular_name, vernacular_created = (
                                 VernacularName.objects.get_or_create(
