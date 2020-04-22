@@ -210,6 +210,10 @@ class Command(BaseCommand):
             value = value.replace('\\xa0', '')
             value = value.strip()
             value = re.sub(' +', ' ', value)
+            try:
+                value.decode('utf-8')
+            except ValueError:
+                value = value.decode('windows-1252')
         return value
 
     def import_additional_data(self, collection_record, record):
