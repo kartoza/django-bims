@@ -93,13 +93,13 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             $table.append($sassDashboarRow);
 
             $iconHead.append('<td></td>');
-            $occurrenceRow.append('<td>Occurrences</td>');
-            $siteRow.append('<td>Sites</td>');
-            $originRow.append('<td>Origin<div class="origin-legends"></div></td>');
-            $endemismRow.append('<td>Endemism<div class="endemism-legends"></div></td>');
-            $consStatusRow.append('<td>Cons. Status<div class="cons-status-legends"></div></td>');
-            $numTaxaRow.append('<td>Number of Taxa</td>');
-            $dashboardRow.append('<td style="padding-top: 12px;">Dashboard</td>');
+            $occurrenceRow.append('<td><b>Occurrences</b></td>');
+            $siteRow.append('<td><b>Sites</b></td>');
+            $originRow.append('<td><b>Origin</b><div class="origin-legends"></div></td>');
+            $endemismRow.append('<td><b>Endemism</b><div class="endemism-legends"></div></td>');
+            $consStatusRow.append('<td><b>Cons. Status</b><div class="cons-status-legends"></div></td>');
+            $numTaxaRow.append('<td><b>Number of Taxa</b></td>');
+            $dashboardRow.append('<td style="padding-top: 12px;"><b>Dashboard</b></td>');
 
             let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
             let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');

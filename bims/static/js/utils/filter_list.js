@@ -38,6 +38,7 @@ let filterParametersJSON = {
     'sourceCollection': {
         'label': 'Data Source',
         'type': 'json',
+        'font': 'uppercase'
     },
     'reference': {
         'label': 'Reference',
@@ -123,6 +124,11 @@ function renderFilterList($table) {
                                 return true;
                             }
                             let label = json_label;
+                            if (data.hasOwnProperty('font')) {
+                                if (data['font'] === 'uppercase') {
+                                    label = label.toUpperCase();
+                                }
+                            }
                             if (data.hasOwnProperty('rename')) {
                                 if (data['rename'].hasOwnProperty(label)) {
                                     label = data['rename'][label];
