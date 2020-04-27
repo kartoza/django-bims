@@ -263,12 +263,14 @@ LIST_SOURCE_REFERENCES = OrderedDict([
 @receiver(models.signals.post_save, sender=SourceReferenceDocument)
 @prevent_recursion
 def source_reference_post_save_handler(sender, instance, **kwargs):
-    from bims.tasks.source_reference import generate_source_reference_filter
+    from bims.tasks.source_reference import (
+        generate_source_reference_filter,
+        SOURCE_REFERENCE_FILTER_FILE
+    )
     import os
     from django.conf import settings
-    file_name = 'spatial_scale_filter_list.txt'
     file_path = os.path.join(
         settings.MEDIA_ROOT,
-        file_name
+        SOURCE_REFERENCE_FILTER_FILE
     )
     generate_source_reference_filter.delay(file_path)
