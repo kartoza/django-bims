@@ -390,13 +390,13 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $table.append($sassDashboarRow);
 
             $iconHead.append('<td></td>');
-            $occurrenceRow.append('<td>Occurrences</td>');
-            $originRow.append('<td>Origin<div class="origin-legends"></div></td>');
-            $endemismRow.append('<td>Endemism<div class="endemism-legends"></div></td>');
-            $consStatusRow.append('<td>Cons. Status<div class="cons-status-legends"></div></td>');
-            $numTaxaRow.append('<td>Number of Taxa</td>');
-            $dashboardRow.append('<td style="padding-top: 12px;">Dashboard</td>');
-            $formRow.append('<td style="padding-top: 12px;">Form</td>');
+            $occurrenceRow.append('<td><b>Occurrences</b></td>');
+            $originRow.append('<td><b>Origin</b><div class="origin-legends"></div></td>');
+            $endemismRow.append('<td><b>Endemism</b><div class="endemism-legends"></div></td>');
+            $consStatusRow.append('<td><b>Cons. Status</b><div class="cons-status-legends"></div></td>');
+            $numTaxaRow.append('<td><b>Number of Taxa</b></td>');
+            $dashboardRow.append('<td style="padding-top: 12px;"><b>Dashboard</b></td>');
+            $formRow.append('<td style="padding-top: 12px;"><b>Form</b></td>');
 
             let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 50%;">SASS Dashboard</button>');
             let $addSassButton = $('<button class="fbis-button-small fbis-red" style="width: 50%;">Add SASS</button>');

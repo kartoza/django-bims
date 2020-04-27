@@ -77,7 +77,8 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: absolute;
     height: 100%;
-    max-width: 35vw;
+    max-width: 45vw;
+    width: 22vw;
     min-width: 422px;
     pointer-events: none;
 }
