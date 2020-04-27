@@ -125,7 +125,7 @@ $('#longitude').keyup((e) => {
     document.getElementById('update-coordinate').disabled = false;
 });
 
-let updateSiteCode = (e) => {
+const updateSiteCode = (e) => {
     let latitude = $('#latitude').val();
     let longitude = $('#longitude').val();
     let button = $('#update-site-code');
@@ -141,16 +141,25 @@ let updateSiteCode = (e) => {
         url += '&site_id=' + siteId
     }
 
-    $.ajax({
-        url: url,
-        success: function (data) {
-            siteCodeInput.prop('disabled', false);
-            siteCodeInput.val(data['site_code']);
-            catchmentInput.val(JSON.stringify(data['catchment']));
+    checkSiteInSA(latitude, longitude, function (isInSA) {
+        if (isInSA) {
+            $.ajax({
+                url: url,
+                success: function (data) {
+                    siteCodeInput.prop('disabled', false);
+                    siteCodeInput.val(data['site_code']);
+                    catchmentInput.val(JSON.stringify(data['catchment']));
+                    document.getElementById('update-site-code').disabled = false;
+                    button.html(buttonLabel);
+                }
+            });
+        } else {
             document.getElementById('update-site-code').disabled = false;
             button.html(buttonLabel);
+            alert('Site is not in South Africa');
         }
     });
+
 };
 
 let fetchRiverName = (e) => {
@@ -365,3 +374,21 @@ $('.open-image-btn').click(function () {
     let imageUrl = $('#siteImageCarousel .carousel-item.active').data('image-url');
     window.open(imageUrl,'Image','width=largeImage.stylewidth,height=largeImage.style.height,resizable=1');
 });
+
+let checkSiteInSA = (latitude, longitude, callback) => {
+
+    let url = `https://geocontext.kartoza.com/api/v1/geocontext/value/group/${longitude}/${latitude}/province/`;
+    $.ajax({
+        url: url,
+        success: function (data) {
+            try {
+                let values = data['service_registry_values'];
+                let value = values[0];
+                let province = value['value'];
+                callback(province !== null);
+            } catch (e) {
+                callback(false);
+            }
+        }
+    });
+}
