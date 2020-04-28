@@ -68,21 +68,21 @@
                             <label class="col-sm-2 col-form-label col-form-label"></label>
                             <div class="col-sm-10">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="documentRadios" id="upload-file" value="file" checked>
-                                <label class="form-check-label" for="upload-file">
-                                    Upload a file
+                                <input class="form-check-input" type="radio" name="documentRadios" id="provide-url" value="url" checked>
+                                <label class="form-check-label" for="provide-url">
+                                    Provide url
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="documentRadios" id="provide-url" value="url">
-                                <label class="form-check-label" for="provide-url">
-                                    Provide url
+                                <input class="form-check-input" type="radio" name="documentRadios" id="upload-file" value="file">
+                                <label class="form-check-label" for="upload-file">
+                                    Upload a file
                                 </label>
                             </div>
                             </div>
                         </div>
                     </fieldset>
-                    <div class="form-group row" id="url-form" style="display:none;">
+                    <div class="form-group row" id="url-form">
                         <label for="document-title"
                                class="col-sm-2 col-form-label col-form-label"><b>Url</b></label>
                         <div class="col-sm-10">
@@ -92,7 +92,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-group row" id="file-form">
+                    <div class="form-group row" id="file-form" style="display:none;">
                         <label class="col-sm-2 col-form-label col-form-label"></label>
                         <div class="col-sm-10">
                             <input id="document-file" type="file" name="doc_file" accept="{{ ALLOWED_DOC_TYPES }}" required>
@@ -103,13 +103,34 @@
                     </div>
                     <input type="hidden" name="permissions" value='{"users":{"AnonymousUser":["view_resourcebase","download_resourcebase"]},"groups":{}}' id="permissions">
                 </div>
+                <div class="container disclaimer" style="margin-bottom: 10px; padding-left: 40px; padding-right: 20px;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               value="" id="disclaimerDocCheck">
+                        <label class="form-check-label"
+                               for="disclaimerDocCheck" style="padding-top: 2px;">
+                            {{ preferences.SiteSetting.disclaimer_doc_text|urlize|linebreaks }}
+                        </label>
+                    </div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.alert').hide()">Close</button>
-                    <button id="new-document-upload" type="button" class="btn btn-primary">
+                    <button id="new-document-upload" type="button" class="btn btn-primary" disabled>
                         <img src="/static/img/small-loading.svg" width="25"
                             alt="Loading view" style="display: none;">
                         <span class="label">Upload</span>
                     </button>
+                    <script>
+                        const checkbox = document.getElementById('disclaimerDocCheck');
+                        const submitButton = document.getElementById('new-document-upload');
+                        checkbox.addEventListener('change', (event) => {
+                            if (event.target.checked) {
+                                submitButton.disabled = false;
+                            } else {
+                                submitButton.disabled = true;
+                            }
+                        })
+                    </script>
                 </div>
             </form>
         </div>
