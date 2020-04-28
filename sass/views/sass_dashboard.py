@@ -435,7 +435,8 @@ class SassDashboardView(TemplateView):
                 'DO'
             ]
             chems = ChemicalRecord.objects.filter(
-                location_site_id=self.location_site.id
+                Q(location_site_id=self.location_site.id) |
+                Q(survey__site_id=self.location_site.id)
             )
             x_label = []
             for chem in list_chems_code:
