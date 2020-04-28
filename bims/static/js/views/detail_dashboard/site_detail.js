@@ -220,7 +220,9 @@ define([
                     self.createConsStatusStackedBarChart(data);
                     self.createEndemismStackedBarChart();
                     self.createOriginStackedBarChart(data);
-                    self.createSiteImageCarousel(data);
+                    if (!data['is_multi_sites']) {
+                        self.createSiteImageCarousel(data);
+                    }
 
                     // Zoom to extent
                     if (data['extent'].length > 0) {
