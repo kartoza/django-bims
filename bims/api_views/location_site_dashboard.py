@@ -65,7 +65,7 @@ class OccurrencesChartData(ChartDataApiView):
     def categories(self, collection_results):
         return list(collection_results.annotate(
             name=Case(When(category='',
-                           then=Value('Unspecified')),
+                           then=Value('Unknown')),
                       default=F('category'))
         ).values_list(
             'name', flat=True
@@ -75,7 +75,7 @@ class OccurrencesChartData(ChartDataApiView):
         return collection_results.annotate(
             year=ExtractYear('collection_date'),
             name=Case(When(category='',
-                           then=Value('Unspecified')),
+                           then=Value('Unknown')),
                       default=F('category'))
         ).values(
             'year', 'name'
@@ -95,7 +95,7 @@ class LocationSitesConservationChartData(ChartDataApiView):
         return list(collection_results.annotate(
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Data deficient'))
+                      default=Value('Not evaluated'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -105,7 +105,7 @@ class LocationSitesConservationChartData(ChartDataApiView):
             year=ExtractYear('collection_date'),
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Data deficient')),
+                      default=Value('Not evaluated')),
         ).values(
             'year', 'name'
         ).annotate(
@@ -144,7 +144,7 @@ class LocationSitesEndemismChartData(ChartDataApiView):
         return list(collection_results.annotate(
             name=Case(When(taxonomy__endemism__isnull=False,
                            then=F('taxonomy__endemism__name')),
-                      default=Value('Unspecified'))
+                      default=Value('Unknown'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -154,7 +154,7 @@ class LocationSitesEndemismChartData(ChartDataApiView):
             year=ExtractYear('collection_date'),
             name=Case(When(taxonomy__endemism__isnull=False,
                            then=F('taxonomy__endemism__name')),
-                      default=Value('Unspecified'))
+                      default=Value('Unknown'))
         ).values(
             'year', 'name'
         ).annotate(

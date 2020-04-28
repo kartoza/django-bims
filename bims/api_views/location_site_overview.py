@@ -69,7 +69,7 @@ class LocationSiteOverviewData(object):
             group_data[self.GROUP_ENDEMISM] = group_records.annotate(
                 name=Case(When(taxonomy__endemism__isnull=False,
                                then=F('taxonomy__endemism__name')),
-                          default=Value('Unspecified'))
+                          default=Value('Unknown'))
             ).values(
                 'name'
             ).annotate(
@@ -78,9 +78,9 @@ class LocationSiteOverviewData(object):
                 'name', 'count'
             ).order_by('name')
             group_origins = group_records.annotate(
-                name=Case(When(category__isnull=False,
-                               then=F('category')),
-                          default=Value('Unspecified'))
+                name=Case(When(category='',
+                               then=Value('Unknown')),
+                          default=F('category'))
             ).values(
                 'name'
             ).annotate(
@@ -98,7 +98,7 @@ class LocationSiteOverviewData(object):
             all_cons_status = group_records.annotate(
                 name=Case(When(taxonomy__iucn_status__isnull=False,
                                then=F('taxonomy__iucn_status__category')),
-                          default=Value('Unspecified'))
+                          default=Value('Not evaluated'))
             ).values(
                 'name'
             ).annotate(

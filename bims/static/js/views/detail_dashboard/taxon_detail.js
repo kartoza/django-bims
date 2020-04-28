@@ -186,7 +186,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 'alien': 'Non-Native',
                 'translocated': 'Non-Native'
             };
-            origin_block_data['keys'] = ['Native', 'Non-Native'];
+            origin_block_data['keys'] = ['Native', 'Non-Native', 'Unknown'];
             origin_block_data['value'] = origin_dict[data['origin']];
             origin_block_data['value_title'] = origin_block_data['value'];
             this.originBlockData.append(self.renderFBISRPanelBlocks(origin_block_data));
