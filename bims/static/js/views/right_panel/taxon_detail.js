@@ -228,7 +228,7 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
                     // Set origin
                     var origin_block_data = {};
                     origin_block_data['value'] = data['origin'];
-                    origin_block_data['keys'] = ['Native', 'Non-Native'];
+                    origin_block_data['keys'] = ['Native', 'Non-Native', 'Unknown'];
                     origin_block_data['value_title'] = data['origin'];
                     this.OriginInfoList.append(self.renderFBISBlocks(origin_block_data));
 

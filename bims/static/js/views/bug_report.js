@@ -63,7 +63,7 @@ define([
            if (this.moved) {
                return;
            }
-           let width = this.panel.width() + 150;
+           let width = $('.panel-wrapper').width() + 10;
            self.moved = true;
            this.container.animate({
                "right": "+=" + width + 'px'

@@ -35,22 +35,22 @@ class TaxonSerializer(serializers.ModelSerializer):
         if obj.iucn_status:
             return obj.iucn_status.sensitive
         else:
-            return None
+            return False
 
     def get_iucn_status_name(self, obj):
         if obj.iucn_status:
             return obj.iucn_status.category
         else:
-            return None
+            return 'NE'
 
     def get_iucn_status_full_name(self, obj):
         if obj.iucn_status:
             for value in IUCNStatus.CATEGORY_CHOICES:
                 if value[0] == obj.iucn_status.category:
                     return value[1]
-            return None
+            return 'Not evaluated'
         else:
-            return None
+            return 'Not evaluated'
 
     def get_iucn_status_colour(self, obj):
         if obj.iucn_status:

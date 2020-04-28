@@ -1142,7 +1142,7 @@ define([
                 if (conservationStatusList.hasOwnProperty(consName)) {
                     consName = conservationStatusList[consName];
                 } else {
-                    consName = 'Data deficient';
+                    consName = 'Not evaluated';
                 }
                 tRow.append('<td>' + rowData['taxon'] + '</td>');
                 tRow.append('<td>' + rowData['count'] + '</td>');

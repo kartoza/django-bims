@@ -274,17 +274,18 @@ class LocationSitesSummary(APIView):
         search_process.create_view()
         biodiversity_data = self.get_biodiversity_data(collection_results)
         site_images = []
-        site_image_objects = SiteImage.objects.filter(
-            site__in=list(
-                collection_results.distinct('site').values_list(
-                    'site__id', flat=True))).values_list(
-            'image', flat=True
-        )
-        for site_image in site_image_objects:
-            site_images.append(
-                get_thumbnail(
-                    site_image, 'x500', crop='center', quality=99).url
+        if not is_multi_sites:
+            site_image_objects = SiteImage.objects.filter(
+                site__in=list(
+                    collection_results.distinct('site').values_list(
+                        'site__id', flat=True))).values_list(
+                'image', flat=True
             )
+            for site_image in site_image_objects:
+                site_images.append(
+                    get_thumbnail(
+                        site_image, 'x500', crop='center', quality=99).url
+                )
 
         # Check module
         modules = []
@@ -374,12 +375,14 @@ class LocationSitesSummary(APIView):
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
             origin=Case(When(category='',
-                             then=Value('Unspecified')),
+                             then=Value('Unknown')),
                         default=F('category')),
-            cons_status=F('taxonomy__iucn_status__category'),
+            cons_status=Case(When(taxonomy__iucn_status__isnull=False,
+                                  then=F('taxonomy__iucn_status__category')),
+                             default=Value('Not evaluated')),
             endemism=Case(When(taxonomy__endemism__isnull=False,
                                then=F('taxonomy__endemism__name')),
-                          default=Value('Unspecified')),
+                          default=Value('Unknown')),
         ).values(
             'taxon', 'origin', 'cons_status', 'endemism'
         ).annotate(
@@ -419,7 +422,7 @@ class LocationSitesSummary(APIView):
         biodiversity_data['species']['biotope_chart'] = {}
         origin_by_name_data = collection_results.annotate(
             name=Case(When(category='',
-                           then=Value('Unspecified')),
+                           then=Value('Unknown')),
                       default=F('category'))
         ).values(
             'name'
@@ -450,11 +453,11 @@ class LocationSitesSummary(APIView):
             taxonomy__iucn_status__isnull=True
         ).count()
         if dd_values > 0:
-            if 'DD' in keys:
-                key_index = keys.index('DD')
+            if 'NE' in keys:
+                key_index = keys.index('NE')
                 values[key_index] += dd_values
             else:
-                keys.append('DD')
+                keys.append('NE')
                 values.append(dd_values)
         biodiversity_data['species']['cons_status_chart']['data'] = values
         biodiversity_data['species']['cons_status_chart']['keys'] = keys
@@ -462,7 +465,7 @@ class LocationSitesSummary(APIView):
         endemism_status_data = collection_results.annotate(
             name=Case(When(taxonomy__endemism__name__isnull=False,
                            then=F('taxonomy__endemism__name')),
-                      default=Value('Unspecified'))
+                      default=Value('Unknown'))
         ).values(
             'name'
         ).annotate(
@@ -494,7 +497,7 @@ class LocationSitesSummary(APIView):
         ).count()
         if unspecified_sampling_method > 0:
             smd_data.append(unspecified_sampling_method)
-            smd_keys.append('Unspecified')
+            smd_keys.append('Unknown')
         biodiversity_data['species']['sampling_method_chart'] = {
             'data': smd_data,
             'keys': smd_keys
@@ -519,7 +522,7 @@ class LocationSitesSummary(APIView):
         ).count()
         if unspecified_biotope > 0:
             biotope_data.append(unspecified_biotope)
-            biotope_keys.append('Unspecified')
+            biotope_keys.append('Unknown')
         biodiversity_data['species']['biotope_chart'] = {
             'data': biotope_data,
             'keys': biotope_keys

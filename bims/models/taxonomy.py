@@ -299,5 +299,15 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
         iucn_status = get_iucn_status(
             species_name=instance.scientific_name
         )
+        if not iucn_status:
+            # Get not evaluated
+            try:
+                iucn_status, _ = IUCNStatus.objects.get_or_create(
+                    category='NE'
+                )
+            except IUCNStatus.MultipleObjectsReturned:
+                iucn_status = IUCNStatus.objects.filter(
+                    category='NE'
+                )[0]
         if iucn_status:
             instance.iucn_status = iucn_status
