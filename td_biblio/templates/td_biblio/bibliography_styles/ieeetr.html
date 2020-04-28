@@ -22,9 +22,7 @@
         {% if author.user %}
         <a href="{{ author.user.get_absolute_url }}" title="{% trans "Access user home page" %}">
         {% endif %}
-        {% for initial in author.first_initial.split %}
-            {{ initial }}.
-        {% endfor %}
+        {{ author.first_name }}
         <span class="last_name">{{ author.last_name }}</span>{% if author.user %}</a>{% endif %}{% if forloop.revcounter == 2 %} and {% else %}, {% endif %}
     </span>
     {% endfor %}
@@ -37,9 +35,11 @@
     <!-- /Title -->
 
     <!-- Journal -->
+    {% if entry.journal %}
     <span class="journal">
         <em>{% if entry.journal.abbreviation %}{{ entry.journal.abbreviation }}{% else %}{{ entry.journal.name }}{% endif %}</em>,
     </span>
+    {% endif %}
     <!-- /Journal -->
 
     <!-- Volume -->

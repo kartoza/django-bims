@@ -6,7 +6,7 @@ from django.conf import settings
 from bims.utils.celery import single_instance_task
 from bims.utils.logger import log
 from bims.models.source_reference import (
-    SourceReference, SourceReferenceDocument
+    SourceReference
 )
 
 SOURCE_REFERENCE_FILTER_FILE = 'source_reference_filter.txt'
