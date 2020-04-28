@@ -5,7 +5,9 @@ from celery import shared_task
 from django.conf import settings
 from bims.utils.celery import single_instance_task
 from bims.utils.logger import log
-from bims.models.source_reference import SourceReference
+from bims.models.source_reference import (
+    SourceReference, SourceReferenceDocument
+)
 
 SOURCE_REFERENCE_FILTER_FILE = 'source_reference_filter.txt'
 
@@ -21,7 +23,21 @@ def generate_source_reference_filter(file_path=None):
     results = []
     reference_source_list = []
     for reference in references:
-        source = str(reference.source)
+        if 'Published report or thesis' in reference.reference_type:
+            source = (
+                '{author_firstname} {author_lastname} | {year} | {doc}'.format(
+                    author_firstname=(
+                        reference.source.owner.first_name.encode('utf-8')
+                    ),
+                    author_lastname=(
+                        reference.source.owner.last_name.encode('utf-8')
+                    ),
+                    year=reference.source.date.year,
+                    doc=str(reference.source)
+                )
+            )
+        else:
+            source = str(reference.source)
         if source not in reference_source_list:
             reference_source_list.append(source)
         else:
