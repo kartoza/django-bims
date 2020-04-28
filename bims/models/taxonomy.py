@@ -26,6 +26,10 @@ class TaxonomyField(models.CharField):
 
 
 class Taxonomy(models.Model):
+    CATEGORY_CHOICES = (
+        ('alien', 'Non-Native'),
+        ('indigenous', 'Native'),
+    )
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
@@ -112,6 +116,14 @@ class Taxonomy(models.Model):
         verbose_name='Endemism',
         null=True,
         blank=True
+    )
+
+    origin = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        blank=True,
+        default='',
+        help_text='Origin'
     )
 
     author = models.CharField(

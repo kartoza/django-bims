@@ -369,13 +369,16 @@ class BiologicalCollectionRecord(AbstractValidation):
 
         # Try to get category if empty
         if not self.category and self.taxonomy:
-            bio_with_category = BiologicalCollectionRecord.objects.filter(
-                taxonomy__canonical_name__icontains=
-                self.taxonomy.canonical_name,
-                category__isnull=False
-            )
-            if bio_with_category.exists():
-                self.category = bio_with_category[0].category
+            if self.taxonomy.origin:
+                self.category = self.taxonomy.origin
+            else:
+                bio_with_category = BiologicalCollectionRecord.objects.filter(
+                    taxonomy__canonical_name__icontains=
+                    self.taxonomy.canonical_name,
+                    category__isnull=False
+                )
+                if bio_with_category.exists():
+                    self.category = bio_with_category[0].category
 
         if not self.original_species_name:
             self.original_species_name = self.taxonomy.canonical_name
