@@ -36,7 +36,10 @@ class Command(BaseCommand):
 
         # -- Origin
         if row[ORIGIN]:
-            data[ORIGIN] = row[ORIGIN]
+            if 'non-native' in row[ORIGIN].lower():
+                taxonomy.origin =  'alien'
+            else:
+                taxonomy.origin = 'indigenous'
 
         # -- ECO tolerance
         if row[ECO_TOLERANCE]:

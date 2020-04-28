@@ -33,7 +33,10 @@ class Command(BaseCommand):
 
         # -- Origin
         if row[ORIGIN]:
-            data[ORIGIN] = row[ORIGIN]
+            if 'non-native' in row[ORIGIN].lower():
+                taxonomy.origin = 'alien'
+            elif row[ORIGIN].lower().strip() == 'native':
+                taxonomy.origin = 'indigenous'
 
         # -- Growth form
         if row[GROWTH_FORM]:

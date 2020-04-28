@@ -31,7 +31,10 @@ class Command(BaseCommand):
 
         # -- Origin
         if row[ORIGIN]:
-            data[ORIGIN] = row[ORIGIN]
+            if 'non-native' in row[ORIGIN].lower():
+                taxonomy.origin = 'alien'
+            else:
+                taxonomy.origin = 'indigenous'
 
         # -- Add species to invert taxon group
         taxon_group, _ = TaxonGroup.objects.get_or_create(
