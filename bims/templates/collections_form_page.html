@@ -360,12 +360,39 @@
                 </table>
 
             </div>
+
+            <div class="disclaimer" style="margin-bottom: 10px;">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   value="" id="disclaimerCheck">
+                            <label class="form-check-label"
+                                   for="disclaimerCheck" style="padding-top: 2px;">
+                                {{ preferences.SiteSetting.disclaimer_form_text|urlize|linebreaks }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="submit-wrapper">
                 <input type="button" name="btn" id="submitBtn"
                        data-toggle="modal"
-                       data-target="#confirm-submit" class="btn btn-info"
-                       value="Next">
+                       data-target="#confirm-submit"
+                       class="btn btn-info"
+                       value="Next" disabled>
             </div>
+            <script>
+                const checkbox = document.getElementById('disclaimerCheck');
+                const submitButton = document.getElementById('submitBtn');
+                checkbox.addEventListener('change', (event) => {
+                    if (event.target.checked) {
+                        submitButton.disabled = false;
+                    } else {
+                        submitButton.disabled = true;
+                    }
+                })
+            </script>
 
             <div class="modal fade" id="confirm-submit" tabindex="-1"
                  role="dialog"

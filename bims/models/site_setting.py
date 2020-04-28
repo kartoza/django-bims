@@ -68,6 +68,22 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    disclaimer_form_text = models.CharField(
+        max_length=300,
+        default='I agree to these data being shared via the FBIS '
+                'platform for visualisation and download by '
+                'registered FBIS users',
+        blank=True
+    )
+
+    disclaimer_doc_text = models.CharField(
+        max_length=300,
+        default='I hereby confirm that I am the owner of these '
+                'data and/or document and agree to these being shared '
+                'via the FBIS platform for download by registered FBIS users.',
+        blank=True
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
