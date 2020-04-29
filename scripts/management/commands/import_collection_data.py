@@ -456,6 +456,7 @@ class Command(BaseCommand):
 
         if reference and source_reference:
             source_reference.source_name = reference
+            source_reference.save()
         elif reference and not source_reference:
             self.add_to_error_summary(
                 'Reference {} is not created'.format(
@@ -1024,6 +1025,7 @@ class Command(BaseCommand):
                         collection_record,
                         record
                     )
+                    collection_record.save()
 
                 except KeyError as e:
                     self.add_to_error_summary(
