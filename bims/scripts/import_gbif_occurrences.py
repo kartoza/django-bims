@@ -1,6 +1,7 @@
 import requests
 import logging
 import datetime
+import simplejson
 from dateutil.parser import parse
 from requests.exceptions import HTTPError
 from django.contrib.gis.geos import Point
@@ -49,6 +50,9 @@ def import_gbif_occurrences(
     :param habitat: habitat of species, default to None
     :param origin: origin of species, default to None
     """
+    if not taxonomy.gbif_key:
+        logger.error('Missing taxon gbif key')
+        return
     api_url = 'http://api.gbif.org/v1/occurrence/search?'
     api_url += 'taxonKey={}'.format(taxonomy.gbif_key)
     api_url += '&offset={}'.format(offset)
@@ -63,7 +67,7 @@ def import_gbif_occurrences(
         response = requests.get(api_url)
         json_result = response.json()
         data_count = json_result['count']
-    except HTTPError as e:
+    except (HTTPError, simplejson.errors.JSONDecodeError) as e:
         logger.error(e.message)
         return
 
