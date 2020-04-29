@@ -14,7 +14,15 @@ from bims.models.source_reference import (
     SourceReferenceDocument,
     SourceReferenceDatabase
 )
+from bims.models.chemical_record import (
+    ChemicalRecord
+)
 from bims.models.iucn_status import IUCNStatus
+
+ORIGIN = {
+    'alien': 'Non-Native',
+    'indigenous': 'Native',
+}
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -86,6 +94,19 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     sampling_effort_value = serializers.SerializerMethodField()
     abundance_measure = serializers.SerializerMethodField()
     abundance_value = serializers.SerializerMethodField()
+    collector_or_owner_institute = serializers.SerializerMethodField()
+    analyst = serializers.SerializerMethodField()
+    analyst_institute = serializers.SerializerMethodField()
+    authors = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
+    year = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        self.chem_records_cached = {}
+        super(BioCollectionOneRowSerializer, self).__init__(*args, **kwargs)
+
+    def chem_data(self, obj, chem):
+        return chem
 
     def get_abundance_measure(self, obj):
         if obj.abundance_type:
@@ -129,7 +150,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 return category[obj.taxonomy.iucn_status.category]
             except KeyError:
                 pass
-        return 'Unspecified'
+        return 'Not evaluated'
 
     def get_fbis_site_code(self, obj):
         return obj.site.site_code
@@ -140,7 +161,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_river_name(self, obj):
         if obj.site.river:
             return obj.site.river.name
-        return 'Unspecified'
+        return 'Unknown'
 
     def get_site_description(self, obj):
         if obj.site.site_description:
@@ -157,16 +178,15 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_origin(self, obj):
         category = obj.category
-        for choice in BiologicalCollectionRecord.CATEGORY_CHOICES:
-            if choice[0] == obj.category:
-                category = choice[1]
-
-        return category.encode('utf8')
+        if category in ORIGIN:
+            return ORIGIN[category]
+        else:
+            return 'Unknown'
 
     def get_endemism(self, obj):
         if obj.taxonomy.endemism:
             return obj.taxonomy.endemism.name
-        return 'Unspecified'
+        return 'Unknown'
 
     def get_sampling_date(self, obj):
         if obj.collection_date:
@@ -174,7 +194,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_study_reference(self, obj):
         if obj.source_reference:
-            return str(obj.source_reference.source)
+            return str(obj.source_reference.title)
         else:
             return '-'
 
@@ -238,7 +258,28 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         else:
             return '-'
 
+    def get_authors(self, obj):
+        if obj.source_reference:
+            return obj.source_reference.authors
+        return '-'
+
+    def get_source(self, obj):
+        if obj.source_reference:
+            if obj.source_reference.source_name:
+                return obj.source_reference.source_name
+        return '-'
+
+    def get_year(self, obj):
+        if obj.source_reference:
+            return obj.source_reference.year
+        return '-'
+
     def get_collector_or_owner(self, obj):
+        if obj.collector_user:
+            return '{first_name} {last_name}'.format(
+                first_name=obj.collector_user.first_name.encode('utf-8'),
+                last_name=obj.collector_user.last_name.encode('utf-8')
+            )
         if obj.additional_data:
             # If this is BioBase data, return a collector name from author of
             # reference
@@ -253,9 +294,31 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                          source.get_authors()])
                     s = ', and '.join(s.rsplit(', ', 1))  # last author case
                     return s
-        if obj.owner:
-            return obj.owner.username.encode('utf8')
-        return obj.collector.encode('utf8')
+        if obj.collector:
+            return obj.collector.encode('utf8')
+        return '{first_name} {last_name}'.format(
+            first_name=obj.owner.first_name.encode('utf-8'),
+            last_name=obj.owner.last_name.encode('utf-8')
+        )
+
+    def get_collector_or_owner_institute(self, obj):
+        if obj.collector_user:
+            if obj.collector_user.organization:
+                return obj.collector_user.organization
+        return '-'
+
+    def get_analyst(self, obj):
+        if obj.analyst:
+            return '{first_name} {last_name}'.format(
+                first_name=obj.analyst.first_name,
+                last_name=obj.analyst.last_name
+            )
+        return '-'
+
+    def get_analyst_institute(self, obj):
+        if obj.analyst:
+            return obj.analyst.organization
+        return '-'
 
     def get_notes(self, obj):
         return obj.notes
@@ -339,10 +402,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'origin',
             'endemism',
             'conservation_status',
+            'collector_or_owner',
+            'collector_or_owner_institute',
+            'analyst',
+            'analyst_institute',
+            'authors',
+            'year',
+            'source',
             'reference_category',
             'study_reference',
             'doi_or_url',
-            'collector_or_owner',
             'notes'
         ]
 
@@ -350,6 +419,27 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         result = super(
             BioCollectionOneRowSerializer, self).to_representation(
             instance)
+        chem_records_identifier = (
+            '{site}-{date}'.format(
+                site=instance.site,
+                date=instance.collection_date
+            )
+        )
+        if chem_records_identifier in self.chem_records_cached:
+            result.update(self.chem_records_cached[chem_records_identifier])
+        else:
+            chem_record_data = {}
+            chem_records = ChemicalRecord.objects.filter(
+                survey__site=instance.site,
+                survey__date=instance.collection_date
+            ).distinct('chem__chem_code')
+            for chem_record in chem_records:
+                chem_record_data[
+                    chem_record.chem.chem_code.upper()] = chem_record.value
+            self.chem_records_cached[chem_records_identifier] = (
+                chem_record_data
+            )
+            result.update(chem_record_data)
         return result
 
 

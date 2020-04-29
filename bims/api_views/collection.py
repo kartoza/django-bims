@@ -133,16 +133,6 @@ class CollectionDownloader(GetCollectionAbstract):
         site_id = self.request.GET.get('siteId')
         search_uri = self.request.build_absolute_uri()
 
-        not_needed_params = [
-            'zoom',
-            'bbox'
-        ]
-
-        search_uri = remove_params_from_uri(
-            not_needed_params,
-            search_uri
-        )
-
         if queryset:
             query_count = queryset.count()
         else:

@@ -2,7 +2,7 @@
 """
     Source reference that overridden with it's own source
 """
-
+import re
 from collections import OrderedDict
 from django.db import models
 from django.conf import settings
@@ -62,6 +62,24 @@ class SourceReference(PolymorphicModel):
         default='',
         max_length=512
     )
+
+    @property
+    def year(self):
+        if re.search(r'[12]\d{3}', self.source_name):
+            year = re.findall(r'[12]\d{3}', self.source_name)[0]
+            return year
+        return '-'
+
+    @property
+    def authors(self):
+        return '-'
+
+    @property
+    def title(self):
+        if self.source_name:
+            return self.source_name
+        else:
+            return 'Unpublished data'
 
     @property
     def reference_type(self):
@@ -163,9 +181,31 @@ class SourceReferenceBibliography(SourceReference):
     document = models.ForeignKey(
         Document, null=True, blank=True, on_delete=models.SET_NULL)
 
+    @property
+    def title(self):
+        return self.source.title
+
+    @property
+    def authors(self):
+        authors = self.source.get_authors()
+        authors_name = ''
+        for author in authors:
+            if authors_name:
+                authors_name += ', '
+            authors_name += '{first_name} {last_name}'.format(
+                first_name=author.first_name,
+                last_name=author.last_name
+            )
+        return authors_name if authors_name else '-'
+
+    @property
+    def year(self):
+        if self.source.publication_date:
+            return self.source.publication_date.year
+        return '-'
+
     @staticmethod
     def create_entry(author_string, journal, date):
-
         pass
 
     @property
@@ -198,8 +238,23 @@ class SourceReferenceDatabase(SourceReference):
         Document, null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
+    def title(self):
+        return self.source.name
+
+    @property
     def reference_type(self):
         return 'Database'
+
+    @property
+    def authors(self):
+        return '-'
+
+    @property
+    def year(self):
+        if re.search(r'[12]\d{3}', self.source_name):
+            year = re.findall(r'[12]\d{3}', self.source_name)[0]
+            return year
+        return '-'
 
     def link_template(self):
         """Returns html template containing the reference data"""
@@ -226,6 +281,23 @@ class SourceReferenceDatabase(SourceReference):
 class SourceReferenceDocument(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(Document)
+
+    @property
+    def year(self):
+        if self.source.date:
+            return self.source.date.year
+        return '-'
+
+    @property
+    def title(self):
+        return self.source.title
+
+    @property
+    def authors(self):
+        return '{first_name} {last_name}'.format(
+            first_name=self.source.owner.first_name,
+            last_name=self.source.owner.last_name
+        )
 
     def link_template(self):
         """Returns html template containing the reference data"""

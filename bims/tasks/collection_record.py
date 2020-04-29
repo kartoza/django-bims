@@ -76,7 +76,8 @@ def download_data_to_csv(path_file, request):
                 if header == 'class_name':
                     header = 'class'
                 header = header.replace('_or_', '/')
-                header = header.replace('_', ' ').capitalize()
+                if not header.isupper():
+                    header = header.replace('_', ' ').capitalize()
                 if header.lower() == 'uuid':
                     header = header.upper()
                 formatted_headers.append(header)
