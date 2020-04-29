@@ -15,7 +15,8 @@ define([
                 "Facility (GBIF). GBIF includes periodically-updated data from the South" +
                 " African Institute for Aquatic Biodiversity (SAIAB), as well as 'Research Grade' " +
                 "iNaturalist data (i.e. records from non-captive individuals, with a picture, locality " +
-                "and date, and with two or more IDs in agreement at species level)."
+                "and date, and with two or more IDs in agreement at species level). " +
+                "Invertebrate data includes both aquatic and aerial stages."
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
