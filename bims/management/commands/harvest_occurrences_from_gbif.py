@@ -37,7 +37,7 @@ class Command(BaseCommand):
         taxa = Taxonomy.objects.filter(
             id__in=taxon_group.values('taxonomies'),
             rank='SPECIES'
-        )
+        ).exclude(gbif_key__isnull=True)
 
         logger.info('Harvest occurrences from taxon group'
                     ' - {group} - with total species {total} : '.format(
