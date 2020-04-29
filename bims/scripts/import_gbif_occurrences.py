@@ -31,11 +31,13 @@ LOCALITY_KEY = 'locality'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 SPECIES_KEY = 'species'
 MODIFIED_DATE_KEY = 'modified'
+LIMIT = 20
 
 
 def import_gbif_occurrences(
     taxonomy,
     offset=0,
+    owner=None,
     habitat=None,
     origin=None):
     """
@@ -43,6 +45,7 @@ def import_gbif_occurrences(
     data stored to biological_collection_record table
     :param taxonomy: Taxonomy object
     :param offset: response data offset, default is 0
+    :param owner: owner of record in the bims
     :param habitat: habitat of species, default to None
     :param origin: origin of species, default to None
     """
@@ -64,20 +67,26 @@ def import_gbif_occurrences(
         logger.error(e.message)
         return
 
+    logger.info('-- Total occurrences {total} - offset {offset} : '.format(
+        offset=offset,
+        total=data_count
+    ))
+
     source_collection = 'gbif'
 
-    admins = settings.ADMINS
-    superusers = Profile.objects.filter(is_superuser=True)
-    if admins:
-        for admin in admins:
-            superuser_list = superusers.filter(email=admin[1])
-            if superuser_list.exists():
-                superusers = superuser_list
-                break
-    if superusers.exists():
-        user = superusers[0]
-    else:
-        user = None
+    if not owner:
+        admins = settings.ADMINS
+        superusers = Profile.objects.filter(is_superuser=True)
+        if admins:
+            for admin in admins:
+                superuser_list = superusers.filter(email=admin[1])
+                if superuser_list.exists():
+                    superusers = superuser_list
+                    break
+        if superusers.exists():
+            owner = superusers[0]
+        else:
+            owner = None
 
     models.signals.post_save.disconnect(
         location_site_post_save_handler,
@@ -129,11 +138,11 @@ def import_gbif_occurrences(
                 upstream_id=upstream_id
             )
             logger.info(
-                'Update existing collection record with upstream ID : {}'.
+                '--- Update existing collection record with upstream ID : {}'.
                 format(upstream_id))
         except BiologicalCollectionRecord.DoesNotExist:
             logger.info(
-                'Collection record created with upstream ID : {}'.
+                '--- Collection record created with upstream ID : {}'.
                 format(upstream_id))
             collection_record = BiologicalCollectionRecord.objects.create(
                 upstream_id=upstream_id,
@@ -145,18 +154,19 @@ def import_gbif_occurrences(
         else:
             pass
         collection_record.taxonomy = taxonomy
-        collection_record.owner = user
+        collection_record.owner = owner
         collection_record.original_species_name = species
         collection_record.collector = collector
         collection_record.source_collection = source_collection
         collection_record.institution_id = institution_code
         collection_record.reference = reference
-        collection_record.collection_habitat = habitat.lower()
-
-        for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
-            if origin.lower() == category[1].lower():
-                origin = category[0]
-                break
+        if habitat:
+            collection_record.collection_habitat = habitat.lower()
+        if origin:
+            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                if origin.lower() == category[1].lower():
+                    origin = category[0]
+                    break
 
         collection_record.category = origin
         collection_record.validated = True
@@ -168,10 +178,6 @@ def import_gbif_occurrences(
         }
         collection_record.save()
 
-        logger.info('Collection record id {} has been updated'.format(
-            collection_record.id
-        ))
-
     # reconnect post save handler
     models.signals.post_save.connect(
         location_site_post_save_handler,
@@ -180,11 +186,11 @@ def import_gbif_occurrences(
         collection_post_save_handler,
     )
 
-    if data_count > offset:
+    if data_count > (offset + LIMIT):
         # Import more occurrences
         import_gbif_occurrences(
             taxonomy=taxonomy,
-            offset=offset + 20,
+            offset=offset + LIMIT,
             habitat=habitat,
             origin=origin,
         )
