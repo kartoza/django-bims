@@ -501,13 +501,13 @@ class Search(object):
                 )
 
         if self.collector:
-            sass_owners = Profile.objects.annotate(
+            collectors = Profile.objects.annotate(
                 full_name=Concat('first_name', Value(' '), 'last_name')
             ).filter(full_name__in=self.collector)
+            collector_list = list(collectors.values_list('id', flat=True))
             bio = bio.filter(
-                Q(collector__in=self.collector) |
-                Q(sitevisittaxon__site_visit__owner__in=list(
-                    sass_owners.values_list('id', flat=True)))
+                Q(collector_user__in=collector_list) |
+                Q(sitevisittaxon__site_visit__owner__in=collector_list)
             )
 
         if self.reference_category:
