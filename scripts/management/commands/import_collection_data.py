@@ -38,7 +38,10 @@ from bims.models import (
     SurveyData,
     SurveyDataOption,
     SurveyDataValue,
-    TaxonGroup
+    TaxonGroup,
+    source_reference_post_save_handler,
+    SourceReferenceDatabase,
+    SourceReferenceDocument
 )
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
@@ -251,6 +254,22 @@ class Command(BaseCommand):
         signals.pre_save.disconnect(
             taxonomy_pre_save_handler,
             sender=Taxonomy
+        )
+        signals.post_save.disconnect(
+            source_reference_post_save_handler,
+            sender=SourceReference
+        )
+        signals.post_save.disconnect(
+            source_reference_post_save_handler,
+            sender=SourceReferenceDatabase
+        )
+        signals.post_save.disconnect(
+            source_reference_post_save_handler,
+            sender=SourceReferenceBibliography
+        )
+        signals.post_save.disconnect(
+            source_reference_post_save_handler,
+            sender=SourceReferenceDocument
         )
 
     def reconnect_signals(self):
