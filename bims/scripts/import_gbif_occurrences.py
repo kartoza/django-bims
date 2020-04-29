@@ -40,7 +40,7 @@ def import_gbif_occurrences(
     offset=0,
     owner=None,
     habitat=None,
-    origin=None):
+    origin=''):
     """
     Import gbif occurrences based on taxonomy gbif key,
     data stored to biological_collection_record table
@@ -171,8 +171,7 @@ def import_gbif_occurrences(
                 if origin.lower() == category[1].lower():
                     origin = category[0]
                     break
-
-        collection_record.category = origin
+            collection_record.category = origin
         collection_record.validated = True
         collection_record.additional_data = {
             'fetch_from_gbif': True,
