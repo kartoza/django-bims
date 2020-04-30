@@ -27,9 +27,13 @@ class BiologicalCollectionQuerySet(models.QuerySet):
         is_doc = False
         for col in self:
             try:
-                title = col.source_reference.source.title
+                title = col.source_reference.title
+                authors = col.source_reference.authors
+                pub_year = col.source_reference.year
             except AttributeError:
                 title = '-'
+                authors = '-'
+                pub_year = '-'
 
             if col.source_reference.reference_type == \
                     'Published report or thesis':
@@ -41,8 +45,6 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 bims_document, _ = BimsDocument.objects.get_or_create(
                     document=col.source_reference.source
                 )
-                authors = bims_document.author
-                pub_year = bims_document.year
                 try:
                     source = json.loads(
                         col.source_reference.source.supplemental_information
@@ -50,20 +52,6 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 except:  # noqa
                     source = '-'
             else:
-                try:
-                    authors = [
-                        person.__unicode__() for person in
-                        col.source_reference.source.authors.all(
-                        ).order_by('authorentryrank__rank')
-                    ]
-                except AttributeError:
-                    authors = '-'
-
-                try:
-                    pub_year = \
-                        col.source_reference.source.publication_date.year
-                except AttributeError:
-                    pub_year = '-'
 
                 try:
                     url = col.source_reference.source.doi
