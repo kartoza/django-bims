@@ -68,9 +68,11 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             var windowHash = window.location.hash;
             var firstFilterWord = filters.slice(0, 5);
             var newFilter = windowHash.slice(windowHash.indexOf(firstFilterWord));
-            Shared.Dispatcher.trigger('filters:updateFilters', newFilter);
             if (this.searchHistory.length < 1) {
+                Shared.Dispatcher.trigger('filters:updateFilters', newFilter, true);
                 this.search(query);
+            } else {
+                Shared.Dispatcher.trigger('filters:updateFilters', newFilter, false);
             }
         },
         onlyFilters: function (filters) {
@@ -78,8 +80,12 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             var windowHash = window.location.hash;
             var firstFilterWord = filters.slice(0, 5);
             var newFilter = windowHash.slice(windowHash.indexOf(firstFilterWord));
-            Shared.Dispatcher.trigger('filters:updateFilters', newFilter);
-            this.search('');
+            if (this.searchHistory.length < 1) {
+                Shared.Dispatcher.trigger('filters:updateFilters', newFilter, true);
+                this.search('');
+            } else {
+                Shared.Dispatcher.trigger('filters:updateFilters', newFilter, false);
+            }
         },
         showSiteDetailedDashboard: function (query) {
             Shared.Dispatcher.trigger('map:showSiteDetailedDashboard', query);

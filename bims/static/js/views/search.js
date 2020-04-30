@@ -720,6 +720,7 @@ define([
             }
         },
         filtersUpdated: function (filters, firstCall=true) {
+            console.log('filtersUpdated', filters, firstCall);
             var self = this;
             var allFilters = {};
 
