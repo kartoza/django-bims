@@ -11,7 +11,7 @@ body {
 hr {
   max-width: 50px;
   border-width: 3px;
-  border-color: #526B43;
+  border-color: #18A090;
 }
 
 hr.light {
@@ -19,14 +19,14 @@ hr.light {
 }
 
 a {
-  color: #526B43;
+  color: #18A090;
   -webkit-transition: all 0.2s;
   -moz-transition: all 0.2s;
   transition: all 0.2s;
 }
 
 a:hover {
-  color: #526B43;
+  color: #18A090;
 }
 
 h1,
@@ -49,8 +49,8 @@ h6 {
 }
 
 .btn-primary {
-  background-color: #526B43;
-  border-color: #526B43;
+  background-color: #18A090;
+  border-color: #18A090;
 }
 
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
@@ -158,8 +158,8 @@ h6 {
 }
 
 .navbar-shrink .user-icon {
-  color: #526B43 !important;
-  border-color: #526B43 !important;
+  color: #18A090 !important;
+  border-color: #18A090 !important;
 }
 
 .noselect {

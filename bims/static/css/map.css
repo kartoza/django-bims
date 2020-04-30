@@ -211,7 +211,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .control-panel-selected {
-    background-color: #1b900d;
+    background-color: #18A090;
     padding-right: 0;
     color: white !important;
 }
@@ -572,7 +572,7 @@ html, body, .map, .map-wrapper, #map-container {
     margin-top: 4px;
     width: 100%;
     height: 46px;
-    background-color: #1b900d;
+    background-color: #18A090;
     padding-top: 4px;
     padding-bottom: 4px;
 }
@@ -783,7 +783,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .layer-switcher.shown button {
-    background-color: #1b900d !important;
+    background-color: #18A090 !important;
 }
 
 .layer-switcher button:focus {
@@ -1043,7 +1043,7 @@ div:hover::-webkit-scrollbar {
     overflow-y: scroll;
     position: absolute;
     left: 0.5em;
-    bottom: 40px;
+    bottom: 70px;
     background-color: white;
     cursor: pointer;
     z-index: 999;
@@ -1530,7 +1530,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .filter-selected {
-    background-color: #1b900d !important;
+    background-color: #18A090 !important;
     color: white !important;
 }
 
@@ -1761,7 +1761,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .info-wrapper-tab.active {
-    color: #1b900d;
+    color: #18A090;
     border-left: 1px solid #dee2e6;
     border-right: 1px solid #dee2e6;
     border-top: 1px solid #dee2e6;
@@ -2090,7 +2090,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .ck-button input:checked + span {
-    background-color: #1b900d;
+    background-color: #18A090;
     color: #fff;
 }
 
@@ -2248,11 +2248,11 @@ div:hover::-webkit-scrollbar {
 }
 
 .origin-btn.selected {
-    background-color: #1b900d;
+    background-color: #18A090;
 }
 
 .origin-btn.selected:hover {
-    background-color: #1b900d;
+    background-color: #18A090;
 }
 
 .origin-btn:hover {
@@ -2309,7 +2309,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .sub-control-panel:active {
-    background-color: #1b900d;
+    background-color: #18A090;
     color: white;
 }
 
@@ -2777,4 +2777,8 @@ div:hover::-webkit-scrollbar {
 
 .active-result {
     height: auto !important;
+}
+
+.ol-scale-line {
+    margin-bottom: 30px;
 }

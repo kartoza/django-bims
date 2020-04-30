@@ -85,7 +85,7 @@ define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol)
                 image = new ol.style.Circle({
                     radius: radius,
                     fill: new ol.style.Fill({
-                        color: '#1b900d'
+                        color: '#18A090'
                     }),
                     stroke: new ol.style.Stroke({
                         color: '#fff',
