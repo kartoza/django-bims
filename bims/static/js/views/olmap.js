@@ -552,6 +552,15 @@ define([
                 center = centerArray;
             }
 
+            // Add scaleline control
+            let scalelineControl = new ol.control.ScaleLine({
+                units: 'metric',
+                bar: true,
+                steps: 4,
+                text: true,
+                minWidth: 140
+            })
+
             this.map = new ol.Map({
                 target: 'map',
                 layers: basemap.getBaseMaps(),
@@ -563,7 +572,11 @@ define([
                 }),
                 controls: ol.control.defaults({
                     zoom: false
-                }).extend([mousePositionControl])
+                }).extend(
+                    [
+                        mousePositionControl,
+                        scalelineControl
+                    ])
             });
 
             // Create a popup overlay which will be used to display feature info

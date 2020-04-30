@@ -1043,7 +1043,7 @@ div:hover::-webkit-scrollbar {
     overflow-y: scroll;
     position: absolute;
     left: 0.5em;
-    bottom: 40px;
+    bottom: 70px;
     background-color: white;
     cursor: pointer;
     z-index: 999;
@@ -2777,4 +2777,8 @@ div:hover::-webkit-scrollbar {
 
 .active-result {
     height: auto !important;
+}
+
+.ol-scale-line {
+    margin-bottom: 30px;
 }
