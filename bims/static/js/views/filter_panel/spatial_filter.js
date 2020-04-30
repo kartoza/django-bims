@@ -580,7 +580,7 @@ define([
                     }
                 };
                 if (cqlFilters) {
-                    options.params.CQL_FILTER = encodeURIComponent(cqlFilters);
+                    options.params.CQL_FILTER = cqlFilters;
                 }
                 let layer = new ol.layer.Tile({
                     source: new ol.source.TileWMS(options)

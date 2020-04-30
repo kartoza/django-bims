@@ -81,6 +81,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
+from bims.utils.location_context import merge_context_group
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -889,6 +890,47 @@ class AlgaeDataAdmin(admin.ModelAdmin):
     )
 
 
+class LocationContextGroupAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'key',
+        'geocontext_group_key',
+        'layer_name',
+        'verified'
+    )
+    search_fields = (
+        'name',
+        'key',
+        'geocontext_group_key'
+    )
+    actions = ['merge_group']
+    def merge_group(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 group', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified group', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified group',
+                messages.ERROR)
+            return
+        excluded_group = verified[0]
+        group_list = queryset.exclude(id=verified[0].id)
+        merge_context_group(
+            excluded_group=excluded_group,
+            group_list=group_list
+        )
+        self.message_user(request, 'Groups has been merged')
+
+    merge_group.short_description = 'Merge groups'
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -937,7 +979,7 @@ admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
 
-admin.site.register(LocationContextGroup)
+admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(
     LocationContextFilterGroupOrder, LocationContextFilterGroupOrderAdmin)
 admin.site.register(LocationContextFilter, LocationContextFilterAdmin)

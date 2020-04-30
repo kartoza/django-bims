@@ -1,7 +1,12 @@
 # coding=utf-8
 """Add group to location context document."""
 from django.core.management.base import BaseCommand
+from django.db.models import signals
 from bims.utils.location_context import get_location_context_data
+from bims.models.location_context_group import (
+    LocationContextGroup,
+    location_context_group_post_save
+)
 
 
 class Command(BaseCommand):
@@ -31,17 +36,11 @@ class Command(BaseCommand):
             help='Update location context for specific site')
 
     def handle(self, *args, **options):
-        # 'political_boundary_group',
-        # 'river_catchment_areas_group',
-        # 'river_ecoregion_group',
-        # 'water_management_area',
-        # 'geomorphological_group',
-        # 'monthly_mean_daily_average_temperature_group',
-        # 'rainfall_group',
-        # 'freshwater_ecoregion_of_the_world',
-        # # 'critical_biodiversity_area',
-        # 'national_freshwater_ecosystem_priority_area',
-        # # 'strategic_water_source_areas'
+
+        signals.post_save.disconnect(
+            location_context_group_post_save,
+            sender=LocationContextGroup
+        )
 
         get_location_context_data(
             group_keys=options.get('groups', None),

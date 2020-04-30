@@ -1,10 +1,12 @@
 import operator
 from django.db.models import Q
+from django.db.models.fields.related import ForeignObjectRel
 from bims.models.spatial_scale import SpatialScale
 from bims.models.spatial_scale_group import SpatialScaleGroup
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
 from bims.utils.logger import log
+from bims.models.location_context_group import LocationContextGroup
 from preferences import preferences
 
 
@@ -144,3 +146,45 @@ def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
                 message=message,
                 group=group_key
             ))
+
+
+def merge_context_group(excluded_group=None, group_list=None):
+    """
+    Merge multiple location context groups
+    """
+    if not excluded_group:
+        return
+    if not group_list:
+        return
+    groups = group_list.exclude(id=excluded_group.id)
+
+    if groups.count() < 1:
+        return
+
+    log('Merging %s data' % groups.count())
+
+    links = [
+        rel.get_accessor_name() for rel in excluded_group._meta.get_fields() if
+        issubclass(type(rel), ForeignObjectRel)
+    ]
+
+    if links:
+        for group in groups:
+            log('----- {} -----'.format(str(group)))
+            for link in links:
+                try:
+                    objects = getattr(group, link).all()
+                    if objects.count() > 0:
+                        print('Updating {obj} for : {taxon}'.format(
+                            obj=str(objects.model._meta.label),
+                            taxon=str(group)
+                        ))
+                        update_dict = {
+                            getattr(group, link).field.name: excluded_group
+                        }
+                        objects.update(**update_dict)
+                except Exception as e:  # noqa
+                    continue
+            log(''.join(['-' for i in range(len(str(group)) + 12)]))
+
+    groups.delete()
