@@ -44,7 +44,7 @@ body {
 }
 
 .dashboard-title {
-    border-bottom: 3px solid #1b900d;
+    border-bottom: 3px solid #18A090;
     margin-bottom: 10px;
 }
 
@@ -52,7 +52,7 @@ body {
     float: right;
     margin-top: -40px;
     font-size: 20pt;
-    background-color: #526B43;
+    background-color: #18A090;
     padding-left: 10px;
     padding-right: 10px;
     color: #ffffff;
@@ -60,7 +60,7 @@ body {
 
 .dashboard-close:hover {
     cursor: pointer;
-    color: #526B43;
+    color: #18A090;
     background-color: #ffffff;
 }
 
@@ -120,7 +120,7 @@ body {
 .loading-title {
     position: absolute;
     font-size: 30px;
-    color: #1b900d;
+    color: #18A090;
     top: 38%;
     left: 50%;
     transform: translate(-50%, -40%);

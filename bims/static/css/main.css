@@ -1,12 +1,12 @@
 .dashboard-title {
-    border-bottom: 3px solid #1b900d;
+    border-bottom: 3px solid #18A090;
     margin-bottom: 10px;
 }
 
 .site-form-close {
     float: right;
     font-size: 20pt;
-    background-color: #526B43;
+    background-color: #18A090;
     padding-left: 10px;
     padding-right: 10px;
     color: #ffffff;
@@ -15,7 +15,7 @@
 
 .site-form-close:hover {
     cursor: pointer;
-    color: #526B43;
+    color: #18A090;
     background-color: #ffffff;
 }
 
@@ -52,13 +52,13 @@
 {
   content: '>';
   font-size: 55px;
-  color: #1b900d;
+  color: #18A090;
 }
 
 .carousel-control-prev-icon:after {
   content: '<';
   font-size: 55px;
-  color: #1b900d;
+  color: #18A090;
 }
 
 .carousel-indicators li {
@@ -67,5 +67,5 @@
 }
 
 .carousel-indicators .active {
-    background-color: #1b900d;
+    background-color: #18A090;
 }

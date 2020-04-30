@@ -10,7 +10,7 @@ body {
 }
 
 .bg-primary {
-    background-color: #526B43 !important;
+    background-color: #18A090 !important;
 }
 
 .bg-dark {
@@ -146,8 +146,8 @@ header.masthead p {
     width: 250px;
     padding: 5px 10px;
     background-color: white;
-    color: #1b900d;
-    border: 2px solid #1b900d;
+    color: #18A090;
+    border: 2px solid #18A090;
     text-align: left;
     border-radius: 4px;
 }
@@ -318,7 +318,7 @@ header.masthead p {
 }
 
 .text-primary {
-    color: #526B43 !important;
+    color: #18A090 !important;
 }
 
 html, body {
@@ -346,27 +346,27 @@ html, body {
     border-radius: 4px;
     margin: 10px;
     font-weight: normal;
-    color: #1b900d;
+    color: #18A090;
     padding: 7px 22px;
     font-size: 11pt;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease 0s;
-    border: 2px solid #1b900d;
+    border: 2px solid #18A090;
 }
 
 .btn-account:hover {
     color: white;
-    background-color: #1b900d;
+    background-color: #18A090;
 }
 
 .section-heading-container {
-    border-bottom: 1px solid #1b900d;
+    border-bottom: 1px solid #18A090;
     padding-bottom: 0;
     margin-bottom: 25px;
 }
 
 .section-heading {
-    color: #1b900d;
+    color: #18A090;
     font-weight: lighter !important;
     font-size: 1.75em !important;
     margin-top: 0;

@@ -13,7 +13,7 @@ class CsvCommand(BaseCommand):
             '--csv-file',
             dest='csv_file',
             default=None,
-            help='CSV file for updating sites data'
+            help='CSV file for updating data'
         )
 
     def handle(self, *args, **options):

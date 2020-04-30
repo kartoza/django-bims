@@ -75,7 +75,7 @@
 }
 
 .btn-element-download:hover, .btn-dashboard:hover {
-    color: #526B43 !important;
+    color: #18A090 !important;
     background-color: white !important;
 }
 
@@ -311,7 +311,7 @@ table#filter-history-table {
     margin-top: 20px;
     margin-left: 30px;
     margin-right: 30px;
-    border-bottom: 3px solid #1b900d;
+    border-bottom: 3px solid #18A090;
 }
 
 #metadata-table-list, .custom-table {
