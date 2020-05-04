@@ -324,6 +324,7 @@ define([
                 self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
             } else if (!self.uploadDataState && !poiFound) {
                 // Show feature info
+                Shared.Dispatcher.trigger('third_party_layers:showFeatureInfo', lon, lat, siteExist);
                 Shared.Dispatcher.trigger('layers:showFeatureInfo', lon, lat, siteExist);
             }
         },

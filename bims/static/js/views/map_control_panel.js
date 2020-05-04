@@ -10,9 +10,10 @@ define(
         'views/upload_data',
         'views/data_downloader-modal',
         'views/filter_panel/spatial_filter',
-        'views/lasso_panel'
+        'views/lasso_panel',
+        'views/control_panel/third_party_layer_panel'
     ],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter, LassoPanelView) {
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter, LassoPanelView, ThirdPartyLayerPanelView) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
@@ -28,6 +29,7 @@ define(
                 'click .search-control': 'searchClicked',
                 'click .lasso-control': 'lassoClicked',
                 'click .filter-control': 'filterClicked',
+                'click .third-party-layer-control': 'thirdPartyLayerClicked',
                 'click .locate-control': 'locateClicked',
                 'click .upload-data': 'uploadDataClicked',
                 'click .download-control': 'downloadControlClicked',
@@ -52,6 +54,8 @@ define(
                 this.validateDataListOpen = false;
                 Shared.Dispatcher.on('mapControlPanel:clickSpatialFilter', this.spatialFilterClicked, this);
                 Shared.Dispatcher.on('mapControlPanel:validationClosed', this.validationDataClosed, this);
+                Shared.Dispatcher.on('mapControlPanel:lassoClicked', this.lassoClicked, this);
+                Shared.Dispatcher.on('mapControlPanel:thirdPartyLayerClicked', this.thirdPartyLayerClicked, this);
             },
             addPanel: function (elm) {
                 elm.addClass('sub-control-panel');
@@ -79,6 +83,7 @@ define(
                     this.closeFilterPanel();
                     this.closeLocatePanel();
                     this.closeValidateData();
+                    this.closeThirdPartyPanel();
                 } else {
                     this.closeSpatialFilterPanel();
                 }
@@ -93,6 +98,7 @@ define(
                     this.closeLassoPanel();
                     this.closeLocatePanel();
                     this.openValidateData();
+                    this.closeThirdPartyPanel();
                 } else {
                     this.closeValidateData();
                 }
@@ -107,6 +113,7 @@ define(
                     this.closeLocatePanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
+                    this.closeThirdPartyPanel();
                 } else {
                     this.closeSearchPanel();
                 }
@@ -121,6 +128,7 @@ define(
                     this.closeLocatePanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
+                    this.closeThirdPartyPanel();
                 } else {
                     this.closeLassoPanel();
                 }
@@ -135,8 +143,24 @@ define(
                     this.closeLocatePanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
+                    this.closeThirdPartyPanel();
                 } else {
                     this.closeFilterPanel();
+                }
+            },
+            thirdPartyLayerClicked: function (e) {
+                if(!this.thirdPartyLayerPanelView.isDisplayed()) {
+                    this.hidePopOver($(e.target));
+                    this.resetAllControlState();
+                    this.openThirdPartyPanel();
+                    this.closeSearchPanel();
+                    this.closeFilterPanel();
+                    this.closeLocatePanel();
+                    this.closeSpatialFilterPanel();
+                    this.closeValidateData();
+                    this.closeLassoPanel();
+                } else {
+                    this.closeThirdPartyPanel();
                 }
             },
             locateClicked: function (e) {
@@ -149,6 +173,7 @@ define(
                     this.closeFilterPanel();
                     this.closeSpatialFilterPanel();
                     this.closeValidateData();
+                    this.closeThirdPartyPanel();
                 } else {
                     this.closeLocatePanel();
                 }
@@ -192,7 +217,11 @@ define(
                 this.lassoPanelView = new LassoPanelView({
                     map: this.parent.map
                 });
+                this.thirdPartyLayerPanelView = new ThirdPartyLayerPanelView({
+                    map: this.parent.map
+                });
                 this.$el.append(this.lassoPanelView.render().$el);
+                this.$el.append(this.thirdPartyLayerPanelView.render().$el);
 
                 this.searchView = new SearchView({
                     parent: this,
@@ -240,6 +269,14 @@ define(
             closeLassoPanel: function () {
                 this.$el.find('.lasso-control').removeClass('control-panel-selected');
                 this.lassoPanelView.hide();
+            },
+            openThirdPartyPanel: function () {
+                this.$el.find('.third-party-layer-control').addClass('control-panel-selected');
+                this.thirdPartyLayerPanelView.show();
+            },
+            closeThirdPartyPanel: function () {
+                this.$el.find('.third-party-layer-control').removeClass('control-panel-selected');
+                this.thirdPartyLayerPanelView.hide();
             },
             openSpatialFilterPanel: function () {
                 this.$el.find('.spatial-filter').addClass('control-panel-selected');
