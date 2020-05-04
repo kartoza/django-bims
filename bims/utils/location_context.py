@@ -6,7 +6,6 @@ from bims.models.spatial_scale_group import SpatialScaleGroup
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
 from bims.utils.logger import log
-from bims.models.location_context_group import LocationContextGroup
 from preferences import preferences
 
 

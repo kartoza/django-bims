@@ -904,6 +904,7 @@ class LocationContextGroupAdmin(admin.ModelAdmin):
         'geocontext_group_key'
     )
     actions = ['merge_group']
+
     def merge_group(self, request, queryset):
         verified = queryset.filter(verified=True)
         if queryset.count() <= 1:

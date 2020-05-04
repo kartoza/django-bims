@@ -23,6 +23,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
+            Shared.Dispatcher.on('layers:renderLegend', this.renderLegend, this);
             var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'transparency');
             if (administrativeVisibility !== null) {
                 this.administrativeTransparency = administrativeVisibility;
@@ -670,21 +671,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 // process properties
                                 if (coordinate !== lastCoordinate || !data) {
                                     return;
-                                }
-
-                                // If the feature is html type, then open the sidepanel to show the data
-                                if (getFeatureFormat === 'text/html') {
-                                    if (!siteExist) {
-                                        let marker = new ol.Feature({
-                                            geometry: new ol.geom.Point(
-                                                ol.proj.fromLonLat([lon, lat])
-                                            ),
-                                        });
-                                        Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
-                                        Shared.Dispatcher.trigger('map:switchHighlight', [marker], true);
-                                    }
-                                    Shared.Dispatcher.trigger('sidePanel:addContentWithTab', layerName, data);
-                                    return true;
                                 }
                                 let linesData = data.split("\n");
                                 let properties = {};
