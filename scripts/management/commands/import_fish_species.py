@@ -5,7 +5,6 @@ from bims.models import (
 
 
 ECO_TOLERANCE = 'Eco-tolerance'
-SANBI_NBA_LIST = 'SANBI NBA List'
 ENDEMISM = 'Endemism'
 ORIGIN = 'Origin'
 CONSERVATION_STATUS = 'Conservation status'
@@ -44,10 +43,6 @@ class Command(BaseCommand):
         # -- ECO tolerance
         if row[ECO_TOLERANCE]:
             data[ECO_TOLERANCE] = row[ECO_TOLERANCE]
-
-        # -- SANBI NBA List
-        if row[SANBI_NBA_LIST]:
-            data[SANBI_NBA_LIST] = row[SANBI_NBA_LIST]
 
         # -- Conservation status
         if row[CONSERVATION_STATUS] and not taxonomy.iucn_status:
