@@ -789,12 +789,21 @@ class Command(BaseCommand):
                     )
 
                     # -- Get or create a survey
-                    self.survey, _ = Survey.objects.get_or_create(
-                        site=location_site,
-                        date=sampling_date,
-                        collector_user=collectors[0] if len(collectors) > 0 else None,
-                        owner=superusers[0]
-                    )
+                    try:
+                        self.survey, _ = Survey.objects.get_or_create(
+                            site=location_site,
+                            date=sampling_date,
+                            collector_user=collectors[0] if len(collectors) > 0 else None,
+                            owner=superusers[0]
+                        )
+                    except Survey.MultipleObjectsReturned:
+                        self.survey = Survey.objects.filter(
+                            site=location_site,
+                            date=sampling_date,
+                            collector_user=collectors[0] if len(
+                                collectors) > 0 else None,
+                            owner=superusers[0]
+                        )[0]
 
                     all_survey_data = {
                         WATER_LEVEL: 'Water level',
