@@ -168,7 +168,7 @@ define([
                 if (!spatialData.hasOwnProperty('children')) {
                     return true;
                 }
-                let header = $('<div class="small-subtitle spatial-scale-sub-panel">\n' +
+                let header = $('<div class="small-subtitle spatial-scale-sub-panel" style="text-transform:capitalize;">\n' +
                                 spatialData['name'] + '\n' +
                                 '<i class="fa fa-angle-down pull-right"></i>\n' +
                              '</div>');
