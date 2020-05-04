@@ -431,7 +431,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         if 'header' not in self.context:
             self.context['header'] = result.keys()
         if chem_records_identifier in self.context['chem_records_cached']:
-            result.update(self.context['chem_records_cached'][chem_records_identifier])
+            result.update(
+                self.context['chem_records_cached'][chem_records_identifier])
         else:
             chem_record_data = {}
             chem_records = ChemicalRecord.objects.filter(
