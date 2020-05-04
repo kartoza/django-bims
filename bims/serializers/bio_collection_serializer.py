@@ -102,8 +102,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     year = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
-        self.chem_records_cached = {}
         super(BioCollectionOneRowSerializer, self).__init__(*args, **kwargs)
+        self.context['chem_records_cached'] = {}
+        self.context['header'] = []
 
     def chem_data(self, obj, chem):
         return chem
@@ -425,8 +426,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 date=instance.collection_date
             )
         )
-        if chem_records_identifier in self.chem_records_cached:
-            result.update(self.chem_records_cached[chem_records_identifier])
+        if 'chem_records_cached' not in self.context:
+            self.context['chem_records_cached'] = {}
+        if 'header' not in self.context:
+            self.context['header'] = result.keys()
+        if chem_records_identifier in self.context['chem_records_cached']:
+            result.update(
+                self.context['chem_records_cached'][chem_records_identifier])
         else:
             chem_record_data = {}
             chem_records = ChemicalRecord.objects.filter(
@@ -434,9 +440,11 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 survey__date=instance.collection_date
             ).distinct('chem__chem_code')
             for chem_record in chem_records:
-                chem_record_data[
-                    chem_record.chem.chem_code.upper()] = chem_record.value
-            self.chem_records_cached[chem_records_identifier] = (
+                chem_code = chem_record.chem.chem_code.upper()
+                if chem_code not in self.context['header']:
+                    self.context['header'].append(chem_code)
+                chem_record_data[chem_code] = chem_record.value
+            self.context['chem_records_cached'][chem_records_identifier] = (
                 chem_record_data
             )
             result.update(chem_record_data)

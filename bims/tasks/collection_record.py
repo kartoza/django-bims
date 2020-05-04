@@ -67,8 +67,8 @@ def download_data_to_csv(path_file, request):
                 collection_results,
                 many=True
             )
-            headers = serializer.data[0].keys()
             rows = serializer.data
+            headers = serializer.context['header']
 
             formatted_headers = []
             # Rename headers
