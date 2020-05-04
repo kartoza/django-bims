@@ -207,7 +207,7 @@ define([
                         self.createFishSSDDSiteDetails(data);
                         if(data['is_chem_exists']) {
                             $('#ssdd-chem-chart-wrapper').show();
-                            dashboardHeader.html('Single Site Dashboard - ' + data['modules'].join());
+                            dashboardHeader.html('Single Site - ' + data['modules'].join());
                             self.renderChemGraph(data);
                         }else {
                             $('#ssdd-chem-chart-wrapper').hide();
@@ -471,14 +471,21 @@ define([
             let chartDownloaded = 0;
 
             let titles = button.data('title').split(',');
-            let chartNames = button.data('chart').split(',');
-            for (let i=0; i<chartNames.length; i++) {
-                if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
-                    svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
-                    chartDownloaded += 1;
-                }
+            let chartNames = [];
+            try {
+                chartNames = button.data('chart').split(',');
+            } catch (e) {
             }
-            if (chartDownloaded === chartNames.length) {
+            if (chartNames.length > 0) {
+                for (let i = 0; i < chartNames.length; i++) {
+                    if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
+                        svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
+                        chartDownloaded += 1;
+                    }
+                }
+                if (chartDownloaded === chartNames.length) {
+                    return;
+                }
                 return;
             }
             if (!title) {
@@ -880,12 +887,13 @@ define([
             orderedCatchments['Secondary'] = catchmentsData['Secondary'];
             orderedCatchments['Tertiary'] = catchmentsData['Tertiary'];
             orderedCatchments['Quaternary'] = catchmentsData['Quaternary'];
+            orderedCatchments['Quinary'] = catchmentsData['Quinary'];
             catchments.html(this.renderTableFromTitlesValuesLists(orderedCatchments));
 
             let sub_water_management_areas = siteDetailsWrapper.find('#sub_water_management_areas');
             let ordered_management_areas = {};
-            ordered_management_areas['Water Management Areas'] = data['site_details']['sub_water_management_areas']['Water Management Areas'];
-            ordered_management_areas['Sub Water Management Areas'] = data['site_details']['sub_water_management_areas']['Sub Water Management Areas'];
+            ordered_management_areas['Water Management Area'] = data['site_details']['sub_water_management_areas']['Water Management Areas'];
+            ordered_management_areas['Sub Water Management Area'] = data['site_details']['sub_water_management_areas']['Sub Water Management Areas'];
             ordered_management_areas['River Management Unit'] = data['site_details']['sub_water_management_areas']['River Management Unit'];
             sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(ordered_management_areas));
 
@@ -1106,6 +1114,12 @@ define([
                             document = true;
                         }
                         continue;
+                    }
+                    if (keys[i] === 'Author/s') {
+                        if (Array.isArray(source[keys[i]]) && source[keys[i]].length > 1) {
+                            itemDiv.append(`<td>${source[keys[i]].join(', ')}</td>`);
+                            continue;
+                        }
                     }
 
                     if(keys[i] === 'DOI/URL' && document){

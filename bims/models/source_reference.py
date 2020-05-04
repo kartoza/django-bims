@@ -192,10 +192,10 @@ class SourceReferenceBibliography(SourceReference):
         for author in authors:
             if authors_name:
                 authors_name += ', '
-            authors_name += '{first_name} {last_name}'.format(
-                first_name=author.first_name,
-                last_name=author.last_name
-            )
+            authors_name += '%(first_name)s %(last_name)s' % {
+                'first_name': author.first_name,
+                'last_name': author.last_name
+            }
         return authors_name if authors_name else '-'
 
     @property
@@ -294,10 +294,10 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def authors(self):
-        return '{first_name} {last_name}'.format(
-            first_name=self.source.owner.first_name,
-            last_name=self.source.owner.last_name
-        )
+        return '%(first_name)s %(last_name)s' % {
+            'first_name': self.source.owner.first_name,
+            'last_name': self.source.owner.last_name
+        }
 
     def link_template(self):
         """Returns html template containing the reference data"""
