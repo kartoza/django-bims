@@ -2782,3 +2782,23 @@ div:hover::-webkit-scrollbar {
 .ol-scale-line {
     margin-bottom: 30px;
 }
+
+.search-header-row {
+    width: 280px;
+    z-index: 9999;
+    position: fixed;
+    background: white;
+    margin-top: -5px;
+    padding-top: 5px;
+    height: 30px;
+}
+
+.search-box-row {
+    z-index: 9999;
+    position: fixed;
+    margin-top: 20px;
+}
+
+.filter-header-row {
+    padding-top: 70px;
+}
