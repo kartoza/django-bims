@@ -72,6 +72,14 @@
             background-color: rgba(0, 128, 0, 0.2);
         }
 
+        .warning {
+            font-size: 12px;
+            background-color: #ffffd8;
+            position: absolute;
+            margin-top: -20px;
+            display: none;
+        }
+
     </style>
 {% endblock %}
 
@@ -122,14 +130,15 @@
                     </div>
                     <div class="col-5"
                          style="padding-right: 0; padding-left: 30px;">
+                        <span class="warning">Warning: The value you have entered is outside of our range</span>
                         <input type="number"
                                class="form-control form-control-sm chem-input-value"
                                placeholder="Value"
                                onchange="handleValueChange(this)"
-                               value="{% if chemical_record.value %}{{ chemical_record.value }}{% else %}{{ chemical_record.min }}{% endif %}"
+                               value="{% if chemical_record.value %}{{ chemical_record.value }}{% endif %}"
                                %
-                                max="{{ chemical_record.max }}"
-                                min="{{ chemical_record.min }}">
+                                data-max="{{ chemical_record.max }}"
+                                data-min="{{ chemical_record.min }}">
                         <small class="form-text text-muted input-value-help">Min = {{ chemical_record.min }}, Max = {{ chemical_record.max }}</small>
                     </div>
                 </div>
@@ -358,10 +367,16 @@
         $('.delete-button').click(deleteRowFunction);
 
         function handleValueChange(input) {
-            const max = parseFloat($(input).attr('max'));
-            const min = parseFloat($(input).attr('min'));
-            if (input.value < min) input.value = min;
-            if (input.value > max) input.value = max;
+            const max = parseFloat($(input).data('max'));
+            const min = parseFloat($(input).data('min'));
+            let warning = $(input).parent().find('.warning');
+            if (input.value < min) {
+                warning.show();
+            } else if (input.value > max) {
+                warning.show();
+            } else {
+                warning.hide();
+            }
         }
 
     </script>
