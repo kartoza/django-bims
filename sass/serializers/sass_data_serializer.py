@@ -2,7 +2,7 @@ from rest_framework import serializers
 import json
 from django.db.models import Q
 from bims.models import (
-    LocationSite, LocationContext, LocationContextGroup
+    LocationSite, LocationContext, LocationContextGroup, SourceReference
 )
 from sass.models import SiteVisitTaxon, SiteVisitBiotopeTaxon, SiteVisit
 
@@ -232,6 +232,56 @@ class SassSummaryDataSerializer(
     accredited = serializers.SerializerMethodField()
     geomorphological_zone = serializers.SerializerMethodField()
     refined_geomorphological_zone = serializers.SerializerMethodField()
+    ecological_category = serializers.SerializerMethodField()
+    primary_catchment = serializers.SerializerMethodField()
+    secondary_catchment = serializers.SerializerMethodField()
+    tertiary_catchment = serializers.SerializerMethodField()
+    quaternary_catchment = serializers.SerializerMethodField()
+    water_management_area = serializers.SerializerMethodField()
+    sub_water_management_area = serializers.SerializerMethodField()
+    river_management_unit = serializers.SerializerMethodField()
+    sa_ecoregion_level_1 = serializers.SerializerMethodField()
+    sa_ecoregion_level_2 = serializers.SerializerMethodField()
+    freshwater_ecoregion = serializers.SerializerMethodField()
+    province = serializers.SerializerMethodField()
+
+    def spatial_data(self, obj, key):
+        if 'context_cache' not in self.context:
+            self.context['context_cache'] = {}
+        context_identifier = '{key}-{site}'.format(
+            site=obj['site_id'],
+            key=key)
+        if context_identifier in self.context['context_cache']:
+            return self.context['context_cache'][context_identifier]
+        data = (
+            self.context['location_contexts'].filter(
+                site_id=obj['site_id'],
+                group__key__icontains=key)
+        )
+        if data.exists():
+            if data[0].value:
+                self.context['context_cache'][context_identifier] = (
+                    data[0].value
+                )
+                return data[0].value
+        self.context['context_cache'][context_identifier] = (
+            '-'
+        )
+        return '-'
+
+    def get_source_reference(self, obj):
+        if 'source_reference' not in self.context:
+            self.context['source_reference'] = {}
+        identifier = obj['source_reference']
+        try:
+            self.context['source_reference'][identifier] = (
+                SourceReference.objects.get(
+                    id=obj['source_reference']
+                )
+            )
+        except SourceReference.DoesNotExist:
+            return ''
+        return identifier
 
     def get_accredited(self, obj):
         site_visit = SiteVisit.objects.get(id=obj['sass_id'])
@@ -246,11 +296,32 @@ class SassSummaryDataSerializer(
         except:  # noqa
             return 'N'
 
+    def get_ecological_category(self, obj):
+        return obj['ecological_category']
+
     def get_reference_category(self, obj):
-        return obj['reference_category']
+        identifier = ''
+        if obj['source_reference']:
+            identifier = self.get_source_reference(obj)
+        if not identifier:
+            return '-'
+        if self.context['source_reference'][identifier]:
+            return self.context['source_reference'][identifier].reference_type
+        else:
+            return '-'
 
     def get_study_reference(self, obj):
-        return obj['reference']
+        identifier = ''
+        if obj['source_reference']:
+            identifier = self.get_source_reference(obj)
+        if not identifier:
+            return '-'
+        if self.context['source_reference'][identifier]:
+            return str(
+                self.context['source_reference'][identifier].title
+            )
+        else:
+            return '-'
 
     def get_river_name(self, obj):
         return obj['river_name']
@@ -278,6 +349,39 @@ class SassSummaryDataSerializer(
 
     def get_number_of_taxa(self, obj):
         return obj['count']
+
+    def get_primary_catchment(self, obj):
+        return self.spatial_data(obj, 'primary_catchment_area')
+
+    def get_secondary_catchment(self, obj):
+        return self.spatial_data(obj, 'secondary_catchment_area')
+
+    def get_tertiary_catchment(self, obj):
+        return self.spatial_data(obj, 'tertiary_catchment_area')
+
+    def get_quaternary_catchment(self, obj):
+        return self.spatial_data(obj, 'quaternary_catchment_area')
+
+    def get_water_management_area(self, obj):
+        return self.spatial_data(obj, 'water_management_area')
+
+    def get_sub_water_management_area(self, obj):
+        return self.spatial_data(obj, 'sub_wmas')
+
+    def get_river_management_unit(self, obj):
+        return self.spatial_data(obj, 'river_management_unit')
+
+    def get_sa_ecoregion_level_1(self, obj):
+        return self.spatial_data(obj, 'eco_region_1')
+
+    def get_sa_ecoregion_level_2(self, obj):
+        return self.spatial_data(obj, 'eco_region_2')
+
+    def get_freshwater_ecoregion(self, obj):
+        return self.spatial_data(obj, 'feow_hydrosheds')
+
+    def get_province(self, obj):
+        return self.spatial_data(obj, 'sa_provinces')
 
     def get_ASPT(self, obj):
         return '{0:.2f}'.format(obj['aspt'])
@@ -335,9 +439,22 @@ class SassSummaryDataSerializer(
             'sass_score',
             'number_of_taxa',
             'ASPT',
+            'ecological_category',
             'reference_category',
             'study_reference',
             'owner',
+            'geomorphological_zone',
+            'primary_catchment',
+            'secondary_catchment',
+            'tertiary_catchment',
+            'quaternary_catchment',
+            'water_management_area',
+            'sub_water_management_area',
+            'river_management_unit',
+            'sa_ecoregion_level_1',
+            'sa_ecoregion_level_2',
+            'freshwater_ecoregion',
+            'province'
         ]
 
     def biotope_fractions(self, site_visit_id, result):
