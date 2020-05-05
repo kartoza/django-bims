@@ -8,6 +8,7 @@ from django.db.models import (
 from django.db.models.functions import Cast, Concat
 from bims.api_views.search import Search
 from sass.models import SiteVisitTaxon
+from bims.models.location_context import LocationContext
 from sass.serializers.sass_data_serializer import SassDataSerializer
 from sass.serializers.sass_data_serializer import SassSummaryDataSerializer
 
@@ -121,12 +122,17 @@ def download_sass_summary_data_task(filename, filters, path_file):
                 ),
                 latitude=F('site_visit__location_site__latitude'),
                 longitude=F('site_visit__location_site__longitude'),
-                reference=F('reference'),
-                reference_category=F('reference_category'),
+                source_reference=F('source_reference'),
+                ecological_category=F('site_visit__'
+                                      'sitevisitecologicalcondition__'
+                                      'ecological_condition__category')
             ).annotate(
                 aspt=Cast(F('sass_score'), FloatField()) / Cast(F('count'),
                                                                 FloatField()),
             ).order_by('sampling_date')
+            context['location_contexts'] = LocationContext.objects.filter(
+                site__in=site_visit_taxa.values('site_visit__location_site')
+            )
 
             serializer = SassSummaryDataSerializer(
                 summary,
