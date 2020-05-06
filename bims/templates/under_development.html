@@ -29,12 +29,34 @@
         }
 
         .center p, .center img {
+            text-align: center;
             margin: 0;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        .desc {
+            font-size: 18px;
+        }
+
+        @media only screen and (max-width: 500px) {
+            .desc {
+                top: 70% !important;
+            }
+        }
+        @media only screen and (max-width: 900px) {
+            .desc {
+                top: 68% !important;
+            }
+        }
+        @media only screen and (min-width: 900px) {
+            .desc {
+                top: 55% !important;
+            }
+        }
+
 
         svg#fish {
             height: 100%;
@@ -213,9 +235,10 @@
 </svg>
 
 <div class="center">
-    <img src="{% static 'img/FBIS v2 Logo.png' %}" style="width: 300px; margin-top: -80px;"/>
-    <p style="font-size: 30px; margin-top: -20px;">Sorry, the site is down for maintenance.</p>
-    <p style="font-size: 18px; margin-top: 35px;">Please check back soon.</p>
+    <img src="{% static 'img/FBIS v2 Logo.png' %}" style="width: 300px; margin-top: -120px;"/>
+    <p style="font-size: 30px; margin-top: -40px; font-weight: bold">Site update underway</p>
+    <p class="desc" >We are busy updating functionality and data on the the Freshwater Biodiversity Information System (FBIS). <br/> The site will be up and running again as soon as possible. Thanks for your patience
+</p>
 </div>
 
 
