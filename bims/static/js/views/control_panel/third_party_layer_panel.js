@@ -9,7 +9,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         miniSASSSelected: false,
         inWARDSelected: false,
         fetchingInWARDSData: false,
-        inWARDSStationsUrl: 'http://inwards.award.org.za/app_json/stations.php?wma=%27inkomati_usuthu%27,%27limpopo%27,%27olifants_letaba%27',
+        inWARDSStationsUrl: "http://inwards.award.org.za/app_json/stations.php?wma='inkomati_usuthu','limpopo','olifants_letaba'",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
@@ -91,7 +91,11 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             this.inWARDSelected = $(e.target).is(":checked");
 
             if (this.inWARDSelected) {
-                self.inWARDSLayer.setVisible(true);
+                this.inWARDSLayer.setVisible(true);
+                // Move layer to top
+                this.map.removeLayer(this.inWARDSLayer);
+                this.map.getLayers().insertAt(this.map.getLayers().getLength(), this.inWARDSLayer);
+
                 // Show fetching message
                 if (!this.fetchingInWARDSData) {
                     let fetchingMessage = $('<span class="fetching" style="font-size: 10pt; font-style: italic"> (fetching)</span>');
@@ -119,10 +123,29 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             if (!this.miniSASSSelected && !this.inWARDSelected) {
                 return false;
             }
+            let self = this;
             lon = parseFloat(lon);
             lat = parseFloat(lat);
             const view = this.map.getView();
             const coordinate = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+            let openSidePanel = false;
+
+            if (this.inWARDSelected) {
+                if (!featureData) {
+                    return;
+                }
+                let properties = featureData.getProperties();
+                let stationName = 'Station';
+                if (properties.hasOwnProperty('station')) {
+                    stationName = 'Station - ' + properties['station'];
+                }
+                let table = this.renderInwardsTable(properties);
+                console.log(featureData.getId());
+                this.showContentToSidePanel(
+                    lon, lat, stationName, table.prop('outerHTML'), siteExist, openSidePanel
+                )
+                openSidePanel = true;
+            }
 
             if (this.miniSASSSelected) {
                 const source = this.miniSASSLayer.getSource();
@@ -146,20 +169,16 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                         if (!data) {
                             return true;
                         }
-                        this.showContentToSidePanel(
-                            lon, lat, layerName, data, siteExist
+                        self.showContentToSidePanel(
+                            lon, lat, layerName, data, siteExist, openSidePanel
                         )
+                        openSidePanel = true;
                     }
                 });
-            } else {
-                let table = this.renderInwardsTable(featureData.getProperties());
-                this.showContentToSidePanel(
-                    lon, lat, 'Station', table.prop('outerHTML'), siteExist
-                )
             }
         },
-        showContentToSidePanel: function (lon, lat, panelTitle, panelContent, siteExist) {
-            if (!siteExist) {
+        showContentToSidePanel: function (lon, lat, panelTitle, panelContent, siteExist, openSidePanel = false) {
+            if (!siteExist && !openSidePanel) {
                 let marker = new ol.Feature({
                     geometry: new ol.geom.Point(
                         ol.proj.fromLonLat([lon, lat])
@@ -171,7 +190,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             Shared.Dispatcher.trigger('sidePanel:addContentWithTab', panelTitle, panelContent);
         },
         renderInwardsTable: function (properties) {
+            let $container = $(`<div></div>`);
             let table = $(`<table class="table table-striped"></table>`);
+            $container.append(table);
             for (let key in properties) {
                 if (properties[key] !== null && properties[key].constructor !== String && properties[key].constructor !== Number) {
                     continue;
@@ -180,7 +201,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 title = title.replace(/_/g, ' ');
                 table.append(`<tr><td style="text-transform: capitalize; min-width: 100px;">${title}</td><td>${properties[key]}</td></tr>`);
             }
-            return table;
+            // $container.append(`<button class="btn btn-default" style="width: 100%" onclick="alert('test')">Download csv</button>`);
+            return $container;
         },
         render: function () {
             this.$el.html(this.template());
