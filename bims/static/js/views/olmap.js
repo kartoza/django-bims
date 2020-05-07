@@ -324,12 +324,15 @@ define([
                 self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
             } else if (!self.uploadDataState && !poiFound) {
                 // Show feature info
-                Shared.Dispatcher.trigger('third_party_layers:showFeatureInfo', lon, lat, siteExist);
+                Shared.Dispatcher.trigger('third_party_layers:showFeatureInfo', lon, lat, siteExist, featuresData);
                 Shared.Dispatcher.trigger('layers:showFeatureInfo', lon, lat, siteExist);
             }
         },
         featureClicked: function (feature, uploadDataState) {
             var properties = feature.getProperties();
+            if (properties.hasOwnProperty('station')) {
+                return [false, feature];
+            }
 
             if (properties.hasOwnProperty('features')) {
                 if (properties['features'].length > 1) {
