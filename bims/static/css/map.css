@@ -1331,9 +1331,11 @@ div:hover::-webkit-scrollbar {
     width: 100%;
     font-size: 13px;
     padding: 3px;
-    color: red;
+    color: #9a791d;
     font-style: italic;
     display: none;
+    position: absolute;
+    margin-top: 22px;
 }
 
 .site-detail-content {
