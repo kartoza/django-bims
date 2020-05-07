@@ -9,7 +9,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         miniSASSSelected: false,
         inWARDSelected: false,
         fetchingInWARDSData: false,
-        inWARDSStationsUrl: "http://inwards.award.org.za/app_json/stations.php?wma='inkomati_usuthu','limpopo','olifants_letaba'",
+        inWARDSStationsUrl: "/bims_proxy/http://inwards.award.org.za/app_json/stations.php?wma='inkomati_usuthu','limpopo','olifants_letaba'",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
@@ -140,7 +140,6 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                     stationName = 'Station - ' + properties['station'];
                 }
                 let table = this.renderInwardsTable(properties);
-                console.log(featureData.getId());
                 this.showContentToSidePanel(
                     lon, lat, stationName, table.prop('outerHTML'), siteExist, openSidePanel
                 )
