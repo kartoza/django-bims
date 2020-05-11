@@ -9,7 +9,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         miniSASSSelected: false,
         inWARDSelected: false,
         fetchingInWARDSData: false,
-        inWARDSStationsUrl: "/proxy/?url=http://inwards.award.org.za/app_json/stations.php?wma='inkomati_usuthu','limpopo','olifants_letaba'",
+        inWARDSStationsUrl: "/proxy/?url=http://inwards.award.org.za/app_json/wq_stations.php",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
@@ -28,6 +28,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             let color = 'gray';
             if (properties['color']) {
                 color = properties['color'];
+            } else {
+                color = '#C6401D';
             }
             let image = new ol.style.Circle({
                 radius: 5,
@@ -200,8 +202,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 title = title.replace(/_/g, ' ');
                 table.append(`<tr><td style="text-transform: capitalize; min-width: 100px;">${title}</td><td>${properties[key]}</td></tr>`);
             }
+            let id = '';
+            if (properties.hasOwnProperty('station')) {
+                id = properties['station'];
+            }
+            $container.append(`<button class="btn btn-default" style="width: 100%" onclick="window.open('http://inwards.award.org.za/app_json/wq_csv.php?id=${id}')">Download csv</button>`);
             $container.append('<div style="text-align: right">Data taken from <a target="_blank" href="http://award.org.za/">http://award.org.za/</a></div>');
-            // $container.append(`<button class="btn btn-default" style="width: 100%" onclick="alert('test')">Download csv</button>`);
             return $container;
         },
         render: function () {
