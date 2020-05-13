@@ -140,11 +140,25 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
 
             baseSourceLayers.push(this.getKartozaBaseMap());
 
+            let defaultLayer = null;
+            let defaultLayerIndex = null;
+
             $.each(baseSourceLayers, function (index, layer) {
+                let properties = layer.getProperties();
+                let title = properties['title'];
                 layer.set('type', 'base');
                 layer.set('visible', true);
                 layer.set('preload', Infinity);
+                if (title === defaultBasemap) {
+                    defaultLayer = layer;
+                    defaultLayerIndex = index;
+                }
             });
+
+            if (defaultLayer) {
+                baseSourceLayers.splice(defaultLayerIndex, 1);
+                baseSourceLayers.push(defaultLayer);
+            }
 
             return baseSourceLayers
         }

@@ -65,6 +65,9 @@
         const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};
         const mapDefaultSelectedFilters = '{{ preferences.SiteSetting.map_default_filters | safe}}';
         const spatialFilterLayerStyle = '{{ preferences.SiteSetting.spatial_filter_layer_style }}';
+        const defaultCenterMap = '{{ preferences.SiteSetting.default_center_map }}';
+        const defaultExtentMap = '{{ preferences.SiteSetting.default_extent_map }}';
+        const defaultBasemap = '{{ preferences.SiteSetting.default_basemap }}';
     </script>
     {% block extra_head %}
 

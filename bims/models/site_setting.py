@@ -84,6 +84,22 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    default_basemap = models.CharField(
+        max_length=100,
+        default='Terrain',
+        help_text='The default basemap layer that is displayed on the map'
+    )
+
+    default_center_map = models.CharField(
+        max_length=100,
+        default='22.948492328125,-31.12543669218031',
+    )
+
+    default_extent_map = models.CharField(
+        max_length=100,
+        default='5.207535937500003,-37.72038269917067,47.3950359375,-18.54426493227018'
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

@@ -58,6 +58,13 @@ define([
             9: 'municipal'
         }, // note that this is the max level for cluster level
         initialize: function () {
+            if (defaultCenterMap) {
+                this.initCenter = [];
+                let center = defaultCenterMap.split(',');
+                for (let d=0; d<center.length; d++) {
+                    this.initCenter.push(parseFloat(center[d]));
+                }
+            }
             // Ensure methods keep the `this` references to the view itself
             _.bindAll(this, 'render');
             this.layers = new Layers({parent: this});
@@ -565,6 +572,13 @@ define([
                 minWidth: 140
             })
 
+            let extent = defaultExtentMap.split(',');
+            let newExtent = [];
+            for (let e=0; e < extent.length; e++) {
+                newExtent.push(parseFloat(extent[e]));
+            }
+            extent = ol.proj.transformExtent(newExtent, 'EPSG:4326', 'EPSG:3857');
+
             this.map = new ol.Map({
                 target: 'map',
                 layers: basemap.getBaseMaps(),
@@ -572,7 +586,7 @@ define([
                     center: ol.proj.fromLonLat(center),
                     zoom: this.initZoom,
                     minZoom: 5,
-                    extent: [579700.2488501729, -4540000.22437294, 5275991.266691402, -2101353.2739626765]
+                    extent: extent
                 }),
                 controls: ol.control.defaults({
                     zoom: false
