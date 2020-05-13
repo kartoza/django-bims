@@ -28,7 +28,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                     'OpenStreetMap contributors</a>';
             }
             return this.getVectorTileMapBoxStyle(
-                '/bims_proxy/https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf.pict?key=' + mapTilerKey,
+                '/bims_proxy/https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=' + mapTilerKey,
                 styleUrl,
                 'openmaptiles',
                 attributions
