@@ -51,7 +51,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 '<div class="search-results-total" data-visibility="false"><span class="search-result-title"> Filter History </span><i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div>' +
                 '</div>');
             container.append($filterDetailWrapper);
-            let $filterDetailTable = $('<table class="table table-condensed table-sm table-bordered"></table>');
+            let $filterDetailTable = $('<table class="table table-condensed table-sm filter-history-table"></table>');
             let $filterDetailTableContainer = $('<div class="container-fluid" style="padding-top: 10px;"></div>');
             $filterDetailTableContainer.append($filterDetailTable);
             $filterDetailWrapper.append($filterDetailTableContainer);

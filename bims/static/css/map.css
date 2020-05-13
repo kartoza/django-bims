@@ -77,8 +77,8 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: absolute;
     height: 100%;
-    max-width: 45vw;
-    width: 22vw;
+    max-width: 800px;
+    width: 600px;
     min-width: 422px;
     pointer-events: none;
 }
@@ -2803,4 +2803,20 @@ div:hover::-webkit-scrollbar {
 
 .filter-header-row {
     padding-top: 70px;
+}
+
+.filter-history-table {
+    margin-left: 10px;
+}
+
+.filter-history-table .row {
+    margin-right: 10px;
+}
+
+#filter-history-table .col-4, #filter-history-table .col-8, .filter-history-table .col-4, .filter-history-table .col-8 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+    margin-bottom: -1px;
 }

@@ -253,3 +253,20 @@ body {
 #chem-bar-chart-wrapper {
     margin-top: 20px;
 }
+
+.filter-history-table {
+    margin-top: 10px;
+}
+
+.filter-history-table .row {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#filter-history-table .col-4, #filter-history-table .col-8, .filter-history-table .col-4, .filter-history-table .col-8 {
+    padding: 0.25rem;
+    border: 1px solid #d3d4d1;
+    padding-left: 0.5rem;
+    font-size: 12px;
+    margin-bottom: -1px;
+}
