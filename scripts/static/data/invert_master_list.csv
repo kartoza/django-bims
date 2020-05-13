@@ -2684,8 +2684,9 @@ Yes,Unknown,No coordinates in GBIF records,WRC guides,Species,Animalia,Arthropod
 Yes,Yes,,Biobase,Family,Animalia,Arthropoda,Insecta,Odonata,Coenagrionidae,,,,Coenagrionidae,,Native,Unknown,Not evaluated,
 Yes,Yes,Ghana,Biobase,Genus,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Macromia,,,Macromia ,"Macromia Rambur, 1842",Native,Unknown,Not evaluated,
 Yes,Unknown,No coordinates in GBIF records,WRC guides,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,bicornis,,Phyllomacromia bicornis,"Phyllomacromia bicornis (Förster, 1906)",Native,Unknown,Not evaluated,
+,,,,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,bifasciata,,Phyllomacromia bifasciata,,,,,
 Yes,Unknown,No coordinates in GBIF records,WRC guides,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,congolica,,Phyllomacromia congolica,Phyllomacromia congolica (Fraser. 1955),Native,Unknown,Not evaluated,
-Yes,Yes,,,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,contumax,,Phyllomacromia contumax,"Phyllomacromia contumax Selys, 1879",Unknown,Unknown,Not evaluated,
+Yes,Yes,,,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,contumax,,Phyllomacromia contumax,"Phyllomacromia contumax Selys, 1879",Unknown,Unknown,Not evaluated,Phyllomacromia bifasciata
 No,Unknown,,WRC guides,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,dundominusculus,,Phyllomacromia dundominusculus,"Phyllomacromia dundominusculus Fraser, 1957",Native,Unknown,Not evaluated,
 Yes,Unknown,No coordinates in GBIF records,WRC guides,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,overlaeti,,Phyllomacromia overlaeti,"Phyllomacromia overlaeti (Schouteden, 1934)",Native,Unknown,Not evaluated,
 Yes,Unknown,No coordinates in GBIF records,WRC guides,Species,Animalia,Arthropoda,Insecta,Odonata,Corduliidae,Phyllomacromia,paludosa,,Phyllomacromia paludosa,"Phyllomacromia paludosa (Pinhey, 1976)",Native,Unknown,Not evaluated,
