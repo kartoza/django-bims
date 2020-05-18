@@ -383,7 +383,7 @@ reset-search-results:
 	@echo "------------------------------------------------------------------"
 	@echo "Reset search results"
 	@echo "------------------------------------------------------------------"
-	@docker-compose exec uwsgi python manage.py clear_search_results
+	@docker-compose exec bims_uwsgi python manage.py clear_search_results
 	@docker-compose ${ARGS} restart worker
 	@docker-compose ${ARGS} restart cache
 

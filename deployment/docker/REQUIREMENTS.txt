@@ -64,3 +64,5 @@ django-preferences==1.0.0
 PyGithub==1.44
 sorl-thumbnail==12.5.0
 svglib==0.9.3
+simplejson==3.17.0
+django-extensions==2.2.9

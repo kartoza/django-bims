@@ -3,6 +3,7 @@
 from django.core.serializers import serialize
 from django.db.models.query import QuerySet
 from django.template import Library
+import collections
 
 import json
 
@@ -15,6 +16,17 @@ def jsonify(object):
         return serialize('json', object)
     return json.dumps(object)
 
+
+@register.filter(is_safe=True)
+def encode_utf8(object):
+    if isinstance(object, basestring):
+        return str(object)
+    elif isinstance(object, collections.Mapping):
+        return dict(map(encode_utf8, object.iteritems()))
+    elif isinstance(object, collections.Iterable):
+        return type(object)(map(encode_utf8, object))
+    else:
+        return object
 
 @register.simple_tag
 def get_html_for_radio_group(name, sass_rating):
