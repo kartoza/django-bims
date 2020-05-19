@@ -56,7 +56,8 @@ class SiteVisit(AbstractAdditionalData):
         help_text='Creator/owner of this data from the web',
         null=True,
         blank=True,
-        related_name='%(class)s_owner'
+        related_name='%(class)s_owner',
+        on_delete=models.SET_NULL
     )
 
     collector = models.ForeignKey(
@@ -64,7 +65,8 @@ class SiteVisit(AbstractAdditionalData):
         help_text='Actual capturer/collector of this data',
         null=True,
         blank=True,
-        related_name='%(class)s_data_collector'
+        related_name='%(class)s_data_collector',
+        on_delete=models.SET_NULL
     )
 
     water_level = models.CharField(
@@ -148,7 +150,8 @@ class SiteVisit(AbstractAdditionalData):
     data_source = models.ForeignKey(
         'bims.DataSource',
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     def __unicode__(self):

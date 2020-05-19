@@ -1,6 +1,6 @@
 from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.documentation import include_docs_urls
+# from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
     BoundaryList,
     BoundaryGeojson
@@ -159,7 +159,7 @@ urlpatterns = [
         ReferenceCategoryList.as_view(), name='list-reference-category'),
     url(r'^list-source-collection/$',
         SourceCollectionList.as_view(), name='list-source-collection'),
-    url(r'^docs/', include_docs_urls(title='BIMS API')),
+    # url(r'^docs/', include_docs_urls(title='BIMS API')),
     url(r'^module-summary/$',
         ModuleSummary.as_view(),
         name='module-summary'),

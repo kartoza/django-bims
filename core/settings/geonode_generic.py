@@ -20,7 +20,7 @@
 
 # Django settings for the GeoNode project.
 import os
-from urlparse import urlparse, urlunparse
+import urllib.parse as urlparse
 # Load more settings from a file called local_settings.py if it exists
 #try:
 #    from geonode.local_settings import *

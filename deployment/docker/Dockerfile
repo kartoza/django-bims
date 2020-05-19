@@ -1,5 +1,5 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM python:2.7.16-slim-stretch
+FROM python:3.7-slim-stretch
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
 RUN mkdir -p /usr/src/{app,geonode}
@@ -37,10 +37,10 @@ RUN echo "Updating apt-get" && \
 
 # Install python dependencies
 RUN echo "Geonode python dependencies"
-RUN pip install celery==4.1.0 # see https://github.com/GeoNode/geonode/pull/3714
+RUN pip install celery==4.4.0
 
 # install shallow clone of geonode master branch
-RUN git clone -b '2.10.3' --depth=1 git://github.com/GeoNode/geonode.git --branch '2.10.3' /usr/src/geonode
+RUN git clone -b '3.0' --depth=1 git://github.com/GeoNode/geonode.git --branch '3.0' /usr/src/geonode
 RUN cd /usr/src/geonode/; pip install -r requirements.txt --no-cache-dir; pip install -e .
 
 # Install pygdal (after requirements https://github.com/GeoNode/geonode/pull/4599)
@@ -76,7 +76,6 @@ WORKDIR /home/web/django_project
 
 ADD uwsgi.conf /uwsgi.conf
 
-EXPOSE 8000
 # Open port 8080 as we will be running our uwsgi socket on that
 EXPOSE 8080
 

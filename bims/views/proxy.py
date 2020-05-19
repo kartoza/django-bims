@@ -1,5 +1,5 @@
 import sys
-import urllib
+import urllib.parse
 from django.views.decorators.csrf import requires_csrf_token
 from geonode.proxy.views import proxy
 
@@ -18,10 +18,10 @@ def proxy_request(request, path):
         value_list = request.GET.getlist(key)
         if key == 'viewparams':
             parameters.extend(['%s=%s' % (
-                key, urllib.quote(val)) for val in value_list])
+                key, urllib.parse.quote(val)) for val in value_list])
         else:
             parameters.extend(
-                ['%s=%s' % (key, urllib.quote(val)) for val in value_list])
+                ['%s=%s' % (key, urllib.parse.quote(val)) for val in value_list])
 
     if parameters:
         path += '?' + '&'.join(parameters)

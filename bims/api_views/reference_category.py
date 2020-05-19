@@ -10,7 +10,7 @@ class ReferenceCategoryList(APIView):
 
     def get(self, request, *args):
         results = []
-        for reference_category, source in LIST_SOURCE_REFERENCES.iteritems():
+        for reference_category, source in LIST_SOURCE_REFERENCES.items():
             results.append(
                 {
                     self.CATEGORY_LABEL: reference_category

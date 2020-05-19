@@ -1,12 +1,8 @@
-django-nose
-coverage
+django-nose==1.4.6
 pep8>=1.5.7,<1.6
-pylint
-flake8==3.3.0
-factory_boy
-
-# documentation
-Sphinx
+pylint==2.5.2
+flake8==3.8.1
+factory_boy==2.12.0
 
 # pdb plus plus
 pdbpp

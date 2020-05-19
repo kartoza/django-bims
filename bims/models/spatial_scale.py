@@ -38,7 +38,8 @@ class SpatialScale(models.Model):
     group = models.ForeignKey(
         'bims.SpatialScaleGroup',
         null=False,
-        blank=False
+        blank=False,
+        on_delete=models.CASCADE
     )
 
     from_geocontext = models.BooleanField(

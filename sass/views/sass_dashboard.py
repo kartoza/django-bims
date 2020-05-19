@@ -329,7 +329,7 @@ class SassDashboardView(TemplateView):
         ordered_dict = OrderedDict(
             sorted(
                 river_catchment.items(),
-                key=lambda (k, v): (v['display_order'], k)))
+                key=lambda kv: (kv[1]['display_order'], kv[0])))
         return ordered_dict
 
     def get_context_data(self, **kwargs):

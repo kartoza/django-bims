@@ -13,7 +13,8 @@ class SiteImage(models.Model):
     site = models.ForeignKey(
         'bims.LocationSite',
         null=False,
-        blank=False
+        blank=False,
+        on_delete=models.CASCADE
     )
 
     image = models.ImageField(
@@ -25,5 +26,6 @@ class SiteImage(models.Model):
     site_visit = models.ForeignKey(
         SiteVisit,
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.SET_NULL
     )

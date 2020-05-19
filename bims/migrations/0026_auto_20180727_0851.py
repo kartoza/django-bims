@@ -12,10 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='locationsite',
-            name=b'location_context',
-        ),
         migrations.DeleteModel(
             name='LocationContext',
         ),

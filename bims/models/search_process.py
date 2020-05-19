@@ -69,7 +69,7 @@ class SearchProcess(models.Model):
         for param in params:
             formatted_param = param
             if (
-                    isinstance(param, unicode) or
+                    isinstance(param, str) or
                     isinstance(param, int) or
                     isinstance(param, date) or
                     param == 'BioBaseData'
@@ -137,7 +137,7 @@ class SearchProcess(models.Model):
         :param results: dictionary
         """
         with open(self.file_path, 'wb') as status_file:
-            status_file.write(json.dumps(results))
+            status_file.write(bytes(json.dumps(results).encode('utf-8')))
 
     def get_file_if_exits(self, finished=True):
         if os.path.exists(self.file_path) and self.finished == finished:

@@ -1,1 +1,1 @@
-from mixin import SessionFormMixin
+from .mixin import SessionFormMixin

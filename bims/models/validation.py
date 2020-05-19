@@ -28,14 +28,16 @@ class AbstractValidation(models.Model):
                   'of this data',
         null=True,
         blank=True,
-        related_name='%(class)s_collector_user'
+        related_name='%(class)s_collector_user',
+        on_delete=models.SET_NULL
     )
     analyst = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         help_text='The person that did the analysis',
         null=True,
         blank=True,
-        related_name='%(class)s_analyst'
+        related_name='%(class)s_analyst',
+        on_delete=models.SET_NULL
     )
 
     validated = models.BooleanField(

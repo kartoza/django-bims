@@ -26,8 +26,7 @@ class Migration(migrations.Migration):
                 ('collector', models.CharField(blank=True, default='', max_length=100)),
                 ('notes', models.TextField(blank=True, default='')),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='fish_collection_records', to='bims.LocationSite')),
-                ('taxon_gbif_id', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='bims.Taxon', verbose_name='Taxon GBIF ')),
+                ('site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='fish_collection_records', to='bims.LocationSite'))
             ],
         ),
     ]

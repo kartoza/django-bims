@@ -12,7 +12,8 @@ class AlgaeData(models.Model):
         'bims.Survey',
         null=True,
         blank=True,
-        related_name='algae_data'
+        related_name='algae_data',
+        on_delete=models.SET_NULL
     )
 
     curation_process = models.CharField(

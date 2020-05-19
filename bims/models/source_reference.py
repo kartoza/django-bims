@@ -233,7 +233,7 @@ class SourceReferenceBibliography(SourceReference):
 
 class SourceReferenceDatabase(SourceReference):
     """ Source reference with database source"""
-    source = models.ForeignKey(DatabaseRecord)
+    source = models.ForeignKey(DatabaseRecord, on_delete=models.CASCADE)
     document = models.ForeignKey(
         Document, null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -280,7 +280,7 @@ class SourceReferenceDatabase(SourceReference):
 
 class SourceReferenceDocument(SourceReference):
     """ Source reference with database source"""
-    source = models.ForeignKey(Document)
+    source = models.ForeignKey(Document, on_delete=models.CASCADE)
 
     @property
     def year(self):

@@ -128,7 +128,7 @@ collectstatic:
 	@echo "------------------------------------------------------------------"
 	@echo "Collecting static in production mode"
 	@echo "------------------------------------------------------------------"
-	#@docker-compose run --rm uwsgi python manage.py collectstatic --noinput
+	#@docker-compose run --rm uwsgi python manage.py collectstatic --noinputshel
 	#We need to run collect static in the same context as the running
 	# uwsgi container it seems so I use docker exec here
 	# no -it flag so we can run over remote shell
@@ -370,6 +370,13 @@ build-devweb: db
 	@echo "Building devweb"
 	@echo "------------------------------------------------------------------"
 	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build devweb
+
+build-worker: db
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Building worker"
+	@echo "------------------------------------------------------------------"
+	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up -d worker
 
 devweb-test:
 	@echo
