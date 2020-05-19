@@ -77,8 +77,8 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: absolute;
     height: 100%;
-    max-width: 800px;
-    width: 600px;
+    max-width: 600px;
+    width: 500px;
     min-width: 422px;
     pointer-events: none;
 }
@@ -88,7 +88,6 @@ html, body, .map, .map-wrapper, #map-container {
     right: 0;
     position: relative;
     height: 100%;
-    max-width: 35vw;
     min-width: 422px;
     background: rgb(255, 255, 255);
     color: #4e4e4e;
