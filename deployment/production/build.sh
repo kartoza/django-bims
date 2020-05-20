@@ -9,7 +9,7 @@ if [ -z "$IMAGE_NAME" ]; then
 fi
 
 if [ -z "$TAG_NAME" ]; then
-	TAG_NAME=v2.1
+	TAG_NAME=v3.0
 fi
 
 if [ -z "$BUILD_ARGS" ]; then
@@ -19,7 +19,7 @@ fi
 # Build Args Environment
 
 if [ -z "$BIMS_TAG" ]; then
-	BIMS_TAG=develop
+	BIMS_TAG=3.0
 fi
 
 echo "BIMS_TAG=${BIMS_TAG}"
