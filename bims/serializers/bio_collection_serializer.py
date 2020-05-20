@@ -270,7 +270,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_study_reference(self, obj):
         if obj.source_reference:
-            return str(obj.source_reference.title)
+            return obj.source_reference.title.encode('utf-8')
         else:
             return '-'
 
