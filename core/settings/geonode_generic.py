@@ -70,17 +70,11 @@ AUTH_IP_WHITELIST = []
 
 MANAGERS = ADMINS = os.getenv('ADMINS', [])
 
-# Additional directories which hold static files
-STATICFILES_DIRS.append(
-    os.path.join(LOCAL_ROOT, "static"),
-)
-
 # Location of locale files
 LOCALE_PATHS = (
     os.path.join(LOCAL_ROOT, 'locale'),
     ) + LOCALE_PATHS
 
-TEMPLATES[0]['DIRS'].insert(0, os.path.join(LOCAL_ROOT, "templates"))
 loaders = TEMPLATES[0]['OPTIONS'].get('loaders') or ['django.template.loaders.filesystem.Loader','django.template.loaders.app_directories.Loader']
 # loaders.insert(0, 'apptemplates.Loader')
 TEMPLATES[0]['OPTIONS']['loaders'] = loaders
@@ -89,4 +83,3 @@ TEMPLATES[0].pop('APP_DIRS', None)
 MONITORING_HOST_NAME = os.getenv("MONITORING_HOST_NAME", hostname)
 MONITORING_SERVICE_NAME = 'geonode'
 
-GEOIP_PATH = os.getenv('GEOIP_PATH', os.path.join(LOCAL_ROOT, 'GeoIPCities.dat'))

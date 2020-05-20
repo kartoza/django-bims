@@ -68,6 +68,10 @@ INSTALLED_APPS += (
 
 # Wagtail configurations
 INSTALLED_APPS += (
+    'modelcluster',
+    'taggit',
+)
+INSTALLED_APPS = (
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
     'wagtail.embeds',
@@ -79,9 +83,7 @@ INSTALLED_APPS += (
     'wagtail.search',
     'wagtail.admin',
     'wagtail.core',
-    'modelcluster',
-    'taggit',
-)
+) + INSTALLED_APPS
 WAGTAIL_SITE_NAME = 'BIMS Wagtail'
 
 if os.environ.get('RAVEN_CONFIG_DSN'):
@@ -170,6 +172,7 @@ STATICFILES_DIRS = [
 MIDDLEWARE += (
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
+    'wagtail.core.middleware.SiteMiddleware',
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
 
