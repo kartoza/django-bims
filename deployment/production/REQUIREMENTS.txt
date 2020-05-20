@@ -1,64 +1,60 @@
-psycopg2-binary
-django>=1.11.22
-django-braces==1.9.0
-django-model-utils==1.4.0
-django-pipeline==1.6.14
-django-role-permissions==2.2.0
-markdown==2.6.11
-celery==4.1.0
+psycopg2-binary==2.8.5
+django-braces==1.14.0
+django-model-utils==4.0.0
+django-pipeline==1.7.0
+django-role-permissions==2.2.1
 
 raven==6.10.0
 django-sentry==1.13.5
-requests>=2.20.0
+requests>=2.23.0
 pytz
 # support special characters
 
-django-allauth==0.35.0
+django-allauth==0.41.0
 
 # Django Easy Audit
 # https://github.com/soynatan/django-easy-audit
-git+https://github.com/soynatan/django-easy-audit.git
-django-grappelli==2.11.1
+django-easy-audit==1.2.2
+django-grappelli==2.14.1
 
-djangorestframework==3.9.1
-djangorestframework-gis==0.13
+djangorestframework==3.9.0
+djangorestframework-gis==0.15
 django-colorfield==0.1.15
-django-filter==1.1.0
-coreapi==2.3.3
-pygbif==0.2.0
-
-# Django BIMS
-# git+https://github.com/kartoza/django-bims.git
+pygbif==0.4.0
 
 # bibliography
-bibtexparser==1.0.1
-eutils==0.4.0
-habanero==0.3.0
+bibtexparser==1.1.0
+eutils==0.6.0
+habanero==0.7.2
 
 # documentation generation
-django-modelsdoc==0.1.9
+django-modelsdoc==0.1.11
 
 # contacts page
-django-contact-us==0.4.1
-pillow>=6.2.0
-django-ordered-model==1.4.3
+django-contact-us==0.4.3
+django-ordered-model==3.4.1
+
+# Statistics Dashboard
 
 # prometheus monitoring support
-django-prometheus==1.0.14
-prometheus_client==0.2.0
+django-prometheus==2.0.0
+prometheus_client==0.7.1
 
-pyshp==1.2.12
+pyshp==2.1.0
 
 # for django flatpages
-django-ckeditor==5.6.1
-django-crispy-forms==1.7.2
-djangorestframework-gis==0.13
-pandas==0.23.4
-git+https://github.com/dimasciput/pandas_access.git
-selenium==3.12.0
-matplotlib==2.2.4
-django-admin-rangefilter==0.4.0
+django-ckeditor==5.9.0
+django-crispy-forms==1.9.1
+# pandas==0.23.4
+# git+https://github.com/dimasciput/pandas_access.git
+
+selenium==3.141.0
+matplotlib==3.2.1
+django-admin-rangefilter==0.6.0
 django-preferences==1.0.0
-PyGithub==1.44
-sorl-thumbnail==12.5.0
-svglib==0.9.3
+PyGithub==1.51
+sorl-thumbnail==12.6.3
+svglib==1.0.0
+simplejson==3.17.0
+django-extensions==2.2.9
+wagtail==2.9
