@@ -25,7 +25,7 @@
                         {% if is_sass_enabled %}
                             <a class="dropdown-item" id="navbar-biblio" href="/sass/list/">SASS</a>
                         {% endif %}
-                        <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL CMS</a>
+                        <a class="dropdown-item" id="navbar-geonode" href="/wagtail-pages/">WAGTAIL PAGES</a>
                          {% if user.is_authenticated %}
                              <div class="dropdown-divider"></div>
                             <a class="dropdown-item" id="navbar-geonode" href="/layers">GIS CATALOGUE</a>
@@ -49,11 +49,13 @@
                             {% if user.is_staff or user.is_superuser %}
                                 <a class="dropdown-item" href="/admin/">ADMINISTRATION</a>
                             {% endif %}
+                            <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL ADMIN</a>
                             <a class="dropdown-item" href="/nonvalidated-user-list/">UPDATE RECORDS</a>
                             <a class="dropdown-item" href="/location-site-form/add/">ADD SITE</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a>
                         {% else %}
+                            <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL ADMIN</a>
                             <a class="dropdown-item" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a>
                             <a class="dropdown-item" href="/accounts/signup/">SIGN UP</a>
                         {% endif %}
