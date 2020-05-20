@@ -1,7 +1,7 @@
 import csv
 import logging
 from celery import shared_task
-from hashlib import md5
+from hashlib import sha256
 from django.core.management import call_command
 
 from bims.models.boundary_type import BoundaryType
@@ -41,7 +41,7 @@ def download_data_to_csv(path_file, request):
     from bims.models import BiologicalCollectionRecord
     from bims.api_views.search import Search
 
-    path_file_hexdigest = md5(path_file).hexdigest()
+    path_file_hexdigest = sha256(path_file.encode('utf-8')).hexdigest()
 
     lock_id = '{0}-lock-{1}'.format(
             download_data_to_csv.name,
@@ -82,7 +82,7 @@ def download_data_to_csv(path_file, request):
                     header = header.upper()
                 formatted_headers.append(header)
 
-            with open(path_file, 'wb') as csv_file:
+            with open(path_file, 'w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
                 writer.fieldnames = headers

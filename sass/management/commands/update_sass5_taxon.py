@@ -66,7 +66,7 @@ class Command(BaseCommand):
 
         for taxon_list in taxon_dict:
             for taxon_data in taxon_dict[taxon_list]:
-                for taxon_complete_name, taxon_score in taxon_data.iteritems():
+                for taxon_complete_name, taxon_score in taxon_data.items():
                     taxon_name = taxon_complete_name.split('*')[0]
                     taxon_name = taxon_name.split(' ')[0]
                     taxonomy = search_taxon_identifier(taxon_name)

@@ -98,7 +98,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             Biotope.objects.filter(biotope_form=1).values_list(
                 'name', 'id'
             ))
-        for biotope_key, biotope_id in biotope_list.iteritems():
+        for biotope_key, biotope_id in biotope_list.items():
             biotope_key = re.sub(r'\([^)]*\)', '', biotope_key).strip()
             biotope_value = post_dictionary.get(biotope_key, None)
             try:
@@ -143,7 +143,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         }
         updated_site_visit_taxon = []
         updated_site_visit_biotope_taxon = []
-        for post_key, abundance in post_dictionary.iteritems():
+        for post_key, abundance in post_dictionary.items():
             if 'taxon_list' not in post_key:
                 continue
             taxon_id = post_key.split('-')[1]

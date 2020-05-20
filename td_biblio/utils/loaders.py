@@ -131,7 +131,7 @@ class BaseLoader(object):
 
         # if created, assign the others fields from record
         if is_new:
-            for attr, value in record.iteritems():
+            for attr, value in record.items():
                 try:
                     setattr(entry, attr, value)
                 except (ValueError, AttributeError):

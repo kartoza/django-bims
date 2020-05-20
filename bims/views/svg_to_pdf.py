@@ -38,7 +38,9 @@ def svg_to_pdf(request):
     if not os.path.exists(path_folder):
         os.mkdir(path_folder)
     path_folder = os.path.join(path_folder,
-                               '{}'.format(hashlib.md5(svg).hexdigest()))
+                               '{}'.format(
+                                   hashlib.sha256(
+                                       svg.encode('utf-8')).hexdigest()))
     if not os.path.exists(path_folder):
         os.mkdir(path_folder)
 
