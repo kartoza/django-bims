@@ -24,7 +24,6 @@ from geonode.groups.models import GroupProfile
 from geonode.documents.views import DocumentUploadView
 
 from bims.models.bims_document import BimsDocument
-from bims.models.taxonomy import Taxonomy
 
 logger = logging.getLogger("geonode.documents.views")
 
@@ -65,19 +64,6 @@ class BimsDocumentUploadView(DocumentUploadView):
         self.object.save()
         if self.request.method == 'POST' and self.object:
             taxon_links = self.request.POST.get('taxon-links', None)
-            if taxon_links:
-                taxon_links = taxon_links.split(',')
-                for taxon_link in taxon_links:
-                    try:
-                        taxon = Taxonomy.objects.get(
-                                id=taxon_link
-                        )
-                        taxon.documents.add(
-                                self.object
-                        )
-                        taxon.save()
-                    except Taxonomy.DoesNotExist as e:  # noqa
-                        pass
 
         return super(BimsDocumentUploadView, self).form_valid(
                 form
@@ -287,13 +273,6 @@ def document_metadata(
                     id=the_document.id
             )
             taxon_links = request.POST.get('taxon-links', None)
-            old_taxon_links = Taxonomy.objects.filter(
-                    documents__id=the_document.id
-            )
-            for taxon_link in old_taxon_links:
-                taxon_link.documents.remove(
-                        doc
-                )
             if taxon_links:
                 taxon_links = taxon_links.split(',')
                 for taxon_link in taxon_links:
