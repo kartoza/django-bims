@@ -10,12 +10,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='biologicalcollectionrecord',
-            name='absent',
-        ),
-        migrations.RemoveField(
-            model_name='survey',
-            name='sites',
-        ),
     ]
