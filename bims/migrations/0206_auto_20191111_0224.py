@@ -20,10 +20,6 @@ class Migration(migrations.Migration):
             model_name='taxon',
             name='endemism',
         ),
-        migrations.RemoveField(
-            model_name='taxon',
-            name=b'iucn_status',
-        ),
         migrations.AlterModelOptions(
             name='taxonomy',
             options={'verbose_name': 'Taxonomy', 'verbose_name_plural': 'Taxa'},

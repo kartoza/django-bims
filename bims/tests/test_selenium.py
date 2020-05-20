@@ -9,7 +9,7 @@ from django.contrib.auth import (
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.staticfiles.testing import LiveServerTestCase
 from django.test import override_settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from selenium import webdriver
 

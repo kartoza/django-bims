@@ -5,8 +5,8 @@ core.settings.contrib
 from core.settings.utils import ensure_unique_app_labels
 from .base import *  # noqa
 # Override base settings from geonode
-from geonode_generic.settings import *  # noqa
-from .celery_settings import *  # noqa
+from core.settings.geonode_generic import *  # noqa
+from core.settings.celery_settings import *  # noqa
 import os
 import raven
 try:
@@ -65,6 +65,26 @@ INSTALLED_APPS += (
     'sorl.thumbnail',
     'ckeditor'
 )
+
+# Wagtail configurations
+INSTALLED_APPS += (
+    'modelcluster',
+    'taggit',
+)
+INSTALLED_APPS = (
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail.core',
+) + INSTALLED_APPS
+WAGTAIL_SITE_NAME = 'BIMS Wagtail'
 
 if os.environ.get('RAVEN_CONFIG_DSN'):
     INSTALLED_APPS += ('raven.contrib.django.raven_compat',)
@@ -149,9 +169,11 @@ STATICFILES_DIRS = [
     absolute_path('td_biblio', 'static'),
 ] + STATICFILES_DIRS
 
-MIDDLEWARE_CLASSES += (
+MIDDLEWARE += (
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
+    'wagtail.core.middleware.SiteMiddleware',
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
 
 TESTING = sys.argv[1:2] == ['test']
@@ -159,7 +181,7 @@ if not TESTING and not on_travis:
     INSTALLED_APPS += (
         'easyaudit',
     )
-    MIDDLEWARE_CLASSES += (
+    MIDDLEWARE += (
         'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
     )
 # for middleware in MIDDLEWARE_CLASSES:
@@ -312,14 +334,11 @@ LOGGING = {
 
 ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
         'ASYNC_SIGNALS_GEONODE', 'False'))
-CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS_GEONODE else True
 
 if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
     BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
     CELERY_BROKER_URL = BROKER_URL
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-    from .geonode_queue_settings import *  # noqa
-    CELERY_TASK_QUEUES += GEONODE_QUEUES
 
 # Set institutionID default value
 INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')
@@ -381,3 +400,14 @@ BIMS_PREFERENCES = {
         os.environ.get('ENABLE_UPLOAD_DATA', 'True')
     )
 }
+
+# Remove geonode session middleware
+if (
+        'geonode.security.middleware.SessionControlMiddleware' in
+        MIDDLEWARE
+    ):
+    MIDDLEWARE_CLASSES_LIST = list(MIDDLEWARE)
+    MIDDLEWARE_CLASSES_LIST.remove(
+        'geonode.security.middleware.SessionControlMiddleware'
+    )
+    MIDDLEWARE = tuple(MIDDLEWARE_CLASSES_LIST)

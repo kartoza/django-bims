@@ -12,10 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='shapefileuploadsession',
-            name='token',
-        ),
         migrations.AddField(
             model_name='shapefile',
             name='token',

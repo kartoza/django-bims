@@ -1,5 +1,5 @@
 import json
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from rest_framework.test import APIRequestFactory
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,

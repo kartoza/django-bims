@@ -20,7 +20,8 @@ class SassEcologicalCondition(models.Model):
     ecological_category = models.ForeignKey(
         'sass.SassEcologicalCategory',
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     sass_score_precentile = models.IntegerField(

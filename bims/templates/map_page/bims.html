@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
 {% load grunt %}
+{% load jsonify %}
 
 
 {% block subtitle %}
@@ -63,7 +64,7 @@
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const emptyWMSSiteParameter = '{{ bims_preferences.empty_location_site_cluster }}';
         const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};
-        const mapDefaultSelectedFilters = '{{ preferences.SiteSetting.map_default_filters | safe}}';
+        const mapDefaultSelectedFilters = "{{ preferences.SiteSetting.map_default_filters | safe }}";
         const spatialFilterLayerStyle = '{{ preferences.SiteSetting.spatial_filter_layer_style }}';
         const defaultCenterMap = '{{ preferences.SiteSetting.default_center_map }}';
         const defaultExtentMap = '{{ preferences.SiteSetting.default_extent_map }}';

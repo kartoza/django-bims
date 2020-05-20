@@ -101,6 +101,7 @@ services:
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
       - APP_NAME=bims
+      - ASYNC_SIGNALS=True
       - ASYNC_SIGNALS_GEONODE=True
     links:
       - smtp:smtp

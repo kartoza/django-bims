@@ -1,7 +1,7 @@
 # coding=utf-8
 import os
 import errno
-from hashlib import md5
+from hashlib import sha256
 import datetime
 from django.http.response import JsonResponse
 from django.conf import settings
@@ -41,11 +41,11 @@ def get_filename(uri, additional_parameter):
     :return: path_file, filename
     """
     today_date = datetime.date.today()
-    filename = md5(
+    filename = sha256(
         '%s%s%s' % (
             uri,
             additional_parameter,
-            today_date)
+            today_date).encode('utf-8')
     ).hexdigest()
     filename += '.csv'
 

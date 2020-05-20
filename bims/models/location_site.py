@@ -57,7 +57,7 @@ class LocationSite(DocumentLinksMixin):
     location_type = models.ForeignKey(
         LocationType,
         models.CASCADE,
-        null=False,
+        null=False
     )
     refined_geomorphological = models.CharField(
         blank=True,
@@ -96,6 +96,7 @@ class LocationSite(DocumentLinksMixin):
         'sass.River',
         null=True,
         blank=True,
+        on_delete=models.SET_NULL
     )
     legacy_river_name = models.CharField(
         max_length=100,

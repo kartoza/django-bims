@@ -791,10 +791,6 @@
                                         <option value="{{ value }}">{{ key }}</option>
                                     {% endfor %}
                                 </select>
-                            {% else %}
-                                <input type="hidden" id="ud_module"
-                                       class="ud-item" name="ud_module"
-                                       value="{{ biological_modules.values | first }}">
                             {% endif %}
                             <label for="ud_species_name"
                                    class="upload-input-label">

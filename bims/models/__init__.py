@@ -29,9 +29,6 @@ from bims.models.spatial_scale import *  # noqa
 from bims.models.spatial_scale_group import *  # noqa
 from bims.models.sampling_method import *  # noqa
 from bims.models.site_image import *  # noqa
-from django.contrib.auth.signals import user_logged_out
-from geonode.base.models import do_logout as do_logout_from_geonode
-user_logged_out.disconnect(do_logout_from_geonode)
 
 from bims.models.auth import *  # noqa
 from bims.models.site_setting import *  # noqa

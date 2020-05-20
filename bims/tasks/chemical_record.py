@@ -2,7 +2,7 @@
 import csv
 import logging
 from celery import shared_task
-from hashlib import md5
+from hashlib import sha256
 from django.db.models import Q
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ def download_chemical_data_to_csv(path_file, site_id):
         ChemicalRecordsOneRowSerializer)
     from bims.utils.celery import memcache_lock
 
-    path_file_hexdigest = md5(path_file).hexdigest()
+    path_file_hexdigest = sha256(path_file.encode('utf-8')).hexdigest()
 
     lock_id = '{}-lock-{}'.format(
         download_chemical_data_to_csv.name,

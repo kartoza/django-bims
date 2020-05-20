@@ -10,7 +10,7 @@ import logging
 import sys
 
 import bibtexparser
-import eutils.client
+import eutils
 
 from time import strptime
 
@@ -131,7 +131,7 @@ class BaseLoader(object):
 
         # if created, assign the others fields from record
         if is_new:
-            for attr, value in record.iteritems():
+            for attr, value in record.items():
                 try:
                     setattr(entry, attr, value)
                 except (ValueError, AttributeError):
@@ -257,7 +257,7 @@ class PubmedLoader(BaseLoader):
 
     def __init__(self, *args, **kwargs):
         super(PubmedLoader, self).__init__(*args, **kwargs)
-        self.client = eutils.client.Client()
+        self.client = eutils.Client()
 
     def to_record(self, input):
         """Convert eutils PubmedArticle xml facade to a valid record"""

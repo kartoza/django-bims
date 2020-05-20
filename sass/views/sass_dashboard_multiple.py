@@ -341,7 +341,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 unique_eco_geo[(eco_region, geo_class)].append(site.id)
 
         index = 0
-        for eco_geo, site_ids in unique_eco_geo.iteritems():
+        for eco_geo, site_ids in unique_eco_geo.items():
             if index >= max_charts:
                 unique_ecoregions.append({
                     'eco_regions': eco_geo,

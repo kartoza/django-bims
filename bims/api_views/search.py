@@ -68,8 +68,9 @@ class SearchAPIView(BimsApiView):
             BiologicalCollectionRecord.objects.all().count()
         )
         # Generate unique process id by search uri and total of collections
-        process_id = hashlib.md5(
-            json.dumps(data_for_process_id, sort_keys=True)
+        process_id = hashlib.sha256(
+            str(json.dumps(data_for_process_id, sort_keys=True)
+                ).encode('utf-8')
         ).hexdigest()
         search_process.set_process_id(process_id)
         search_process.set_status(SEARCH_PROCESSING)
@@ -619,8 +620,7 @@ class Search(object):
 
         sites = (
             self.collection_records.annotate(
-                name=F('site__site_code'),
-                site_id=F('site__id')).values(
+                name=F('site__site_code')).values(
                 'site_id', 'name').annotate(
                 total=Count('site')
             ).order_by(order_by)

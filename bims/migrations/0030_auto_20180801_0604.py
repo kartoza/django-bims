@@ -12,46 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='author',
-            name=b'user',
-        ),
-        migrations.RemoveField(
-            model_name='authorentryrank',
-            name=b'author',
-        ),
-        migrations.RemoveField(
-            model_name='authorentryrank',
-            name=b'entry',
-        ),
-        migrations.RemoveField(
-            model_name='collection',
-            name=b'entries',
-        ),
-        migrations.RemoveField(
-            model_name='editor',
-            name=b'user',
-        ),
-        migrations.RemoveField(
-            model_name='entry',
-            name=b'authors',
-        ),
-        migrations.RemoveField(
-            model_name='entry',
-            name=b'crossref',
-        ),
-        migrations.RemoveField(
-            model_name='entry',
-            name=b'editors',
-        ),
-        migrations.RemoveField(
-            model_name='entry',
-            name=b'journal',
-        ),
-        migrations.RemoveField(
-            model_name='entry',
-            name=b'publisher',
-        ),
         migrations.DeleteModel(
             name='Author',
         ),

@@ -24,7 +24,6 @@ class Command(BaseCommand):
 
         self.stdout.write('>>> Collectstatic')
         call_command('collectstatic',
-                     ignore=['geoexplorer'],
                      verbosity=0,
                      interactive=False)
 

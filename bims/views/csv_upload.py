@@ -192,7 +192,7 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                             optional_site_records.items()
                     else:
                         optional_site_records_iter = \
-                            optional_site_records.iteritems()
+                            optional_site_records.items()
 
                     for opt_key, opt_val in optional_site_records_iter:
                         setattr(location_site, opt_key, opt_val)

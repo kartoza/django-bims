@@ -1,6 +1,6 @@
 # coding=utf-8
 import os
-from hashlib import md5
+from hashlib import sha256
 import datetime
 import errno
 from rest_framework.views import APIView
@@ -35,10 +35,10 @@ class ChemicalRecordDownloader(APIView):
             query_count = queryset.count()
 
         today_date = datetime.date.today()
-        filename = md5(
+        filename = sha256(
             'chem{}{}'.format(
                 query_count,
-                today_date)
+                today_date).encode('utf-8')
         ).hexdigest()
         filename += '.csv'
 

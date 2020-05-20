@@ -12,10 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='biologicalcollectionrecord',
-            name=b'taxon_gbif_id',
-        ),
         migrations.AlterField(
             model_name='taxonomy',
             name='rank',

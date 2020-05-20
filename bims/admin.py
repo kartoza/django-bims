@@ -20,7 +20,7 @@ from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
 from django.utils.html import format_html
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib import messages
 
 from geonode.documents.admin import DocumentAdmin

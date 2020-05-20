@@ -1,7 +1,7 @@
 # coding=utf8
 
 import json
-from hashlib import md5
+from hashlib import sha256
 import datetime
 import os
 import errno
@@ -143,7 +143,7 @@ class CollectionDownloader(GetCollectionAbstract):
         if not site_id or site_id == '':
             filters = self.request.GET
             title = ''
-            for key, value in filters.iteritems():
+            for key, value in filters.items():
                 if value and value != '' and value != [] and value != '[]':
                     filter_title = key + '=' + value + '-'
                     title += filter_title
@@ -151,18 +151,19 @@ class CollectionDownloader(GetCollectionAbstract):
                 title = title[:-1]
                 filename = title + '.csv'
             else:
-                filename = md5(
+                filename = sha256(
                     '%s%s%s' % (
                         search_uri,
                         query_count,
-                        today_date)
+                        today_date).encode('utf-8')
                 ).hexdigest()
                 filename += '.csv'
         else:
             filename = site_id + '.csv'
 
         # Check if filename exists
-        filename = '{}.csv'.format(md5(filename).hexdigest())
+        filename = '{}.csv'.format(sha256(
+            filename.encode('utf-8')).hexdigest())
         folder = 'csv_processed'
         path_folder = os.path.join(settings.MEDIA_ROOT, folder)
         path_file = os.path.join(path_folder, filename)
@@ -378,9 +379,9 @@ class ClusterCollection(GetCollectionAbstract):
                 collection_results)
             data_for_filename['site_results_length'] = len(site_results)
 
-            # Create filename from md5 of filters and results length
-            filename = hashlib.md5(
-                json.dumps(search_uri, sort_keys=True)
+            # Create filename from sha256 of filters and results length
+            filename = hashlib.sha256(
+                json.dumps(search_uri, sort_keys=True).encode('utf-8')
             ).hexdigest()
         else:
             filename = process
