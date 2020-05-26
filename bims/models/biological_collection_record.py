@@ -24,6 +24,7 @@ from bims.models.bims_document import BimsDocument
 class BiologicalCollectionQuerySet(models.QuerySet):
     def source_references(self):
         source_references = []
+        unique_source_references = []
         is_doc = False
         for col in self:
             try:
@@ -88,7 +89,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 'is_doc': is_doc,
                 'Notes': note
             }
-            source_references.append(item)
+            if json.dumps(item) not in unique_source_references:
+                source_references.append(item)
+                unique_source_references.append(json.dumps(item))
         return source_references
 
 
