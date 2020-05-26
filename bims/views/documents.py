@@ -62,8 +62,6 @@ class BimsDocumentUploadView(DocumentUploadView):
                 settings.ADMIN_MODERATE_UPLOADS)
         self.object.is_published = is_published
         self.object.save()
-        if self.request.method == 'POST' and self.object:
-            taxon_links = self.request.POST.get('taxon-links', None)
 
         return super(BimsDocumentUploadView, self).form_valid(
                 form
@@ -267,16 +265,6 @@ def document_metadata(
             Document.objects.filter(
                     id=the_document.id).update(
                     category=new_category)
-
-            # Update taxon links
-            doc = Document.objects.get(
-                    id=the_document.id
-            )
-            taxon_links = request.POST.get('taxon-links', None)
-            if taxon_links:
-                taxon_links = taxon_links.split(',')
-                for taxon_link in taxon_links:
-                    pass
 
             if getattr(settings, 'SLACK_ENABLED', False):
                 try:

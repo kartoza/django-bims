@@ -103,6 +103,9 @@ class BiologicalCollectionManager(models.Manager):
 ABUNDANCE_TYPE_NUMBER = 'number'
 ABUNDANCE_TYPE_PERCENTAGE = 'percentage'
 ABUNDANCE_TYPE_DENSITY = 'density'
+ABUNDANCE_TYPE_SPECIES_VALVE = 'species_valve_per_frustule_count'
+ABUNDANCE_TYPE_DENSITY_CELLS_M2 = 'density_cells_per_m2'
+ABUNDANCE_TYPE_DENSITY_CELLS_ML = 'density_cells_per_mL'
 
 
 class BiologicalCollectionRecord(AbstractValidation):
@@ -121,6 +124,9 @@ class BiologicalCollectionRecord(AbstractValidation):
         (ABUNDANCE_TYPE_NUMBER, 'Number'),
         (ABUNDANCE_TYPE_PERCENTAGE, 'Percentage'),
         (ABUNDANCE_TYPE_DENSITY, 'Density'),
+        (ABUNDANCE_TYPE_SPECIES_VALVE, 'Species valve/frustule count'),
+        (ABUNDANCE_TYPE_DENSITY_CELLS_M2, 'Density (cells/m2)'),
+        (ABUNDANCE_TYPE_DENSITY_CELLS_ML, 'Density (cells/mL)'),
     )
 
     site = models.ForeignKey(
