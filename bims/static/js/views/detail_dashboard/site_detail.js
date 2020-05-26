@@ -205,9 +205,9 @@ define([
                     } else {
                         $('#species-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
+                        dashboardHeader.html('Single Site - ' + data['modules'].join());
                         if(data['is_chem_exists']) {
                             $('#ssdd-chem-chart-wrapper').show();
-                            dashboardHeader.html('Single Site - ' + data['modules'].join());
                             self.renderChemGraph(data);
                         }else {
                             $('#ssdd-chem-chart-wrapper').hide();

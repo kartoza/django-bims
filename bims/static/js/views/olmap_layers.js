@@ -650,9 +650,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
                 if (layer['layer'].getVisible()) {
                     try {
+                        const queryLayer = layer['layer'].getSource().getParams()['layers'];
+                        if (queryLayer.indexOf('location_site_view') > -1) {
+                            return true;
+                        }
                         const getFeatureFormat = layer['layer'].getSource().getParams()['getFeatureFormat'];
                         const layerName = layer['layer'].getSource().getParams()['name'];
-                        const queryLayer = layer['layer'].getSource().getParams()['layers'];
                         let layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
                             coordinate,
                             view.getResolution(),
@@ -660,7 +663,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             {'INFO_FORMAT': getFeatureFormat}
                         );
                         layerSource += '&QUERY_LAYERS=' + queryLayer;
-
                         Shared.GetFeatureXHRRequest.push($.ajax({
                             type: 'POST',
                             url: '/get_feature/',
