@@ -97,7 +97,8 @@ class SiteSetting(Preferences):
 
     default_extent_map = models.CharField(
         max_length=100,
-        default='5.207535937500003,-37.72038269917067,47.3950359375,-18.54426493227018'
+        default='5.207535937500003,-37.72038269917067,47.3950359375,'
+                '-18.54426493227018'
     )
 
     def save(self, *args, **kwargs):
