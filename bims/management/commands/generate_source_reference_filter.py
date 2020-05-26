@@ -10,4 +10,4 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        generate_source_reference_filter(SOURCE_REFERENCE_FILTER_FILE)
+        generate_source_reference_filter()
