@@ -207,7 +207,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 id = properties['station'];
             }
             $container.append(`<button class="btn btn-default" style="width: 100%" onclick="window.open('http://inwards.award.org.za/app_json/wq_csv.php?id=${id}')">Download csv</button>`);
-            $container.append('<div style="text-align: right">Data taken from <a target="_blank" href="http://award.org.za/">http://award.org.za/</a></div>');
+            $container.append('<div style="text-align: right; font-size: 11pt">Data shared with permission from <a target="_blank" href="http://award.org.za/">http://award.org.za/</a></div>');
             return $container;
         },
         render: function () {
