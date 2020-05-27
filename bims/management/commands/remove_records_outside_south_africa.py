@@ -49,7 +49,9 @@ class Command(BaseCommand):
             polygon_union = polygon_union.union(boundary.geometry)
 
         print('Get all records outside SA')
-        bio = BiologicalCollectionRecord.objects.exclude(
+        bio = BiologicalCollectionRecord.objects.filter(
+            source_collection='gbif'
+        ).exclude(
             site__geometry_point__intersects=polygon_union
         )
         print('Got %s records' % bio.count())
