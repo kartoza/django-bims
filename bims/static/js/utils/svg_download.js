@@ -7,15 +7,30 @@ function svgChartDownload(chartConfig, title) {
 
     chartConfig.options['animation'] = false;
     chartConfig.options['responsive'] = false;
-    if (!chartConfig.options.hasOwnProperty('legend')) {
-        chartConfig.options['legend'] = {display: true};
-    }
+    chartConfig.options['legend'] = {
+        display: true,
+        labels: {
+            filter: function(item, chart) {
+                // Logic to remove a particular legend item goes here
+                return !item.text.includes('hide_this_legend');
+            }
+        }
+    };
     chartConfig.options['title'] = {
         display: true,
         text: title,
         fontSize: 20
     };
-    new Chart(c2s, chartConfig);
+    let chart = new Chart(c2s, chartConfig);
+    if (chartConfig['type'] === 'pie') {
+        if (chart.data.labels.length === 1) {
+            chart.data.labels.push('hide_this_legend');
+            chart.data.datasets.forEach((dataset) => {
+                dataset.data.push(0.001);
+            });
+            chart.update();
+        }
+    }
     // Download the chart
     let svg = c2s.getSerializedSvg(true);
     // Convert svg source to URI data scheme.
