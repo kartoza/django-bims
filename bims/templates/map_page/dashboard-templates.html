@@ -468,13 +468,28 @@
                         <div class="card-header-title pull-left d-inline">
                             Occurrence Charts
                         </div>
-                        <button class="ssdd-export btn btn-default pull-right"
-                                data-toggle="tooltip" data-placement="left"
-                                title="Download charts as svg which you can drag and drop to excel or word"
-                                data-datac="data-summary" data-title="Origin,Endemism,Conservation Status,Sampling Method,Biotope"
-                                data-chart="origin_pie,endemism_pie,cons_status_pie,sampling_method_pie,biotope_pie">
-                            <i class="fa fa-download"></i>
-                        </button>
+                        <!-- Example single danger button -->
+                        <div class="btn-group pull-right">
+                            <button type="button"
+                                    class="btn btn-default pull-right dropdown-toggle"
+                                    data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false" style="color: black">
+                                <i class="fa fa-download"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="ssdd-export btn dropdown-item" data-title="Origin" data-chart="origin_pie">
+                                    Download Origin Chart
+                                </a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Endemism" data-chart="endemism_pie">
+                                    Download Endemism Chart</a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Conservation Status" data-chart="cons_status_pie">
+                                    Download Conservation Status Chart</a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Sampling Method" data-chart="sampling_method_pie">
+                                    Download Sampling Method Chart</a>
+                               <a class="ssdd-export btn dropdown-item" data-title="Biotope" data-chart="biotope_pie">
+                                    Download Biotope Chart</a>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div id="data-summary">
