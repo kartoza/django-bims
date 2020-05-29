@@ -34,9 +34,9 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
     """ The SourceReference """
     base_model = SourceReference
     child_models = (
-        (SourceReferenceBibliography, SourceReferenceBibliographyAdmin),
-        (SourceReferenceDatabase, SourceReferenceDatabaseAdmin),
-        (SourceReferenceDocument, SourceReferenceDocumentAdmin))
+        SourceReferenceBibliography,
+        SourceReferenceDatabase,
+        SourceReferenceDocument)
     list_filter = (PolymorphicChildModelFilter,)
     search_fields = (
         'sourcereferencebibliography__source__title',
