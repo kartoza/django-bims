@@ -9,7 +9,8 @@
 
 version: '2'
 volumes:
-  geoserver-data-dir:
+  geodatadir:
+  rabbitmq:
 services:
   smtp:
     image: catatnight/postfix
@@ -28,21 +29,20 @@ services:
       - POSTGRES_PASS=docker
     restart: unless-stopped
 
-  data-dir-conf:
-    image: geosolutionsit/geoserver_data:2.13.x
-    restart: on-failure
-    command: /bin/true
-    volumes:
-      - geoserver-data-dir:/geoserver_data/data
-
   geoserver:
-    image: geosolutionsit/geoserver-docker:2.13.x
+    image: geonode/spcgeonode:geoserver-3.0
     restart: unless-stopped
+    environment:
+      - HTTP_HOST=192.168.1.197
+      - HTTP_PORT=63305
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admingeoserver
+      - DATABASE_URL=postgres://docker:docker@db:5432/gis
+      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
     depends_on:
       - db
-      - data-dir-conf
     volumes:
-      - geoserver-data-dir:/geoserver_data/data
+      - geodatadir:/spcgeonode-geodatadir/
 
   bims_uwsgi:
     build:
@@ -54,7 +54,7 @@ services:
     build:
       context: docker
     hostname: uwsgi
-    working_dir: /usr/src/app
+    working_dir: /usr/src/geonode
     entrypoint: []
     environment:
       - DATABASE_NAME=gis
@@ -68,14 +68,24 @@ services:
       - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
+      - DEFAULT_BACKEND_UPLOADER=geonode.importer
+      - DEFAULT_BACKEND_DATASTORE=datastore
+      - GEONODE_DATABASE=gis
+      - GEONODE_DATABASE_PASSWORD=docker
+      - GEONODE_GEODATABASE=geonode_data
+      - GEONODE_GEODATABASE_PASSWORD=docker
+      - GEONODE_GEODATABASE_USERNAME=geonode_data
+      - BROKER_URL=amqp://rabbitmq:5672
+      - DATABASE_URL=postgis://docker:docker@db:5432/gis
+      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
       - APP_NAME=bims
     links:
       - smtp:smtp
       - db:db
       - geoserver:geoserver
+      - rabbitmq:rabbitmq
       - worker:worker
-    volumes:
-      - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
     restart: unless-stopped
     user: root
     extra_hosts:
@@ -86,7 +96,7 @@ services:
       context: docker
     hostname: worker
     working_dir: /home/web/django_project
-    command: celery worker --app=bims.celery:app -B -l info
+    command: celery worker --app=bims.celery:app -B -l debug
     entrypoint: []
     environment:
       - DATABASE_NAME=gis
@@ -98,11 +108,24 @@ services:
       - VIRTUAL_PORT=8080
       - RABBITMQ_HOST=rabbitmq
       - GEOCONTEXT_URL=https://geocontext.kartoza.com
-      - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
       - APP_NAME=bims
       - ASYNC_SIGNALS=True
       - ASYNC_SIGNALS_GEONODE=True
+      - DEFAULT_BACKEND_UPLOADER=geonode.importer
+      - DEFAULT_BACKEND_DATASTORE=datastore
+      - GEONODE_DATABASE=gis
+      - GEONODE_DATABASE_PASSWORD=docker
+      - GEONODE_GEODATABASE=geonode_data
+      - GEONODE_GEODATABASE_PASSWORD=docker
+      - GEONODE_GEODATABASE_USERNAME=geonode_data
+      - PYTHONPATH=/home/web/django_project:/usr/src/geonode
+      - DATABASE_URL=postgis://docker:docker@db:5432/gis
+      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - C_FORCE_ROOT=True
+      - DEBUG=True
+      - BROKER_URL=amqp://rabbitmq:5672
     links:
       - smtp:smtp
       - db:db
@@ -144,13 +167,10 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: library/rabbitmq:3.6
-    hostname: rabbitmq
-    environment:
-      - RABBIT_PASSWORD=rabbit_test_password
-      - USER=rabbit_user
-      - RABBITMQ_NODENAME=rabbit
-    restart: unless-stopped
+    image: rabbitmq:3.7-alpine
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    restart: on-failure
 
   cache:
    image: memcached

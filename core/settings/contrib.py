@@ -233,10 +233,6 @@ INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 
 IUCN_API_URL = 'http://apiv3.iucnredlist.org/api/v3'
 
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-
 # django modelsdoc settings
 MODELSDOC_APPS = ('bims', 'td_biblio',)
 
@@ -335,11 +331,6 @@ LOGGING = {
 ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
         'ASYNC_SIGNALS_GEONODE', 'False'))
 
-if ASYNC_SIGNALS_GEONODE and USE_GEOSERVER:
-    BROKER_URL = 'amqp://guest:guest@%s:5672//' % os.environ['RABBITMQ_HOST']
-    CELERY_BROKER_URL = BROKER_URL
-    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-
 # Set institutionID default value
 INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')
 
@@ -347,9 +338,7 @@ ACCOUNT_APPROVAL_REQUIRED = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 ACCOUNT_ADAPTER = 'bims.adapters.account_adapter.AccountAdapter'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-
-OGC_SERVER['default']['DATASTORE'] = os.environ.get(
-        'DEFAULT_BACKEND_DATASTORE', '')
+CELERY_TASK_PROTOCOL = 1
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS':

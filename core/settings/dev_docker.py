@@ -29,6 +29,16 @@ DATABASES = {
     }
 }
 
+if os.getenv('DEFAULT_BACKEND_DATASTORE'):
+    DATABASES[os.getenv('DEFAULT_BACKEND_DATASTORE')] = {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'geonode_data',
+        'USER': 'geonode_data',
+        'PASSWORD': 'docker',
+        'HOST': 'db',
+        'PORT': 5432
+    }
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
