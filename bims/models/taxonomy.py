@@ -293,11 +293,8 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
         generate_permission(instance.scientific_name)
 
     if instance.is_species and not instance.iucn_status:
-        print('Fetch IUCN Status - {}'.format(
-            instance.scientific_name
-        ))
         iucn_status = get_iucn_status(
-            species_name=instance.scientific_name
+            species_name=instance.canonical_name.encode('utf-8')
         )
         if not iucn_status:
             # Get not evaluated

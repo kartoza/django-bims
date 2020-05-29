@@ -24,6 +24,7 @@ from bims.models.bims_document import BimsDocument
 class BiologicalCollectionQuerySet(models.QuerySet):
     def source_references(self):
         source_references = []
+        unique_source_references = []
         is_doc = False
         for col in self:
             try:
@@ -88,7 +89,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 'is_doc': is_doc,
                 'Notes': note
             }
-            source_references.append(item)
+            if json.dumps(item) not in unique_source_references:
+                source_references.append(item)
+                unique_source_references.append(json.dumps(item))
         return source_references
 
 
@@ -103,6 +106,9 @@ class BiologicalCollectionManager(models.Manager):
 ABUNDANCE_TYPE_NUMBER = 'number'
 ABUNDANCE_TYPE_PERCENTAGE = 'percentage'
 ABUNDANCE_TYPE_DENSITY = 'density'
+ABUNDANCE_TYPE_SPECIES_VALVE = 'species_valve_per_frustule_count'
+ABUNDANCE_TYPE_DENSITY_CELLS_M2 = 'density_cells_per_m2'
+ABUNDANCE_TYPE_DENSITY_CELLS_ML = 'density_cells_per_mL'
 
 
 class BiologicalCollectionRecord(AbstractValidation):
@@ -121,6 +127,9 @@ class BiologicalCollectionRecord(AbstractValidation):
         (ABUNDANCE_TYPE_NUMBER, 'Number'),
         (ABUNDANCE_TYPE_PERCENTAGE, 'Percentage'),
         (ABUNDANCE_TYPE_DENSITY, 'Density'),
+        (ABUNDANCE_TYPE_SPECIES_VALVE, 'Species valve/frustule count'),
+        (ABUNDANCE_TYPE_DENSITY_CELLS_M2, 'Density (cells/m2)'),
+        (ABUNDANCE_TYPE_DENSITY_CELLS_ML, 'Density (cells/mL)'),
     )
 
     site = models.ForeignKey(

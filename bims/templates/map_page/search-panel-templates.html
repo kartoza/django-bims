@@ -190,7 +190,7 @@
                 <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
                     <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
                     <div class="native-origin-dropdown dropdown-menu origin-menu" aria-labelledby="native-origin-btn">
-                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All endemic </div>
+                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All native </div>
                     </div>
                 </div>
                 </div>
@@ -392,18 +392,28 @@
             </div>
         </div>
         <div class="row content" style="border-top: 1px solid darkgray; margin-top: 3px">
-            <ul id="third-party-options" style="width:100%; height: 90px;">
-                <li data-name="MiniSASS">
+            <ul id="third-party-options" style="width:100%; height: 445px;">
+                <li data-name="MiniSASS" style="height: 180px !important;">
                     <div class="row-title">
                         <input type="checkbox" value="MiniSASS" class="mini-sass-check">
                         MiniSASS
                     </div>
+                    <small class="text-muted">
+                        MiniSASS is a citizen science tool which can be used by anyone to monitor the health of a river.
+                        The data are served with permission from <a href="http://www.minisass.org/en/">http://www.minisass.org/en/</a>, and further information about the tool is available via this website.
+                    </small>
                 </li>
-                <li data-name="InWARDS">
+                <li data-name="InWARDS" style="height: 255px !important;">
                     <div class="row-title">
                         <input type="checkbox" value="InWARDS" class="inward-check">
                         <span class="label">InWARDS Water Quality</span>
                     </div>
+                    <small class="text-muted">
+                        InWaRDS is a Decision-support for integrated water resources management developed by AWARD (the Association for Water and Rural Development).
+                        The data are served with permission,
+                        and further information is available via their website: <a href="http://award.org.za/index.php/focus-areas/water/the-inwards-decision-support-for-integrated-water-resources-management-in-the-olifants/">
+                        http://award.org.za/index.php/focus-areas/water/the-inwards-decision-support-for-integrated-water-resources-management-in-the-olifants/</a>
+                    </small>
                 </li>
             </ul>
     </div>

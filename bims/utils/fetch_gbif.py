@@ -52,6 +52,7 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
                         }
                         objects.update(**update_dict)
                 except Exception as e:  # noqa
+                    logger.error(e)
                     continue
             logger.info(''.join(['-' for i in range(len(str(taxon)) + 12)]))
 

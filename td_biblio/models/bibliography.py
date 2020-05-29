@@ -51,7 +51,7 @@ class AbstractHuman(models.Model):
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
 
-        return '%s %s' % (self.last_name, self.first_initial)
+        return '%s %s' % (self.first_name, self.last_name)
 
     def _set_user(self):
         """Look for local django user based on human name"""
@@ -88,7 +88,7 @@ class Author(AbstractHuman):
     """Entry author"""
 
     class Meta:
-        ordering = ('last_name', 'first_name')
+        ordering = ('first_name', 'last_name')
         verbose_name = _("Author")
         verbose_name_plural = _("Authors")
 
@@ -97,7 +97,7 @@ class Editor(AbstractHuman):
     """Journal or book editor"""
 
     class Meta:
-        ordering = ('last_name', 'first_name')
+        ordering = ('first_name', 'last_name')
         verbose_name = _("Editor")
         verbose_name_plural = _("Editors")
 

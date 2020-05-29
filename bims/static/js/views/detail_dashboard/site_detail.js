@@ -205,9 +205,9 @@ define([
                     } else {
                         $('#species-ssdd-site-details').show();
                         self.createFishSSDDSiteDetails(data);
+                        dashboardHeader.html('Single Site - ' + data['modules'].join());
                         if(data['is_chem_exists']) {
                             $('#ssdd-chem-chart-wrapper').show();
-                            dashboardHeader.html('Single Site - ' + data['modules'].join());
                             self.renderChemGraph(data);
                         }else {
                             $('#ssdd-chem-chart-wrapper').hide();
@@ -1007,12 +1007,13 @@ define([
                 return null;
             }
             var backgroundColours = [
-                '#8D2641',
-                '#D7CD47',
-                '#18A090',
-                '#A2CE89',
-                '#4E6440',
-                '#525351'];
+                '#8D2641', '#D7CD47',
+                '#18A090', '#A2CE89',
+                '#4E6440', '#525351',
+                '#D7CD47', '#8D2641',
+                '#A2CE89', '#18A090',
+                '#525351', '#4E6440']
+
             var chartConfig = {
                 type: 'pie',
                 data: {

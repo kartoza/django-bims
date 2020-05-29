@@ -372,10 +372,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                     return s
         if obj.collector:
             return obj.collector.encode('utf8')
-        return '{first_name} {last_name}'.format(
-            first_name=obj.owner.first_name.encode('utf-8'),
-            last_name=obj.owner.last_name.encode('utf-8')
-        )
+        try:
+            return '{first_name} {last_name}'.format(
+                first_name=obj.owner.first_name.encode('utf-8'),
+                last_name=obj.owner.last_name.encode('utf-8')
+            )
+        except Exception as e:  # noqa
+            return '-'
 
     def get_collector_or_owner_institute(self, obj):
         if obj.collector_user:

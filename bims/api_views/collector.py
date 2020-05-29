@@ -29,13 +29,14 @@ class CollectorList(APIView):
                 validated=True
             ).exclude(
                 collector__exact='',
-                source_collection='gbif'
             ).annotate(
                 full_name=Concat(
                     'collector_user__first_name', V(' '),
                     'collector_user__last_name',
                     output_field=CharField()
                 )
+            ).exclude(
+                source_collection='gbif'
             ).distinct('full_name').order_by(
                 'full_name'
             ).values_list('full_name', flat=True)

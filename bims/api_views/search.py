@@ -412,7 +412,7 @@ class Search(object):
         if self.conservation_status:
             self.filter_taxa_records(
                 {
-                    'taxonomy__iucn_status__category__in':
+                    'iucn_status__category__in':
                         self.conservation_status
                 }
             )

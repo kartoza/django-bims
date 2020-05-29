@@ -18,13 +18,14 @@ class AuthorEntryRankInline(admin.TabularInline):
 
 
 class AbstractHumanAdmin(admin.ModelAdmin):
-    list_display = ('last_name', 'first_name')
-    ordering = ('last_name', 'first_name')
+    list_display = ('first_name', 'last_name')
+    ordering = ('first_name', 'last_name')
 
 
 class AuthorAdmin(AbstractHumanAdmin):
-    list_display = ('last_name', 'first_name', 'user')
+    list_display = ('first_name', 'last_name', 'user')
     raw_id_fields = ('user',)
+    search_fields = ('first_name', 'last_name')
 
 
 class EditorAdmin(AbstractHumanAdmin):
