@@ -87,7 +87,10 @@ def download_data_to_csv(path_file, request):
                 writer.writeheader()
                 writer.fieldnames = headers
                 for row in rows:
-                    writer.writerow(row)
+                    try:
+                        writer.writerow(row)
+                    except UnicodeEncodeError:
+                        continue
 
             return
 
