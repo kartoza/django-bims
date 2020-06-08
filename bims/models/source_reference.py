@@ -12,6 +12,27 @@ from td_biblio.models.bibliography import Entry
 from geonode.documents.models import Document
 from bims.helpers.remove_duplicates import remove_duplicates
 from bims.utils.decorator import prevent_recursion
+from bims.models.bims_document import BimsDocument
+
+
+def format_authors(users):
+    """Format queryset of users to readable format"""
+    if not users:
+        return ''
+    index = 0
+    author = ''
+    for doc_author in users:
+        if (0 < index <
+                len(users) - 1):
+            author += ', '
+        elif index == len(users) - 1:
+            author += ' & '
+        author += '{first_name} {last_name}'.format(
+            first_name=doc_author.first_name.encode('utf-8'),
+            last_name=doc_author.last_name.encode('utf-8')
+        )
+        index += 1
+    return author
 
 
 class SourceIsNotFound(Exception):
@@ -183,23 +204,35 @@ class SourceReferenceBibliography(SourceReference):
 
     @property
     def title(self):
-        return self.source.title
+        return self.source.title.encode('utf-8')
 
     @property
     def authors(self):
-        authors = self.source.get_authors()
-        authors_name = ''
-        for author in authors:
-            if authors_name:
-                authors_name += ', '
-            authors_name += '%(first_name)s %(last_name)s' % {
-                'first_name': author.first_name,
-                'last_name': author.last_name
-            }
+        authors = None
+        if self.document:
+            try:
+                bims_document = BimsDocument.objects.get(
+                    document__id=self.document.id
+                )
+                if bims_document.authors.all().exists():
+                    authors = bims_document.authors.all()
+            except BimsDocument.DoesNotExist:
+                pass
+        if not authors:
+            authors = self.source.get_authors()
+        authors_name = format_authors(authors)
         return authors_name if authors_name else '-'
 
     @property
     def year(self):
+        try:
+            bims_document = BimsDocument.objects.get(
+                document=self.document
+            )
+            if bims_document.year:
+                return bims_document.year
+        except BimsDocument.DoesNotExist:
+            pass
         if self.source.publication_date:
             return self.source.publication_date.year
         return '-'
@@ -284,16 +317,32 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def year(self):
+        try:
+            bims_doc = BimsDocument.objects.get(
+                document=self.source
+            )
+            if bims_doc.year:
+                return bims_doc.year
+        except BimsDocument.DoesNotExist:
+            pass
         if self.source.date:
             return self.source.date.year
         return '-'
 
     @property
     def title(self):
-        return self.source.title
+        return self.source.title.encode('utf-8')
 
     @property
     def authors(self):
+        try:
+            bims_doc = BimsDocument.objects.get(
+                document=self.source
+            )
+            authors = bims_doc.authors.all()
+            return format_authors(authors)
+        except BimsDocument.DoesNotExist:
+            pass
         return '%(first_name)s %(last_name)s' % {
             'first_name': self.source.owner.first_name,
             'last_name': self.source.owner.last_name

@@ -23,18 +23,14 @@ def generate_source_reference_filter(file_path=None):
     results = []
     reference_source_list = []
     for reference in references:
-        if 'Published report or thesis' in reference.reference_type:
-            source = (
-                '{author_firstname} {author_lastname} | {year} | {doc}'.format(
-                    author_firstname=(
-                        reference.source.owner.first_name.encode('utf-8')
-                    ),
-                    author_lastname=(
-                        reference.source.owner.last_name.encode('utf-8')
-                    ),
-                    year=reference.source.date.year,
-                    doc=str(reference.source)
-                )
+        if (
+            reference.reference_type == 'Peer-reviewed scientific article' or
+            reference.reference_type == 'Published report or thesis'
+        ):
+            source = '{authors} | {year} | {title}'.format(
+                authors=reference.authors,
+                year=reference.year,
+                title=reference.title
             )
         else:
             source = str(reference.source)

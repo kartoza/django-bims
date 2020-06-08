@@ -1,0 +1,150 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    Edit Document
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <style>
+        .header-wrapper {
+            padding-top: 110px;
+            font-size: 18pt;
+            padding-bottom: 10px;
+        }
+        hr {
+            max-width: 100% !important;
+        }
+    </style>
+{% endblock %}
+
+
+{% block body_content %}
+    <div class="container header-wrapper">
+        {{ object.document.title }}
+        <hr/>
+    </div>
+    <div class="container">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="inputTitle">Title</label>
+                <textarea type="textarea" class="form-control" id="inputTitle"
+                          aria-describedby="emailHelp"
+                          placeholder="Document title"
+                          name="document_title">{{ object.document.title }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="inputYear">Published year</label>
+                <input type="number" class="form-control" id="inputYear"
+                       value="{% if object.year %}{{ object.year }}{% else %}2020{% endif %}" name="year">
+            </div>
+            <div class="form-group author-group">
+                <label for="author">Author(s)</label>
+                {% for author in object.authors.all %}
+                    <div class="row"
+                         style="margin-top: 10px;">
+                        <div class="col-11">
+                             <input type="text" class="form-control authors" value="{{ author.first_name }} {{ author.last_name }}"  name="author_{{ forloop.counter0 }}">
+                        </div>
+                        <div class="col-1">
+                            <button class="btn btn-danger deleteAuthor">Delete
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+                <div class="row" style="margin-top: 10px;">
+                    <div class="col-11">
+                         <input type="text" class="form-control authors" value=""
+                       placeholder="Author's name with following format: [First name] [Space] [Last name]"
+                        name="author_{{ object.authors.count }}" >
+                    </div>
+                    <div class="col-1">
+                        <button class="btn btn-danger deleteAuthor">Delete</button>
+                    </div>
+                </div>
+
+            </div>
+            <button class="btn btn-default" id="addAuthor">Add new author</button>
+            <div style="height: 20px"></div>
+            <input class="btn btn-primary" type="submit" value="Save">
+        </form>
+
+        <div class="row author-template" style="margin-top: 10px; display: none">
+            <div class="col-11">
+                <input type="text" class="form-control authors" value=""
+                       placeholder="Author's name with following format: [First name] [Space] [Last name]"
+                       name="">
+            </div>
+            <div class="col-1">
+                <button class="btn btn-danger deleteAuthor">Delete
+                </button>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        let $addAuthorBtn = $('#addAuthor');
+        let $deleteAuthorBtn = $('.deleteAuthor');
+        $addAuthorBtn.click(function (e) {
+            e.preventDefault();
+            let input = $('.author-template');
+            let authors = $('.author-group').find('.authors');
+            let newInput = input.clone();
+            newInput.show();
+            newInput.removeClass('author-template');
+            newInput.find('input').attr('name', 'author_' + ( authors.length ));
+            newInput.val('');
+            $('.author-group').append(newInput);
+            newInput.focus();
+        });
+        $deleteAuthorBtn.click(function (e) {
+            e.preventDefault();
+            let target = $(e.target);
+            target.parent().parent().remove();
+        });
+        $('.authors').autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.first_name + ' ' + item.last_name,
+                                value: item.id
+                            }
+                        }));
+                    }
+                });
+            },
+            minLength: 3,
+            open: function (event, ui) {
+                setTimeout(function () {
+                    $('.ui-autocomplete').css('z-index', 99);
+                }, 0);
+            },
+            change: function (event, ui) {
+                let $ownerIdInput = $('#owner_id');
+                if (ui.item) {
+                    $ownerIdInput.val(ui.item.value);
+                } else {
+                    $ownerIdInput.val(' ');
+                    $('#owner').val('');
+                }
+            },
+            select: function (e, u) {
+                e.preventDefault();
+                $(e.target).val(u.item.label);
+            }
+        });
+
+    </script>
+{% endblock %}
