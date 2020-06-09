@@ -272,7 +272,7 @@ class SourceReferenceDatabase(SourceReference):
 
     @property
     def title(self):
-        return self.source.name
+        return self.source.name.encode('utf-8')
 
     @property
     def reference_type(self):
@@ -331,7 +331,7 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def title(self):
-        return self.source.title.encode('utf-8')
+        return '-'
 
     @property
     def authors(self):
@@ -340,7 +340,8 @@ class SourceReferenceDocument(SourceReference):
                 document=self.source
             )
             authors = bims_doc.authors.all()
-            return format_authors(authors)
+            if authors.exists():
+                return format_authors(authors)
         except BimsDocument.DoesNotExist:
             pass
         return '%(first_name)s %(last_name)s' % {
