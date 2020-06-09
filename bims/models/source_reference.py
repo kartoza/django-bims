@@ -331,7 +331,7 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def title(self):
-        return '-'
+        return self.source.title.encode('utf-8')
 
     @property
     def authors(self):
