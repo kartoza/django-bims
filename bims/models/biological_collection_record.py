@@ -28,8 +28,8 @@ class BiologicalCollectionQuerySet(models.QuerySet):
         is_doc = False
         for col in self:
             try:
-                title = col.source_reference.title.decode('utf-8')
-                authors = col.source_reference.authors.decode('utf-8')
+                title = col.source_reference.title
+                authors = col.source_reference.authors
                 pub_year = col.source_reference.year
             except AttributeError:
                 title = '-'
@@ -71,7 +71,10 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                         url = '-'
 
                 try:
-                    source = col.source_reference.source.journal.name.encode('utf-8')
+                    source = (
+                        col.source_reference.source.journal.name.encode(
+                            'utf-8')
+                    )
                 except AttributeError:
                     source = col.source_reference.__unicode__()
 

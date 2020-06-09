@@ -96,54 +96,50 @@
             e.preventDefault();
             let input = $('.author-template');
             let authors = $('.author-group').find('.authors');
-            let newInput = input.clone();
+            let newInput = input.clone(true);
             newInput.show();
+            newInput.find('input').removeClass('ui-autocomplete-input');
             newInput.removeClass('author-template');
             newInput.find('input').attr('name', 'author_' + ( authors.length ));
             newInput.val('');
             $('.author-group').append(newInput);
-            newInput.focus();
+            newInput.find('input').focus();
         });
         $deleteAuthorBtn.click(function (e) {
             e.preventDefault();
             let target = $(e.target);
             target.parent().parent().remove();
         });
-        $('.authors').autocomplete({
-            source: function (request, response) {
-                $.ajax({
-                    url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
-                    type: 'get',
-                    dataType: 'json',
-                    success: function (data) {
-                        response($.map(data, function (item) {
-                            return {
-                                label: item.first_name + ' ' + item.last_name,
-                                value: item.id
-                            }
-                        }));
-                    }
-                });
-            },
-            minLength: 3,
-            open: function (event, ui) {
-                setTimeout(function () {
-                    $('.ui-autocomplete').css('z-index', 99);
-                }, 0);
-            },
-            change: function (event, ui) {
-                let $ownerIdInput = $('#owner_id');
-                if (ui.item) {
-                    $ownerIdInput.val(ui.item.value);
-                } else {
-                    $ownerIdInput.val(' ');
-                    $('#owner').val('');
+        $(document).on("focus", ".authors", function() {
+            $(this).autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                        type: 'get',
+                        dataType: 'json',
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item.first_name + ' ' + item.last_name,
+                                    value: item.id
+                                }
+                            }));
+                        }
+                    });
+                },
+                minLength: 3,
+                open: function (event, ui) {
+                    setTimeout(function () {
+                        $('.ui-autocomplete').css('z-index', 99);
+                    }, 0);
+                },
+                change: function (event, ui) {
+                },
+                select: function (e, u) {
+                    e.preventDefault();
+                    $(e.target).val(u.item.label);
                 }
-            },
-            select: function (e, u) {
-                e.preventDefault();
-                $(e.target).val(u.item.label);
-            }
+            })
         });
 
     </script>

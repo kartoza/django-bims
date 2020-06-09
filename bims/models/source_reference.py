@@ -20,16 +20,16 @@ def format_authors(users):
     if not users:
         return ''
     index = 0
-    author = ''
+    author = u''
     for doc_author in users:
         if (0 < index <
                 len(users) - 1):
             author += ', '
         elif index == len(users) - 1:
             author += ' & '
-        author += '{first_name} {last_name}'.format(
-            first_name=doc_author.first_name.encode('utf-8'),
-            last_name=doc_author.last_name.encode('utf-8')
+        author += u'{first_name} {last_name}'.format(
+            first_name=doc_author.first_name,
+            last_name=doc_author.last_name
         )
         index += 1
     return author
@@ -204,7 +204,7 @@ class SourceReferenceBibliography(SourceReference):
 
     @property
     def title(self):
-        return self.source.title.encode('utf-8')
+        return self.source.title
 
     @property
     def authors(self):
@@ -272,7 +272,7 @@ class SourceReferenceDatabase(SourceReference):
 
     @property
     def title(self):
-        return self.source.name.encode('utf-8')
+        return self.source.name
 
     @property
     def reference_type(self):
@@ -331,7 +331,7 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def title(self):
-        return self.source.title.encode('utf-8')
+        return self.source.title
 
     @property
     def authors(self):
