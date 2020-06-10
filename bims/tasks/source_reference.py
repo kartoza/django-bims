@@ -27,7 +27,7 @@ def generate_source_reference_filter(file_path=None):
             reference.reference_type == 'Peer-reviewed scientific article' or
             reference.reference_type == 'Published report or thesis'
         ):
-            source = u'{authors} | {year}'.format(
+            source = u'{authors} | {year} | {title}'.format(
                 authors=reference.authors,
                 year=reference.year,
                 title=reference.title
