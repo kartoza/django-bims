@@ -25,7 +25,7 @@ def format_authors(users):
         if (0 < index <
                 len(users) - 1):
             author += ', '
-        elif index == len(users) - 1:
+        elif index > 0 and index == len(users) - 1:
             author += ' & '
         author += u'{first_name} {last_name}'.format(
             first_name=doc_author.first_name,

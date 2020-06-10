@@ -483,6 +483,14 @@ html, body, .map, .map-wrapper, #map-container {
     cursor: pointer;
 }
 
+.layer-selector-name {
+    max-width: 180px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: inline-block;
+    margin-bottom: -5px;
+}
+
 .locate-options-container {
     display: none;
     padding-bottom: 0 !important;
@@ -2318,6 +2326,10 @@ div:hover::-webkit-scrollbar {
     text-align: center;
     font-size: 80%;
     word-wrap: break-word;
+}
+
+.layer-source {
+    color: #4f82b8;
 }
 
 .layer-abstract {
