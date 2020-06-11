@@ -228,11 +228,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         var defaultVisibility = Shared.StorageUtil.getItemDict(
                             value['wms_layer_name'], 'selected');
-
                         if (defaultVisibility === null) {
                             defaultVisibility = value['default_visibility'];
-                            Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
                         }
+                        Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
 
                         var options = {
                             url: '/bims_proxy/' + encodeURI(value.wms_url),
@@ -255,7 +254,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, false, '', wmsUrl
+                            value.name, defaultVisibility, '', wmsUrl
                         );
                         self.renderLegend(
                             value.wms_layer_name,
