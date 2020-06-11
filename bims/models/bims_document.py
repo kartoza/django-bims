@@ -44,9 +44,11 @@ class BimsDocument(models.Model):
             self.author = self.document.metadata_author.get_full_name()
         if not self.year and self.document.date:
             self.year = self.document.date.year
-        if not self.authors.all().exists():
-            self.authors.add(self.document.owner)
-
+        try:
+            if not self.authors.all().exists():
+                self.authors.add(self.document.owner)
+        except ValueError:
+            pass
         super(BimsDocument, self).save(*args, **kwargs)
 
 
