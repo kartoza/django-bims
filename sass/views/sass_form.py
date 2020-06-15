@@ -266,11 +266,11 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             survey = existing_surveys[0]
         if not survey and site_visit_taxa:
             surveys = list(
-                site_visit_taxa.values_list(
+                site_visit_taxa.filter(survey__isnull=False).values_list(
                     'survey', flat=True).distinct('survey')
             )
             if len(surveys) > 0:
-                survey = surveys[0]
+                return Survey.objects.get(id=surveys[0])
         if survey:
             return Survey.objects.get(
                 id=survey.id
