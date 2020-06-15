@@ -200,8 +200,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                             taxonomy=sass_taxon.taxon,
                             original_species_name=
                             sass_taxon.taxon.canonical_name,
-                            validated=True,
-                            source_collection=self.source_collection
+                            validated=True
                         )
                     )
                 except SiteVisitTaxon.MultipleObjectsReturned:
@@ -225,6 +224,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.taxon_abundance = taxon_abundance
                 site_visit_taxon.owner = site_visit.owner
                 site_visit_taxon.collector_user = site_visit.collector
+                site_visit_taxon.source_collection = self.source_collection
 
                 if created:
                     site_visit.owner = self.request.user
@@ -302,13 +302,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             except Profile.DoesNotExist:
                 pass
 
-        # Accredited
-        accredited = request.POST.get('accredited', False) == 'on'
-        if accredited and owner:
-            bims_profile = BimsProfile.objects.get(user=owner)
-            if not bims_profile.is_accredited():
-                bims_profile.accredit()
-
         # Date
         date_string = request.POST.get('date', None)
         date = parse(date_string) if date_string else None
@@ -355,6 +348,17 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             site_visit = SiteVisit.objects.get(
                 pk=sass_id
             )
+
+        # Accredited
+        accredited = request.POST.get('accredited', False) == 'on'
+        if accredited and owner:
+            bims_profile = BimsProfile.objects.get(user=owner)
+            if not bims_profile.is_accredited(
+                collection_date=site_visit.site_visit_date
+            ):
+                bims_profile.accredit(
+                    date_accredit_to=site_visit.site_visit_date
+                )
 
         biotope_fractions = self.get_biotope_fractions(self.request.POST)
         sass_biotope_fractions = SassBiotopeFraction.objects.filter(
@@ -668,7 +672,9 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             context['owner'] = owner
             bims_profile, created = BimsProfile.objects.get_or_create(
                 user=owner)
-            context['accredited'] = bims_profile.is_accredited()
+            context['accredited'] = bims_profile.is_accredited(
+                collection_date=self.site_visit.site_visit_date
+            )
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
