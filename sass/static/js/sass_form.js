@@ -193,7 +193,7 @@ function closeSassForm(e) {
     } else if (pageBefore.indexOf('source-reference-form') > -1){
         window.location.href = '/map';
     }
-    window.history.go(-1);
+    window.location.href = pageBefore;
 }
 
 function validateImage(image, errorWrapper) {
