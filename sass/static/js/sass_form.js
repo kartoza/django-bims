@@ -190,10 +190,16 @@ function closeSassForm(e) {
     let pageBefore = window.document.referrer;
     if (pageBefore === ''){
         window.location.href = '/map';
+        return false;
     } else if (pageBefore.indexOf('source-reference-form') > -1){
         window.location.href = '/map';
+        return false;
     }
-    window.location.href = pageBefore;
+    if (window.location.href !== pageBefore) {
+        window.location.href = pageBefore;
+        return false;
+    }
+    window.location.href = '/map';
 }
 
 function validateImage(image, errorWrapper) {
