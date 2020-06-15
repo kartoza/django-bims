@@ -28,6 +28,7 @@ define([
         fetchBaseUrl: '/api/location-sites-summary/?',
         fetchLocationSiteCoordinateUrl: '/api/location-sites-coordinate/?',
         csvDownloadUrl: '/api/collection/download/',
+        csvDownloadEmailUrl: '/api/csv-download/',
         chemCsvDownloadUrl: '/api/chemical-record/download/',
         locationSiteCoordinateRequestXHR: null,
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
@@ -160,11 +161,13 @@ define([
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
                     self.chemCsvDownloadUrl += '?' + data;
+                    self.csvDownloadEmailUrl += '?' + data;
                     self.fetchData(data, true);
                     self.currentFiltersUrl = '?' + data;
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
                     self.chemCsvDownloadUrl += self.apiParameters(filterParameters);
+                    self.csvDownloadEmailUrl += self.apiParameters(filterParameters);
                     self.currentFiltersUrl = self.apiParameters(filterParameters);
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
@@ -557,10 +560,34 @@ define([
             });
         },
         downloadAsCSV: function (e) {
-            var button = $(e.target);
-            button.html('Processing...');
-            button.prop("disabled", true);
-            this.downloadingCSV(this.csvDownloadUrl, button);
+            let button = $(e.target);
+            let name = button.html();
+            let self = this;
+            button.html('Checking...');
+            button.prop('disabled', true);
+            let alertModalBody = $('#alertModalBody');
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.')
+            } else {
+                $.get({
+                    url: self.csvDownloadEmailUrl,
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log(data);
+                        alertModalBody.html('Your data download is underway. ' +
+                            'This may take some time. ' +
+                            'You will be notified by email when your download is ready. ' +
+                            'Thank you for your patience.');
+                    }
+                });
+
+            }
+            $('#alertModal').modal({
+                'keyboard': false,
+                'backdrop': 'static'
+            });
+            button.html(name);
+            button.prop('disabled', false);
         },
         downloadChemRecordsAsCSV: function (e) {
             var button = $(e.target);
