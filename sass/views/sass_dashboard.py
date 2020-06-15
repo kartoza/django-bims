@@ -38,13 +38,14 @@ class SassDashboardView(TemplateView):
         search = Search(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
-            id__in=collection_records
+            id__in=collection_records,
+            collection_date=F('site_visit__site_visit_date')
         )
 
     def get_sass_score_chart_data(self):
         data = {}
         summary = self.site_visit_taxa.annotate(
-            date=F('site_visit__site_visit_date'),
+            date=F('collection_date'),
         ).values('date').annotate(
             count=Count('sass_taxon'),
             sass_score=Coalesce(Sum(Case(
