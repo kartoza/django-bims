@@ -38,7 +38,8 @@ class SassDashboardView(TemplateView):
         search = Search(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
-            id__in=collection_records
+            id__in=collection_records,
+            collection_date=F('site_visit__site_visit_date')
         )
 
     def get_sass_score_chart_data(self):

@@ -68,6 +68,7 @@ from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
 from bims.api_views.chemical_record import ChemicalRecordDownloader
 from bims.api_views.taxa_search_result import TaxaSearchResult
 from bims.api_views.river_name import GetRiverName
+from bims.api_views.csv_download import CsvDownload
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -186,4 +187,7 @@ urlpatterns = [
     url(r'^add-new-taxon/$',
         csrf_exempt(AddNewTaxon.as_view()),
         name='add-new-taxon'),
+    url(r'^csv-download/$',
+        CsvDownload.as_view(),
+        name='csv-download'),
 ]

@@ -34,12 +34,15 @@ def update_cluster(ids=None):
 
 
 @shared_task(name='bims.tasks.download_data_to_csv', queue='update')
-def download_data_to_csv(path_file, request):
+def download_data_to_csv(
+        path_file, request, send_email = False, user_id = None):
+    from django.contrib.auth import get_user_model
     from bims.serializers.bio_collection_serializer import \
         BioCollectionOneRowSerializer
     from bims.utils.celery import memcache_lock
     from bims.models import BiologicalCollectionRecord
     from bims.api_views.search import Search
+    from bims.api_views.csv_download import send_csv_via_email
 
     path_file_hexdigest = md5(path_file).hexdigest()
 
@@ -92,6 +95,16 @@ def download_data_to_csv(path_file, request):
                     except UnicodeEncodeError:
                         continue
 
+            if send_email and user_id:
+                UserModel = get_user_model()
+                try:
+                    user = UserModel.objects.get(id=user_id)
+                    send_csv_via_email(
+                        user=user,
+                        csv_file=path_file
+                    )
+                except UserModel.DoesNotExist:
+                    pass
             return
 
     logger.info(
