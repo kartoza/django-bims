@@ -118,15 +118,10 @@
                     <div class="source-reference-wrapper">
                         {% if source_reference %}
                             <div style="font-weight: bold">{{ source_reference.reference_type }}</div>
-                            {% if source_reference.reference_type == 'Published report or thesis' %}
-                                <div>{{ source_reference.source.bimsdocument.author }},
-                                    {{ source_reference.source.bimsdocument.year }},
-                                    {{ source_reference.source.title }}</div>
-                            {% elif source_reference.reference_type == 'Peer-reviewed scientific article' %}
-                                <div>{{ source_reference }}</div>
-                                {% if source_reference.source.doi %}
-                                    <div>DOI : {{ source_reference.source.doi }}</div>
-                                {% endif %}
+                            {% if source_reference.reference_type == 'Published report or thesis' or source_reference.reference_type == 'Peer-reviewed scientific article' %}
+                                <div>{{ source_reference.authors }} |
+                                {{ source_reference.year }} |
+                                {{ source_reference.title }}</div>
                             {% else %}
                                 <div>{{ source_reference }}</div>
                             {% endif %}
