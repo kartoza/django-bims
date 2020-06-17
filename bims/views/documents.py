@@ -26,6 +26,7 @@ from geonode.documents.views import DocumentUploadView
 
 from bims.models.bims_document import BimsDocument
 from bims.utils.user import get_user_from_name
+from bims.utils.user import create_users_from_string
 
 logger = logging.getLogger("geonode.documents.views")
 
@@ -186,11 +187,22 @@ class SourceReferenceBimsDocumentUploadView(DocumentUploadView):
             document=self.object)
         bims_document.update_metadata(form.data)
 
+        # Update authors
+        try:
+            authors = form.data['author']
+            authors = create_users_from_string(authors)
+            if authors:
+                bims_document.authors.clear()
+                for author in authors:
+                    bims_document.authors.add(author)
+        except KeyError:
+            pass
+
         return HttpResponse(
             json.dumps({
                 'id': self.object.id,
                 'title': self.object.title,
-                'author': self.object.bimsdocument.author,
+                'author': self.object.bimsdocument.authors_string,
                 'year': self.object.bimsdocument.year
             }),
             content_type='application/json',
