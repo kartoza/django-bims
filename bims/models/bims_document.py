@@ -19,6 +19,15 @@ class BimsDocument(models.Model):
     def __unicode__(self):
         return self.document.__unicode__()
 
+    @property
+    def authors_string(self):
+        author_string = ''
+        for author in self.authors.all():
+            if author_string:
+                author_string += ', '
+            author_string += author.first_name + ' ' + author.last_name
+        return author_string
+
     def update_metadata(self, data, silent=False):
         """ Update metadata to this object.
         :param data: data that will be updated
