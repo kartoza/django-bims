@@ -38,13 +38,16 @@ class SassDashboardView(TemplateView):
         search = Search(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
-            id__in=collection_records
+            id__in=collection_records,
+            taxonomy__taxongroup__category=(
+                TaxonomicGroupCategory.SASS_TAXON_GROUP.name
+            )
         )
 
     def get_sass_score_chart_data(self):
         data = {}
         summary = self.site_visit_taxa.annotate(
-            date=F('collection_date'),
+            date=F('site_visit__site_visit_date'),
         ).values('date').annotate(
             count=Count('sass_taxon'),
             sass_score=Coalesce(Sum(Case(
