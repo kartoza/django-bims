@@ -12,6 +12,7 @@ let taxonAbundanceOnChange = function (e) {
 };
 
 let taxaIdList = [];
+let collectionIdList = [];
 
 let taxonAutocompleteHandler = {
     source: function (request, response) {
@@ -198,6 +199,10 @@ $(function () {
         if (typeof val !== 'undefined') {
             taxaIdList.push(val);
         }
+        let collectionId = $(tr).children().eq(0).find('.collection-id').val();
+        if (typeof collectionId !== 'undefined') {
+            collectionIdList.push(collectionId);
+        }
     });
 
     let locationSiteCoordinate = ol.proj.transform([
@@ -260,7 +265,6 @@ $(function () {
             if ($target.val()) {
                 $target.removeClass('error');
                 $target.next().hide();
-                $target.unbind();
             }
         }
     });
@@ -362,6 +366,10 @@ $(function () {
         // Get taxa list id
         let $taxaIdList = $('#taxa-id-list');
         $taxaIdList.val(taxaIdList.join());
+
+        // Get taxa list id
+        let $collectionIdList = $('#collection-id-list');
+        $collectionIdList.val(collectionIdList.join());
 
         form.submit();
     });

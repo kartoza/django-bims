@@ -3,10 +3,44 @@
 """
 from django.contrib.gis.db import models
 from sass.models.abstract_additional_data import AbstractAdditionalData
+from bims.models.taxon_group import TaxonGroup
 
 BIOTOPE_TYPE_BROAD = 'broad'
 BIOTOPE_TYPE_SPECIFIC = 'specific'
 BIOTOPE_TYPE_SUBSTRATUM = 'substratum'
+
+
+class BiotopeQuerySet(models.QuerySet):
+    def biotope_list(self, taxon_group, biotope_type):
+        if not isinstance(taxon_group, TaxonGroup):
+            return []
+        return self.filter(
+            taxon_group=taxon_group,
+            biotope_type=biotope_type
+        ).order_by('display_order')
+
+
+class BiotopeManager(models.Manager):
+    def get_queryset(self):
+        return BiotopeQuerySet(self.model, using=self._db)
+
+    def broad_biotope_list(self, taxon_group):
+        return self.get_queryset().biotope_list(
+            taxon_group,
+            BIOTOPE_TYPE_BROAD
+        )
+
+    def specific_biotope_list(self, taxon_group):
+        return self.get_queryset().biotope_list(
+            taxon_group,
+            BIOTOPE_TYPE_SPECIFIC
+        )
+
+    def substratum_list(self, taxon_group):
+        return self.get_queryset().biotope_list(
+            taxon_group,
+            BIOTOPE_TYPE_SUBSTRATUM
+        )
 
 
 class Biotope(AbstractAdditionalData):
@@ -80,6 +114,8 @@ class Biotope(AbstractAdditionalData):
         null=True,
         blank=True
     )
+
+    objects = BiotopeManager()
 
     def __unicode__(self):
         return self.name

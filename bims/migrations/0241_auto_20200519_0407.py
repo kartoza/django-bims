@@ -526,4 +526,22 @@ class Migration(migrations.Migration):
             name='verified',
             field=models.BooleanField(default=False, help_text='The data has been verified'),
         ),
+        migrations.AlterField(
+            model_name='biologicalcollectionrecord',
+            name='abundance_type',
+            field=models.CharField(blank=True, choices=[(b'number', b'Number'),
+                                                        (b'percentage',
+                                                         b'Percentage'), (
+                                                        b'density',
+                                                        b'Density'), (
+                                                        b'species_valve_per_frustule_count',
+                                                        b'Species valve/frustule count'),
+                                                        (
+                                                        b'density_cells_per_m2',
+                                                        b'Density (cells/m2)'),
+                                                        (
+                                                        b'density_cells_per_mL',
+                                                        b'Density (cells/mL)')],
+                                   default=b'number', max_length=50),
+        ),
     ]

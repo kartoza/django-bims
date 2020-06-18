@@ -10,7 +10,7 @@ class AbstractAdditionalData(models.Model):
         encoder=DjangoJSONEncoder,
         null=True,
         blank=True,
-        default={},
+        default=dict,
     )
 
     def save(self, *args, **kwargs):

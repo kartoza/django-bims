@@ -377,6 +377,9 @@ class LocationSite(DocumentLinksMixin):
     def __unicode__(self):
         return u'%s' % self.name
 
+    def __str__(self):
+        return '%s' % self.name
+
     def validate_json_field(self, field):
         max_allowed = 10
         attempt = 0

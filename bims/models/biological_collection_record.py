@@ -424,6 +424,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         )
         return label
 
+    def __str__(self):
+        label = '{species} - {date}'.format(
+            species=self.original_species_name,
+            date=self.collection_date
+        )
+        return label
+
 
 @receiver(models.signals.post_save)
 def collection_post_save_handler(sender, instance, **kwargs):

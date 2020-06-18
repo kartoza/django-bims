@@ -34,6 +34,7 @@ def do_logout(sender, user, request, **kwargs):
         remove_session_token(request.session)
         request.session.modified = True
 
+
 user_logged_out.connect(do_logout)
 
 
