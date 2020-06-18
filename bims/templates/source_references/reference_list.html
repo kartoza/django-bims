@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{% for reference in object_list %}
+    <li class="publication-list-year">
+        {{ reference.reference_type }} - {{ reference }} - {% if reference.authors != '-' %}{{ reference.authors }}{% endif %}
+    </li>
+{% endfor %}
+
+</body>
+</html>

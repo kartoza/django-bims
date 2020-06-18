@@ -11,6 +11,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.forms.utils import ErrorList
+from django.views.generic import UpdateView
 
 from geonode.utils import resolve_object
 from geonode.people.forms import ProfileForm
@@ -24,6 +25,8 @@ from geonode.groups.models import GroupProfile
 from geonode.documents.views import DocumentUploadView
 
 from bims.models.bims_document import BimsDocument
+from bims.utils.user import get_user_from_name
+from bims.utils.user import create_users_from_string
 
 logger = logging.getLogger("geonode.documents.views")
 
@@ -43,6 +46,56 @@ def _resolve_document(request, docid, permission='base.change_resourcebase',
     '''
     return resolve_object(request, Document, {'pk': docid},
                           permission=permission, permission_msg=msg, **kwargs)
+
+
+class BimsDocumentUpdateView(UpdateView):
+    model = BimsDocument
+    fields = ['year']
+    template_name = 'documents/bims_document_update.html'
+
+    def get_success_url(self):
+        return reverse(
+            'document_detail',
+            args=(
+                self.object.document.id,
+            ))
+
+    def get_object(self, queryset=None):
+        queryset = self.get_queryset()
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        try:
+            obj = queryset.get(document__id=pk)
+        except BimsDocument.DoesNotExist:
+            obj = BimsDocument.objects.create(
+                document=Document.objects.get(id=pk)
+            )
+        return obj
+
+    def form_valid(self, form):
+        post_dict = self.request.POST.dict()
+        year = self.request.POST.get('year', None)
+        title = self.request.POST.get('document_title', None)
+        self.object.year = year
+        self.object.authors.clear()
+        if title:
+            doc = self.object.document
+            doc.title = title
+            doc.save()
+        for key in post_dict:
+            if 'author' in key:
+                user_string = post_dict[key].strip()
+                first_name = user_string.split(' ')[0]
+                last_name = ' '.join(user_string.split(' ')[1:])
+                user = get_user_from_name(
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                if user:
+                    self.object.authors.add(user)
+        self.object.save()
+        return super(BimsDocumentUpdateView, self).form_valid(
+            form
+        )
 
 
 class BimsDocumentUploadView(DocumentUploadView):
@@ -134,11 +187,22 @@ class SourceReferenceBimsDocumentUploadView(DocumentUploadView):
             document=self.object)
         bims_document.update_metadata(form.data)
 
+        # Update authors
+        try:
+            authors = form.data['author']
+            authors = create_users_from_string(authors)
+            if authors:
+                bims_document.authors.clear()
+                for author in authors:
+                    bims_document.authors.add(author)
+        except KeyError:
+            pass
+
         return HttpResponse(
             json.dumps({
                 'id': self.object.id,
                 'title': self.object.title,
-                'author': self.object.bimsdocument.author,
+                'author': self.object.bimsdocument.authors_string,
                 'year': self.object.bimsdocument.year
             }),
             content_type='application/json',

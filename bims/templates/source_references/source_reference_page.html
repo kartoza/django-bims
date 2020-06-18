@@ -187,7 +187,7 @@
                                     <select id="study-reference" name="document-id" type="text" class="form-control form-control-sm">
                                         {% for doc in documents %}
                                             <option value="{{ doc.id }}"
-                                                    author="{{ doc.bimsdocument.author }}"
+                                                    author="{{ doc.bimsdocument.authors_string }}"
                                                     year="{{ doc.bimsdocument.year }}"
                                                     title-doc="{{ doc.title }}">{{ doc.title }}</option>
                                         {% endfor %}

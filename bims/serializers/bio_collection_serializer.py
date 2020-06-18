@@ -336,13 +336,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_authors(self, obj):
         if obj.source_reference:
-            return obj.source_reference.authors
+            return obj.source_reference.authors.encode('utf-8')
         return '-'
 
     def get_source(self, obj):
         if obj.source_reference:
             if obj.source_reference.source_name:
-                return obj.source_reference.source_name
+                return obj.source_reference.source_name.encode('utf-8')
         return '-'
 
     def get_year(self, obj):

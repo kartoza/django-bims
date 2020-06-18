@@ -541,15 +541,14 @@
 <script type="text/html" id="layer-selector-row">
     <li class="ui-state-default" style="display: <%= display %>"
         data-name="<%= id %>">
-        <div class="layer-selector-tags">
-            <span value="<%= key %>" class="badge badge-primary layer-source"><%= source %></span>
-            <span class="badge badge-success"><%= category %></span>
-        </div>
         <div class="row-title">
             <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
             <input type="checkbox" value="<%= key %>"
                    class="layer-selector-input" <%= checked %>>
-            <%= name %>
+            <div class="layer-selector-name"><%= name %></div>
+            <% if (source && source !== 'Base') { %>
+            <span><i class="fa fa-info-circle layer-source" value="<%= key %>" aria-hidden="true"></i></span>
+            <% } %>
         </div>
         <div class="options">
             <div class="group">
@@ -564,7 +563,7 @@
                 </div>
             </div>
         </div>
-        <div value="<%= key %>" class="layer-source-info"></div>
+        <div value="<%= key %>" class="layer-source-info" style="display: none" data-fetching="false"></div>
 </script>
 
 <script type="text/html" id="map-control-panel">

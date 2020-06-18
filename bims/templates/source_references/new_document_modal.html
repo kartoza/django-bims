@@ -19,10 +19,10 @@
                         <div class="col-sm-10">
                             <input id="document-author" type="text" class="form-control form-control-sm" name="author" maxlength="512" required>
                             <div id="document-author-error" class="alert alert-danger" role="alert"
-                                 style="display: none;">Author is required
+                                 style="display: none;">Author(s) is required
                             </div>
                             <small class="form-text text-muted">
-                                E.g. Smith, W.C., Brown, F.D, and Kleynhans, C.B.
+                                E.g. W.C. Smith, F.D Brown & C.B Kleynhans
                             </small>
                         </div>
                     </div>
@@ -115,7 +115,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.alert').hide()">Close</button>
-                    <button id="new-document-upload" type="button" class="btn btn-primary" disabled>
+                    <button id="new-document-upload" type="button" value="submit" class="btn btn-primary" disabled>
                         <img src="/static/img/small-loading.svg" width="25"
                             alt="Loading view" style="display: none;">
                         <span class="label">Upload</span>
@@ -146,7 +146,7 @@
         let $modal = $('#new-document-modal');
         let $error = $('#new-document-modal-error');
         let $yearInput = $('#document-year');
-        let documentMethod = 'file';
+        let documentMethod = 'url';
         $('input[type=radio][name=documentRadios]').change(function() {
             let $urlForm = $('#url-form');
             let $fileForm = $('#file-form');
@@ -164,7 +164,6 @@
         $form.submit(function (e) {
             e.preventDefault();
             $('.alert-danger').hide();
-
             {# validation #}
             if ($yearInput.val() && (parseInt($yearInput.val()) < 1900 || parseInt($yearInput.val()) > 9999)) {
                 $('#document-year-error').show();

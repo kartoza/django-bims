@@ -71,12 +71,11 @@ class TaxonDetail(APIView):
         for rank in taxonomic_rank:
             data.update(rank)
         common_names = []
+
         # Common name
         if taxon.vernacular_names.filter(language='eng').exists():
             common_names = list(
                 taxon.vernacular_names.all().filter(language='eng').values())
-        elif taxon.vernacular_names.all().values().exists():
-            common_names = list(taxon.vernacular_names.all().values())
         if len(common_names) == 0:
             data['common_name'] = 'Unknown'
         else:
