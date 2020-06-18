@@ -69,6 +69,8 @@ from bims.api_views.chemical_record import ChemicalRecordDownloader
 from bims.api_views.taxa_search_result import TaxaSearchResult
 from bims.api_views.river_name import GetRiverName
 
+from bims.api_views.get_latest_bio_records import get_latest_bio
+
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
         LocationTypeAllowedGeometryDetail.as_view()),
@@ -186,4 +188,6 @@ urlpatterns = [
     url(r'^add-new-taxon/$',
         csrf_exempt(AddNewTaxon.as_view()),
         name='add-new-taxon'),
+
+    url(r'^latest-bio', get_latest_bio, name='latest-bio')
 ]
