@@ -16,5 +16,5 @@ def update_location_context(location_site_id):
 
     get_location_context_data(
         site_id=str(location_site_id),
-        only_empty=True
+        only_empty=False
     )
