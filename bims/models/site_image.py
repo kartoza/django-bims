@@ -6,6 +6,7 @@
 
 from django.db import models
 from sass.models.site_visit import SiteVisit
+from bims.models.survey import Survey
 
 
 class SiteImage(models.Model):
@@ -25,6 +26,13 @@ class SiteImage(models.Model):
 
     site_visit = models.ForeignKey(
         SiteVisit,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
+    survey = models.ForeignKey(
+        Survey,
         null=True,
         blank=True,
         on_delete=models.SET_NULL

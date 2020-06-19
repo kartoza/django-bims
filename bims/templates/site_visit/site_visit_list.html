@@ -1,0 +1,65 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Site visit list
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <script type="text/javascript">
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Site visit list</h2>
+        </div>
+
+        <ul class="publication-list-year">
+        {% for site_visit in survey_list %}
+            <li class="publication-list">
+                {{ site_visit.site.site_code }} - {{ site_visit.date }} - {{ site_visit.owner }} - {{ site_visit.collector_user }}
+            </li>
+        {% endfor %}
+        </ul>
+
+        {% if is_paginated %}
+            <div class="pagination-centered">
+
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="arrow"><a
+                                href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                class="pagination">&laquo;</a></li>
+                    {% endif %}
+                    <li class="current">
+                        <a href="">{{ page_obj.number }}</a>
+                        {{ page_obj.start_index }} - {{ page_obj.end_index }}
+                    </li>
+                    {% if page_obj.has_next %}
+                        <li class="arrow"><a
+                                href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                class="pagination">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+{% endblock %}

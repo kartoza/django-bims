@@ -14,6 +14,7 @@ from bims.models.biotope import (
     Biotope,
 )
 from bims.models.sampling_method import SamplingMethod
+from bims.models.site_image import SiteImage
 
 
 class SiteVisitUpdateView(UserPassesTestMixin, UpdateView, SessionFormMixin):
@@ -157,6 +158,12 @@ class SiteVisitUpdateView(UserPassesTestMixin, UpdateView, SessionFormMixin):
                 taxon_group=context['taxon_group']
             )
         )
+        try:
+            context['site_image'] = SiteImage.objects.get(
+                survey=self.object
+            )
+        except SiteImage.DoesNotExist:
+            pass
         return context
 
     def form_valid(self, form):
@@ -169,9 +176,9 @@ class SiteVisitUpdateView(UserPassesTestMixin, UpdateView, SessionFormMixin):
         )
         for collection_record in self.collection_records:
             collection_record.present = (
-                form.data.get('{}-observed'.format(
-                    collection_record.id
-                ), '') == 'on'
+                    form.data.get('{}-observed'.format(
+                        collection_record.id
+                    ), '') == 'on'
             )
             collection_record.abundance_number = (
                 float(form.data.get('{}-abundance'.format(
@@ -181,7 +188,7 @@ class SiteVisitUpdateView(UserPassesTestMixin, UpdateView, SessionFormMixin):
             sampling_effort = form.data.get('sampling_effort', '')
             if sampling_effort:
                 sampling_effort += (
-                    ' ' + form.data.get('sampling_effort_type', '')
+                        ' ' + form.data.get('sampling_effort_type', '')
                 )
                 collection_record.sampling_effort = sampling_effort
             collection_record.save()
@@ -190,8 +197,23 @@ class SiteVisitUpdateView(UserPassesTestMixin, UpdateView, SessionFormMixin):
             specific_biotope=form.data.get('specific_biotope', None),
             substratum=form.data.get('substratum', None),
             sampling_method=form.data.get('sampling_method', None),
-            abundance_type=form.data.get('abundance_type', '')
+            abundance_type=form.data.get('abundance_type', ''),
+            owner=form.data.get('owner_id', None)
         )
+
+        # Add site image
+        site_image_file = self.request.FILES.get('site-image', None)
+        if site_image_file:
+            site_image, _ = SiteImage.objects.get_or_create(
+                survey=self.object,
+                site=self.object.site
+            )
+            site_image.image = site_image_file
+            site_image.save()
+
+        self.object.validated = False
+        self.object.owner = self.collection_records[0].owner
+        self.object.collector_user = self.collection_records[0].collector_user
 
         return super(SiteVisitUpdateView, self).form_valid(form)
 
