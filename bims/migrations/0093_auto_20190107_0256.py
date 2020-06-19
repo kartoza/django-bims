@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='profile',
             name='data',
-            field=django.contrib.postgres.fields.jsonb.JSONField(default=b''),
+            field=django.contrib.postgres.fields.jsonb.JSONField(default=''),
         ),
         migrations.AddField(
             model_name='profile',

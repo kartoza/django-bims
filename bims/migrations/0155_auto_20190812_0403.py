@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='biologicalcollectionrecord',
-            name=b'collector',
+            name='collector',
             field=models.CharField(blank=True, default=b'', help_text=b'Collector name in string value, this is useful for collector values from GBIF and other third party sources', max_length=300, verbose_name=b'collector or observer'),
         ),
     ]

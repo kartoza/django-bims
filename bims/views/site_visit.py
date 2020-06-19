@@ -3,12 +3,12 @@ import uuid
 from datetime import datetime as libdatetime
 from django.views.generic.edit import UpdateView
 from django.urls import reverse
+from django.contrib.auth.mixins import UserPassesTestMixin
 from bims.models.survey import Survey
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.views.mixin.session_form.mixin import SessionFormMixin
-from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.biotope import (
     Biotope,
@@ -16,13 +16,31 @@ from bims.models.biotope import (
 from bims.models.sampling_method import SamplingMethod
 
 
-class SiteVisitUpdateView(UpdateView, SessionFormMixin):
+class SiteVisitUpdateView(UserPassesTestMixin, UpdateView, SessionFormMixin):
     template_name = 'site_visit/site_visit_update.html'
     pk_url_kwarg = 'sitevisitid'
     model = Survey
     fields = ['site', 'date']
     collection_records = None
     session_identifier = 'site-visit-form'
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        try:
+            site_visit = Survey.objects.get(
+                id=self.kwargs['sitevisitid']
+            )
+            if (
+                    site_visit.owner == self.request.user or
+                    site_visit.collector_user == self.request.user
+            ):
+                return True
+        except Survey.DoesNotExist:
+            return False
+        return False
 
     def taxon_group(self):
         """Get taxon group for the current site visit"""
@@ -90,6 +108,15 @@ class SiteVisitUpdateView(UpdateView, SessionFormMixin):
             return abundance_type[0].abundance_type
         return None
 
+    def source_reference(self):
+        """Get existing source reference"""
+        source_reference_records = self.collection_records.exclude(
+            source_reference__isnull=True
+        )
+        if source_reference_records.exists():
+            return source_reference_records[0].source_reference
+        return None
+
     def get_context_data(self, **kwargs):
         context = super(SiteVisitUpdateView, self).get_context_data(**kwargs)
         self.collection_records = (
@@ -97,11 +124,7 @@ class SiteVisitUpdateView(UpdateView, SessionFormMixin):
                 survey=self.object.id
             ).order_by('taxonomy__canonical_name')
         )
-        context['source_reference'] = (
-            SourceReference.objects.filter(
-                id__in=self.collection_records.values('source_reference')
-            )[0]
-        )
+        context['source_reference'] = self.source_reference()
         context['collection_records'] = self.collection_records
         context['taxon_group'] = self.taxon_group()
         context['owner'] = self.owner()

@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('geometry_line', django.contrib.gis.db.models.fields.LineStringField(blank=True, null=True, srid=4326)),
                 ('geometry_polygon', django.contrib.gis.db.models.fields.PolygonField(blank=True, null=True, srid=4326)),
                 ('geometry_multipolygon', django.contrib.gis.db.models.fields.MultiPolygonField(blank=True, null=True, srid=4326)),
-                ('location_context', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='bims.LocationContext')),
+                ('location_context', models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(

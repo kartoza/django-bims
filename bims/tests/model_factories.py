@@ -28,7 +28,7 @@ from bims.models import (
     SourceReferenceDatabase,
     DatabaseRecord,
     LocationContext,
-    LocationContextGroup
+    LocationContextGroup,
 )
 
 

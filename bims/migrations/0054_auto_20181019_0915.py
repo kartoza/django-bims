@@ -23,9 +23,4 @@ class Migration(migrations.Migration):
             name='iucn_redlist_id',
             field=models.IntegerField(blank=True, null=True, verbose_name=b'IUCN taxon id'),
         ),
-        migrations.AlterField(
-            model_name='taxon',
-            name=b'iucn_status',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='bims.IUCNStatus', verbose_name=b'IUCN status'),
-        ),
     ]
