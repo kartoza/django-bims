@@ -7,8 +7,6 @@
 {% block head %}
 
     <!-- Custom styles for this template -->
-    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
-          rel="stylesheet">
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
@@ -34,7 +32,6 @@
 
         {% if is_paginated %}
             <div class="pagination-centered">
-
                 <ul class="pagination">
                     {% if page_obj.has_previous %}
                         <li class="arrow"><a

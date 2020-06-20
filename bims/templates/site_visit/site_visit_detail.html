@@ -1,0 +1,533 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    {{ taxon_group.name }} Form
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        const location_site_lat = '{{ object.site.latitude }}';
+        const location_site_long = '{{ object.site.longitude }}';
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
+        const taxonGroupName = '{{ taxon_group.name }}';
+    </script>
+    <style>
+        .btn-normal {
+            margin-bottom: 10px;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <input type="hidden" id="site-id" name="site" value="{{ object.site.id }}">
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Detail {{ taxon_group.name }} data for site {% if object.site.site_code %}{{ object.site.site_code }} {% else %}
+                {{ object.site.name }}{% endif %}</h2>
+        </div>
+        {% if user.is_superuser or owner == user or collector == user %}
+            <a class="btn btn-primary btn-normal" href="/site-visit/update/{{ object.id }}/">Edit</a>
+            {# <div class="btn btn-danger btn-normal" style="margin-bottom: 10px;" data-toggle="modal" data-target="#confirm-submit">Delete</div>#}
+            <div class="modal fade" id="confirm-submit" tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="myModalLabel" aria-hidden="true">
+                <form method="POST" action="/sass/delete/{{ site_visit_id }}/">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                Confirm Delete
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete this Site Visit
+                                record?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" id="cancel-submit"
+                                        class="btn btn-default"
+                                        data-dismiss="modal">Cancel
+                                </button>
+                                <button type="submit" value="Yes"
+                                        class="btn btn-success success" data-message="Deleting...">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+        <div class="alert alert-danger" role="alert"
+             style="display: none;">
+
+        </div>
+        <div id="fish-map"></div>
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-1 col-form-label col-form-label">Latitude</label>
+            <input type="text" id="latitude" name="latitude"
+                   class="col-sm-2 form-control form-control-sm"
+                   value="{{ object.site.latitude }}" disabled>
+            <label for="date"
+                   class="col-sm-1 col-form-label col-form-label">Longitude</label>
+            <input type="text" id="longitude" name="longitude"
+                   class="col-sm-2 form-control form-control-sm"
+                   value="{{ object.site.longitude }}" disabled>
+        </div>
+        <div id="closest-sites-container">
+            <div class="sub-header closest-sites-header">
+                <span class="title">List of nearest sites</span>
+                <button type="button"
+                        class="btn btn-danger pull-right close-nearest-list-table">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">Site Code</th>
+                    <th scope="col">Site Name</th>
+                    <th scope="col">Distance</th>
+                    <th scope="col">Action</th>
+                </tr>
+                </thead>
+                <tbody id="closest-site-table-body">
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-success add-new-site"
+                    style="margin-bottom: 10px;">
+                + Add new site
+            </button>
+        </div>
+
+        <div id="add-new-site-container">
+            <div class="sub-header add-new-site-header">
+                <span class="title">Add a new site</span>
+                <button type="button"
+                        class="btn btn-danger pull-right close-add-new-site">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Name</label>
+                <div class="col-sm-10">
+                    <input type="text" name="site_name"
+                           id="location-site-name"
+                           class="form-control form-control-sm"
+                           placeholder="">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_code"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Code</label>
+                <div class="col-sm-10">
+                    <input type="text" name="site_code"
+                           id="location-site-code"
+                           class="form-control form-control-sm"
+                           placeholder="">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_description"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Description</label>
+                <div class="col-sm-10">
+                    <input type="text" name="site_description"
+                           id="location-site-description"
+                           class="form-control form-control-sm"
+                           placeholder="">
+                </div>
+            </div>
+        </div>
+
+        <div class="separator-line"></div>
+        <input type="hidden" value="" id="taxa-id-list"
+               name="taxa-id-list">
+        <input type="hidden" value="" id="collection-id-list"
+               name="collection-id-list">
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Date</label>
+            <div class="col-sm-10">
+                <input type="text" name="date"
+                       class="form-control form-control-sm" value="{{ object.date.day }}/{{ object.date.month }}/{{ object.date.year }}"
+                       id="date" placeholder="" disabled>
+            </div>
+        </div>
+        <div class="form-group row even-row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Owner</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control form-control-sm"
+                       id="owner" placeholder="" name="owner" value="{% if owner.get_full_name %}{{ owner.get_full_name }}{% else %}{{ owner.username }}{% endif %}"
+                       disabled>
+            </div>
+        </div>
+        <div class="form-group row even-row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Collector</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control form-control-sm"
+                       id="collector" placeholder="" name="owner" value="{% if collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}"
+                       disabled>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="data-source" class="col-sm-2">Source Reference</label>
+            <div class="col-sm-10">
+                <div class="source-reference-wrapper">
+                    {% if source_reference %}
+                        <div style="font-weight: bold">{{ source_reference.reference_type }}</div>
+                        {% if source_reference.reference_type == 'Published report or thesis' or source_reference.reference_type == 'Peer-reviewed scientific article' %}
+                            <div>{{ source_reference.authors }} |
+                            {{ source_reference.year }} |
+                            {{ source_reference.title }}</div>
+                        {% else %}
+                            <div>{{ source_reference }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Broad
+                Biotope</label>
+            <div class="col-sm-10">
+                <select class="form-control"
+                        name="biotope" id="broad-biotope" disabled>
+                    <option value=""> Not specified</option>
+                    {% for broad_biotope in broad_biotope_list %}
+                        <option value="{{ broad_biotope.id }}" {% if broad_biotope.id == biotope.id %} selected {% endif %}> {{ broad_biotope.name }} </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Specific
+                Biotope</label>
+            <div class="col-sm-10">
+                <select class="form-control"
+                        name="specific_biotope" id="specific-biotope" disabled>
+                    <option value=""> Not specified</option>
+                    {% for biotope in specific_biotope_list %}
+                        <option value="{{ biotope.id }}" {% if biotope.id == specific_biotope.id %} selected {% endif %}> {{ biotope.name }} </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Substratum</label>
+            <div class="col-sm-10">
+                <select class="form-control"
+                        name="substratum" id="substratum" disabled>
+                    <option value=""> Not specified</option>
+                    {% for biotope in substratum_list %}
+                        <option value="{{ biotope.id }}" {% if biotope.id == substratum.id %} selected {% endif %}> {{ biotope.name }} </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Sampling
+                Method</label>
+            <div class="col-sm-10">
+                <select class="form-control"
+                        name="sampling_method" disabled>
+                    <option value=""> Not specified</option>
+                    {% for sampling_method_val in sampling_method_list %}
+                        <option value="{{ sampling_method_val.id }}" {% if sampling_method_val.id == sampling_method.id %} selected {% endif %}> {{ sampling_method_val.sampling_method }} </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Sampling
+                Effort</label>
+            <div class="col-sm-10">
+                <div class="row">
+                    <div class="col-4">
+                        <select class="form-control"
+                                name="sampling_effort_type" disabled>
+                            <option value=""> Not specified</option>
+                            <option value="min" {% if sampling_effort_unit == 'min' %} selected {% endif %}> Time (min)</option>
+                            <option value="square_metre" {% if sampling_effort_unit == 'square_metre' %} selected {% endif %}> Area (m&sup2;)
+                            </option>
+                            {% if taxon_group.name == 'Algae' %}
+                                <option value="replicates" {% if sampling_effort_unit == 'replicates' %} selected {% endif %}> Replicates </option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-8">
+                        <input type="number" min="0"
+                               value="{{ sampling_effort_value }}"
+                               name="sampling_effort"
+                               class="form-control"
+                               disabled
+                               style="width: 100%">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {% if taxon_group.name == 'Algae' %}
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Curation
+                    Process</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="curation_process" disabled>
+                        <option value=""> Not specified
+                        </option>
+                        <option value="Acid cleaned (diatoms)">
+                            Acid cleaned (diatoms)
+                        </option>
+                        <option value="Preserved lugols">
+                            Preserved lugols
+                        </option>
+                        <option value="Frozen">
+                            Frozen
+                        </option>
+                    </select>
+                </div>
+            </div>
+        {% endif %}
+        <div class="form-group row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">Site
+                Image</label>
+            <div class="col-sm-10">
+                <div class="form-group">
+                    <img src="{{ site_image.image.url }}" height="200">
+                </div>
+            </div>
+        </div>
+
+        {# ------ ALGAE BIOMASS FORM ------- #}
+        {% if taxon_group.name == 'Algae' %}
+            {% include 'collections_form_layouts/algae_biomass.html' %}
+        {% endif %}
+
+        <div class="form-group rowa">
+            <table class="table table-sm">
+                <thead>
+                <tr>
+                    <th scope="col" style="padding-bottom: 12px;"
+                        width="300">Taxa
+                    </th>
+                    <th scope="col" style="padding-bottom: 12px;">
+                        Observed
+                    </th>
+                    <th scope="col">
+                        <div class="pull-left"
+                             style="padding-top: 10px; padding-right: 10px;">
+                            Abundance
+                        </div>
+                        <div class="pull-left">
+                            {% if taxon_group.name == 'Algae' %}
+                                 <select class="form-control "
+                                        name="abundance_type" disabled>
+                                    <option value="species_valve_per_frustule_count" {% if abundance_type == 'species_valve_per_frustule_count' %} selected {% endif %}> Species valve/frustule count</option>
+                                    <option value="percentage" {% if abundance_type == 'percentage' %} selected {% endif %}> Percentage
+                                        Abundance
+                                    </option>
+                                    <option value="density_cells_per_m2" {% if abundance_type == 'density_cells_per_m2' %} selected {% endif %}> Density (cells/m2)
+                                    <option value="density_cells_per_mL" {% if abundance_type == 'density_cells_per_mL' %} selected {% endif %}> Density (cells/mL)
+                                    </option>
+                                </select>
+                            {% else %}
+                                <select class="form-control "
+                                        name="abundance_type" disabled>
+                                    <option value="number" {% if abundance_type == 'number' %} selected {% endif %}> Number</option>
+                                    <option value="percentage" {% if abundance_type == 'percentage' %} selected {% endif %}> Percentage
+                                        Abundance
+                                    </option>
+                                    <option value="density" {% if abundance_type == 'density' %} selected {% endif %}> Density
+                                        (m&sup2;)
+                                    </option>
+                                </select>
+                            {% endif %}
+                        </div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody class="taxon-table-body">
+                <tr class="find-taxon-container" style="display: none">
+                    <td scope="row">
+                        <input type="text"
+                               class="form-control taxon-input-name">
+                    </td>
+                </tr>
+                {% for collection_record in collection_records %}
+                    <tr>
+                        <td scope="row"
+                            class="taxon-name">
+                            {{ collection_record.taxonomy.canonical_name }}
+                            <input class="collection-id" type="hidden"
+                                   value="{{ collection_record.id }}">
+                        </td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input observed"
+                                       type="checkbox"
+                                       checked={{ collection_record.present|yesno:"true,false" }}
+                                       name="{{ collection_record.id }}-observed" disabled>
+                                <label class="form-check-label">
+                                </label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" min="0"
+                                   name="{{ collection_record.id }}-abundance"
+                                   class="form-control taxon-abundance"
+                                   value={% if collection_record.abundance_number %}{{ collection_record.abundance_number }}{% else %}0{% endif %}
+                                   placeholder="0" disabled>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+    <div id="sampling-method-container" style="display: none;">
+        <select class="form-control"
+                name="{{ taxon.taxon_id }}-sampling-method">
+            <option value=""> Not specified</option>
+            {% for sampling_method in sampling_method_list %}
+                <option value="{{ sampling_method.id }}">
+                    {{ sampling_method.sampling_method }} </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div id="sampling-effort-container" style="display: none;">
+        <input type="number" min="0"
+               name="{{ taxon.taxon_id }}-sampling-effort"
+               class="form-control pull-left"
+               style="width: 100px">
+        <select class="form-control pull-right"
+                name="{{ taxon.taxon_id }}-sampling-effort-type"
+                style="width: 200px">
+            <option value=""> Not specified</option>
+            <option value="min"> Time (min)</option>
+            <option value="meter"> Area (m)</option>
+        </select>
+    </div>
+    <div class="modal fade" tabindex="-1" role="dialog" id="addNewTaxonModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Taxon</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-10">
+                                <input type="text" id="add-taxon-input"
+                                       class="form-control form-control-sm"
+                                       value="" placeholder="Taxon name" style="height: 100%;">
+                            </div>
+                            <div class="col-2">
+                                <button type="button" id="find-taxon-button"
+                                        class="btn btn-info" style="width: 100%;"> Find
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container" style="max-height: 600px; overflow-y: auto">
+                        <table class="table table-sm table-striped find-taxon-table" style="display:none;">
+                            <thead>
+                            <tr>
+                                <th scope="col">Scientific Name</th>
+                                <th scope="col">Canonical Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Source</th>
+                                <th scope="col">Stored</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="container new-taxon-form" style="margin-top: 15px; display: none">
+                        <div class="alert alert-info" role="alert">
+                            Whilst FBIS will accept taxa that are not listed in GBIF,
+                            you should use the capability only for taxa where the classification is partly unresolved.
+                            <br><br>
+                            Click ADD to add this taxon even though it is not listed in GBIF,
+                            alternatively you can refine your GBIF search to obtain a valid taxon name.
+                        </div>
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th scope="col">Taxon Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+                                    <select class="form-control new-taxon-rank">
+                                        {% for rank in taxon_rank %}
+                                            <option value="{{ rank }}" {% if rank == 'SPECIES' %}selected{% endif %}>{{ rank }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><button
+                                        type="button"
+                                        class="btn btn-success add-new-taxon-btn"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                                </button></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="width: 100%; height: 170px; text-align: center;display: none; margin-top: 15px;" class="find-taxon-loading">
+                        <img src="/static/img/small-loading.svg" width="150"
+                             alt="Loading view">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/utils/effect.js' %}"></script>
+    <script src="{% static "js/non_requirejs/collection_form.js" %}"></script>
+
+{% endblock %}

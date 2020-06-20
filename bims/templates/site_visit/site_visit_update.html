@@ -289,10 +289,11 @@
                     Image</label>
                 <div class="col-sm-10">
                     <div class="form-group">
+                        <img id="site-image-viewer" src="{{ site_image.image.url }}" height="200">
                         <div class="input-group input-file">
                             <input type="file" class="form-control"
                                    accept="image/*" name="site-image"
-                                   placeholder='Choose a file...'/>
+                                   placeholder='Choose a file...' onchange="updateViewer(this)"/>
                         </div>
                     </div>
                 </div>
@@ -594,6 +595,23 @@
 {% endblock %}
 
 {% block foot %}
+
+    <script>
+        function updateViewer(input) {
+            let url = input.value;
+            let ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+            if (input.files && input.files[0] && (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#site-image-viewer').attr('src', e.target.result);
+                }
+
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                $('#img').attr('src', '');
+            }
+        }
+    </script>
 
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
