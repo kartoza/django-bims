@@ -73,6 +73,12 @@ class DatabaseRecord(models.Model):
             name += ' (%s)' % self.url
         return u'%s' % name
 
+    def __str__(self):
+        name = '%s' % self.name
+        if self.url:
+            name += ' (%s)' % self.url
+        return '%s' % name
+
 
 class SourceReference(PolymorphicModel):
     """ Source reference model """
@@ -123,6 +129,15 @@ class SourceReference(PolymorphicModel):
         return self
 
     def __unicode__(self):
+        if not self.get_source_unicode():
+            if self.note:
+                return self.note
+            else:
+                return 'None'
+        else:
+            return self.get_source_unicode()
+
+    def __str__(self):
         if not self.get_source_unicode():
             if self.note:
                 return self.note
@@ -262,6 +277,9 @@ class SourceReferenceBibliography(SourceReference):
 
     def __unicode__(self):
         return u'%s' % self.source
+
+    def __str__(self):
+        return '%s' % self.source
 
 
 class SourceReferenceDatabase(SourceReference):

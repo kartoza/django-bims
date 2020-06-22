@@ -1,4 +1,5 @@
 from django.views.generic.list import ListView
+from django.db.models import Count
 from bims.models.survey import Survey
 from bims.api_views.search import Search
 
@@ -26,6 +27,8 @@ class SiteVisitListView(ListView):
             collection_results = search.process_search()
             qs = qs.filter(
                 id__in=collection_results.values('survey')
+            ).annotate(
+                total=Count('biological_collection_record')
             )
 
         return qs.order_by('-date')

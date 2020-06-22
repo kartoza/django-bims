@@ -239,6 +239,10 @@ class Search(object):
         return self.parse_request_json('ecologicalCategory')
 
     @property
+    def collectors(self):
+        return self.parse_request_json('collectors')
+
+    @property
     def polygon(self):
         try:
             polygon_coordinates = self.parse_request_json('polygon')
@@ -509,6 +513,13 @@ class Search(object):
             bio = bio.filter(
                 Q(collector_user__in=collector_list) |
                 Q(sitevisittaxon__site_visit__owner__in=collector_list)
+            )
+
+        if self.collectors:
+            bio = bio.filter(
+                Q(survey__collector_user__in=self.collectors) |
+                Q(survey__owner__in=self.collectors) |
+                Q(sitevisittaxon__site_visit__owner__in=self.collectors)
             )
 
         if self.reference_category:
