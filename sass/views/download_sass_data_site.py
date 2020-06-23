@@ -11,6 +11,7 @@ from sass.tasks.download_sass_data_site import (
     download_sass_data_site_task,
     download_sass_summary_data_task
 )
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 FAILED_STATUS = 'failed'
@@ -72,7 +73,10 @@ def download_sass_data_site(request, **kwargs):
     collection_records = search.process_search()
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
-        id__in=list(collection_records.values_list('id', flat=True))
+        id__in=list(collection_records.values_list('id', flat=True)),
+        taxonomy__taxongroup__category=(
+            TaxonomicGroupCategory.SASS_TAXON_GROUP.name
+        )
     )
     if not site_visit_taxa:
         response_message = 'No SASS data for this site'
@@ -104,7 +108,10 @@ def download_sass_summary_data(request):
 
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
-        id__in=list(collection_records.values_list('id', flat=True))
+        id__in=list(collection_records.values_list('id', flat=True)),
+        taxonomy__taxongroup__category=(
+            TaxonomicGroupCategory.SASS_TAXON_GROUP.name
+        )
     )
     if not site_visit_taxa:
         response_message = 'No SASS data for this site'

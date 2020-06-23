@@ -3,6 +3,8 @@ const allowedInput = ['D', 'C', 'B', 'A', '1'];
 $('#submitBtn').click(function () {
 });
 
+$('.sass-form-close').click(closeSassForm);
+
 $('#submit').click(function () {
     let submitButton = $('#submit');
     let dateValue = $('#date').val();
@@ -185,14 +187,19 @@ function userInputAutocomplete (inputIdName) {
 }
 
 function closeSassForm(e) {
-    var page_before = window.document.referrer;
-    if(page_before === ''){
+    let pageBefore = window.document.referrer;
+    if (pageBefore === ''){
         window.location.href = '/map';
-    }else if(page_before.indexOf('source-reference-form') > -1){
+        return false;
+    } else if (pageBefore.indexOf('source-reference-form') > -1){
         window.location.href = '/map';
-    }else {
-        window.history.back();
+        return false;
     }
+    if (window.location.href !== pageBefore) {
+        window.location.href = pageBefore;
+        return false;
+    }
+    window.location.href = '/map';
 }
 
 function validateImage(image, errorWrapper) {
@@ -232,7 +239,6 @@ $(document).ready(function () {
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
     let totalTaxaScore = $.extend({}, biotope_number);
-    $('.sass-form-close').click(closeSassForm);
 
     // Map creation
     let markerSource = new ol.source.Vector();

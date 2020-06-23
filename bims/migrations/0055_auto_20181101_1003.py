@@ -28,4 +28,8 @@ class Migration(migrations.Migration):
             name='validation',
             field=models.OneToOneField(null=True, on_delete=django.db.models.deletion.CASCADE, to='bims.Validation'),
         ),
+        migrations.AlterModelOptions(
+            name='biologicalcollectionrecord',
+            options={'permissions': (('can_upload_csv', 'Can upload CSV'), ('can_upload_shapefile', 'Can upload Shapefile'), ('can_validate_data', 'Can validate data'))},
+        ),
     ]

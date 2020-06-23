@@ -21,11 +21,7 @@
 # Django settings for the GeoNode project.
 import os
 import urllib.parse as urlparse
-# Load more settings from a file called local_settings.py if it exists
-#try:
-#    from geonode.local_settings import *
-#except ImportError:
-from geonode.settings import *
+from geonode.settings import *  # noqa
 
 #
 # General Django development settings
@@ -47,7 +43,7 @@ LOCAL_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 try:
     ALLOWED_HOSTS = ast.literal_eval(os.getenv('ALLOWED_HOSTS'))
-except:
+except:  # noqa
     ALLOWED_HOSTS = ['localhost', ] if os.getenv('ALLOWED_HOSTS') is None \
         else re.split(r' *[,|:|;] *', os.getenv('ALLOWED_HOSTS'))
 
@@ -73,13 +69,18 @@ MANAGERS = ADMINS = os.getenv('ADMINS', [])
 # Location of locale files
 LOCALE_PATHS = (
     os.path.join(LOCAL_ROOT, 'locale'),
-    ) + LOCALE_PATHS
+) + LOCALE_PATHS
 
-loaders = TEMPLATES[0]['OPTIONS'].get('loaders') or ['django.template.loaders.filesystem.Loader','django.template.loaders.app_directories.Loader']
+loaders = (
+        TEMPLATES[0]['OPTIONS'].get('loaders') or
+        [
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader'
+        ]
+)
 # loaders.insert(0, 'apptemplates.Loader')
 TEMPLATES[0]['OPTIONS']['loaders'] = loaders
 TEMPLATES[0].pop('APP_DIRS', None)
 
 MONITORING_HOST_NAME = os.getenv("MONITORING_HOST_NAME", hostname)
 MONITORING_SERVICE_NAME = 'geonode'
-

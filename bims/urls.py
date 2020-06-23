@@ -56,6 +56,10 @@ from bims.views.bug_report import BugReportView
 from bims.views.abiotic_form import AbioticFormView
 from bims.views.svg_to_pdf import svg_to_pdf
 from bims.api_views.delete_collection_data import CollectionDeleteApiView
+from bims.views.documents import BimsDocumentUpdateView
+from bims.views.site_visit import (
+    SiteVisitUpdateView, SiteVisitListView, SiteVisitDetailView
+)
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -142,6 +146,15 @@ urlpatterns = [
     url(r'^collection/delete/(?P<col_id>\d+)/$',
         CollectionDeleteApiView.as_view(),
         name='collection-delete'),
+    url(r'^bims-document/(?P<pk>\d+)/$',
+        BimsDocumentUpdateView.as_view(),
+        name='bims-document-update-view'),
+    url(r'^site-visit/update/(?P<sitevisitid>\d+)/$',
+        login_required(SiteVisitUpdateView.as_view())),
+    url(r'^site-visit/list/$',
+        SiteVisitListView.as_view()),
+    url(r'^site-visit/detail/(?P<sitevisitid>\d+)/$',
+        SiteVisitDetailView.as_view()),
 ]
 
 # Api urls

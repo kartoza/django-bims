@@ -1,0 +1,1 @@
+[{{ current_site }}] CSV created email notification

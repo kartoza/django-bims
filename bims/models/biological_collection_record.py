@@ -53,7 +53,6 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 except:  # noqa
                     source = '-'
             else:
-
                 try:
                     url = col.source_reference.source.doi
                 except AttributeError:
@@ -72,7 +71,10 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                         url = '-'
 
                 try:
-                    source = col.source_reference.source.journal.name
+                    source = (
+                        col.source_reference.source.journal.name.encode(
+                            'utf-8')
+                    )
                 except AttributeError:
                     source = col.source_reference.__unicode__()
 
@@ -416,6 +418,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         return False
 
     def __unicode__(self):
+        label = '{species} - {date}'.format(
+            species=self.original_species_name,
+            date=self.collection_date
+        )
+        return label
+
+    def __str__(self):
         label = '{species} - {date}'.format(
             species=self.original_species_name,
             date=self.collection_date

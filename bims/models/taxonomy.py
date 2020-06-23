@@ -187,6 +187,12 @@ class Taxonomy(models.Model):
             self.rank
         )
 
+    def __str__(self):
+        return '%s - %s' % (
+            self.scientific_name,
+            self.rank
+        )
+
     def get_direct_children(self):
         children = Taxonomy.objects.filter(
             parent=self

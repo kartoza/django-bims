@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
             model_name='locationsite',
             name='location_context',
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text=b'This is intended for filtering', null=True, verbose_name=b'Formatted location_context_document'),

@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('bims', '0058_auto_20181102_0318'),
-        ('bims', '0055_auto_20181102_0922_squashed_0056_auto_20181102_0923'),
     ]
 
     operations = [

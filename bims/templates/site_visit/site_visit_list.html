@@ -1,0 +1,112 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Site visit list
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <style>
+        .btn-sm {
+            font-size: 10pt !important;
+        }
+        .pagination-centered {
+            text-align: center;
+        }
+        ul.pagination {
+            display: flex;
+            align-items: center;
+            list-style: none;
+        }
+        ul.pagination li {
+            display: inline-block;
+            margin-left: 1rem;
+        }
+        ul.pagination li.arrow {
+            font-size: 2rem;
+        }
+        ul.pagination li a {
+            margin-right: 1rem;
+        }
+        ul.pagination li.current a {
+            font-weight: bold;
+            background-color: #18A090 !important;
+            border-radius: 3rem;
+            padding: 0.3rem 0.8rem;
+            color: #fff;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Site visits <span class="badge badge-info">{{ page_obj.paginator.count }}</span></h2>
+        </div>
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">Site code/name</th>
+                <th scope="col">Collection date</th>
+                <th scope="col">Owner</th>
+                <th scope="col">Collector</th>
+                <th scope="col">Total occurrences</th>
+                <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for site_visit in survey_list %}
+                    <tr>
+                        <td>{{ site_visit.site.site_code }}</td>
+                        <td>{{ site_visit.date }}</td>
+                        <td>{{ site_visit.owner.get_full_name }}</td>
+                        <td>{{ site_visit.collector_user.get_full_name }}</td>
+                        <td>{{ site_visit.total }}</td>
+                        <td>
+                            <a href="/site-visit/detail/{{ site_visit.id }}/" class="btn btn-primary btn-sm">View</a>
+                             {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
+                                <a href="/site-visit/update/{{ site_visit.id }}/" class="btn btn-primary btn-sm">Edit</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if is_paginated %}
+            <div class="pagination-centered">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="arrow"><a
+                                href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                class="pagination">&laquo;</a></li>
+                    {% endif %}
+                    <li class="current">
+                        <a href="">{{ page_obj.number }}</a>
+                        {{ page_obj.start_index }} - {{ page_obj.end_index }}
+                    </li>
+                    {% if page_obj.has_next %}
+                        <li class="arrow"><a
+                                href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                class="pagination">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+{% endblock %}

@@ -622,6 +622,9 @@ define([
                 this.yearSlider.set([this.startYear, this.endYear]);
                 target.closest('.row').find('#year-from').html(this.startYear);
                 target.closest('.row').find('#year-to').html(this.endYear);
+                filterParameters['yearFrom'] = '';
+                filterParameters['yearTo'] = '';
+                filterParameters['months'] = ''
             }
 
             $('.ecological-condition').find('.ecological-condition-item').removeClass('selected');

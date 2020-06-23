@@ -377,6 +377,9 @@ class LocationSite(DocumentLinksMixin):
     def __unicode__(self):
         return u'%s' % self.name
 
+    def __str__(self):
+        return '%s' % self.name
+
     def validate_json_field(self, field):
         max_allowed = 10
         attempt = 0
@@ -465,7 +468,10 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     Post save location site
     """
     from bims.tasks.location_site import update_location_context
-    if not isinstance(sender, LocationSite):
+    if (
+            not isinstance(sender, LocationSite) and
+            not sender.__name__ == 'LocationSite'
+    ):
         return
 
     # Update refined geomorphological if exist
@@ -476,34 +482,27 @@ def location_site_post_save_handler(sender, instance, **kwargs):
             )
             if not groups.exists():
                 return
-            group = groups[0]
-            try:
-                geo_context, created = LocationContext.objects.get_or_create(
-                    site=instance,
-                    group=group
-                )
-            except LocationContext.MultipleObjectsReturned:
-                LocationContext.objects.filter(
-                    site=instance,
-                    group=group
-                ).delete()
-                geo_context = LocationContext.objects.create(
-                    site=instance,
-                    group=group
-                )
-                created = True
-            group.name = 'Geomorphological zones'
-            group.group_key = 'geomorphological_group'
-            group.save()
-            if not created:
+            site_contexts = LocationContext.objects.filter(
+                site=instance,
+                group__in=groups
+            )
+            if site_contexts.exists():
+                geo_context = site_contexts[0]
                 if instance.refined_geomorphological != geo_context.value:
                     if not instance.original_geomorphological:
                         instance.original_geomorphological = geo_context.value
                     geo_context.value = instance.refined_geomorphological
                     geo_context.save()
             else:
-                geo_context.value = instance.refined_geomorphological
-                geo_context.save()
+                if groups.exclude(layer_name='').exists():
+                    group = groups.exclude(layer_name='')[0]
+                else:
+                    group = groups[0]
+                geo_context, _ = LocationContext.objects.get_or_create(
+                    site=instance,
+                    group=group,
+                    value=instance.refined_geomorphological
+                )
             if not instance.original_geomorphological:
                 instance.original_geomorphological = geo_context.value
         except LocationContext.MultipleObjectsReturned:

@@ -8,7 +8,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0025_create_administrative_layer'),
         ('bims', '0030_auto_20180801_0604'),
     ]
 

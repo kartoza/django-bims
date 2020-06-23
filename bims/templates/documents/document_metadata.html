@@ -78,34 +78,34 @@
     {{ block.super }}
     <script type="text/javascript">
         $(document).ready(function () {
-            var $idResourceLinks = $('#id_resource-links');
-            $idResourceLinks.hide();
-            $idResourceLinks.prev().hide();
-
-            var $completenessHints = $('#completeness-hints');
-            $completenessHints.hide();
-
-            // Add forms
-            var $mandatoryForm = $('#mandatory').find('#basicDescriptiveInfo');
-            var $taxonLinkLabel = $('<span><label for="id_taxon-links">Link to Taxon</label></span>');
-            var $taxonLinkSelect = $('<select multiple="multiple" id="id_taxon-links">\n' +
-                '</select>');
-            $mandatoryForm.find('.col-lg-7').append($taxonLinkLabel);
-            $mandatoryForm.find('.col-lg-7').append($taxonLinkSelect);
-            $mandatoryForm.find('.col-lg-7').append('<input name="taxon-links" type="hidden">');
-            $taxonLinkSelect.select2({
-                placeholder: "Select an option",
-                allowClear: true
-            }).on('change', function (e) {
-                if(e.val) {
-                    $('input[name=taxon-links]').val(e.val.join());
-                } else if ($(e.target).val()) {
-                    $('input[name=taxon-links]').val($(e.target).val().join());
-                }
-            });
-
-            var url = document.URL.split('/');
-            var docid = url[url.length-2];
+            {#var $idResourceLinks = $('#id_resource-links');#}
+            {#$idResourceLinks.hide();#}
+            {#$idResourceLinks.prev().hide();#}
+            {##}
+            {#var $completenessHints = $('#completeness-hints');#}
+            {#$completenessHints.hide();#}
+            {##}
+            {#// Add forms#}
+            {#var $mandatoryForm = $('#mandatory').find('#basicDescriptiveInfo');#}
+            {#var $taxonLinkLabel = $('<span><label for="id_taxon-links">Link to Taxon</label></span>');#}
+            {#var $taxonLinkSelect = $('<select multiple="multiple" id="id_taxon-links">\n' +#}
+            {#    '</select>');#}
+            {#$mandatoryForm.find('.col-lg-7').append($taxonLinkLabel);#}
+            {#$mandatoryForm.find('.col-lg-7').append($taxonLinkSelect);#}
+            {#$mandatoryForm.find('.col-lg-7').append('<input name="taxon-links" type="hidden">');#}
+            {#$taxonLinkSelect.select2({#}
+            {#    placeholder: "Select an option",#}
+            {#    allowClear: true#}
+            {#}).on('change', function (e) {#}
+            {#    if(e.val) {#}
+            {#        $('input[name=taxon-links]').val(e.val.join());#}
+            {#    } else if ($(e.target).val()) {#}
+            {#        $('input[name=taxon-links]').val($(e.target).val().join());#}
+            {#    }#}
+            {#});#}
+            {##}
+            {#var url = document.URL.split('/');#}
+            {#var docid = url[url.length-2];#}
         });
 
     </script>

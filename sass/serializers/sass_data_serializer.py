@@ -140,7 +140,9 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
         return obj.site_visit.site_visit_date
 
     def get_accredited(self, obj):
-        if obj.site_visit.owner.bims_profile.is_accredited():
+        if obj.site_visit.owner.bims_profile.is_accredited(
+            collection_date=obj.site_visit.site_visit_date
+        ):
             return 'Y'
         else:
             return 'N'
@@ -289,7 +291,9 @@ class SassSummaryDataSerializer(
         try:
             if not owner:
                 return 'N'
-            if owner.bims_profile.is_accredited():
+            if owner.bims_profile.is_accredited(
+                collection_date=site_visit.site_visit_date
+            ):
                 return 'Y'
             else:
                 return 'N'

@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='iucnstatus',
-            name=b'category',
+            name='category',
             field=models.CharField(blank=True, choices=[(b'LC', b'Least concern'), (b'NT', b'Near threatened'), (b'VU', b'Vulnerable'), (b'EN', b'Endangered'), (b'CR', b'Critically endangered'), (b'EW', b'Extinct in the wild'), (b'EX', b'Extinct'), (b'DD', b'Data deficient'), (b'NE', b'Not evaluated')], default=b'', max_length=50),
         ),
     ]

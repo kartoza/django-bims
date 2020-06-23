@@ -23,7 +23,9 @@ def get_or_create_search_process(search_type, query, process_id=None):
             query=query
         )
         fields['query'] = query
-        fields['process_id'] = hashlib.sha256(str(query).encode('utf-8')).hexdigest()
+        fields['process_id'] = (
+            hashlib.sha256(str(query).encode('utf-8')).hexdigest()
+        )
     if process_id:
         search_processes = search_processes.filter(
             process_id=process_id
@@ -70,7 +72,10 @@ def create_search_process_file(data, search_process,
         if search_process.process_id:
             path_file = search_process.process_id
         elif search_process.query:
-            path_file = hashlib.sha256(str(search_process.query).encode('utf-8')).hexdigest()
+            path_file = (
+                hashlib.sha256(
+                    str(search_process.query).encode('utf-8')).hexdigest()
+            )
         else:
             path_file = hashlib.sha256(
                 str(json.dumps(data, sort_keys=True)).encode('utf-8')

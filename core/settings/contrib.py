@@ -392,9 +392,9 @@ BIMS_PREFERENCES = {
 
 # Remove geonode session middleware
 if (
-        'geonode.security.middleware.SessionControlMiddleware' in
+    'geonode.security.middleware.SessionControlMiddleware' in
         MIDDLEWARE
-    ):
+):
     MIDDLEWARE_CLASSES_LIST = list(MIDDLEWARE)
     MIDDLEWARE_CLASSES_LIST.remove(
         'geonode.security.middleware.SessionControlMiddleware'
