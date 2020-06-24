@@ -72,8 +72,7 @@ class BiologicalCollectionQuerySet(models.QuerySet):
 
                 try:
                     source = (
-                        col.source_reference.source.journal.name.encode(
-                            'utf-8')
+                        col.source_reference.source.journal.name
                     )
                 except AttributeError:
                     source = col.source_reference.__unicode__()
