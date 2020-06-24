@@ -1,0 +1,15 @@
+.dashboard-close {
+    float: right;
+    margin-top: -40px;
+    font-size: 20pt;
+    background-color: #18A090;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #ffffff;
+}
+
+.dashboard-close:hover {
+    cursor: pointer;
+    color: #18A090;
+    background-color: #ffffff;
+}

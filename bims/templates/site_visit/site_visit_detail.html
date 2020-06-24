@@ -12,6 +12,7 @@
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
         const location_site_lat = '{{ object.site.latitude }}';
@@ -35,6 +36,7 @@
         <div class="dashboard-title">
             <h2>Detail {{ taxon_group.name }} data for site {% if object.site.site_code %}{{ object.site.site_code }} {% else %}
                 {{ object.site.name }}{% endif %}</h2>
+            <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
         </div>
         {% if user.is_superuser or owner == user or collector == user %}
             <a class="btn btn-primary btn-normal" href="/site-visit/update/{{ object.id }}/">Edit</a>
@@ -529,5 +531,6 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static 'js/utils/effect.js' %}"></script>
     <script src="{% static "js/non_requirejs/collection_form.js" %}"></script>
+    <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
 
 {% endblock %}

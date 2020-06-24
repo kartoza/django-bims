@@ -11,6 +11,7 @@
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <style>
         .btn-sm {
             font-size: 10pt !important;
@@ -48,6 +49,7 @@
     <div class="body-form container">
         <div class="dashboard-title">
             <h2>Site visits <span class="badge badge-info">{{ page_obj.paginator.count }}</span></h2>
+            <div class="dashboard-close" data-destination="/map"><i class="fa fa-times" aria-hidden="true"></i></div>
         </div>
 
         <table class="table table-striped">
@@ -109,4 +111,5 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
 {% endblock %}
