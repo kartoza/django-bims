@@ -378,6 +378,8 @@ class LocationSite(DocumentLinksMixin):
         return u'%s' % self.name
 
     def __str__(self):
+        if self.site_code:
+            return self.site_code
         return '%s' % self.name
 
     def validate_json_field(self, field):

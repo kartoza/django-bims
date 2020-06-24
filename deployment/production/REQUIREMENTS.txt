@@ -58,3 +58,4 @@ svglib==1.0.0
 simplejson==3.17.0
 django-extensions==2.2.9
 wagtail==2.9
+service-identity==18.1.0

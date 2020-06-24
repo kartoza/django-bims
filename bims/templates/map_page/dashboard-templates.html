@@ -415,6 +415,39 @@
                         </div>
                     </div>
                 </div>
+                {# Survey Data #}
+                <div class="card" id="species-ssdd-survey-data">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Site Visit Data
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <span id="site-visit-info" style="font-size: 10pt; display: none">5 recent site visit</span>
+                        <table class="table table-bordered table-condensed table-sm site-detailed-table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        Site Code
+                                    </th>
+                                    <th>
+                                        Date
+                                    </th>
+                                    <th>
+                                        Total records
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-survey-data"></tbody>
+                        </table>
+                        <div class="container">
+                            <button id="site-visit-detail-button" class="btn btn-info"
+                                    style="width: 100%;display: none; font-size: 11pt">See more site visit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 {# Occurence Data #}
                 <div class="card" id="species-ssdd-occurrence-data">
                     <div class="card-header">

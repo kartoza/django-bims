@@ -19,7 +19,8 @@ from bims.models import (
     Taxonomy,
     Endemism,
     LIST_SOURCE_REFERENCES,
-    LocationSite
+    LocationSite,
+    Survey
 )
 from bims.tasks.search import search_task
 from sass.models import (
@@ -620,6 +621,13 @@ class Search(object):
         if order_by not in valid_order:
             order_by = 'name'
 
+        # Survey
+        survey = (
+            Survey.objects.filter(
+                id__in=self.collection_records.values('survey')
+            )
+        )
+
         collections = (
             self.collection_records.annotate(
                 name=F('taxonomy__canonical_name'),
@@ -640,6 +648,7 @@ class Search(object):
         return {
             'total_records': self.collection_records.count(),
             'total_sites': sites.count(),
+            'total_survey': survey.count(),
             'records': list(collections),
             'sites': list(sites)
         }

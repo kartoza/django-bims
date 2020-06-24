@@ -195,6 +195,7 @@ define([
                         }
                     }
 
+                    self.createSurveyDataTable(data);
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
                     self.renderMetadataTable(data);
@@ -1093,6 +1094,40 @@ define([
                 $result.append(temp_result);
             });
             return $result;
+        },
+        createSurveyDataTable: function (data) {
+            let $dataWrapper = $('#dashboard-survey-data');
+            let $surveyButton = $('#site-visit-detail-button');
+            let $surveyInfo = $('#site-visit-info');
+            $dataWrapper.html('');
+            if (!data.hasOwnProperty('survey')) return false;
+            if (data['survey'].length > 0) {
+                $.each(data['survey'], function (index, survey_data){
+                    $dataWrapper.append(
+                        `<tr>
+                            <td><a href="/site-visit/detail/${survey_data['id']}/">${survey_data['site']}</a></td>
+                            <td>${survey_data['date']}</td>
+                            <td>${survey_data['records']}</td>
+                        </tr>`
+                    )
+                });
+            }
+            if (data['total_survey'] > 5) {
+                $surveyButton.show();
+                $surveyInfo.show();
+            } else {
+                $surveyButton.hide();
+                $surveyInfo.hide();
+            }
+            $surveyButton.click(function() {
+                let url = window.location.href;
+                url = url.split('site-detail/');
+                if (url <= 1) {
+                    return false;
+                }
+                window.location.href = `/site-visit/list/?${url[1]}`;
+                return true;
+            })
         },
         createOccurrenceDataTable: function (data) {
             let occurrenceDataWrapper = $('#species-ssdd-occurrence-data');

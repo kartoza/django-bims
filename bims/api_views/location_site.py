@@ -47,6 +47,7 @@ from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.enums.chem_unit import ChemUnit
+from bims.models.survey import Survey
 
 
 class LocationSiteList(APIView):
@@ -226,6 +227,7 @@ class LocationSitesSummary(APIView):
     CONS_STATUS_OCCURRENCE = 'cons_status_occurrence'
     SOURCE_REFERENCES = 'source_references'
     CHEMICAL_RECORDS = 'chemical_records'
+    SURVEY = 'survey'
     iucn_category = {}
     origin_name_list = {}
 
@@ -270,8 +272,8 @@ class LocationSitesSummary(APIView):
             search.location_sites_raw_query
         )
         search_process.set_status(SEARCH_FINISHED, False)
-
         search_process.create_view()
+
         biodiversity_data = self.get_biodiversity_data(collection_results)
         site_images = []
         if not is_multi_sites:
@@ -295,12 +297,30 @@ class LocationSitesSummary(APIView):
                 id=filters['modules']
             ).values_list('name', flat=True))
 
+        # - Survey
+        survey_list = []
+        surveys = Survey.objects.filter(
+            id__in=collection_results.values('survey')
+        ).order_by('-date')
+        for survey in surveys[:5]:
+            survey_list.append({
+                'date': str(survey.date),
+                'site': str(survey.site),
+                'id': survey.id,
+                'records': (
+                    BiologicalCollectionRecord.objects.filter(
+                        survey=survey).count()
+                )
+            })
+
+        # - Source references
         collection_with_references = collection_results.exclude(
             source_reference__isnull=True
         ).distinct('source_reference')
 
         source_references = collection_with_references.source_references()
 
+        # - Chemical data
         list_chems = {}
         chem_exist = False
         if site_id:
@@ -353,6 +373,7 @@ class LocationSitesSummary(APIView):
             self.BIODIVERSITY_DATA: dict(biodiversity_data),
             self.SOURCE_REFERENCES: source_references,
             self.CHEMICAL_RECORDS: list_chems,
+            self.SURVEY: survey_list,
             'modules': modules,
             'site_images': list(site_images),
             'process': search_process.process_id,
@@ -360,7 +381,8 @@ class LocationSitesSummary(APIView):
             'sites_raw_query': search_process.process_id,
             'is_multi_sites': is_multi_sites,
             'is_sass_exists': is_sass_exists,
-            'is_chem_exists': chem_exist
+            'is_chem_exists': chem_exist,
+            'total_survey': surveys.count()
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)
@@ -655,8 +677,8 @@ class LocationSitesSummary(APIView):
         if not string_in:
             return '-'
         else:
-            if isinstance(string_in, unicode):
-                return string_in.decode('utf-8').strip()
+            if isinstance(string_in, str):
+                return string_in.strip()
             return str(string_in)
 
     def get_number_of_records_and_taxa(self, records_collection):
