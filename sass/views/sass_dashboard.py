@@ -232,7 +232,7 @@ class SassDashboardView(TemplateView):
             if date not in data:
                 data[date] = {}
             rate = rating_data['rate']
-            biotope = rating_data['biotope_name'].encode('utf-8')
+            biotope = rating_data['biotope_name']
             if not rate:
                 rate = 0
             data[date][biotope] = rate

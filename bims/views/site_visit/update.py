@@ -107,7 +107,7 @@ class SiteVisitUpdateView(
         source_reference_url = reverse('source-reference-form') + (
             '?session={session}&identifier={identifier}&next={next}'.format(
                 session=session_uuid,
-                next='/map',
+                next='/site-visit/detail/{}/'.format(self.object.id),
                 identifier=self.session_identifier
             )
         )
