@@ -147,14 +147,12 @@
             </div>
         </div>
 
-
         {% if is_paginated %}
             <div class="pagination-centered">
                 <ul class="pagination">
                     {% if page_obj.has_previous %}
                         <li class="arrow"><a
-                                href="?page=
-                                        {{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                 class="pagination">&laquo;</a></li>
                     {% endif %}
                     <li class="current">
@@ -163,8 +161,7 @@
                     </li>
                     {% if page_obj.has_next %}
                         <li class="arrow"><a
-                                href="?page=
-                                        {{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                 class="pagination">&raquo;</a></li>
                     {% endif %}
                 </ul>
@@ -229,7 +226,9 @@
                 if (value === '') {
                     let regex = new RegExp("collectors=\\[\\d*\\]");
                     let url = window.location.href;
-                    url = url.replace(regex, `collectors=[]`);
+                    if (url.search(regex) >= 1) {
+                        url = url.replace(regex, `collectors=[]`);
+                    }
                     window.location.href = url;
                 }
             },
@@ -238,7 +237,18 @@
                 let userId = u.item.value;
                 let regex = new RegExp("collectors=\\[\\d*\\]");
                 let url = window.location.href;
-                url = url.replace(regex, `collectors=[${userId}]`);
+                let pageRegex = new RegExp("&page=\\d+|page=\\d+")
+                url = url.replace(pageRegex,'');
+                if (url.search(regex) >= 1) {
+                    url = url.replace(regex, `collectors=[${userId}]`);
+                } else {
+                    if (url[url.length - 1] !== '/') {
+                        url += '&';
+                    } else {
+                        url += '?';
+                    }
+                    url += `collectors=[${userId}]`;
+                }
                 $('#owner').val(u.item.label);
                 window.location.href = url;
             }

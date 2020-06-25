@@ -92,7 +92,9 @@ function renderDocumentInfo() {
 }
 
 $(document).ready(function () {
-    renderDocumentInfo();
+    setTimeout(function () {
+        renderDocumentInfo();
+    }, 100);
 
     $('#study-reference').change(function () {
         renderDocumentInfo()
