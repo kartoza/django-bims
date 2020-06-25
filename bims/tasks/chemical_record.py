@@ -45,7 +45,7 @@ def download_chemical_data_to_csv(path_file, site_id):
                 header = header.replace('_', ' ').capitalize()
                 formatted_headers.append(header)
 
-            with open(path_file, 'wb') as csv_file:
+            with open(path_file, 'w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
                 writer.fieldnames = headers
