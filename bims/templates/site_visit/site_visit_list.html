@@ -41,6 +41,19 @@
             padding: 0.3rem 0.8rem;
             color: #fff;
         }
+        .counter {
+            background-color: #efefef;
+            padding: 0.1rem 0.5rem;
+            border-radius: 3px;
+        }
+        .metric {
+            font-size: 13pt;
+            font-weight: lighter;
+        }
+        .metric>td {
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
     </style>
 
 {% endblock %}
@@ -48,39 +61,75 @@
 {% block body_content %}
     <div class="body-form container">
         <div class="dashboard-title">
-            <h2>Site visits <span class="badge badge-info">{{ page_obj.paginator.count }}</span></h2>
+            <h2>Site visits</h2>
             <div class="dashboard-close" data-destination="/map"><i class="fa fa-times" aria-hidden="true"></i></div>
         </div>
 
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th scope="col">Site code/name</th>
-                <th scope="col">Collection date</th>
-                <th scope="col">Owner</th>
-                <th scope="col">Collector</th>
-                <th scope="col">Total occurrences</th>
-                <th scope="col">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-                {% for site_visit in survey_list %}
+        <div class="row">
+            <div class="col-2">
+                <h5>Metrics</h5>
+                <div style="border-top: 1px solid rgba(0,0,0,0.28)">
+                    <table style="width: 100%">
+                        <tr class="metric">
+                            <td>Site visits</td>
+                            <td><span class="counter">{{ page_obj.paginator.count }}</span>
+                            </td>
+                        </tr>
+                        <tr class="metric">
+                            <td>Sites</td>
+                            <td><span
+                                    class="counter">{{ total_sites }}</span>
+                            </td>
+                        </tr>
+                        <tr class="metric">
+                            <td>Records</td>
+                            <td><span
+                                    class="counter">{{ total_records }}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <h5 style="margin-top: 20px;">Filters</h5>
+                <div style="border-top: 1px solid rgba(0,0,0,0.28)" class="filter-list">
+                    <div class="filter-title">Collector/Owner</div>
+                    <div class="filter-value">-</div>
+                </div>
+            </div>
+            <div class="col-10">
+                <table class="table table-striped">
+                    <thead>
                     <tr>
-                        <td>{{ site_visit.site.site_code }}</td>
-                        <td>{{ site_visit.date }}</td>
-                        <td>{{ site_visit.owner.get_full_name }}</td>
-                        <td>{{ site_visit.collector_user.get_full_name }}</td>
-                        <td>{{ site_visit.total }}</td>
-                        <td>
-                            <a href="/site-visit/detail/{{ site_visit.id }}/" class="btn btn-primary btn-sm">View</a>
-                             {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
-                                <a href="/site-visit/update/{{ site_visit.id }}/" class="btn btn-primary btn-sm">Edit</a>
-                            {% endif %}
-                        </td>
+                        <th scope="col">Site code/name</th>
+                        <th scope="col">Collection date</th>
+                        <th scope="col">Owner</th>
+                        <th scope="col">Collector</th>
+                        <th scope="col">Total occurrences</th>
+                        <th scope="col">Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                    {% for site_visit in survey_list %}
+                        <tr>
+                            <td>{{ site_visit.site.site_code }}</td>
+                            <td>{{ site_visit.date }}</td>
+                            <td>{{ site_visit.owner.get_full_name }}</td>
+                            <td>{{ site_visit.collector_user.get_full_name }}</td>
+                            <td>{{ site_visit.total }}</td>
+                            <td>
+                                <a href="/site-visit/detail/{{ site_visit.id }}/"
+                                   class="btn btn-primary btn-sm">View</a>
+                                {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
+                                    <a href="/site-visit/update/{{ site_visit.id }}/"
+                                       class="btn btn-primary btn-sm">Edit</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
 
         {% if is_paginated %}
             <div class="pagination-centered">
@@ -112,4 +161,9 @@
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
+    <script src="{% static "js/utils/filter_list.js" %}"></script>
+
+    <script>
+        renderFilterList($('.filter-list'), false);
+    </script>
 {% endblock %}

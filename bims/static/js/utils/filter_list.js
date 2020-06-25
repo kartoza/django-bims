@@ -85,10 +85,12 @@ function getUrlVars() {
     return vars;
 }
 
-function renderFilterList($table) {
+function renderFilterList($div, asTable = true) {
     let urlParams = getUrlVars();
     let tableData = {};
-    $table.html('<div class="row" style="font-weight: bold;"><div class="col-4">Category</div><div class="col-8">Selection</div></div>');
+    if (asTable) {
+        $div.html('<div class="row" style="font-weight: bold;"><div class="col-4">Category</div><div class="col-8">Selection</div></div>');
+    }
 
     $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
@@ -147,9 +149,14 @@ function renderFilterList($table) {
     });
 
     $.each(tableData, function (key, data) {
-        let $tr = $('<div class="row">');
-        $tr.append('<div class="col-4">' + key + '</div>');
-        $tr.append('<div class="col-8">' + data + '</div>');
-        $table.append($tr);
+        if (asTable) {
+            let $tr = $('<div class="row">');
+            $tr.append('<div class="col-4">' + key + '</div>');
+            $tr.append('<div class="col-8">' + data + '</div>');
+            $div.append($tr);
+        } else {
+            $div.append(`<div class="filter-title">${key}</div>`);
+            $div.append(`<div class="filter-value">${data}</div>`);
+        }
     });
 }
