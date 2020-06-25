@@ -1,5 +1,7 @@
+import json
 from django.views.generic.list import ListView
 from django.db.models import Count
+from django.contrib.auth import get_user_model
 from bims.models.survey import Survey
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.api_views.search import Search
@@ -49,7 +51,21 @@ class SiteVisitListView(ListView):
         # - Total collection records
         total_records = self.collection_results.count()
 
+        # - Get owner object from the id passed from the request
+        collector_owner = None
+        if self.request.GET.get('collectors'):
+            try:
+                ids = json.loads(self.request.GET.get('collectors'))
+                user_model = get_user_model()
+                collector_owner = user_model.objects.filter(
+                    id__in=ids
+                )
+            except ValueError:
+                # Couldn't parse the ids
+                pass
+
         context['total_sites'] = total_sites
         context['total_records'] = total_records
+        context['collector_owner'] = collector_owner
 
         return context

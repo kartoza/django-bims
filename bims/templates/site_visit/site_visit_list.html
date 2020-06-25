@@ -16,24 +16,30 @@
         .btn-sm {
             font-size: 10pt !important;
         }
+
         .pagination-centered {
             text-align: center;
         }
+
         ul.pagination {
             display: flex;
             align-items: center;
             list-style: none;
         }
+
         ul.pagination li {
             display: inline-block;
             margin-left: 1rem;
         }
+
         ul.pagination li.arrow {
             font-size: 2rem;
         }
+
         ul.pagination li a {
             margin-right: 1rem;
         }
+
         ul.pagination li.current a {
             font-weight: bold;
             background-color: #18A090 !important;
@@ -41,16 +47,19 @@
             padding: 0.3rem 0.8rem;
             color: #fff;
         }
+
         .counter {
             background-color: #efefef;
             padding: 0.1rem 0.5rem;
             border-radius: 3px;
         }
+
         .metric {
             font-size: 13pt;
             font-weight: lighter;
         }
-        .metric>td {
+
+        .metric > td {
             padding-top: 8px;
             padding-bottom: 8px;
         }
@@ -62,7 +71,8 @@
     <div class="body-form container">
         <div class="dashboard-title">
             <h2>Site visits</h2>
-            <div class="dashboard-close" data-destination="/map"><i class="fa fa-times" aria-hidden="true"></i></div>
+            <div class="dashboard-close" data-destination="/map"><i
+                    class="fa fa-times" aria-hidden="true"></i></div>
         </div>
 
         <div class="row">
@@ -72,7 +82,8 @@
                     <table style="width: 100%">
                         <tr class="metric">
                             <td>Site visits</td>
-                            <td><span class="counter">{{ page_obj.paginator.count }}</span>
+                            <td><span
+                                    class="counter">{{ page_obj.paginator.count }}</span>
                             </td>
                         </tr>
                         <tr class="metric">
@@ -90,9 +101,15 @@
                     </table>
                 </div>
                 <h5 style="margin-top: 20px;">Filters</h5>
-                <div style="border-top: 1px solid rgba(0,0,0,0.28)" class="filter-list">
+                <div style="border-top: 1px solid rgba(0,0,0,0.28)"
+                     class="filter-list">
                     <div class="filter-title">Collector/Owner</div>
-                    <div class="filter-value">-</div>
+                    <div class="filter-value">
+                        <input type="text" class="form-control form-control-sm"
+                               onClick="this.setSelectionRange(0, this.value.length)"
+                               id="owner" placeholder="" name="owner" value="{% if collector_owner %}{% if collector_owner.0.get_full_name %}{{ collector_owner.0.get_full_name }}{% else %}{{ collector_owner.0.username }}{% endif %}{% endif %}"
+                               required>
+                    </div>
                 </div>
             </div>
             <div class="col-10">
@@ -136,7 +153,8 @@
                 <ul class="pagination">
                     {% if page_obj.has_previous %}
                         <li class="arrow"><a
-                                href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                href="?page=
+                                        {{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                 class="pagination">&laquo;</a></li>
                     {% endif %}
                     <li class="current">
@@ -145,7 +163,8 @@
                     </li>
                     {% if page_obj.has_next %}
                         <li class="arrow"><a
-                                href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                href="?page=
+                                        {{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                                 class="pagination">&raquo;</a></li>
                     {% endif %}
                 </ul>
@@ -160,10 +179,69 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
-    <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
     <script src="{% static "js/utils/filter_list.js" %}"></script>
 
     <script>
-        renderFilterList($('.filter-list'), false);
+        function dashboardClose(e) {
+            let previousUrl = '/map'
+            let url = new URL(window.location.href);
+            let params = url.searchParams.toString();
+            if (params && url.searchParams.has('taxon')) {
+                previousUrl += '/#site-detail/';
+                previousUrl += params;
+                let regex = new RegExp("&page=\\d+|page=\\d+")
+                previousUrl = previousUrl.replace(regex, '');
+                window.location.href = previousUrl;
+                return true;
+            }
+            window.location.href = previousUrl;
+        }
+
+        $(function () {
+            $('.dashboard-close').click(dashboardClose);
+            renderFilterList($('.filter-list'), false);
+        });
+
+        $('#owner').autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.first_name + ' ' + item.last_name,
+                                value: item.id
+                            }
+                        }));
+                    }
+                });
+            },
+            minLength: 3,
+            open: function (event, ui) {
+                setTimeout(function () {
+                    $('.ui-autocomplete').css('z-index', 99);
+                }, 0);
+            },
+            change: function (event, ui) {
+                let value = $(event.target).val();
+                if (value === '') {
+                    let regex = new RegExp("collectors=\\[\\d*\\]");
+                    let url = window.location.href;
+                    url = url.replace(regex, `collectors=[]`);
+                    window.location.href = url;
+                }
+            },
+            select: function (e, u) {
+                e.preventDefault();
+                let userId = u.item.value;
+                let regex = new RegExp("collectors=\\[\\d*\\]");
+                let url = window.location.href;
+                url = url.replace(regex, `collectors=[${userId}]`);
+                $('#owner').val(u.item.label);
+                window.location.href = url;
+            }
+        });
     </script>
 {% endblock %}

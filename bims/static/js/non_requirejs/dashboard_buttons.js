@@ -1,7 +1,3 @@
-$(function () {
-    console.log('test');
-});
-
 function dashboardClose(e) {
     let button = $(e.target);
     if (!button.hasClass('dashboard-close')) {
