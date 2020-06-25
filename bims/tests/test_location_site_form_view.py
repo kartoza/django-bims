@@ -227,7 +227,7 @@ class TestLocationSiteFormView(TestCase):
         location_site_3 = LocationSiteF.create(
             location_type=loc_type,
         )
-        post_request_3 = self.client.post(
+        self.client.post(
             '/location-site-form/delete/{}/'.format(
                 location_site_3.id
             ),
@@ -236,7 +236,4 @@ class TestLocationSiteFormView(TestCase):
         )
         self.assertTrue(
             LocationSite.objects.filter(id=location_site_3.id).exists()
-        )
-        self.assertTrue(
-            '/account/login' in post_request_3.redirect_chain[0][0],
         )

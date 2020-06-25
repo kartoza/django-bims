@@ -21,7 +21,6 @@ class Migration(migrations.Migration):
                 ('original_species_name', models.CharField(blank=True, default='', max_length=100)),
                 ('category', models.CharField(blank=True, choices=[('alien', 'Alien'), ('indigenous', 'Indigenous'), ('translocated', 'Translocated')], max_length=50)),
                 ('present', models.BooleanField(default=True)),
-                ('absent', models.BooleanField(default=True)),
                 ('collection_date', models.DateField(default=django.utils.timezone.now)),
                 ('collector', models.CharField(blank=True, default='', max_length=100)),
                 ('notes', models.TextField(blank=True, default='')),
