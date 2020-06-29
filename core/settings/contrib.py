@@ -72,6 +72,7 @@ INSTALLED_APPS += (
     'taggit',
 )
 INSTALLED_APPS = (
+    'wagtail.contrib.search_promotions',
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
     'wagtail.embeds',
