@@ -307,3 +307,13 @@ h6 {
 .item-highlight {
   animation: yellowfade 1.5s;
 }
+
+.filter-title {
+    font-weight: bold;
+    padding-top: 10px;
+}
+
+.filter-value {
+    font-weight: lighter;
+    font-size: 11pt;
+}

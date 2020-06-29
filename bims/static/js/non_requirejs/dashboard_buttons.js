@@ -1,7 +1,3 @@
-$(function () {
-    console.log('test');
-});
-
 function dashboardClose(e) {
     let button = $(e.target);
     if (!button.hasClass('dashboard-close')) {
@@ -33,7 +29,7 @@ function dashboardClose(e) {
             window.location.href = '/map/';
         }
     } else if (previousUrl.indexOf('source-reference-form') > -1) {
-        window.history.href = '/map/';
+        window.history.go(-7);
     } else {
         window.history.back();
     }

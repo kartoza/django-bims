@@ -29,7 +29,7 @@ class TestCollectionRecordView(TestCase):
         )
         self.assertEqual(
             response.status_code,
-            302
+            403
         )
         self.assertTrue(
             BiologicalCollectionRecord.objects.filter(

@@ -235,9 +235,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     """
     class Meta:
         model = BiologicalCollectionRecord
-        django_get_or_create = ('id', )
 
-    id = factory.Sequence(lambda n: n)
     site = factory.SubFactory(LocationSiteF)
     original_species_name = factory.Sequence(
             lambda n: u'Test original species name %s' % n)

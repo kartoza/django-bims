@@ -48,7 +48,7 @@ def download_sass_data_site_task(filename, filters, path_file):
             for header in headers:
                 formatted_headers.append(header.replace('_', ' ').capitalize())
 
-            with open(path_file, 'wb') as csv_file:
+            with open(path_file, 'w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
                 writer.fieldnames = headers
