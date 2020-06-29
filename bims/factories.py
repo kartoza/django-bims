@@ -77,8 +77,8 @@ class AbstractHumanFactory(DjangoModelFactory):
     last_name = factory.Faker('last_name')
 
     class Meta:
-            model = models.AbstractHuman
-            abstract = True
+        model = models.AbstractHuman
+        abstract = True
 
 
 class AuthorFactory(AbstractHumanFactory):

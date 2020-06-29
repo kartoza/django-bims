@@ -34,7 +34,7 @@ services:
   geoserver:
     environment:
 
-      {% for key, value in geoserver.environment.iteritems() %}
+      {% for key, value in geoserver.environment.items() %}
 
       - {{ key }}={{ value }}
 
@@ -50,13 +50,13 @@ services:
       dockerfile: Dockerfile-dev
     environment:
 
-      {% for key, value in django.environment.iteritems() %}
+      {% for key, value in django.environment.items() %}
 
       - {{ key }}={{ value }}
 
       {% endfor %}
 
-      {% for key, value in geonode.environment.iteritems() %}
+      {% for key, value in geonode.environment.items() %}
 
       - {{ key }}={{ value }}
 

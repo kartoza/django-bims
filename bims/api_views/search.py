@@ -2,6 +2,7 @@ import json
 import operator
 import hashlib
 import ast
+from functools import reduce
 from django.db.models import Q, Count, F, Value
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent

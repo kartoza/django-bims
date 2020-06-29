@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from six import string_types
 import pandas as pd
 import math
 from django.conf import settings
@@ -48,7 +49,7 @@ class Command(BaseCommand):
                     continue
                 row_index = 0
                 for column_data in row:
-                    if isinstance(column_data, basestring):
+                    if isinstance(column_data, string_types):
                         if (
                             not column_data.isspace() and
                             column_data not in self.not_taxon_string
