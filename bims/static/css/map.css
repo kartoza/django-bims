@@ -360,6 +360,7 @@ html, body, .map, .map-wrapper, #map-container {
     display: none;
     padding-bottom: 0 !important;
     max-height: 500px;
+    scrollbar-width: none; /* fix firefox scroll issues */
 }
 
 .layers-selector-container .content {
@@ -367,6 +368,7 @@ html, body, .map, .map-wrapper, #map-container {
     margin-top: 3px;
     max-height: 470px;
     overflow-y: auto;
+    scrollbar-width: this; /* fix firefox scroll issues */
 }
 
 #layers-selector {
