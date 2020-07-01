@@ -72,9 +72,9 @@
                             <div class="card-body">
                                 <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
                                 <p>Uploaded at {{ upload_session.uploaded_at }}</p>
-                                <p class="card-text">Progress : {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
+                                <p class="card-text">Progress : <span class="progress-text">{% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</span></p>
                                 <div class="progress">
-                                    <div data-progress="{{ upload_session.progress }}"
+                                    <div data-progress="{{ upload_session.progress }}" data-id="{{ upload_session.id }}"
                                          class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0"></div>
                                 </div>
                             </div>
@@ -93,6 +93,12 @@
                                 <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
                                 <p>Uploaded at {{ upload_session.uploaded_at }}</p>
                                 <p class="card-text">Result : {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
+                                {% if upload_session.error_file %}
+                                    <a href="{{ upload_session.error_file.url }}" target="_blank" class="btn btn-danger">Error File</a>
+                                {% endif %}
+                                {% if upload_session.success_file %}
+                                    <a href="{{ upload_session.success_file.url }}" target="_blank" class="btn btn-success">Success File</a>
+                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}
@@ -112,16 +118,42 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script type="text/javascript">
 
+        const updateUrl = "/api/taxa-upload-status/";
+
+        const updateProgress = (id, $elm) => {
+            setTimeout(function () {
+                console.log(updateUrl);
+                $.get(updateUrl + id).then(
+                    (response) => {
+                        if (!response['processed']) {
+                            let currentProgress = response['progress'];
+                            $elm.parent().parent().find('.progress-text').html(currentProgress);
+                            if (currentProgress && currentProgress.indexOf('/') > -1) {
+                                let [indexProgress, totalProgress] = currentProgress.split('/');
+                                let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
+                                $elm.css({'width': `${percentProgress}%`});
+                            }
+                            updateProgress(id, $elm);
+                        } else {
+                            location.reload();
+                        }
+                    }
+                )
+            }, 1000);
+        }
+
         $(function () {
             let progressBar = $('.progress-bar');
             $.each(progressBar, function (index, elm) {
                 let $elm = $(elm);
                 let currentProgress = $elm.data('progress');
+                let sessionId = $elm.data('id');
                 if (currentProgress && currentProgress.indexOf('/') > -1) {
                     let [indexProgress, totalProgress] = currentProgress.split('/');
                     let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
-                    $(elm).css({'width': `${percentProgress}%`});
+                    $elm.css({'width': `${percentProgress}%`});
                 }
+                updateProgress(sessionId, $(elm));
             });
         });
 

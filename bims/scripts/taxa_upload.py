@@ -2,6 +2,7 @@ import csv
 import re
 import copy
 import logging
+from django.contrib.sites.models import Site
 from bims.scripts.species_keys import *
 from bims.enums import TaxonomicRank
 from bims.models import (
@@ -22,11 +23,13 @@ class TaxaCSVUpload(object):
     success_list = []
     headers = []
     total_rows = 0
+    domain = ''
 
     def import_taxa(self):
         """
         Import taxa list from csv file
         """
+        self.domain = Site.objects.get_current().domain
         self.total_rows = len(
             self.taxa_upload_session.process_file.readlines()
         ) - 1
@@ -52,7 +55,10 @@ class TaxaCSVUpload(object):
         :param success_row: success data
         :param taxon_id: id of the added taxonomy
         """
-        success_row['taxon_id'] = taxon_id
+        success_row['taxon_id'] = 'http://{d}/admin/bims/taxonomy/{id}'.format(
+            d=self.domain,
+            id=taxon_id
+        )
         self.success_list.append(success_row)
 
     def parent_rank(self, rank):
@@ -391,7 +397,7 @@ class TaxaCSVUpload(object):
                     csv_file, delimiter=',', quotechar='"',
                     quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(success_headers)
-                for data in self.error_list:
+                for data in self.success_list:
                     data_list = []
                     for key in success_headers:
                         data_list.append(data[key])

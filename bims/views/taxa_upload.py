@@ -3,6 +3,8 @@
 """
 
 from datetime import datetime
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
@@ -29,6 +31,8 @@ class TaxaUploadView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
         context['finished_sessions'] = TaxaUploadSession.objects.filter(
             uploader=self.request.user,
             processed=True
+        ).order_by(
+            '-uploaded_at'
         )
         context['taxa_groups'] = TaxonGroup.objects.filter(
             category='SPECIES_MODULE'
@@ -46,5 +50,24 @@ class TaxaUploadView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
             uploaded_at=datetime.now(),
             module_group_id=taxon_group_id
         )
-        taxa_upload(taxa_upload_session.id)
+        taxa_upload.delay(taxa_upload_session.id)
         return HttpResponseRedirect('/upload-taxa')
+
+
+class TaxaUploadStatusApiView(APIView):
+    """
+    Return status of the taxa upload
+    """
+
+    def get(self, request, session_id, *args):
+        try:
+            session = TaxaUploadSession.objects.get(
+                id=session_id
+            )
+        except TaxaUploadSession.DoesNotExist:
+            raise Http404('No session found')
+        return Response({
+            'token': session.token,
+            'progress': session.progress,
+            'processed': session.processed
+        })
