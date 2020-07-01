@@ -33,6 +33,7 @@
                        download="data_example.csv">Download Template</a>
                     {% endblock %}
 
+                    {% if not upload_sessions %}
                     <div class="help-block-space"></div>
                     <div class="help-block">
                         Note : Duplicates will be detected and update the existing data
@@ -60,6 +61,7 @@
                         </div>
                     </div>
                     <button class="btn btn-primary" type="submit">Upload</button>
+                    {% endif %}
                 </div>
             </form>
 
