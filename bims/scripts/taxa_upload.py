@@ -29,6 +29,8 @@ class TaxaCSVUpload(object):
         """
         Import taxa list from csv file
         """
+        self.error_list = []
+        self.success_list = []
         self.domain = Site.objects.get_current().domain
         self.total_rows = len(
             self.taxa_upload_session.process_file.readlines()
@@ -250,7 +252,11 @@ class TaxaCSVUpload(object):
                 elif self.row_value(row, PHYLUM):
                     rank = PHYLUM
                 else:
-                    rank = KINGDOM
+                    self.error_file(
+                        error_row=row,
+                        error_message='Missing taxon rank'
+                    )
+                    continue
             taxa = Taxonomy.objects.filter(
                 canonical_name__iexact=taxon_name,
                 rank=rank.upper()
@@ -306,6 +312,7 @@ class TaxaCSVUpload(object):
                                 'its parents'
                             )
                         )
+                        continue
                     else:
                         # Taxonomy not found, create one
                         taxonomy, _ = Taxonomy.objects.get_or_create(
@@ -362,8 +369,9 @@ class TaxaCSVUpload(object):
         # Create error file
         # TODO : Done it simultaneously with file processing
         if self.error_list:
-            error_headers = headers
-            error_headers.append('error_message')
+            error_headers = copy.deepcopy(headers)
+            if 'error_message' not in error_headers:
+                error_headers.append('error_message')
             error_file_path = '{path}error_{name}'.format(
                 path=file_path,
                 name=file_name
@@ -376,7 +384,10 @@ class TaxaCSVUpload(object):
                 for data in self.error_list:
                     data_list = []
                     for key in error_headers:
-                        data_list.append(data[key])
+                        try:
+                            data_list.append(data[key])
+                        except KeyError:
+                            continue
                     writer.writerow(data_list)
             self.taxa_upload_session.error_file.name = (
                 'taxa-file/error_{}'.format(
@@ -386,8 +397,9 @@ class TaxaCSVUpload(object):
         # Create success file
         # TODO : Done it simultaneously with file processing
         if self.success_list:
-            success_headers = headers
-            success_headers.append('taxon_id')
+            success_headers = copy.deepcopy(headers)
+            if 'taxon_id' not in success_headers:
+                success_headers.append('taxon_id')
             success_file_path = '{path}success_{name}'.format(
                 path=file_path,
                 name=file_name
@@ -400,7 +412,10 @@ class TaxaCSVUpload(object):
                 for data in self.success_list:
                     data_list = []
                     for key in success_headers:
-                        data_list.append(data[key])
+                        try:
+                            data_list.append(data[key])
+                        except KeyError:
+                            continue
                     writer.writerow(data_list)
             self.taxa_upload_session.success_file.name = (
                 'taxa-file/success_{}'.format(
