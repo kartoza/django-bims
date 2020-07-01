@@ -73,7 +73,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date', models.DateField(default=django.utils.timezone.now)),
-                ('sites', models.ManyToManyField(to='bims.LocationSite')),
             ],
         ),
         migrations.CreateModel(

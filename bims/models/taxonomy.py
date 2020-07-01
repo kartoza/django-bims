@@ -170,8 +170,10 @@ class Taxonomy(models.Model):
         return json_data
 
     def save(self, *args, **kwargs):
-        self.gbif_data = self.save_json_data(self.gbif_data)
-        self.additional_data = self.save_json_data(self.additional_data)
+        if self.gbif_data:
+            self.gbif_data = self.save_json_data(self.gbif_data)
+        if self.additional_data:
+            self.additional_data = self.save_json_data(self.additional_data)
         super(Taxonomy, self).save(*args, **kwargs)
 
     # noinspection PyClassicStyleClass
@@ -300,7 +302,7 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
 
     if instance.is_species and not instance.iucn_status:
         iucn_status = get_iucn_status(
-            species_name=instance.canonical_name.encode('utf-8')
+            species_name=instance.canonical_name
         )
         if not iucn_status:
             # Get not evaluated

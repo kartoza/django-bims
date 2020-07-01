@@ -1,0 +1,130 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Taxa Uploader
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+
+            <div class="help-block-space"></div>
+            <h3>Upload Taxonomy data</h3>
+            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+            </div>
+            <div class="modal-body">
+            <form action="{{ request.path }}" method="post" id="taxa-upload-form" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="help-block">
+                    <div class="help-block-space"></div>
+                    <strong>You can download the template here :</strong>
+                    {% block download_example_button %}
+                    <a href="{% static "data/data_example.csv" %}"
+                       download="data_example.csv">Download Template</a>
+                    {% endblock %}
+
+                    <div class="help-block-space"></div>
+                    <div class="help-block">
+                        Note : Duplicates will be detected and update the existing data
+                    </div>
+
+                    <div class="help-block-space"></div>
+                    <div class="form-group row">
+                        <label for="inputPassword"
+                               class="col-sm-2 col-form-label"><b>Taxon Group</b></label>
+                        <div class="col-sm-10">
+                            <select class="form-control" name="taxon_group"
+                                    id="taxon-group">
+                                {% for taxon_group in taxa_groups %}
+                                    <option value="{{ taxon_group.id }}"> {{ taxon_group.name }} </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="help-block-space"></div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label" for="file"><b>Upload csv here</b></label>
+                        <div class="col-sm-10">
+                             <input id="fileupload" type="file" name="csv_file">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Upload</button>
+                </div>
+            </form>
+
+            {# Upload sessions #}
+            {% if upload_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Current progress : </h5>
+                    {% for upload_session in upload_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <p>Uploaded at {{ upload_session.uploaded_at }}</p>
+                                <p class="card-text">Progress : {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
+                                <div class="progress">
+                                    <div data-progress="{{ upload_session.progress }}"
+                                         class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0"></div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# Upload sessions #}
+            {% if finished_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Finished upload sessions : </h5>
+                    {% for upload_session in finished_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <p>Uploaded at {{ upload_session.uploaded_at }}</p>
+                                <p class="card-text">Result : {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script type="text/javascript">
+
+        $(function () {
+            let progressBar = $('.progress-bar');
+            $.each(progressBar, function (index, elm) {
+                let $elm = $(elm);
+                let currentProgress = $elm.data('progress');
+                if (currentProgress && currentProgress.indexOf('/') > -1) {
+                    let [indexProgress, totalProgress] = currentProgress.split('/');
+                    let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
+                    $(elm).css({'width': `${percentProgress}%`});
+                }
+            });
+        });
+
+    </script>
+
+{% endblock %}

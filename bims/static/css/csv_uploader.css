@@ -155,3 +155,7 @@ body {
     border-radius: 10px;
     display: none;
 }
+
+.upload-progress-container {
+  padding-top: 20px;
+}
