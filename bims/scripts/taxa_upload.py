@@ -2,7 +2,6 @@ import csv
 import re
 import copy
 import logging
-from django.utils.dateparse import parse_date
 from bims.scripts.species_keys import *
 from bims.enums import TaxonomicRank
 from bims.models import (
