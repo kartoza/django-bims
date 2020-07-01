@@ -42,6 +42,22 @@ class TaxaUploadView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         csv_file = request.FILES.get('csv_file')
         taxon_group_id = request.POST.get('taxon_group', None)
+        taxon_group_logo = request.FILES.get('taxon_group_logo')
+        taxon_group_name = request.POST.get('taxon_group_name', '')
+        if taxon_group_logo and taxon_group_logo:
+            taxon_groups = TaxonGroup.objects.filter(
+                category='SPECIES_MODULE'
+            ).order_by('-display_order')
+            display_order = 1
+            if taxon_groups:
+                display_order = taxon_groups[0].display_order + 1
+            TaxonGroup.objects.create(
+                name=taxon_group_name,
+                logo=taxon_group_logo,
+                category='SPECIES_MODULE',
+                display_order=display_order
+            )
+            return HttpResponseRedirect('/upload-taxa')
         if not csv_file:
             raise Http404('Missing csv file')
         taxa_upload_session = TaxaUploadSession.objects.create(
