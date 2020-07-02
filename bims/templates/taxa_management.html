@@ -89,6 +89,10 @@
             vertical-align: top;
         }
 
+        .selected {
+            border-color: #179f90;
+            background-color: #179f9026;
+        }
 
     </style>
 
@@ -118,6 +122,28 @@
                     </li>
                 {% endfor %}
             </ul>
+            <hr style="max-width: 100% !important; border-color: #e6c762"/>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th scope="col" style="width: 30%">Taxon Name</th>
+                    <th scope="col" style="width: 20%">Rank</th>
+                    <th scope="col">Taxonomic Status</th>
+                </tr>
+                </thead>
+                <tbody id="taxa-list">
+
+                </tbody>
+            </table>
+            <div class="pagination-centered" style="display:none">
+                <ul class="pagination">
+                    <li class="arrow"><a href="#" class="pagination pagination-previous">&laquo;</a></li>
+                    <li class="current">
+                        <span id="taxa-current-page"></span>  - <span id="taxa-current-size"></span> / <span id="taxa-count"></span>
+                    </li>
+                    <li class="arrow"><a href="#" class="pagination pagination-next">&raquo;</a></li>
+                </ul>
+            </div>
 
         </div>
     </div>
@@ -142,5 +168,78 @@
             }
         });
 
+        const getTaxaList = (url) => {
+            $.get(url).then(
+                function (response) {
+                    let $taxaList = $('#taxa-list');
+                    let $pagination = $('.pagination-centered');
+                    let paginationNext = $('.pagination-next');
+                    let paginationPrev = $('.pagination-previous');
+
+                    // Get current page by parsing the next url
+                    let currentPage = 1;
+                    let taxaCurrentSize = 0;
+                    if (response['next']) {
+                        let url = new URL(response['next']);
+                        let page = url.searchParams.get('page');
+                        currentPage = page - 1;
+                        taxaCurrentSize = currentPage * 20;
+                    }
+                    if (!response['next'] && response['previous']) {
+                        let url = new URL(response['previous']);
+                        currentPage = parseInt(url.searchParams.get('page')) + 1;
+                        taxaCurrentSize = response['count']
+                    }
+                    $taxaList.html('');
+                    $.each(response['results'], function (index, data) {
+                        let name = data['canonical_name'];
+                        if (!name) {
+                            name = data['scientific_name'];
+                        }
+                        $taxaList.append(`<tr><td>${name}</td><td>${data['rank']}</td><td>${data['taxonomic_status']}</td></tr>`);
+                    });
+                    if (response['next'] == null && response['previous'] == null) {
+                        $pagination.hide();
+                    } else {
+                        $('#taxa-count').html(response['count']);
+                        $('#taxa-current-size').html(taxaCurrentSize);
+                        $('#taxa-current-page').html((currentPage * 20) - 19);
+                        $pagination.show();
+                        if (response['next']) {
+                            paginationNext.show();
+                            paginationNext.off('click');
+                            paginationNext.click(() => {
+                                getTaxaList(response['next']);
+                            })
+                        } else {
+                            paginationNext.hide();
+                        }
+                        if (response['previous']) {
+                            paginationPrev.show();
+                            paginationPrev.off('click');
+                            paginationPrev.click(() => {
+                                getTaxaList(response['previous']);
+                            })
+                        } else {
+                            paginationPrev.hide();
+                        }
+                    }
+                }
+            )
+        }
+
+        $('.ui-state-default').click(function (e) {
+            let $elm = $(e.target);
+            let maxTry = 10;
+            let currentTry = 1;
+            while (!$elm.hasClass('ui-state-default') && currentTry < maxTry) {
+                currentTry++;
+                $elm = $elm.parent();
+            }
+            $('.ui-state-default').removeClass('selected');
+            $elm.addClass('selected');
+            let id = $elm.data('id');
+            getTaxaList(`/api/taxa-list/?taxonGroup=${id}`);
+        })
     </script>
 {% endblock %}
