@@ -61,6 +61,7 @@
             padding: 10px;
             width: 32%;
             height: 90px;
+            background-color: rgba(222, 222, 222, 0.31);
         }
 
         #sortable li .row {
@@ -91,7 +92,11 @@
 
         .selected {
             border-color: #179f90;
-            background-color: #179f9026;
+            background-color: #179f9026 !important;
+        }
+
+        .btn-action {
+            font-size: 10pt;
         }
 
     </style>
@@ -114,9 +119,13 @@
                                 <img src="{{ taxa_group.logo.url }}"/>
                             </div>
                             <div class="col-sm-9">
-                                <span class="taxon-group-title">
+                                <div class="taxon-group-title">
                                     {{ taxa_group.name }}
-                                </span>
+                                </div>
+                                <div>
+                                    Total taxonomy
+                                    : {{ taxa_group.taxonomies.count }}
+                                </div>
                             </div>
                         </div>
                     </li>
@@ -124,19 +133,33 @@
             </ul>
             <hr style="max-width: 100% !important; border-color: #e6c762"/>
             <!-- Search form -->
-            <div class="form-inline d-flex md-form form-sm mt-0" style="margin-bottom: 10px;">
+            <div class="form-inline d-flex md-form form-sm mt-0"
+                 style="margin-bottom: 10px;">
                 <i class="fa fa-search" aria-hidden="true"></i>
                 <input class="form-control form-control-sm ml-3 w-45"
                        type="text" placeholder="Taxon name"
                        aria-label="Search" id="taxon-name-input">
-                <button id="search-button" class="btn btn-success btn-md my-0 ml-sm-2" style="height: 31px; padding-top: 3px">Search</button>
+                <button id="search-button"
+                        class="btn btn-success btn-md my-0 ml-sm-2"
+                        style="height: 31px; padding-top: 3px">Search
+                </button>
+            </div>
+
+            <!-- Download button -->
+            <div class="float-right download-button-container"
+                 style="margin-top: -47px; display: none">
+                <button class="btn btn-outline-success" id="download-csv"><i
+                        class="fa fa-download" aria-hidden="true"></i>&nbsp;Download
+                    as csv
+                </button>
             </div>
             <table class="table table-striped">
                 <thead>
                 <tr>
                     <th scope="col" style="width: 30%">Taxon Name</th>
                     <th scope="col" style="width: 20%">Rank</th>
-                    <th scope="col">Taxonomic Status</th>
+                    <th scope="col" style="width: 25%">Import date</th>
+                    <th scope="col">Action</th>
                 </tr>
                 </thead>
                 <tbody id="taxa-list">
@@ -144,15 +167,29 @@
             </table>
             <div class="pagination-centered" style="display:none">
                 <ul class="pagination">
-                    <li class="arrow"><a href="#" class="pagination pagination-previous">&laquo;</a></li>
-                    <li class="current">
-                        <span id="taxa-current-page"></span>  - <span id="taxa-current-size"></span> / <span id="taxa-count"></span>
+                    <li class="arrow"><a href="#"
+                                         class="pagination pagination-previous">&laquo;</a>
                     </li>
-                    <li class="arrow"><a href="#" class="pagination pagination-next">&raquo;</a></li>
+                    <li class="current">
+                        <span id="taxa-current-page"></span> - <span
+                            id="taxa-current-size"></span> / <span
+                            id="taxa-count"></span>
+                    </li>
+                    <li class="arrow"><a href="#"
+                                         class="pagination pagination-next">&raquo;</a>
+                    </li>
                 </ul>
             </div>
 
         </div>
+    </div>
+
+    <div class="row-action" style="display: none">
+        <td>
+            <button class="btn btn-action btn-warning">Edit</button>
+            <button class="btn btn-action btn-danger">Remove from group
+            </button>
+        </td>
     </div>
 {% endblock %}
 
@@ -165,6 +202,8 @@
 
     <script>
         let taxaListCurrentUrl = '';
+        let selectedTaxonGroup = '';
+        let urlDownload = '/download-csv-taxa-list/';
 
         $("#sortable").sortable({
             stop: function (event, ui) {
@@ -179,6 +218,7 @@
 
         const getTaxaList = (url) => {
             taxaListCurrentUrl = url;
+            $('.download-button-container').show();
             $.get(url).then(
                 function (response) {
                     let $taxaList = $('#taxa-list');
@@ -206,7 +246,9 @@
                         if (!name) {
                             name = data['scientific_name'];
                         }
-                        $taxaList.append(`<tr><td>${name}</td><td>${data['rank']}</td><td>${data['taxonomic_status']}</td></tr>`);
+                        let rowAction = $('.row-action').clone();
+                        rowAction.removeClass('.row-action');
+                        $taxaList.append(`<tr><td>${name}</td><td>${data['rank']}</td><td>${data['import_date']}</td><td>${rowAction.html()}</td></tr>`);
                     });
                     if (response['next'] == null && response['previous'] == null) {
                         $pagination.hide();
@@ -248,9 +290,9 @@
             }
             $('.ui-state-default').removeClass('selected');
             $elm.addClass('selected');
-            let id = $elm.data('id');
+            selectedTaxonGroup = $elm.data('id');
             $('#taxon-name-input').val('');
-            getTaxaList(`/api/taxa-list/?taxonGroup=${id}`);
+            getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`);
         })
 
         $('#search-button').click(function (e) {
@@ -259,31 +301,18 @@
             }
             let taxonNameInput = $('#taxon-name-input');
             let taxonName = taxonNameInput.val();
-            let url = updateURLParameter(taxaListCurrentUrl, 'taxon', taxonName);
-            getTaxaList(url);
+            getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&taxon=${taxonName}`);
         });
 
-        /**
-         * http://stackoverflow.com/a/10997390/11236
-         */
-        function updateURLParameter(url, param, paramVal) {
-            var newAdditionalURL = "";
-            var tempArray = url.split("?");
-            var baseURL = tempArray[0];
-            var additionalURL = tempArray[1];
-            var temp = "";
-            if (additionalURL) {
-                tempArray = additionalURL.split("&");
-                for (var i = 0; i < tempArray.length; i++) {
-                    if (tempArray[i].split('=')[0] != param) {
-                        newAdditionalURL += temp + tempArray[i];
-                        temp = "&";
-                    }
-                }
-            }
-
-            var rows_txt = temp + "" + param + "=" + paramVal;
-            return baseURL + "?" + newAdditionalURL + rows_txt;
-        }
+        $('#download-csv').click(function (e) {
+            let a = document.createElement("a");
+            a.href = urlDownload + '?taxonGroup=' + selectedTaxonGroup;
+            let fileName = 'taxa-list.csv';
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(urlDownload);
+            a.remove();
+        });
     </script>
 {% endblock %}
