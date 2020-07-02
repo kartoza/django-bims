@@ -60,7 +60,7 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Taxonomy
-        exclude = ('gbif_data',)
+        exclude = ('gbif_data', 'vernacular_names')
 
 
 class TaxonExportSerializer(serializers.ModelSerializer):

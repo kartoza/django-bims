@@ -20,7 +20,8 @@ from bims.api_views.non_biodiversity_layer import (
 from bims.api_views.taxon import (
     TaxonDetail,
     FindTaxon,
-    AddNewTaxon
+    AddNewTaxon,
+    TaxaList
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -194,4 +195,7 @@ urlpatterns = [
     url(r'^taxa-upload-status/(?P<session_id>[0-9]+)/$',
         TaxaUploadStatusApiView.as_view(),
         name='taxa-upload-status'),
+    url(r'^taxa-list/$',
+        TaxaList.as_view(),
+        name='taxa-list'),
 ]
