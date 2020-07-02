@@ -123,6 +123,14 @@
                 {% endfor %}
             </ul>
             <hr style="max-width: 100% !important; border-color: #e6c762"/>
+            <!-- Search form -->
+            <div class="form-inline d-flex md-form form-sm mt-0" style="margin-bottom: 10px;">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input class="form-control form-control-sm ml-3 w-45"
+                       type="text" placeholder="Taxon name"
+                       aria-label="Search" id="taxon-name-input">
+                <button id="search-button" class="btn btn-success btn-md my-0 ml-sm-2" style="height: 31px; padding-top: 3px">Search</button>
+            </div>
             <table class="table table-striped">
                 <thead>
                 <tr>
@@ -132,7 +140,6 @@
                 </tr>
                 </thead>
                 <tbody id="taxa-list">
-
                 </tbody>
             </table>
             <div class="pagination-centered" style="display:none">
@@ -157,6 +164,8 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
 
     <script>
+        let taxaListCurrentUrl = '';
+
         $("#sortable").sortable({
             stop: function (event, ui) {
                 let $li = $(event.target).find('li');
@@ -169,6 +178,7 @@
         });
 
         const getTaxaList = (url) => {
+            taxaListCurrentUrl = url;
             $.get(url).then(
                 function (response) {
                     let $taxaList = $('#taxa-list');
@@ -239,7 +249,41 @@
             $('.ui-state-default').removeClass('selected');
             $elm.addClass('selected');
             let id = $elm.data('id');
+            $('#taxon-name-input').val('');
             getTaxaList(`/api/taxa-list/?taxonGroup=${id}`);
         })
+
+        $('#search-button').click(function (e) {
+            if (!taxaListCurrentUrl) {
+                return true;
+            }
+            let taxonNameInput = $('#taxon-name-input');
+            let taxonName = taxonNameInput.val();
+            let url = updateURLParameter(taxaListCurrentUrl, 'taxon', taxonName);
+            getTaxaList(url);
+        });
+
+        /**
+         * http://stackoverflow.com/a/10997390/11236
+         */
+        function updateURLParameter(url, param, paramVal) {
+            var newAdditionalURL = "";
+            var tempArray = url.split("?");
+            var baseURL = tempArray[0];
+            var additionalURL = tempArray[1];
+            var temp = "";
+            if (additionalURL) {
+                tempArray = additionalURL.split("&");
+                for (var i = 0; i < tempArray.length; i++) {
+                    if (tempArray[i].split('=')[0] != param) {
+                        newAdditionalURL += temp + tempArray[i];
+                        temp = "&";
+                    }
+                }
+            }
+
+            var rows_txt = temp + "" + param + "=" + paramVal;
+            return baseURL + "?" + newAdditionalURL + rows_txt;
+        }
     </script>
 {% endblock %}

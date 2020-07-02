@@ -240,6 +240,7 @@ class TaxaList(LoginRequiredMixin, APIView):
     def get(self, request, *args):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
+        taxon_name = request.GET.get('taxon', '')
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
         try:
@@ -249,6 +250,10 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_list = taxon_group.taxonomies.all()
         if rank:
             taxon_list = taxon_list.filter(rank=rank)
+        if taxon_name:
+            taxon_list = taxon_list.filter(
+                canonical_name__icontains=taxon_name
+            )
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(
