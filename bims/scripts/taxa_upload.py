@@ -337,6 +337,13 @@ class TaxaCSVUpload(object):
                         taxonomy.canonical_name = taxon_name
                         taxonomy.save()
 
+                    # -- Add to taxon group
+                    taxon_group = self.taxa_upload_session.module_group
+                    if not taxon_group.taxonomies.filter(
+                        id=taxonomy.id
+                    ).exists():
+                        taxon_group.taxonomies.add(taxonomy)
+
             except Exception as e:  # noqa
                 self.error_file(
                     error_row=row,

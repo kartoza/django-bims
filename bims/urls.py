@@ -61,6 +61,7 @@ from bims.views.documents import BimsDocumentUpdateView
 from bims.views.site_visit import (
     SiteVisitUpdateView, SiteVisitListView, SiteVisitDetailView
 )
+from bims.views.taxa_management import TaxaManagementView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -158,6 +159,8 @@ urlpatterns = [
         SiteVisitListView.as_view()),
     url(r'^site-visit/detail/(?P<sitevisitid>\d+)/$',
         SiteVisitDetailView.as_view()),
+    url(r'^taxa-management/$',
+        TaxaManagementView.as_view()),
 ]
 
 # Api urls

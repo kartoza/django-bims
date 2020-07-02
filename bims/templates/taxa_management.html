@@ -1,0 +1,162 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Site visit list
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <style>
+        .btn-sm {
+            font-size: 10pt !important;
+        }
+
+        .pagination-centered {
+            text-align: center;
+        }
+
+        ul.pagination {
+            display: flex;
+            align-items: center;
+            list-style: none;
+        }
+
+        ul.pagination li {
+            display: inline-block;
+            margin-left: 1rem;
+        }
+
+        ul.pagination li.arrow {
+            font-size: 2rem;
+        }
+
+        ul.pagination li a {
+            margin-right: 1rem;
+        }
+
+        ul.pagination li.current a {
+            font-weight: bold;
+            background-color: #18A090 !important;
+            border-radius: 3rem;
+            padding: 0.3rem 0.8rem;
+            color: #fff;
+        }
+
+        .counter {
+            background-color: #efefef;
+            padding: 0.1rem 0.5rem;
+            border-radius: 3px;
+        }
+
+        .metric {
+            font-size: 13pt;
+            font-weight: lighter;
+        }
+
+        .metric > td {
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        #sortable {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            padding-left: 15px;
+            width: 100%;
+        }
+
+        #sortable li {
+            margin: 3px 3px 3px 0;
+            padding: 10px;
+            width: 32%;
+            height: 90px;
+        }
+
+        #sortable li .row {
+            height: 100%;
+        }
+
+        #sortable li img {
+            max-height: 80%;
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+        }
+
+        .taxon-group-title {
+            font-size: 1.5em;
+        }
+
+        ul li {
+            display: inline-block;
+            vertical-align: top;
+        }
+
+
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Taxa management</h2>
+            <div class="dashboard-close" data-destination="/map"><i
+                    class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
+        <div class="dashboard-body">
+            <ul id="sortable">
+                {% for taxa_group in taxa_groups %}
+                    <li data-id="{{ taxa_group.id }}" class="ui-state-default">
+                        <div class="row">
+                            <div class="col-sm-3 img-container">
+                                <img src="{{ taxa_group.logo.url }}"/>
+                            </div>
+                            <div class="col-sm-9">
+                                <span class="taxon-group-title">
+                                    {{ taxa_group.name }}
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+
+    <script>
+        $("#sortable").sortable({
+            stop: function (event, ui) {
+                let $li = $(event.target).find('li');
+                let ids = [];
+                $.each($li, function (index, element) {
+                    ids.push($(element).data('id'));
+                });
+                console.log(ids);
+            }
+        });
+
+    </script>
+{% endblock %}
