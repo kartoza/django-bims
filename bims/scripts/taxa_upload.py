@@ -3,7 +3,7 @@ import re
 import copy
 import logging
 from django.contrib.sites.models import Site
-from bims.scripts.species_keys import *
+from bims.scripts.species_keys import *  # noqa
 from bims.enums import TaxonomicRank
 from bims.models import (
     Taxonomy,
@@ -70,7 +70,7 @@ class TaxaCSVUpload(object):
         :return: rank of parent
         """
         try:
-            return ALL_TAXON_RANKS[ALL_TAXON_RANKS.index(rank.upper())-1]
+            return ALL_TAXON_RANKS[ALL_TAXON_RANKS.index(rank.upper()) - 1]
         except KeyError:
             return 'KINGDOM'
 
@@ -178,11 +178,11 @@ class TaxaCSVUpload(object):
             ranks = copy.copy(TAXON_RANKS)
             try:
                 ranks = ranks[:ranks.index(current_rank)]
-            except ValueError as e:
+            except ValueError:
                 print(current_rank)
                 return
             if len(ranks) > 0:
-                parent = self.get_parent(row, ranks[len(ranks)-1])
+                parent = self.get_parent(row, ranks[len(ranks) - 1])
                 if parent:
                     taxon.parent = parent
                     taxon.save()
@@ -223,6 +223,12 @@ class TaxaCSVUpload(object):
             self.taxa_upload_session.save()
             index += 1
             taxon_name = self.row_value(row, TAXON)
+            if not taxon_name:
+                self.error_file(
+                    error_row=row,
+                    error_message='Missing Taxon value'
+                )
+                continue
             if SCIENTIFIC_NAME in row:
                 scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
                                    if self.row_value(row, SCIENTIFIC_NAME)
@@ -235,28 +241,11 @@ class TaxaCSVUpload(object):
             if not rank:
                 rank = self.row_value(row, 'Taxon rank')
             if not rank:
-                if self.row_value(row, SUBSPECIES):
-                    rank = SUBSPECIES
-                elif self.row_value(row, SPECIES):
-                    rank = SPECIES
-                elif self.row_value(row, GENUS):
-                    rank = GENUS
-                elif self.row_value(row, SUBFAMILY):
-                    rank = SUBFAMILY
-                elif self.row_value(row, FAMILY):
-                    rank = FAMILY
-                elif self.row_value(row, ORDER):
-                    rank = ORDER
-                elif self.row_value(row, CLASS):
-                    rank = CLASS
-                elif self.row_value(row, PHYLUM):
-                    rank = PHYLUM
-                else:
-                    self.error_file(
-                        error_row=row,
-                        error_message='Missing taxon rank'
-                    )
-                    continue
+                self.error_file(
+                    error_row=row,
+                    error_message='Missing taxon rank'
+                )
+                continue
             taxa = Taxonomy.objects.filter(
                 canonical_name__iexact=taxon_name,
                 rank=rank.upper()
@@ -288,18 +277,10 @@ class TaxaCSVUpload(object):
                         use_name_lookup=False
                     )
 
-                # Validate data
+                # Taxonomy found or created then validate it
                 if taxonomy:
-                    if (taxon_name not in taxonomy.scientific_name and
-                            taxon_name.lower().strip() !=
-                            taxonomy.canonical_name.lower().strip() and
-                            taxon_name.lower() not in
-                            taxonomy.legacy_canonical_name.lower()
-                    ):
-                        taxonomy = None
-                    else:
-                        if not taxonomy.parent:
-                            taxonomy.parent = self.get_parent(row, rank)
+                    if not taxonomy.parent:
+                        taxonomy.parent = self.get_parent(row, rank)
 
                 # Data from GBIF couldn't be found, so add it manually
                 if not taxonomy:
@@ -363,8 +344,13 @@ class TaxaCSVUpload(object):
                 )
 
         headers = csv_dict.fieldnames
-        file_name = self.taxa_upload_session.process_file.name.replace('taxa-file/', '')
-        file_path = self.taxa_upload_session.process_file.path.replace(file_name, '')
+        file_name = (
+            self.taxa_upload_session.process_file.name.replace(
+                'taxa-file/', '')
+        )
+        file_path = (
+            self.taxa_upload_session.process_file.path.replace(file_name, '')
+        )
 
         # Create error file
         # TODO : Done it simultaneously with file processing
@@ -392,7 +378,8 @@ class TaxaCSVUpload(object):
             self.taxa_upload_session.error_file.name = (
                 'taxa-file/error_{}'.format(
                     file_name
-            ))
+                )
+            )
 
         # Create success file
         # TODO : Done it simultaneously with file processing
@@ -420,7 +407,8 @@ class TaxaCSVUpload(object):
             self.taxa_upload_session.success_file.name = (
                 'taxa-file/success_{}'.format(
                     file_name
-            ))
+                )
+            )
 
         self.taxa_upload_session.processed = True
         self.taxa_upload_session.progress = 'Finished'

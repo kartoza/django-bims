@@ -13,6 +13,7 @@ TAXA_FILE_HEADERS = [
     'Endemism', 'Conservation status'
 ]
 
+
 @shared_task(name='bims.tasks.taxa_upload', queue='update')
 def taxa_upload(taxa_upload_session_id):
     from bims.utils.logger import log
