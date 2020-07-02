@@ -42,3 +42,4 @@ from bims.models.location_context_filter_group_order import *  # noqa
 from bims.models.location_context_group import *  # noqa
 from bims.models.algae_data import *  # noqa
 from bims.models.blog import *  # noqa
+from bims.models.taxa_upload_session import *  # noqa

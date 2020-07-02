@@ -19,6 +19,7 @@ from bims.api_views.database_record import DatabaseRecordsList
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
+from bims.views.taxa_upload import TaxaUploadView
 from bims.views.shapefile_upload import (
     ShapefileUploadView,
     process_shapefiles,
@@ -71,6 +72,8 @@ urlpatterns = [
             }), permanent=False)(request)), name='user-profile'),
     url(r'^upload/$', CsvUploadView.as_view(),
         name='csv-upload'),
+    url(r'^upload-taxa/$', TaxaUploadView.as_view(),
+        name='csv-upload-taxa'),
     url(r'^upload_shp/$', ShapefileUploadView.as_view(),
         name='shapefile-upload'),
     url(r'^process_shapefiles/$', process_shapefiles,

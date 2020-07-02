@@ -5,3 +5,4 @@ from bims.tasks.location_site import *  # noqa
 from bims.tasks.chemical_record import *  # noqa
 from bims.tasks.location_context import *  # noqa
 from bims.tasks.source_reference import *  # noqa
+from bims.tasks.taxa_upload import *  # noqa
