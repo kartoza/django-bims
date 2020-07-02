@@ -306,7 +306,12 @@
 
         $('#download-csv').click(function (e) {
             let a = document.createElement("a");
-            a.href = urlDownload + '?taxonGroup=' + selectedTaxonGroup;
+            let url = urlDownload + '?taxonGroup=' + selectedTaxonGroup;
+            let taxonName = $('#taxon-name-input').val();
+            if (taxonName) {
+                url += '&taxon=' + taxonName;
+            }
+            a.href = url;
             let fileName = 'taxa-list.csv';
             a.download = fileName;
             document.body.appendChild(a);
