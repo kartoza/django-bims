@@ -349,17 +349,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 pk=sass_id
             )
 
-        # Accredited
-        accredited = request.POST.get('accredited', False) == 'on'
-        if accredited and owner:
-            bims_profile = BimsProfile.objects.get(user=owner)
-            if not bims_profile.is_accredited(
-                collection_date=site_visit.site_visit_date
-            ):
-                bims_profile.accredit(
-                    date_accredit_to=site_visit.site_visit_date
-                )
-
         biotope_fractions = self.get_biotope_fractions(self.request.POST)
         sass_biotope_fractions = SassBiotopeFraction.objects.filter(
             sass_biotope__in=[s.sass_biotope.id for s in biotope_fractions]
@@ -378,6 +367,18 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             'other-biota', None
         )
         site_visit.save()
+
+        # Accredited
+        accredited = request.POST.get('accredited', False) == 'on'
+        if accredited and owner:
+            bims_profile = BimsProfile.objects.get(user=owner)
+            if not bims_profile.is_accredited(
+                collection_date=site_visit.site_visit_date
+            ):
+                bims_profile.accredit(
+                    date_accredit_to=site_visit.site_visit_date
+                )
+
         site_visit_taxon_ids = self.update_site_visit_biotope_taxon(
             site_visit,
             self.request.POST,
@@ -672,9 +673,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             context['owner'] = owner
             bims_profile, created = BimsProfile.objects.get_or_create(
                 user=owner)
-            context['accredited'] = bims_profile.is_accredited(
-                collection_date=self.site_visit.site_visit_date
-            )
+            if self.site_visit:
+                context['accredited'] = bims_profile.is_accredited(
+                    collection_date=self.site_visit.site_visit_date
+                )
 
         context['biotope_form_list'] = self.get_biotope_form_data()
         context['taxon_list'] = self.get_taxon_list()
