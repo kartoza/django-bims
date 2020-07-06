@@ -69,7 +69,10 @@ class Profile(models.Model):
             not self.sass_accredited_date_from
         ):
             return False
-        if self.sass_accredited_date_from > self.sass_accredited_date_to:
+        if self.sass_accredited_date_from and self.sass_accredited_date_to:
+            if self.sass_accredited_date_from > self.sass_accredited_date_to:
+                return False
+        else:
             return False
         if collection_date and self.sass_accredited_date_to > collection_date:
             return True
@@ -100,7 +103,7 @@ class Profile(models.Model):
         if not date_accredit_from:
             if date_accredit_to:
                 self.sass_accredited_date_from = date(
-                    date_accredit_from.year, 1, 1
+                    date_accredit_to.year, 1, 1
                 )
             else:
                 self.sass_accredited_date_from = date(date.today().year, 1, 1)
@@ -124,6 +127,11 @@ class Profile(models.Model):
         super(Profile, self).save(*args, **kwargs)
 
     def clean(self):
+        if (
+            not self.sass_accredited_date_from and
+            not self.sass_accredited_date_to
+        ):
+            return
         if self.sass_accredited_date_from and not self.sass_accredited_date_to:
             raise ValidationError(
                 'Missing SASS Accredited date to'
