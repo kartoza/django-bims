@@ -12,10 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='bimsdocument',
-            name='authors',
-            field=models.ManyToManyField(blank=True,
-                                         to=settings.AUTH_USER_MODEL),
-        ),
     ]
