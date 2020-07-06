@@ -6,7 +6,7 @@ from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
     gbif_name_suggest
 )
-from bims.models import Taxonomy, VernacularName
+from bims.models import Taxonomy, VernacularName, TaxonGroup
 from bims.enums import TaxonomicRank, TaxonomicStatus
 
 logger = logging.getLogger('bims')
@@ -31,6 +31,15 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
 
     logger.info('Merging %s data' % len(taxa))
 
+    taxon_groups = TaxonGroup.objects.filter(
+        taxonomies__in=taxa
+    )
+
+    for taxon_group in taxon_groups:
+        taxon_group.taxonomies.add(excluded_taxon)
+
+    vernacular_names = []
+
     links = [
         rel.get_accessor_name() for rel in excluded_taxon._meta.get_fields() if
         issubclass(type(rel), ForeignObjectRel)
@@ -38,6 +47,11 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
 
     if links:
         for taxon in taxa:
+            if taxon.vernacular_names.all().exists():
+                vernacular_names.extend(
+                    list(
+                        taxon.vernacular_names.all())
+                )
             logger.info('----- {} -----'.format(str(taxon)))
             for link in links:
                 try:
@@ -57,6 +71,9 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
             logger.info(''.join(['-' for i in range(len(str(taxon)) + 12)]))
 
     taxa.delete()
+
+    if vernacular_names:
+        excluded_taxon.vernacular_names.add(*vernacular_names)
 
 
 def check_taxa_duplicates(taxon_name, taxon_rank):

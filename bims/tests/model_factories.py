@@ -29,6 +29,7 @@ from bims.models import (
     DatabaseRecord,
     LocationContext,
     LocationContextGroup,
+    VernacularName
 )
 
 
@@ -204,6 +205,28 @@ class TaxonomyF(factory.django.DjangoModelFactory):
     iucn_status = factory.SubFactory(IUCNStatusF)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
     canonical_name = factory.Sequence(lambda n: u'Canonical name %s' % n)
+
+    @factory.post_generation
+    def vernacular_names(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for vernacular_name in extracted:
+                self.vernacular_names.add(vernacular_name)
+
+
+class VernacularNameF(factory.django.DjangoModelFactory):
+    """
+    Vernacular name identifier factory
+    """
+    class Meta:
+        model = VernacularName
+
+    name = factory.Sequence(lambda n: n)
+    source = factory.Sequence(lambda n: u'source name %s' % n)
 
 
 class TaxonGroupF(factory.django.DjangoModelFactory):
