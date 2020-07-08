@@ -3,7 +3,8 @@
 from django.test import TestCase
 from bims.api_views.taxon_group import (
     update_taxon_group_orders,
-    remove_taxa_from_taxon_group
+    remove_taxa_from_taxon_group,
+    add_taxa_to_taxon_group
 )
 from bims.tests.model_factories import (
     TaxonGroupF,
@@ -73,6 +74,28 @@ class TestTaxonGroup(TestCase):
             1
         )
         self.assertFalse(
+            BiologicalCollectionRecord.objects.filter(
+                module_group=taxon_group_1
+            ).exists()
+        )
+
+    def test_add_taxa_to_taxon_group(self):
+        taxonomy_1 = TaxonomyF.create()
+        taxonomy_2 = TaxonomyF.create()
+        BiologicalCollectionRecordF.create(
+            taxonomy=taxonomy_1
+        )
+        taxon_group_1 = TaxonGroupF.create()
+        add_taxa_to_taxon_group(
+            [taxonomy_1.id,  taxonomy_2.id],
+            taxon_group_1.id
+        )
+        self.assertEqual(
+            TaxonGroup.objects.get(
+                id=taxon_group_1.id).taxonomies.all().count(),
+            2
+        )
+        self.assertTrue(
             BiologicalCollectionRecord.objects.filter(
                 module_group=taxon_group_1
             ).exists()

@@ -73,7 +73,8 @@ from bims.api_views.csv_download import CsvDownload
 from bims.views.taxa_upload import TaxaUploadStatusApiView
 from bims.api_views.taxon_group import (
     UpdateTaxonGroupOrder,
-    RemoveTaxaFromTaxonGroup
+    RemoveTaxaFromTaxonGroup,
+    AddTaxaToTaxonGroup
 )
 
 urlpatterns = [
@@ -208,4 +209,7 @@ urlpatterns = [
     url(r'^remove-taxa-from-taxon-group/$',
         RemoveTaxaFromTaxonGroup.as_view(),
         name='remove-taxa-from-taxon-group'),
+    url(r'^add-taxa-to-taxon-group/$',
+        AddTaxaToTaxonGroup.as_view(),
+        name='add-taxa-to-taxon-group'),
 ]

@@ -45,6 +45,28 @@ def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id):
         ).update(module_group=None)
 
 
+def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
+    """
+    Add taxa to taxon group
+    :param taxa_ids: list of taxon taxon ids
+    :param taxon_group_id: id of the taxon group
+    """
+    taxa = Taxonomy.objects.filter(
+        id__in=taxa_ids
+    )
+    try:
+        taxon_group = TaxonGroup.objects.get(
+            id=taxon_group_id
+        )
+    except TaxonGroup.DoesNotExist:
+        return
+    for taxonomy in taxa:
+        taxon_group.taxonomies.add(taxonomy)
+        BiologicalCollectionRecord.objects.filter(
+            taxonomy=taxonomy
+        ).update(module_group=taxon_group)
+
+
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):
     def test_func(self):
         return self.request.user.has_perm('bims.can_update_taxon_group')
@@ -82,6 +104,31 @@ class RemoveTaxaFromTaxonGroup(TaxaUpdateMixin):
         taxa_ids = json.loads(taxa_ids)
         taxon_group_id = int(taxon_group_id)
         remove_taxa_from_taxon_group(taxa_ids, taxon_group_id)
+        return Response(
+            {
+                'taxonomy_count': TaxonGroup.objects.get(
+                    id=taxon_group_id
+                ).taxonomies.all().count()
+            }
+        )
+
+
+class AddTaxaToTaxonGroup(TaxaUpdateMixin):
+    """Api to add taxa to taxon group.
+    Post data required:
+    {
+        'taxaIds': [1,2], // List of taxa id
+        'taxonGroupId': 1 // id of the taxon group
+    }
+    """
+    def post(self, request, *args):
+        taxa_ids = self.request.POST.get('taxaIds', None)
+        taxon_group_id = self.request.POST.get('taxonGroupId', None)
+        if not taxa_ids or not taxon_group_id:
+            raise Http404('Missing required parameter')
+        taxa_ids = json.loads(taxa_ids)
+        taxon_group_id = int(taxon_group_id)
+        add_taxa_to_taxon_group(taxa_ids, taxon_group_id)
         return Response(
             {
                 'taxonomy_count': TaxonGroup.objects.get(
