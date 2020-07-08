@@ -32,7 +32,7 @@ class TestTaxonGroup(TestCase):
         )
         self.assertEqual(taxon_group_1.display_order, 0)
         self.assertEqual(taxon_group_2.display_order, 1)
-        update_taxon_group_orders([2,1])
+        update_taxon_group_orders([2, 1])
         self.assertEqual(TaxonGroup.objects.get(id=1).display_order, 1)
         self.assertEqual(TaxonGroup.objects.get(id=2).display_order, 0)
 
@@ -87,7 +87,7 @@ class TestTaxonGroup(TestCase):
         )
         taxon_group_1 = TaxonGroupF.create()
         add_taxa_to_taxon_group(
-            [taxonomy_1.id,  taxonomy_2.id],
+            [taxonomy_1.id, taxonomy_2.id],
             taxon_group_1.id
         )
         self.assertEqual(

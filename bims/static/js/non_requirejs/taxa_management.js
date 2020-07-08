@@ -4,6 +4,8 @@ let selectedTaxonGroup = '';
 let urlDownload = '/download-csv-taxa-list/';
 let taxonGroupUpdateOrderUrl = '/api/update-taxon-group-order/';
 let removeTaxaFromTaxonGroupUrl = '/api/remove-taxa-from-taxon-group/';
+let addTaxaToTaxonGroupUrl = '/api/add-taxa-to-taxon-group/';
+let addNewTaxonUrl = '/api/add-new-taxon/';
 
 // ----- Global elements ----- //
 let $sortable = $('#sortable');
@@ -11,6 +13,8 @@ let $searchButton = $('#search-button');
 let $downloadCsvButton = $('#download-csv');
 let $loadingOverlay = $('.loading');
 let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
+let $taxonGroupCard = $('.ui-state-default');
+let $findTaxonButton = $('#find-taxon-button');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -63,7 +67,6 @@ $downloadCsvButton.click(function (e) {
 
 $removeTaxonFromGroupBtn.click(function (e) {
     let $target = $(e.target);
-    let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
     let maxTry = 10;
     let currentTry = 0;
     while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
@@ -71,21 +74,50 @@ $removeTaxonFromGroupBtn.click(function (e) {
         $target = $target.parent();
     }
     let id = $target.data('id');
-    let currentTaxonomiesCount = parseInt($taxonGroupCard.html());
-    showLoading();
-        $.ajax({
-            url: removeTaxaFromTaxonGroupUrl,
-            headers:{ "X-CSRFToken": csrfToken },
-            type: 'POST',
-            data: {
-                'taxaIds': JSON.stringify([id]),
-                'taxonGroupId': selectedTaxonGroup
-            },
-            success: function (response) {
-                hideLoading();
-                $taxonGroupCard.html(response['taxonomy_count']);
-                getTaxaList(taxaListCurrentUrl);
+    removeTaxonFromTaxonGroup(id);
+});
+
+$taxonGroupCard.click(function (e) {
+    let $elm = $(e.target);
+    let maxTry = 10;
+    let currentTry = 1;
+    while (!$elm.hasClass('ui-state-default') && currentTry < maxTry) {
+        currentTry++;
+        $elm = $elm.parent();
+    }
+    $('.ui-state-default').removeClass('selected');
+    $elm.addClass('selected');
+    selectedTaxonGroup = $elm.data('id');
+    $('#taxon-name-input').val('');
+    getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`);
+})
+
+$findTaxonButton.click(function () {
+    let taxonName = $('#add-taxon-input').val();
+    if (!taxonName) {
+        return false;
+    }
+    // Show loading div
+    let table = $('.find-taxon-table');
+    table.hide();
+    let loading = $('.find-taxon-loading');
+    loading.show();
+    let $newTaxonForm = $('.new-taxon-form');
+    $newTaxonForm.hide();
+
+    // Show response list
+    $.ajax({
+        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroup=fish`,
+        type: 'get',
+        dataType: 'json',
+        success: function (data) {
+            if (data.length > 0) {
+                populateFindTaxonTable(table, data);
+            } else {
+                // showNewTaxonForm(taxonName);
             }
+            loading.hide();
+        }
     });
 });
 
@@ -174,51 +206,6 @@ const hideLoading = () => {
     $loadingOverlay.hide();
 }
 
-$('.ui-state-default').click(function (e) {
-    let $elm = $(e.target);
-    let maxTry = 10;
-    let currentTry = 1;
-    while (!$elm.hasClass('ui-state-default') && currentTry < maxTry) {
-        currentTry++;
-        $elm = $elm.parent();
-    }
-    $('.ui-state-default').removeClass('selected');
-    $elm.addClass('selected');
-    selectedTaxonGroup = $elm.data('id');
-    $('#taxon-name-input').val('');
-    getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`);
-})
-
-
-$('#find-taxon-button').click(function () {
-    let taxonName = $('#add-taxon-input').val();
-    if (!taxonName) {
-        return false;
-    }
-    // Show loading div
-    let table = $('.find-taxon-table');
-    table.hide();
-    let loading = $('.find-taxon-loading');
-    loading.show();
-    let $newTaxonForm = $('.new-taxon-form');
-    $newTaxonForm.hide();
-
-    // Show response list
-    $.ajax({
-        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroup=fish`,
-        type: 'get',
-        dataType: 'json',
-        success: function (data) {
-            if (data.length > 0) {
-                populateFindTaxonTable(table, data);
-            } else {
-                showNewTaxonForm(taxonName);
-            }
-            loading.hide();
-        }
-    });
-});
-
 function windowpop(url, width, height) {
     let leftPosition, topPosition;
     // Allow for borders.
@@ -287,77 +274,68 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,
-        'rank': rank,
-        'taxonGroup': taxonGroupName,
-        'csrfmiddlewaretoken': csrfToken
+        'rank': rank
     };
     let table = $('.find-taxon-table');
     table.hide();
     let loading = $('.find-taxon-loading');
     loading.show();
 
-    if (taxaId) {
-        $('#addNewTaxonModal').modal('toggle');
-        loading.hide();
-        $('#add-taxon-input').val('');
-
-        if (taxaIdList.indexOf(taxaId + '') === -1) {
-            renderNewTaxon(taxaId, name);
-        } else {
-            let div = $('.taxon-table-body').find(`.taxon-id[value="${taxaId}"]`);
-            if (div.length) {
-                div = div.parent().parent();
-                div.scrollHere();
-                div.highlight();
+    if (!taxaId) {
+        $.ajax({
+            url: addNewTaxonUrl,
+            type: 'POST',
+            headers:{ "X-CSRFToken": csrfToken },
+            data: postData,
+            success: function (response) {
+                $('#addNewTaxonModal').modal('toggle');
+                loading.hide();
+                $('#add-taxon-input').val('');
+                addNewTaxonToObservedList(
+                    name,
+                    gbifKey,
+                    rank,
+                    response['id']
+                )
             }
-        }
-        return true;
+        });
+        return
     }
 
+    let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
+    showLoading();
     $.ajax({
-        url: `/api/add-new-taxon/`,
+        url: addTaxaToTaxonGroupUrl,
+        headers:{ "X-CSRFToken": csrfToken },
         type: 'POST',
-        data: postData,
-        success: function (data) {
-            $('#addNewTaxonModal').modal('toggle');
-            renderNewTaxon(data['id'], name);
-            loading.hide();
-            $('#add-taxon-input').val('');
+        data: {
+            'taxaIds': JSON.stringify([taxaId]),
+            'taxonGroupId': selectedTaxonGroup,
+        },
+        success: function (response) {
+            $taxonGroupCard.html(response['taxonomy_count']);
+            getTaxaList(taxaListCurrentUrl);
         }
     });
 }
 
-// Add new taxon row to the existing taxa list
-function renderNewTaxon(taxonId, taxonName) {
-    let $container = $('.taxon-table-body');
-    taxaIdList.push(taxonId + '');
-    let $row = $('<tr>');
-    $row.html(
-        '<td scope="row" class="taxon-name">' +
-        taxonName +
-        '<input type="hidden" class="taxon-id" value="' + taxonId + '">' +
-        '</td>');
-    $row.append(
-        '<td>' +
-        '<div class="form-check">' +
-        '<input class="form-check-input observed" type="checkbox"' +
-        ' value="True"' +
-        ' name="' + taxonId + '-observed">' +
-        ' <label class="form-check-label">' +
-        ' </label>' +
-        '</div>' +
-        '</td>');
-    let taxonAbundanceInput = $('<input type="number" min="0"' +
-        ' name="' + taxonId + '-abundance"' +
-        ' class="form-control taxon-abundance"' +
-        ' placeholder="0">');
-    let tdTaxonAbundance = $('<td>');
-    tdTaxonAbundance.append(taxonAbundanceInput);
-    $row.append(tdTaxonAbundance);
-    $container.prepend($row);
-    $row.scrollHere();
-    $row.highlight();
-    taxonAbundanceInput.change(taxonAbundanceOnChange);
+function removeTaxonFromTaxonGroup(taxaId) {
+    let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
+    showLoading();
+    $.ajax({
+        url: removeTaxaFromTaxonGroupUrl,
+        headers:{ "X-CSRFToken": csrfToken },
+        type: 'POST',
+        data: {
+            'taxaIds': JSON.stringify([taxaId]),
+            'taxonGroupId': selectedTaxonGroup
+        },
+        success: function (response) {
+            hideLoading();
+            $taxonGroupCard.html(response['taxonomy_count']);
+            getTaxaList(taxaListCurrentUrl);
+        }
+    });
 }
 
 hideLoading();

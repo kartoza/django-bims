@@ -192,14 +192,12 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 canonical_name=taxon_name,
                 rank=rank
             )
-            try:
-                taxon_group = TaxonGroup.objects.get(name=taxon_group)
-                if not (
-                    taxon_group.taxonomies.filter(taxonomy=taxonomy).exists()
-                ):
+            if taxon_group:
+                try:
+                    taxon_group = TaxonGroup.objects.get(name=taxon_group)
                     taxon_group.taxonomies.add(taxonomy)
-            except TaxonGroup.DoesNotExist:
-                pass
+                except TaxonGroup.DoesNotExist:
+                    pass
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
@@ -231,8 +229,11 @@ class TaxaList(LoginRequiredMixin, APIView):
 
         if self.paginator is None:
             return None
-        return self.paginator.paginate_queryset(queryset,
-                   self.request, view=self)
+        return self.paginator.paginate_queryset(
+            queryset,
+            self.request,
+            view=self)
+
     def get_paginated_response(self, data):
         assert self.paginator is not None
         return self.paginator.get_paginated_response(data)
