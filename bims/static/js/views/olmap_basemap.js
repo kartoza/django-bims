@@ -45,22 +45,34 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             });
         },
         getKartozaBaseMap: function () {
+            let layer_NGIOSMPhotos_0 = new ol.layer.Tile({
+                title: 'NGIOSMPhotos',
+                minZoom: 13,
+                maxZoom: 28,
+                opacity: 0.75,
+                source: new ol.source.XYZ({
+                    attributions: ['Data from <a href="http://www.ngi.gov.za/">NGI</a>; tiles from <a href="http://aerial.openstreetmap.org.za">OSM</a>, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'],
+                    url: '/bims_proxy/http://c.aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg',
+                    opacity: 0.75
+                })
+            });
             let baseMapLayer = new ol.layer.Tile({
                 source: new ol.source.TileWMS({
-                    url: '/bims_proxy/https://maps.kartoza.com/mapproxy/service',
+                    url: '/bims_proxy/https://maps.kartoza.com/geoserver/wms',
                     params: {
-                        'layers': 'basemap',
+                        'layers': 'fbis:fbis_basemap',
                         'uppercase': true,
                         'transparent': true,
                         'continuousWorld': true,
                         'opacity': 1.0,
-                        'SRS': 'EPSG:3857'
+                        'SRS': 'EPSG:3857',
+                        'format': 'image/png'
                     }
                 })
             });
             return new ol.layer.Group({
                 title: 'Terrain',
-                layers: [baseMapLayer,]
+                layers: [layer_NGIOSMPhotos_0, baseMapLayer]
             });
         },
         getPositronBasemap: function () {
