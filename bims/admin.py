@@ -529,7 +529,7 @@ class CustomUserAdmin(ProfileAdmin):
             )
             if 'DateModified' in profile_data:
                 return false_response
-        except (ValueError, BimsProfile.DoesNotExist, TypeError):
+        except (ValueError, TypeError, BimsProfile.DoesNotExist):
             pass
         return true_response
 
