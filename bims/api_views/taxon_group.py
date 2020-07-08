@@ -82,4 +82,10 @@ class RemoveTaxaFromTaxonGroup(TaxaUpdateMixin):
         taxa_ids = json.loads(taxa_ids)
         taxon_group_id = int(taxon_group_id)
         remove_taxa_from_taxon_group(taxa_ids, taxon_group_id)
-        return Response('Updated')
+        return Response(
+            {
+                'taxonomy_count': TaxonGroup.objects.get(
+                    id=taxon_group_id
+                ).taxonomies.all().count()
+            }
+        )
