@@ -1,0 +1,337 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Taxa management
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <style>
+        .btn-sm {
+            font-size: 10pt !important;
+        }
+
+        .pagination-centered {
+            text-align: center;
+        }
+
+        ul.pagination {
+            display: flex;
+            align-items: center;
+            list-style: none;
+        }
+
+        ul.pagination li {
+            display: inline-block;
+            margin-left: 1rem;
+        }
+
+        ul.pagination li.arrow {
+            font-size: 2rem;
+        }
+
+        ul.pagination li a {
+            margin-right: 1rem;
+        }
+
+        ul.pagination li.current a {
+            font-weight: bold;
+            background-color: #18A090 !important;
+            border-radius: 3rem;
+            padding: 0.3rem 0.8rem;
+            color: #fff;
+        }
+
+        #sortable {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            padding-left: 15px;
+            width: 100%;
+        }
+
+        #sortable li {
+            margin: 3px 3px 3px 0;
+            padding: 10px;
+            width: 32%;
+            height: 90px;
+            background-color: rgba(222, 222, 222, 0.31);
+        }
+
+        #sortable li .row {
+            height: 100%;
+        }
+
+        #sortable li img {
+            max-height: 80%;
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+        }
+
+        .taxon-group-title {
+            font-size: 1.5em;
+        }
+
+        ul li {
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .selected {
+            border-color: #179f90;
+            background-color: #179f9026 !important;
+        }
+
+        .btn-action {
+            font-size: 10pt;
+        }
+
+        /* Absolute Center Spinner */
+        .loading {
+            position: fixed;
+            z-index: 9999;
+            height: 2em;
+            width: 2em;
+            overflow: show;
+            margin: auto;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+        }
+
+        /* Transparent Overlay */
+        .loading:before {
+            content: '';
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(rgba(116, 116, 116, 0.63), rgba(0, 0, 0, .8));
+            background: -webkit-radial-gradient(rgba(130, 130, 130, 0.8), rgba(73, 73, 73, 0.8));
+        }
+
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="loading">
+        <img src="/static/img/small-loading.svg" width="150" style="filter: brightness(104%) contrast(97%);"
+                             alt="Loading view">
+    </div>
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Taxa management</h2>
+            <div class="dashboard-close" data-destination="/map"><i
+                    class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
+        <div class="dashboard-body">
+            <ul id="sortable">
+                {% for taxa_group in taxa_groups %}
+                    <li data-id="{{ taxa_group.id }}" class="ui-state-default">
+                        <div class="row">
+                            <div class="col-sm-3 img-container">
+                                <img src="{{ taxa_group.logo.url }}"/>
+                            </div>
+                            <div class="col-sm-9">
+                                <div class="taxon-group-title">
+                                    {{ taxa_group.name }}
+                                </div>
+                                <div>
+                                    Total taxonomy
+                                    : <span id="taxon_group_{{ taxa_group.id }}">{{ taxa_group.taxonomies.count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+            <hr style="max-width: 100% !important; border-color: #e6c762"/>
+            <!-- Search form -->
+            <div class="form-inline d-flex md-form form-sm mt-0"
+                 style="margin-bottom: 10px;">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input class="form-control form-control-sm ml-3 w-45"
+                       type="text" placeholder="Taxon name"
+                       aria-label="Search" id="taxon-name-input">
+                <button id="search-button"
+                        class="btn btn-success btn-md my-0 ml-sm-2"
+                        style="height: 31px; padding-top: 3px">Search
+                </button>
+            </div>
+
+
+            <!-- Download button -->
+            <div class="float-right download-button-container"
+                 style="margin-top: -47px; display: none">
+                <button id="add-taxon-btn"
+                        class="btn btn-outline-success" data-toggle="modal"
+                            data-target="#addNewTaxonModal">Add a taxon
+                </button>
+                <button class="btn btn-outline-success" id="download-csv"><i
+                        class="fa fa-download" aria-hidden="true"></i>&nbsp;Download
+                    as csv
+                </button>
+            </div>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th scope="col" style="width: 30%">Taxon Name</th>
+                    <th scope="col" style="width: 20%">Rank</th>
+                    <th scope="col" style="width: 25%">Import date</th>
+                    <th scope="col">Action</th>
+                </tr>
+                </thead>
+                <tbody id="taxa-list">
+                </tbody>
+            </table>
+            <div class="pagination-centered" style="display:none">
+                <ul class="pagination">
+                    <li class="arrow"><a href="#"
+                                         class="pagination pagination-previous">&laquo;</a>
+                    </li>
+                    <li class="current">
+                        <span id="taxa-current-page"></span> - <span
+                            id="taxa-current-size"></span> / <span
+                            id="taxa-count"></span>
+                    </li>
+                    <li class="arrow"><a href="#"
+                                         class="pagination pagination-next">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row-action" style="display: none">
+        <td>
+            <button class="btn btn-action btn-danger remove-taxon-from-group">Remove from group
+            </button>
+            <a href="" class="btn btn-action btn-warning edit-taxon" onclick="windowpop(this.href, 800, 600)">Edit
+            </a>
+        </td>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="addNewTaxonModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Taxon</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-10">
+                                <input type="text" id="add-taxon-input"
+                                       class="form-control form-control-sm"
+                                       value="" placeholder="Taxon name" style="height: 100%;">
+                            </div>
+                            <div class="col-2">
+                                <button type="button" id="find-taxon-button"
+                                        class="btn btn-info" style="width: 100%;"> Find
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container" style="max-height: 600px; overflow-y: auto">
+                        <table class="table table-sm table-striped find-taxon-table" style="display:none;">
+                            <thead>
+                            <tr>
+                                <th scope="col">Scientific Name</th>
+                                <th scope="col">Canonical Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Source</th>
+                                <th scope="col">Stored</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="container new-taxon-form" style="margin-top: 15px; display: none">
+                        <div class="alert alert-info" role="alert">
+                            Whilst FBIS will accept taxa that are not listed in GBIF,
+                            you should use the capability only for taxa where the classification is partly unresolved.
+                            <br><br>
+                            Click ADD to add this taxon even though it is not listed in GBIF,
+                            alternatively you can refine your GBIF search to obtain a valid taxon name.
+                        </div>
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th scope="col">Taxon Name</th>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+                                    <select class="form-control new-taxon-rank">
+                                        {% for rank in taxon_rank %}
+                                            <option value="{{ rank }}" {% if rank == 'SPECIES' %}selected{% endif %}>{{ rank }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><button
+                                        type="button"
+                                        class="btn btn-success add-new-taxon-btn"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
+                                </button></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="width: 100%; height: 170px; text-align: center;display: none; margin-top: 15px;" class="find-taxon-loading">
+                        <img src="/static/img/small-loading.svg" width="150"
+                             alt="Loading view">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script>
+        let csrfToken = '{{ csrf_token }}';
+
+    </script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/taxa_management.js" %}"></script>
+
+    <script>
+
+    </script>
+{% endblock %}

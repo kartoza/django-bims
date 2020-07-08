@@ -31,8 +31,12 @@ from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
 from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
-from bims.views.download_csv_taxa_records import \
+from bims.views.download_csv_taxa_records import (
     download_csv_site_taxa_records
+)
+from bims.views.download_csv_taxa_list import (
+    download_csv_taxa_list
+)
 from bims.views.autocomplete_search import (
     autocomplete,
     user_autocomplete,
@@ -61,6 +65,7 @@ from bims.views.documents import BimsDocumentUpdateView
 from bims.views.site_visit import (
     SiteVisitUpdateView, SiteVisitListView, SiteVisitDetailView
 )
+from bims.views.taxa_management import TaxaManagementView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -104,6 +109,9 @@ urlpatterns = [
     url(r'^download-csv-taxa-records/$',
         download_csv_site_taxa_records,
         name='taxa-site-download'),
+    url(r'^download-csv-taxa-list/$',
+        download_csv_taxa_list,
+        name='taxa-list-download'),
     url(r'^autocomplete/$', autocomplete, name='autocomplete-search'),
     url(r'^user-autocomplete/$',
         user_autocomplete,
@@ -158,6 +166,8 @@ urlpatterns = [
         SiteVisitListView.as_view()),
     url(r'^site-visit/detail/(?P<sitevisitid>\d+)/$',
         SiteVisitDetailView.as_view()),
+    url(r'^taxa-management/$',
+        TaxaManagementView.as_view()),
 ]
 
 # Api urls
