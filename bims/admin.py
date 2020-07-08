@@ -82,6 +82,7 @@ from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
 from bims.utils.location_context import merge_context_group
+from bims.utils.user import merge_users
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -467,6 +468,32 @@ class CustomUserAdmin(ProfileAdmin):
         SassAccreditedStatusFilter,
         UserHasEmailFilter,
     )
+
+    actions = ['merge_users']
+
+    def merge_users(self, request, queryset):
+        active_user = queryset.filter(is_active=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 user', messages.ERROR
+            )
+            return
+        if not active_user.exists():
+            self.message_user(
+                request, 'Missing active user', messages.ERROR)
+            return
+        if active_user.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 active user',
+                messages.ERROR)
+            return
+        merge_users(
+            primary_user=active_user[0],
+            user_list=queryset.values_list('id', flat=True)
+        )
+        self.message_user(request, 'Users has been merged')
+
+    merge_users.short_description = 'Merge users'
 
     def sass_accredited_status(self, obj):
         false_response = format_html(
