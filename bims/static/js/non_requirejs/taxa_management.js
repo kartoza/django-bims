@@ -3,11 +3,14 @@ let taxaListCurrentUrl = '';
 let selectedTaxonGroup = '';
 let urlDownload = '/download-csv-taxa-list/';
 let taxonGroupUpdateOrderUrl = '/api/update-taxon-group-order/';
+let removeTaxaFromTaxonGroupUrl = '/api/remove-taxa-from-taxon-group/';
 
 // ----- Global elements ----- //
 let $sortable = $('#sortable');
 let $searchButton = $('#search-button');
 let $downloadCsvButton = $('#download-csv');
+let $loadingOverlay = $('.loading');
+let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -18,6 +21,7 @@ $sortable.sortable({
             ids.push($(element).data('id'));
         });
         $sortable.sortable("disable");
+        showLoading();
         $.ajax({
             url: taxonGroupUpdateOrderUrl,
             headers:{ "X-CSRFToken": csrfToken },
@@ -26,8 +30,8 @@ $sortable.sortable({
                 'taxonGroups': JSON.stringify(ids)
             },
             success: function (response) {
+                hideLoading();
                 $sortable.sortable("enable");
-                console.log(response);
             }
         });
     }
@@ -57,12 +61,42 @@ $downloadCsvButton.click(function (e) {
     a.remove();
 });
 
+$removeTaxonFromGroupBtn.click(function (e) {
+    let $target = $(e.target);
+    let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
+    let maxTry = 10;
+    let currentTry = 0;
+    while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
+        currentTry += 1;
+        $target = $target.parent();
+    }
+    let id = $target.data('id');
+    let currentTaxonomiesCount = parseInt($taxonGroupCard.html());
+    showLoading();
+        $.ajax({
+            url: removeTaxaFromTaxonGroupUrl,
+            headers:{ "X-CSRFToken": csrfToken },
+            type: 'POST',
+            data: {
+                'taxaIds': JSON.stringify([id]),
+                'taxonGroupId': selectedTaxonGroup
+            },
+            success: function (response) {
+                hideLoading();
+                $taxonGroupCard.html(currentTaxonomiesCount - 1);
+                getTaxaList(taxaListCurrentUrl);
+            }
+    });
+});
+
 // ----- Functions ----- //
 const getTaxaList = (url) => {
     taxaListCurrentUrl = url;
+    showLoading();
     $('.download-button-container').show();
     $.get(url).then(
         function (response) {
+            hideLoading();
             let $taxaList = $('#taxa-list');
             let $pagination = $('.pagination-centered');
             let paginationNext = $('.pagination-next');
@@ -88,9 +122,17 @@ const getTaxaList = (url) => {
                 if (!name) {
                     name = data['scientific_name'];
                 }
-                let rowAction = $('.row-action').clone();
-                rowAction.removeClass('.row-action');
-                $taxaList.append(`<tr><td>${name}</td><td>${data['rank']}</td><td>${data['import_date']}</td><td>${rowAction.html()}</td></tr>`);
+                let $rowAction = $('.row-action').clone(true, true);
+                $rowAction.removeClass('row-action');
+                $rowAction.show();
+                let $row = $(`<tr class="taxa-row" data-id="${data['id']}"></tr>`);
+                $taxaList.append($row);
+                $row.append(`<td>${name}</td>`);
+                $row.append(`<td>${data['rank']}</td>`);
+                $row.append(`<td>${data['import_date']}</td>`);
+                let $tdAction = $(`<td></td>`);
+                $row.append($tdAction);
+                $tdAction.append($rowAction);
             });
             if (response['next'] == null && response['previous'] == null) {
                 $pagination.hide();
@@ -120,6 +162,14 @@ const getTaxaList = (url) => {
             }
         }
     )
+}
+
+const showLoading = () => {
+    $loadingOverlay.show();
+}
+
+const hideLoading = () => {
+    $loadingOverlay.hide();
 }
 
 $('.ui-state-default').click(function (e) {
@@ -297,3 +347,5 @@ function renderNewTaxon(taxonId, taxonName) {
     $row.highlight();
     taxonAbundanceInput.change(taxonAbundanceOnChange);
 }
+
+hideLoading();

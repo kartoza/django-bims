@@ -71,7 +71,10 @@ from bims.api_views.taxa_search_result import TaxaSearchResult
 from bims.api_views.river_name import GetRiverName
 from bims.api_views.csv_download import CsvDownload
 from bims.views.taxa_upload import TaxaUploadStatusApiView
-from bims.api_views.taxon_group import UpdateTaxonGroupOrder
+from bims.api_views.taxon_group import (
+    UpdateTaxonGroupOrder,
+    RemoveTaxaFromTaxonGroup
+)
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -200,6 +203,9 @@ urlpatterns = [
         TaxaList.as_view(),
         name='taxa-list'),
     url(r'^update-taxon-group-order/$',
-        csrf_exempt(UpdateTaxonGroupOrder.as_view()),
+        UpdateTaxonGroupOrder.as_view(),
         name='update-taxon-group-order'),
+    url(r'^remove-taxa-from-taxon-group/$',
+        RemoveTaxaFromTaxonGroup.as_view(),
+        name='remove-taxa-from-taxon-group'),
 ]
