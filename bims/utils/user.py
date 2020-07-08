@@ -1,3 +1,4 @@
+from django.db.models.fields.related import ForeignObjectRel
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from django.db.models import Q
@@ -84,3 +85,45 @@ def create_users_from_string(user_string):
             if user and user not in list_user:
                 list_user.append(user)
     return list_user
+
+
+def merge_users(primary_user, user_list):
+    """
+    Merge multiple users into one primary_user
+    """
+    if not primary_user and not user_list:
+        return
+
+    print ('Merging %s data' % len(user_list))
+
+    User = get_user_model()
+    users = User.objects.filter(
+        id__in=user_list
+    ).exclude(id=primary_user.id)
+
+    links = [
+        rel.get_accessor_name() for rel in primary_user._meta.get_fields() if
+        issubclass(type(rel), ForeignObjectRel)
+    ]
+
+    if links:
+        for user in users:
+            print('----- {} -----'.format(str(user)))
+            for link in links:
+                try:
+                    objects = getattr(user, link).all()
+                    if objects.count() > 0:
+                        print('Updating {obj} for : {taxon}'.format(
+                            obj=str(objects.model._meta.label),
+                            taxon=str(user)
+                        ))
+                        update_dict = {
+                            getattr(user, link).field.name: primary_user
+                        }
+                        objects.update(**update_dict)
+                except Exception as e:  # noqa
+                    print(e)
+                    continue
+            print (''.join(['-' for i in range(len(str(user)) + 12)]))
+
+    users.delete()
