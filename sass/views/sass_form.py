@@ -355,6 +355,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         )
         site_visit.sass_biotope_fraction.remove(*sass_biotope_fractions)
         site_visit.sass_biotope_fraction.add(*biotope_fractions)
+        if isinstance(date, libdatetime):
+            date = date.date()
         site_visit.site_visit_date = date
         site_visit.time = datetime
         site_visit.owner = owner
@@ -685,13 +687,13 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         context['location_site_lon'] = self.site_lon
         context['geoserver_public_location'] = get_key(
             'GEOSERVER_PUBLIC_LOCATION')
-        try:
-            self.site_image = (
-                SiteImage.objects.get(site_visit=self.site_visit))
-            context['site_image'] = self.site_image
-        except SiteImage.DoesNotExist:
-            pass
         if self.site_visit:
+            try:
+                self.site_image = (
+                    SiteImage.objects.get(site_visit=self.site_visit))
+                context['site_image'] = self.site_image
+            except SiteImage.DoesNotExist:
+                pass
             context['sass_version'] = self.site_visit.sass_version
 
         return context

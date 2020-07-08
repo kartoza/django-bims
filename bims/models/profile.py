@@ -103,7 +103,7 @@ class Profile(models.Model):
         if not date_accredit_from:
             if date_accredit_to:
                 self.sass_accredited_date_from = date(
-                    date_accredit_from.year, 1, 1
+                    date_accredit_to.year, 1, 1
                 )
             else:
                 self.sass_accredited_date_from = date(date.today().year, 1, 1)
