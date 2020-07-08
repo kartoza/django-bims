@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bims.models import TaxonGroup, Taxonomy
+from bims.models import TaxonGroup, Taxonomy, BiologicalCollectionRecord
 
 
 def update_taxon_group_orders(taxon_group_ids):
@@ -40,6 +40,9 @@ def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id):
         return
     for taxonomy in taxa:
         taxon_group.taxonomies.remove(taxonomy)
+        BiologicalCollectionRecord.objects.filter(
+            taxonomy=taxonomy
+        ).update(module_group=None)
 
 
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):

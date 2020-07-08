@@ -5,8 +5,13 @@ from bims.api_views.taxon_group import (
     update_taxon_group_orders,
     remove_taxa_from_taxon_group
 )
-from bims.tests.model_factories import TaxonGroupF, TaxonomyF
+from bims.tests.model_factories import (
+    TaxonGroupF,
+    TaxonomyF,
+    BiologicalCollectionRecordF
+)
 from bims.models.taxon_group import TaxonGroup
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 
 class TestTaxonGroup(TestCase):
@@ -38,7 +43,16 @@ class TestTaxonGroup(TestCase):
         taxon_group_1 = TaxonGroupF.create(
             taxonomies=(taxonomy_1, taxonomy_2)
         )
+        biological_1 = BiologicalCollectionRecordF.create(
+            taxonomy=taxonomy_1,
+            module_group=taxon_group_1
+        )
+        BiologicalCollectionRecordF.create(
+            taxonomy=taxonomy_3,
+            module_group=taxon_group_1
+        )
         self.assertEqual(taxon_group_1.taxonomies.all().count(), 2)
+        self.assertEqual(biological_1.module_group, taxon_group_1)
         remove_taxa_from_taxon_group(
             [taxonomy_1.id],
             taxon_group_1.id
@@ -52,4 +66,14 @@ class TestTaxonGroup(TestCase):
             TaxonGroup.objects.get(
                 id=taxon_group_1.id).taxonomies.all().count(),
             1
+        )
+        self.assertEqual(
+            TaxonGroup.objects.get(
+                id=taxon_group_1.id).taxonomies.all().count(),
+            1
+        )
+        self.assertFalse(
+            BiologicalCollectionRecord.objects.filter(
+                module_group=taxon_group_1
+            ).exists()
         )
