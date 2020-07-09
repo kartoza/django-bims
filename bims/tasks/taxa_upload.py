@@ -17,7 +17,7 @@ TAXA_FILE_HEADERS = [
 @shared_task(name='bims.tasks.taxa_upload', queue='update')
 def taxa_upload(taxa_upload_session_id):
     from bims.utils.logger import log
-    from bims.models import TaxaUploadSession
+    from bims.models import UploadSession as TaxaUploadSession
     from bims.scripts.taxa_upload import TaxaCSVUpload
     try:
         taxa_upload_session = (
@@ -51,4 +51,4 @@ def taxa_upload(taxa_upload_session_id):
     taxa_upload_session.save()
     taxa_csv_upload = TaxaCSVUpload()
     taxa_csv_upload.taxa_upload_session = taxa_upload_session
-    taxa_csv_upload.import_taxa()
+    taxa_csv_upload.start()

@@ -20,6 +20,7 @@ from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 from bims.views.taxa_upload import TaxaUploadView
+from bims.views.collections_upload import CollectionsUploadView
 from bims.views.shapefile_upload import (
     ShapefileUploadView,
     process_shapefiles,
@@ -168,6 +169,8 @@ urlpatterns = [
         SiteVisitDetailView.as_view()),
     url(r'^taxa-management/$',
         TaxaManagementView.as_view()),
+    url(r'^upload-collections/$', CollectionsUploadView.as_view(),
+        name='upload-collections'),
 ]
 
 # Api urls

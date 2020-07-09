@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Taxa uploader view
+"""Collections uploader view
 """
 
 from datetime import datetime
@@ -13,26 +13,28 @@ from bims.models.taxon_group import TaxonGroup
 from bims.tasks.taxa_upload import taxa_upload
 
 
-class TaxaUploadView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
+class CollectionsUploadView(
+    UserPassesTestMixin, LoginRequiredMixin, TemplateView):
     """Taxa upload view."""
-    template_name = 'taxa_uploader.html'
+    template_name = 'collections_uploader.html'
 
     def test_func(self):
-        return self.request.user.has_perm('bims.can_upload_taxa')
+        return self.request.user.has_perm('bims.can_upload_collection')
 
     def get_context_data(self, **kwargs):
-        context = super(TaxaUploadView, self).get_context_data(**kwargs)
+        context = super(
+            CollectionsUploadView, self).get_context_data(**kwargs)
         taxa_upload_sessions = UploadSession.objects.filter(
             uploader=self.request.user,
             processed=False,
             process_file__isnull=False,
-            category='taxa'
+            category='collections'
         )
         context['upload_sessions'] = taxa_upload_sessions
         context['finished_sessions'] = UploadSession.objects.filter(
             uploader=self.request.user,
             processed=True,
-            category='taxa'
+            category='collections'
         ).order_by(
             '-uploaded_at'
         )
@@ -62,20 +64,20 @@ class TaxaUploadView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
             return HttpResponseRedirect('/upload-taxa')
         if not csv_file:
             raise Http404('Missing csv file')
-        taxa_upload_session = UploadSession.objects.create(
+        upload_session = UploadSession.objects.create(
             uploader=request.user,
             process_file=csv_file,
             uploaded_at=datetime.now(),
             module_group_id=taxon_group_id,
-            category='taxa'
+            category='collections'
         )
-        taxa_upload.delay(taxa_upload_session.id)
+        taxa_upload.delay(upload_session.id)
         return HttpResponseRedirect('/upload-taxa')
 
 
-class TaxaUploadStatusApiView(APIView):
+class CollectionsUploadStatusView(APIView):
     """
-    Return status of the taxa upload
+    Return status of the collections upload
     """
 
     def get(self, request, session_id, *args):

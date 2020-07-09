@@ -1,67 +1,20 @@
-import csv
-import re
+
 import copy
 import logging
-from django.contrib.sites.models import Site
 from bims.scripts.species_keys import *  # noqa
 from bims.enums import TaxonomicRank
 from bims.models import (
-    Taxonomy,
-    TaxaUploadSession
+    Taxonomy
 )
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif
 )
+from bims.scripts.data_upload import DataCSVUpload
 
 logger = logging.getLogger('bims')
 
 
-class TaxaCSVUpload(object):
-
-    taxa_upload_session = TaxaUploadSession.objects.none()
-    error_list = []
-    success_list = []
-    headers = []
-    total_rows = 0
-    domain = ''
-
-    def import_taxa(self):
-        """
-        Import taxa list from csv file
-        """
-        self.error_list = []
-        self.success_list = []
-        self.domain = Site.objects.get_current().domain
-        self.total_rows = len(
-            self.taxa_upload_session.process_file.readlines()
-        ) - 1
-        with open(self.taxa_upload_session.process_file.path) as csv_file:
-            self.species_csv_dict_reader(csv.DictReader(csv_file))
-
-    def error_file(self, error_row, error_message):
-        """
-        Write to error file
-        :param error_row: error data
-        :param error_message: error message for this row
-        """
-        logger.log(
-            level=logging.ERROR,
-            msg=str(error_message)
-        )
-        error_row['error_message'] = error_message
-        self.error_list.append(error_row)
-
-    def success_file(self, success_row, taxon_id):
-        """
-        Write to success file
-        :param success_row: success data
-        :param taxon_id: id of the added taxonomy
-        """
-        success_row['taxon_id'] = 'http://{d}/admin/bims/taxonomy/{id}'.format(
-            d=self.domain,
-            id=taxon_id
-        )
-        self.success_list.append(success_row)
+class TaxaCSVUpload(DataCSVUpload):
 
     def parent_rank(self, rank):
         """
@@ -188,235 +141,132 @@ class TaxaCSVUpload(object):
                     taxon.save()
         return taxon
 
-    @staticmethod
-    def row_value(row, key):
-        """
-        Get row value by key
-        :param row: row data
-        :param key: key
-        :return: row value
-        """
-        row_value = ''
+    def process_row(self, row):
+        """Processing row of the csv files"""
+        taxon_name = self.row_value(row, TAXON)
+        if not taxon_name:
+            self.error_file(
+                error_row=row,
+                error_message='Missing Taxon value'
+            )
+            return
+        if SCIENTIFIC_NAME in row:
+            scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
+                               if self.row_value(row, SCIENTIFIC_NAME)
+                               else taxon_name)
+        else:
+            scientific_name = taxon_name
+        scientific_name = scientific_name.strip()
+        # Get rank
+        rank = self.row_value(row, 'Taxon Rank')
+        if not rank:
+            rank = self.row_value(row, 'Taxon rank')
+        if not rank:
+            self.error_file(
+                error_row=row,
+                error_message='Missing taxon rank'
+            )
+            return
+        taxa = Taxonomy.objects.filter(
+            canonical_name__iexact=taxon_name,
+            rank=rank.upper()
+        )
         try:
-            row_value = row[key]
-            row_value = row_value.replace('\xa0', ' ')
-            row_value = row_value.replace('\xc2', '')
-            row_value = row_value.replace('\\xa0', '')
-            row_value = row_value.strip()
-            row_value = re.sub(' +', ' ', row_value)
-        except KeyError:
-            pass
-        return row_value
-
-    def species_csv_dict_reader(self, csv_dict):
-        """
-        Read and process species from csv file
-        :param csv_dict: csv data as dictionaries
-        """
-        index = 1
-        for row in csv_dict:
-            logger.debug(row)
-            self.taxa_upload_session.progress = '{index}/{total}'.format(
-                index=index,
-                total=self.total_rows
-            )
-            self.taxa_upload_session.save()
-            index += 1
-            taxon_name = self.row_value(row, TAXON)
-            if not taxon_name:
-                self.error_file(
-                    error_row=row,
-                    error_message='Missing Taxon value'
+            taxonomy = None
+            if taxa.exists():
+                taxonomy = taxa[0]
+                logger.debug('{} already in the system'.format(
+                    taxon_name
+                ))
+            if not taxonomy:
+                # Fetch from gbif
+                taxonomy = fetch_all_species_from_gbif(
+                    species=taxon_name,
+                    taxonomic_rank=rank,
+                    should_get_children=False,
+                    fetch_vernacular_names=False,
+                    use_name_lookup=True
                 )
-                continue
-            if SCIENTIFIC_NAME in row:
-                scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
-                                   if self.row_value(row, SCIENTIFIC_NAME)
-                                   else taxon_name)
             else:
-                scientific_name = taxon_name
-            scientific_name = scientific_name.strip()
-            # Get rank
-            rank = self.row_value(row, 'Taxon Rank')
-            if not rank:
-                rank = self.row_value(row, 'Taxon rank')
-            if not rank:
-                self.error_file(
-                    error_row=row,
-                    error_message='Missing taxon rank'
+                # Try again with lookup
+                logger.debug('Use different method')
+                taxonomy = fetch_all_species_from_gbif(
+                    species=taxon_name,
+                    taxonomic_rank=rank,
+                    should_get_children=False,
+                    fetch_vernacular_names=False,
+                    use_name_lookup=False
                 )
-                continue
-            taxa = Taxonomy.objects.filter(
-                canonical_name__iexact=taxon_name,
-                rank=rank.upper()
-            )
-            try:
-                taxonomy = None
-                if taxa.exists():
-                    taxonomy = taxa[0]
-                    logger.debug('{} already in the system'.format(
-                        taxon_name
-                    ))
-                if not taxonomy:
-                    # Fetch from gbif
-                    taxonomy = fetch_all_species_from_gbif(
-                        species=taxon_name,
-                        taxonomic_rank=rank,
-                        should_get_children=False,
-                        fetch_vernacular_names=False,
-                        use_name_lookup=True
+
+            # Taxonomy found or created then validate it
+            if taxonomy:
+                if not taxonomy.parent:
+                    taxonomy.parent = self.get_parent(row, rank)
+
+            # Data from GBIF couldn't be found, so add it manually
+            if not taxonomy:
+                parent = self.get_parent(row, rank)
+                if not parent:
+                    self.error_file(
+                        error_row=row,
+                        error_message=(
+                            'Data not found from gbif for this taxon and '
+                            'its parents'
+                        )
                     )
+                    return
                 else:
-                    # Try again with lookup
-                    logger.debug('Use different method')
-                    taxonomy = fetch_all_species_from_gbif(
-                        species=taxon_name,
-                        taxonomic_rank=rank,
-                        should_get_children=False,
-                        fetch_vernacular_names=False,
-                        use_name_lookup=False
+                    # Taxonomy not found, create one
+                    taxonomy, _ = Taxonomy.objects.get_or_create(
+                        scientific_name=scientific_name,
+                        canonical_name=taxon_name,
+                        rank=TaxonomicRank[rank.upper()].name,
+                        parent=parent
                     )
 
-                # Taxonomy found or created then validate it
-                if taxonomy:
-                    if not taxonomy.parent:
-                        taxonomy.parent = self.get_parent(row, rank)
+            # -- Finish
+            if taxonomy:
+                # Merge taxon with same canonical name
+                legacy_canonical_name = taxonomy.legacy_canonical_name
+                legacy_canonical_name = (
+                    legacy_canonical_name.replace('\\xa0', '')
+                )
+                if FORMER_SPECIES_NAME in row:
+                    former_species_name = self.row_value(
+                        row, FORMER_SPECIES_NAME)
+                    if len(former_species_name) > 500:
+                        former_species_name = former_species_name[:500]
+                    if former_species_name not in legacy_canonical_name:
+                        legacy_canonical_name += ';' + former_species_name
+                taxonomy.legacy_canonical_name = (
+                    legacy_canonical_name[:700]
+                )
+                # -- Import date
+                taxonomy.import_date = (
+                    self.taxa_upload_session.uploaded_at.date()
+                )
+                self.success_file(
+                    row,
+                    taxonomy.id
+                )
+                # -- Validate parents
+                self.validate_parents(
+                    taxon=taxonomy,
+                    row=row
+                )
+                if taxonomy.canonical_name != taxon_name:
+                    taxonomy.canonical_name = taxon_name
+                    taxonomy.save()
 
-                # Data from GBIF couldn't be found, so add it manually
-                if not taxonomy:
-                    parent = self.get_parent(row, rank)
-                    if not parent:
-                        self.error_file(
-                            error_row=row,
-                            error_message=(
-                                'Data not found from gbif for this taxon and '
-                                'its parents'
-                            )
-                        )
-                        continue
-                    else:
-                        # Taxonomy not found, create one
-                        taxonomy, _ = Taxonomy.objects.get_or_create(
-                            scientific_name=scientific_name,
-                            canonical_name=taxon_name,
-                            rank=TaxonomicRank[rank.upper()].name,
-                            parent=parent
-                        )
-
-                # -- Finish
-                if taxonomy:
-                    # Merge taxon with same canonical name
-                    legacy_canonical_name = taxonomy.legacy_canonical_name
-                    legacy_canonical_name = (
-                        legacy_canonical_name.replace('\\xa0', '')
-                    )
-                    if FORMER_SPECIES_NAME in row:
-                        former_species_name = self.row_value(
-                            row, FORMER_SPECIES_NAME)
-                        if len(former_species_name) > 500:
-                            former_species_name = former_species_name[:500]
-                        if former_species_name not in legacy_canonical_name:
-                            legacy_canonical_name += ';' + former_species_name
-                    taxonomy.legacy_canonical_name = (
-                        legacy_canonical_name[:700]
-                    )
-                    # -- Import date
-                    taxonomy.import_date = (
-                        self.taxa_upload_session.uploaded_at.date()
-                    )
-                    self.success_file(
-                        row,
-                        taxonomy.id
-                    )
-                    # -- Validate parents
-                    self.validate_parents(
-                        taxon=taxonomy,
-                        row=row
-                    )
-                    if taxonomy.canonical_name != taxon_name:
-                        taxonomy.canonical_name = taxon_name
-                        taxonomy.save()
-
-                    # -- Add to taxon group
-                    taxon_group = self.taxa_upload_session.module_group
-                    if not taxon_group.taxonomies.filter(
+                # -- Add to taxon group
+                taxon_group = self.taxa_upload_session.module_group
+                if not taxon_group.taxonomies.filter(
                         id=taxonomy.id
-                    ).exists():
-                        taxon_group.taxonomies.add(taxonomy)
+                ).exists():
+                    taxon_group.taxonomies.add(taxonomy)
 
-            except Exception as e:  # noqa
-                self.error_file(
-                    error_row=row,
-                    error_message=str(e)
-                )
-
-        headers = csv_dict.fieldnames
-        file_name = (
-            self.taxa_upload_session.process_file.name.replace(
-                'taxa-file/', '')
-        )
-        file_path = (
-            self.taxa_upload_session.process_file.path.replace(file_name, '')
-        )
-
-        # Create error file
-        # TODO : Done it simultaneously with file processing
-        if self.error_list:
-            error_headers = copy.deepcopy(headers)
-            if 'error_message' not in error_headers:
-                error_headers.append('error_message')
-            error_file_path = '{path}error_{name}'.format(
-                path=file_path,
-                name=file_name
+        except Exception as e:  # noqa
+            self.error_file(
+                error_row=row,
+                error_message=str(e)
             )
-            with open(error_file_path, mode='w') as csv_file:
-                writer = csv.writer(
-                    csv_file, delimiter=',', quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(error_headers)
-                for data in self.error_list:
-                    data_list = []
-                    for key in error_headers:
-                        try:
-                            data_list.append(data[key])
-                        except KeyError:
-                            continue
-                    writer.writerow(data_list)
-            self.taxa_upload_session.error_file.name = (
-                'taxa-file/error_{}'.format(
-                    file_name
-                )
-            )
-
-        # Create success file
-        # TODO : Done it simultaneously with file processing
-        if self.success_list:
-            success_headers = copy.deepcopy(headers)
-            if 'taxon_id' not in success_headers:
-                success_headers.append('taxon_id')
-            success_file_path = '{path}success_{name}'.format(
-                path=file_path,
-                name=file_name
-            )
-            with open(success_file_path, mode='w') as csv_file:
-                writer = csv.writer(
-                    csv_file, delimiter=',', quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(success_headers)
-                for data in self.success_list:
-                    data_list = []
-                    for key in success_headers:
-                        try:
-                            data_list.append(data[key])
-                        except KeyError:
-                            continue
-                    writer.writerow(data_list)
-            self.taxa_upload_session.success_file.name = (
-                'taxa-file/success_{}'.format(
-                    file_name
-                )
-            )
-
-        self.taxa_upload_session.processed = True
-        self.taxa_upload_session.progress = 'Finished'
-        self.taxa_upload_session.save()
