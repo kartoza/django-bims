@@ -1,4 +1,3 @@
-
 import copy
 import logging
 from bims.scripts.species_keys import *  # noqa
@@ -15,6 +14,7 @@ logger = logging.getLogger('bims')
 
 
 class TaxaCSVUpload(DataCSVUpload):
+    model_name = 'taxonomy'
 
     def parent_rank(self, rank):
         """
@@ -243,7 +243,7 @@ class TaxaCSVUpload(DataCSVUpload):
                 )
                 # -- Import date
                 taxonomy.import_date = (
-                    self.taxa_upload_session.uploaded_at.date()
+                    self.upload_session.uploaded_at.date()
                 )
                 self.success_file(
                     row,
@@ -259,7 +259,7 @@ class TaxaCSVUpload(DataCSVUpload):
                     taxonomy.save()
 
                 # -- Add to taxon group
-                taxon_group = self.taxa_upload_session.module_group
+                taxon_group = self.upload_session.module_group
                 if not taxon_group.taxonomies.filter(
                         id=taxonomy.id
                 ).exists():

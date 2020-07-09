@@ -11,13 +11,20 @@ logger = logging.getLogger('bims')
 
 
 class DataCSVUpload(object):
-    taxa_upload_session = UploadSession.objects.none()
+    upload_session = UploadSession.objects.none()
     error_list = []
     success_list = []
     headers = []
     total_rows = 0
     domain = ''
     csv_dict_reader = None
+    model_name = ''
+
+    def process_started(self):
+        pass
+
+    def process_ended(self):
+        pass
 
     def start(self):
         """
@@ -27,11 +34,13 @@ class DataCSVUpload(object):
         self.success_list = []
         self.domain = Site.objects.get_current().domain
         self.total_rows = len(
-            self.taxa_upload_session.process_file.readlines()
+            self.upload_session.process_file.readlines()
         ) - 1
-        with open(self.taxa_upload_session.process_file.path) as csv_file:
+        self.process_started()
+        with open(self.upload_session.process_file.path) as csv_file:
             self.csv_dict_reader = csv.DictReader(csv_file)
             self.process_csv_dict_reader()
+        self.process_ended()
 
     def error_file(self, error_row, error_message):
         """
@@ -46,32 +55,29 @@ class DataCSVUpload(object):
         error_row['error_message'] = error_message
         self.error_list.append(error_row)
 
-    def success_file(self, success_row, taxon_id):
+    def success_file(self, success_row, data_id):
         """
         Write to success file
         :param success_row: success data
-        :param taxon_id: id of the added taxonomy
+        :param data_id: id of the added data
         """
-        success_row['taxon_id'] = 'http://{d}/admin/bims/taxonomy/{id}'.format(
+        success_row['link'] = 'http://{d}/admin/bims/{model}/{id}'.format(
+            model=self.model_name,
             d=self.domain,
-            id=taxon_id
+            id=data_id
         )
         self.success_list.append(success_row)
 
-    def finish(self):
+    def finish(self, headers):
         """
         Finishing the csv upload process
         """
-        if not self.csv_dict_reader:
-            return
-
-        headers = self.csv_dict_reader.fieldnames
         file_name = (
-            self.taxa_upload_session.process_file.name.replace(
+            self.upload_session.process_file.name.replace(
                 'taxa-file/', '')
         )
         file_path = (
-            self.taxa_upload_session.process_file.path.replace(file_name, '')
+            self.upload_session.process_file.path.replace(file_name, '')
         )
 
         # Create error file
@@ -99,7 +105,7 @@ class DataCSVUpload(object):
                         except KeyError:
                             continue
                     writer.writerow(data_list)
-            self.taxa_upload_session.error_file.name = (
+            self.upload_session.error_file.name = (
                 'taxa-file/error_{}'.format(
                     file_name
                 )
@@ -130,15 +136,15 @@ class DataCSVUpload(object):
                         except KeyError:
                             continue
                     writer.writerow(data_list)
-            self.taxa_upload_session.success_file.name = (
+            self.upload_session.success_file.name = (
                 'taxa-file/success_{}'.format(
                     file_name
                 )
             )
 
-        self.taxa_upload_session.processed = True
-        self.taxa_upload_session.progress = 'Finished'
-        self.taxa_upload_session.save()
+        self.upload_session.processed = True
+        self.upload_session.progress = 'Finished'
+        self.upload_session.save()
 
     @staticmethod
     def row_value(row, key):
@@ -167,15 +173,15 @@ class DataCSVUpload(object):
         index = 1
         for row in self.csv_dict_reader:
             logger.debug(row)
-            self.taxa_upload_session.progress = '{index}/{total}'.format(
+            self.upload_session.progress = '{index}/{total}'.format(
                 index=index,
                 total=self.total_rows
             )
-            self.taxa_upload_session.save()
+            self.upload_session.save()
             index += 1
             self.process_row(row=row)
 
-        self.finish()
+        self.finish(self.csv_dict_reader.fieldnames)
 
     def process_row(self, row):
         """ Processing row of the csv files """

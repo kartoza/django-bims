@@ -216,20 +216,6 @@ function windowpop(url, width, height) {
     window.open(url, "Window2", "status=no,height=" + height + ",width=" + width + ",resizable=yes,left=" + leftPosition + ",top=" + topPosition + ",screenX=" + leftPosition + ",screenY=" + topPosition + ",toolbar=no,menubar=no,scrollbars=no,location=no,directories=no");
 }
 
-function showNewTaxonForm(taxonName) {
-    let $taxonForm = $('.new-taxon-form');
-    let $button = $taxonForm.find('.add-new-taxon-btn');
-    let $rank = $taxonForm.find('.new-taxon-rank');
-    let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
-    let $newTaxonNameInput = $('#new-taxon-name');
-    $button.click(function () {
-        $taxonForm.hide();
-        addNewTaxonToObservedList(capitalizedTaxonName, '', $rank.val());
-    });
-    $newTaxonNameInput.val(capitalizedTaxonName);
-    $taxonForm.show();
-}
-
 function populateFindTaxonTable(table, data) {
     let tableBody = table.find('tbody');
     tableBody.html('');
@@ -303,6 +289,8 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
     }
 
     let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
+    $('#addNewTaxonModal').modal('toggle');
+    loading.hide();
     showLoading();
     $.ajax({
         url: addTaxaToTaxonGroupUrl,

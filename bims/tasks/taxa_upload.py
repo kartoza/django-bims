@@ -50,5 +50,5 @@ def taxa_upload(taxa_upload_session_id):
     taxa_upload_session.progress = 'Processing'
     taxa_upload_session.save()
     taxa_csv_upload = TaxaCSVUpload()
-    taxa_csv_upload.taxa_upload_session = taxa_upload_session
+    taxa_csv_upload.upload_session = taxa_upload_session
     taxa_csv_upload.start()
