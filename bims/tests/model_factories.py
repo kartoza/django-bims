@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db.models import signals
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
+from geonode.documents.models import Document
 from bims.models import (
     LocationType,
     LocationSite,
@@ -354,3 +355,8 @@ class SourceReferenceDatabaseF(factory.django.DjangoModelFactory):
 class DatabaseRecordF(factory.django.DjangoModelFactory):
     class Meta:
         model = DatabaseRecord
+
+
+class DocumentF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Document
