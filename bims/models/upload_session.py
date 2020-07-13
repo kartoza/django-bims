@@ -9,12 +9,18 @@ from django.db import models
 from bims.models.taxon_group import TaxonGroup
 
 
-class TaxaUploadSession(models.Model):
-    """Taxa upload session model
+class UploadSession(models.Model):
+    """Upload session model
     """
+    CATEGORY_CHOICES = (
+        ('taxa', 'Taxa'),
+        ('collections', 'Collections'),
+    )
+
     uploader = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.SET_NULL,
+        related_name='upload_session_uploader',
         blank=True,
         null=True,
     )
@@ -34,6 +40,13 @@ class TaxaUploadSession(models.Model):
 
     uploaded_at = models.DateTimeField(
         default=datetime.now
+    )
+
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        blank=True,
+        default='',
     )
 
     processed = models.BooleanField(
@@ -78,8 +91,8 @@ class TaxaUploadSession(models.Model):
     class Meta:
         """Meta class for project."""
         app_label = 'bims'
-        verbose_name_plural = 'Taxa Upload Sessions'
-        verbose_name = 'Taxa Upload Session'
+        verbose_name_plural = 'Upload Sessions'
+        verbose_name = 'Upload Session'
 
     def __str__(self):
         return str(self.token)

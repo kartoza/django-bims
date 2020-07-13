@@ -134,7 +134,7 @@ class BaseLoader(object):
             for attr, value in record.items():
                 try:
                     setattr(entry, attr, value)
-                except (ValueError, AttributeError):
+                except (TypeError, ValueError, AttributeError):
                     pass
             entry.save()
 

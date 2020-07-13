@@ -77,7 +77,7 @@ from bims.models import (
     LocationContextFilterGroupOrder,
     LocationContextFilter,
     AlgaeData,
-    TaxaUploadSession
+    UploadSession
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -1007,7 +1007,7 @@ admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
-admin.site.register(TaxaUploadSession)
+admin.site.register(UploadSession)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(

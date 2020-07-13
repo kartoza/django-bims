@@ -94,7 +94,7 @@ def merge_users(primary_user, user_list):
     if not primary_user and not user_list:
         return
 
-    print ('Merging %s data' % len(user_list))
+    print('Merging %s data' % len(user_list))
 
     User = get_user_model()
     users = User.objects.filter(
@@ -124,6 +124,6 @@ def merge_users(primary_user, user_list):
                 except Exception as e:  # noqa
                     print(e)
                     continue
-            print (''.join(['-' for i in range(len(str(user)) + 12)]))
+            print(''.join(['-' for i in range(len(str(user)) + 12)]))
 
     users.delete()

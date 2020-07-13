@@ -1,0 +1,175 @@
+{
+  "indexed": {
+    "date-parts": [
+      [
+        2020,
+        4,
+        11
+      ]
+    ],
+    "date-time": "2020-04-11T23:12:10Z",
+    "timestamp": 1586646730801
+  },
+  "reference-count": 37,
+  "publisher": "Elsevier BV",
+  "issue": "3",
+  "license": [
+    {
+      "URL": "https:\/\/www.elsevier.com\/tdm\/userlicense\/1.0\/",
+      "start": {
+        "date-parts": [
+          [
+            2007,
+            7,
+            1
+          ]
+        ],
+        "date-time": "2007-07-01T00:00:00Z",
+        "timestamp": 1183248000000
+      },
+      "delay-in-days": 0,
+      "content-version": "tdm"
+    }
+  ],
+  "content-domain": {
+    "domain": [
+
+    ],
+    "crossmark-restriction": false
+  },
+  "published-print": {
+    "date-parts": [
+      [
+        2007,
+        7
+      ]
+    ]
+  },
+  "DOI": "10.1016\/j.aaen.2007.05.002",
+  "type": "article-journal",
+  "created": {
+    "date-parts": [
+      [
+        2007,
+        7,
+        6
+      ]
+    ],
+    "date-time": "2007-07-06T12:42:39Z",
+    "timestamp": 1183725759000
+  },
+  "page": "148-156",
+  "source": "Crossref",
+  "is-referenced-by-count": 2,
+  "title": "The criteria nurses use in assessing acute trauma in military emergency care",
+  "prefix": "10.1016",
+  "volume": "15",
+  "author": [
+    {
+      "given": "Sten-Ove",
+      "family": "Andersson",
+      "sequence": "first",
+      "affiliation": [
+
+      ]
+    },
+    {
+      "given": "Lars Owe",
+      "family": "Dahlgren",
+      "sequence": "additional",
+      "affiliation": [
+
+      ]
+    },
+    {
+      "given": "Lars",
+      "family": "Lundberg",
+      "sequence": "additional",
+      "affiliation": [
+
+      ]
+    },
+    {
+      "given": "Bj\u00f6rn",
+      "family": "Sj\u00f6str\u00f6m",
+      "sequence": "additional",
+      "affiliation": [
+
+      ]
+    }
+  ],
+  "member": "78",
+  "container-title": "Accident and Emergency Nursing",
+  "original-title": [
+
+  ],
+  "language": "en",
+  "link": [
+    {
+      "URL": "https:\/\/api.elsevier.com\/content\/article\/PII:S0965230207000495?httpAccept=text\/xml",
+      "content-type": "text\/xml",
+      "content-version": "vor",
+      "intended-application": "text-mining"
+    },
+    {
+      "URL": "https:\/\/api.elsevier.com\/content\/article\/PII:S0965230207000495?httpAccept=text\/plain",
+      "content-type": "text\/plain",
+      "content-version": "vor",
+      "intended-application": "text-mining"
+    }
+  ],
+  "deposited": {
+    "date-parts": [
+      [
+        2019,
+        4,
+        30
+      ]
+    ],
+    "date-time": "2019-04-30T04:52:09Z",
+    "timestamp": 1556599929000
+  },
+  "score": 1.0,
+  "subtitle": [
+
+  ],
+  "short-title": [
+
+  ],
+  "issued": {
+    "date-parts": [
+      [
+        2007,
+        7
+      ]
+    ]
+  },
+  "references-count": 37,
+  "journal-issue": {
+    "published-print": {
+      "date-parts": [
+        [
+          2007,
+          7
+        ]
+      ]
+    },
+    "issue": "3"
+  },
+  "alternative-id": [
+    "S0965230207000495"
+  ],
+  "URL": "http:\/\/dx.doi.org\/10.1016\/j.aaen.2007.05.002",
+  "relation": {
+
+  },
+  "ISSN": [
+    "0965-2302"
+  ],
+  "subject": [
+    "General Nursing",
+    "Critical Care and Intensive Care Medicine",
+    "Emergency Medicine"
+  ],
+  "container-title-short": "Accident and Emergency Nursing"
+}
