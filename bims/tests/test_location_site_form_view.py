@@ -29,7 +29,8 @@ class TestLocationSiteFormView(TestCase):
         post_data_file = open(post_data_path)
         self.post_data = json.load(post_data_file)
         signals.post_save.disconnect(
-            location_site_post_save_handler)
+            location_site_post_save_handler,
+            sender=LocationSite)
 
     def test_LocationSiteFormView_non_logged_in_user_access(self):
         """
