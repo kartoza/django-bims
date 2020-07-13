@@ -486,7 +486,7 @@ class CollectionsCSVUpload(DataCSVUpload):
         # -- Optional data - Sampling effort
         sampling_effort = ''
         if SAMPLING_EFFORT_VALUE in row and self.row_value(
-                row,SAMPLING_EFFORT_VALUE):
+                row, SAMPLING_EFFORT_VALUE):
             sampling_effort += self.row_value(
                 row,
                 SAMPLING_EFFORT_VALUE) + ' '

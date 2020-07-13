@@ -104,6 +104,7 @@ class IUCNStatusF(factory.django.DjangoModelFactory):
     sensitive = False
 
 
+@factory.django.mute_signals(signals.post_save)
 class SurveyF(factory.django.DjangoModelFactory):
     """
     Survey factory

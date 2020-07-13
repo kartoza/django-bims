@@ -1,5 +1,4 @@
 import os
-import json
 import mock
 from django.test import TestCase
 from bims.scripts.collections_upload_source_reference import (
@@ -14,8 +13,9 @@ test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
 
 
-def mocked_doi_loader(ids = None, format = "bibtex", style = 'apa',
-    locale = "en-US", url = None, **kwargs):
+def mocked_doi_loader(
+        ids = None, format = "bibtex", style = 'apa',
+        locale = "en-US", url = None, **kwargs):
     response_file = 'doi_data.json'
     response_path = os.path.join(
         test_data_directory, response_file)

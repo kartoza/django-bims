@@ -19,8 +19,7 @@ def process_source_reference(
         document_url = None,
         document_title = None,
         document_author = None,
-        source_year = None
-    ):
+        source_year = None):
     """Processing source reference data from csv"""
     source_reference = None
     document_id = 0
@@ -91,8 +90,7 @@ def process_source_reference(
                     requests.exceptions.HTTPError,
                     Entry.DoesNotExist):
                 return 'Error Fetching DOI : {doi}'.format(
-                        doi=doi,
-                    ), None
+                        doi=doi), None
             except Entry.MultipleObjectsReturned:
                 entry = Entry.objects.filter(doi__iexact=doi)[0]
 
@@ -213,7 +211,6 @@ def process_source_reference(
         source_reference.save()
     elif reference and not source_reference:
         return 'Reference {} is not created'.format(
-                reference
-            ), None
+                reference), None
 
     return 'Reference created', source_reference
