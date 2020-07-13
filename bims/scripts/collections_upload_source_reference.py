@@ -11,6 +11,29 @@ from bims.models import (
 )
 
 
+def get_or_create_data_from_model(model, fields, create = True):
+    """
+    Get or create data from model.
+    If multiple data returned then return the first one
+    """
+    try:
+        if create:
+            data, _ = model.objects.get_or_create(
+                **fields
+            )
+        else:
+            data = model.objects.get(
+                **fields
+            )
+    except model.MultipleObjectsReturned:
+        data = model.objects.filter(
+            **fields
+        )[0]
+    except model.DoesNotExist:
+        return None
+    return data
+
+
 def process_source_reference(
         reference = None,
         reference_category = None,
@@ -44,8 +67,7 @@ def process_source_reference(
     # if there is document url, get or create document based on url
     if document_url:
         document_fields = {
-            'doc_url': document_url,
-            'title': document_title
+            'doc_url': document_url
         }
         if source_year:
             document_fields['date'] = date(
@@ -59,53 +81,65 @@ def process_source_reference(
         else:
             author = None
         document_fields['owner'] = author
-        document, document_created = Document.objects.get_or_create(
-            **document_fields
+        document = get_or_create_data_from_model(
+            Document,
+            document_fields
         )
+        if document.title != document_title:
+            document.title = document_title
+            document.save()
 
     # if DOI provided, check in bibliography records
     if doi:
-        try:
-            entry = Entry.objects.get(
-                doi=doi
-            )
-        except Entry.MultipleObjectsReturned:
-            entry = Entry.objects.filter(doi=doi)[0]
-        except Entry.DoesNotExist:
+        entry = get_or_create_data_from_model(
+            model=Entry,
+            fields={
+                'doi': doi
+            },
+            create=False
+        )
+        if not entry:
             doi_loader = DOILoader()
             try:
                 doi_loader.load_records(DOIs=[doi])
                 doi_loader.save_records()
-                entry = Entry.objects.get(doi__iexact=doi)
-                source_reference = (
+                entry_fields = {
+                    'doi__iexact': doi
+                }
+                entry = get_or_create_data_from_model(
+                    Entry,
+                    entry_fields,
+                    create=False
+                )
+                if entry:
+                    source_reference = (
+                        SourceReference.create_source_reference(
+                            category='bibliography',
+                            source_id=entry.id,
+                            note=None
+                        )
+                    )
+                    source_reference_found = True
+            except (
+                    DOILoaderError,
+                    requests.exceptions.HTTPError) as e:
+                print(e)
+            finally:
+                if not entry:
+                    return 'Error Fetching DOI : {doi}'.format(
+                        doi=doi), None
+                if entry and not source_reference:
                     SourceReference.create_source_reference(
                         category='bibliography',
                         source_id=entry.id,
                         note=None
                     )
-                )
-                source_reference_found = True
-            except (
-                    DOILoaderError,
-                    requests.exceptions.HTTPError,
-                    Entry.DoesNotExist):
-                return 'Error Fetching DOI : {doi}'.format(
-                        doi=doi), None
-            except Entry.MultipleObjectsReturned:
-                entry = Entry.objects.filter(doi__iexact=doi)[0]
-
-        if entry and not source_reference:
-            SourceReference.create_source_reference(
-                category='bibliography',
-                source_id=entry.id,
-                note=None
-            )
-            source_reference, _ = (
-                SourceReferenceBibliography.objects.get_or_create(
-                    source=entry
-                )
-            )
-            source_reference_found = True
+                    source_reference, _ = (
+                        SourceReferenceBibliography.objects.get_or_create(
+                            source=entry
+                        )
+                    )
+                    source_reference_found = True
 
     if not source_reference_found:
         if (

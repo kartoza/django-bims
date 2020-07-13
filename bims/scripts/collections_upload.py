@@ -362,6 +362,7 @@ class CollectionsCSVUpload(DataCSVUpload):
             reference=self.row_value(row, SOURCE),
             reference_category = self.row_value(row, REFERENCE_CATEGORY),
             doi = self.row_value(row, DOI),
+            document_title = self.row_value(row, DOCUMENT_TITLE),
             document_link = self.row_value(row, DOCUMENT_UPLOAD_LINK),
             document_url = self.row_value(row, DOCUMENT_URL),
             document_author = self.row_value(row, DOCUMENT_AUTHOR),
