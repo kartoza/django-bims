@@ -1,0 +1,91 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Dashboard management
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.min.css" />
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+
+    <style>
+        .grid-stack-item-content {
+            background-color: rgba(160, 206, 210, 0.76);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bolder;
+            color: #585858;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="loading">
+        <img src="/static/img/small-loading.svg" width="150" style="filter: brightness(104%) contrast(97%); display: none"
+                             alt="Loading view">
+    </div>
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Dashboard management</h2>
+            <div class="dashboard-close" data-destination="/map"><i
+                    class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
+        <div class="dashboard-body">
+            <div class="grid-stack">
+                <div class="grid-stack-item" data-gs-x="0" data-gs-y="0"
+                     data-gs-width="4" data-gs-height="2" data-gs-min-width="4" data-gs-max-width="12">
+                    <div class="grid-stack-item-content">Filter history</div>
+                </div>
+                <div class="grid-stack-item" data-gs-x="4" data-gs-y="0"
+                     data-gs-width="8" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12">
+                    <div class="grid-stack-item-content">Occurrence Charts</div>
+                </div>
+                <div class="grid-stack-item" data-gs-x="0" data-gs-y="2"
+                     data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12">
+                    <div class="grid-stack-item-content">Distribution Map</div>
+                </div>
+                <div class="grid-stack-item" data-gs-x="4" data-gs-y="4"
+                     data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12">
+                    <div class="grid-stack-item-content">Occurrences</div>
+                </div>
+                <div class="grid-stack-item" data-gs-x="0" data-gs-y="6"
+                     data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12">
+                    <div class="grid-stack-item-content">Overview</div>
+                </div>
+            </div>
+            <div class="container-fluid" style="margin-top: 20px;">
+                <button class="btn btn-success" style="width: 100%">Update</button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script>
+        let csrfToken = '{{ csrf_token }}';
+    </script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.all.js"></script>
+
+    <script>
+        $(function () {
+            let grid = GridStack.init({
+                 resizable: {
+                     handles: 'e'
+                 },
+            });
+        })
+    </script>
+{% endblock %}
