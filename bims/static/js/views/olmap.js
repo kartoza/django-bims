@@ -583,6 +583,7 @@ define([
                     center: ol.proj.fromLonLat(center),
                     zoom: this.initZoom,
                     minZoom: 5,
+                    maxZoom: 19, // prevent zooming past 50m
                     extent: extent
                 }),
                 controls: ol.control.defaults({
