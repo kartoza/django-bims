@@ -67,6 +67,7 @@ from bims.views.site_visit import (
     SiteVisitUpdateView, SiteVisitListView, SiteVisitDetailView
 )
 from bims.views.taxa_management import TaxaManagementView
+from bims.views.dashboard_management import DashboardManagementView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -169,6 +170,8 @@ urlpatterns = [
         SiteVisitDetailView.as_view()),
     url(r'^taxa-management/$',
         TaxaManagementView.as_view()),
+    url(r'^dashboard-management/$',
+        DashboardManagementView.as_view()),
     url(r'^upload-collections/$', CollectionsUploadView.as_view(),
         name='upload-collections'),
 ]
