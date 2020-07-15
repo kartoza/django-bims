@@ -21,6 +21,7 @@
             align-items: center;
             font-weight: bolder;
             color: #585858;
+            text-transform: capitalize;
         }
     </style>
 
@@ -32,38 +33,53 @@
                              alt="Loading view">
     </div>
     <div class="body-form container">
-        <div class="dashboard-title">
-            <h2>Dashboard management</h2>
-            <div class="dashboard-close" data-destination="/map"><i
-                    class="fa fa-times" aria-hidden="true"></i></div>
-        </div>
-        <div class="dashboard-body">
-            <div class="grid-stack">
-                <div class="grid-stack-item" data-gs-x="0" data-gs-y="0"
-                     data-gs-width="4" data-gs-height="2" data-gs-min-width="4" data-gs-max-width="12">
-                    <div class="grid-stack-item-content">Filter history</div>
+        <form action="{{ request.path }}" method="post" id="dashboard-management-form" novalidate enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="dashboard-title">
+                <h2>Dashboard management</h2>
+                <div class="dashboard-close" data-destination="/map"><i
+                        class="fa fa-times" aria-hidden="true"></i></div>
+            </div>
+            <div class="dashboard-body">
+                <div style="padding-right: 10px; padding-left: 10px;">
+                    <select class="form-control" name="module_group"
+                            id="taxon-group">
+                        {% for taxon_group in module_groups %}
+                            <option value="{{ taxon_group.id }}" {%  if taxon_group == module_group %} selected {% endif %}> {{ taxon_group.name }} </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div class="grid-stack-item" data-gs-x="4" data-gs-y="0"
-                     data-gs-width="8" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12">
-                    <div class="grid-stack-item-content">Occurrence Charts</div>
+                <br/>
+                <div class="grid-stack">
+                    {% if not dashboard_configuration %}
+                    <div class="grid-stack-item" data-gs-x="0" data-gs-y="0"
+                         data-gs-width="4" data-gs-height="2" data-gs-min-width="4" data-gs-max-width="12" data-key="filter-history">
+                        <div class="grid-stack-item-content">Filter history</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="4" data-gs-y="0"
+                         data-gs-width="8" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12" data-key="occurrence-charts">
+                        <div class="grid-stack-item-content">Occurrence Charts</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="0" data-gs-y="2"
+                         data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12" data-key="distribution-map">
+                        <div class="grid-stack-item-content">Distribution Map</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="4" data-gs-y="4"
+                         data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="occurrences">
+                        <div class="grid-stack-item-content">Occurrences</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="0" data-gs-y="6"
+                         data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12" data-key="overview">
+                        <div class="grid-stack-item-content">Overview</div>
+                    </div>
+                    {% endif %}
                 </div>
-                <div class="grid-stack-item" data-gs-x="0" data-gs-y="2"
-                     data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12">
-                    <div class="grid-stack-item-content">Distribution Map</div>
-                </div>
-                <div class="grid-stack-item" data-gs-x="4" data-gs-y="4"
-                     data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12">
-                    <div class="grid-stack-item-content">Occurrences</div>
-                </div>
-                <div class="grid-stack-item" data-gs-x="0" data-gs-y="6"
-                     data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12">
-                    <div class="grid-stack-item-content">Overview</div>
+                <input type="hidden" name="dashboard_configuration" id="dashboard-configuration" />
+                <div style="padding-right: 10px; padding-left: 10px;margin-top: 20px;">
+                    <button class="btn btn-success" style="width: 100%" id="update-dashboard">Update</button>
                 </div>
             </div>
-            <div class="container-fluid" style="margin-top: 20px;">
-                <button class="btn btn-success" style="width: 100%">Update</button>
-            </div>
-        </div>
+        </form>
     </div>
 
 {% endblock %}
@@ -80,12 +96,46 @@
     <script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.all.js"></script>
 
     <script>
+        let grid = null;
+
+        let serializedData = {% if dashboard_configuration %}{{ dashboard_configuration.additional_data | safe }}{% else %}null{% endif %};
+
+        const updateDashboard = (e) => {
+            e.preventDefault();
+            let serializedData = [];
+            grid.engine.nodes.forEach(function (node) {
+                serializedData.push({
+                    x: node.x,
+                    y: node.y,
+                    width: node.width,
+                    height: node.height,
+                    key: $(node.el).data('key')
+                });
+            });
+            $('#dashboard-configuration').val(JSON.stringify(serializedData));
+            $('#dashboard-management-form').submit();
+        }
+
         $(function () {
-            let grid = GridStack.init({
+            let $updateDashboardBtn = $('#update-dashboard');
+            grid = GridStack.init({
                  resizable: {
                      handles: 'e'
                  },
             });
+            if (serializedData) {
+                grid.removeAll();
+                var items = GridStack.Utils.sort(serializedData);
+                grid.batchUpdate();
+                items.forEach(function (node) {
+                    grid.addWidget(`<div data-key="${node['key']}"><div class="grid-stack-item-content">${node['key'].replace('-', ' ')}</div></div>`, node);
+                });
+                grid.commit();
+            }
+            $updateDashboardBtn.click(updateDashboard);
+            $('#taxon-group').change((e) => {
+                location.href = '/dashboard-management/?module_group=' + $(e.target).val();
+            })
         })
     </script>
 {% endblock %}
