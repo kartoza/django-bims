@@ -294,6 +294,8 @@ def fetch_all_species_from_gbif(
         rank_key = '{}Key'.format(taxonomic_rank.lower())
     if 'nubKey' in species_data or rank_key:
         if gbif_key:
+            if isinstance(gbif_key, str):
+                gbif_key = int(gbif_key)
             temp_key = gbif_key
         else:
             temp_key = species_data['key']

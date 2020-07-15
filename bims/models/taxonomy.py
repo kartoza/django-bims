@@ -12,6 +12,14 @@ from bims.permissions.generate_permission import generate_permission
 from bims.models.vernacular_name import VernacularName
 from django.contrib.postgres.fields import JSONField
 
+ORIGIN_CATEGORIES = {
+    'non-native': 'alien',
+    'native': 'indigenous',
+    'unknown': 'unknown',
+    'non-native: invasive': 'alien-invasive',
+    'non-native: non-invasive': 'alien-non-invasive'
+}
+
 
 class TaxonomyField(models.CharField):
 
@@ -27,8 +35,14 @@ class TaxonomyField(models.CharField):
 
 class Taxonomy(models.Model):
     CATEGORY_CHOICES = (
-        ('alien', 'Non-Native'),
-        ('indigenous', 'Native'),
+        (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
+        (ORIGIN_CATEGORIES['native'], 'Native'),
+        (ORIGIN_CATEGORIES['unknown'], 'Unknown'),
+        (ORIGIN_CATEGORIES['non-native: invasive'], 'Non-native: invasive'),
+        (
+            ORIGIN_CATEGORIES['non-native: non-invasive'],
+            'Non-native: non-invasive'
+        )
     )
 
     gbif_key = models.IntegerField(

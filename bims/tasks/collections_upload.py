@@ -29,7 +29,7 @@ def collections_upload(session_id):
         return
 
     # - Check the headers
-    upload_session.progress = 'Checking header column'
+    upload_session.progress = 'Checking header row'
     upload_session.save()
 
     with open(upload_session.process_file.path) as csv_file:
@@ -38,7 +38,7 @@ def collections_upload(session_id):
         for header in FILE_HEADERS:
             if header not in headers:
                 error_message = (
-                    'Header column is not following the correct format'
+                    'Header row is not following the correct format'
                 )
                 upload_session.progress = error_message
                 upload_session.error_file = (

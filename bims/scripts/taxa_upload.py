@@ -1,9 +1,15 @@
 import copy
+import json
 import logging
 from bims.scripts.species_keys import *  # noqa
 from bims.enums import TaxonomicRank
 from bims.models import (
-    Taxonomy
+    Taxonomy,
+    Endemism,
+    IUCNStatus,
+    IUCN_CATEGORIES,
+    VernacularName,
+    ORIGIN_CATEGORIES
 )
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif
@@ -15,6 +21,59 @@ logger = logging.getLogger('bims')
 
 class TaxaCSVUpload(DataCSVUpload):
     model_name = 'taxonomy'
+
+    def endemism(self, row):
+        """Processing endemism data"""
+        endemism_value = self.row_value(row, ENDEMISM)
+        if not endemism_value:
+            return None
+        try:
+            endemism_obj, _ = Endemism.objects.get_or_create(
+                name=endemism_value
+            )
+        except Endemism.MultipleObjectsReturned:
+            endemism_obj = Endemism.objects.filter(
+                name=endemism_value
+            )[0]
+        return endemism_obj
+
+    def conservation_status(self, row):
+        """Processing conservation status"""
+        cons_status = self.row_value(row, CONSERVATION_STATUS)
+        if not cons_status:
+            return None
+        if cons_status.lower() not in IUCN_CATEGORIES:
+            return None
+        iucn_status, _ = IUCNStatus.objects.get_or_create(
+            category=IUCN_CATEGORIES[cons_status.lower()]
+        )
+        return iucn_status
+
+    def common_name(self, row):
+        """Common name of species"""
+        common_name_value = self.row_value(row, COMMON_NAME)
+        if not common_name_value:
+            return None
+        try:
+            vernacular_name, _ = VernacularName.objects.get_or_create(
+                name=common_name_value,
+                language='en'
+            )
+        except VernacularName.MultipleObjectsReturned:
+            vernacular_name = VernacularName.objects.filter(
+                name=common_name_value,
+                language='en'
+            )[0]
+        return vernacular_name
+
+    def origin(self, row):
+        """Proccessing origin"""
+        origin_value = self.row_value(row, ORIGIN)
+        if not origin_value:
+            return ''
+        if origin_value.lower() not in ORIGIN_CATEGORIES:
+            return ''
+        return ORIGIN_CATEGORIES[origin_value.lower()]
 
     def parent_rank(self, rank):
         """
@@ -158,9 +217,9 @@ class TaxaCSVUpload(DataCSVUpload):
             scientific_name = taxon_name
         scientific_name = scientific_name.strip()
         # Get rank
-        rank = self.row_value(row, 'Taxon Rank')
+        rank = self.row_value(row, TAXON_RANK)
         if not rank:
-            rank = self.row_value(row, 'Taxon rank')
+            rank = self.row_value(row, TAXON_RANK)
         if not rank:
             self.error_file(
                 error_row=row,
@@ -180,13 +239,23 @@ class TaxaCSVUpload(DataCSVUpload):
                 ))
             if not taxonomy:
                 # Fetch from gbif
-                taxonomy = fetch_all_species_from_gbif(
-                    species=taxon_name,
-                    taxonomic_rank=rank,
-                    should_get_children=False,
-                    fetch_vernacular_names=False,
-                    use_name_lookup=True
-                )
+                if self.row_value(row, ON_GBIF) == 'Yes':
+                    gbif_link = self.row_value(row, GBIF_LINK)
+                    gbif_key = (
+                        gbif_link.split('/')[len(gbif_link.split('/')) - 1]
+                    )
+                    if gbif_key:
+                        taxonomy = fetch_all_species_from_gbif(
+                            gbif_key=gbif_key
+                        )
+                if not taxonomy:
+                    taxonomy = fetch_all_species_from_gbif(
+                        species=taxon_name,
+                        taxonomic_rank=rank,
+                        should_get_children=False,
+                        fetch_vernacular_names=False,
+                        use_name_lookup=True
+                    )
             else:
                 # Try again with lookup
                 logger.debug('Use different method')
@@ -254,9 +323,33 @@ class TaxaCSVUpload(DataCSVUpload):
                     taxon=taxonomy,
                     row=row
                 )
+
+                # -- Endemism
+                endemism = self.endemism(row)
+                if endemism:
+                    taxonomy.endemism = endemism
+
+                # -- Conservation status
+                iucn_status = self.conservation_status(row)
+                if iucn_status:
+                    taxonomy.iucn_status = iucn_status
+
+                # -- Common name
+                common_name = self.common_name(row)
+                if common_name:
+                    taxonomy.vernacular_names.add(common_name)
+
+                # -- Origin
+                origin_data = self.origin(row)
+                if origin_data:
+                    taxonomy.origin = origin_data
+
+                # -- Additional data
+                taxonomy.additional_data = json.dumps(row)
+
                 if taxonomy.canonical_name != taxon_name:
                     taxonomy.canonical_name = taxon_name
-                    taxonomy.save()
+                taxonomy.save()
 
                 # -- Add to taxon group
                 taxon_group = self.upload_session.module_group
