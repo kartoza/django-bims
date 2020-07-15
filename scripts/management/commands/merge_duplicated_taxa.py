@@ -1,65 +1,66 @@
 # -*- coding: utf-8 -*-
+from django.db.models import F, CharField, Count
+from django.db.models.functions import Concat
 from django.core.management.base import BaseCommand
-from bims.models import BiologicalCollectionRecord, Taxonomy
-from bims.utils.logger import log
-from bims.utils.gbif import find_species
+from bims.models import Taxonomy
+from bims.utils.fetch_gbif import merge_taxa_data
 
 
 class Command(BaseCommand):
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '-s',
-            '--taxon_name',
-            dest='taxon_name',
-            default=None,
-            help='Taxon name'
-        )
 
     def handle(self, *args, **options):
-        taxon_name = options.get('taxon_name', None)
-        if not taxon_name:
-            log('Missing taxon name')
-            return
-        taxa = Taxonomy.objects.filter(
-            scientific_name=taxon_name
+        qs = Taxonomy.objects.annotate(
+            dupe_id=Concat(
+                F('canonical_name')
+                , F('scientific_name')
+                , output_field=CharField()
+            )
         )
-        if not taxa:
-            log('Taxa not found')
-            return
-        if taxa.count() == 1:
-            log('No duplication found')
-            return
-        log('Taxa found : %s' % taxa.count())
 
-        gbif_key_found = False
-        taxa_sample_index = 0
-        gbif_key = None
-        while not gbif_key_found and taxa_sample_index < taxa.count():
-            taxa_sample = taxa[taxa_sample_index]
-            rank = taxa_sample.rank
-            gbif_response = find_species(
-                taxa_sample.scientific_name, rank=rank)
-            if 'nubKey' in gbif_response:
-                gbif_key_found = True
-                gbif_key = gbif_response['nubKey']
-            else:
-                taxa_sample_index += 1
-        if not gbif_key:
-            log('Gbif key not found')
-            return
+        dupes = qs.values('dupe_id').annotate(
+            dupe_count=Count('dupe_id')).filter(dupe_count__gt=1)
+        for dupe in dupes:
+            taxa_dupes = Taxonomy.objects.annotate(
+                dupe_id=Concat(
+                    F('canonical_name')
+                    , F('scientific_name')
+                    , output_field=CharField()
+                )
+            ).filter(dupe_id=dupe['dupe_id'])
 
-        # Find taxon with gbif key
-        taxon_with_gbif_key = taxa.filter(gbif_key=gbif_key)
-        if not taxon_with_gbif_key:
-            log('Taxon with gbif key not found')
-            return
-        taxon_with_gbif_key = taxon_with_gbif_key[0]
-        taxa_without_gbif_key = taxa.exclude(gbif_key=gbif_key)
+            taxa = taxa_dupes
 
-        for taxon in taxa_without_gbif_key:
-            children_taxa = Taxonomy.objects.filter(parent=taxon)
-            children_taxa.update(parent=taxon_with_gbif_key)
-            bio = BiologicalCollectionRecord.objects.filter(taxonomy=taxon)
-            bio.update(taxonomy=taxon_with_gbif_key)
+            print('merging {count} -- {dupe}'.format(
+                count=taxa.count(),
+                dupe=dupe['dupe_id'])
+            )
 
-        taxa_without_gbif_key.delete()
+            # -- Check verified
+            verified_taxon = taxa[0]
+
+            if taxa.filter(verified=True).exists():
+                verified_taxon = taxa.filter(verified=True)[0]
+                merge_taxa_data(excluded_taxon=verified_taxon, taxa_list=taxa)
+                continue
+
+            if taxa.filter(additional_data__isnull=False).exclude(
+                additional_data={}
+            ).exists():
+                taxa = taxa.filter(additional_data__isnull=False).exclude(
+                    additional_data={}
+                )
+
+            if taxa.filter(endemism__isnull=False).exists():
+                taxa = taxa.filter(endemism__isnull=False)
+
+            if taxa.filter(origin__isnull=False).exists():
+                taxa = taxa.filter(origin__isnull=False)
+
+            if taxa.filter(gbif_key__isnull=False).exists():
+                verified_taxon = taxa.filter(gbif_key__isnull=False).order_by(
+                    'gbif_key'
+                )[0]
+
+            merge_taxa_data(
+                excluded_taxon=verified_taxon, taxa_list=taxa_dupes)
+
