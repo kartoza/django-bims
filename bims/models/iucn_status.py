@@ -8,20 +8,31 @@ from django.dispatch import receiver
 from colorfield.fields import ColorField
 
 SENSITIVE_STATUS = ['CR', 'EN', 'VU']
+IUCN_CATEGORIES = {
+    'least concern': 'LC',
+    'near threatened': 'NT',
+    'vulnerable': 'VU',
+    'endangered': 'EN',
+    'critically endangered': 'CR',
+    'extinct in the wild': 'EW',
+    'extinct': 'EX',
+    'data deficient': 'DD',
+    'not evaluated': 'NE'
+}
 
 
 class IUCNStatus(models.Model):
     """IUCN status model."""
     CATEGORY_CHOICES = (
-        ('LC', 'Least concern'),
-        ('NT', 'Near threatened'),
-        ('VU', 'Vulnerable'),
-        ('EN', 'Endangered'),
-        ('CR', 'Critically endangered'),
-        ('EW', 'Extinct in the wild'),
-        ('EX', 'Extinct'),
-        ('DD', 'Data deficient'),
-        ('NE', 'Not evaluated')
+        (IUCN_CATEGORIES['least concern'], 'Least concern'),
+        (IUCN_CATEGORIES['near threatened'], 'Near threatened'),
+        (IUCN_CATEGORIES['vulnerable'], 'Vulnerable'),
+        (IUCN_CATEGORIES['endangered'], 'Endangered'),
+        (IUCN_CATEGORIES['critically endangered'], 'Critically endangered'),
+        (IUCN_CATEGORIES['extinct in the wild'], 'Extinct in the wild'),
+        (IUCN_CATEGORIES['extinct'], 'Extinct'),
+        (IUCN_CATEGORIES['data deficient'], 'Data deficient'),
+        (IUCN_CATEGORIES['not evaluated'], 'Not evaluated')
     )
 
     category = models.CharField(

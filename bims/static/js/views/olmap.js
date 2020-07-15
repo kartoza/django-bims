@@ -595,7 +595,7 @@ define([
                     ])
             });
 
-            // Create a popup overlay which will be used to display feature info
+            // Create a popup overlay which will be used to dispgitlay feature info
             this.popup = new ol.Overlay({
                 element: document.getElementById('popup'),
                 positioning: 'bottom-center',
