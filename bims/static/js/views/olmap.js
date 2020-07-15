@@ -583,6 +583,7 @@ define([
                     center: ol.proj.fromLonLat(center),
                     zoom: this.initZoom,
                     minZoom: 5,
+                    maxZoom: 19, // prevent zooming past 50m
                     extent: extent
                 }),
                 controls: ol.control.defaults({
@@ -594,7 +595,7 @@ define([
                     ])
             });
 
-            // Create a popup overlay which will be used to display feature info
+            // Create a popup overlay which will be used to dispgitlay feature info
             this.popup = new ol.Overlay({
                 element: document.getElementById('popup'),
                 positioning: 'bottom-center',

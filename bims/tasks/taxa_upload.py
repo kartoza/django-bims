@@ -1,16 +1,14 @@
 # coding=utf-8
 import csv
 from celery import shared_task
+from bims.scripts.species_keys import *  # noqa
 TAXA_FILE_HEADERS = [
-    'Taxon rank',
-    'Kingdom',
-    'Phylum',
-    'Class', 'Order',
-    'Family', 'Genus',
-    'Species', 'Taxon',
-    'Scientific name and authority',
-    'Common name', 'Origin',
-    'Endemism', 'Conservation status'
+    TAXON_RANK,
+    TAXON,
+    SCIENTIFIC_NAME,
+    ORIGIN,
+    ENDEMISM,
+    CONSERVATION_STATUS
 ]
 
 
@@ -28,7 +26,7 @@ def taxa_upload(taxa_upload_session_id):
         return
 
     # - Check the headers
-    taxa_upload_session.progress = 'Checking header column'
+    taxa_upload_session.progress = 'Checking header row'
     taxa_upload_session.save()
 
     with open(taxa_upload_session.process_file.path) as csv_file:
@@ -37,7 +35,7 @@ def taxa_upload(taxa_upload_session_id):
         for header in TAXA_FILE_HEADERS:
             if header not in headers:
                 error_message = (
-                    'Header column is not following the correct format'
+                    'Header row is not following the correct format'
                 )
                 taxa_upload_session.progress = error_message
                 taxa_upload_session.error_file = (
