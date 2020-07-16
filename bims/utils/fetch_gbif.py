@@ -24,7 +24,9 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
     else:
         taxa = Taxonomy.objects.filter(
             gbif_key=gbif_key
-        ).exclude(id=excluded_taxon.id)
+        )
+
+    taxa = taxa.exclude(id=excluded_taxon.id)
 
     if taxa.count() < 1:
         return
