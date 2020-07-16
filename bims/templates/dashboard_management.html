@@ -61,13 +61,24 @@
                     </select>
                 </div>
                 <br/>
-                <div class="action" style="padding-left: 10px; padding-right: 10px">
+                <div class="action" style="padding-left: 10px; padding-right: 10px;">
                     <div id="trash" style="padding: 15px; margin-bottom: 15px;" class="text-center">
                         <div>
                             <i class="fa fa-remove" aria-hidden="true"></i>
                         </div>
                         <div>
                             <span>Drop here to remove!</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <select class="form-control" id="container-group">
+                                <option value="">Add new</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <div class="newWidget">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -154,6 +165,7 @@
                     handles: 'e,s,w'
                 },
                 removable: '#trash',
+                acceptWidgets: '.newWidget',
                 removeTimeout: 100,
             });
             if (serializedData) {
@@ -171,11 +183,31 @@
             } else {
                 availableContainers = [];
             }
-            console.log(availableContainers);
+            if (availableContainers.length > 0) {
+                $.each(availableContainers, (index, value) => {
+                    $('#container-group').append(`<option value="${value}">${value.replace('-', ' ')}</option>`);
+                })
+            }
             $updateDashboardBtn.click(updateDashboard);
             $('#taxon-group').change((e) => {
                 location.href = '/dashboard-management/?module_group=' + $(e.target).val();
+            });
+            $('#container-group').change((e) => {
+                let val = $(e.target).val();
+                if (val) {
+                    $('.newWidget').html(
+                        `<div class="card-body grid-stack-item-content">
+                            ${val}
+                        </div>`
+                    )
+                }
             })
+            $('.newWidget').draggable({
+                revert: 'invalid',
+                scroll: false,
+                appendTo: 'body',
+                helper: 'clone'
+            });
         })
     </script>
 {% endblock %}
