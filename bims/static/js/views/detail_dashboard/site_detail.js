@@ -1080,8 +1080,7 @@ define([
             let endemismPieCanvas = document.getElementById('species-ssdd-endemism-pie');
             let conservationStatusPieCanvas = document.getElementById('species-ssdd-conservation-status-pie');
             let samplingMethodPieCanvas = document.getElementById('species-ssdd-sampling-method-pie');
-            let biotopeCanvas = document.getElementById('species-ssdd-\n' +
-                '            console.log(height);pie');
+            let biotopeCanvas = document.getElementById('species-ssdd-biotope-pie');
 
             if (container) {
                 originPieCanvas = container.find('.occurrence-origin-chart').find('canvas')[0];
