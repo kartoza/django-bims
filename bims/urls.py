@@ -68,6 +68,7 @@ from bims.views.site_visit import (
 )
 from bims.views.taxa_management import TaxaManagementView
 from bims.views.dashboard_management import DashboardManagementView
+from bims.views.harvest_collection_data import HarvestCollectionView
 
 urlpatterns = [
     url(r'^$', LandingPageView.as_view(), name='landing-page'),
@@ -174,6 +175,8 @@ urlpatterns = [
         DashboardManagementView.as_view()),
     url(r'^upload-collections/$', CollectionsUploadView.as_view(),
         name='upload-collections'),
+    url(r'^harvest-collections/$', HarvestCollectionView.as_view(),
+        name='harvest-collections'),
 ]
 
 # Api urls

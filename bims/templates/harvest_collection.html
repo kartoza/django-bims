@@ -1,0 +1,215 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Taxa Uploader
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+    <style>
+        #log-container {
+            background-color: black !important;
+            color: white !important;
+            font-size: 10pt;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+
+            <div class="help-block-space"></div>
+            <h3>Harvest GBIF data</h3>
+            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+            </div>
+            <div class="modal-body">
+            <form action="{{ request.path }}" method="post" id="taxa-upload-form" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="help-block">
+                    <div class="help-block-space"></div>
+
+                    {% if not upload_sessions %}
+                    <div class="help-block-space"></div>
+                    <div class="help-block">
+                        Note : Duplicates will be detected and update the existing data
+                    </div>
+
+                    <div class="help-block-space"></div>
+                    <div class="form-group row">
+                        <label for="inputPassword"
+                               class="col-sm-2 col-form-label"><b>Taxon Group</b></label>
+                        <div class="col-sm-8">
+                            <select class="form-control" name="taxon_group"
+                                    id="taxon-group">
+                                {% for taxon_group in taxa_groups %}
+                                    <option value="{{ taxon_group.id }}"> {{ taxon_group.name }} </option>
+                                {% endfor %}
+                            </select>
+                            <a href="/taxa-management" class="text-muted" style="position: absolute; font-size: 10pt">Link to taxa management</a>
+                        </div>
+                        <button type="button" class="btn btn-primary col-sm-2" data-toggle="modal" data-target="#taxonGroupModal">
+                            Add new
+                        </button>
+                    </div>
+                    <div class="help-block-space"></div>
+
+                    <button class="btn btn-primary" type="submit">Start harvesting</button>
+
+
+                    {% endif %}
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade" id="taxonGroupModal" tabindex="-1"
+                     role="dialog" aria-labelledby="exampleModalLabel"
+                     aria-hidden="true" style="margin-top: 100px;">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">
+                                    Add new taxon group</h5>
+                                <button type="button" class="close"
+                                        data-dismiss="modal"
+                                        aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" style="padding: 20px;">
+                                <div class="form-group row">
+                                    <label for="inputName"
+                                           class="col-sm-2 col-form-label">Name</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control"
+                                               id="inputName"
+                                               placeholder="Taxon group name" name="taxon_group_name">
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="inputLogo"
+                                           class="col-sm-2 col-form-label">Logo</label>
+                                    <div class="col-sm-10">
+                                        <input type="file" class="form-control"
+                                               id="inputLogo" name="taxon_group_logo">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary"
+                                        data-dismiss="modal">Close
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </form>
+
+            {# Upload sessions #}
+            {% if upload_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Current progress : </h5>
+                    {% for upload_session in upload_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Module group {{ upload_session.module_group.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <p>Start time {{ upload_session.start_time }}</p>
+                                <p class="card-text">Status : <span class="progress-text">{% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</span></p>
+                                <div class="log">
+                                    <textarea id="log-container" rows="10" style="width: 100%">{{ upload_session.log | safe }}
+                                    </textarea>
+                                <div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# Upload sessions #}
+            {% if finished_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Finished upload sessions : </h5>
+                    {% for upload_session in finished_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <p>Uploaded at {{ upload_session.uploaded_at }}</p>
+                                <p class="card-text">Result : {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
+                                {% if upload_session.error_file %}
+                                    <a href="{{ upload_session.error_file.url }}" target="_blank" class="btn btn-danger">Error File</a>
+                                {% endif %}
+                                {% if upload_session.success_file %}
+                                    <a href="{{ upload_session.success_file.url }}" target="_blank" class="btn btn-success">Success File</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script type="text/javascript">
+
+        const updateUrl = "/api/upload-status/";
+
+        const updateProgress = (id, $elm) => {
+            setTimeout(function () {
+                console.log(updateUrl);
+                $.get(updateUrl + id).then(
+                    (response) => {
+                        if (!response['processed']) {
+                            let currentProgress = response['progress'];
+                            $elm.parent().parent().find('.progress-text').html(currentProgress);
+                            if (currentProgress && currentProgress.indexOf('/') > -1) {
+                                let [indexProgress, totalProgress] = currentProgress.split('/');
+                                let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
+                                $elm.css({'width': `${percentProgress}%`});
+                            }
+                            updateProgress(id, $elm);
+                        } else {
+                            location.reload();
+                        }
+                    }
+                )
+            }, 1000);
+        }
+
+        $(function () {
+            let progressBar = $('.progress-bar');
+            $.each(progressBar, function (index, elm) {
+                let $elm = $(elm);
+                let currentProgress = $elm.data('progress');
+                let sessionId = $elm.data('id');
+                if (currentProgress && currentProgress.indexOf('/') > -1) {
+                    let [indexProgress, totalProgress] = currentProgress.split('/');
+                    let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
+                    $elm.css({'width': `${percentProgress}%`});
+                }
+                updateProgress(sessionId, $(elm));
+            });
+        });
+
+    </script>
+
+{% endblock %}

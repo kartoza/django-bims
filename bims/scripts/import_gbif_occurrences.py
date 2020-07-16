@@ -14,7 +14,8 @@ from bims.models import (
     LocationType,
     BiologicalCollectionRecord,
     location_site_post_save_handler,
-    collection_post_save_handler
+    collection_post_save_handler,
+    HarvestSession
 )
 
 logger = logging.getLogger('bims')
