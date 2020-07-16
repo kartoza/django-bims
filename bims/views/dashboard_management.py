@@ -4,6 +4,7 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.http import HttpResponseRedirect
+from django.core.management import call_command
 from bims.models.taxon_group import TaxonGroup
 from bims.models.dashboard_configuration import DashboardConfiguration
 
@@ -51,6 +52,7 @@ class DashboardManagementView(
             request.POST.get('dashboard_configuration', '{}')
         )
         dashboard_configuration.save()
+        call_command('clear_search_results')
         return HttpResponseRedirect(
             request.path_info + '?module_group=' + request.POST.get(
                 'module_group', None)

@@ -38,6 +38,7 @@ define([
         siteLayerSource: null,
         siteLayerVector: null,
         siteId: null,
+        currentDashboardWrapper: null,
         currentFiltersUrl: '',
         chartConfigs: [],
         categoryColor: {
@@ -195,12 +196,62 @@ define([
                         }
                     }
 
+                    // Check dashboard configuration
+                    let $dashboardWrapper = self.$el.find('.dashboard-wrapper');
+                    let dashboardHeader = self.$el.find('.dashboard-header');
+                    if (Object.keys(data['dashboard_configuration']).length !== 0) {
+                        let $moduleDashboardWrapper = $(`<div class="container row dashboard-wrapper-${data['modules'].join()}"></div>`);
+                        self.currentDashbordWrapper = $moduleDashboardWrapper;
+                        $dashboardWrapper.before($moduleDashboardWrapper);
+                        let currentDashboardWidth = $moduleDashboardWrapper.width();
+                        let height = (currentDashboardWidth / 24);
+                        $dashboardWrapper.hide();
+                        $.each(data['dashboard_configuration'], (index, configuration) => {
+                            // Find the container
+                            let rowHeight = height * configuration['height'];
+                            let $container = self.$el.find(`.${configuration['key']}`).clone();
+                            $container.addClass('card-100');
+                            let $div = $(`<div class="col-${configuration['width']}" style="margin-top: 20px; height: ${rowHeight}px"></div>`);
+                            $div.append($container);
+                            $moduleDashboardWrapper.append($div);
+                            // Render content for each container
+                            switch(configuration['key']) {
+                                case 'filter-history': {
+                                    renderFilterList($container.find('.content-body'));
+                                    break;
+                                }
+                                case 'overview': {
+                                    self.createMultiSiteDetails(data, $container.find('.records-overview'));
+                                    break;
+                                }
+                                case 'occurrences': {
+                                    $container.find('.content-body').height(rowHeight - 120);
+                                    self.createOccurrencesBarChart(data, $container.find('.content-body')[0], (rowHeight - 20) + 'px');
+                                    break;
+                                }
+                                case 'distribution-map': {
+                                    $('#locationsite-map').height(rowHeight - 120);
+                                    break;
+                                }
+                                case 'occurrence-charts': {
+                                    self.createDataSummary(data, $container.find('.content-body'));
+                                    break;
+                                }
+                            }
+                            dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
+                            console.log(configuration)
+                        })
+                        self.loadingDashboard.hide();
+                        return;
+                    } else {
+                        $dashboardWrapper.show();
+                    }
+
                     self.createSurveyDataTable(data);
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
                     self.renderMetadataTable(data);
 
-                    let dashboardHeader = self.$el.find('.dashboard-header');
                     if (data['is_multi_sites']) {
                         $('#species-ssdd-site-details').hide();
                         $('#ssdd-chem-chart-wrapper').hide();
@@ -208,7 +259,7 @@ define([
                         dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                     } else {
                         $('#species-ssdd-site-details').show();
-                        self.createFishSSDDSiteDetails(data);
+                        self.renderSingleSiteDetails(data);
                         dashboardHeader.html('Single Site - ' + data['modules'].join());
                         if(data['is_chem_exists']) {
                             $('#ssdd-chem-chart-wrapper').show();
@@ -218,7 +269,6 @@ define([
                         }
                     }
 
-                    renderFilterList($('#filter-history-table'));
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart();
                     self.createConsStatusStackedBarChart(data);
@@ -402,6 +452,9 @@ define([
             }, 300, function () {
                 self.isOpen = false;
                 self.clearDashboard();
+                if (self.currentDashbordWrapper) {
+                    self.currentDashbordWrapper.html('');
+                }
                 self.loadingDashboard.show();
                 Shared.Router.clearSearch();
             });
@@ -872,11 +925,13 @@ define([
             chartCanvas = this.resetCanvas(chartCanvas);
             this.chartConfigs[chartName] = chartConfig;
             var ctx = chartCanvas.getContext('2d');
-            ctx.height = '200px';
+            ctx.height = 100;
             new ChartJs(ctx, chartConfig);
         },
-        createOccurrencesBarChart: function (data) {
-            var chartCanvas = document.getElementById('species-ssdd-occurrences-line-chart-canvas');
+        createOccurrencesBarChart: function (data, chartCanvas) {
+            if (!chartCanvas) {
+                chartCanvas = document.getElementById('species-ssdd-occurrences-line-chart-canvas');
+            }
             if (data.hasOwnProperty('taxa_occurrence')) {
                 if (data['taxa_occurrence']['occurrences_line_chart']['values'].length === 0) {
                     this.$el.find('.species-ssdd-occurrences-line-chart').hide();
@@ -886,15 +941,16 @@ define([
                 this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
             }
         },
-        createMultiSiteDetails: function (data) {
-            let overview = this.$el.find('#records-sites');
-            overview.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
-
-            this.createOriginsOccurrenceTable(data);
-            this.createConservationOccurrenceTable(data);
-            this.createEndemismOccurrenceTable(data);
+        createMultiSiteDetails: function (data, element) {
+            if (!element) {
+                element = this.$el.find('#records-sites');
+            }
+            element.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
+            // this.createOriginsOccurrenceTable(data);
+            // this.createConservationOccurrenceTable(data);
+            // this.createEndemismOccurrenceTable(data);
         },
-        createFishSSDDSiteDetails: function (data) {
+        renderSingleSiteDetails: function (data) {
             let siteDetailsWrapper = $('#species-ssdd-overview');
 
             let overview = siteDetailsWrapper.find('#overview');
@@ -1000,7 +1056,7 @@ define([
             }
             return $detailWrapper;
         },
-        createDataSummary: function (data) {
+        createDataSummary: function (data, container = null) {
             let bio_data = data['biodiversity_data'];
             let biodiversityData = data['biodiversity_data']['species'];
             let origin_length = biodiversityData['origin_chart']['keys'].length;
@@ -1019,16 +1075,27 @@ define([
                     biodiversityData['cons_status_chart']['keys'][i] = iucnCategory[next_name];
                 }
             }
-            let origin_pie_canvas = document.getElementById('species-ssdd-origin-pie');
-            this.renderPieChart(bio_data, 'species', 'origin', origin_pie_canvas);
-            let endemism_pie_canvas = document.getElementById('species-ssdd-endemism-pie');
-            this.renderPieChart(bio_data, 'species', 'endemism', endemism_pie_canvas);
-            let conservation_status_pie_canvas = document.getElementById('species-ssdd-conservation-status-pie');
-            this.renderPieChart(bio_data, 'species', 'cons_status', conservation_status_pie_canvas);
-            let sampling_method_pie_canvas = document.getElementById('species-ssdd-sampling-method-pie');
-            this.renderPieChart(bio_data, 'species', 'sampling_method', sampling_method_pie_canvas);
-            let biotope_canvas = document.getElementById('species-ssdd-biotope-pie');
-            this.renderPieChart(bio_data, 'species', 'biotope', biotope_canvas);
+
+            let originPieCanvas = document.getElementById('species-ssdd-origin-pie');
+            let endemismPieCanvas = document.getElementById('species-ssdd-endemism-pie');
+            let conservationStatusPieCanvas = document.getElementById('species-ssdd-conservation-status-pie');
+            let samplingMethodPieCanvas = document.getElementById('species-ssdd-sampling-method-pie');
+            let biotopeCanvas = document.getElementById('species-ssdd-\n' +
+                '            console.log(height);pie');
+
+            if (container) {
+                originPieCanvas = container.find('.occurrence-origin-chart').find('canvas')[0];
+                endemismPieCanvas = container.find('.occurrence-endemism-chart').find('canvas')[0];
+                conservationStatusPieCanvas = container.find('.occurrence-conservation-status-chart').find('canvas')[0];
+                samplingMethodPieCanvas = container.find('.occurrence-sampling-method-chart').find('canvas')[0];
+                biotopeCanvas = container.find('.occurrence-biotope-chart').find('canvas')[0];
+            }
+
+            this.renderPieChart(bio_data, 'species', 'origin', originPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'endemism', endemismPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'cons_status', conservationStatusPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'sampling_method', samplingMethodPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'biotope', biotopeCanvas);
         },
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {

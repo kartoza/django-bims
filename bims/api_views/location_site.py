@@ -48,6 +48,7 @@ from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.enums.chem_unit import ChemUnit
 from bims.models.survey import Survey
+from bims.models.dashboard_configuration import DashboardConfiguration
 
 
 class LocationSiteList(APIView):
@@ -363,6 +364,19 @@ class LocationSitesSummary(APIView):
                     list_chems[chem_name] = [{chem: data}]
             list_chems['x_label'] = x_label
 
+        try:
+            dashboard_configuration = json.loads(
+                DashboardConfiguration.objects.get(
+                    module_group__id=filters['modules']
+                ).additional_data
+            )
+        except (
+            DashboardConfiguration.DoesNotExist,
+            KeyError,
+            ValueError
+        ):
+            dashboard_configuration = {}
+
         response_data = {
             self.TOTAL_RECORDS: collection_results.count(),
             self.SITE_DETAILS: dict(site_details),
@@ -383,7 +397,8 @@ class LocationSitesSummary(APIView):
             'is_multi_sites': is_multi_sites,
             'is_sass_exists': is_sass_exists,
             'is_chem_exists': chem_exist,
-            'total_survey': surveys.count()
+            'total_survey': surveys.count(),
+            'dashboard_configuration': dashboard_configuration
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)

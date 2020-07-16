@@ -23,6 +23,17 @@
             color: #585858;
             text-transform: capitalize;
         }
+
+        .grid-stack-item-removing {
+            opacity: 0.8;
+            filter: blur(5px);
+        }
+
+        #trash {
+            background: rgba(255, 0, 0, 0.4);
+            color: white;
+            border-radius: 5px;
+        }
     </style>
 
 {% endblock %}
@@ -48,6 +59,17 @@
                             <option value="{{ taxon_group.id }}" {%  if taxon_group == module_group %} selected {% endif %}> {{ taxon_group.name }} </option>
                         {% endfor %}
                     </select>
+                </div>
+                <br/>
+                <div class="action" style="padding-left: 10px; padding-right: 10px">
+                    <div id="trash" style="padding: 15px; margin-bottom: 15px;" class="text-center">
+                        <div>
+                            <i class="fa fa-remove" aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <span>Drop here to remove!</span>
+                        </div>
+                    </div>
                 </div>
                 <br/>
                 <div class="grid-stack">
@@ -99,19 +121,28 @@
         let grid = null;
 
         let serializedData = {% if dashboard_configuration %}{{ dashboard_configuration.additional_data | safe }}{% else %}null{% endif %};
+        let availableContainers = [
+            'distribution-map',
+            'overview',
+            'occurrences',
+            'occurrence-charts',
+            'filter-history'
+        ]
 
         const updateDashboard = (e) => {
             e.preventDefault();
             let serializedData = [];
             grid.engine.nodes.forEach(function (node) {
+                let key = $(node.el).data('key');
                 serializedData.push({
                     x: node.x,
                     y: node.y,
                     width: node.width,
                     height: node.height,
-                    key: $(node.el).data('key')
+                    key: key
                 });
             });
+            serializedData = GridStack.Utils.sort(serializedData);
             $('#dashboard-configuration').val(JSON.stringify(serializedData));
             $('#dashboard-management-form').submit();
         }
@@ -119,19 +150,28 @@
         $(function () {
             let $updateDashboardBtn = $('#update-dashboard');
             grid = GridStack.init({
-                 resizable: {
-                     handles: 'e'
-                 },
+                resizable: {
+                    handles: 'e,s,w'
+                },
+                removable: '#trash',
+                removeTimeout: 100,
             });
             if (serializedData) {
                 grid.removeAll();
                 var items = GridStack.Utils.sort(serializedData);
                 grid.batchUpdate();
                 items.forEach(function (node) {
+                    let index = availableContainers.indexOf(node['key']);
+                    if (index >= 0) {
+                        availableContainers.splice(index, 1);
+                    }
                     grid.addWidget(`<div data-key="${node['key']}"><div class="grid-stack-item-content">${node['key'].replace('-', ' ')}</div></div>`, node);
                 });
                 grid.commit();
+            } else {
+                availableContainers = [];
             }
+            console.log(availableContainers);
             $updateDashboardBtn.click(updateDashboard);
             $('#taxon-group').change((e) => {
                 location.href = '/dashboard-management/?module_group=' + $(e.target).val();
