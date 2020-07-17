@@ -1,13 +1,9 @@
 # coding=utf-8
-import csv
 from celery import shared_task
 
 
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
 def harvest_collections(session_id):
-    import os
-    from django.core.files import File
-    from django.conf import settings
     from bims.utils.logger import log
     from bims.models import HarvestSession
     from bims.scripts.import_gbif_occurrences import (
@@ -21,28 +17,25 @@ def harvest_collections(session_id):
         log('Session does not exist')
         return
 
-    # - Check the headers
-    harvest_session.progress = 'Checking header row'
+    harvest_session.status = 'Processing'
     harvest_session.save()
 
-    log_file_folder = os.path.join(
-        settings.MEDIA_ROOT, 'harvest-session-log'
-    )
+    taxonomies = harvest_session.module_group.taxonomies.all()
+    index = 1
 
-    log_file_path = os.path.join(
-        log_file_folder, '{id}-{time}.txt'.format(
-            id=session_id,
-            time=harvest_session.start_time.strftime("%s")
+    for taxon in taxonomies:
+        harvest_session.status = 'Fetching gbif data for {c} ({i}/{t})'.format(
+            c=taxon.canonical_name,
+            i=index,
+            t=taxonomies.count()
         )
-    )
-
-    if not os.path.exists(log_file_folder):
-        os.mkdir(log_file_folder)
-
-    with open(log_file_path, 'a+') as fi:
-        harvest_session.log_file = File(fi, name=os.path.basename(fi.name))
+        index += 1
         harvest_session.save()
+        import_gbif_occurrences(
+            taxonomy=taxon,
+            log_file_path=harvest_session.log_file.path
+        )
 
-    harvest_session.progress = 'Processing'
+    harvest_session.status = 'Finished'
+    harvest_session.finished = True
     harvest_session.save()
-

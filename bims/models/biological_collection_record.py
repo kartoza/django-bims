@@ -19,6 +19,7 @@ from bims.models.taxon_group import TaxonGroup
 from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
+from bims.models.survey import Survey
 
 
 class BiologicalCollectionQuerySet(models.QuerySet):
@@ -380,6 +381,23 @@ class BiologicalCollectionRecord(AbstractValidation):
 
         if not self.original_species_name:
             self.original_species_name = self.taxonomy.canonical_name
+
+        if not self.survey:
+            try:
+                survey, _ = Survey.objects.get_or_create(
+                    site=self.site,
+                    date=self.collection_date,
+                    collector_user=self.collector_user,
+                    owner=self.owner
+                )
+            except Survey.MultipleObjectsReturned:
+                survey = Survey.objects.filter(
+                    site=self.site,
+                    date=self.collection_date,
+                    collector_user=self.collector_user,
+                    owner=self.owner
+                )[0]
+            self.survey = survey
 
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 

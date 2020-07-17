@@ -14,8 +14,7 @@ from bims.models import (
     LocationType,
     BiologicalCollectionRecord,
     location_site_post_save_handler,
-    collection_post_save_handler,
-    HarvestSession
+    collection_post_save_handler
 )
 
 logger = logging.getLogger('bims')
@@ -41,7 +40,8 @@ def import_gbif_occurrences(
     offset=0,
     owner=None,
     habitat=None,
-    origin=''):
+    origin='',
+    log_file_path=None):
     """
     Import gbif occurrences based on taxonomy gbif key,
     data stored to biological_collection_record table
@@ -50,32 +50,57 @@ def import_gbif_occurrences(
     :param owner: owner of record in the bims
     :param habitat: habitat of species, default to None
     :param origin: origin of species, default to None
+    :param log_file_path: Path of log file of the current process,
+        if provided then write the log to this file
     """
+    log_file = None
+    if log_file_path:
+        log_file = open(log_file_path, 'a')
+        log_file.write('---------------------------------------------------\n')
+        log_file.write('Fetching : {}\n'.format(taxonomy.canonical_name))
+
     if not taxonomy.gbif_key:
-        logger.error('Missing taxon gbif key')
+        if log_file:
+            log_file.write('Missing taxon gbif key\n')
+        else:
+            logger.error('Missing taxon gbif key')
         return
     api_url = 'http://api.gbif.org/v1/occurrence/search?'
     api_url += 'taxonKey={}'.format(taxonomy.gbif_key)
     api_url += '&offset={}'.format(offset)
-    # We need data with coordinate
+    # We need data with coordinate to create a site
     api_url += '&hasCoordinate=true'
     # We don't need data with geospatial issue
     api_url += '&hasGeospatialIssue=false'
-    # Only fetch South Africa
-    api_url += '&country=ZA'
+    # Only fetch from Rwanda
+    api_url += '&country=RW'
+
+    if log_file:
+        log_file.write('URL : {}\n'.format(api_url))
 
     try:
         response = requests.get(api_url)
         json_result = response.json()
         data_count = json_result['count']
     except (HTTPError, simplejson.errors.JSONDecodeError) as e:
-        logger.error(e.message)
+        if log_file:
+            log_file.write(e.message)
+        else:
+            logger.error(e.message)
         return
 
-    logger.info('-- Total occurrences {total} - offset {offset} : '.format(
-        offset=offset,
-        total=data_count
-    ))
+    if log_file:
+        log_file.write(
+            '-- Total occurrences {total} - offset {offset} : \n'.format(
+                offset=offset,
+                total=data_count
+            )
+        )
+    else:
+        logger.info('-- Total occurrences {total} - offset {offset} : '.format(
+            offset=offset,
+            total=data_count
+        ))
 
     source_collection = 'gbif'
 
@@ -95,9 +120,11 @@ def import_gbif_occurrences(
 
     models.signals.post_save.disconnect(
         location_site_post_save_handler,
+        sender=LocationSite
     )
     models.signals.post_save.disconnect(
         collection_post_save_handler,
+        sender=BiologicalCollectionRecord
     )
 
     for result in json_result['results']:
@@ -142,13 +169,27 @@ def import_gbif_occurrences(
             collection_record = BiologicalCollectionRecord.objects.get(
                 upstream_id=upstream_id
             )
-            logger.info(
-                '--- Update existing collection record with upstream ID : {}'.
-                format(upstream_id))
+            if log_file:
+                log_file.write(
+                    '--- Update existing '
+                    'collection record with upstream ID : {}\n'.
+                    format(upstream_id)
+                )
+            else:
+                logger.info(
+                    '--- Update existing collection record with'
+                    ' upstream ID : {}'.
+                    format(upstream_id))
         except BiologicalCollectionRecord.DoesNotExist:
-            logger.info(
-                '--- Collection record created with upstream ID : {}'.
-                format(upstream_id))
+            if log_file:
+                log_file.write(
+                    '--- Collection record created with upstream ID : {}\n'.
+                    format(upstream_id)
+                )
+            else:
+                logger.info(
+                    '--- Collection record created with upstream ID : {}'.
+                    format(upstream_id))
             collection_record = BiologicalCollectionRecord.objects.create(
                 upstream_id=upstream_id,
                 site=location_site,
@@ -182,12 +223,17 @@ def import_gbif_occurrences(
         }
         collection_record.save()
 
+    if log_file:
+        log_file.close()
+
     # reconnect post save handler
     models.signals.post_save.connect(
         location_site_post_save_handler,
+        sender=LocationSite
     )
     models.signals.post_save.connect(
         collection_post_save_handler,
+        sender=BiologicalCollectionRecord
     )
 
     if data_count > (offset + LIMIT):
@@ -197,4 +243,5 @@ def import_gbif_occurrences(
             offset=offset + LIMIT,
             habitat=habitat,
             origin=origin,
+            log_file_path=log_file_path
         )

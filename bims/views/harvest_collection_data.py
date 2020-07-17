@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.conf import settings
+from django.core.files import File
 from bims.models.harvest_session import HarvestSession
 from bims.models.taxon_group import TaxonGroup
 from bims.tasks.harvest_collections import harvest_collections
@@ -33,18 +35,24 @@ class HarvestCollectionView(
             log_file__isnull=False,
             category=self.category
         )
-        session_data = []
-        for session in taxa_upload_sessions:
-            data = {
-                'module_group': session.module_group,
-                'finished': session.finished,
-                'start_time': str(session.start_time),
-            }
-            with open(session.log_file.path, 'rb') as f:
-                data['log'] = b''.join(list(deque(f, 50)))
-            session_data.append(data)
 
-        context['upload_sessions'] = session_data
+        if taxa_upload_sessions:
+            taxa_upload_session = taxa_upload_sessions[0]
+            session_data = {
+                'module_group': taxa_upload_session.module_group,
+                'finished': taxa_upload_session.finished,
+                'start_time': str(taxa_upload_session.start_time),
+                'status': taxa_upload_session.status,
+                'id': taxa_upload_session.id
+            }
+            try:
+                with open(taxa_upload_session.log_file.path, 'rb') as f:
+                    session_data['log'] = b''.join(
+                        list(deque(f, 50))).decode('utf-8')
+            except ValueError:
+                pass
+            context['upload_session'] = session_data
+
         context['finished_sessions'] = HarvestSession.objects.filter(
             harvester=self.request.user,
             finished=True,
@@ -81,13 +89,31 @@ class HarvestCollectionView(
             module_group_id=taxon_group_id,
             category=self.category
         )
-        harvest_collections(harvest_session.id)
+        log_file_folder = os.path.join(
+            settings.MEDIA_ROOT, 'harvest-session-log'
+        )
+
+        log_file_path = os.path.join(
+            log_file_folder, '{id}-{time}.txt'.format(
+                id=harvest_session.id,
+                time=harvest_session.start_time.strftime('%s')
+            )
+        )
+
+        if not os.path.exists(log_file_folder):
+            os.mkdir(log_file_folder)
+
+        with open(log_file_path, 'a+') as fi:
+            harvest_session.log_file = File(fi, name=os.path.basename(fi.name))
+            harvest_session.save()
+
+        harvest_collections.delay(harvest_session.id)
         return HttpResponseRedirect(request.path_info)
 
 
-class DataUploadStatusView(APIView):
+class HarvestSessionStatusView(APIView):
     """
-    Return status of the data upload
+    Return status of the harvest session
     """
 
     def get(self, request, session_id, *args):
@@ -97,8 +123,13 @@ class DataUploadStatusView(APIView):
             )
         except HarvestSession.DoesNotExist:
             raise Http404('No session found')
-        return Response({
-            'id': session.id,
-            'status': session.status,
-            'finished': session.finished
-        })
+        session_data = {
+            'module_group': session.module_group.name,
+            'finished': session.finished,
+            'start_time': str(session.start_time),
+            'status': session.status
+        }
+        with open(session.log_file.path, 'rb') as f:
+            session_data['log'] = b''.join(
+                list(deque(f, 50))).decode('utf-8')
+        return Response(session_data)

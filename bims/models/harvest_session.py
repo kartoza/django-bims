@@ -2,7 +2,6 @@
 """Harvest session model definition.
 
 """
-import uuid
 from django.conf import settings
 from datetime import datetime
 from django.db import models
