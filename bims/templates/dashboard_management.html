@@ -76,9 +76,7 @@
                                 <option value="">Add new</option>
                             </select>
                         </div>
-                        <div class="col-6">
-                            <div class="newWidget">
-                            </div>
+                        <div class="col-6 new-widget-container">
                         </div>
                     </div>
                 </div>
@@ -165,7 +163,7 @@
                     handles: 'e,s,w'
                 },
                 removable: '#trash',
-                acceptWidgets: '.newWidget',
+                acceptWidgets: '.new-widget',
                 removeTimeout: 100,
             });
             if (serializedData) {
@@ -194,20 +192,25 @@
             });
             $('#container-group').change((e) => {
                 let val = $(e.target).val();
+                let widgetContainer = $('.new-widget-container');
+                let widget = $(`<div data-key=${val}>`);
+                widgetContainer.html(widget);
+                widget.addClass('new-widget');
                 if (val) {
-                    $('.newWidget').html(
+                    widget.html(
                         `<div class="card-body grid-stack-item-content">
                             ${val}
                         </div>`
                     )
                 }
+                widget.draggable({
+                    revert: 'invalid',
+                    scroll: false,
+                    appendTo: 'body',
+                    helper: 'move'
+                });
             })
-            $('.newWidget').draggable({
-                revert: 'invalid',
-                scroll: false,
-                appendTo: 'body',
-                helper: 'clone'
-            });
+
         })
     </script>
 {% endblock %}

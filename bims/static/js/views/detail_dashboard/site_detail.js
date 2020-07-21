@@ -39,6 +39,7 @@ define([
         siteLayerVector: null,
         siteId: null,
         currentDashboardWrapper: null,
+        currentModule: '',
         currentFiltersUrl: '',
         chartConfigs: [],
         categoryColor: {
@@ -122,6 +123,36 @@ define([
 
             return this;
         },
+        renderMap: function (target = 'locationsite-map') {
+            let self = this;
+            if (!self.mapLocationSite) {
+                self.mapLocationSite = new ol.Map({
+                    controls: ol.control.defaults().extend([
+                        new ol.control.ScaleLine()
+                    ]),
+                    layers: [
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        })
+                    ],
+                    target: target,
+                    view: new ol.View({
+                        center: [0, 0],
+                        zoom: 2
+                    })
+                });
+                self.mapLocationSite.addLayer(self.siteTileLayer);
+                let graticule = new ol.Graticule({
+                    strokeStyle: new ol.style.Stroke({
+                        color: 'rgba(0,0,0,1)',
+                        width: 1,
+                        lineDash: [2.5, 4]
+                    }),
+                    showLabels: true
+                });
+                graticule.setMap(self.mapLocationSite);
+            }
+        },
         show: function (data) {
             if (this.isOpen) {
                 return false;
@@ -132,33 +163,6 @@ define([
             this.$el.show('slide', {
                 direction: 'right'
             }, 300, function () {
-                if (!self.mapLocationSite) {
-                    self.mapLocationSite = new ol.Map({
-                        controls: ol.control.defaults().extend([
-                            new ol.control.ScaleLine()
-                        ]),
-                        layers: [
-                            new ol.layer.Tile({
-                                source: new ol.source.OSM()
-                            })
-                        ],
-                        target: 'locationsite-map',
-                        view: new ol.View({
-                            center: [0, 0],
-                            zoom: 2
-                        })
-                    });
-                    self.mapLocationSite.addLayer(self.siteTileLayer);
-                    let graticule = new ol.Graticule({
-                        strokeStyle: new ol.style.Stroke({
-                            color: 'rgba(0,0,0,1)',
-                            width: 1,
-                            lineDash: [2.5, 4]
-                        }),
-                        showLabels: true
-                    });
-                    graticule.setMap(self.mapLocationSite);
-                }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
                     self.chemCsvDownloadUrl += '?' + data;
@@ -196,6 +200,8 @@ define([
                         }
                     }
 
+                    self.currentModule = data['modules'].join();
+
                     // Check dashboard configuration
                     let $dashboardWrapper = self.$el.find('.dashboard-wrapper');
                     let dashboardHeader = self.$el.find('.dashboard-header');
@@ -209,7 +215,8 @@ define([
                         $.each(data['dashboard_configuration'], (index, configuration) => {
                             // Find the container
                             let rowHeight = height * configuration['height'];
-                            let $container = self.$el.find(`.${configuration['key']}`).clone();
+                            let $container = '';
+                            $container = self.$el.find(`.${configuration['key']}`).clone();
                             $container.addClass('card-100');
                             let $div = $(`<div class="col-${configuration['width']}" style="margin-top: 20px; height: ${rowHeight}px"></div>`);
                             $div.append($container);
@@ -225,12 +232,15 @@ define([
                                     break;
                                 }
                                 case 'occurrences': {
-                                    $container.find('.content-body').height(rowHeight - 120);
-                                    self.createOccurrencesBarChart(data, $container.find('.content-body')[0], (rowHeight - 20) + 'px');
+                                    self.createOccurrencesBarChart(data, $container.find('.content-body')[0]);
                                     break;
                                 }
                                 case 'distribution-map': {
-                                    $('#locationsite-map').height(rowHeight - 120);
+                                    let map = $container.find('.content-body');
+                                    let mapId = 'location-site-map-' + data['modules'].join();
+                                    map.attr('id', mapId);
+                                    map.css('height', '100%');
+                                    self.renderMap(mapId);
                                     break;
                                 }
                                 case 'occurrence-charts': {
@@ -247,6 +257,7 @@ define([
                         $dashboardWrapper.show();
                     }
 
+                    self.renderMap();
                     self.createSurveyDataTable(data);
                     self.createOccurrenceDataTable(data);
                     self.createDataSummary(data);
@@ -372,7 +383,6 @@ define([
             sassDashboardButton.attr('href', '#');
             $('#metadata-table-list').html('');
             this.clearSiteImages();
-            this.mapLocationSite.removeLayer(this.siteLayerVector);
             this.siteName.html('');
             this.siteNameWrapper.hide();
             this.uniqueSites = [];
@@ -422,12 +432,8 @@ define([
             }
 
             if (this.mapLocationSite) {
-                let newParams = {
-                    layers: locationSiteGeoserverLayer,
-                    format: 'image/png',
-                    viewparams: 'where:' + emptyWMSSiteParameter
-                };
-                self.siteLayerSource.updateParams(newParams);
+                this.mapLocationSite = null;
+                $('#locationsite-map').html('');
             }
 
             if (Shared.LocationSiteDetailXHRRequest) {
@@ -888,6 +894,7 @@ define([
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     legend: {display: false},
                     title: {display: false},
                     hover: {mode: 'point', intersect: false},
@@ -932,6 +939,16 @@ define([
             if (!chartCanvas) {
                 chartCanvas = document.getElementById('species-ssdd-occurrences-line-chart-canvas');
             }
+            let container = $(chartCanvas);
+            let _maxTry = 10;
+            let _currentTry = 1;
+            while (!container.hasClass('card-body') && _currentTry < _maxTry) {
+                container = container.parent();
+                _currentTry =+ 1;
+            }
+            let cardHeight = container.height();
+            $(chartCanvas).parent().css('height', cardHeight);
+
             if (data.hasOwnProperty('taxa_occurrence')) {
                 if (data['taxa_occurrence']['occurrences_line_chart']['values'].length === 0) {
                     this.$el.find('.species-ssdd-occurrences-line-chart').hide();
@@ -1056,7 +1073,7 @@ define([
             }
             return $detailWrapper;
         },
-        createDataSummary: function (data, container = null) {
+        createDataSummary: function (data, container = null, height = null) {
             let bio_data = data['biodiversity_data'];
             let biodiversityData = data['biodiversity_data']['species'];
             let origin_length = biodiversityData['origin_chart']['keys'].length;
@@ -1083,6 +1100,14 @@ define([
             let biotopeCanvas = document.getElementById('species-ssdd-biotope-pie');
 
             if (container) {
+
+                let parentHeight = container.parent().height();
+                let titleHeight = container.find('.ssdd-titles').height();
+                let legendHeight = container.find('.species-ssdd-legend').height();
+                let padding = 100;
+                container.css('height', parentHeight);
+                container.find('.col-chart').css('height', parentHeight - titleHeight - legendHeight - padding);
+
                 originPieCanvas = container.find('.occurrence-origin-chart').find('canvas')[0];
                 endemismPieCanvas = container.find('.occurrence-endemism-chart').find('canvas')[0];
                 conservationStatusPieCanvas = container.find('.occurrence-conservation-status-chart').find('canvas')[0];
