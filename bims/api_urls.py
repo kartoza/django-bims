@@ -71,6 +71,7 @@ from bims.api_views.taxa_search_result import TaxaSearchResult
 from bims.api_views.river_name import GetRiverName
 from bims.api_views.csv_download import CsvDownload
 from bims.views.data_upload import DataUploadStatusView
+from bims.views.harvest_collection_data import HarvestSessionStatusView
 from bims.api_views.taxon_group import (
     UpdateTaxonGroupOrder,
     RemoveTaxaFromTaxonGroup,
@@ -200,6 +201,9 @@ urlpatterns = [
     url(r'^upload-status/(?P<session_id>[0-9]+)/$',
         DataUploadStatusView.as_view(),
         name='upload-status'),
+    url(r'^harvest-status/(?P<session_id>[0-9]+)/$',
+        HarvestSessionStatusView.as_view(),
+        name='harvest-status'),
     url(r'^taxa-list/$',
         TaxaList.as_view(),
         name='taxa-list'),
