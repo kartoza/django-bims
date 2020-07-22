@@ -354,3 +354,7 @@ table#filter-history-table {
     overflow-y: auto;
     padding: 0 !important;
 }
+
+.card-padding {
+    padding: 20px !important;
+}

@@ -123,7 +123,7 @@ define([
 
             return this;
         },
-        renderMap: function (target = 'locationsite-map') {
+        renderMap: function (data, target = 'locationsite-map') {
             let self = this;
             if (!self.mapLocationSite) {
                 self.mapLocationSite = new ol.Map({
@@ -152,6 +152,23 @@ define([
                 });
                 graticule.setMap(self.mapLocationSite);
             }
+             // Zoom to extent
+            if (data['extent'].length > 0) {
+                let ext = ol.proj.transformExtent(
+                    data['extent'],
+                    ol.proj.get('EPSG:4326'),
+                    ol.proj.get('EPSG:3857'));
+                self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
+                if (self.mapLocationSite.getView().getZoom() > 8) {
+                    self.mapLocationSite.getView().setZoom(8);
+                }
+            }
+            let newParams = {
+                layers: locationSiteGeoserverLayer,
+                format: 'image/png',
+                viewparams: 'where:"' + data['sites_raw_query'] + '"'
+            };
+            self.siteLayerSource.updateParams(newParams);
         },
         show: function (data) {
             if (this.isOpen) {
@@ -240,11 +257,15 @@ define([
                                     let mapId = 'location-site-map-' + data['modules'].join();
                                     map.attr('id', mapId);
                                     map.css('height', '100%');
-                                    self.renderMap(mapId);
+                                    self.renderMap(data, mapId);
                                     break;
                                 }
                                 case 'occurrence-charts': {
                                     self.createDataSummary(data, $container.find('.content-body'));
+                                    break;
+                                }
+                                case 'survey': {
+                                    self.createSurveyDataTable(data, $container);
                                     break;
                                 }
                             }
@@ -256,12 +277,6 @@ define([
                     } else {
                         $dashboardWrapper.show();
                     }
-
-                    self.renderMap();
-                    self.createSurveyDataTable(data);
-                    self.createOccurrenceDataTable(data);
-                    self.createDataSummary(data);
-                    self.renderMetadataTable(data);
 
                     if (data['is_multi_sites']) {
                         $('#species-ssdd-site-details').hide();
@@ -280,6 +295,13 @@ define([
                         }
                     }
 
+                    // Map
+                    self.renderMap(data);
+                    // Survey table
+                    self.createSurveyDataTable(data);
+                    self.createOccurrenceDataTable(data);
+                    self.createDataSummary(data);
+                    self.renderMetadataTable(data);
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart();
                     self.createConsStatusStackedBarChart(data);
@@ -288,24 +310,6 @@ define([
                     if (!data['is_multi_sites']) {
                         self.createSiteImageCarousel(data);
                     }
-
-                    // Zoom to extent
-                    if (data['extent'].length > 0) {
-                        let ext = ol.proj.transformExtent(
-                            data['extent'],
-                            ol.proj.get('EPSG:4326'),
-                            ol.proj.get('EPSG:3857'));
-                        self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
-                        if (self.mapLocationSite.getView().getZoom() > 8) {
-                            self.mapLocationSite.getView().setZoom(8);
-                        }
-                    }
-                    let newParams = {
-                        layers: locationSiteGeoserverLayer,
-                        format: 'image/png',
-                        viewparams: 'where:"' + data['sites_raw_query'] + '"'
-                    };
-                    self.siteLayerSource.updateParams(newParams);
 
                     self.loadingDashboard.hide();
                 }
@@ -1104,7 +1108,7 @@ define([
                 let parentHeight = container.parent().height();
                 let titleHeight = container.find('.ssdd-titles').height();
                 let legendHeight = container.find('.species-ssdd-legend').height();
-                let padding = 100;
+                let padding = 120;
                 container.css('height', parentHeight);
                 container.find('.col-chart').css('height', parentHeight - titleHeight - legendHeight - padding);
 
@@ -1186,10 +1190,13 @@ define([
             });
             return $result;
         },
-        createSurveyDataTable: function (data) {
-            let $dataWrapper = $('#dashboard-survey-data');
-            let $surveyButton = $('#site-visit-detail-button');
-            let $surveyInfo = $('#site-visit-info');
+        createSurveyDataTable: function (data, container) {
+            if (!container) {
+                container = $('#species-ssdd-survey-data');
+            }
+            let $dataWrapper = container.find('.content-body');
+            let $surveyButton = container.find('.survey-button');
+            let $surveyInfo = container.find('.survey-info');
             $dataWrapper.html('');
             if (!data.hasOwnProperty('survey')) return false;
             if (data['survey'].length > 0) {
