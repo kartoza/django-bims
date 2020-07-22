@@ -268,6 +268,9 @@ define([
                                     self.createSurveyDataTable(data, $container);
                                     break;
                                 }
+                                case 'metadata-table': {
+                                    self.renderMetadataTable(data, $container);
+                                }
                             }
                             dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                             console.log(configuration)
@@ -299,9 +302,11 @@ define([
                     self.renderMap(data);
                     // Survey table
                     self.createSurveyDataTable(data);
-                    self.createOccurrenceDataTable(data);
+                    // Summary charts
                     self.createDataSummary(data);
+                    // Metadata table
                     self.renderMetadataTable(data);
+                    self.createOccurrenceDataTable(data);
                     self.createOccurrencesBarChart(data);
                     self.createTaxaStackedBarChart();
                     self.createConsStatusStackedBarChart(data);
@@ -1238,8 +1243,11 @@ define([
                 this.$el.find('.download-as-csv').hide();
             }
         },
-        renderMetadataTable: function (data) {
-            let ulDiv = $('#metadata-table-list');
+        renderMetadataTable: function (data, container=null) {
+            if (!container) {
+                container = $('#ssdd-metadata-table');
+            }
+            let ulDiv = container.find('.content-body');
             ulDiv.html(' ');
             let dataSources = data['source_references'];
             let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
