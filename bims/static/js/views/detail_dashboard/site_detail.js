@@ -288,6 +288,11 @@ define([
                                     self.createOriginStackedBarChart(data, $container);
                                     break;
                                 }
+                                case 'site-image': {
+                                    $container.show();
+                                    self.createSiteImageCarousel(data, $container);
+                                    break;
+                                }
                             }
                             dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                             console.log(configuration)
@@ -813,23 +818,29 @@ define([
                 }
             );
         },
-        createSiteImageCarousel: function (data) {
-            let wrapper = this.$el.find('#ssdd-carousel-wrapper');
+        createSiteImageCarousel: function (data, container) {
             let siteImages = data['site_images'];
-            if (siteImages.length > 0) {
-                wrapper.show();
+            if (!container) {
+                container = this.$el.find('#ssdd-carousel-wrapper');
+                if (siteImages.length > 0) {
+                    container.show();
+                }
+            } else {
+                if (siteImages.length === 0) {
+                    container.find('.content-body').html(`<div class="center-text">No site image</div>`);
+                }
             }
             $.each(siteImages, function (index, siteImage) {
                 let className = '';
                 if (index === 0) {
                     className = 'active'
                 }
-                wrapper.find('.carousel-indicators').append(
+                container.find('.carousel-indicators').append(
                     '<li data-target="#ssdd-site-image-carousel" data-slide-to="'+ index +'" class="'+ className +'"/>'
                 );
-                wrapper.find('.carousel-inner').append(
-                    '<div class="carousel-item '+ className +'">' +
-                    '  <img alt="" src="' + siteImage + '">' +
+                container.find('.carousel-inner').append(
+                    '<div class="carousel-item '+ className +'" style="height: 100%">' +
+                    '  <img alt="" src="' + siteImage + '" height="100%">' +
                     '</div>'
                 );
             });

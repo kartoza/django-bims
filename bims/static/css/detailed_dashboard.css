@@ -363,3 +363,11 @@ table#filter-history-table {
     height: 100%;
     width: 100%;
 }
+
+.center-text {
+    font-size: 14pt;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}

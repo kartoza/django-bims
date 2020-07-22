@@ -279,9 +279,10 @@ class LocationSitesSummary(APIView):
         site_images = []
         if not is_multi_sites:
             site_image_objects = SiteImage.objects.filter(
-                survey__in=list(
+                Q(survey__in=list(
                     collection_results.distinct('survey').values_list(
-                        'survey__id', flat=True))
+                        'survey__id', flat=True))) |
+                Q(site_id=int(site_id))
             ).values_list(
                 'image', flat=True
             )

@@ -126,6 +126,7 @@ services:
       - C_FORCE_ROOT=True
       - DEBUG=True
       - BROKER_URL=amqp://rabbitmq:5672
+      - MEDIA_ROOT=/home/web/media
     links:
       - smtp:smtp
       - db:db
