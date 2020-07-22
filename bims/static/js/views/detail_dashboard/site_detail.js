@@ -270,6 +270,23 @@ define([
                                 }
                                 case 'metadata-table': {
                                     self.renderMetadataTable(data, $container);
+                                    break;
+                                }
+                                case 'taxa-chart': {
+                                    self.createTaxaStackedBarChart($container);
+                                    break;
+                                }
+                                case 'conservation-status-chart': {
+                                    self.createConsStatusStackedBarChart(data, $container);
+                                    break;
+                                }
+                                case 'endemism-chart': {
+                                    self.createEndemismStackedBarChart($container);
+                                    break;
+                                }
+                                case 'origin-chart': {
+                                    self.createOriginStackedBarChart(data, $container);
+                                    break;
                                 }
                             }
                             dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
@@ -306,11 +323,17 @@ define([
                     self.createDataSummary(data);
                     // Metadata table
                     self.renderMetadataTable(data);
-                    self.createOccurrenceDataTable(data);
+                    // Occurrences bar chart
                     self.createOccurrencesBarChart(data);
+                    // Occurrence data table
+                    self.createOccurrenceDataTable(data);
+                    // Taxa chart
                     self.createTaxaStackedBarChart();
+                    // Conservation status chart
                     self.createConsStatusStackedBarChart(data);
+                    // Endemism chart
                     self.createEndemismStackedBarChart();
+                    // Origin chart
                     self.createOriginStackedBarChart(data);
                     if (!data['is_multi_sites']) {
                         self.createSiteImageCarousel(data);
@@ -697,6 +720,7 @@ define([
                 data: barChartData,
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     legend: {display: true},
                     title: {display: false},
                     hover: {mode: 'point', intersect: false},
@@ -754,21 +778,25 @@ define([
                 }
             });
         },
-        createOriginStackedBarChart: function (data) {
+        createOriginStackedBarChart: function (data, container = null) {
             let self = this;
             let originCategoryList = data['origin_name_list'];
-            let chartContainer = this.$el.find('.species-ssdd-origin-bar-chart');
+            if (!container) {
+                container = this.$el.find('.species-ssdd-origin-bar-chart');
+            }
             let baseUrl = '/api/location-sites-occurrences-chart-data/';
+            let canvasContainer = container.find('.canvas-container');
+            let chartCanvas = container.find('canvas')[0];
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if (Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-origin-bar-chart').hide();
+                        canvasContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-origin-bar-chart').show();
+                    canvasContainer.show();
                     // Update labels
                     $.each(responseData['dataset_labels'], function (index, label) {
                         if (originCategoryList.hasOwnProperty(label)) {
@@ -781,7 +809,6 @@ define([
                             responseData['data'][originCategoryList[key]] = current_data;
                         }
                     });
-                    let chartCanvas = document.getElementById('species-ssdd-origin-bar-chart-canvas');
                     this.originChartCanvas = self.renderStackedBarChart(responseData, 'origin_bar', chartCanvas);
                 }
             );
@@ -813,40 +840,46 @@ define([
             wrapper.find('.carousel-indicators').html('');
             wrapper.find('.carousel-inner').html('');
         },
-        createTaxaStackedBarChart: function () {
+        createTaxaStackedBarChart: function (container = null) {
             let self = this;
-            let chartContainer = this.$el.find('#species-ssdd-taxa-occurrences-bar-chart');
+            if (!container) {
+                container = this.$el.find('#species-ssdd-taxa-occurrences-bar-chart');
+            }
             let baseUrl = '/api/location-sites-taxa-chart-data/';
-            let chartCanvas = document.getElementById('species-ssdd-taxa-occurrences-line-chart-canvas');
+            let chartCanvas = container.find('canvas')[0];
+            let canvasContainer = container.find('.canvas-container');
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if(Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-taxa-line-chart').hide();
+                        canvasContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-taxa-line-chart').show();
+                    canvasContainer.show();
                     this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'taxa_stacked_bar', chartCanvas);
                 }
             )
         },
-        createConsStatusStackedBarChart: function (data) {
+        createConsStatusStackedBarChart: function (data, container = null) {
             let self = this;
             let iucnCategoryList = data['iucn_name_list'];
-            let chartContainer = this.$el.find('#species-ssdd-cons-status-bar-chart');
+            if (!container) {
+                container = this.$el.find('#species-ssdd-cons-status-bar-chart');
+            }
             let baseUrl = '/api/location-sites-cons-chart-data/';
+            let canvasContainer = container.find('.canvas-container');
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if (Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-cons-status-bar-chart').hide();
+                        canvasContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-cons-status-bar-chart').show();
+                    canvasContainer.show();
                     // Update labels
                     $.each(responseData['dataset_labels'], function (index, label) {
                         if (iucnCategoryList.hasOwnProperty(label)) {
@@ -860,26 +893,29 @@ define([
                             responseData['data'][iucnCategoryList[key]] = data;
                         }
                     });
-                    var chartCanvas = document.getElementById('species-ssdd-cons-status-bar-chart-canvas');
+                    let chartCanvas = container.find('canvas')[0];
                     this.consChartCanvas = self.renderStackedBarChart(responseData, 'cons_status_bar', chartCanvas);
                 }
             )
         },
-        createEndemismStackedBarChart: function () {
+        createEndemismStackedBarChart: function (container) {
             let self = this;
-            let chartContainer = this.$el.find('#species-ssdd-endemism-bar-chart');
+            if (!container) {
+                container = this.$el.find('#species-ssdd-endemism-bar-chart');
+            }
             let baseUrl = '/api/location-sites-endemism-chart-data/';
-            let chartCanvas = document.getElementById('species-ssdd-endemism-bar-chart-canvas');
+            let chartCanvas = container.find('canvas')[0];
+            let chartContainer = container.find('.canvas-container');
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if(Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-endemism-bar-chart').hide();
+                        chartContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-endemism-bar-chart').show();
+                    chartContainer.show();
                     this.endemismChartCanvas = self.renderStackedBarChart(responseData, 'endemism', chartCanvas);
                 }
             )

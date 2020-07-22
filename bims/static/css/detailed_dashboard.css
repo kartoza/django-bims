@@ -358,3 +358,8 @@ table#filter-history-table {
 .card-padding {
     padding: 20px !important;
 }
+
+.canvas-container {
+    height: 100%;
+    width: 100%;
+}

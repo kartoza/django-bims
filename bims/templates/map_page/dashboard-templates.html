@@ -601,7 +601,7 @@
                 </div>
 
                 {# Occurrences per year line chart #}
-                <div class="card" id="species-ssdd-taxa-occurrences-bar-chart">
+                <div class="card taxa-chart" id="species-ssdd-taxa-occurrences-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Taxa
@@ -613,8 +613,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="col-12 species-ssdd-taxa-line-chart">
+                    <div class="card-body" style="height: 100%; width: 100%">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-taxa-occurrences-line-chart-canvas"></canvas>
                         </div>
@@ -622,7 +622,7 @@
                 </div>
 
                 {# origin per year bar chart #}
-                <div class="card" id="species-ssdd-origin-bar-chart">
+                <div class="card origin-chart" id="species-ssdd-origin-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Origin
@@ -635,7 +635,7 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 species-ssdd-origin-bar-chart">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-origin-bar-chart-canvas"></canvas>
                         </div>
@@ -643,7 +643,7 @@
                 </div>
 
                 {# endemism per year bar chart #}
-                <div class="card" id="species-ssdd-endemism-bar-chart">
+                <div class="card endemism-chart" id="species-ssdd-endemism-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Endemism
@@ -655,8 +655,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="col-12 species-ssdd-endemism-bar-chart">
+                    <div class="card-body" style="height: 100%; width: 100%">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-endemism-bar-chart-canvas"></canvas>
                         </div>
@@ -664,7 +664,7 @@
                 </div>
 
                 {# cons-status per year bar chart #}
-                <div class="card" id="species-ssdd-cons-status-bar-chart">
+                <div class="card conservation-status-chart" id="species-ssdd-cons-status-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Conservation Status
@@ -676,8 +676,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="col-12 species-ssdd-cons-status-bar-chart">
+                    <div class="card-body" style="height: 100%; width: 100%">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-cons-status-bar-chart-canvas"></canvas>
                         </div>
