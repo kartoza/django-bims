@@ -787,7 +787,7 @@ define([
             let self = this;
             let originCategoryList = data['origin_name_list'];
             if (!container) {
-                container = this.$el.find('.species-ssdd-origin-bar-chart');
+                container = this.$el.find('#species-ssdd-origin-bar-chart');
             }
             let baseUrl = '/api/location-sites-occurrences-chart-data/';
             let canvasContainer = container.find('.canvas-container');

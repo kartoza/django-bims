@@ -160,6 +160,26 @@ class LocationSite(DocumentLinksMixin):
         null=True,
     )
 
+    def generate_site_code(self):
+        """
+        Generate site code from site details
+        """
+        # Get first 4 letter from site name
+        name = ''
+        if self.name:
+            name = self.name.replace(' ', '')
+            name = name[0:4]
+            name = name.upper()
+        # Total sites with same name
+        total_sites = LocationSite.objects.filter(
+            name=self.name
+        ).exclude(id = self.id).count()
+        site_code = '{name}-{number}'.format(
+            name=name,
+            number='{:04d}'.format(total_sites)
+        )
+        return site_code
+
     @property
     def location_site_identifier(self):
         """

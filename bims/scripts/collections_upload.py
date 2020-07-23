@@ -1,4 +1,5 @@
 import uuid
+import json
 import logging
 from bims.scripts.collection_csv_keys import *  # noqa
 from datetime import datetime
@@ -188,12 +189,17 @@ class CollectionsCSVUpload(DataCSVUpload):
             float(self.row_value(record, LATITUDE)))
         # Create or get location site
         legacy_site_code = self.row_value(record, ORIGINAL_SITE_CODE)
+        location_site_name = ''
+        if self.row_value(record, LOCATION_SITE):
+            location_site_name = self.row_value(record, LOCATION_SITE)
+        elif self.row_value(record, WETLAND_NAME):
+            location_site_name = self.row_value(record, WETLAND_NAME)
         try:
             location_site, status = (
                 LocationSite.objects.get_or_create(
                     location_type=location_type,
                     geometry_point=record_point,
-                    name=self.row_value(record, LOCATION_SITE),
+                    name=location_site_name,
                     legacy_site_code=legacy_site_code
                 )
             )
@@ -201,7 +207,7 @@ class CollectionsCSVUpload(DataCSVUpload):
             location_site = LocationSite.objects.filter(
                 location_type=location_type,
                 geometry_point=record_point,
-                name=self.row_value(record, LOCATION_SITE),
+                name=location_site_name,
                 legacy_site_code=legacy_site_code
             )[0]
         if site_description:
@@ -210,6 +216,9 @@ class CollectionsCSVUpload(DataCSVUpload):
             location_site.refined_geomorphological = refined_geo
         if legacy_river_name:
             location_site.legacy_river_name = legacy_river_name
+        if not location_site.site_code:
+            site_code = location_site.generate_site_code()
+            location_site.site_code = site_code
         location_site.save()
         return location_site
 
@@ -442,11 +451,7 @@ class CollectionsCSVUpload(DataCSVUpload):
             else:
                 category = None
         if not category:
-            self.error_file(
-                error_row=row,
-                error_message='Missing origin'
-            )
-            return
+            category = taxonomy.origin
         optional_data['category'] = category
 
         # -- Optional data - Habitat
@@ -581,12 +586,16 @@ class CollectionsCSVUpload(DataCSVUpload):
         for field in optional_data:
             setattr(
                 record, field, optional_data[field])
+
+        # -- Additional data
+        record.additional_data = json.dumps(row)
         record.validated = True
         record.save()
 
-        self.site_ids.append(
-            str(record.site.id)
-        )
+        if not str(record.site.id) in self.site_ids:
+            self.site_ids.append(
+                str(record.site.id)
+            )
 
         self.success_file(
             success_row=row,

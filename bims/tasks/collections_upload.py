@@ -3,10 +3,8 @@ import csv
 from celery import shared_task
 FILE_HEADERS = [
     'UUID',
-    'Original River Name',
     'Original Site Code',
     'Site description',
-    'Refined Geomorphological Zone',
     'Latitude',
     'Longitude',
     'Sampling Date',

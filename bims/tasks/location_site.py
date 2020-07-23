@@ -14,6 +14,7 @@ def update_location_context(location_site_id):
                 site_id=str(location_site_id),
                 only_empty=False
             )
+            return
     try:
         LocationSite.objects.get(id=location_site_id)
     except LocationSite.DoesNotExist:

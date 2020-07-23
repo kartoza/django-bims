@@ -154,6 +154,9 @@
                                 {% if upload_session.success_file %}
                                     <a href="{{ upload_session.success_file.url }}" target="_blank" class="btn btn-success">Success File</a>
                                 {% endif %}
+                                {% if upload_session.canceled %}
+                                    <p style="color:red">Canceled</p>
+                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}

@@ -77,3 +77,6 @@ class SamplingMethod(models.Model):
 
     def __unicode__(self):
         return self.sampling_method
+
+    def __str__(self):
+        return self.sampling_method
