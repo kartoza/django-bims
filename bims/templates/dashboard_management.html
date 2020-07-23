@@ -24,6 +24,10 @@
             text-transform: capitalize;
         }
 
+        .dropdown-item {
+            text-transform: capitalize;
+        }
+
         .grid-stack-item-removing {
             opacity: 0.8;
             filter: blur(5px);
@@ -47,18 +51,23 @@
         <form action="{{ request.path }}" method="post" id="dashboard-management-form" novalidate enctype="multipart/form-data">
             {% csrf_token %}
             <div class="dashboard-title">
-                <h2>Dashboard management</h2>
-                <div class="dashboard-close" data-destination="/map"><i
-                        class="fa fa-times" aria-hidden="true"></i></div>
+                <h2>Dashboard management - Site dashboard</h2>
             </div>
             <div class="dashboard-body">
                 <div style="padding-right: 10px; padding-left: 10px;">
-                    <select class="form-control" name="module_group"
-                            id="taxon-group">
-                        {% for taxon_group in module_groups %}
-                            <option value="{{ taxon_group.id }}" {%  if taxon_group == module_group %} selected {% endif %}> {{ taxon_group.name }} </option>
-                        {% endfor %}
-                    </select>
+                    <div class="row">
+                        <div class="col-1" style="padding-top: 10px;">
+                            Module
+                        </div>
+                        <div class="col-11">
+                            <select class="form-control" name="module_group"
+                                    id="taxon-group">
+                                {% for taxon_group in module_groups %}
+                                    <option value="{{ taxon_group.id }}" {%  if taxon_group == module_group %} selected {% endif %}> {{ taxon_group.name }} </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <br/>
                 <div class="action" style="padding-left: 10px; padding-right: 10px;">
@@ -82,7 +91,7 @@
                 </div>
                 <br/>
                 <div class="grid-stack">
-                    {% if not dashboard_configuration %}
+                    {% if not dashboard_configuration or not dashboard_configuration.additional_data %}
                     <div class="grid-stack-item" data-gs-x="0" data-gs-y="0"
                          data-gs-width="4" data-gs-height="2" data-gs-min-width="4" data-gs-max-width="12" data-key="filter-history">
                         <div class="grid-stack-item-content">Filter history</div>
@@ -106,11 +115,42 @@
                     {% endif %}
                 </div>
                 <input type="hidden" name="dashboard_configuration" id="dashboard-configuration" />
-                <div style="padding-right: 10px; padding-left: 10px;margin-top: 20px;">
-                    <button class="btn btn-success" style="width: 100%" id="update-dashboard">Update</button>
+                <div style="padding-right: 10px; padding-left: 10px;margin-top: 20px;" class="row">
+                    <div class="col-6">
+                        <button class="btn btn-danger" style="width:100%" data-toggle="modal" data-target="#exampleModalCenter" id="reset-button">Reset</button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-success" style="width: 100%" id="update-dashboard">Update</button>
+                    </div>
                 </div>
             </div>
         </form>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Reset dashboard</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to reset the dashboard?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="reset-dashboard">Reset
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
 {% endblock %}
@@ -129,7 +169,7 @@
     <script>
         let grid = null;
 
-        let serializedData = {% if dashboard_configuration %}{{ dashboard_configuration.additional_data | safe }}{% else %}null{% endif %};
+        let serializedData = {% if dashboard_configuration.additional_data %}{{ dashboard_configuration.additional_data | safe }}{% else %}null{% endif %};
         let availableContainers = [
             'distribution-map',
             'overview',
@@ -165,6 +205,17 @@
 
         $(function () {
             let $updateDashboardBtn = $('#update-dashboard');
+
+            $('#reset-button').click(function (e) {
+                e.preventDefault();
+            });
+
+            $('#reset-dashboard').click(function (e) {
+                let $form = $("#dashboard-management-form");
+                $form.append(`<input type="hidden" name="reset" value="True"/>`);
+                $form.submit();
+            });
+
             grid = GridStack.init({
                 resizable: {
                     handles: 'e,s,w'
@@ -173,6 +224,14 @@
                 acceptWidgets: '.new-widget',
                 removeTimeout: 100,
             });
+
+            grid.on('removed', function(e, items) {
+                items.forEach(function (item) {
+                    let key = item.el.dataset.key;
+                    $('#container-group').append(`<option class="dropdown-item" value="${key}">${key.replace(/-/g, ' ')}</option>`);
+                });
+            });
+
             if (serializedData) {
                 grid.removeAll();
                 var items = GridStack.Utils.sort(serializedData);
@@ -182,7 +241,7 @@
                     if (index >= 0) {
                         availableContainers.splice(index, 1);
                     }
-                    grid.addWidget(`<div data-key="${node['key']}"><div class="grid-stack-item-content">${node['key'].replace('-', ' ')}</div></div>`, node);
+                    grid.addWidget(`<div data-key="${node['key']}"><div class="grid-stack-item-content">${node['key'].replace(/-/g, ' ')}</div></div>`, node);
                 });
                 grid.commit();
             } else {
@@ -190,7 +249,7 @@
             }
             if (availableContainers.length > 0) {
                 $.each(availableContainers, (index, value) => {
-                    $('#container-group').append(`<option value="${value}">${value.replace('-', ' ')}</option>`);
+                    $('#container-group').append(`<option class="dropdown-item" value="${value}">${value.replace(/-/g, ' ')}</option>`);
                 })
             }
             $updateDashboardBtn.click(updateDashboard);
@@ -206,7 +265,7 @@
                 if (val) {
                     widget.html(
                         `<div class="card-body grid-stack-item-content">
-                            ${val}
+                            ${val.replace(/-/g, ' ')}
                         </div>`
                     )
                 }
@@ -214,7 +273,13 @@
                     revert: 'invalid',
                     scroll: false,
                     appendTo: 'body',
-                    helper: 'move'
+                    helper: 'move',
+                    stop: function (e) {
+                        let elm = $(e.target);
+                        if (!elm.parent().hasClass('new-widget-container')) {
+                            $(`#container-group option[value=${elm.data('key')}]`).remove();
+                        }
+                    }
                 });
             })
 
