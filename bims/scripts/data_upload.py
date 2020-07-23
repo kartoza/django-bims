@@ -172,6 +172,9 @@ class DataCSVUpload(object):
         """
         index = 1
         for row in self.csv_dict_reader:
+            if UploadSession.objects.get(id=self.upload_session.id).canceled:
+                print('Canceled')
+                break
             logger.debug(row)
             self.upload_session.progress = '{index}/{total}'.format(
                 index=index,
