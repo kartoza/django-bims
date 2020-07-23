@@ -38,6 +38,8 @@ define([
         siteLayerSource: null,
         siteLayerVector: null,
         siteId: null,
+        currentDashboardWrapper: null,
+        currentModule: '',
         currentFiltersUrl: '',
         chartConfigs: [],
         categoryColor: {
@@ -121,6 +123,53 @@ define([
 
             return this;
         },
+        renderMap: function (data, target = 'locationsite-map') {
+            let self = this;
+            if (!self.mapLocationSite) {
+                self.mapLocationSite = new ol.Map({
+                    controls: ol.control.defaults().extend([
+                        new ol.control.ScaleLine()
+                    ]),
+                    layers: [
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        })
+                    ],
+                    target: target,
+                    view: new ol.View({
+                        center: [0, 0],
+                        zoom: 2
+                    })
+                });
+                self.mapLocationSite.addLayer(self.siteTileLayer);
+                let graticule = new ol.Graticule({
+                    strokeStyle: new ol.style.Stroke({
+                        color: 'rgba(0,0,0,1)',
+                        width: 1,
+                        lineDash: [2.5, 4]
+                    }),
+                    showLabels: true
+                });
+                graticule.setMap(self.mapLocationSite);
+            }
+             // Zoom to extent
+            if (data['extent'].length > 0) {
+                let ext = ol.proj.transformExtent(
+                    data['extent'],
+                    ol.proj.get('EPSG:4326'),
+                    ol.proj.get('EPSG:3857'));
+                self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
+                if (self.mapLocationSite.getView().getZoom() > 8) {
+                    self.mapLocationSite.getView().setZoom(8);
+                }
+            }
+            let newParams = {
+                layers: locationSiteGeoserverLayer,
+                format: 'image/png',
+                viewparams: 'where:"' + data['sites_raw_query'] + '"'
+            };
+            self.siteLayerSource.updateParams(newParams);
+        },
         show: function (data) {
             if (this.isOpen) {
                 return false;
@@ -131,33 +180,6 @@ define([
             this.$el.show('slide', {
                 direction: 'right'
             }, 300, function () {
-                if (!self.mapLocationSite) {
-                    self.mapLocationSite = new ol.Map({
-                        controls: ol.control.defaults().extend([
-                            new ol.control.ScaleLine()
-                        ]),
-                        layers: [
-                            new ol.layer.Tile({
-                                source: new ol.source.OSM()
-                            })
-                        ],
-                        target: 'locationsite-map',
-                        view: new ol.View({
-                            center: [0, 0],
-                            zoom: 2
-                        })
-                    });
-                    self.mapLocationSite.addLayer(self.siteTileLayer);
-                    let graticule = new ol.Graticule({
-                        strokeStyle: new ol.style.Stroke({
-                            color: 'rgba(0,0,0,1)',
-                            width: 1,
-                            lineDash: [2.5, 4]
-                        }),
-                        showLabels: true
-                    });
-                    graticule.setMap(self.mapLocationSite);
-                }
                 if (typeof data === 'string') {
                     self.csvDownloadUrl += '?' + data;
                     self.chemCsvDownloadUrl += '?' + data;
@@ -195,12 +217,92 @@ define([
                         }
                     }
 
-                    self.createSurveyDataTable(data);
-                    self.createOccurrenceDataTable(data);
-                    self.createDataSummary(data);
-                    self.renderMetadataTable(data);
+                    self.currentModule = data['modules'].join();
 
+                    // Check dashboard configuration
+                    let $dashboardWrapper = self.$el.find('.dashboard-wrapper');
                     let dashboardHeader = self.$el.find('.dashboard-header');
+                    if (Object.keys(data['dashboard_configuration']).length !== 0) {
+                        let $moduleDashboardWrapper = $(`<div class="container row dashboard-wrapper-${data['modules'].join()}"></div>`);
+                        self.currentDashbordWrapper = $moduleDashboardWrapper;
+                        $dashboardWrapper.before($moduleDashboardWrapper);
+                        let currentDashboardWidth = $moduleDashboardWrapper.width();
+                        let height = (currentDashboardWidth / 24);
+                        $dashboardWrapper.hide();
+                        $.each(data['dashboard_configuration'], (index, configuration) => {
+                            // Find the container
+                            let rowHeight = height * configuration['height'];
+                            let $container = '';
+                            $container = self.$el.find(`.${configuration['key']}`).clone();
+                            $container.addClass('card-100');
+                            let $div = $(`<div class="col-${configuration['width']}" style="margin-top: 20px; height: ${rowHeight}px"></div>`);
+                            $div.append($container);
+                            $moduleDashboardWrapper.append($div);
+                            // Render content for each container
+                            switch(configuration['key']) {
+                                case 'filter-history': {
+                                    renderFilterList($container.find('.content-body'));
+                                    break;
+                                }
+                                case 'overview': {
+                                    self.createMultiSiteDetails(data, $container.find('.records-overview'));
+                                    break;
+                                }
+                                case 'occurrences': {
+                                    self.createOccurrencesBarChart(data, $container.find('.content-body')[0]);
+                                    break;
+                                }
+                                case 'distribution-map': {
+                                    let map = $container.find('.content-body');
+                                    let mapId = 'location-site-map-' + data['modules'].join();
+                                    map.attr('id', mapId);
+                                    map.css('height', '100%');
+                                    self.renderMap(data, mapId);
+                                    break;
+                                }
+                                case 'occurrence-charts': {
+                                    self.createDataSummary(data, $container.find('.content-body'));
+                                    break;
+                                }
+                                case 'survey': {
+                                    self.createSurveyDataTable(data, $container);
+                                    break;
+                                }
+                                case 'metadata-table': {
+                                    self.renderMetadataTable(data, $container);
+                                    break;
+                                }
+                                case 'taxa-chart': {
+                                    self.createTaxaStackedBarChart($container);
+                                    break;
+                                }
+                                case 'conservation-status-chart': {
+                                    self.createConsStatusStackedBarChart(data, $container);
+                                    break;
+                                }
+                                case 'endemism-chart': {
+                                    self.createEndemismStackedBarChart($container);
+                                    break;
+                                }
+                                case 'origin-chart': {
+                                    self.createOriginStackedBarChart(data, $container);
+                                    break;
+                                }
+                                case 'site-image': {
+                                    $container.show();
+                                    self.createSiteImageCarousel(data, $container);
+                                    break;
+                                }
+                            }
+                            dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
+                            console.log(configuration)
+                        })
+                        self.loadingDashboard.hide();
+                        return;
+                    } else {
+                        $dashboardWrapper.show();
+                    }
+
                     if (data['is_multi_sites']) {
                         $('#species-ssdd-site-details').hide();
                         $('#ssdd-chem-chart-wrapper').hide();
@@ -208,7 +310,7 @@ define([
                         dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                     } else {
                         $('#species-ssdd-site-details').show();
-                        self.createFishSSDDSiteDetails(data);
+                        self.renderSingleSiteDetails(data);
                         dashboardHeader.html('Single Site - ' + data['modules'].join());
                         if(data['is_chem_exists']) {
                             $('#ssdd-chem-chart-wrapper').show();
@@ -218,33 +320,29 @@ define([
                         }
                     }
 
-                    renderFilterList($('#filter-history-table'));
+                    // Map
+                    self.renderMap(data);
+                    // Survey table
+                    self.createSurveyDataTable(data);
+                    // Summary charts
+                    self.createDataSummary(data);
+                    // Metadata table
+                    self.renderMetadataTable(data);
+                    // Occurrences bar chart
                     self.createOccurrencesBarChart(data);
+                    // Occurrence data table
+                    self.createOccurrenceDataTable(data);
+                    // Taxa chart
                     self.createTaxaStackedBarChart();
+                    // Conservation status chart
                     self.createConsStatusStackedBarChart(data);
+                    // Endemism chart
                     self.createEndemismStackedBarChart();
+                    // Origin chart
                     self.createOriginStackedBarChart(data);
                     if (!data['is_multi_sites']) {
                         self.createSiteImageCarousel(data);
                     }
-
-                    // Zoom to extent
-                    if (data['extent'].length > 0) {
-                        let ext = ol.proj.transformExtent(
-                            data['extent'],
-                            ol.proj.get('EPSG:4326'),
-                            ol.proj.get('EPSG:3857'));
-                        self.mapLocationSite.getView().fit(ext, self.mapLocationSite.getSize());
-                        if (self.mapLocationSite.getView().getZoom() > 8) {
-                            self.mapLocationSite.getView().setZoom(8);
-                        }
-                    }
-                    let newParams = {
-                        layers: locationSiteGeoserverLayer,
-                        format: 'image/png',
-                        viewparams: 'where:"' + data['sites_raw_query'] + '"'
-                    };
-                    self.siteLayerSource.updateParams(newParams);
 
                     self.loadingDashboard.hide();
                 }
@@ -322,7 +420,6 @@ define([
             sassDashboardButton.attr('href', '#');
             $('#metadata-table-list').html('');
             this.clearSiteImages();
-            this.mapLocationSite.removeLayer(this.siteLayerVector);
             this.siteName.html('');
             this.siteNameWrapper.hide();
             this.uniqueSites = [];
@@ -372,12 +469,8 @@ define([
             }
 
             if (this.mapLocationSite) {
-                let newParams = {
-                    layers: locationSiteGeoserverLayer,
-                    format: 'image/png',
-                    viewparams: 'where:' + emptyWMSSiteParameter
-                };
-                self.siteLayerSource.updateParams(newParams);
+                this.mapLocationSite = null;
+                $('#locationsite-map').html('');
             }
 
             if (Shared.LocationSiteDetailXHRRequest) {
@@ -402,6 +495,9 @@ define([
             }, 300, function () {
                 self.isOpen = false;
                 self.clearDashboard();
+                if (self.currentDashbordWrapper) {
+                    self.currentDashbordWrapper.html('');
+                }
                 self.loadingDashboard.show();
                 Shared.Router.clearSearch();
             });
@@ -629,6 +725,7 @@ define([
                 data: barChartData,
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     legend: {display: true},
                     title: {display: false},
                     hover: {mode: 'point', intersect: false},
@@ -686,21 +783,25 @@ define([
                 }
             });
         },
-        createOriginStackedBarChart: function (data) {
+        createOriginStackedBarChart: function (data, container = null) {
             let self = this;
             let originCategoryList = data['origin_name_list'];
-            let chartContainer = this.$el.find('.species-ssdd-origin-bar-chart');
+            if (!container) {
+                container = this.$el.find('.species-ssdd-origin-bar-chart');
+            }
             let baseUrl = '/api/location-sites-occurrences-chart-data/';
+            let canvasContainer = container.find('.canvas-container');
+            let chartCanvas = container.find('canvas')[0];
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if (Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-origin-bar-chart').hide();
+                        canvasContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-origin-bar-chart').show();
+                    canvasContainer.show();
                     // Update labels
                     $.each(responseData['dataset_labels'], function (index, label) {
                         if (originCategoryList.hasOwnProperty(label)) {
@@ -713,28 +814,33 @@ define([
                             responseData['data'][originCategoryList[key]] = current_data;
                         }
                     });
-                    let chartCanvas = document.getElementById('species-ssdd-origin-bar-chart-canvas');
                     this.originChartCanvas = self.renderStackedBarChart(responseData, 'origin_bar', chartCanvas);
                 }
             );
         },
-        createSiteImageCarousel: function (data) {
-            let wrapper = this.$el.find('#ssdd-carousel-wrapper');
+        createSiteImageCarousel: function (data, container) {
             let siteImages = data['site_images'];
-            if (siteImages.length > 0) {
-                wrapper.show();
+            if (!container) {
+                container = this.$el.find('#ssdd-carousel-wrapper');
+                if (siteImages.length > 0) {
+                    container.show();
+                }
+            } else {
+                if (siteImages.length === 0) {
+                    container.find('.content-body').html(`<div class="center-text">No site image</div>`);
+                }
             }
             $.each(siteImages, function (index, siteImage) {
                 let className = '';
                 if (index === 0) {
                     className = 'active'
                 }
-                wrapper.find('.carousel-indicators').append(
+                container.find('.carousel-indicators').append(
                     '<li data-target="#ssdd-site-image-carousel" data-slide-to="'+ index +'" class="'+ className +'"/>'
                 );
-                wrapper.find('.carousel-inner').append(
-                    '<div class="carousel-item '+ className +'">' +
-                    '  <img alt="" src="' + siteImage + '">' +
+                container.find('.carousel-inner').append(
+                    '<div class="carousel-item '+ className +'" style="height: 100%">' +
+                    '  <img alt="" src="' + siteImage + '" height="100%">' +
                     '</div>'
                 );
             });
@@ -745,40 +851,46 @@ define([
             wrapper.find('.carousel-indicators').html('');
             wrapper.find('.carousel-inner').html('');
         },
-        createTaxaStackedBarChart: function () {
+        createTaxaStackedBarChart: function (container = null) {
             let self = this;
-            let chartContainer = this.$el.find('#species-ssdd-taxa-occurrences-bar-chart');
+            if (!container) {
+                container = this.$el.find('#species-ssdd-taxa-occurrences-bar-chart');
+            }
             let baseUrl = '/api/location-sites-taxa-chart-data/';
-            let chartCanvas = document.getElementById('species-ssdd-taxa-occurrences-line-chart-canvas');
+            let chartCanvas = container.find('canvas')[0];
+            let canvasContainer = container.find('.canvas-container');
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if(Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-taxa-line-chart').hide();
+                        canvasContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-taxa-line-chart').show();
+                    canvasContainer.show();
                     this.taxaOccurrencesChartCanvas = self.renderStackedBarChart(responseData, 'taxa_stacked_bar', chartCanvas);
                 }
             )
         },
-        createConsStatusStackedBarChart: function (data) {
+        createConsStatusStackedBarChart: function (data, container = null) {
             let self = this;
             let iucnCategoryList = data['iucn_name_list'];
-            let chartContainer = this.$el.find('#species-ssdd-cons-status-bar-chart');
+            if (!container) {
+                container = this.$el.find('#species-ssdd-cons-status-bar-chart');
+            }
             let baseUrl = '/api/location-sites-cons-chart-data/';
+            let canvasContainer = container.find('.canvas-container');
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if (Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-cons-status-bar-chart').hide();
+                        canvasContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-cons-status-bar-chart').show();
+                    canvasContainer.show();
                     // Update labels
                     $.each(responseData['dataset_labels'], function (index, label) {
                         if (iucnCategoryList.hasOwnProperty(label)) {
@@ -792,26 +904,29 @@ define([
                             responseData['data'][iucnCategoryList[key]] = data;
                         }
                     });
-                    var chartCanvas = document.getElementById('species-ssdd-cons-status-bar-chart-canvas');
+                    let chartCanvas = container.find('canvas')[0];
                     this.consChartCanvas = self.renderStackedBarChart(responseData, 'cons_status_bar', chartCanvas);
                 }
             )
         },
-        createEndemismStackedBarChart: function () {
+        createEndemismStackedBarChart: function (container) {
             let self = this;
-            let chartContainer = this.$el.find('#species-ssdd-endemism-bar-chart');
+            if (!container) {
+                container = this.$el.find('#species-ssdd-endemism-bar-chart');
+            }
             let baseUrl = '/api/location-sites-endemism-chart-data/';
-            let chartCanvas = document.getElementById('species-ssdd-endemism-bar-chart-canvas');
+            let chartCanvas = container.find('canvas')[0];
+            let chartContainer = container.find('.canvas-container');
 
             this.fetchChartData(
-                chartContainer,
+                container,
                 baseUrl,
                 (responseData) => {
                     if(Object.keys(responseData['data']).length === 0) {
-                        self.$el.find('.species-ssdd-endemism-bar-chart').hide();
+                        chartContainer.hide();
                         return;
                     }
-                    self.$el.find('.species-ssdd-endemism-bar-chart').show();
+                    chartContainer.show();
                     this.endemismChartCanvas = self.renderStackedBarChart(responseData, 'endemism', chartCanvas);
                 }
             )
@@ -835,6 +950,7 @@ define([
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     legend: {display: false},
                     title: {display: false},
                     hover: {mode: 'point', intersect: false},
@@ -872,11 +988,23 @@ define([
             chartCanvas = this.resetCanvas(chartCanvas);
             this.chartConfigs[chartName] = chartConfig;
             var ctx = chartCanvas.getContext('2d');
-            ctx.height = '200px';
+            ctx.height = 100;
             new ChartJs(ctx, chartConfig);
         },
-        createOccurrencesBarChart: function (data) {
-            var chartCanvas = document.getElementById('species-ssdd-occurrences-line-chart-canvas');
+        createOccurrencesBarChart: function (data, chartCanvas) {
+            if (!chartCanvas) {
+                chartCanvas = document.getElementById('species-ssdd-occurrences-line-chart-canvas');
+            }
+            let container = $(chartCanvas);
+            let _maxTry = 10;
+            let _currentTry = 1;
+            while (!container.hasClass('card-body') && _currentTry < _maxTry) {
+                container = container.parent();
+                _currentTry =+ 1;
+            }
+            let cardHeight = container.height();
+            $(chartCanvas).parent().css('height', cardHeight);
+
             if (data.hasOwnProperty('taxa_occurrence')) {
                 if (data['taxa_occurrence']['occurrences_line_chart']['values'].length === 0) {
                     this.$el.find('.species-ssdd-occurrences-line-chart').hide();
@@ -886,15 +1014,16 @@ define([
                 this.renderBarChart(data['taxa_occurrence'], 'occurrences_line', chartCanvas);
             }
         },
-        createMultiSiteDetails: function (data) {
-            let overview = this.$el.find('#records-sites');
-            overview.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
-
-            this.createOriginsOccurrenceTable(data);
-            this.createConservationOccurrenceTable(data);
-            this.createEndemismOccurrenceTable(data);
+        createMultiSiteDetails: function (data, element) {
+            if (!element) {
+                element = this.$el.find('#records-sites');
+            }
+            element.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
+            // this.createOriginsOccurrenceTable(data);
+            // this.createConservationOccurrenceTable(data);
+            // this.createEndemismOccurrenceTable(data);
         },
-        createFishSSDDSiteDetails: function (data) {
+        renderSingleSiteDetails: function (data) {
             let siteDetailsWrapper = $('#species-ssdd-overview');
 
             let overview = siteDetailsWrapper.find('#overview');
@@ -1000,7 +1129,7 @@ define([
             }
             return $detailWrapper;
         },
-        createDataSummary: function (data) {
+        createDataSummary: function (data, container = null, height = null) {
             let bio_data = data['biodiversity_data'];
             let biodiversityData = data['biodiversity_data']['species'];
             let origin_length = biodiversityData['origin_chart']['keys'].length;
@@ -1019,16 +1148,34 @@ define([
                     biodiversityData['cons_status_chart']['keys'][i] = iucnCategory[next_name];
                 }
             }
-            let origin_pie_canvas = document.getElementById('species-ssdd-origin-pie');
-            this.renderPieChart(bio_data, 'species', 'origin', origin_pie_canvas);
-            let endemism_pie_canvas = document.getElementById('species-ssdd-endemism-pie');
-            this.renderPieChart(bio_data, 'species', 'endemism', endemism_pie_canvas);
-            let conservation_status_pie_canvas = document.getElementById('species-ssdd-conservation-status-pie');
-            this.renderPieChart(bio_data, 'species', 'cons_status', conservation_status_pie_canvas);
-            let sampling_method_pie_canvas = document.getElementById('species-ssdd-sampling-method-pie');
-            this.renderPieChart(bio_data, 'species', 'sampling_method', sampling_method_pie_canvas);
-            let biotope_canvas = document.getElementById('species-ssdd-biotope-pie');
-            this.renderPieChart(bio_data, 'species', 'biotope', biotope_canvas);
+
+            let originPieCanvas = document.getElementById('species-ssdd-origin-pie');
+            let endemismPieCanvas = document.getElementById('species-ssdd-endemism-pie');
+            let conservationStatusPieCanvas = document.getElementById('species-ssdd-conservation-status-pie');
+            let samplingMethodPieCanvas = document.getElementById('species-ssdd-sampling-method-pie');
+            let biotopeCanvas = document.getElementById('species-ssdd-biotope-pie');
+
+            if (container) {
+
+                let parentHeight = container.parent().height();
+                let titleHeight = container.find('.ssdd-titles').height();
+                let legendHeight = container.find('.species-ssdd-legend').height();
+                let padding = 120;
+                container.css('height', parentHeight);
+                container.find('.col-chart').css('height', parentHeight - titleHeight - legendHeight - padding);
+
+                originPieCanvas = container.find('.occurrence-origin-chart').find('canvas')[0];
+                endemismPieCanvas = container.find('.occurrence-endemism-chart').find('canvas')[0];
+                conservationStatusPieCanvas = container.find('.occurrence-conservation-status-chart').find('canvas')[0];
+                samplingMethodPieCanvas = container.find('.occurrence-sampling-method-chart').find('canvas')[0];
+                biotopeCanvas = container.find('.occurrence-biotope-chart').find('canvas')[0];
+            }
+
+            this.renderPieChart(bio_data, 'species', 'origin', originPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'endemism', endemismPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'cons_status', conservationStatusPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'sampling_method', samplingMethodPieCanvas);
+            this.renderPieChart(bio_data, 'species', 'biotope', biotopeCanvas);
         },
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
@@ -1095,10 +1242,13 @@ define([
             });
             return $result;
         },
-        createSurveyDataTable: function (data) {
-            let $dataWrapper = $('#dashboard-survey-data');
-            let $surveyButton = $('#site-visit-detail-button');
-            let $surveyInfo = $('#site-visit-info');
+        createSurveyDataTable: function (data, container) {
+            if (!container) {
+                container = $('#species-ssdd-survey-data');
+            }
+            let $dataWrapper = container.find('.content-body');
+            let $surveyButton = container.find('.survey-button');
+            let $surveyInfo = container.find('.survey-info');
             $dataWrapper.html('');
             if (!data.hasOwnProperty('survey')) return false;
             if (data['survey'].length > 0) {
@@ -1140,8 +1290,11 @@ define([
                 this.$el.find('.download-as-csv').hide();
             }
         },
-        renderMetadataTable: function (data) {
-            let ulDiv = $('#metadata-table-list');
+        renderMetadataTable: function (data, container=null) {
+            if (!container) {
+                container = $('#ssdd-metadata-table');
+            }
+            let ulDiv = container.find('.content-body');
             ulDiv.html(' ');
             let dataSources = data['source_references'];
             let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];

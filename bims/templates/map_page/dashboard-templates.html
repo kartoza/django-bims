@@ -27,17 +27,14 @@
                                     </div>
                                     <button id="export-taxasite-map"
                                             class="btn btn-default pull-right">
-                                        <i
-                                                class="fa fa-download"></i>
+                                        <i class="fa fa-download"></i>
                                     </button>
                                 </div>
-
                                 <div class="card-body locationsite-map-wrapper">
                                     <div id="taxasite-map"
                                          class="map"
                                          style="height: 300px; width: 100%;">
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -290,7 +287,7 @@
         <div class="container dashboard-wrapper row">
             <div class="col-lg-4">
                 {# Filter History #}
-                <div class="card" id="filter-history-wrapper">
+                <div class="card filter-history" id="filter-history-wrapper">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline"
                              style="height: 35px !important;">
@@ -298,11 +295,11 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="col-12" id="filter-history-table"></div>
+                        <div class="col-12 content-body" id="filter-history-table"></div>
                     </div>
                 </div>
                 {# Distribution #}
-                <div class="card" id="species-ssdd-distribution">
+                <div class="card distribution-map" id="species-ssdd-distribution">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Distribution
@@ -316,13 +313,13 @@
                     </div>
                     <div class="card-body">
                         <div id="locationsite-map"
-                             class="locationsite-map-wrapper"
-                             style="height: 300px; width: 100%;">
+                             class="locationsite-map-wrapper content-body"
+                             style="width: 100%;">
                         </div>
                     </div>
                 </div>
                 {# Overview #}
-                <div class="card" id="species-ssdd-overview">
+                <div class="card overview" id="species-ssdd-overview">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Overview
@@ -334,7 +331,7 @@
                     </div>
                     {# Overview Site details #}
                     <div class="card-body" id="ssdd-overview-wrapper">
-                        <div id="species-ssdd-site-details">
+                        <div class="content-body" id="species-ssdd-site-details">
                             <div class="col-12 sub-title site-details-header">
                                 Site Details
                             </div>
@@ -365,7 +362,7 @@
                             <div class="col-12 sub-title site-details-header">
                                 Species and Occurences
                             </div>
-                            <div class="col-12" id="records-sites">
+                            <div class="col-12 records-overview" id="records-sites">
                             </div>
                         </div>
                         <div class="occurrences-table-view">
@@ -416,14 +413,14 @@
                     </div>
                 </div>
                 {# Survey Data #}
-                <div class="card" id="species-ssdd-survey-data">
+                <div class="card survey" id="species-ssdd-survey-data">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Site Visit Data
                         </div>
                     </div>
-                    <div class="card-body">
-                        <span id="site-visit-info" style="font-size: 10pt; display: none">5 recent site visit</span>
+                    <div class="card-body card-padding">
+                        <span class="survey-info" style="font-size: 10pt; display: none">5 recent site visit</span>
                         <table class="table table-bordered table-condensed table-sm site-detailed-table">
                             <thead>
                                 <tr>
@@ -438,10 +435,10 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody id="dashboard-survey-data"></tbody>
+                            <tbody class="content-body"></tbody>
                         </table>
                         <div class="container">
-                            <button id="site-visit-detail-button" class="btn btn-info"
+                            <button class="btn btn-info survey-button"
                                     style="width: 100%;display: none; font-size: 11pt">See more site visit
                             </button>
                         </div>
@@ -475,14 +472,14 @@
             <div class="col-lg-8">
 
                 {# Site image #}
-                <div class="card" id="ssdd-carousel-wrapper" style="display: none;">
+                <div class="card site-image" id="ssdd-carousel-wrapper" style="display: none;">
                     <div class="card-body">
-                        <div id="ssdd-site-image-carousel" class="carousel slide" data-ride="carousel">
+                        <div id="ssdd-site-image-carousel" class="carousel slide content-body canvas-container" data-ride="carousel">
                             <!-- Indicators -->
                             <ul class="carousel-indicators">
                             </ul>
                             <!-- The slideshow -->
-                            <div class="carousel-inner">
+                            <div class="carousel-inner" style="height: 100%; width: 100%">
                             </div>
                             <!-- Left and right controls -->
                             <a class="carousel-control-prev" href="#ssdd-site-image-carousel" data-slide="prev">
@@ -496,7 +493,7 @@
                 </div>
 
                 {# Data Summary #}
-                <div class="card" id="species-ssdd-data-summary">
+                <div class="card occurrence-charts" id="species-ssdd-data-summary">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Occurrence Charts
@@ -525,7 +522,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div id="data-summary">
+                        <div id="data-summary" class="content-body">
                             <div class="row">
                                 <div class="col-1"></div>
                                 <div class="col-2 ssdd-titles">
@@ -547,19 +544,19 @@
                             </div>
                             <div class="row">
                                 <div class="col-1"></div>
-                                <div class="col-2 col-chart">
+                                <div class="col-2 col-chart occurrence-origin-chart">
                                     <canvas id="species-ssdd-origin-pie"></canvas>
                                 </div>
-                                <div class="col-2 col-chart">
+                                <div class="col-2 col-chart occurrence-endemism-chart">
                                     <canvas id="species-ssdd-endemism-pie"></canvas>
                                 </div>
-                                <div class="col-2 col-chart">
+                                <div class="col-2 col-chart occurrence-conservation-status-chart">
                                     <canvas id="species-ssdd-conservation-status-pie"></canvas>
                                 </div>
-                                <div class="col-2 col-chart">
+                                <div class="col-2 col-chart occurrence-sampling-method-chart">
                                     <canvas id="species-ssdd-sampling-method-pie"></canvas>
                                 </div>
-                                <div class="col-2 col-chart">
+                                <div class="col-2 col-chart occurrence-biotope-chart">
                                     <canvas id="species-ssdd-biotope-pie"></canvas>
                                 </div>
                                 <div class="col-1 col-chart"></div>
@@ -583,7 +580,7 @@
                 </div>
 
                 {# Occurrences per year line chart #}
-                <div class="card" id="species-ssdd-occurrences-line-chart">
+                <div class="card occurrences" id="species-ssdd-occurrences-line-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Occurrences
@@ -598,13 +595,13 @@
                     </div>
                     <div class="card-body">
                         <div class="col-12 species-ssdd-occurrences-line-chart">
-                            <canvas id="species-ssdd-occurrences-line-chart-canvas"></canvas>
+                            <canvas class="content-body" id="species-ssdd-occurrences-line-chart-canvas"></canvas>
                         </div>
                     </div>
                 </div>
 
                 {# Occurrences per year line chart #}
-                <div class="card" id="species-ssdd-taxa-occurrences-bar-chart">
+                <div class="card taxa-chart" id="species-ssdd-taxa-occurrences-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Taxa
@@ -616,8 +613,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="col-12 species-ssdd-taxa-line-chart">
+                    <div class="card-body" style="height: 100%; width: 100%">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-taxa-occurrences-line-chart-canvas"></canvas>
                         </div>
@@ -625,7 +622,7 @@
                 </div>
 
                 {# origin per year bar chart #}
-                <div class="card" id="species-ssdd-origin-bar-chart">
+                <div class="card origin-chart" id="species-ssdd-origin-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Origin
@@ -638,7 +635,7 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <div class="col-12 species-ssdd-origin-bar-chart">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-origin-bar-chart-canvas"></canvas>
                         </div>
@@ -646,7 +643,7 @@
                 </div>
 
                 {# endemism per year bar chart #}
-                <div class="card" id="species-ssdd-endemism-bar-chart">
+                <div class="card endemism-chart" id="species-ssdd-endemism-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Endemism
@@ -658,8 +655,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="col-12 species-ssdd-endemism-bar-chart">
+                    <div class="card-body" style="height: 100%; width: 100%">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-endemism-bar-chart-canvas"></canvas>
                         </div>
@@ -667,7 +664,7 @@
                 </div>
 
                 {# cons-status per year bar chart #}
-                <div class="card" id="species-ssdd-cons-status-bar-chart">
+                <div class="card conservation-status-chart" id="species-ssdd-cons-status-bar-chart">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inbar">
                             Conservation Status
@@ -679,8 +676,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="col-12 species-ssdd-cons-status-bar-chart">
+                    <div class="card-body" style="height: 100%; width: 100%">
+                        <div class="col-12 canvas-container">
                             <div class="chart-loading">Fetching...</div>
                             <canvas id="species-ssdd-cons-status-bar-chart-canvas"></canvas>
                         </div>
@@ -711,7 +708,7 @@
             </div>
             <div class="col-lg-12">
                 {# Metadata table #}
-                <div class="card" id="ssdd-metadata-table">
+                <div class="card metadata-table" id="ssdd-metadata-table">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Metadata Table
@@ -721,8 +718,8 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body">
-                        <table id="metadata-table-list" class="table table-hover custom-table metadata-table">
+                    <div class="card-body card-padding">
+                        <table class="table table-hover custom-table metadata-table content-body">
                         </table>
                     </div>
                 </div>
