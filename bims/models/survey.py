@@ -37,6 +37,12 @@ class Survey(AbstractValidation):
             survey=self.data_name
         )
 
+    def __str__(self):
+        return '{date} - {survey}'.format(
+            date=self.date,
+            survey=self.data_name
+        )
+
 
 class SurveyData(models.Model):
     """Survey data model."""
