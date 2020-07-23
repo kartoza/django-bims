@@ -320,6 +320,8 @@ define([
                         }
                     }
 
+                    // Render filter list
+                    renderFilterList($('#filter-history-table'));
                     // Map
                     self.renderMap(data);
                     // Survey table
