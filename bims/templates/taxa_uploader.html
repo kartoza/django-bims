@@ -130,6 +130,8 @@
                                     <div data-progress="{{ upload_session.progress }}" data-id="{{ upload_session.id }}"
                                          class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0"></div>
                                 </div>
+                                <br/>
+                                <button class="btn btn-danger" data-toggle="modal" data-target="#cancelModal" data-id="{{ upload_session.id }}">Cancel</button>
                             </div>
                         </div>
                     {% endfor %}
@@ -163,6 +165,33 @@
     </div>
 
 
+    <!-- Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Cancel session</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to cancel this session ?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                    <button type="button" class="btn btn-danger" id="cancel-session">Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 {% endblock %}
 
 {% block foot %}
@@ -173,6 +202,7 @@
     <script type="text/javascript">
 
         const updateUrl = "/api/upload-status/";
+        let currentSessionId = 0;
 
         const updateProgress = (id, $elm) => {
             setTimeout(function () {
@@ -208,6 +238,19 @@
                     $elm.css({'width': `${percentProgress}%`});
                 }
                 updateProgress(sessionId, $(elm));
+            });
+
+            $('#cancel-session').click(function () {
+                let $form = $("#taxa-upload-form");
+                $form.append(`<input type="hidden" name="cancel" value="True"/>`);
+                $form.append(`<input type="hidden" name="canceled_session_id" value="${currentSessionId}"/>`);
+                $form.submit();
+            });
+
+            $('#cancelModal').on('shown.bs.modal', function (event) {
+                 let triggerElement = $(event.relatedTarget);
+                 currentSessionId = triggerElement.data('id');
+                 console.log(currentSessionId);
             });
         });
 

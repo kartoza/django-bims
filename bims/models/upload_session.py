@@ -53,6 +53,10 @@ class UploadSession(models.Model):
         default=False
     )
 
+    canceled = models.BooleanField(
+        default=False
+    )
+
     error_notes = models.TextField(
         blank=True,
         null=True

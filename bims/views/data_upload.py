@@ -2,11 +2,13 @@
 """Collections uploader view
 """
 
+import ast
 from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
+from django.db.models import Q
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from bims.models.upload_session import UploadSession
 from bims.models.taxon_group import TaxonGroup
@@ -28,13 +30,14 @@ class DataUploadView(
         taxa_upload_sessions = UploadSession.objects.filter(
             uploader=self.request.user,
             processed=False,
+            canceled=False,
             process_file__isnull=False,
             category=self.category
         )
         context['upload_sessions'] = taxa_upload_sessions
         context['finished_sessions'] = UploadSession.objects.filter(
+            Q(processed=True) | Q(canceled=True),
             uploader=self.request.user,
-            processed=True,
             category=self.category
         ).order_by(
             '-uploaded_at'
@@ -49,6 +52,20 @@ class DataUploadView(
         taxon_group_id = request.POST.get('taxon_group', None)
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
+        cancel = ast.literal_eval(request.POST.get(
+            'cancel', 'False'
+        ))
+        if cancel:
+            session_id = request.POST.get('canceled_session_id', '')
+            try:
+                upload_session = UploadSession.objects.get(
+                    id=int(session_id)
+                )
+                upload_session.canceled = True
+                upload_session.save()
+                return HttpResponseRedirect(request.path_info)
+            except (UploadSession.DoesNotExist, ValueError):
+                pass
         if taxon_group_logo and taxon_group_logo:
             taxon_groups = TaxonGroup.objects.filter(
                 category='SPECIES_MODULE'
