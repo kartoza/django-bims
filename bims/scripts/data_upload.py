@@ -37,9 +37,29 @@ class DataCSVUpload(object):
             self.upload_session.process_file.readlines()
         ) - 1
         self.process_started()
+        processed = False
         with open(self.upload_session.process_file.path) as csv_file:
-            self.csv_dict_reader = csv.DictReader(csv_file)
-            self.process_csv_dict_reader()
+            try:
+                self.csv_dict_reader = csv.DictReader(csv_file)
+                self.process_csv_dict_reader()
+                processed = True
+            except UnicodeDecodeError:
+                pass
+        if not processed:
+            with open(
+                self.upload_session.process_file.path,
+                encoding='ISO-8859-1'
+            ) as csv_file:
+                try:
+                    self.csv_dict_reader = csv.DictReader(csv_file)
+                    self.process_csv_dict_reader()
+                    processed = True
+                except UnicodeDecodeError:
+                    pass
+        if not processed:
+            self.upload_session.canceled = True
+            self.upload_session.save()
+            return
         self.process_ended()
 
     def error_file(self, error_row, error_message):

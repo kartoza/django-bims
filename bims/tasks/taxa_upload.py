@@ -29,13 +29,13 @@ def taxa_upload(taxa_upload_session_id):
     taxa_upload_session.progress = 'Checking header row'
     taxa_upload_session.save()
 
-    with open(taxa_upload_session.process_file.path) as csv_file:
-        reader = csv.DictReader(csv_file)
+    def check_header(_csv_file):
+        reader = csv.DictReader(_csv_file)
         headers = reader.fieldnames
         for header in TAXA_FILE_HEADERS:
             if header not in headers:
                 error_message = (
-                    'Header row is not following the correct format'
+                    'Header row does not follow the correct format'
                 )
                 taxa_upload_session.progress = error_message
                 taxa_upload_session.error_file = (
@@ -43,7 +43,22 @@ def taxa_upload(taxa_upload_session_id):
                 )
                 taxa_upload_session.processed = True
                 taxa_upload_session.save()
-                return
+                return False
+        return True
+
+    checked = False
+    try:
+        with open(taxa_upload_session.process_file.path) as csv_file:
+            checked = check_header(csv_file)
+    except UnicodeDecodeError:
+        with open(
+            taxa_upload_session.process_file.path,
+            encoding='ISO-8859-1'
+        ) as csv_file:
+            checked = check_header(csv_file)
+
+    if not checked:
+        return
 
     taxa_upload_session.progress = 'Processing'
     taxa_upload_session.save()
