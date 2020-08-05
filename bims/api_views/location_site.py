@@ -49,6 +49,7 @@ from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.enums.chem_unit import ChemUnit
 from bims.models.survey import Survey
 from bims.models.dashboard_configuration import DashboardConfiguration
+from bims.models.taxonomy import Taxonomy
 
 
 class LocationSiteList(APIView):
@@ -241,7 +242,7 @@ class LocationSitesSummary(APIView):
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
 
         self.origin_name_list = dict(
-            (x, y) for x, y in BiologicalCollectionRecord.CATEGORY_CHOICES
+            (x, y) for x, y in Taxonomy.CATEGORY_CHOICES
         )
 
         taxa_occurrence = self.site_taxa_occurrences_per_year(

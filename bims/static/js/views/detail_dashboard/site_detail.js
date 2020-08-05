@@ -42,24 +42,12 @@ define([
         currentModule: '',
         currentFiltersUrl: '',
         chartConfigs: [],
-        categoryColor: {
-            'Native': '#a13447',
-            'Non-Native': '#00a99d',
-            'Translocated': '#e0d43f',
-            'No origin data': '#565656',
-        },
         pieOptions: {
             legend: {
                 display: true
             },
             cutoutPercentage: 0,
             maintainAspectRatio: true,
-        },
-        categories: {
-            'indigenous': 'Native',
-            'alien': 'Non-Native',
-            'translocated': 'Translocated',
-            null: 'No origin data'
         },
         events: {
             'click .close-dashboard': 'closeDashboard',
@@ -1021,9 +1009,9 @@ define([
                 element = this.$el.find('#records-sites');
             }
             element.html(this.renderTableFromTitlesValuesLists(data['site_details']['overview']));
-            // this.createOriginsOccurrenceTable(data);
-            // this.createConservationOccurrenceTable(data);
-            // this.createEndemismOccurrenceTable(data);
+            this.createOriginsOccurrenceTable(data);
+            this.createConservationOccurrenceTable(data);
+            this.createEndemismOccurrenceTable(data);
         },
         renderSingleSiteDetails: function (data) {
             let siteDetailsWrapper = $('#species-ssdd-overview');
