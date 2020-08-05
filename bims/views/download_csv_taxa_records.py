@@ -1,10 +1,15 @@
 # coding=utf-8
 import csv
+import sys
 from django.http import HttpResponse
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxonomy import Taxonomy
 from bims.api_views.search import Search
+
+
+if sys.version_info[0] >= 3:
+    unicode = str
 
 
 def download_csv_site_taxa_records(request):
@@ -49,6 +54,6 @@ def download_csv_site_taxa_records(request):
             record.site.get_centroid().coords[1],
             record.site.get_centroid().coords[0],
         ))
-        writer.writerow(row_object)
+        writer.writerow([unicode(s).encode('utf-8') for s in row_object])
 
     return response

@@ -2,6 +2,7 @@
 import logging
 import os
 import csv
+import sys
 from geonode.people.models import Profile
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -9,6 +10,10 @@ from django.contrib.sites.models import Site
 from bims.models.profile import Profile as BimsProfile
 
 logger = logging.getLogger(__name__)
+
+
+if sys.version_info[0] >= 3:
+    unicode = str
 
 
 class Command(BaseCommand):
@@ -68,4 +73,4 @@ class Command(BaseCommand):
                     )
                 except BimsProfile.DoesNotExist:
                     pass
-                writer.writerow(csv_data)
+                writer.writerow([unicode(s).encode('utf-8') for s in csv_data])
