@@ -30,7 +30,7 @@ class BioRecordsUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('nonvalidated-user-list')
 
     def user_passes_test(self, request):
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             self.object = self.get_object()
             allowed_taxon = AllowedTaxon()
             taxon_list = allowed_taxon.get(request.user)

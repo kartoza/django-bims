@@ -16,7 +16,7 @@ class CsvDownload(APIView):
 
     def get(self, request, *args):
         # User need to be logged in before requesting csv download
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return HttpResponseForbidden('Not logged in')
 
         # What to do here

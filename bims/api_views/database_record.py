@@ -15,7 +15,7 @@ class DatabaseRecordsList(APIView):
                 DatabaseRecord.objects.all(), many=True).data)
 
     def post(self, request, *args):
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return HttpResponseForbidden()
         data = request.data
         try:
