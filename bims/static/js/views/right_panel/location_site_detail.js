@@ -450,6 +450,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         url = '/invert-form/?siteId=' + self.siteId;
                     } else if (buttonName.toLowerCase() === 'algae') {
                         url = '/algae-form/?siteId=' + self.siteId;
+                    } else {
+                        url = `/module-form/?siteId=${self.siteId}&module=${value['module']}`;
                     }
                     window.location = url;
                 });

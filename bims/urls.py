@@ -50,7 +50,8 @@ from bims.views.proxy import proxy_request
 from bims.views.collections_form import (
     FishFormView,
     InvertFormView,
-    AlgaeFormView
+    AlgaeFormView,
+    ModuleFormView
 )
 from bims.views.location_site import (
     LocationSiteFormView,
@@ -135,6 +136,7 @@ urlpatterns = [
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
     url(r'^invert-form/$', InvertFormView.as_view(), name='invert-form'),
     url(r'^algae-form/$', AlgaeFormView.as_view(), name='algae-form'),
+    url(r'^module-form/$', ModuleFormView.as_view(), name='module-form'),
     url(r'^source-reference-form/$', SourceReferenceView.as_view(),
         name='source-reference-form'),
     url(r'^source-reference/database/',

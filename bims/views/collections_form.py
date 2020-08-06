@@ -387,6 +387,26 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         return HttpResponseRedirect(abiotic_url)
 
 
+class ModuleFormView(CollectionFormView):
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        module_id = request.GET.get('module', None)
+        if not module_id:
+            raise Http404('Missing module id')
+        try:
+            taxon_group = TaxonGroup.objects.get(
+                id=module_id
+            )
+        except TaxonGroup.DoesNotExist:
+            raise Http404('Missing module')
+        self.taxon_group_name = taxon_group.name
+        self.session_identifier = '{}-form'.format(
+            taxon_group.name.lower()
+        )
+        return super(ModuleFormView, self).get(request, *args, **kwargs)
+
+
 class FishFormView(CollectionFormView):
     session_identifier = 'fish-form'
     taxon_group_name = 'Fish'
