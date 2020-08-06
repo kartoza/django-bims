@@ -48,12 +48,12 @@
                 {% if self.get_ancestors.count > 1 %}
                     {{ page.body | richtext }}
                 {% else %}
-                    {% for page in self.get_children.specific %}
+                    {% for page in posts %}
                         <div class="post-preview">
                             <a href="{% pageurl page %}">
                                 <h2 class="post-title">{{ page.title }}</h2>
                                 <h4 class="post-subtitle">
-                                    {{ page.intro | safe }}
+                                    {{ page.blogpage.intro | safe }}
                                 </h4>
                             </a>
                             <p class="post-meta">
@@ -62,6 +62,17 @@
                         </div>
                         <hr/>
                     {% endfor %}
+                    <!-- Pager -->
+                    <div class="clearfix">
+                        {% if posts.has_next %}
+                        <a class="btn btn-primary float-left" href="?page={{ posts.next_page_number }}">&larr; Older
+                            Posts</a>
+                        {% endif %}
+                        {% if posts.has_previous %}
+                        <a class="btn btn-primary float-right" href="?page={{ posts.previous_page_number }}">Newer
+                            Posts &rarr;</a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
         </div>
