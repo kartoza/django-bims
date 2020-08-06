@@ -297,6 +297,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
+                    console.log(data);
                     self.siteDetailData = data;
                     Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
 
@@ -327,7 +328,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         }
                     }
                     let sidePanelTitle = '<i class="fa fa-map-marker"></i> ' + data['site_detail_info']['fbis_site_code'];
-                    if (isStaff) {
+                    if (isStaff || ( userID !== null && userID === data['owner']) ) {
                         sidePanelTitle += '<a href="/location-site-form/update/?id=' + data['id'] + '" style="float: right; padding-top: 5px">Edit</a>';
                     }
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', sidePanelTitle);

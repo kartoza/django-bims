@@ -27,7 +27,7 @@ def fetch_river_name(latitude, longitude):
         response = requests.get(geocontext_url)
         if response.status_code == 200:
             name = response.content
-            name = name.strip('\"')
+            name = name.decode('utf-8').strip('\"')
     except HTTPError:
         pass
 

@@ -42,6 +42,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'location_type',
             'location_context',
             'refined_geomorphological',
+            'owner'
         ]
 
     def get_site_detail_info(self, obj):
