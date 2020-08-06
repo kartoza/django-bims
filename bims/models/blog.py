@@ -8,5 +8,6 @@ class BlogPage(Page):
     body = RichTextField(blank=True)
 
     content_panels = Page.content_panels + [
+        FieldPanel('intro', classname="full"),
         FieldPanel('body', classname="full"),
     ]

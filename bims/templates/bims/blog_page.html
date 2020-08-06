@@ -8,88 +8,62 @@
 {% endblock %}
 
 {% block head %}
+
+    <link href="{% static "css/fonts.css" %}" rel="stylesheet">
+    <link href="{% static "css/clean-blog.css" %}" rel="stylesheet">
     <style>
         .blog-content {
-            margin-top: 125px;
-            margin-bottom: 125px;
+            margin-bottom: 50px;
         }
-        .blog-title {
-            font-size: 25pt;
-            font-weight: bold;
-        }
+
         hr {
-           max-width: 100%;
+            max-width: 100%;
         }
-        .blog-body {
-            padding-top: 20px;
-            font-size: 15pt;
-            font-weight: lighter;
-        }
-        .blog-info {
-            font-size: 10pt;
-        }
-        .children-buttons {
-            margin-bottom: -16px;
-        }
-        .children-buttons .btn {
-            background-color: #18A090;
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-            font-size: 10pt;
-        }
-        .children-buttons .btn:hover {
-            background-color: #0d8b81;
-        }
+
     </style>
 {% endblock %}
 
 {% block body_content %}
-    <div class="container blog-content">
-        <nav class="breadcrumb-container" aria-label="breadcrumb"
-             role="navigation">
+    <!-- Page Header -->
+    <header class="masthead">
+        <div class="overlay"></div>
+        <div class="container">
             <div class="row">
-                <div class="col-lg-12">
-                    {% if self.get_ancestors %}
-                        <ol class="breadcrumb">
-
-                            <li><a href="/wagtail-pages/"><i class="fa fa-home"
-                                                             aria-hidden="true"></i><span
-                                    class="hidden"
-                                    aria-hidden="false">Home</span></a></li>
-                            {% for ancestor in self.get_ancestors|slice:"1:" %}
-                                {% if forloop.last %}
-                                    <li>&nbsp;>&nbsp;<a href="{% pageurl ancestor %}">{{ ancestor }}</a>
-                                    </li>
-                                {% else %}
-                                    <li>&nbsp;>&nbsp;<a href="{% pageurl ancestor %}">{{ ancestor }}</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-                            <li class="active">&nbsp;>&nbsp;{{ self.title }}</li>
-                        </ol>
-                    {% endif %}
+                <div class="col-lg-8 col-md-10 mx-auto">
+                    <div class="{% if self.get_ancestors.count > 1 %}post-heading{% else %}site-heading{% endif %}">
+                        <h1>{{ self.title | safe }}</h1>
+                        <span class="subheading">{{ self.intro | safe }}</span>
+                        {% if self.get_ancestors.count > 1 %}
+                            <span class="meta">Posted{% if self.owner %} by {{ self.owner.first_name }} {{ self.owner.last_name }}{% endif %} on {{ self.first_published_at }}</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </nav>
-        <div class="blog-title">
-            {{ self.title | safe }}
         </div>
-        {% if self.get_children.specific %}
-        <div class="children-buttons">
-        {% for page in self.get_children.specific %}
-            <a class="btn btn-info" href="{{ page.url }}">{{ page.title }}</a>
-        {% endfor %}
-        </div>
-        {% endif %}
-        <hr/>
-        <div class="blog-info">
-            {% if self.owner %}
-                {{ self.owner.first_name }} {{ self.owner.last_name }},
-            {% endif %}
-            {{ self.latest_revision_created_at }}
-        </div>
-        <div class="blog-body">
-            {{ self.body | richtext }}
+    </header>
+
+    <div class="container blog-content">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                {% if self.get_ancestors.count > 1 %}
+                    {{ page.body | richtext }}
+                {% else %}
+                    {% for page in self.get_children.specific %}
+                        <div class="post-preview">
+                            <a href="{% pageurl page %}">
+                                <h2 class="post-title">{{ page.title }}</h2>
+                                <h4 class="post-subtitle">
+                                    {{ page.intro | safe }}
+                                </h4>
+                            </a>
+                            <p class="post-meta">
+                                Posted{% if self.owner %} by {{ page.owner.first_name }} {{ page.owner.last_name }}{% endif %} on {{ page.first_published_at }}
+                            </p>
+                        </div>
+                        <hr/>
+                    {% endfor %}
+                {% endif %}
+            </div>
         </div>
     </div>
 {% endblock %}
