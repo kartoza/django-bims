@@ -228,11 +228,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         var defaultVisibility = Shared.StorageUtil.getItemDict(
                             value['wms_layer_name'], 'selected');
-
                         if (defaultVisibility === null) {
                             defaultVisibility = value['default_visibility'];
-                            Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
                         }
+                        Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
 
                         var options = {
                             url: '/bims_proxy/' + encodeURI(value.wms_url),
@@ -255,7 +254,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, false, '', wmsUrl
+                            value.name, defaultVisibility, '', wmsUrl
                         );
                         self.renderLegend(
                             value.wms_layer_name,
@@ -771,6 +770,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
         },
         getLayerAbstract: function (layerKey) {
+            let layerProvider = '';
+            let layerName = '';
+            let layerSourceContainer = $('div.layer-source-info[value="' + layerKey + '"]');
+            let fetching = layerSourceContainer.data('fetching');
+            if (fetching) {
+                if (layerSourceContainer.is(':visible')) {
+                    layerSourceContainer.slideUp(200);
+                } else {
+                    layerSourceContainer.slideDown(200);
+                }
+                return;
+            }
+            layerSourceContainer.data('fetching', true);
+            layerSourceContainer.html('<div style="width: 100%; height: 50px; text-align: center; padding-top:18px;">Fetching...</div>');
+            layerSourceContainer.slideDown(200);
+
             if (layerKey.indexOf(":") > 0) {
                 layerProvider = layerKey.split(":")[0];
                 layerName = layerKey.split(":")[1];
@@ -786,7 +801,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 url: `/bims_proxy/https://maps.kartoza.com/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
                 dataType: `xml`,
                 success: function (response) {
-                    var xml_response, parser, xmlDoc;
+                    let xml_response, parser, xmlDoc;
                     xml_response = response['documentElement']['innerHTML'];
                     xml_response = xml_response.replace(/[\r\n]*/g, "");
                     xml_response = xml_response.replace("\\n", "");
@@ -801,19 +816,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     }
                 },
                 error(err) {
-                    console.log(err);
                     abstract_result = "Abstract information unavailable.";
                 },
                 complete() {
-                    layerSourceContainer = $('div.layer-source-info[value="' + layerKey + '"]');
-                    if (layerSourceContainer.html() == "") {
-                        layerSourceContainer.toggle();
-                        layerSourceContainer.html(`
-                            <div class="layer-abstract">
-                                ` + abstract_result + `
-                            </div>`);
-                    }
-                    layerSourceContainer.slideToggle(400);
+                    layerSourceContainer.html(`
+                        <div class="layer-abstract">
+                            ` + abstract_result + `
+                        </div>`);
                 }
             })
         },

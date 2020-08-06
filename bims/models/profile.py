@@ -63,7 +63,7 @@ class Profile(models.Model):
         null=True,
     )
 
-    def is_accredited(self):
+    def is_accredited(self, collection_date = None):
         if (
             not self.sass_accredited_date_to or
             not self.sass_accredited_date_from
@@ -71,6 +71,8 @@ class Profile(models.Model):
             return False
         if self.sass_accredited_date_from > self.sass_accredited_date_to:
             return False
+        if collection_date and self.sass_accredited_date_to > collection_date:
+            return True
         if self.sass_accredited_date_to > date.today():
             return True
 
@@ -96,7 +98,12 @@ class Profile(models.Model):
             return
 
         if not date_accredit_from:
-            self.sass_accredited_date_from = date(date.today().year, 1, 1)
+            if date_accredit_to:
+                self.sass_accredited_date_from = date(
+                    date_accredit_from.year, 1, 1
+                )
+            else:
+                self.sass_accredited_date_from = date(date.today().year, 1, 1)
         else:
             self.sass_accredited_date_from = date_accredit_from
         self.save()

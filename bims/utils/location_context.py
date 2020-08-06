@@ -125,7 +125,7 @@ def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
                 all_context = list(
                     LocationContext.objects.filter(
                         site=location_site).values_list(
-                        'group__key', flat=True)
+                        'group__geocontext_group_key', flat=True)
                 )
             except (ValueError, TypeError):
                 pass

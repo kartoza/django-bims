@@ -53,7 +53,6 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 except:  # noqa
                     source = '-'
             else:
-
                 try:
                     url = col.source_reference.source.doi
                 except AttributeError:
@@ -72,7 +71,10 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                         url = '-'
 
                 try:
-                    source = col.source_reference.source.journal.name
+                    source = (
+                        col.source_reference.source.journal.name.encode(
+                            'utf-8')
+                    )
                 except AttributeError:
                     source = col.source_reference.__unicode__()
 
