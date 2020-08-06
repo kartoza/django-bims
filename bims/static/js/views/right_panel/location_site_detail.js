@@ -297,7 +297,6 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 url: this.url,
                 dataType: 'json',
                 success: function (data) {
-                    console.log(data);
                     self.siteDetailData = data;
                     Shared.Dispatcher.trigger('sidePanel:updateSiteDetailData', self.siteDetailData);
 
