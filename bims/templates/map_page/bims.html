@@ -69,6 +69,7 @@
         const defaultCenterMap = '{{ preferences.SiteSetting.default_center_map }}';
         const defaultExtentMap = '{{ preferences.SiteSetting.default_extent_map }}';
         const defaultBasemap = '{{ preferences.SiteSetting.default_basemap }}';
+        const userID = {% if user.id %}{{ user.id }}{% else %}null{% endif %};
     </script>
     {% block extra_head %}
 
