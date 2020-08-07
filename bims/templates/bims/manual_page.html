@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load manual_menu %}
 {% load wagtailcore_tags %}
+{% load wagtailmarkdown %}
 
 {% block head %}
     <style>
@@ -57,7 +58,7 @@
                 </nav>
 
                 <h1 class="font-weight-bold">{{ page.title }}</h1>
-                {{ page.body | richtext }}
+                {{ page.body | markdown }}
             </div>
         </div>
     </div>
