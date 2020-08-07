@@ -1,0 +1,65 @@
+{% extends 'main_base.html' %}
+{% load manual_menu %}
+{% load wagtailcore_tags %}
+
+{% block head %}
+    <style>
+        .menu-container > .card-body {
+            padding: 0;
+        }
+
+        .menu-container ul {
+            list-style-type: none; /* Remove bullets */
+            margin: 0; /* Remove margins */
+            padding-inline-start: 20px;
+        }
+
+        .menu-container .active {
+            color: blue;
+        }
+
+        .menu-container li {
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <div style="margin-top:120px"></div>
+    <div class="container" style="min-height: 500px">
+        <div class="row">
+            <div class="col-3">
+                <div class="card menu-container">
+                    <div class="card-body">
+                        {% manual_menu menu page.slug %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-9">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        {% for ancestor in self.get_ancestors|slice:"1:" %}
+                            {% if forloop.last %}
+                                <li class="breadcrumb-item">
+                                    <a href="{% pageurl ancestor %}">{{ ancestor }}</a>
+                                </li>
+                            {% else %}
+                                <li class="breadcrumb-item">
+                                    <a href="{% pageurl ancestor %}">{{ ancestor }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {{ page.title }}
+                        </li>
+                    </ol>
+                </nav>
+
+                <h1 class="font-weight-bold">{{ page.title }}</h1>
+                {{ page.body | richtext }}
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html' %}
+{% endblock %}
