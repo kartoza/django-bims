@@ -5,10 +5,7 @@
  */
 
 body {
-  font-size: 20px;
   color: #212529;
-  font-family: 'Roboto', 'Times New Roman', serif;
-  font-weight: 300;
 }
 
 p {
@@ -177,11 +174,12 @@ header.masthead {
   position: relative;
   background-size: cover;
   background-image: url('../img/Default_Background.jpg');
+  padding-top: 50px;
 }
 
 header.posthead {
   margin-bottom: 50px;
-  margin-top: 120px;
+  padding-top: 120px;
 }
 
 .posthead h1 {

@@ -1,6 +1,5 @@
 body {
     font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    line-height: 1.2;
     box-sizing: border-box; //to account for the border on top
     -o-box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -11,10 +10,6 @@ body {
 
 .bg-primary {
     background-color: #18A090 !important;
-}
-
-.bg-dark {
-    background-color: #212529 !important;
 }
 
 .text-faded {
@@ -31,14 +26,7 @@ section {
     -o-box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    min-height: 100%;
     position: relative;
-}
-
-#fish-data {
-    padding-top: 30px;
-    min-height: 500px;
-    padding-bottom: 150px;
 }
 
 #about {
@@ -80,16 +68,26 @@ img::-moz-selection {
 }
 
 header.masthead {
-    padding-top: 10rem;
-    padding-bottom: calc(10rem - 56px);
+    padding-top: 20px;
+    padding-bottom: 0px;
     background-position: center center;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
     background-size: cover;
     background-color: black;
-    height: 400px !important;
+    max-height: 400px !important;
     min-height: auto !important;
+}
+
+.header-image {
+    background-position: center top;
+    background-size: cover;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-attachment: scroll;
+    height: 400px;
 }
 
 header.masthead hr {
@@ -110,6 +108,13 @@ header.masthead p {
         font-size: 1.15rem;
     }
 }
+
+@media (max-width: 500px) {
+    .carousel-title {
+        font-size: 25px !important;
+    }
+}
+
 
 @media (min-width: 992px) {
     header.masthead {
@@ -152,15 +157,6 @@ header.masthead p {
     border-radius: 4px;
 }
 
-@media only screen and (max-width: 600px) {
-    .title-header-buttons div {
-        margin-top: 200px
-    }
-    .carousel-title {
-        display: none !important;
-    }
-}
-
 #search-on-map {
     border: none;
     height: 30px;
@@ -192,7 +188,6 @@ header.masthead p {
 #carouselIndicators {
     width: 100%;
     position: relative;
-    height: 400px;
     overflow-y: hidden;
 }
 
@@ -367,7 +362,6 @@ html, body {
 
 .section-heading {
     color: #18A090;
-    font-weight: lighter !important;
     font-size: 1.75em !important;
     margin-top: 0;
 }
@@ -407,12 +401,7 @@ html, body {
     color: white !important;
 }
 
-.dropdown-toggle {
-    color: transparent !important;
-}
-
 .carousel-title {
-    margin-top: -30px;
     height: 100%;
     padding-left: 100px;
     padding-right: 100px;
@@ -436,4 +425,34 @@ html, body {
 
 .dashboard-row {
     margin-top: 20px;
+}
+
+.carousel-inner {
+    padding-top: 35px;
+    padding-bottom: 10px;
+}
+
+.summary-data {
+    margin-top: 50px;
+    text-align: center;
+    color: #263c4c;
+}
+
+.summary-data .fa {
+    font-size: 50pt;
+}
+
+.summary-data p {
+    margin-top: 20px;
+    font-size: 20pt;
+    font-weight: bold;
+}
+
+.biodiversity-data-container {
+    padding-top: 100px;
+    padding-bottom: 100px;
+}
+
+.btn-explore-map {
+    font-size: 20px;
 }

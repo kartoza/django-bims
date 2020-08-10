@@ -13,26 +13,19 @@
                 <div class="carousel-item">
             {% endif %}
                 <div class="carousel-title">
-                    {{ header.description }}
+                    {{ header.description | safe }}
                 </div>
-                <img class="d-block w-100" src="uploaded/{{ header.file }}" alt="slide">
+                <div class="d-block w-100 header-image header-{{ header.id }}" alt="slide">
+                <style>
+                    .header-{{ header.id }} {
+                        background-image: url("uploaded/{{ header.file }}");
+                    }
+                </style>
             </div>
         {% endfor %}
     </div>
 </div>
 <div id="title-header">
     <div class="title-header-buttons">
-        {% if not user.is_authenticated %}
-            <a class="btn btn-account btn-l js-scroll-trigger login-carousel" href="/accounts/login/">Login</a>
-            <a class="btn btn-account btn-l js-scroll-trigger login-carousel" href="/accounts/signup/">Sign Up</a>
-        {% else %}
-            <div class="container-1">
-                <span class="icon"><i class="fa fa-search"></i></span>
-                <input type="search" id="search-on-map" placeholder="Search on map..." onkeyup="searchOnMap(event)"/>
-            </div>
-            <a class="btn btn-account btn-l js-scroll-trigger" href="/profile/">MY PROFILE</a>
-            <a class="btn btn-account btn-l js-scroll-trigger" href="/map">MAP</a>
-            <a class="btn btn-account btn-l js-scroll-trigger" href="/upload/">UPLOAD</a>
-        {% endif %}
     </div>
 </div>

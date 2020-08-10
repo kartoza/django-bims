@@ -13,35 +13,38 @@
     <script type="text/javascript">
         const summaries = '{{ summaries|jsonify|safe }}';
     </script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
 
 {% endblock %}
 
 {% block body_content %}
-<div id="section-wrapper">
-    <div id="header-wrapper">
-    <header class="masthead text-center text-white d-flex" id="header">
-        {% include "carousel.html" %}
-    </header>
-    <section id="fish-data" style="position: relative">
-      <div class="container" style="margin-bottom: 25px">
-        <div class="row">
-          <div class="col-lg-8 mx-auto text-center">
-            <h2 class="section-heading">BIODIVERSITY RECORDS</h2>
-          </div>
-        </div>
-    {% include 'landing_page_dashboard.html' %}
-      </div>
-    </section>
-    </div>
-    </div>
+    <div id="section-wrapper">
+        <div id="header-wrapper">
+            <header class="masthead text-center text-white d-flex" id="header">
+                {% include "carousel.html" %}
+            </header>
+            <section id="fish-data" class="biodiversity-data-container" style="position: relative">
+                <div class="container" style="margin-bottom: 25px">
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto text-center">
+                            <h2 class="section-heading">BIODIVERSITY
+                                RECORDS</h2>
+                        </div>
+                    </div>
+                    {% include 'landing_page_dashboard.html' %}
 
-{% include "footer.html" %}
+                    <div class="row" style="display: flex; align-items: center; justify-content: center; margin-top: 20px;">
+                        <a href="/map" class="btn btn-primary btn-explore-map"><i class="fa fa-map-o"></i> &nbsp;Explore Map »</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    {% include "footer.html" %}
 {% endblock %}
 
 {% block foot %}
-
     <!-- Plugin JavaScript -->
-    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/landing-page.js" %}"></script>

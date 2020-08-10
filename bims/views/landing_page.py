@@ -25,6 +25,7 @@ class LandingPageView(PrometheusCounter, TemplateView):
         for header in carousel_headers:
             context['headers'].append({
                 'file': header.banner,
-                'description': header.description
+                'description': header.description,
+                'id': header.id
             })
         return context
