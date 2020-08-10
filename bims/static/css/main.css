@@ -69,3 +69,11 @@
 .carousel-indicators .active {
     background-color: #18A090;
 }
+
+.rich-text .code, .rich-text code {
+    background-color: #f7f7f7;
+    padding: 10px;
+    font-size: 11pt;
+    color: #e83e8c;
+    word-break: break-word;
+}

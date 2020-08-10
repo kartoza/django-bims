@@ -2,15 +2,25 @@ from wagtail.core.models import Page
 from wagtail.core.fields import RichTextField
 from wagtail.admin.edit_handlers import FieldPanel
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from wagtail.admin.edit_handlers import PageChooserPanel
+from django.db import models
 
 
 class BlogPage(Page):
     intro = RichTextField(blank=True)
     body = RichTextField(blank=True)
+    related_page = models.ForeignKey(
+        'wagtailcore.Page',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+    )
 
     content_panels = Page.content_panels + [
         FieldPanel('intro', classname="full"),
         FieldPanel('body', classname="full"),
+        PageChooserPanel('related_page', ['bims.BlogPage', 'bims.ManualPage']),
     ]
 
     # taken from
