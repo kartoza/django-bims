@@ -2,7 +2,14 @@
 {% load static from staticfiles %}
 {% load manual_menu %}
 {% load wagtailcore_tags %}
-{% load wagtailmarkdown %}
+
+{% block subtitle %}
+     {% if self.get_ancestors|length > 1 %}
+        {{ self.get_ancestors.1.title }}
+    {% else %}
+       {{ page.title }}
+    {% endif %}
+{% endblock %}
 
 {% block head %}
     <style>
@@ -78,7 +85,7 @@
                 <h1 class="font-weight-bold">{{ page.title }}</h1>
                 {{ page.intro | richtext }}
                 <hr/>
-                {{ page.body | markdown }}
+                {{ page.body | richtext }}
             </div>
         </div>
     </div>

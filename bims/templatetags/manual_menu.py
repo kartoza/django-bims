@@ -18,6 +18,7 @@ def get_list_element(list_data, active_slug):
     element += '</ul>'
     return element
 
+
 @register.simple_tag(name='manual_menu')
 def manual_menu(menu_data, active_slug):
     element = get_list_element(menu_data, active_slug)
