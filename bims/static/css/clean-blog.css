@@ -179,6 +179,24 @@ header.masthead {
   background-image: url('../img/Default_Background.jpg');
 }
 
+header.posthead {
+  margin-bottom: 50px;
+  margin-top: 120px;
+}
+
+.posthead h1 {
+  font-size: 32pt;
+  color: #263c4c;
+  font-weight: bold;
+}
+
+.posthead .meta {
+  color: #848484;
+  letter-spacing: 1px;
+  font-size: 11pt;
+  font-weight: 300;
+}
+
 header.masthead .overlay {
   position: absolute;
   top: 0;
@@ -192,7 +210,7 @@ header.masthead .overlay {
 header.masthead .page-heading,
 header.masthead .post-heading,
 header.masthead .site-heading {
-  padding: 120px 0 150px;
+  padding: 90px 0 150px;
   color: white;
 }
 
@@ -200,7 +218,7 @@ header.masthead .site-heading {
   header.masthead .page-heading,
   header.masthead .post-heading,
   header.masthead .site-heading {
-    padding: 120px 0;
+    padding: 90px 0;
   }
 }
 
@@ -285,19 +303,26 @@ header.masthead .post-heading .meta a {
   font-size: 30px;
   margin-top: 30px;
   margin-bottom: 0;
+  color: #18A090;
 }
 
-.post-preview > a > .post-subtitle, .post-preview > a > .post-subtitle > p {
+.post-title:hover {
+  color: #028173 !important;
+}
+
+.post-preview > .post-subtitle, .post-preview > .post-subtitle > p {
   font-weight: 300 !important;
   margin: 20px 0 15px !important;
   font-size: 14pt !important;
 }
 
 .post-preview > .post-meta {
-  font-size: 18px;
-  font-style: italic;
-  margin-top: 0;
-  color: #868e96;
+  color: #848484;
+  letter-spacing: 1px;
+  font-size: 11pt;
+  font-weight: 300;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .post-preview > .post-meta > a {
@@ -312,7 +337,7 @@ header.masthead .post-heading .meta a {
 
 @media only screen and (min-width: 768px) {
   .post-preview > a > .post-title {
-    font-size: 36px;
+    font-size: 40px;
   }
 }
 

@@ -24,17 +24,17 @@
 
 {% block body_content %}
     <!-- Page Header -->
-    <header class="masthead">
+    <header class="{% if self.get_ancestors.count > 1 %}posthead{% else %}masthead{% endif %}">
         <div class="overlay"></div>
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-md-10 mx-auto">
                     <div class="{% if self.get_ancestors.count > 1 %}post-heading{% else %}site-heading{% endif %}">
+                        {% if self.get_ancestors.count > 1 %}
+                            <span class="meta">{% if self.owner %}{{ self.owner.first_name | upper }} {{ self.owner.last_name | upper }} - {% endif %}{{ self.first_published_at|date|upper }}</span>
+                        {% endif %}
                         <h1>{{ self.title | safe }}</h1>
                         <span class="subheading">{{ self.intro | safe }}</span>
-                        {% if self.get_ancestors.count > 1 %}
-                            <span class="meta">Posted{% if self.owner %} by {{ self.owner.first_name }} {{ self.owner.last_name }}{% endif %} on {{ self.first_published_at }}</span>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -56,13 +56,14 @@
                         <div class="post-preview">
                             <a href="{% pageurl page %}">
                                 <h2 class="post-title">{{ page.title }}</h2>
-                                <h4 class="post-subtitle">
-                                    {{ page.blogpage.intro | safe }}
-                                </h4>
                             </a>
                             <p class="post-meta">
-                                Posted{% if self.owner %} by {{ page.owner.first_name }} {{ page.owner.last_name }}{% endif %} on {{ page.first_published_at }}
+                                {% if self.owner %}{{ page.owner.first_name | upper }} {{ page.owner.last_name | upper }} - {% endif %}{{ page.first_published_at|date|upper }}
                             </p>
+                            <h4 class="post-subtitle">
+                                {{ page.blogpage.intro | safe }}
+                            </h4>
+
                         </div>
                         <hr/>
                     {% endfor %}
