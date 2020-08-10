@@ -64,7 +64,8 @@
 .bims-title-big {
     text-align: right;
     border-right: 2px solid yellow;
-    font-size: 30px;
+    font-size: 20px;
+    padding-right: 10px;
 }
 
 .bims-title-acc {

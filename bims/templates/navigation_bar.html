@@ -1,72 +1,134 @@
-<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+{#<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">#}
+{#    <div class="container">#}
+{#        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target=".navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">#}
+{#            Menu#}
+{#        </button>#}
+{#        <div class="collapse navbar-collapse navbarResponsive">#}
+{#            <ul class="navbar-nav">#}
+{#                <li class="dropdown">#}
+{#                    <div class="btn" id="menu-dropdown-burger" data-toggle="dropdown">#}
+{#                        <i class="fa fa-reorder user-icon"></i>#}
+{#                    </div>#}
+{#                    <div class="dropdown-menu dropdown-menu-left" aria-labelledby="menu-dropdown-burger">#}
+{#                        <a class="dropdown-item" href="/">HOME</a>#}
+{#                        <a class="dropdown-item" href="/map">MAP</a>#}
+{#                        <a class="dropdown-item"#}
+{#                           href="/pages/about_us/">ABOUT US</a>#}
+{#                        <a class="dropdown-item" id="navbar-ext-resources" href="{% url 'link_list' %}">LINKS</a>#}
+{#                        {% if user.is_authenticated %}#}
+{#                            <a class="dropdown-item" href="/tracking/">SITE#}
+{#                                STATISTICS</a>#}
+{#                            <a class="dropdown-item" id="navbar-doc-report" href="/documents/">DOCUMENTS</a>#}
+{#                        {% endif %}#}
+{#                        <a class="dropdown-item" id="navbar-contact" href="/contact/">CONTACT</a>#}
+{#                        <a class="dropdown-item" id="navbar-biblio" href="/bibliography/">BIBLIOGRAPHY</a>#}
+{#                        {% if is_sass_enabled %}#}
+{#                            <a class="dropdown-item" id="navbar-biblio" href="/sass/list/">SASS</a>#}
+{#                        {% endif %}#}
+{#                        <a class="dropdown-item" id="navbar-geonode" href="/blog/">BLOG</a>#}
+{#                        <a class="dropdown-item" id="navbar-geonode" href="/upload-taxa/">UPLOAD TAXA</a>#}
+{#                        <a class="dropdown-item" id="navbar-geonode" href="/upload-collections/">UPLOAD COLLECTIONS</a>#}
+{#                        <a class="dropdown-item" id="navbar-geonode" href="/harvest-collections/">HARVEST FROM GBIF</a>#}
+{#                        <a class="dropdown-item" id="navbar-geonode" href="/dashboard-management/">EDIT DASHBOARD</a>#}
+{#                        <a class="dropdown-item" id="navbar-geonode" href="/taxa-management/">EDIT TAXA</a>#}
+{#                         {% if user.is_authenticated %}#}
+{#                             <div class="dropdown-divider"></div>#}
+{#                            <a class="dropdown-item" id="navbar-geonode" href="/layers">GIS CATALOGUE</a>#}
+{#                        {% endif %}#}
+{#                    </div>#}
+{#                </li>#}
+{#            </ul>#}
+{#        </div>#}
+{#        <div class="collapse navbar-collapse navbarResponsive" id="navbarResponsive">#}
+{#            <ul class="navbar-nav ml-auto">#}
+{#                <li class="dropdown">#}
+{#                    <div class="btn" id="menu-dropdown-account" data-toggle="dropdown" href="#">#}
+{#                        <i class="fa fa-user user-icon"></i>#}
+{#                    </div>#}
+{#                    <div class="dropdown-menu right-nav-dropdown" aria-labelledby="menu-dropdown-account">#}
+{#                        {% if user.is_authenticated %}#}
+{#                            <a class="dropdown-item" id="navbar-profile" href="/profile/">PROFILE</a>#}
+{#                            {% if perms.bims.can_upload_csv and bims_preferences.enable_upload_data %}#}
+{#                                <a class="dropdown-item" id="navbar-upload" href="{% block upload_data_url %}/upload/{% endblock %}">UPLOAD DATA</a>#}
+{#                            {% endif %}#}
+{#                            {% if user.is_staff or user.is_superuser %}#}
+{#                                <a class="dropdown-item" href="/admin/">ADMINISTRATION</a>#}
+{#                            {% endif %}#}
+{#                            <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL ADMIN</a>#}
+{#                            <a class="dropdown-item" href="/nonvalidated-user-list/">UPDATE RECORDS</a>#}
+{#                            <a class="dropdown-item" href="/site-visit/list/?collectors=[{{ user.id }}]">MY SITE VISITS</a>#}
+{#                            <a class="dropdown-item" href="/location-site-form/add/">ADD SITE</a>#}
+{#                            <div class="dropdown-divider"></div>#}
+{#                            <a class="dropdown-item" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a>#}
+{#                        {% else %}#}
+{#                            <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL ADMIN</a>#}
+{#                            <a class="dropdown-item" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a>#}
+{#                            <a class="dropdown-item" href="/accounts/signup/">SIGN UP</a>#}
+{#                        {% endif %}#}
+{#                    </div>#}
+{#                </li>#}
+{#            </ul>#}
+{#        </div>#}
+{#    </div>#}
+{#</nav>#}
+
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
     <div class="container">
-        <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target=".navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-            Menu
+        <a class="navbar-brand bims-title-big" href="/">BIMS</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+                data-target="#navbarCollapse" aria-controls="navbarCollapse"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse navbarResponsive">
-            <ul class="navbar-nav">
-                <li class="dropdown">
-                    <div class="btn" id="menu-dropdown-burger" data-toggle="dropdown">
-                        <i class="fa fa-reorder user-icon"></i>
-                    </div>
-                    <div class="dropdown-menu dropdown-menu-left" aria-labelledby="menu-dropdown-burger">
-                        <a class="dropdown-item" href="/">HOME</a>
-                        <a class="dropdown-item" href="/map">MAP</a>
-                        <a class="dropdown-item"
-                           href="/pages/about_us/">ABOUT US</a>
-                        <a class="dropdown-item" id="navbar-ext-resources" href="{% url 'link_list' %}">LINKS</a>
-                        {% if user.is_authenticated %}
-                            <a class="dropdown-item" href="/tracking/">SITE
-                                STATISTICS</a>
-                            <a class="dropdown-item" id="navbar-doc-report" href="/documents/">DOCUMENTS</a>
-                        {% endif %}
-                        <a class="dropdown-item" id="navbar-contact" href="/contact/">CONTACT</a>
-                        <a class="dropdown-item" id="navbar-biblio" href="/bibliography/">BIBLIOGRAPHY</a>
-                        {% if is_sass_enabled %}
-                            <a class="dropdown-item" id="navbar-biblio" href="/sass/list/">SASS</a>
-                        {% endif %}
-                        <a class="dropdown-item" id="navbar-geonode" href="/blog/">BLOG</a>
-                        <a class="dropdown-item" id="navbar-geonode" href="/upload-taxa/">UPLOAD TAXA</a>
-                        <a class="dropdown-item" id="navbar-geonode" href="/upload-collections/">UPLOAD COLLECTIONS</a>
-                        <a class="dropdown-item" id="navbar-geonode" href="/harvest-collections/">HARVEST FROM GBIF</a>
-                        <a class="dropdown-item" id="navbar-geonode" href="/dashboard-management/">EDIT DASHBOARD</a>
-                        <a class="dropdown-item" id="navbar-geonode" href="/taxa-management/">EDIT TAXA</a>
-                         {% if user.is_authenticated %}
-                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" id="navbar-geonode" href="/layers">GIS CATALOGUE</a>
-                        {% endif %}
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/map">Map</a>
+                </li>
+                 <li class="nav-item active">
+                    <a class="nav-link" href="/blog/">Blog</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#"
+                       id="dropdown01" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false">About</a>
+                    <div class="dropdown-menu" aria-labelledby="dropdown01">
+                        <a class="dropdown-item" href="/contact/">Contact</a>
+                        <a class="dropdown-item" href="/pages/about_us/">About Us</a>
                     </div>
                 </li>
             </ul>
         </div>
-        <div class="collapse navbar-collapse navbarResponsive" id="navbarResponsive">
+        <div class="navbar-collapse collapse w-50 order-3 dual-collapse2">
             <ul class="navbar-nav ml-auto">
-                <li class="dropdown">
-                    <div class="btn" id="menu-dropdown-account" data-toggle="dropdown" href="#">
-                        <i class="fa fa-user user-icon"></i>
-                    </div>
-                    <div class="dropdown-menu right-nav-dropdown" aria-labelledby="menu-dropdown-account">
-                        {% if user.is_authenticated %}
-                            <a class="dropdown-item" id="navbar-profile" href="/profile/">PROFILE</a>
-                            {% if perms.bims.can_upload_csv and bims_preferences.enable_upload_data %}
-                                <a class="dropdown-item" id="navbar-upload" href="{% block upload_data_url %}/upload/{% endblock %}">UPLOAD DATA</a>
-                            {% endif %}
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#"
+                           id="dropdown01" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">{{ user.first_name }}</a>
+                        <div class="dropdown-menu" aria-labelledby="dropdown01">
                             {% if user.is_staff or user.is_superuser %}
-                                <a class="dropdown-item" href="/admin/">ADMINISTRATION</a>
+                                <a class="dropdown-item" id="navbar-geonode" href="/upload-taxa/">Upload Taxa</a>
+                                <a class="dropdown-item" id="navbar-geonode" href="/upload-collections/">Upload Collections</a>
+                                <a class="dropdown-item" id="navbar-geonode" href="/harvest-collections/">Harvest From GBIF</a>
+                                <a class="dropdown-item" id="navbar-geonode" href="/dashboard-management/">Edit Dashboard</a>
+                                <a class="dropdown-item" id="navbar-geonode" href="/taxa-management/">Edit Taxa</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="/admin/">Admin Page</a>
+                                <a class="dropdown-item" id="navbar-geonode" href="/cms">Wagtail Admin</a>
                             {% endif %}
-                            <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL ADMIN</a>
-                            <a class="dropdown-item" href="/nonvalidated-user-list/">UPDATE RECORDS</a>
-                            <a class="dropdown-item" href="/site-visit/list/?collectors=[{{ user.id }}]">MY SITE VISITS</a>
-                            <a class="dropdown-item" href="/location-site-form/add/">ADD SITE</a>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="/accounts/logout/"><i class="fa fa-sign-out"></i> LOGOUT</a>
-                        {% else %}
-                            <a class="dropdown-item" id="navbar-geonode" href="/cms">WAGTAIL ADMIN</a>
-                            <a class="dropdown-item" href="/accounts/login/"><i class="fa fa-sign-in"></i> LOGIN</a>
-                            <a class="dropdown-item" href="/accounts/signup/">SIGN UP</a>
-                        {% endif %}
-                    </div>
-                </li>
+                            <a class="dropdown-item" href="/accounts/logout/">Log Out</a>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/accounts/signup/">Sign Up</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/accounts/login/">Login</a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>

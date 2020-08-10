@@ -77,3 +77,7 @@
     color: #e83e8c;
     word-break: break-word;
 }
+
+.navbar {
+    font-family: 'Lato', sans-serif;
+}

@@ -7,8 +7,6 @@ body {
 }
 
 .container {
-    margin-right: 0 !important;
-    margin-left: 0 !important;
     max-width: 100% !important;
 }
 
@@ -72,6 +70,10 @@ html, body, .map, .map-wrapper, #map-container {
     overflow: hidden;
 }
 
+#map-container {
+    padding-top: 56px;
+}
+
 .panel-wrapper {
     top: 0;
     right: 0;
@@ -81,6 +83,7 @@ html, body, .map, .map-wrapper, #map-container {
     width: 500px;
     min-width: 422px;
     pointer-events: none;
+    padding-top: 56px;
 }
 
 .right-panel {
@@ -1508,10 +1511,6 @@ div:hover::-webkit-scrollbar {
     outline: none;
 }
 
-.fixed-top {
-    pointer-events: none;
-}
-
 .dropdown {
     pointer-events: auto;
 }
@@ -2832,4 +2831,24 @@ div:hover::-webkit-scrollbar {
     padding-left: 0.5rem;
     font-size: 12px;
     margin-bottom: -1px;
+}
+@media (min-width: 576px) {
+    .navbar .container {
+        max-width: 540px !important;
+    }
+}
+@media (min-width: 768px) {
+    .navbar .container {
+        max-width: 720px !important;
+    }
+}
+@media (min-width: 992px) {
+    .navbar .container {
+        max-width: 960px !important;
+    }
+}
+@media (min-width: 1200px) {
+    .navbar .container {
+        max-width: 1140px !important;
+    }
 }

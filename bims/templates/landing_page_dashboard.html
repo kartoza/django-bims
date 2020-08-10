@@ -1,15 +1,22 @@
-<div class="row dashboard-row">
-    {% for class_name, class_data in summaries.items %}
-        <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 dashboard-data text-center" id="total-{{ class_name }}">
-            <div class="chrt-icon-wrapper">
-                <p class="total-data green">{{ class_data.total }}</p>
-                <p class="total-data-desc green">{{ class_name }}</p>
-                <span class="bullet"></span>
-                <div class="donut-chart">
-                    <canvas id="chart-{{ class_name }}" width="145" height="145"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="clearfix visible-md-block"></div>
-    {% endfor %}
+<div class="row summary-data">
 </div>
+
+<script>
+    function getNumberWithCommas(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    $.get('/api/landing-page-summary/').then(
+        function(data) {
+            const $container = $('.summary-data');
+
+            $.each(data, function(index, summaryData) {
+               $container.append(
+                   `<div class="col-md-4">
+                        <i class="fa ${summaryData['icon']}"></i>
+                        <p>${getNumberWithCommas(summaryData['value'])} ${summaryData['title']}</p>
+                   </div>`
+               )
+            });
+        }
+    )
+</script>

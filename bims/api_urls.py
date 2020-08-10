@@ -77,6 +77,7 @@ from bims.api_views.taxon_group import (
     RemoveTaxaFromTaxonGroup,
     AddTaxaToTaxonGroup
 )
+from bims.api_views.landing_page_summary import LandingPageSummary
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -216,4 +217,7 @@ urlpatterns = [
     url(r'^add-taxa-to-taxon-group/$',
         AddTaxaToTaxonGroup.as_view(),
         name='add-taxa-to-taxon-group'),
+    url(r'^landing-page-summary/$',
+        LandingPageSummary.as_view(),
+        name='landing-page-summary'),
 ]
