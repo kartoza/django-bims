@@ -54,7 +54,6 @@ urlpatterns = [
         name='home'),
     re_path(r'^wagtail-documents/', include(wagtaildocs_urls)),
     re_path(r'^cms/', include(wagtailadmin_urls)),
-    re_path(r'^blog/', include(wagtail_urls)),
 ]
 
 for geonode_pattern in geonode_urlpatterns:
@@ -68,6 +67,7 @@ urlpatterns += geonode_urlpatterns
 
 urlpatterns += [
     url('^admin/', admin.site.urls),
+    re_path(r'^', include(wagtail_urls)),
 ]
 
 if settings.DEBUG:

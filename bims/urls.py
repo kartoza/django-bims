@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from bims.views.map import MapPageView
 from bims.views.tracking import dashboard
-from bims.views.landing_page import LandingPageView
+from bims.views.landing_page import landing_page_view
 
 from bims.api_views.collection import (
     CollectionDownloader,
@@ -72,7 +72,7 @@ from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
 
 urlpatterns = [
-    url(r'^$', LandingPageView.as_view(), name='landing-page'),
+    url(r'^$', landing_page_view, name='landing-page'),
     url(r'^map/$', MapPageView.as_view(), name='map-page'),
     url(r'^profile/$',
         login_required(lambda request: RedirectView.as_view(

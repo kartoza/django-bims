@@ -101,6 +101,18 @@ class SiteSetting(Preferences):
                 '-18.54426493227018'
     )
 
+    blog_page_link = models.CharField(
+        blank=True,
+        max_length=100,
+        help_text='Link to blog page'
+    )
+
+    docs_page_link = models.CharField(
+        blank=True,
+        max_length=100,
+        help_text='Link to docs page'
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
