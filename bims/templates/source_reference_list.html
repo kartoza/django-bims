@@ -1,0 +1,106 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Source References
+{% endblock %}
+
+{% block pre-head %}
+    <style>
+        .card {
+            margin-bottom: 10px;
+        }
+
+        .custom-control-label {
+            max-width: 80%;
+        }
+
+        .reference-filter-title {
+            margin-bottom: 0 !important;
+            font-weight: bold;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <!-- Page Header -->
+    <div class="body-container container">
+        <div class="dashboard-title">
+            <h2>Explore Source References</h2>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-4 col-xs-12">
+
+                <div class="card">
+                    <article class="card-group-item">
+                        <header class="card-header">
+                            <h6 class="title reference-filter-title">Type</h6>
+                        </header>
+                        <div class="filter-content">
+                            <div class="card-body" data-filter="type">
+                                {% for source_type in type %}
+                                    <div class="custom-control custom-checkbox">
+                                        <span class="float-right badge badge-light round">{{ source_type.count }}</span>
+                                        <input type="checkbox"
+                                               value="{{ source_type.key }}"
+                                               class="custom-control-input"
+                                               id="{{ source_type.key }}"
+                                               {% if source_type.selected %}checked{% endif %}>
+                                        <label class="custom-control-label"
+                                               for="{{ source_type.key }}">{{ source_type.title }}</label>
+                                    </div> <!-- form-check.// -->
+                                {% endfor %}
+                            </div> <!-- card-body.// -->
+                        </div>
+                    </article> <!-- card-group-item.// -->
+                </div> <!-- card.// -->
+            </div>
+            <div class="col-lg-9 col-md-8 col-xs-12">
+                {% for source_reference in object_list %}
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-10">
+                                    <h5 class="card-title">{{ source_reference.link_template | safe }}</h5>
+                                    <p class="card-text"><i
+                                            class="fa fa-folder-o"
+                                            aria-hidden="true"></i> {{ source_reference.reference_type }}
+                                    </p>
+                                    <p class="card-text"><i class="fa fa-users"
+                                                            aria-hidden="true"></i> {{ source_reference.authors }}
+                                    </p>
+                                    {#                                    <a href="#" class="btn btn-primary">Download</a>#}
+                                </div>
+                                <div class="col-2">
+                                    <p class="card-text">
+                                        <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
+                                                class="badge badge-primary">{{ source_reference.occurrences }}</span></a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html' %}
+{% endblock %}
+
+{% block foot %}
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script>
+        $('.custom-control-input').change(function (e) {
+            let $parent = $(e.target).parent().parent();
+            let filterName = $parent.data('filter');
+            let checkedVals = $parent.find(':checkbox:checked').map(function () {
+                return this.value;
+            }).get();
+            if (checkedVals.length > 0) {
+               window.location = `/source-references?${filterName}=${checkedVals}`;
+            }
+        })
+    </script>
+{% endblock %}

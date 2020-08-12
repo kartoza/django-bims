@@ -91,6 +91,13 @@ class SourceReference(PolymorphicModel):
     )
 
     @property
+    def occurrences(self):
+        from bims.models.biological_collection_record import BiologicalCollectionRecord
+        return BiologicalCollectionRecord.objects.filter(
+            source_reference=self.id
+        ).count()
+
+    @property
     def year(self):
         if re.search(r'[12]\d{3}', self.source_name):
             year = re.findall(r'[12]\d{3}', self.source_name)[0]
@@ -271,7 +278,7 @@ class SourceReferenceBibliography(SourceReference):
             ' <a href="http://dx.doi.org/{doi}" '
             'target="_blank">{source}</a>'.format(
                 doi=self.source.doi,
-                source=self.source
+                source=self.title
             )
         )
 
@@ -315,7 +322,7 @@ class SourceReferenceDatabase(SourceReference):
                 ' <a href="{url}" '
                 'target="_blank">{source}</a>'.format(
                     url=self.source.url,
-                    source=self.source
+                    source=self.title
                 )
             )
         return (
@@ -375,7 +382,7 @@ class SourceReferenceDocument(SourceReference):
             'download>{source}</a>'.format(
                 media=settings.MEDIA_URL,
                 url=self.source.doc_file,
-                source=self.source
+                source=self.title
             )
         )
 

@@ -1,6 +1,15 @@
 .dashboard-title {
     border-bottom: 3px solid #18A090;
     margin-bottom: 10px;
+    text-align: center;
+}
+
+.dashboard-title h2 {
+    font-size: 17pt;
+    letter-spacing: 0.05em;
+    font-weight: 300;
+    text-transform: uppercase;
+    font-family: 'Open Sans', sans-serif;
 }
 
 .site-form-close {
@@ -80,4 +89,9 @@
 
 .navbar {
     font-family: 'Lato', sans-serif;
+}
+
+.body-container {
+    padding-top: 100px;
+    padding-bottom: 50px;
 }
