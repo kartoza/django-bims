@@ -8,19 +8,20 @@
     <div class="carousel-inner">
         {% for header in headers %}
             {% if forloop.counter == 1 %}
-                <div class="carousel-item active">
+            <div class="carousel-item active">
             {% else %}
-                <div class="carousel-item">
+            <div class="carousel-item">
             {% endif %}
                 <div class="carousel-title">
                     {{ header.description | safe }}
                 </div>
                 <div class="d-block w-100 header-image header-{{ header.id }}" alt="slide">
-                <style>
-                    .header-{{ header.id }} {
-                        background-image: url("uploaded/{{ header.file }}");
-                    }
-                </style>
+                    <style>
+                        .header-{{ header.id }} {
+                            background-image: url("uploaded/{{ header.file }}");
+                        }
+                    </style>
+                </div>
             </div>
         {% endfor %}
     </div>
