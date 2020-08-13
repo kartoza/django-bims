@@ -49,11 +49,26 @@ def process_source_reference(
     document = None
     source_reference_found = False
 
-    if not reference:
-        return '', None
-
     if not document_author:
         return 'Missing author', None
+
+    if (
+        not reference and
+        not reference_category and
+        not doi and
+        not document_link and
+        not document_url and
+        not document_title and
+        not document_author and
+        not source_year
+    ):
+        return '', None
+
+    if not reference:
+        if document_title:
+            reference = document_title
+    if not document_title and reference:
+        document_title = reference
 
     # if there is document link, get the id of the document
     if document_link:
