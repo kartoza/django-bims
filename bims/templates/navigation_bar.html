@@ -87,6 +87,14 @@
                 <li class="nav-item active">
                     <a class="nav-link" href="{{ domain_name }}/map">Map</a>
                 </li>
+                <li class="nav-item active dropdown">
+                    <a class="nav-link dropdown-toggle" href="#"
+                       id="dropdown01" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false">Data</a>
+                    <div class="dropdown-menu" aria-labelledby="dropdown01">
+                        <a class="dropdown-item" href="{{ domain_name }}/source-references/">Source References</a>
+                    </div>
+                </li>
                 {%  if preferences.SiteSetting.blog_page_link %}
                  <li class="nav-item active">
                     <a class="nav-link" href="{{ preferences.SiteSetting.blog_page_link }}">Blog</a>
@@ -97,7 +105,7 @@
                     <a class="nav-link" href="{{ preferences.SiteSetting.docs_page_link }}">Docs</a>
                  </li>
                  {% endif %}
-                <li class="nav-item dropdown">
+                <li class="nav-item active dropdown">
                     <a class="nav-link dropdown-toggle" href="#"
                        id="dropdown01" data-toggle="dropdown"
                        aria-haspopup="true" aria-expanded="false">About</a>
@@ -112,7 +120,7 @@
         <div class="navbar-collapse collapse w-50 order-3 dual-collapse2">
             <ul class="navbar-nav ml-auto">
                 {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
+                    <li class="nav-item active dropdown">
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown01" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">{{ user.first_name }}</a>
