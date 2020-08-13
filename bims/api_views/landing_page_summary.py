@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from bims.models import (
     BiologicalCollectionRecord,
     LocationSite,
+    Survey
 )
 from sass.models.site_visit import SiteVisit
 
@@ -36,7 +37,10 @@ class LandingPageSummary(APIView):
             'title': 'Site Visits',
             'img': '',
             'icon': 'fa-street-view',
-            'value': SiteVisit.objects.all().count()
+            'value': (
+                Survey.objects.all().count() +
+                SiteVisit.objects.all().count()
+            )
         })
 
         return Response(summary_data)
