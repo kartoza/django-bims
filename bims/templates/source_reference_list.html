@@ -64,6 +64,9 @@
         .active.active:hover {
             color: white;
         }
+        .input-group-append:hover {
+            cursor: pointer;
+        }
     </style>
 {% endblock %}
 
@@ -71,11 +74,20 @@
     <!-- Page Header -->
     <div class="body-container container">
         <div class="dashboard-title">
-            <h2>Explore Source References</h2>
+            <h2>Explore Source References&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 0 %}s{% endif %}</h2>
         </div>
         <div class="row">
             <div class="col-lg-3 col-md-4 col-xs-12">
-
+                <div class="input-group md-form form-sm form-2 pl-0" style="margin-bottom: 10px;">
+                    <input class="form-control my-0 py-1 red-border"
+                           type="text" placeholder="Search"
+                           aria-label="Search" value="{{ search }}" id="search-input">
+                    <div class="input-group-append">
+                        <span class="input-group-text red lighten-3" id="basic-text1">
+                            <i class="fa fa-search text-grey" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </div>
                 <div class="card">
                     <article class="card-group-item">
                         <header class="card-header">
@@ -174,6 +186,11 @@
                 return this.value;
             }).get();
             insertParam(filterName, checkedVals);
+        })
+
+        $('.input-group-append').click(function (e) {
+            let value =  $('#search-input').val();
+            insertParam('q', value);
         })
     </script>
 {% endblock %}

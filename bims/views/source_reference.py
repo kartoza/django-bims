@@ -27,6 +27,9 @@ class SourceReferenceListView(ListView):
         else:
             self.type_filter = ''
 
+        # -- Search query
+        self.search_query = self.request.GET.get('q', '')
+
         return super(SourceReferenceListView, self).get(
             request, *args, **kwargs)
 
@@ -54,6 +57,18 @@ class SourceReferenceListView(ListView):
                                 self.source_reference_type[
                                     source_reference_type]})
             qs = qs.filter(or_condition)
+
+        if self.search_query:
+            qs = qs.filter(
+                Q(sourcereferencebibliography__source__title__icontains =
+                  self.search_query) |
+                Q(sourcereferencedocument__source__title__icontains =
+                  self.search_query) |
+                Q(sourcereferencedatabase__source__name__icontains =
+                  self.search_query) |
+                Q(note__icontains = self.search_query) |
+                Q(source_name__icontains = self.search_query)
+            )
 
         qs = qs.filter(**filters)
 
@@ -98,4 +113,5 @@ class SourceReferenceListView(ListView):
                 'selected': 'bibliography' in self.type_filter
             }
         ]
+        context['search'] = self.search_query
         return context
