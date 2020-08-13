@@ -19,6 +19,51 @@
             margin-bottom: 0 !important;
             font-weight: bold;
         }
+        .badge-occurrences {
+            font-size: 9pt;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        .badge-zero {
+            background-color: #b8b8b8;
+        }
+        .reference-type-label {
+            text-transform: uppercase;
+            font-weight: 300;
+            font-size: 10pt;
+        }
+        .vertical-separator {
+            border-left: 1px solid #88929b;
+            width: 1px;
+            height: 100%;
+            padding-right: 10px;
+            margin-left: 5px;
+        }
+        .paginator-wrapper {
+            width: 100%;
+            padding-top: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .page-item.active .page-link {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+        .page-link:hover {
+            color: #313131;
+            text-decoration: none;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+        .page-link {
+            color: #757575;
+            background-color: #fff;
+        }
+        .active.active:hover {
+            color: white;
+        }
     </style>
 {% endblock %}
 
@@ -60,27 +105,33 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-10">
+                                <div class="col-12">
+                                    <p class="reference-type-label">{{ source_reference.reference_type }}</p>
                                     <h5 class="card-title">{{ source_reference.link_template | safe }}</h5>
-                                    <p class="card-text"><i
-                                            class="fa fa-folder-o"
-                                            aria-hidden="true"></i> {{ source_reference.reference_type }}
-                                    </p>
-                                    <p class="card-text"><i class="fa fa-users"
+                                    <p class="card-text"><i class="fa fa-calendar"
+                                                            aria-hidden="true"></i> {{ source_reference.year }} <span class="vertical-separator"></span>  <i class="fa fa-users"
                                                             aria-hidden="true"></i> {{ source_reference.authors }}
-                                    </p>
-                                    {#                                    <a href="#" class="btn btn-primary">Download</a>#}
-                                </div>
-                                <div class="col-2">
-                                    <p class="card-text">
-                                        <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
-                                                class="badge badge-primary">{{ source_reference.occurrences }}</span></a>
                                     </p>
                                 </div>
                             </div>
                         </div>
+                        <div class="card-footer">
+                            <p class="card-text">
+                                {% if source_reference.occurrences > 0 %}
+                                    <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
+                                            class="badge badge-info badge-occurrences">{{ source_reference.occurrences }} records</span>
+                                    </a>
+                                {% else %}
+                                    <span
+                                            class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
+                                {% endif %}
+                            </p>
+                        </div>
                     </div>
                 {% endfor %}
+            </div>
+            <div class="paginator-wrapper">
+                {% include 'paginator_template.html' %}
             </div>
         </div>
     </div>

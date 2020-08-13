@@ -376,12 +376,20 @@ class SourceReferenceDocument(SourceReference):
 
     def link_template(self):
         """Returns html template containing the reference data"""
-        return (
-            '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'
-            ' <a href="{media}{url}" '
-            'download>{source}</a>'.format(
+        href = ''
+        if self.source.doc_file:
+            href = '"{media}{url}" download'.format(
                 media=settings.MEDIA_URL,
                 url=self.source.doc_file,
+            )
+        elif self.source.doc_url:
+            href = '"{url}" target="_blank"'.format(
+                url=self.source.doc_url,
+            )
+        return (
+            '<i class="fa fa-file-pdf-o" aria-hidden="true"></i>'
+            ' <a href={href}>{source}</a>'.format(
+                href=href,
                 source=self.title
             )
         )
