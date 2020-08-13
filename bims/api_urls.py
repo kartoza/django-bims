@@ -25,8 +25,7 @@ from bims.api_views.taxon import (
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
-    CollectionDownloader,
-    ClusterCollection
+    CollectionDownloader
 )
 from bims.api_views.collector import CollectorList
 from bims.api_views.reference_category import ReferenceCategoryList
@@ -112,8 +111,6 @@ urlpatterns = [
         TaxonDetail.as_view()),
     url(r'^cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
-    url(r'^collection/cluster/$',
-        ClusterCollection.as_view()),
     url(r'^collection/download/$',
         CollectionDownloader.as_view()),
     url(r'^chemical-record/download/$',

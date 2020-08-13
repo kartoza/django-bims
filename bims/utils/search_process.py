@@ -81,8 +81,10 @@ def create_search_process_file(data, search_process,
                 str(json.dumps(data, sort_keys=True)).encode('utf-8')
             ).hexdigest()
 
-    folder = 'search_cluster'
+    folder = 'search_results'
     path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+    if not os.path.exists(path_folder):
+        os.mkdir(path_folder)
     path_file = os.path.join(path_folder, path_file)
     with open(path_file, 'wb') as status_file:
         status_file.write(bytes(json.dumps(data).encode('utf-8')))
