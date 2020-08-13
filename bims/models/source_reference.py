@@ -92,7 +92,9 @@ class SourceReference(PolymorphicModel):
 
     @property
     def occurrences(self):
-        from bims.models.biological_collection_record import BiologicalCollectionRecord
+        from bims.models.biological_collection_record import (
+            BiologicalCollectionRecord
+        )
         return BiologicalCollectionRecord.objects.filter(
             source_reference=self.id
         ).count()

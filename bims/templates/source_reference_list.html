@@ -58,7 +58,7 @@
             border-color: #dee2e6;
         }
         .page-link {
-            color: #757575;
+            color: #17a2b8;
             background-color: #fff;
         }
         .active.active:hover {
@@ -143,15 +143,37 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script>
+
+        function insertParam(key, value) {
+            key = encodeURIComponent(key);
+            value = encodeURIComponent(value);
+            // kvp looks like ['key1=value1', 'key2=value2', ...]
+            var kvp = document.location.search.substr(1).split('&');
+            let i = 0;
+            for (; i < kvp.length; i++) {
+                if (kvp[i].startsWith(key + '=')) {
+                    let pair = kvp[i].split('=');
+                    pair[1] = value;
+                    kvp[i] = pair.join('=');
+                    break;
+                }
+            }
+            if (i >= kvp.length) {
+                kvp[kvp.length] = [key, value].join('=');
+            }
+            // can return this or...
+            let params = kvp.join('&');
+            // reload page with new params
+            document.location.search = params;
+        }
+
         $('.custom-control-input').change(function (e) {
             let $parent = $(e.target).parent().parent();
             let filterName = $parent.data('filter');
             let checkedVals = $parent.find(':checkbox:checked').map(function () {
                 return this.value;
             }).get();
-            if (checkedVals.length > 0) {
-               window.location = `/source-references?${filterName}=${checkedVals}`;
-            }
+            insertParam(filterName, checkedVals);
         })
     </script>
 {% endblock %}

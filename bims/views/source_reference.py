@@ -7,10 +7,11 @@ from bims.models.source_reference import (
     SourceReferenceDocument
 )
 
+
 class SourceReferenceListView(ListView):
     model = SourceReference
     template_name = 'source_reference_list.html'
-    paginate_by = 20
+    paginate_by = 15
     source_reference_type = {
         'database': SourceReferenceDatabase,
         'bibliography': SourceReferenceBibliography,
@@ -44,8 +45,14 @@ class SourceReferenceListView(ListView):
                 if type_filter in self.source_reference_type:
                     or_condition |= Q(**{
                         'instance_of':
-                        self.source_reference_type[type_filter
-                    ]})
+                            self.source_reference_type[type_filter]
+                    })
+                else:
+                    for source_reference_type in self.source_reference_type:
+                        or_condition &= Q(**{
+                            'not_instance_of':
+                                self.source_reference_type[
+                                    source_reference_type]})
             qs = qs.filter(or_condition)
 
         qs = qs.filter(**filters)
@@ -53,7 +60,7 @@ class SourceReferenceListView(ListView):
         # Return filtered queryset
         return qs
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['type'] = [
             {
@@ -92,4 +99,3 @@ class SourceReferenceListView(ListView):
             }
         ]
         return context
-
