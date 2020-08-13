@@ -51,7 +51,7 @@
         <form action="{{ request.path }}" method="post" id="dashboard-management-form" novalidate enctype="multipart/form-data">
             {% csrf_token %}
             <div class="dashboard-title">
-                <h2>Dashboard management - Site dashboard</h2>
+                <h2>Dashboard management | Site dashboard</h2>
             </div>
             <div class="dashboard-body">
                 <div style="padding-right: 10px; padding-left: 10px;">
@@ -126,6 +126,8 @@
             </div>
         </form>
     </div>
+
+    {% include 'footer.html' %}
 
     <!-- Modal -->
     <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"

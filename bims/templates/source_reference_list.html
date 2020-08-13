@@ -1,0 +1,196 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Source References
+{% endblock %}
+
+{% block pre-head %}
+    <style>
+        .card {
+            margin-bottom: 10px;
+        }
+
+        .custom-control-label {
+            max-width: 80%;
+        }
+
+        .reference-filter-title {
+            margin-bottom: 0 !important;
+            font-weight: bold;
+        }
+        .badge-occurrences {
+            font-size: 9pt;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        .badge-zero {
+            background-color: #b8b8b8;
+        }
+        .reference-type-label {
+            text-transform: uppercase;
+            font-weight: 300;
+            font-size: 10pt;
+        }
+        .vertical-separator {
+            border-left: 1px solid #88929b;
+            width: 1px;
+            height: 100%;
+            padding-right: 10px;
+            margin-left: 5px;
+        }
+        .paginator-wrapper {
+            width: 100%;
+            padding-top: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .page-item.active .page-link {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+        .page-link:hover {
+            color: #313131;
+            text-decoration: none;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+        .page-link {
+            color: #17a2b8;
+            background-color: #fff;
+        }
+        .active.active:hover {
+            color: white;
+        }
+        .input-group-append:hover {
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <!-- Page Header -->
+    <div class="body-container container">
+        <div class="dashboard-title">
+            <h2>Explore Source References&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 0 %}s{% endif %}</h2>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-4 col-xs-12">
+                <div class="input-group md-form form-sm form-2 pl-0" style="margin-bottom: 10px;">
+                    <input class="form-control my-0 py-1 red-border"
+                           type="text" placeholder="Search"
+                           aria-label="Search" value="{{ search }}" id="search-input">
+                    <div class="input-group-append">
+                        <span class="input-group-text red lighten-3" id="basic-text1">
+                            <i class="fa fa-search text-grey" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="card">
+                    <article class="card-group-item">
+                        <header class="card-header">
+                            <h6 class="title reference-filter-title">Type</h6>
+                        </header>
+                        <div class="filter-content">
+                            <div class="card-body" data-filter="type">
+                                {% for source_type in type %}
+                                    <div class="custom-control custom-checkbox">
+                                        <span class="float-right badge badge-light round">{{ source_type.count }}</span>
+                                        <input type="checkbox"
+                                               value="{{ source_type.key }}"
+                                               class="custom-control-input"
+                                               id="{{ source_type.key }}"
+                                               {% if source_type.selected %}checked{% endif %}>
+                                        <label class="custom-control-label"
+                                               for="{{ source_type.key }}">{{ source_type.title }}</label>
+                                    </div> <!-- form-check.// -->
+                                {% endfor %}
+                            </div> <!-- card-body.// -->
+                        </div>
+                    </article> <!-- card-group-item.// -->
+                </div> <!-- card.// -->
+            </div>
+            <div class="col-lg-9 col-md-8 col-xs-12">
+                {% for source_reference in object_list %}
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <p class="reference-type-label">{{ source_reference.reference_type }}</p>
+                                    <h5 class="card-title">{{ source_reference.link_template | safe }}</h5>
+                                    <p class="card-text"><i class="fa fa-calendar"
+                                                            aria-hidden="true"></i> {{ source_reference.year }} <span class="vertical-separator"></span>  <i class="fa fa-users"
+                                                            aria-hidden="true"></i> {{ source_reference.authors }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <p class="card-text">
+                                {% if source_reference.occurrences > 0 %}
+                                    <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
+                                            class="badge badge-info badge-occurrences">{{ source_reference.occurrences }} records</span>
+                                    </a>
+                                {% else %}
+                                    <span
+                                            class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="paginator-wrapper">
+                {% include 'paginator_template.html' %}
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html' %}
+{% endblock %}
+
+{% block foot %}
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script>
+
+        function insertParam(key, value) {
+            key = encodeURIComponent(key);
+            value = encodeURIComponent(value);
+            // kvp looks like ['key1=value1', 'key2=value2', ...]
+            var kvp = document.location.search.substr(1).split('&');
+            let i = 0;
+            for (; i < kvp.length; i++) {
+                if (kvp[i].startsWith(key + '=')) {
+                    let pair = kvp[i].split('=');
+                    pair[1] = value;
+                    kvp[i] = pair.join('=');
+                    break;
+                }
+            }
+            if (i >= kvp.length) {
+                kvp[kvp.length] = [key, value].join('=');
+            }
+            // can return this or...
+            let params = kvp.join('&');
+            // reload page with new params
+            document.location.search = params;
+        }
+
+        $('.custom-control-input').change(function (e) {
+            let $parent = $(e.target).parent().parent();
+            let filterName = $parent.data('filter');
+            let checkedVals = $parent.find(':checkbox:checked').map(function () {
+                return this.value;
+            }).get();
+            insertParam(filterName, checkedVals);
+        })
+
+        $('.input-group-append').click(function (e) {
+            let value =  $('#search-input').val();
+            insertParam('q', value);
+        })
+    </script>
+{% endblock %}

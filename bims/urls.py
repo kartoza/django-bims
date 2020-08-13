@@ -70,6 +70,7 @@ from bims.views.site_visit import (
 from bims.views.taxa_management import TaxaManagementView
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
+from bims.views.source_reference import SourceReferenceListView
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -179,6 +180,8 @@ urlpatterns = [
         name='upload-collections'),
     url(r'^harvest-collections/$', HarvestCollectionView.as_view(),
         name='harvest-collections'),
+    url(r'^source-references/$', SourceReferenceListView.as_view(),
+        name='source-references'),
 ]
 
 # Api urls
