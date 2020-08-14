@@ -7,7 +7,7 @@ define([
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
-        searchUrl: "/api/search-v2/",
+        searchUrl: "/api/collection-search/",
         siteResultUrl: "/api/site-search-result/",
         taxaResultUrl: "/api/taxa-search-result/",
         viewCollection: [],

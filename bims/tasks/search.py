@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 @shared_task(name='bims.tasks.search_task', queue='update')
 def search_task(parameters, search_process_id, background=True):
     from bims.utils.celery import memcache_lock
-    from bims.api_views.search import Search
+    from bims.api_views.search import CollectionSearch
     from bims.models.search_process import (
         SearchProcess,
         SEARCH_PROCESSING,
@@ -30,7 +30,7 @@ def search_task(parameters, search_process_id, background=True):
             if acquired:
                 search_process.set_status(SEARCH_PROCESSING)
 
-                search = Search(parameters)
+                search = CollectionSearch(parameters)
                 search_results = search.get_summary_data()
                 if search_results:
                     search_process.set_search_raw_query(
@@ -48,7 +48,7 @@ def search_task(parameters, search_process_id, background=True):
             'Search %s is already being processed by another worker',
             search_process.process_id)
     else:
-        search = Search(parameters)
+        search = CollectionSearch(parameters)
         search_results = search.get_summary_data()
         if search_results:
             search_process.set_search_raw_query(

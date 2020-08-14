@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from bims.models.biological_collection_record import \
     BiologicalCollectionRecord
 from bims.models.taxonomy import Taxonomy
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 
 
 if sys.version_info[0] >= 3:
@@ -15,7 +15,7 @@ if sys.version_info[0] >= 3:
 def download_csv_site_taxa_records(request):
     taxon_id = request.GET.get('taxon')
     filters = request.GET
-    search = Search(filters)
+    search = CollectionSearch(filters)
     records = search.process_search()
 
     current_model = BiologicalCollectionRecord

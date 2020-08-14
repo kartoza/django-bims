@@ -4,7 +4,7 @@ from django.db.models import Count
 from django.contrib.auth import get_user_model
 from bims.models.survey import Survey
 from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 
 
 class SiteVisitListView(ListView):
@@ -27,7 +27,7 @@ class SiteVisitListView(ListView):
         qs = super(SiteVisitListView, self).get_queryset()
 
         if search_filters:
-            search = Search(search_filters)
+            search = CollectionSearch(search_filters)
             self.collection_results = search.process_search()
             qs = qs.filter(
                 id__in=self.collection_results.values('survey')

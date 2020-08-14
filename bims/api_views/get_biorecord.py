@@ -18,7 +18,7 @@ from bims.utils.search_process import (
     create_search_process_file
 )
 from bims.models.search_process import TAXON_SUMMARY
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 
 
 class GetBioRecordDetail(LoginRequiredMixin, APIView):
@@ -40,7 +40,7 @@ class GetBioRecords(APIView):
 
     def get(self, request):
         filters = request.GET
-        search = Search(filters)
+        search = CollectionSearch(filters)
 
         # Search collection
         collection_results = search.process_search()
@@ -62,7 +62,7 @@ class BioCollectionSummary(APIView):
 
     def get(self, request):
         filters = request.GET
-        search = Search(filters)
+        search = CollectionSearch(filters)
 
         search_process, created = get_or_create_search_process(
             TAXON_SUMMARY,

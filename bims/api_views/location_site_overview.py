@@ -3,7 +3,7 @@ from django.db.models import F, Value, Case, When, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import Http404
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
@@ -36,7 +36,7 @@ class LocationSiteOverviewData(object):
     def biodiversity_data(self):
         if not self.search_filters:
             return {}
-        search = Search(self.search_filters)
+        search = CollectionSearch(self.search_filters)
         collection_results = search.process_search()
 
         biodiversity_data = OrderedDict()

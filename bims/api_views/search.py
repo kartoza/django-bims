@@ -35,9 +35,9 @@ MAX_PAGINATED_SITES = 20
 MAX_PAGINATED_RECORDS = 50
 
 
-class SearchAPIView(BimsApiView):
+class CollectionSearchAPIView(BimsApiView):
     """
-    Search with django query
+    API View to search collection data
     """
 
     def get(self, request):
@@ -96,14 +96,14 @@ class SearchAPIView(BimsApiView):
             return Response(search_results)
 
 
-class Search(object):
+class CollectionSearch(object):
     location_sites_raw_query = ''
     collection_records = None
     filtered_taxa_records = None
 
     def __init__(self, parameters):
         self.parameters = parameters
-        super(Search, self).__init__()
+        super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):
         return self.parameters.get(field, default_value)
