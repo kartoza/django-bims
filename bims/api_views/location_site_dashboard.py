@@ -1,7 +1,7 @@
 from rest_framework.views import APIView, Response
 from django.db.models import Case, F, Count, Value, When
 from django.db.models.functions import ExtractYear
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 
 
 class ChartDataApiView(APIView):
@@ -47,7 +47,7 @@ class ChartDataApiView(APIView):
 
     def get(self, request):
         filters = request.GET.dict()
-        search = Search(filters)
+        search = CollectionSearch(filters)
         collection_results = search.process_search()
         chart_data = self.chart_data(collection_results)
         categories = self.categories(collection_results)

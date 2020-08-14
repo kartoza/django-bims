@@ -13,7 +13,7 @@ from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
 from bims.models.site_image import SiteImage
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 from bims.serializers.chemical_records_serializer import \
     ChemicalRecordsSerializer
 from sass.models import (
@@ -35,7 +35,7 @@ class SassDashboardView(TemplateView):
     def get_site_visit_taxon(self):
         filters = self.request.GET.dict()
         filters['validated'] = ''
-        search = Search(filters)
+        search = CollectionSearch(filters)
         collection_records = search.process_search()
         self.site_visit_taxa = SiteVisitTaxon.objects.filter(
             id__in=collection_records,

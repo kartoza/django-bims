@@ -15,7 +15,7 @@ from bims.serializers.bio_collection_serializer import (
     BioCollectionOneRowSerializer,
     BioCollectionGeojsonSerializer
 )
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 
 
 class GetCollectionAbstract(APIView):
@@ -199,7 +199,7 @@ class CollectionDownloader(GetCollectionAbstract):
 
     def get(self, request):
         filters = request.GET
-        search = Search(filters)
+        search = CollectionSearch(filters)
         file_type = request.GET.get('fileType', None)
         if not file_type:
             file_type = 'csv'

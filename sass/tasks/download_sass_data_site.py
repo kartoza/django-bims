@@ -6,7 +6,7 @@ from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Q, Value, CharField
 )
 from django.db.models.functions import Cast, Concat
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 from sass.models import SiteVisitTaxon
 from bims.models.location_context import LocationContext
 from sass.serializers.sass_data_serializer import SassDataSerializer
@@ -27,7 +27,7 @@ def download_sass_data_site_task(filename, filters, path_file):
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            search = Search(filters)
+            search = CollectionSearch(filters)
             context = {
                 'filters': filters
             }
@@ -76,7 +76,7 @@ def download_sass_summary_data_task(filename, filters, path_file):
     oid = random.randint(1, 101)
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            search = Search(filters)
+            search = CollectionSearch(filters)
             context = {
                 'filters': filters
             }

@@ -31,7 +31,7 @@ from bims.api_views.collector import CollectorList
 from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
-from bims.api_views.search import SearchAPIView
+from bims.api_views.search import CollectionSearchAPIView
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_collection_data import RejectCollectionData
 from bims.api_views.get_biorecord import (
@@ -115,8 +115,8 @@ urlpatterns = [
         CollectionDownloader.as_view()),
     url(r'^chemical-record/download/$',
         ChemicalRecordDownloader.as_view()),
-    url(r'^search-v2/$',
-        SearchAPIView.as_view(), name='search-api-version-2'),
+    url(r'^collection-search/$',
+        CollectionSearchAPIView.as_view(), name='collection-search'),
     url(r'^boundary/geojson$',
         BoundaryGeojson.as_view(), name='boundary-geojson'),
     url(r'^list-boundary/$',

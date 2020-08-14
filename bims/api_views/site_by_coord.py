@@ -4,7 +4,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from bims.models.location_site import LocationSite
-from bims.api_views.search import Search
+from bims.api_views.search import CollectionSearch
 
 
 class SiteByCoord(APIView):
@@ -42,7 +42,7 @@ class SiteByCoord(APIView):
             return Response('Invalid lat or lon format')
 
         if search_mode:
-            search = Search(request.GET.dict())
+            search = CollectionSearch(request.GET.dict())
             collection_results = search.process_search()
             site_ids = collection_results.filter(
                 site__geometry_point__distance_lte=(point, D(km=radius))
