@@ -1,4 +1,5 @@
 import csv
+import sys
 import logging
 from celery import shared_task
 from hashlib import sha256
@@ -8,6 +9,9 @@ from bims.models.boundary_type import BoundaryType
 from bims.models.boundary import Boundary
 
 logger = logging.getLogger(__name__)
+IN_CELERY_WORKER_PROCESS = (
+    sys.argv and sys.argv[0].endswith('celery') and 'worker' in sys.argv
+)
 
 
 @shared_task(name='bims.tasks.update_search_index', queue='update')
@@ -33,79 +37,95 @@ def update_cluster(ids=None):
                     break
 
 
+def process_download_data_to_csv(
+    path_file, request, send_email = False, user_id = None
+):
+    from django.contrib.auth import get_user_model
+    from bims.serializers.bio_collection_serializer import (
+        BioCollectionOneRowSerializer
+    )
+    from bims.api_views.search import CollectionSearch
+    from bims.models import BiologicalCollectionRecord
+    from bims.api_views.csv_download import send_csv_via_email
+
+    filters = request
+    site_results = None
+    search = CollectionSearch(filters)
+    collection_results = search.process_search()
+
+    if not collection_results and site_results:
+        site_ids = site_results.values_list('id', flat=True)
+        collection_results = BiologicalCollectionRecord.objects.filter(
+            site__id__in=site_ids
+        ).distinct()
+
+    serializer = BioCollectionOneRowSerializer(
+        collection_results,
+        many=True
+    )
+    rows = serializer.data
+    headers = serializer.context['header']
+
+    formatted_headers = []
+    # Rename headers
+    for header in headers:
+        if header == 'class_name':
+            header = 'class'
+        header = header.replace('_or_', '/')
+        if not header.isupper():
+            header = header.replace('_', ' ').capitalize()
+        if header.lower() == 'uuid':
+            header = header.upper()
+        formatted_headers.append(header)
+
+    with open(path_file, 'w') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
+        writer.writeheader()
+        writer.fieldnames = headers
+        for row in rows:
+            try:
+                writer.writerow(row)
+            except UnicodeEncodeError:
+                continue
+
+    if send_email and user_id:
+        UserModel = get_user_model()
+        try:
+            user = UserModel.objects.get(id=user_id)
+            send_csv_via_email(
+                user=user,
+                csv_file=path_file
+            )
+        except UserModel.DoesNotExist:
+            pass
+    return
+
+
 @shared_task(name='bims.tasks.download_data_to_csv', queue='update')
 def download_data_to_csv(
         path_file, request, send_email = False, user_id = None):
-    from django.contrib.auth import get_user_model
-    from bims.serializers.bio_collection_serializer import \
-        BioCollectionOneRowSerializer
     from bims.utils.celery import memcache_lock
-    from bims.models import BiologicalCollectionRecord
-    from bims.api_views.search import CollectionSearch
-    from bims.api_views.csv_download import send_csv_via_email
 
-    path_file_hexdigest = sha256(path_file.encode('utf-8')).hexdigest()
+    if IN_CELERY_WORKER_PROCESS:
+        path_file_hexdigest = sha256(path_file.encode('utf-8')).hexdigest()
+        lock_id = '{0}-lock-{1}'.format(
+                download_data_to_csv.name,
+                path_file_hexdigest
+        )
 
-    lock_id = '{0}-lock-{1}'.format(
-            download_data_to_csv.name,
-            path_file_hexdigest
-    )
-
-    oid = '{0}'.format(path_file_hexdigest)
-
-    with memcache_lock(lock_id, oid) as acquired:
-        if acquired:
-            filters = request
-            site_results = None
-            search = CollectionSearch(filters)
-            collection_results = search.process_search()
-
-            if not collection_results and site_results:
-                site_ids = site_results.values_list('id', flat=True)
-                collection_results = BiologicalCollectionRecord.objects.filter(
-                    site__id__in=site_ids
-                ).distinct()
-
-            serializer = BioCollectionOneRowSerializer(
-                collection_results,
-                many=True
-            )
-            rows = serializer.data
-            headers = serializer.context['header']
-
-            formatted_headers = []
-            # Rename headers
-            for header in headers:
-                if header == 'class_name':
-                    header = 'class'
-                header = header.replace('_or_', '/')
-                if not header.isupper():
-                    header = header.replace('_', ' ').capitalize()
-                if header.lower() == 'uuid':
-                    header = header.upper()
-                formatted_headers.append(header)
-
-            with open(path_file, 'w') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
-                writer.writeheader()
-                writer.fieldnames = headers
-                for row in rows:
-                    try:
-                        writer.writerow(row)
-                    except UnicodeEncodeError:
-                        continue
-
-            if send_email and user_id:
-                UserModel = get_user_model()
-                try:
-                    user = UserModel.objects.get(id=user_id)
-                    send_csv_via_email(
-                        user=user,
-                        csv_file=path_file
-                    )
-                except UserModel.DoesNotExist:
-                    pass
-            return
+        oid = '{0}'.format(path_file_hexdigest)
+        with memcache_lock(lock_id, oid) as acquired:
+            if acquired:
+                return process_download_data_to_csv(
+                    path_file, request, send_email, user_id
+                )
+        logger.info(
+            'Csv %s is already being processed by another worker',
+            path_file)
+    else:
+        return process_download_data_to_csv(
+            path_file, request, send_email, user_id
+        )
 
     logger.info(
             'Csv %s is already being processed by another worker',

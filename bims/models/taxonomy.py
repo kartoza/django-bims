@@ -307,6 +307,14 @@ class Taxonomy(models.Model):
             self.rank == TaxonomicRank.SUBSPECIES.name
         )
 
+    @property
+    def name(self):
+        if self.canonical_name:
+            return self.canonical_name
+        elif self.scientific_name:
+            return self.scientific_name
+        return '-'
+
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
 def taxonomy_pre_save_handler(sender, instance, **kwargs):

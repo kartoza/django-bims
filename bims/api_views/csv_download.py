@@ -19,7 +19,7 @@ class CsvDownload(APIView):
         if not request.user.is_authenticated:
             return HttpResponseForbidden('Not logged in')
 
-        # What to do here
+        # Get email and username of the user
         email = request.user.email
         username = request.user.username
 
