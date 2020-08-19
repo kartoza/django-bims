@@ -34,33 +34,6 @@
             font-weight: 300;
             font-size: 10pt;
         }
-        .vertical-separator {
-            border-left: 1px solid #88929b;
-            width: 1px;
-            height: 100%;
-            padding-right: 10px;
-            margin-left: 5px;
-        }
-        .paginator-wrapper {
-            width: 100%;
-            padding-top: 40px;
-            display: flex;
-            justify-content: center;
-        }
-        .page-item.active .page-link {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-        }
-        .page-link:hover {
-            color: #313131;
-            text-decoration: none;
-            background-color: #e9ecef;
-            border-color: #dee2e6;
-        }
-        .page-link {
-            color: #17a2b8;
-            background-color: #fff;
-        }
         .active.active:hover {
             color: white;
         }
@@ -74,7 +47,7 @@
     <!-- Page Header -->
     <div class="body-container container">
         <div class="dashboard-title">
-            <h2>Explore Source References&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 0 %}s{% endif %}</h2>
+            <h2>Explore Source References&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
         </div>
         <div class="row">
             <div class="col-lg-3 col-md-4 col-xs-12">
