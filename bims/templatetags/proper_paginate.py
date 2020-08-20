@@ -8,7 +8,7 @@ register = template.Library()
 
 
 @register.filter(name='proper_paginate')
-def proper_paginate(paginator, current_page, neighbors=10):
+def proper_paginate(paginator, current_page, neighbors=3):
     if paginator.num_pages > 2 * neighbors:
         start_index = max(1, current_page - neighbors)
         end_index = min(paginator.num_pages, current_page + neighbors)
