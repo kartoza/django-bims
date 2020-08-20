@@ -399,6 +399,10 @@ class BiologicalCollectionRecord(AbstractValidation):
                 )[0]
             self.survey = survey
 
+        if not self.survey.owner and self.owner:
+            self.survey.owner = self.owner
+            self.survey.save()
+
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 
     def get_children(self):
