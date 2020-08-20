@@ -3,6 +3,7 @@
 {% block subtitle %}
     Site visit list
 {% endblock %}
+{% load humanize %}
 
 {% block head %}
 
@@ -39,7 +40,7 @@
 {% block body_content %}
     <div class="body-form container">
         <div class="dashboard-title">
-            <h2>Site visits&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
+            <h2>Site visits&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count|intcomma }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
 {#            <div class="dashboard-close" data-destination="/map"><i#}
 {#                    class="fa fa-times" aria-hidden="true"></i></div>#}
         </div>
@@ -52,19 +53,19 @@
                         <tr class="metric">
                             <td>Site visits</td>
                             <td><span
-                                    class="counter">{{ page_obj.paginator.count }}</span>
+                                    class="counter">{{ page_obj.paginator.count|intcomma }}</span>
                             </td>
                         </tr>
                         <tr class="metric">
                             <td>Sites</td>
                             <td><span
-                                    class="counter">{{ total_sites }}</span>
+                                    class="counter">{{ total_sites|intcomma }}</span>
                             </td>
                         </tr>
                         <tr class="metric">
                             <td>Records</td>
                             <td><span
-                                    class="counter">{{ total_records }}</span>
+                                    class="counter">{{ total_records|intcomma }}</span>
                             </td>
                         </tr>
                     </table>
@@ -85,7 +86,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th scope="col">Site code/name</th>
+                        <th scope="col" style="width:200px">Site code/name</th>
                         <th scope="col">Collection date</th>
                         <th scope="col">Owner</th>
                         <th scope="col">Collector</th>
@@ -96,10 +97,10 @@
                     <tbody>
                     {% for site_visit in survey_list %}
                         <tr>
-                            <td>{{ site_visit.site.site_code }}</td>
+                            <td>{{ site_visit.site.location_site_identifier }}</td>
                             <td>{{ site_visit.date }}</td>
-                            <td>{{ site_visit.owner.get_full_name }}</td>
-                            <td>{{ site_visit.collector_user.get_full_name }}</td>
+                            <td><a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a></td>
+                            <td><a href="/profile/{{ site_visit.collector_user.username }}/">{{ site_visit.collector_user.get_full_name }}</a></td>
                             <td>{{ site_visit.total }}</td>
                             <td>
                                 <a href="/site-visit/detail/{{ site_visit.id }}/"
