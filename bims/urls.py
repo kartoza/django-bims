@@ -179,13 +179,13 @@ urlpatterns = [
         name='harvest-collections'),
     url(r'^source-references/$', SourceReferenceListView.as_view(),
         name='source-references'),
-    # url(r'^profile/$',
-    #     login_required(lambda request: RedirectView.as_view(
-    #         url=reverse_lazy('profile_detail', kwargs={
-    #             'username': request.user.username
-    #         }), permanent=False)(request)), name='user-profile'),
     url(r'^profile/(?P<slug>\w+)/$', ProfileView.as_view(),
-        name='profile')
+        name='profile'),
+    url(r'^profile/$',
+        login_required(lambda request: RedirectView.as_view(
+            url=reverse_lazy('profile', kwargs={
+                'slug': request.user.username
+            }), permanent=False)(request)), name='user-profile'),
 ]
 
 # Api urls

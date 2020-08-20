@@ -4,6 +4,7 @@ from django.db.models import Q, Count
 from bims.models.survey import Survey
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.source_reference import SourceReference
 
 
 class ProfileView(DetailView):
@@ -50,5 +51,17 @@ class ProfileView(DetailView):
         context['total_sites'] = sites.count()
 
         # -- Source references
+        source_reference = (
+            SourceReference.objects.filter(
+                Q(sourcereferencebibliography__source__authors__user=
+                  self.object) |
+                Q(sourcereferencebibliography__document__bimsdocument__authors=
+                  self.object) |
+                Q(sourcereferencedocument__source__bimsdocument__authors=
+                  self.object) |
+                Q(sourcereferencedocument__source__owner=self.object))
+        )
+        context['source_references'] = source_reference[0:10]
+        context['source_references_total'] = source_reference.count()
 
         return context

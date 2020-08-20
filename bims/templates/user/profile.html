@@ -21,11 +21,26 @@
             padding-bottom: 2px;
             width: 100%;
         }
+        .badge-occurrences {
+            font-size: 9pt;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        .badge-zero {
+            background-color: #b8b8b8;
+        }
+        .reference-type-label {
+            text-transform: uppercase;
+            font-weight: 300;
+            font-size: 10pt;
+        }
     </style>
 {% endblock %}
 
 {% block body_content %}
-    <div class="container body-container">
+    <div class="container body-container" style="min-height: 50em">
         <div class="row">
             <div class="col-lg-4 col-md-4 col-xs-12">
                 <h2 style="font-weight: bold">{{ object.first_name }} {{ object.last_name }}</h2>
@@ -44,6 +59,7 @@
                 {% if request.user == object %}
                     <button class="btn btn-outline-secondary edit-button">Edit Profile</button>
                 {% endif %}
+                <div style="height: 20px"></div>
             </div>
             <div class="col-lg-8 col-md-8 col-xs-12">
                 <ul class="nav nav-tabs"  role="tablist">
@@ -80,6 +96,10 @@
                     </div>
                     <div class="tab-pane fade" id="site-visits" role="tabpanel"
                          aria-labelledby="site-visits-tab">
+                        <h5 style="font-weight: bold">Recent Site Visits</h5>
+                        {% if not site_visits %}
+                            No site visits
+                        {% endif %}
                         <div class="row">
                         {% for site_visit in site_visits %}
                             <div class="col-md-6 col-xs-12">
@@ -101,14 +121,58 @@
                             </div>
                         {% endfor %}
                         </div>
+                        {% if total_site_visits > 10 %}
                         <div class="row">
                             <div class="col-12">
                                 <a href="/site-visit/list/?collectors=[{{ object.id }}]" class="btn btn-primary btn-block">See More Site Visits</a>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     <div class="tab-pane fade" id="references" role="tabpanel"
-                         aria-labelledby="references-tab">...
+                         aria-labelledby="references-tab">
+                        <h5 style="font-weight: bold">Uploaded Source References</h5>
+                        {% if not source_references %}
+                            No source references
+                        {% endif %}
+                        {% for source_reference in source_references %}
+                            <div class="card" style="margin-bottom: 10px;">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <p class="reference-type-label">{{ source_reference.reference_type }}</p>
+                                            <h5 class="card-title">{{ source_reference.link_template | safe }}</h5>
+                                            <p class="card-text"><i
+                                                    class="fa fa-calendar"
+                                                    aria-hidden="true"></i> {{ source_reference.year }}
+                                                <span class="vertical-separator"></span>
+                                                <i class="fa fa-users"
+                                                   aria-hidden="true"></i> {{ source_reference.authors }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <p class="card-text">
+                                        {% if source_reference.occurrences > 0 %}
+                                            <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
+                                                    class="badge badge-info badge-occurrences">{{ source_reference.occurrences }} records</span>
+                                            </a>
+                                        {% else %}
+                                            <span
+                                                    class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        {% if source_references_total > 10 %}
+                        <div class="row">
+                            <div class="col-12">
+                                <a href="/source-references/?collectors=[{{ object.id }}]" class="btn btn-primary btn-block">See More References</a>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
