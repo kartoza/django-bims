@@ -53,11 +53,11 @@
                 <hr/>
 
                 <p><i class="fa fa-building-o text-muted"></i> {{ object.organization }}</p>
-                <p><i class="fa fa-user-o text-muted"></i> {{ object.bims_profile.role | capfirst }}</p>
+                <p><i class="fa fa-user-o text-muted"></i> {{ object.bims_profile.get_role_display }}</p>
                 <p><i class="fa fa-envelope-o text-muted"></i> <a href="mailto:{{ object.email }}">{{ object.email }}</a></p>
 
                 {% if request.user == object %}
-                    <button class="btn btn-outline-secondary edit-button">Edit Profile</button>
+                    <button type="button" class="btn btn-outline-secondary edit-button" data-toggle="modal" data-target="#formModal" data-firstname="{{ object.first_name }}">Edit Profile</button>
                     <div style="height: 10px;"></div>
                     <a href="/account/password/change/" class="btn btn-outline-secondary edit-button">Set/Change Password</a>
                 {% endif %}
@@ -180,6 +180,54 @@
 
 
                 </div>
+            </div>
+        </div>
+    <div class="modal fade" id="formModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form method="post" action="{% url 'profile' object.username %}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Edit Profile</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="first-name" class="col-form-label">First Name:</label>
+                            <input type="text" class="form-control"
+                                   id="first-name" name="first-name" value="{{ object.first_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="last-name" class="col-form-label">Last Name:</label>
+                            <input type="text" class="form-control"
+                                   id="last-name" name="last-name" value="{{ object.last_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="role" class="col-form-label">Role:</label>
+                            <select name="role" class="form-control" id="role">
+                                <option value="water_resource_manager" {% if object.bims_profile.role == "water_resource_manager"  %} selected {% endif %}>Water Resource Manager</option>
+                                <option value="researcher" {% if object.bims_profile.role == "researcher"  %} selected {% endif %}>Researcher</option>
+                                <option value="consultant" {% if object.bims_profile.role == "consultant"  %} selected {% endif %}>Consultant</option>
+                                <option value="conservation_planner {% if object.bims_profile.role == "conservation_planner"  %} selected {% endif %}">Conservation Planner</option>
+                                <option value="citizen" {% if object.bims_profile.role == "citizen"  %} selected {% endif %}>Citizen</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="organization" class="col-form-label">Organization:</label>
+                            <input type="text" class="form-control"
+                                   id="organization" name="organization" value="{{ object.organization }}">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                        Update
+                    </button>
+                </div>
+                </form>
             </div>
         </div>
     </div>
