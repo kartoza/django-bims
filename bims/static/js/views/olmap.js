@@ -274,7 +274,6 @@ define([
                                     siteId = features[0]['id'].split('.')[1];
                                 }
                                 Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
-                                Shared.Dispatcher.trigger('siteDetail:show', siteId);
                             } else {
                                 self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
                             }
