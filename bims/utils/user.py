@@ -72,7 +72,7 @@ def create_users_from_string(user_string):
     list_user = []
     and_username = ''
     for user_split_1 in user_string.split(','):
-        for user_name in user_split_1.split('and'):
+        for user_name in user_split_1.split(' and '):
             if '&' in user_name:
                 and_username = user_name
                 continue

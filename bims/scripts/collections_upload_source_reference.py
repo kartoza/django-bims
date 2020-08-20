@@ -7,7 +7,8 @@ from bims.utils.user import create_users_from_string
 from bims.models import (
     DatabaseRecord,
     SourceReference,
-    SourceReferenceBibliography
+    SourceReferenceBibliography,
+    BimsDocument
 )
 
 
@@ -100,6 +101,16 @@ def process_source_reference(
             Document,
             document_fields
         )
+        try:
+            bims_document, _ = BimsDocument.objects.get_or_create(
+                document=document
+            )
+        except BimsDocument.MultipleObjectsReturned:
+            bims_document = BimsDocument.objects.filter(
+                document=document
+            )[0]
+        for author in authors:
+            bims_document.authors.add(author)
         if document.title != document_title:
             document.title = document_title
             document.save()
