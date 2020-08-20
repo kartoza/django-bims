@@ -1,0 +1,226 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load humanize %}
+
+{% block subtitle %}
+    {{ object.first_name }}
+{% endblock %}
+
+{% block pre-head %}
+    <style>
+        hr {
+            max-width: 100% !important;
+            border-width: 1px !important;
+            border-color: #bcbcbc !important;
+        }
+        .edit-button {
+            padding-left: 30px;
+            padding-right: 30px;
+            font-size: 14px !important;
+            padding-top: 4px;
+            padding-bottom: 2px;
+            width: 100%;
+        }
+        .badge-occurrences {
+            font-size: 9pt;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        .badge-zero {
+            background-color: #b8b8b8;
+        }
+        .reference-type-label {
+            text-transform: uppercase;
+            font-weight: 300;
+            font-size: 10pt;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <div class="container body-container" style="min-height: 50em">
+        <div class="row">
+            <div class="col-lg-4 col-md-4 col-xs-12">
+                <h2 style="font-weight: bold">{{ object.first_name }} {{ object.last_name }}</h2>
+                <h5 class="text-muted">{{ object.username }}</h5>
+                {% if object.is_active %}
+                    <span class="badge badge-success">Active</span>
+                {% else %}
+                    <span class="badge badge-secondary">Inactive</span>
+                {% endif %}
+                <hr/>
+
+                <p><i class="fa fa-building-o text-muted"></i> {{ object.organization }}</p>
+                <p><i class="fa fa-user-o text-muted"></i> {{ object.bims_profile.role | capfirst }}</p>
+                <p><i class="fa fa-envelope-o text-muted"></i> <a href="mailto:{{ object.email }}">{{ object.email }}</a></p>
+
+                {% if request.user == object %}
+                    <button class="btn btn-outline-secondary edit-button">Edit Profile</button>
+                    <div style="height: 10px;"></div>
+                    <a href="/account/password/change/" class="btn btn-outline-secondary edit-button">Set/Change Password</a>
+                {% endif %}
+                <div style="height: 20px"></div>
+            </div>
+            <div class="col-lg-8 col-md-8 col-xs-12">
+                <ul class="nav nav-tabs"  role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" role="tab" id="overview-tab" href="#overview">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" role="tab" id="site-visits-tab" href="#site-visits">Site Visits</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" role="tab" id="references-tab" href="#references">Source References</a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="myTabContent" style="margin-top: 20px;">
+                    <div class="tab-pane fade show active" id="overview"
+                         role="tabpanel" aria-labelledby="overview-tab">
+                         <div class="chart">
+                             <h5 style="font-weight: bold">User Contributions</h5>
+                             <canvas id="contribution-chart"></canvas>
+                         </div>
+                        <div style="margin-top: 10px;">
+                            <h5 style="font-weight: bold">Total Site Visits</h5>
+                            {{ total_site_visits | intcomma }}
+                        </div>
+                        <hr/>
+                        <div>
+                            <h5 style="font-weight: bold">Total Sites</h5>
+                            {{ total_sites | intcomma }}
+                        </div><hr/>
+                        <div>
+                            <h5 style="font-weight: bold">Total Collection Records</h5>
+                            {{ total_records | intcomma }}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="site-visits" role="tabpanel"
+                         aria-labelledby="site-visits-tab">
+                        <h5 style="font-weight: bold">Recent Site Visits</h5>
+                        {% if not site_visits %}
+                            No site visits
+                        {% endif %}
+                        <div class="row">
+                        {% for site_visit in site_visits %}
+                            <div class="col-md-6 col-xs-12">
+                                <div class="card border-dark mb-3">
+                                    <div class="card-header">
+                                        {{ site_visit.site.location_site_identifier }}
+                                    </div>
+                                    <div class="card-body text-dark">
+                                        <p><i class="fa fa-calendar" aria-hidden="true"></i> {{ site_visit.date }}</p>
+                                        <p style="margin-bottom: 0"><i class="fa fa-list-alt" aria-hidden="true"></i> {{ site_visit.biological_collection_record.all.count }}</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        {% if request.user == object %}
+                                            <a href="/site-visit/update/{{ site_visit.id }}/" class="btn btn-outline-secondary">Edit</a>
+                                        {% endif %}
+                                        <a href="/site-visit/detail/{{ site_visit.id }}/" class="btn btn-outline-secondary">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                        {% if total_site_visits > 10 %}
+                        <div class="row">
+                            <div class="col-12">
+                                <a href="/site-visit/list/?collectors=[{{ object.id }}]" class="btn btn-primary btn-block">See More Site Visits</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="tab-pane fade" id="references" role="tabpanel"
+                         aria-labelledby="references-tab">
+                        <h5 style="font-weight: bold">Uploaded Source References</h5>
+                        {% if not source_references %}
+                            No source references
+                        {% endif %}
+                        {% for source_reference in source_references %}
+                            <div class="card" style="margin-bottom: 10px;">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <p class="reference-type-label">{{ source_reference.reference_type }}</p>
+                                            <h5 class="card-title">{{ source_reference.link_template | safe }}</h5>
+                                            <p class="card-text"><i
+                                                    class="fa fa-calendar"
+                                                    aria-hidden="true"></i> {{ source_reference.year }}
+                                                <span class="vertical-separator"></span>
+                                                <i class="fa fa-users"
+                                                   aria-hidden="true"></i> {{ source_reference.authors }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <p class="card-text">
+                                        {% if source_reference.occurrences > 0 %}
+                                            <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
+                                                    class="badge badge-info badge-occurrences">{{ source_reference.occurrences }} records</span>
+                                            </a>
+                                        {% else %}
+                                            <span
+                                                    class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        {% if source_references_total > 10 %}
+                        <div class="row">
+                            <div class="col-12">
+                                <a href="/source-references/?collectors=[{{ object.id }}]" class="btn btn-primary btn-block">See More References</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.html' %}
+{% endblock %}
+
+{% block foot %}
+
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script>
+        $(function (){
+            let options =  {
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                },
+                elements: {
+                    point:{
+                        radius: 0
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                    }]
+                }
+            };
+            let labels = {{ contributions_date | safe }};
+            let dataset = {{ contributions_value }};
+            let data = {"labels":labels,"datasets":[{"label":"Contributions","data":dataset,"fill":false,"borderColor":"rgb(75, 192, 192)","lineTension":0.1}]};
+            let ctx = document.getElementById('contribution-chart');
+            let lineChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: options
+            });
+        });
+    </script>
+{% endblock %}

@@ -317,3 +317,39 @@ h6 {
     font-weight: lighter;
     font-size: 11pt;
 }
+
+.paginator-wrapper {
+    width: 100%;
+    padding-top: 40px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+@media (max-width: 450px) {
+    .paginator-wrapper {
+        font-size: 7pt;
+    }
+}
+
+.page-item.active .page-link {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+.page-link:hover {
+    color: #313131;
+    text-decoration: none;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+.page-link {
+    color: #17a2b8;
+    background-color: #fff;
+}
+.vertical-separator {
+    border-left: 1px solid #88929b;
+    width: 1px;
+    height: 100%;
+    padding-right: 10px;
+    margin-left: 5px;
+}

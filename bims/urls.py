@@ -71,15 +71,12 @@ from bims.views.taxa_management import TaxaManagementView
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
 from bims.views.source_reference import SourceReferenceListView
+from bims.views.profile import ProfileView
+
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
     url(r'^map/$', MapPageView.as_view(), name='map-page'),
-    url(r'^profile/$',
-        login_required(lambda request: RedirectView.as_view(
-            url=reverse_lazy('profile_detail', kwargs={
-                'username': request.user.username
-            }), permanent=False)(request)), name='user-profile'),
     url(r'^upload/$', CsvUploadView.as_view(),
         name='csv-upload'),
     url(r'^upload-taxa/$', TaxaUploadView.as_view(),
@@ -182,6 +179,13 @@ urlpatterns = [
         name='harvest-collections'),
     url(r'^source-references/$', SourceReferenceListView.as_view(),
         name='source-references'),
+    url(r'^profile/(?P<slug>\w+)/$', ProfileView.as_view(),
+        name='profile'),
+    url(r'^profile/$',
+        login_required(lambda request: RedirectView.as_view(
+            url=reverse_lazy('profile', kwargs={
+                'slug': request.user.username
+            }), permanent=False)(request)), name='user-profile'),
 ]
 
 # Api urls

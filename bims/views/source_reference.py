@@ -30,6 +30,11 @@ class SourceReferenceListView(ListView):
         # -- Search query
         self.search_query = self.request.GET.get('q', '')
 
+        # -- Collectors
+        self.collectors = self.request.GET.get('collectors', None)
+        if self.collectors:
+            self.collectors = self.collectors.split(',')
+
         return super(SourceReferenceListView, self).get(
             request, *args, **kwargs)
 
@@ -40,6 +45,17 @@ class SourceReferenceListView(ListView):
         filters = dict()
         # Base queryset
         qs = super(SourceReferenceListView, self).get_queryset()
+
+        if self.collectors:
+            qs = qs.filter(
+                Q(sourcereferencebibliography__source__authors__user__in=
+                  self.collectors) |
+                Q(sourcereferencebibliography__document__bimsdocument__authors__in=  # noqa
+                  self.collectors) |
+                Q(sourcereferencedocument__source__bimsdocument__authors__in=
+                  self.collectors) |
+                Q(sourcereferencedocument__source__owner__in=self.collectors)
+            )
 
         if self.type_filter:
             or_condition = Q()
@@ -77,10 +93,11 @@ class SourceReferenceListView(ListView):
 
     def get_context_data(self, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
+        data = self.get_queryset()
         context['type'] = [
             {
                 'title': 'Unpublished',
-                'count': SourceReference.objects.exclude(
+                'count': data.exclude(
                     Q(instance_of=SourceReferenceDatabase) |
                     Q(instance_of=SourceReferenceDocument) |
                     Q(instance_of=SourceReferenceBibliography)
@@ -90,7 +107,7 @@ class SourceReferenceListView(ListView):
             },
             {
                 'title': 'Database',
-                'count': SourceReference.objects.instance_of(
+                'count': data.instance_of(
                     SourceReferenceDatabase
                 ).count(),
                 'key': 'database',
@@ -98,7 +115,7 @@ class SourceReferenceListView(ListView):
             },
             {
                 'title': 'Published report or thesis',
-                'count': SourceReference.objects.instance_of(
+                'count': data.instance_of(
                     SourceReferenceDocument
                 ).count(),
                 'key': 'document',
@@ -106,7 +123,7 @@ class SourceReferenceListView(ListView):
             },
             {
                 'title': 'Peer-reviewed scientific article',
-                'count': SourceReference.objects.instance_of(
+                'count': data.instance_of(
                     SourceReferenceBibliography
                 ).count(),
                 'key': 'bibliography',
