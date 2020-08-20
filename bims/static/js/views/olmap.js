@@ -224,7 +224,17 @@ define([
                         'layerSource': layerSource
                     },
                     success: function (data) {
-                        let objectData = JSON.parse(data);
+                        let objectData = {};
+                        if (data.constructor === Object) {
+                            objectData = data;
+                        } else {
+                            try {
+                                objectData = JSON.parse(data);
+                            } catch (e) {
+                                console.log(e)
+                                return
+                            }
+                        }
                         let features = objectData['features'];
                         if (features.length === 0) {
                             self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
@@ -240,7 +250,12 @@ define([
                             // Check if the feature is a single location site point
                             if (features[0]['id'].includes('location_site_view')) {
                                 // Get location site id
-                                const siteId = features[0]['id'].split('.')[1];
+                                let siteId = '';
+                                if (features[0]['id'].indexOf('fid') > -1) {
+                                    siteId = features[0]['properties']['site_id'];
+                                } else {
+                                    siteId = features[0]['id'].split('.')[1];
+                                }
                                 Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
                             }
                             let initialRadius = 5;
@@ -251,7 +266,15 @@ define([
                             // Check if the feature is single location site marker
                             if (features[0]['id'].includes('location_site_view')) {
                                 // Get location site id
-                                Shared.Dispatcher.trigger('siteDetail:show', features[0]['id'].split('.')[1], '');
+                                 // Get location site id
+                                let siteId = '';
+                                if (features[0]['id'].indexOf('fid') > -1) {
+                                    siteId = features[0]['properties']['site_id'];
+                                } else {
+                                    siteId = features[0]['id'].split('.')[1];
+                                }
+                                Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
+                                Shared.Dispatcher.trigger('siteDetail:show', siteId);
                             } else {
                                 self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
                             }
