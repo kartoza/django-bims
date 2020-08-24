@@ -98,9 +98,8 @@ def send_csv_via_email(user, csv_file):
     if not os.path.exists(zip_folder):
         os.mkdir(zip_folder)
     zip_file = os.path.join(zip_folder, 'OccurrenceData.zip')
-    zip_obj = zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED)
-    zip_obj.write(csv_file, 'OccurrenceData.csv')
-    msg.attach_file(zip_file, 'application/zip')
+    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.write(csv_file, 'OccurrenceData.csv')
+    msg.attach_file(zip_file, 'application/octet-stream')
     msg.content_subtype = 'html'
-    zip_obj.close()
     msg.send()
