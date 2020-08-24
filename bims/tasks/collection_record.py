@@ -44,14 +44,12 @@ def download_data_to_csv(
     from bims.api_views.search import Search
     from bims.api_views.csv_download import send_csv_via_email
 
-    path_file_hexdigest = md5(path_file).hexdigest()
-
     lock_id = '{0}-lock-{1}'.format(
             download_data_to_csv.name,
-            path_file_hexdigest
+            path_file
     )
 
-    oid = '{0}'.format(path_file_hexdigest)
+    oid = '{0}'.format(path_file)
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:

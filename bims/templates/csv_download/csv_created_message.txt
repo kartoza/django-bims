@@ -1,4 +1,6 @@
 {% load i18n %}
 You have received the following notice from {{ current_site }}:
 
+<p>
 {% trans "Your requested csv file has been compiled and is now ready, please find the attached file." %}
+</p>
