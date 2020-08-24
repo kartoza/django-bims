@@ -2,7 +2,6 @@ import csv
 import sys
 import logging
 from celery import shared_task
-from hashlib import sha256
 from django.core.management import call_command
 
 from bims.models.boundary_type import BoundaryType
@@ -107,13 +106,12 @@ def download_data_to_csv(
     from bims.utils.celery import memcache_lock
 
     if IN_CELERY_WORKER_PROCESS:
-        path_file_hexdigest = sha256(path_file.encode('utf-8')).hexdigest()
         lock_id = '{0}-lock-{1}'.format(
                 download_data_to_csv.name,
-                path_file_hexdigest
+                path_file
         )
 
-        oid = '{0}'.format(path_file_hexdigest)
+        oid = '{0}'.format(path_file)
         with memcache_lock(lock_id, oid) as acquired:
             if acquired:
                 return process_download_data_to_csv(
