@@ -294,7 +294,7 @@ def fetch_all_species_from_gbif(
     rank_key = None
     if taxonomic_rank:
         rank_key = '{}Key'.format(taxonomic_rank.lower())
-    if 'nubKey' in species_data or rank_key:
+    if 'nubKey' in species_data or rank_key and taxonomic_rank:
         if gbif_key:
             if isinstance(gbif_key, str):
                 gbif_key = int(gbif_key)
@@ -322,7 +322,7 @@ def fetch_all_species_from_gbif(
                         species_data['oldKey'] = old_key
 
     # Check if there is accepted key
-    if 'acceptedKey' in species_data:
+    if 'acceptedKey' in species_data and taxonomic_rank:
         new_species_data = get_species(species_data['acceptedKey'])
         if new_species_data['rank'].upper() == taxonomic_rank.upper():
             species_data = new_species_data
