@@ -858,7 +858,8 @@ class LocationContextFilterGroupOrderAdmin(admin.ModelAdmin):
         'link_to_group',
         'link_to_filter',
         'group_display_order',
-        'filter_display_order'
+        'filter_display_order',
+        'show_in_dashboard'
     )
 
     def link_to_group(self, obj):

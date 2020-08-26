@@ -2567,31 +2567,6 @@ div:hover::-webkit-scrollbar {
     margin-right: -1px;
 }
 
-#species-ssdd-records-sites .col-6 {
-    padding: 0.25rem;
-    border: 1px solid #d3d4d1;
-    padding-left: 0.5rem;
-    font-size: 12px;
-}
-
-#species-ssdd-records-sites .col-12.sub-title {
-    padding: 0.25rem;
-    border: 1px solid #d3d4d1;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-#species-ssdd-records-sites .title_column {
-    font-weight: 700;
-}
-
-#species-ssdd-records-sites .col-6 {
-    padding: 0.25rem;
-    border: 1px solid #d3d4d1;
-    padding-left: 0.5rem;
-    font-size: 12px;
-}
-
 .occurrences-table-view .col-6.sub-title {
     padding: 0.25rem;
     border: 1px solid #d3d4d1;

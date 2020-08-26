@@ -1014,48 +1014,17 @@ define([
             this.createEndemismOccurrenceTable(data);
         },
         renderSingleSiteDetails: function (data) {
-            let siteDetailsWrapper = $('#species-ssdd-overview');
-
-            let overview = siteDetailsWrapper.find('#overview');
-            let orderedOverview = {};
-            orderedOverview['FBIS Site Code'] = data['site_details']['overview']['FBIS Site Code'];
-            orderedOverview['Original Site Code'] = data['site_details']['overview']['Original Site Code'];
-            orderedOverview['Site coordinates'] = data['site_details']['overview']['Site coordinates'];
-            orderedOverview['Site description'] = data['site_details']['overview']['Site description'];
-            overview.html(this.renderTableFromTitlesValuesLists(orderedOverview));
-
-            let river_and_geomorphology = siteDetailsWrapper.find('#river_and_geomorphological');
-            river_and_geomorphology.html(this.renderTableFromTitlesValuesLists(data['site_details']['river_and_geomorphological']));
-
-            let catchments = siteDetailsWrapper.find('#catchments');
-            let catchmentsData = data['site_details']['catchments'];
-            let orderedCatchments = {};
-            orderedCatchments['Primary'] = catchmentsData['Primary'];
-            orderedCatchments['Secondary'] = catchmentsData['Secondary'];
-            orderedCatchments['Tertiary'] = catchmentsData['Tertiary'];
-            orderedCatchments['Quaternary'] = catchmentsData['Quaternary'];
-            orderedCatchments['Quinary'] = catchmentsData['Quinary'];
-            catchments.html(this.renderTableFromTitlesValuesLists(orderedCatchments));
-
-            let sub_water_management_areas = siteDetailsWrapper.find('#sub_water_management_areas');
-            let ordered_management_areas = {};
-            ordered_management_areas['Water Management Area'] = data['site_details']['sub_water_management_areas']['Water Management Areas'];
-            ordered_management_areas['Sub Water Management Area'] = data['site_details']['sub_water_management_areas']['Sub Water Management Areas'];
-            ordered_management_areas['River Management Unit'] = data['site_details']['sub_water_management_areas']['River Management Unit'];
-            sub_water_management_areas.html(this.renderTableFromTitlesValuesLists(ordered_management_areas));
-
-            let sa_ecoregions = siteDetailsWrapper.find('#sa-ecoregions');
-            let orderedEcoregions = {};
-            orderedEcoregions['SA Ecoregion Level 1'] = data['site_details']['sa_ecoregions']['SA Ecoregion Level 1'];
-            orderedEcoregions['SA Ecoregion Level 2'] = data['site_details']['sa_ecoregions']['SA Ecoregion Level 2'];
-            orderedEcoregions['Freshwater Ecoregion'] = data['site_details']['sa_ecoregions']['Freshwater Ecoregion'];
-            orderedEcoregions['Province'] = data['site_details']['sa_ecoregions']['Province'];
-            sa_ecoregions.html(this.renderTableFromTitlesValuesLists(orderedEcoregions));
-
-            let recordSitesWrapper = $('#species-ssdd-records-sites');
-            let recordSitesSub = recordSitesWrapper.find('#records-sites');
-            recordSitesSub.html(this.renderTableFromTitlesValuesLists(data['site_details']['records_and_sites']));
-
+            let siteDetailsWrapper = $('#species-ssdd-site-details');
+            const siteDetailsData = data['site_details']
+            siteDetailsWrapper.html('');
+            const container =  _.template($('#site-details-container').html());
+            $.each(siteDetailsData, (key, data) => {
+                const containerHtml = container({
+                    title: key,
+                    detailsData: data
+                })
+                siteDetailsWrapper.append(containerHtml);
+            })
             this.createOriginsOccurrenceTable(data);
             this.createConservationOccurrenceTable(data);
             this.createEndemismOccurrenceTable(data);

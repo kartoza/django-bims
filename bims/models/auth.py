@@ -48,7 +48,7 @@ def user_signed_up_(request, user, **kwargs):
     except Site.DoesNotExist:
         bims_site_name = 'Biodiversity Information System'
 
-    bims_team_name = preferences.SiteSetting.default_team_name
+    bims_team_name = preferences.SiteSetting.default_site_name
     if not bims_team_name:
         bims_team_name = 'BIMS'
 
