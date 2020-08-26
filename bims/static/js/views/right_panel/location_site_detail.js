@@ -132,38 +132,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('site_detail_info')) {
-                var siteDetailsTemplate = _.template($('#site-details-template').html());
-                let siteName = data['name'];
-                let siteDescription = data['site_detail_info']['site_description'];
-                if (siteDescription === 'Unknown') {
-                    if (siteName) {
-                        siteDescription = siteName;
-                    }
-                }
-                let geomorphologicalZone = '-';
-                let ecologicalRegion = '-';
-                let ecologicalRegion2 = '-';
-                try {
-                    if(data['refined_geomorphological']) {
-                        geomorphologicalZone = data['refined_geomorphological'];
-                    } else {
-                        geomorphologicalZone = data['location_context']['geo_class_recoded'];
-                    }
-                    ecologicalRegion = data['location_context']['eco_region_1'];
-                    ecologicalRegion2 = data['location_context']['eco_region_2'];
-                } catch (err) {
-                }
-
-                $detailWrapper.append(siteDetailsTemplate({
-                    'fbis_site_code': data['site_detail_info']['fbis_site_code'],
-                    'site_name': data['name'],
-                    'site_coordinates': data['site_detail_info']['site_coordinates'],
-                    'site_description': siteDescription,
-                    'geomorphological_zone': geomorphologicalZone,
-                    'ecological_region': ecologicalRegion,
-                    'ecological_region_2': ecologicalRegion2,
-                    'river': data['site_detail_info']['river'],
-                }));
+                let siteDetailsTemplate = _.template($('#site-details-template').html());
+                $detailWrapper.append(siteDetailsTemplate(data));
             }
             return $detailWrapper;
         },

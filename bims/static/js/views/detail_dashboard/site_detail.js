@@ -1077,14 +1077,8 @@ define([
         renderSiteDetailInfo: function (data) {
             var $detailWrapper = $('<div></div>');
             if (data.hasOwnProperty('site_detail_info')) {
-                var siteDetailsTemplate = _.template($('#site-details-template').html());
-                $detailWrapper.html(siteDetailsTemplate({
-                    'fbis_site_code': data['site_detail_info']['fbis_site_code'],
-                    'site_coordinates': data['site_detail_info']['site_coordinates'],
-                    'site_description': data['site_detail_info']['site_description'],
-                    'geomorphological_zone': data['site_detail_info']['geomorphological_zone'],
-                    'river': data['site_detail_info']['river'],
-                }));
+                let siteDetailsTemplate = _.template($('#site-details-template').html());
+                $detailWrapper.html(siteDetailsTemplate(data));
             }
             return $detailWrapper;
         },

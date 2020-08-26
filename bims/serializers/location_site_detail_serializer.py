@@ -1,9 +1,11 @@
-from django.db.models import Q
 from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
 from bims.serializers.location_site_serializer import LocationSiteSerializer
 from bims.enums.taxonomic_rank import TaxonomicRank
+from bims.models.location_context_filter_group_order import (
+    LocationContextFilterGroupOrder
+)
 
 
 class LocationSiteDetailSerializer(LocationSiteSerializer):
@@ -20,18 +22,22 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         return ''
 
     def get_location_context(self, obj):
-        location_context = LocationContext.objects.filter(
-            Q(group__geocontext_group_key__icontains='ecoregion') |
-            Q(group__geocontext_group_key__icontains='geo'),
-            site=obj
+        context_data = {}
+        filter_groups = (
+            LocationContextFilterGroupOrder.objects.filter(
+                show_in_side_panel=True
+            ).order_by('group_display_order')
         )
-        if location_context:
-            return dict(location_context.values_list(
-                'group__key',
-                'value'
-            ))
-        else:
-            return {}
+        for filter_group in filter_groups:
+            if filter_group.group.name not in context_data:
+                context_data[filter_group.group.name] = (
+                    LocationContext.objects.filter(
+                        site=obj
+                    ).value_from_key(
+                        filter_group.group.key
+                    )
+                )
+        return context_data
 
     class Meta:
         model = LocationSite
@@ -58,7 +64,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
         except AttributeError:
             river_name = 'Unknown'
         site_detail_info = {
-            'fbis_site_code': parse_string(obj.site_code),
+            'site_code': parse_string(obj.site_code),
             'site_coordinates': parse_string(site_coordinates),
             'site_description': parse_string(obj.site_description),
             'river': river_name
