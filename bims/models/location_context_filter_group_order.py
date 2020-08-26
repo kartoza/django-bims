@@ -16,6 +16,14 @@ class LocationContextFilterGroupOrder(models.Model):
         null=False,
         blank=False
     )
+    show_in_dashboard = models.BooleanField(
+        default=False,
+        help_text='Show this location context group in dashboard'
+    )
+    show_in_side_panel = models.BooleanField(
+        default=False,
+        help_text='Show this location context group in side panel'
+    )
 
     @property
     def filter_display_order(self):

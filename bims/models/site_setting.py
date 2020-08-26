@@ -32,9 +32,9 @@ class SiteSetting(Preferences):
         blank=True
     )
 
-    default_team_name = models.CharField(
+    default_site_name = models.CharField(
         max_length=150,
-        help_text='Default team name',
+        help_text='Default site name',
         null=True,
         blank=True
     )
@@ -60,8 +60,7 @@ class SiteSetting(Preferences):
         blank=True
     )
 
-    geocontext_keys = models.CharField(
-        max_length=300,
+    geocontext_keys = models.TextField(
         help_text='Default location context group keys that will be fetched '
                   'from Geocontext, separated by commas.',
         default='political_boundary_group,rainfall_group',

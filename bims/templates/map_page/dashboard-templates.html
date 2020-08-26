@@ -234,6 +234,20 @@
     </div>
 </script>
 
+<script type="text/template" id="site-details-container">
+    <div class="site-details-container">
+        <div class="col-12 sub-title site-details-header"><%= title %></div>
+        <div class="col-12 site-details-content">
+            <% _.each(detailsData, function(value, key) { %>
+                <div class="row">
+                    <div class="col-6"><%= key %> </div>
+                    <div class="col-6"><%= value %> </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+</script>
+
 <script type="text/template" id="taxon-detail-table">
     <div class="container taxon-dashboard-detail table">
         <div class="row">
@@ -357,13 +371,6 @@
                             </div>
                             <div class="col-12"
                                  id="sa-ecoregions"></div>
-                        </div>
-                        <div id="species-ssdd-records-sites">
-                            <div class="col-12 sub-title site-details-header">
-                                Species and Occurences
-                            </div>
-                            <div class="col-12 records-overview" id="records-sites">
-                            </div>
                         </div>
                         <div class="occurrences-table-view">
                             <div class="col-12">

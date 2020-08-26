@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from sorl.thumbnail import get_thumbnail
+from preferences import preferences
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
@@ -50,6 +51,9 @@ from sass.enums.chem_unit import ChemUnit
 from bims.models.survey import Survey
 from bims.models.dashboard_configuration import DashboardConfiguration
 from bims.models.taxonomy import Taxonomy
+from bims.models.location_context_filter_group_order import (
+    LocationContextFilterGroupOrder
+)
 
 
 class LocationSiteList(APIView):
@@ -262,7 +266,7 @@ class LocationSitesSummary(APIView):
 
         if site_id:
             site_details = self.get_site_details(site_id)
-            site_details['records_and_sites'] = (
+            site_details['Species and Occurences'] = (
                 self.get_number_of_records_and_taxa(collection_results))
         else:
             is_multi_sites = True
@@ -603,7 +607,9 @@ class LocationSitesSummary(APIView):
         if location_site.river:
             site_river = location_site.river.name
         overview = dict()
-        overview['FBIS Site Code'] = location_site.site_code
+        overview['{} Site Code'.format(
+            preferences.SiteSetting.default_site_name
+        )] = location_site.site_code
         overview['Original Site Code'] = location_site.legacy_site_code
         overview['Site coordinates'] = (
             'Longitude: {long}, Latitude: {lat}'.format(
@@ -623,71 +629,36 @@ class LocationSitesSummary(APIView):
         river_and_geo = OrderedDict()
         river_and_geo['River'] = site_river
         river_and_geo['Original River Name'] = location_site.legacy_river_name
-
         river_and_geo['Geomorphological zone'] = (
             location_context.value_from_key(
                 'geo_class_recoded')
         )
-
         refined_geomorphological = '-'
         if location_site.refined_geomorphological:
             refined_geomorphological = location_site.refined_geomorphological
         river_and_geo['Refined Geomorphological zone'] = \
             refined_geomorphological
 
-        # Catchments
-        catchments = dict()
-
-        catchments['Primary'] = location_context.value_from_key(
-            'primary_catchment_area')
-        catchments['Secondary'] = location_context.value_from_key(
-            'secondary_catchment_area')
-        catchments['Tertiary'] = location_context.value_from_key(
-            'tertiary_catchment_area')
-        catchments['Quaternary'] = location_context.value_from_key(
-            'quaternary_catchment_area')
-        catchments['Quinary'] = location_context.value_from_key(
-            'quinary_catchment_area')
-
-        sub_water_management_areas = dict()
-        sub_water_management_areas['Water Management Areas'] = (
-            location_context.value_from_key(
-                'water_management_area')
-        )
-        sub_water_management_areas['Sub Water Management Areas'] = (
-            location_context.value_from_key(
-                'sub_wmas')
-        )
-        sub_water_management_areas['River Management Unit'] = (
-            location_context.value_from_key(
-                'river_management_unit')
-        )
-
-        # # Politcal Boundary Group
-        sa_ecoregions = dict()
-        sa_ecoregions['SA Ecoregion Level 1'] = (
-            location_context.value_from_key(
-                'eco_region_1')
-        )
-        sa_ecoregions['SA Ecoregion Level 2'] = (
-            location_context.value_from_key(
-                'eco_region_2')
-        )
-        sa_ecoregions['Freshwater Ecoregion'] = (
-            location_context.value_from_key(
-                'feow_hydrosheds')
-        )
-        sa_ecoregions['Province'] = (
-            location_context.value_from_key(
-                'sa_provinces')
-        )
-
         result = dict()
-        result['overview'] = overview
-        result['river_and_geomorphological'] = river_and_geo
-        result['catchments'] = catchments
-        result['sub_water_management_areas'] = sub_water_management_areas
-        result['sa_ecoregions'] = sa_ecoregions
+        result['Overview'] = overview
+        result['River and Geomorphological Zone'] = river_and_geo
+
+        # Location context group data
+        location_context_filters = (
+            LocationContextFilterGroupOrder.objects.filter(
+                show_in_dashboard=True
+            ).order_by('group_display_order')
+        )
+
+        for context_filter in location_context_filters:
+            title = context_filter.filter.title
+            if title not in result:
+                result[title] = {}
+            result[title][context_filter.group.name] = (
+                location_context.value_from_key(
+                    context_filter.group.key
+                )
+            )
 
         return result
 

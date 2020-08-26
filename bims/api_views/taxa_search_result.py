@@ -16,7 +16,7 @@ class TaxaSearchResult(APIView):
         })
 
     def get(self, request):
-        page = request.GET.get('page', 1)
+        page = int(request.GET.get('page', '1'))
         if page < 1:
             page = 1
         process_id = request.GET.get('process_id', None)
