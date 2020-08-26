@@ -14,7 +14,8 @@ from bims.models import (
     LocationType,
     BiologicalCollectionRecord,
     location_site_post_save_handler,
-    collection_post_save_handler
+    collection_post_save_handler,
+    HarvestSession
 )
 
 logger = logging.getLogger('bims')
@@ -41,7 +42,8 @@ def import_gbif_occurrences(
     owner=None,
     habitat=None,
     origin='',
-    log_file_path=None):
+    log_file_path=None,
+    session_id=None):
     """
     Import gbif occurrences based on taxonomy gbif key,
     data stored to biological_collection_record table
@@ -52,6 +54,7 @@ def import_gbif_occurrences(
     :param origin: origin of species, default to None
     :param log_file_path: Path of log file of the current process,
         if provided then write the log to this file
+    :param session_id: Id of the harvest session
     """
     log_file = None
     if log_file_path:
@@ -128,6 +131,25 @@ def import_gbif_occurrences(
     )
 
     for result in json_result['results']:
+        if session_id:
+            if HarvestSession.objects.get(id=session_id).canceled:
+                if log_file:
+                    log_file.write('Cancelled')
+                else:
+                    logger.info('Cancelled')
+                if log_file:
+                    log_file.close()
+
+                # reconnect post save handler
+                models.signals.post_save.connect(
+                    location_site_post_save_handler,
+                    sender=LocationSite
+                )
+                models.signals.post_save.connect(
+                    collection_post_save_handler,
+                    sender=BiologicalCollectionRecord
+                )
+                return
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
         longitude = result.get(LON_KEY)
         latitude = result.get(LAT_KEY)
@@ -243,5 +265,6 @@ def import_gbif_occurrences(
             offset=offset + LIMIT,
             habitat=habitat,
             origin=origin,
-            log_file_path=log_file_path
+            log_file_path=log_file_path,
+            session_id=session_id
         )

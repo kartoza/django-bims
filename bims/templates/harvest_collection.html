@@ -30,7 +30,7 @@
             <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
             </div>
             <div class="modal-body">
-            <form action="{{ request.path }}" method="post" id="taxa-upload-form" novalidate enctype="multipart/form-data">
+            <form action="{{ request.path }}" method="post" id="gbif-harvest-form" novalidate enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="help-block">
                     <div class="help-block-space"></div>
@@ -127,6 +127,7 @@
                             <div class="log">
                                 <textarea id="log-container" rows="10" style="width: 100%">{{ upload_session.log | safe }}</textarea>
                             <div>
+                            <button class="btn btn-danger" data-toggle="modal" data-target="#cancelModal" data-id="{{ upload_session.id }}">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -141,7 +142,11 @@
                             <div class="card-body">
                                 <h5 class="card-title"><a href="{{ upload_session.log_file.url }}" class="btn btn-warning">Download logs</a></h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
                                 <p>Started at {{ upload_session.start_time }}</p>
+                                {% if upload_session.canceled %}
+                                    <p style="color:red">Canceled</p>
+                                {% else %}
                                 <p class="card-text">Result : {% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</p>
+                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}
@@ -152,6 +157,31 @@
         </div>
     </div>
 
+    <!-- Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Cancel session</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to cancel this session ?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                    <button type="button" class="btn btn-danger" id="cancel-session">Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}
 
@@ -165,6 +195,7 @@
         const updateUrl = "/api/harvest-status/";
         const harvestSessionInProgress = {% if upload_session %}true{% else %}false{% endif %};
         const harvestSessionId = {% if upload_session %}{{ upload_session.id }}{% else %}0{% endif %};
+        let currentSessionId = 0;
 
         const updateProgress = (id, $elm) => {
             setTimeout(function () {
@@ -195,6 +226,17 @@
             if (harvestSessionInProgress) {
                 updateProgress(harvestSessionId, $('.upload-progress-container'));
             }
+
+            $('#cancel-session').click(function () {
+                let $form = $("#gbif-harvest-form");
+                $form.append(`<input type="hidden" name="cancel" value="True"/>`);
+                $form.append(`<input type="hidden" name="canceled_session_id" value="${currentSessionId}"/>`);
+                $form.submit();
+            });
+            $('#cancelModal').on('shown.bs.modal', function (event) {
+                 let triggerElement = $(event.relatedTarget);
+                 currentSessionId = triggerElement.data('id');
+            });
         });
 
     </script>
