@@ -296,7 +296,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                             Shared.Dispatcher.trigger('map:switchHighlight', features, true);
                         }
                     }
-                    let sidePanelTitle = '<i class="fa fa-map-marker"></i> ' + data['site_detail_info']['fbis_site_code'];
+                    let sidePanelTitle = '<i class="fa fa-map-marker"></i> ' + data['site_detail_info']['site_code'];
                     if (isStaff || ( userID !== null && userID === data['owner']) ) {
                         sidePanelTitle += '<a href="/location-site-form/update/?id=' + data['id'] + '" style="float: right; padding-top: 5px">Edit</a>';
                     }
