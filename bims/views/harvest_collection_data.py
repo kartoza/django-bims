@@ -2,6 +2,7 @@
 """Collections uploader view
 """
 
+import ast
 import os
 from collections import deque
 from datetime import datetime
@@ -11,6 +12,7 @@ from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.conf import settings
+from django.db.models import Q
 from django.core.files import File
 from bims.models.harvest_session import HarvestSession
 from bims.models.taxon_group import TaxonGroup
@@ -29,24 +31,25 @@ class HarvestCollectionView(
     def get_context_data(self, **kwargs):
         context = super(
             HarvestCollectionView, self).get_context_data(**kwargs)
-        taxa_upload_sessions = HarvestSession.objects.filter(
+        harvest_sessions = HarvestSession.objects.filter(
             harvester=self.request.user,
             finished=False,
+            canceled=False,
             log_file__isnull=False,
             category=self.category
         )
 
-        if taxa_upload_sessions:
-            taxa_upload_session = taxa_upload_sessions[0]
+        if harvest_sessions:
+            harvest_session = harvest_sessions[0]
             session_data = {
-                'module_group': taxa_upload_session.module_group,
-                'finished': taxa_upload_session.finished,
-                'start_time': str(taxa_upload_session.start_time),
-                'status': taxa_upload_session.status,
-                'id': taxa_upload_session.id
+                'module_group': harvest_session.module_group,
+                'finished': harvest_session.finished,
+                'start_time': str(harvest_session.start_time),
+                'status': harvest_session.status,
+                'id': harvest_session.id
             }
             try:
-                with open(taxa_upload_session.log_file.path, 'rb') as f:
+                with open(harvest_session.log_file.path, 'rb') as f:
                     session_data['log'] = b''.join(
                         list(deque(f, 50))).decode('utf-8')
             except ValueError:
@@ -54,8 +57,8 @@ class HarvestCollectionView(
             context['upload_session'] = session_data
 
         context['finished_sessions'] = HarvestSession.objects.filter(
+            Q(finished=True) | Q(canceled=True),
             harvester=self.request.user,
-            finished=True,
             category=self.category
         ).order_by(
             '-start_time'
@@ -69,6 +72,20 @@ class HarvestCollectionView(
         taxon_group_id = request.POST.get('taxon_group', None)
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
+        cancel = ast.literal_eval(request.POST.get(
+            'cancel', 'False'
+        ))
+        if cancel:
+            session_id = request.POST.get('canceled_session_id', '')
+            try:
+                harvest_session = HarvestSession.objects.get(
+                    id=int(session_id)
+                )
+                harvest_session.canceled = True
+                harvest_session.save()
+                return HttpResponseRedirect(request.path_info)
+            except (HarvestSession.DoesNotExist, ValueError):
+                pass
         if taxon_group_logo and taxon_group_logo:
             taxon_groups = TaxonGroup.objects.filter(
                 category='SPECIES_MODULE'

@@ -45,6 +45,10 @@ class HarvestSession(models.Model):
         default=False
     )
 
+    canceled = models.BooleanField(
+        default=False
+    )
+
     log_file = models.FileField(
         upload_to='harvest-session-log/',
         null=True

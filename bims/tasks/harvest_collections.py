@@ -24,6 +24,9 @@ def harvest_collections(session_id):
     index = 1
 
     for taxon in taxonomies:
+        if HarvestSession.objects.get(id=session_id).canceled:
+            print('Canceled')
+            return
         harvest_session.status = 'Fetching gbif data for {c} ({i}/{t})'.format(
             c=taxon.canonical_name,
             i=index,
@@ -33,7 +36,8 @@ def harvest_collections(session_id):
         harvest_session.save()
         import_gbif_occurrences(
             taxonomy=taxon,
-            log_file_path=harvest_session.log_file.path
+            log_file_path=harvest_session.log_file.path,
+            session_id=session_id
         )
 
     harvest_session.status = 'Finished'
