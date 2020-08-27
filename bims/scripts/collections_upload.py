@@ -104,6 +104,8 @@ class CollectionsCSVUpload(DataCSVUpload):
             update_location_context(
                 location_site_id=','.join(self.site_ids)
             )
+        # Update source reference filter
+        source_reference_post_save_handler()
 
     def parse_date(self, row):
         # Parse date string to date object

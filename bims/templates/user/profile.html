@@ -257,6 +257,16 @@
                 scales: {
                     xAxes: [{
                         type: 'time',
+                        time: {
+                            displayFormats: {
+                                quarter: 'll'
+                            }
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
                     }]
                 }
             };
