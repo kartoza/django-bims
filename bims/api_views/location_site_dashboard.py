@@ -119,14 +119,20 @@ class LocationSitesTaxaChartData(ChartDataApiView):
     """
     """
     def categories(self, collection_results):
-        return list(collection_results.annotate(
+        taxa = collection_results.values('taxonomy').distinct('taxonomy')[0:25]
+        return list(collection_results.filter(
+            taxonomy__in=taxa
+        ).annotate(
             name=F('taxonomy__scientific_name'),
         ).values_list(
             'name', flat=True
         ).distinct('name'))
 
     def chart_data(self, collection_results):
-        return collection_results.annotate(
+        taxa = collection_results.values('taxonomy').distinct('taxonomy')[0:25]
+        return collection_results.filter(
+            taxonomy__in=taxa
+        ).annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__scientific_name'),
         ).annotate(
