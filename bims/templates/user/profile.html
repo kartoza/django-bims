@@ -257,11 +257,26 @@
                 scales: {
                     xAxes: [{
                         type: 'time',
+                        time: {
+                            displayFormats: {
+                                quarter: 'll'
+                            }
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
                     }]
                 }
             };
             let labels = {{ contributions_date | safe }};
             let dataset = {{ contributions_value }};
+            if (dataset.length === 1) {
+                let date = moment(labels[0]);
+                labels.unshift(date.subtract(1, 'days').format("YYYY-MM-DD"));
+                dataset.unshift(0)
+            }
             let data = {"labels":labels,"datasets":[{"label":"Contributions","data":dataset,"fill":false,"borderColor":"rgb(75, 192, 192)","lineTension":0.1}]};
             let ctx = document.getElementById('contribution-chart');
             let lineChart = new Chart(ctx, {

@@ -80,6 +80,12 @@
                                id="owner" placeholder="" name="owner" value="{% if collector_owner %}{% if collector_owner.0.get_full_name %}{{ collector_owner.0.get_full_name }}{% else %}{{ collector_owner.0.username }}{% endif %}{% endif %}"
                                required>
                     </div>
+                    <div class="filter-title">Source Collection</div>
+                    <div class="filter-value">
+                        <select class="form-control form-control-sm source-collection-select">
+                            <option>All</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="col-10">
@@ -133,8 +139,10 @@
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/utils/filter_list.js" %}"></script>
+    <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
 
     <script>
+        const sourceCollection = {{ source_collection | safe }};
         function dashboardClose(e) {
             let previousUrl = '/map'
             let url = new URL(window.location.href);
@@ -153,6 +161,30 @@
         $(function () {
             $('.dashboard-close').click(dashboardClose);
             renderFilterList($('.filter-list'), false);
+
+            // Get source collection list
+            $.get('/api/list-source-collection/').then(
+                (response) => {
+                    let select = $('.source-collection-select');
+                    $.each(response, (index, data) => {
+                        let selected = '';
+                        if (sourceCollection.indexOf(data['source_collection']) > -1) {
+                            selected = 'selected'
+                        }
+                        select.append(
+                            `<option value=${data['source_collection']} ${selected} >${data['source_collection'].toUpperCase()}</option>`
+                        )
+                    });
+                    select.change(function (event, ui) {
+                        let val = $(event.target).val();
+                        if (val && val !== 'All') {
+                            insertParam('sourceCollection', `["${val}"]`);
+                        } else {
+                            insertParam('sourceCollection', `[]`);
+                        }
+                    })
+                }
+            )
         });
 
         $('#owner').autocomplete({
@@ -180,33 +212,14 @@
             change: function (event, ui) {
                 let value = $(event.target).val();
                 if (value === '') {
-                    let regex = new RegExp("collectors=\\[\\d*\\]");
-                    let url = window.location.href;
-                    if (url.search(regex) >= 1) {
-                        url = url.replace(regex, `collectors=[]`);
-                    }
-                    window.location.href = url;
+                    insertParam('collectors', '[]');
                 }
             },
             select: function (e, u) {
                 e.preventDefault();
                 let userId = u.item.value;
-                let regex = new RegExp("collectors=\\[\\d*\\]");
-                let url = window.location.href;
-                let pageRegex = new RegExp("&page=\\d+|page=\\d+")
-                url = url.replace(pageRegex,'');
-                if (url.search(regex) >= 1) {
-                    url = url.replace(regex, `collectors=[${userId}]`);
-                } else {
-                    if (url[url.length - 1] !== '/') {
-                        url += '&';
-                    } else {
-                        url += '?';
-                    }
-                    url += `collectors=[${userId}]`;
-                }
                 $('#owner').val(u.item.label);
-                window.location.href = url;
+                insertParam('collectors', `[${userId}]`);
             }
         });
     </script>

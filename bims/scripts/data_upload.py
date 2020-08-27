@@ -59,6 +59,7 @@ class DataCSVUpload(object):
         if not processed:
             self.upload_session.canceled = True
             self.upload_session.save()
+            self.process_ended()
             return
         self.process_ended()
 

@@ -39,6 +39,9 @@ from bims.tasks.location_site import update_location_context
 from bims.scripts.collections_upload_source_reference import (
     process_source_reference
 )
+from bims.tasks.source_reference import (
+    generate_source_reference_filter
+)
 
 
 logger = logging.getLogger('bims')
@@ -104,6 +107,8 @@ class CollectionsCSVUpload(DataCSVUpload):
             update_location_context(
                 location_site_id=','.join(self.site_ids)
             )
+        # Update source reference filter
+        generate_source_reference_filter()
 
     def parse_date(self, row):
         # Parse date string to date object

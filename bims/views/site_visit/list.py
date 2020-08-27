@@ -1,4 +1,5 @@
 import json
+import ast
 from django.views.generic.list import ListView
 from django.db.models import Count
 from django.contrib.auth import get_user_model
@@ -34,6 +35,8 @@ class SiteVisitListView(ListView):
             ).annotate(
                 total=Count('biological_collection_record')
             )
+        else:
+            self.collection_results = BiologicalCollectionRecord.objects.all()
 
         return qs.order_by('-date')
 
@@ -63,6 +66,11 @@ class SiteVisitListView(ListView):
             except ValueError:
                 # Couldn't parse the ids
                 pass
+
+        # Get source collection if exist in request
+        context['source_collection'] = ast.literal_eval(
+            self.request.GET.get('sourceCollection', '[]')
+        )
 
         context['total_sites'] = total_sites
         context['total_records'] = total_records

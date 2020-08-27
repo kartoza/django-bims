@@ -3,7 +3,7 @@ import operator
 import hashlib
 import ast
 from functools import reduce
-from django.db.models import Q, Count, F, Value
+from django.db.models import Q, Count, F, Value, Case, When
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
 from django.contrib.gis.geos import Polygon
@@ -640,7 +640,12 @@ class CollectionSearch(object):
 
         sites = (
             self.collection_records.annotate(
-                name=F('site__site_code')).values(
+                name=Case(
+                    When(site__site_code='',
+                         then=F('site__name')),
+                    default=F('site__site_code')
+                )
+            ).values(
                 'site_id', 'name').annotate(
                 total=Count('site')
             ).order_by(order_by)

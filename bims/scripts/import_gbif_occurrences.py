@@ -122,10 +122,6 @@ def import_gbif_occurrences(
             owner = None
 
     models.signals.post_save.disconnect(
-        location_site_post_save_handler,
-        sender=LocationSite
-    )
-    models.signals.post_save.disconnect(
         collection_post_save_handler,
         sender=BiologicalCollectionRecord
     )
@@ -141,10 +137,6 @@ def import_gbif_occurrences(
                     log_file.close()
 
                 # reconnect post save handler
-                models.signals.post_save.connect(
-                    location_site_post_save_handler,
-                    sender=LocationSite
-                )
                 models.signals.post_save.connect(
                     collection_post_save_handler,
                     sender=BiologicalCollectionRecord
