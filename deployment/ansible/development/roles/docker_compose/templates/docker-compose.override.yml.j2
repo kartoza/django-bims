@@ -68,6 +68,7 @@ services:
       - ./media:/home/web/media:rw
       - ./logs:/var/log/
       - ../.pycharm_helpers:/root/.pycharm_helpers
+      - ./backups:/home/web/backups
     ports:
       # for django test server
       - "{{ docker_port_forward.django.http }}:8080"

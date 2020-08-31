@@ -1,0 +1,102 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Backups management
+{% endblock %}
+
+{% block head %}
+        <!-- Custom styles for this template -->
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Backups management</h2>
+        </div>
+
+        <form action="{{ request.path }}" method="post" id="backup-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <h5>List backups data</h5>
+            <input type="text" class="form-control" id="searchFile" aria-describedby="search" placeholder="Search">
+            <div class="dashboard-body" style="height: 400px; overflow-y: auto; border: 1px solid #b3b3b3">
+                <div id="jstree_div"></div>
+            </div>
+            <button class="btn btn-success" id="btn-download" style="margin-top: 20px;" disabled>Download</button>
+        </form>
+    </div>
+    {% include 'footer.html' %}
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script>
+        let csrfToken = '{{ csrf_token }}';
+        let backupsData = {{ data | safe }};
+    </script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+
+    <script>
+        let selectedFile = '';
+        const createTreeData = () => {
+            return {};
+        }
+        $('#btn-download').click((e) => {
+            e.preventDefault();
+            if (!selectedFile) return false;
+            const $form = $('#backup-form');
+            $form.append(`<input type="hidden" name="selected-file" value="${selectedFile}"/>`);
+            $form.submit();
+        })
+        $(function () {
+            const $jsTree = $('#jstree_div');
+            const $btnDownload = $('#btn-download');
+            $jsTree.jstree({
+                'core': {
+                    'data': backupsData
+                },
+                'search': {
+                    'case_insensitive': true,
+                    'show_only_matches' : true
+                },
+                'types': {
+                    'file': {
+                        'icon': 'fa fa-file-o'
+                    }
+                },
+                "plugins" : ["types", "search"]
+            }).on('loaded.jstree', function () {
+                $jsTree.jstree('open_all');
+            }).bind("select_node.jstree", function (NODE, REF_NODE) {
+                let selected = $jsTree.jstree("get_selected", true)[0];
+                if (selected['type'] === 'file') {
+                    $btnDownload.attr('disabled', false);
+                    selectedFile = selected['id'];
+                } else {
+                    $btnDownload.attr('disabled', true);
+                    selectedFile = '';
+                }
+            })
+            let to = false;
+            $('#searchFile').keyup(function () {
+                if (to) {
+                    clearTimeout(to);
+                }
+                to = setTimeout(function () {
+                    let v = $('#searchFile').val();
+                    $jsTree.jstree(true).search(v);
+                }, 250);
+            });
+        });
+    </script>
+{% endblock %}
