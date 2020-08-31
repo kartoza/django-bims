@@ -72,6 +72,7 @@ from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
 from bims.views.source_reference import SourceReferenceListView
 from bims.views.profile import ProfileView
+from bims.views.backups_management import BackupsManagementView
 
 
 urlpatterns = [
@@ -171,6 +172,8 @@ urlpatterns = [
         SiteVisitDetailView.as_view()),
     url(r'^taxa-management/$',
         TaxaManagementView.as_view()),
+    url(r'^backups-management/$',
+        BackupsManagementView.as_view()),
     url(r'^dashboard-management/$',
         DashboardManagementView.as_view()),
     url(r'^upload-collections/$', CollectionsUploadView.as_view(),
