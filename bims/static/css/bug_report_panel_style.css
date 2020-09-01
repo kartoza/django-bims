@@ -10,7 +10,7 @@
 .brp-title {
     text-align: center;
     padding: 10px;
-    background-color: rgba(219, 175, 0, 0.7);
+    background-color: rgb(var(--secondary-accent-color));
     color: white;
 }
 
@@ -30,13 +30,13 @@
 }
 
 .brp-summary {
-    border-top: 1px solid rgba(219, 175, 0, 0.3);
+    border-top: 1px solid rgb(var(--secondary-accent-color));
     margin-bottom: -18px;
-    #border-bottom: 1px solid #18A090;
+    #border-bottom: 1px solid var(--main-accent-color);
 }
 
 .brp-description {
-    border-top: 1px solid rgba(219, 175, 0, 0.3);
+    border-top: 1px solid rgb(var(--secondary-accent-color));
 }
 
 .bug-report-panel textarea {
@@ -55,10 +55,10 @@
     border-radius: 50%;
     padding-top: 6px;
     margin-right: 10px;
-    background-color: rgba(219, 175, 0, 0.7);
+    background-color: rgb(var(--secondary-accent-color));
+    opacity: 0.7;
     font-size: 18pt;
     color: white;
-    box-shadow: 2px 2px rgba(128, 128, 128, 0.54);
     width: 50px;
     height: 47px;
     text-align: center;
@@ -68,14 +68,15 @@
 
 .bug-report-button:hover {
     cursor: pointer;
-    background-color: rgba(204, 163, 3, 0.7);
+    background-color: rgb(var(--secondary-accent-color));
+    box-shadow: inset 0 0 0 99999px rgba(128,128,128,0.3) !important;
 }
 
 .brp-small-text {
     font-size: 9pt;
     padding: 10px;
     margin-top: -15px;
-    border-top: 1px solid rgba(219, 175, 0, 0.3);
+    border-top: rgb(var(--secondary-accent-color))
 }
 
 .brp-submit {
@@ -99,7 +100,7 @@
 }
 
 .brp-loading-panel {
-    border-top: 1px solid rgba(219, 175, 0, 0.3);
+    border-top: 1px solid rgba(var(--secondary-accent-color), 0.3);
     text-align: center;
     margin-bottom: 40px;
     padding-top: 15px;

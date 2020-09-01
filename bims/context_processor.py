@@ -5,7 +5,9 @@ Our custom context processors
 import ast
 import os
 from django.conf import settings
+from django.core.cache import cache
 from bims.utils.get_key import get_key
+from bims.models.theme import THEME_CACHE_KEY, CustomTheme
 
 
 # noinspection PyPep8Naming
@@ -140,3 +142,14 @@ def custom_navbar_url(request):
                     context['tag_version'] = tag.readline()
 
     return context
+
+
+def bims_custom_theme(request):
+    theme = cache.get(THEME_CACHE_KEY)
+    if theme is None:
+        try:
+            theme = CustomTheme.objects.get(is_enabled=True)
+        except Exception:  # noqa
+            theme = {}
+        cache.set(THEME_CACHE_KEY, theme)
+    return {'custom_theme': theme}

@@ -185,7 +185,8 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     left: 0;
     top: 60px;
-    background-color: rgba(219, 175, 0, 0.7);
+    background-color: rgb(var(--secondary-accent-color));
+    opacity: 0.7;
     margin-left: 31px;
     border-radius: 0;
     color: white;
@@ -213,7 +214,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .control-panel-selected {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     padding-right: 0;
     color: white !important;
 }
@@ -584,7 +585,7 @@ html, body, .map, .map-wrapper, #map-container {
     margin-top: 4px;
     width: 100%;
     height: 46px;
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     padding-top: 4px;
     padding-bottom: 4px;
 }
@@ -795,7 +796,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .layer-switcher.shown button {
-    background-color: #18A090 !important;
+    background-color: var(--main-accent-color) !important;
 }
 
 .layer-switcher button:focus {
@@ -849,7 +850,7 @@ div:hover::-webkit-scrollbar {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: rgba(219, 175, 0, 0.4);
+    background-color: rgba(var(--secondary-accent-color), 0.4);
     border-radius: 20px;
 }
 
@@ -1540,12 +1541,12 @@ div:hover::-webkit-scrollbar {
 }
 
 .filter-selected {
-    background-color: #18A090 !important;
+    background-color: var(--main-accent-color) !important;
     color: white !important;
 }
 
 .highlighted {
-    background-color: rgba(250, 244, 0, 0.38);
+    background-color: rgba(var(--secondary-accent-color), 0.38);
 }
 
 .layer-transparency {
@@ -1771,7 +1772,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .info-wrapper-tab.active {
-    color: #18A090;
+    color: var(--main-accent-color);
     border-left: 1px solid #dee2e6;
     border-right: 1px solid #dee2e6;
     border-top: 1px solid #dee2e6;
@@ -2100,7 +2101,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .ck-button input:checked + span {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     color: #fff;
 }
 
@@ -2258,11 +2259,11 @@ div:hover::-webkit-scrollbar {
 }
 
 .origin-btn.selected {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
 }
 
 .origin-btn.selected:hover {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
 }
 
 .origin-btn:hover {
@@ -2319,7 +2320,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .sub-control-panel:active {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     color: white;
 }
 
@@ -2481,7 +2482,7 @@ div:hover::-webkit-scrollbar {
     font-size: 16px;
     font-weight: 400;
     text-decoration: underline;
-    color: #18a090;
+    color: var(--main-accent-color);
     padding: 0.3rem;
     padding-left: 10px;
 }
@@ -2727,7 +2728,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .filter-panel-selected {
-    background-color: rgba(232, 226, 81, 0.29) !important;
+    background-color: rgba(var(--secondary-accent-color), 0.3) !important;
 }
 
 .coming-soon-filter {
@@ -2751,7 +2752,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .badge-primary {
-    background-color: #00a592 !important;
+    background-color: var(--main-accent-color) !important;
 }
 
 .sortby-wrapper {

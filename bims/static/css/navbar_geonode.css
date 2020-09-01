@@ -224,6 +224,6 @@ body {
 }
 
 .dropdown-menu a:active {
-    background-color: #18A090 !important;
+    background-color: var(--main-accent-color) !important;
     color: #fff !important;
 }

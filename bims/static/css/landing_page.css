@@ -9,7 +9,7 @@ body {
 }
 
 .bg-primary {
-    background-color: #18A090 !important;
+    background-color: var(--main-accent-color) !important;
 }
 
 .text-faded {
@@ -151,8 +151,8 @@ header.masthead p {
     width: 250px;
     padding: 5px 10px;
     background-color: white;
-    color: #18A090;
-    border: 2px solid #18A090;
+    color: var(--main-accent-color);
+    border: 2px solid var(--main-accent-color);
     text-align: left;
     border-radius: 4px;
 }
@@ -313,7 +313,7 @@ header.masthead p {
 }
 
 .text-primary {
-    color: #18A090 !important;
+    color: var(--main-accent-color) !important;
 }
 
 html, body {
@@ -341,27 +341,27 @@ html, body {
     border-radius: 4px;
     margin: 10px;
     font-weight: normal;
-    color: #18A090;
+    color: var(--main-accent-color);
     padding: 7px 22px;
     font-size: 11pt;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease 0s;
-    border: 2px solid #18A090;
+    border: 2px solid var(--main-accent-color);
 }
 
 .btn-account:hover {
     color: white;
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
 }
 
 .section-heading-container {
-    border-bottom: 1px solid #18A090;
+    border-bottom: 1px solid var(--main-accent-color);
     padding-bottom: 0;
     margin-bottom: 25px;
 }
 
 .section-heading {
-    color: #18A090;
+    color: var(--main-accent-color);
     font-size: 1.75em !important;
     margin-top: 0;
 }

@@ -44,7 +44,7 @@ body {
 }
 
 .dashboard-title {
-    border-bottom: 3px solid #18A090;
+    border-bottom: 3px solid var(--main-accent-color);
     margin-bottom: 10px;
 }
 
@@ -104,7 +104,7 @@ body {
 .loading-title {
     position: absolute;
     font-size: 30px;
-    color: #18A090;
+    color: var(--main-accent-color);
     top: 38%;
     left: 50%;
     transform: translate(-50%, -40%);

@@ -46,3 +46,4 @@ from bims.models.upload_session import *  # noqa
 from bims.models.dashboard_configuration import *  # noqa
 from bims.models.harvest_session import *  # noqa
 from bims.models.manual_page import *  # noqa
+from bims.models.theme import *  # noqa

@@ -13,7 +13,7 @@
 }
 
 .dropdown-menu a:active {
-    background-color: #18A090 !important;
+    background-color: var(--main-accent-color) !important;
     color: #fff;
 }
 
@@ -63,7 +63,7 @@
 
 .bims-title-big {
     text-align: right;
-    border-right: 2px solid yellow;
+    border-right: 2px solid rgb(var(--secondary-accent-color));
     font-size: 20px;
     padding-right: 10px;
 }

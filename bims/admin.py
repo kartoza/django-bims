@@ -79,7 +79,8 @@ from bims.models import (
     AlgaeData,
     UploadSession,
     DashboardConfiguration,
-    HarvestSession
+    HarvestSession,
+    CustomTheme
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -922,6 +923,15 @@ class AlgaeDataAdmin(admin.ModelAdmin):
     )
 
 
+class CustomThemeAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'description',
+        'date',
+        'is_enabled'
+    )
+
+
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -1014,6 +1024,7 @@ admin.site.register(Chem, ChemAdmin)
 admin.site.register(UploadSession)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
+admin.site.register(CustomTheme, CustomThemeAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(
