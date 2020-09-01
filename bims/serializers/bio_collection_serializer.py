@@ -359,7 +359,11 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         if obj.additional_data:
             # If this is BioBase data, return a collector name from author of
             # reference
-            additional_data = json.loads(obj.additional_data)
+            additional_data = {}
+            if isinstance(obj.additional_data, str):
+                additional_data = json.loads(obj.additional_data)
+            elif isinstance(obj.additional_data, dict):
+                additional_data = obj.additional_data
             if 'BioBaseData' in additional_data:
                 if isinstance(
                         obj.source_reference, SourceReferenceBibliography):

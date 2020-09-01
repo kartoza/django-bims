@@ -18,7 +18,7 @@
     <style>
         :root {
             --main-accent-color: {% if custom_theme.main_accent_color %}{{ custom_theme.main_accent_color }}{% else %}#18A090{% endif %};
-            --secondary-accent-color: {% if custom_theme.secondary_accent_color %}{{ custom_theme.secondary_accent_color | hex_to_rgb }}{% else %}#DBAF00{% endif %};
+            --secondary-accent-color: {% if custom_theme.secondary_accent_color %}{{ custom_theme.secondary_accent_color | hex_to_rgb }}{% else %}219, 175, 0{% endif %};
             --main-button-text-color: {% if custom_theme.main_button_text_color %}{{ custom_theme.main_button_text_color }}{% else %}#fff{% endif %};
             --navbar-bg-color: {% if custom_theme.navbar_background_color %}{{ custom_theme.navbar_background_color }}{% else %}#343a40{% endif %};
             --navbar-txt-color: {% if custom_theme.navbar_text_color %}{{ custom_theme.navbar_text_color }}{% else %}#fff{% endif %};
