@@ -11,7 +11,7 @@ body {
 hr {
   max-width: 50px;
   border-width: 3px;
-  border-color: #18A090;
+  border-color: var(--main-accent-color);
 }
 
 hr.light {
@@ -19,14 +19,14 @@ hr.light {
 }
 
 a {
-  color: #18A090;
+  color: var(--main-accent-color);
   -webkit-transition: all 0.2s;
   -moz-transition: all 0.2s;
   transition: all 0.2s;
 }
 
 a:hover {
-  color: #18A090;
+  color: var(--main-accent-color);
 }
 
 h1,
@@ -49,17 +49,16 @@ h6 {
 }
 
 .btn-primary {
-  background-color: #18A090;
-  border-color: #18A090;
+  color: var(--main-button-text-color);
+  background-color: var(--main-accent-color);
+  border-color: var(--main-accent-color);
 }
 
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  color: #fff;
-  background-color: #0c7c6e !important;
-}
-
-.btn-primary:active, .btn-primary:focus {
-  box-shadow: 0 0 0 0.2rem rgba(240, 95, 64, 0.5) !important;
+  color: var(--main-button-text-color);
+  background-color: var(--main-accent-color) !important;
+  border-color: var(--main-accent-color) !important;
+  box-shadow: inset 0 0 0 99999px rgba(128,128,128,0.4) !important;
 }
 
 #mainNav {
@@ -158,8 +157,8 @@ h6 {
 }
 
 .navbar-shrink .user-icon {
-  color: #18A090 !important;
-  border-color: #18A090 !important;
+  color: var(--main-accent-color) !important;
+  border-color: var(--main-accent-color) !important;
 }
 
 .noselect {
@@ -173,7 +172,7 @@ h6 {
 }
 
 .fbis-button {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     border-radius: 3px;
     margin: 0.25rem;
     font-weight: normal;
@@ -192,7 +191,7 @@ h6 {
 }
 
 .fbis-button-small {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     border-radius: 2.5px;
     padding: 0.4rem;
     font-weight: normal;
@@ -333,8 +332,8 @@ h6 {
 }
 
 .page-item.active .page-link {
-    background-color: #17a2b8;
-    border-color: #17a2b8;
+    background-color: var(--main-accent-color);
+    border-color: var(--main-accent-color);
 }
 .page-link:hover {
     color: #313131;
@@ -343,7 +342,7 @@ h6 {
     border-color: #dee2e6;
 }
 .page-link {
-    color: #17a2b8;
+    color: var(--main-accent-color);
     background-color: #fff;
 }
 .vertical-separator {

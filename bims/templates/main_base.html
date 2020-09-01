@@ -1,6 +1,7 @@
 {% load static from staticfiles %}
 {% load pipeline %}
 {% load grunt %}
+{% load site %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -14,6 +15,15 @@
 
     <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet">
+    <style>
+        :root {
+            --main-accent-color: {% if custom_theme.main_accent_color %}{{ custom_theme.main_accent_color }}{% else %}#18A090{% endif %};
+            --secondary-accent-color: {% if custom_theme.secondary_accent_color %}{{ custom_theme.secondary_accent_color | hex_to_rgb }}{% else %}#DBAF00{% endif %};
+            --main-button-text-color: {% if custom_theme.main_button_text_color %}{{ custom_theme.main_button_text_color }}{% else %}#fff{% endif %};
+            --navbar-bg-color: {% if custom_theme.navbar_background_color %}{{ custom_theme.navbar_background_color }}{% else %}#343a40{% endif %};
+            --navbar-txt-color: {% if custom_theme.navbar_text_color %}{{ custom_theme.navbar_text_color }}{% else %}#fff{% endif %};
+        }
+    </style>
 
     {% block pre-head %} {% endblock %}
     <link href="{% static "css/base.css" %}" rel="stylesheet">

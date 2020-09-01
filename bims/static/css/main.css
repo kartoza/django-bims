@@ -1,5 +1,5 @@
 .dashboard-title {
-    border-bottom: 3px solid #18A090;
+    border-bottom: 3px solid var(--main-accent-color);
     margin-bottom: 10px;
     text-align: center;
 }
@@ -15,7 +15,7 @@
 .site-form-close {
     float: right;
     font-size: 20pt;
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
     padding-left: 10px;
     padding-right: 10px;
     color: #ffffff;
@@ -24,7 +24,7 @@
 
 .site-form-close:hover {
     cursor: pointer;
-    color: #18A090;
+    color: var(--main-accent-color);
     background-color: #ffffff;
 }
 
@@ -61,13 +61,13 @@
 {
   content: '>';
   font-size: 55px;
-  color: #18A090;
+  color: var(--main-accent-color);
 }
 
 .carousel-control-prev-icon:after {
   content: '<';
   font-size: 55px;
-  color: #18A090;
+  color: var(--main-accent-color);
 }
 
 .carousel-indicators li {
@@ -76,7 +76,7 @@
 }
 
 .carousel-indicators .active {
-    background-color: #18A090;
+    background-color: var(--main-accent-color);
 }
 
 .rich-text .code, .rich-text code {
@@ -89,6 +89,11 @@
 
 .navbar {
     font-family: 'Lato', sans-serif;
+    background-color: var(--navbar-bg-color) !important;
+}
+
+.nav-link, .navbar-brand {
+    color: var(--navbar-txt-color) !important;
 }
 
 .body-container {
