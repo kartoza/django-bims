@@ -1045,3 +1045,6 @@ if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
 
 from bims.custom_admin import * # noqa
+from geonode.themes.models import *  # noqa
+admin.site.unregister(GeoNodeThemeCustomization)
+admin.site.unregister(Partner)
