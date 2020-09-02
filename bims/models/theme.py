@@ -4,6 +4,7 @@ from django.db import models
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from colorfield.fields import ColorField
 
 
 THEME_CACHE_KEY = 'bims_theme'
@@ -11,14 +12,16 @@ THEME_CACHE_KEY = 'bims_theme'
 
 class CustomTheme(models.Model):
     name = models.CharField(
-        max_length=100
+        max_length=100,
+        help_text='Will not appear anywhere'
+    )
+    description = models.TextField(
+        null=True,
+        help_text='Will not appear anywhere',
+        blank=True
     )
     logo = models.ImageField(
         upload_to='site_logo',
-        null=True,
-        blank=True
-    )
-    description = models.TextField(
         null=True,
         blank=True
     )
@@ -26,25 +29,20 @@ class CustomTheme(models.Model):
         auto_now_add=True,
         blank=True
     )
-    main_accent_color = models.CharField(
-        max_length=30,
+    main_accent_color = ColorField(
         default='#18A090'
     )
-    secondary_accent_color = models.CharField(
-        max_length=30,
+    secondary_accent_color = ColorField(
         default='#DBAF00'
     )
-    main_button_text_color = models.CharField(
-        max_length=30,
-        default='#fff'
+    main_button_text_color = ColorField(
+        default='#FFFFFF'
     )
-    navbar_background_color = models.CharField(
-        max_length=30,
+    navbar_background_color = ColorField(
         default='#343a40'
     )
-    navbar_text_color = models.CharField(
-        max_length=30,
-        default='#fff'
+    navbar_text_color = ColorField(
+        default='#FFFFFF'
     )
     is_enabled = models.BooleanField(
         default=True
@@ -53,6 +51,9 @@ class CustomTheme(models.Model):
     class Meta:
         ordering = ("date", )
         verbose_name_plural = 'Custom Themes'
+
+    def __str__(self):
+        return self.name
 
 
 @receiver(post_save, sender=CustomTheme)
