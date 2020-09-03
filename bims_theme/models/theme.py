@@ -37,6 +37,12 @@ class CustomTheme(models.Model):
         blank=True,
         help_text='Carousels that will appear on the landing page'
     )
+    partners = models.ManyToManyField(
+        'bims_theme.Partner',
+        null=True,
+        blank=True,
+        help_text='List of partners that will appear on the landing page'
+    )
     date = models.DateTimeField(
         auto_now_add=True,
         blank=True
