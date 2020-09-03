@@ -20,11 +20,13 @@
 {% block body_content %}
     <div id="section-wrapper">
         <div id="header-wrapper">
+            {% if custom_theme.carousels.all %}
             <header class="masthead text-center text-white d-flex" id="header">
                 {% include "carousel.html" %}
             </header>
-            <section id="fish-data" class="biodiversity-data-container" style="position: relative">
-                <div class="container" style="margin-bottom: 25px">
+            {% endif %}
+            <section class="biodiversity-data-container" style="position: relative;">
+                <div class="container">
                     <div class="row">
                         <div class="col-lg-8 mx-auto text-center">
                             <h2 class="section-heading">BIODIVERSITY
@@ -38,6 +40,29 @@
                     </div>
                 </div>
             </section>
+            {% if custom_theme.partners.all %}
+            <section class="biodiversity-data-container grid-logos" style="position: relative; background-color: #f5f5f5a6">
+                <div class="container" style="margin-bottom: 25px">
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto text-center">
+                            <h2 class="section-heading">PARTNERS</h2>
+                        </div>
+                        <div class="partner-container">
+                            <div class="flex-container">
+                                {% for partner in custom_theme.partners.all %}
+                                    <div class="flex-item">
+                                        <a href="{{ partner.link }}" target="_blank">
+                                            <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+            {% endif %}
         </div>
     </div>
     {% include "footer.html" %}
@@ -45,12 +70,14 @@
 
 {% block foot %}
     <!-- Plugin JavaScript -->
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/landing-page.js" %}"></script>
     <script>
         $(document).ready(function () {
             showSiteNotice();
+            $('[data-toggle="tooltip"]').tooltip();
+            $('[data-toggle="popover"]').popover();
         });
     </script>
 {% endblock %}
