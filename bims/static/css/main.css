@@ -92,7 +92,7 @@
     background-color: var(--navbar-bg-color) !important;
 }
 
-.nav-link, .navbar-brand {
+.navbar-nav .nav-link, .navbar-brand {
     color: var(--navbar-txt-color) !important;
 }
 

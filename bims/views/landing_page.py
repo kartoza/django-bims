@@ -2,7 +2,7 @@
 from django.template.response import TemplateResponse
 from wagtail.core.models import Site
 from wagtail.core.views import serve
-from bims.models.carousel_header import CarouselHeader
+from bims.models.theme import CustomTheme
 
 
 def landing_page_view(request, *args, **kwargs):
@@ -19,15 +19,22 @@ def landing_page_view(request, *args, **kwargs):
         return serve(request, '/')
 
     context = {}
-    carousel_headers = CarouselHeader.objects.all()
-    context['headers'] = []
-    context['summaries'] = []
-    for header in carousel_headers:
-        context['headers'].append({
-            'file': header.banner,
-            'description': header.description,
-            'id': header.id
-        })
+    custom_theme = CustomTheme.objects.filter(is_enabled=True)
+    if custom_theme.exists():
+        custom_theme = custom_theme[0]
+        carousel_headers = custom_theme.carousels.all()
+        context['headers'] = []
+        context['summaries'] = []
+        for header in carousel_headers:
+            context['headers'].append({
+                'file': header.banner,
+                'title': header.title,
+                'paragraph': header.description,
+                'id': header.id,
+                'color': header.text_color,
+                'overlay': header.background_color_overlay,
+                'overlay_opacity': header.background_overlay_opacity / 100
+            })
     return TemplateResponse(
         request,
         'landing_page.html',

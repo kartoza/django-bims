@@ -20,10 +20,22 @@ class CustomTheme(models.Model):
         help_text='Will not appear anywhere',
         blank=True
     )
+    site_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='The name of the site'
+    )
     logo = models.ImageField(
         upload_to='site_logo',
         null=True,
         blank=True
+    )
+    carousels = models.ManyToManyField(
+        'bims.CarouselHeader',
+        null=True,
+        blank=True,
+        help_text='Carousels that will appear on the landing page'
     )
     date = models.DateTimeField(
         auto_now_add=True,
