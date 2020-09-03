@@ -45,6 +45,9 @@ class CarouselHeader(OrderedModel):
         help_text='Opacity of the background overlay, in percentage'
     )
 
+    class Meta:
+        verbose_name_plural = 'Carousel Headers'
+
     def __str__(self):
         if self.title:
             return self.title

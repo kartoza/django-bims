@@ -32,7 +32,7 @@ class CustomTheme(models.Model):
         blank=True
     )
     carousels = models.ManyToManyField(
-        'bims.CarouselHeader',
+        'bims_theme.CarouselHeader',
         null=True,
         blank=True,
         help_text='Carousels that will appear on the landing page'

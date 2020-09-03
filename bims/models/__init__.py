@@ -7,7 +7,6 @@ from bims.models.profile import Profile
 from bims.models.cluster import *  # noqa
 from bims.models.boundary import *  # noqa
 from bims.models.boundary_type import *  # noqa
-from bims.models.carousel_header import CarouselHeader
 from bims.models.links import *
 from bims.models.shapefile import * #noqa
 from bims.models.shapefile_upload_session import * #noqa
@@ -46,4 +45,3 @@ from bims.models.upload_session import *  # noqa
 from bims.models.dashboard_configuration import *  # noqa
 from bims.models.harvest_session import *  # noqa
 from bims.models.manual_page import *  # noqa
-from bims.models.theme import *  # noqa

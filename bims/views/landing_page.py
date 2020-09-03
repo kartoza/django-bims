@@ -2,7 +2,7 @@
 from django.template.response import TemplateResponse
 from wagtail.core.models import Site
 from wagtail.core.views import serve
-from bims.models.theme import CustomTheme
+from bims_theme.models.theme import CustomTheme
 
 
 def landing_page_view(request, *args, **kwargs):
