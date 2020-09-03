@@ -41,7 +41,7 @@ class CarouselHeader(OrderedModel):
 
     background_overlay_opacity = models.PositiveIntegerField(
         default=0,
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text='Opacity of the background overlay, in percentage'
     )
 
