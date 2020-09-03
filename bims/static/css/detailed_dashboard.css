@@ -370,7 +370,8 @@ table#filter-history-table {
 }
 
 .card-header {
-    border-bottom: 0;
+    border-bottom: 4px solid var(--main-accent-color);
+    border-radius: 0;
 }
 
 .card-header .btn-default {

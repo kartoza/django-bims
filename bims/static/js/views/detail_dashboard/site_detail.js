@@ -62,7 +62,8 @@ define([
             'click .download-chem-csv': 'downloadChemRecordsAsCSV',
             'click .ssdd-export': 'downloadElementEvent',
             'click .download-chart-image': 'downloadChartImage',
-            'click #chem-graph-export': 'downloadChemGraphs'
+            'click #chem-graph-export': 'downloadChemGraphs',
+            'click .btn-html-img': 'convertToPNG'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -1544,6 +1545,24 @@ define([
                     horizontalMargin: 20
                 });
             }
+        },
+        convertToPNG: function (e) {
+            let self = this;
+            let element = this.$el.find('#detailed-site-dashboard-wrapper')[0];
+            element.scrollIntoView();
+            this.$el.find('.btn').hide();
+            html2canvas(element, {
+                width: 10000,
+                height: 10000,
+                onrendered: function (canvas) {
+                    var link = document.createElement('a');
+                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                    link.download = 'Site dashboard.png';
+                    link.click();
+                    link.remove();
+                    self.$el.find('.btn').show();
+                }
+            })
         }
     })
 });
