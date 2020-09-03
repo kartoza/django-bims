@@ -12,6 +12,7 @@ require.config({
         chartJs: 'libs/chart/Chart-2.7.2',
         fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min',
         htmlToCanvas: 'libs/htmlToCanvas/html2canvas.min',
+        gridStack: 'libs/gridstack-1.1.2/gridstack.min',
         chosen: 'libs/chosen/chosen.jquery.min',
         detectBrowser: 'utils/detect-browser',
         'jquery-ui/ui/widget': 'libs/jquery-fileupload/vendor/jquery.ui.widget',
@@ -47,7 +48,14 @@ require.config({
         olMapboxStyle: {
             deps: ['ol'],
             exports: 'OlMapboxStyle'
-        }
+        },
+        gridStack: {
+            deps: [
+                'underscore',
+                'jqueryUi',
+                'jquery'
+            ]
+        },
     }
 });
 

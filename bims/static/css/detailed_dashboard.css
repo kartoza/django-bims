@@ -75,7 +75,7 @@
 }
 
 .btn-element-download:hover, .btn-dashboard:hover {
-    color: #18A090 !important;
+    color: var(--main-accent-color) !important;
     background-color: white !important;
 }
 
@@ -310,8 +310,8 @@ table#filter-history-table {
 .dashboard-header {
     margin-top: 20px;
     margin-left: 30px;
-    margin-right: 30px;
-    border-bottom: 3px solid #18A090;
+    margin-right: 15px;
+    border-bottom: 3px solid var(--main-accent-color);
 }
 
 #metadata-table-list, .custom-table {
@@ -322,20 +322,13 @@ table#filter-history-table {
 }
 
 .custom-table thead {
-    background-color: lightgrey;
-}
-
-.custom-table thead th {
-    border-bottom: 2px solid black !important;
+    background-color: rgba(var(--secondary-accent-color), 0.4);
 }
 
 .custom-table tbody {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid #c6c6c6;
 }
 
-.custom-table td, .custom-table th {
-    border-top: 1px solid black !important;
-}
 
 .chem-bar-chart {
     margin-bottom: 25px
@@ -370,4 +363,16 @@ table#filter-history-table {
     justify-content: center;
     align-items: center;
     height: 100%;
+}
+
+.card {
+    border-radius: 0;
+}
+
+.card-header {
+    border-bottom: 0;
+}
+
+.card-header .btn-default {
+    background-color: rgba(var(--secondary-accent-color), 0.4);
 }

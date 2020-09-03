@@ -207,8 +207,8 @@
 }
 
 h1 {
-    color: #18A090 !important;
-    border-bottom: 1px solid #18A090;
+    color: var(--main-accent-color) !important;
+    border-bottom: 1px solid var(--main-accent-color);
 }
 
 .password-message {
