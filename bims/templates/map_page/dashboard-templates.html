@@ -453,7 +453,7 @@
                 </div>
 
                 {# Occurence Data #}
-                <div class="card" id="species-ssdd-occurrence-data">
+                <div class="card occurrences-data" id="species-ssdd-occurrence-data">
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Occurrence Data
@@ -464,9 +464,12 @@
                         </button>
                     </div>
                     <div class="card-body card-padding">
-                        <div id="occurrence-data">
+                        <div class="content-body">
                         </div>
-                        <div class="container">
+
+                    </div>
+                    <div class="card-footer">
+                         <div class="container">
                             <button class="btn btn-info download-as-csv"
                                     style="width: 100%;">Download as CSV
                             </button>
@@ -530,7 +533,7 @@
                     </div>
                     <div class="card-body">
                         <div id="data-summary" class="content-body">
-                            <div class="row">
+                            <div class="row no-gutters">
                                 <div class="col-1"></div>
                                 <div class="col-2 ssdd-titles">
                                     Origin
@@ -549,7 +552,7 @@
                                 </div>
                                 <div class="col-1"></div>
                             </div>
-                            <div class="row">
+                            <div class="row no-gutters">
                                 <div class="col-1"></div>
                                 <div class="col-2 col-chart occurrence-origin-chart">
                                     <canvas id="species-ssdd-origin-pie"></canvas>
@@ -568,7 +571,7 @@
                                 </div>
                                 <div class="col-1 col-chart"></div>
                             </div>
-                            <div class="row species-ssdd-legends">
+                            <div class="row species-ssdd-legends no-gutters">
                                 <div class="col-1"></div>
                                 <div class="col-2 species-ssdd-legend"
                                      id="species-ssdd-origin-legend"></div>
@@ -726,7 +729,7 @@
                         </button>
                     </div>
                     <div class="card-body card-padding">
-                        <table class="table table-hover custom-table metadata-table content-body">
+                        <table class="table table-hover custom-table content-body">
                         </table>
                     </div>
                 </div>

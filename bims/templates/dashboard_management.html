@@ -9,7 +9,7 @@
     <!-- Custom styles for this template -->
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.min.css" />
+    <link rel="stylesheet" href="{% static "js/libs/gridstack-1.1.2/gridstack.min.css" %}" />
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
 
@@ -108,9 +108,37 @@
                          data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="occurrences">
                         <div class="grid-stack-item-content">Occurrences</div>
                     </div>
+                    <div class="grid-stack-item" data-gs-x="4" data-gs-y="10"
+                         data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="taxa-chart">
+                        <div class="grid-stack-item-content">Taxa Chart</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="4" data-gs-y="16"
+                         data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="origin-chart">
+                        <div class="grid-stack-item-content">Origin Chart</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="4" data-gs-y="22"
+                         data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="endemism-chart">
+                        <div class="grid-stack-item-content">Endemism Chart</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="4" data-gs-y="28"
+                         data-gs-width="8" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="conservation-status-chart">
+                        <div class="grid-stack-item-content">Conservation Status Chart</div>
+                    </div>
                     <div class="grid-stack-item" data-gs-x="0" data-gs-y="6"
-                         data-gs-width="4" data-gs-height="4" data-gs-min-width="4" data-gs-max-width="12" data-key="overview">
+                         data-gs-width="4" data-gs-height="12" data-gs-min-width="4" data-gs-max-width="12" data-key="overview">
                         <div class="grid-stack-item-content">Overview</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="0" data-gs-y="18"
+                         data-gs-width="4" data-gs-height="6" data-gs-min-width="4" data-gs-max-width="12" data-key="survey">
+                        <div class="grid-stack-item-content">Site Visit Data</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="0" data-gs-y="24"
+                         data-gs-width="4" data-gs-height="10" data-gs-min-width="4" data-gs-max-width="12" data-key="occurrences-data">
+                        <div class="grid-stack-item-content">Occurrence Data</div>
+                    </div>
+                    <div class="grid-stack-item" data-gs-x="0" data-gs-y="34"
+                         data-gs-width="4" data-gs-height="8" data-gs-min-width="12" data-gs-max-width="12" data-key="metadata-table">
+                        <div class="grid-stack-item-content">Metadata Table</div>
                     </div>
                     {% endif %}
                 </div>
@@ -166,7 +194,7 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.all.js"></script>
+    <script src="{% static "js/libs/gridstack-1.1.2/gridstack.all.js" %}"></script>
 
     <script>
         let grid = null;
@@ -184,7 +212,8 @@
             'conservation-status-chart',
             'endemism-chart',
             'origin-chart',
-            'site-image'
+            'site-image',
+            'occurrence-data'
         ]
 
         const updateDashboard = (e) => {
@@ -247,7 +276,9 @@
                 });
                 grid.commit();
             } else {
-                availableContainers = [];
+                availableContainers = [
+                    'site-image'
+                ];
             }
             if (availableContainers.length > 0) {
                 $.each(availableContainers, (index, value) => {

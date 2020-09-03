@@ -3,15 +3,17 @@ define([
     'underscore',
     'ol',
     'jquery',
+    'gridStack',
     'shared',
     'htmlToCanvas',
     'chartJs',
-    'utils/filter_list'
+    'utils/filter_list',
 ], function (
     Backbone,
     _,
     ol,
     $,
+    gridStack,
     Shared,
     HtmlToCanvas,
     ChartJs,
@@ -39,6 +41,7 @@ define([
         siteLayerVector: null,
         siteId: null,
         currentDashboardWrapper: null,
+        grid: null,
         currentModule: '',
         currentFiltersUrl: '',
         chartConfigs: [],
@@ -210,22 +213,29 @@ define([
                     // Check dashboard configuration
                     let $dashboardWrapper = self.$el.find('.dashboard-wrapper');
                     let dashboardHeader = self.$el.find('.dashboard-header');
+
+                    console.log(data);
+
+                    if (data['is_multi_sites']) {
+                        dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
+                    } else {
+                        dashboardHeader.html('Single Site - ' + data['modules'].join());
+                    }
+
                     if (Object.keys(data['dashboard_configuration']).length !== 0) {
-                        let $moduleDashboardWrapper = $(`<div class="container row dashboard-wrapper-${data['modules'].join()}"></div>`);
+
+                        let $moduleDashboardWrapper = $(
+                            `<div class="container grid-stack dashboard-wrapper-${data['modules'].join()}" style="padding-right: 40px !important;"></div>`
+                        );
                         self.currentDashbordWrapper = $moduleDashboardWrapper;
                         $dashboardWrapper.before($moduleDashboardWrapper);
-                        let currentDashboardWidth = $moduleDashboardWrapper.width();
-                        let height = (currentDashboardWidth / 24);
                         $dashboardWrapper.hide();
+
+                        // Render the layouts
+                        self.renderCustomDashboardLayout($moduleDashboardWrapper, data['dashboard_configuration']);
+
                         $.each(data['dashboard_configuration'], (index, configuration) => {
-                            // Find the container
-                            let rowHeight = height * configuration['height'];
-                            let $container = '';
-                            $container = self.$el.find(`.${configuration['key']}`).clone();
-                            $container.addClass('card-100');
-                            let $div = $(`<div class="col-${configuration['width']}" style="margin-top: 20px; height: ${rowHeight}px"></div>`);
-                            $div.append($container);
-                            $moduleDashboardWrapper.append($div);
+                            let $container = $moduleDashboardWrapper.find(`[data-key='${configuration['key']}']`).find('.grid-stack-item-content');
                             // Render content for each container
                             switch(configuration['key']) {
                                 case 'filter-history': {
@@ -233,11 +243,19 @@ define([
                                     break;
                                 }
                                 case 'overview': {
-                                    self.createMultiSiteDetails(data, $container.find('.records-overview'));
+                                    if (data['is_multi_sites']) {
+                                        self.createMultiSiteDetails(data, $container.find('.records-overview'));
+                                    } else {
+                                        self.renderSingleSiteDetails(data);
+                                    }
                                     break;
                                 }
                                 case 'occurrences': {
                                     self.createOccurrencesBarChart(data, $container.find('.content-body')[0]);
+                                    break;
+                                }
+                                case 'occurrences-data': {
+                                    self.createOccurrenceDataTable(data, $container);
                                     break;
                                 }
                                 case 'distribution-map': {
@@ -282,8 +300,6 @@ define([
                                     break;
                                 }
                             }
-                            dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
-                            console.log(configuration)
                         })
                         self.loadingDashboard.hide();
                         return;
@@ -295,11 +311,9 @@ define([
                         $('#species-ssdd-site-details').hide();
                         $('#ssdd-chem-chart-wrapper').hide();
                         self.createMultiSiteDetails(data);
-                        dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                     } else {
                         $('#species-ssdd-site-details').show();
                         self.renderSingleSiteDetails(data);
-                        dashboardHeader.html('Single Site - ' + data['modules'].join());
                         if(data['is_chem_exists']) {
                             $('#ssdd-chem-chart-wrapper').show();
                             self.renderChemGraph(data);
@@ -471,6 +485,12 @@ define([
             if (this.locationSiteCoordinateRequestXHR) {
                 this.locationSiteCoordinateRequestXHR.abort();
                 this.locationSiteCoordinateRequestXHR = null;
+            }
+
+            if (this.grid) {
+                $('.grid-stack').remove();
+                this.grid.destroy();
+                this.grid = null;
             }
         },
         closeDashboard: function () {
@@ -660,7 +680,6 @@ define([
                     url: self.csvDownloadEmailUrl,
                     dataType: 'json',
                     success: function (data) {
-                        console.log(data);
                         alertModalBody.html('Your data download is underway. ' +
                             'This may take some time. ' +
                             'You will be notified by email when your download is ready. ' +
@@ -1013,7 +1032,10 @@ define([
             this.createConservationOccurrenceTable(data);
             this.createEndemismOccurrenceTable(data);
         },
-        renderSingleSiteDetails: function (data) {
+        renderSingleSiteDetails: function (data, element = null) {
+            if (!element) {
+
+            }
             let siteDetailsWrapper = $('#species-ssdd-site-details');
             const siteDetailsData = data['site_details']
             siteDetailsWrapper.html('');
@@ -1113,7 +1135,7 @@ define([
                 let parentHeight = container.parent().height();
                 let titleHeight = container.find('.ssdd-titles').height();
                 let legendHeight = container.find('.species-ssdd-legend').height();
-                let padding = 120;
+                let padding = 90;
                 container.css('height', parentHeight);
                 container.find('.col-chart').css('height', parentHeight - titleHeight - legendHeight - padding);
 
@@ -1232,9 +1254,13 @@ define([
                 return true;
             })
         },
-        createOccurrenceDataTable: function (data) {
-            let occurrenceDataWrapper = $('#species-ssdd-occurrence-data');
-            let occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
+        createOccurrenceDataTable: function (data, container = null) {
+            if (!container) {
+                container = $('#species-ssdd-occurrence-data');
+            }
+            console.log('occurrenceDataSub', container)
+            // let occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
+            let occurrenceDataSub = container.find('.content-body');
             if (data['occurrence_data'].length > 0 || data['iucn_name_list'].length > 0 || data['origin_name_list'].length > 0) {
                 this.$el.find('.download-as-csv').show();
                 occurrenceDataSub.html(this.renderOccurrenceData(data['occurrence_data'], data['iucn_name_list'], data['origin_name_list']));
@@ -1486,6 +1512,37 @@ define([
                 var title = $(elements[i]).attr('id');
                 var canvas = $(elements[i])[0];
                 self.downloadChart(title, canvas);
+            }
+        },
+        renderCustomDashboardLayout: function ($wrapper, dashboardConfiguration) {
+            $.each(dashboardConfiguration, (index, configuration) => {
+                // Find the container
+                let $container = '';
+                $container = this.$el.find(`.${configuration['key']}`).clone();
+                if (configuration['width'] === 12) {
+                    $container.addClass('mr-4');
+                    $container.addClass('ml-2');
+                } else {
+                    $container.addClass('mr-2');
+                    $container.addClass('ml-2');
+                }
+                $container.addClass('card-100');
+                $container.addClass('grid-stack-item-content');
+                let $div = $(`<div class="grid-stack-item" data-gs-x="${configuration['x']}" data-gs-y="${configuration['y']}"
+                                    data-gs-width="${configuration['width']}" 
+                                    data-gs-height="${configuration['height']}" 
+                                    data-gs-min-width="${configuration['width']}" 
+                                    data-gs-max-width="12" data-key="${configuration['key']}">
+                            </div>`);
+                $div.append($container);
+                $wrapper.append($div);
+            });
+            if (!this.grid) {
+                this.grid = GridStack.init({
+                    removeTimeout: 100,
+                    verticalMargin: 20,
+                    horizontalMargin: 20
+                });
             }
         }
     })
