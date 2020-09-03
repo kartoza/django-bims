@@ -80,7 +80,7 @@
             {% if custom_theme.logo %}
                 <img src="{{ custom_theme.logo.url }}" height="35"/>
             {% else %}
-                BIMS
+                {% if custom_theme.site_name %}{{ custom_theme.site_name }}{% else %}{{ APPLICATION_NAME }}{% endif %}
             {% endif %}
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse"

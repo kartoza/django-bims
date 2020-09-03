@@ -34,6 +34,7 @@ urlpatterns = [
     url(r'^contact/', include('contactus.urls')),
     url(r'^pages/', include('django.contrib.flatpages.urls')),
     url(r'^', include('bims.urls')),
+    url(r'^', include('bims_theme.urls')),
     url(r'^sass/', include('sass.urls')),
     url(r'^bibliography/',
         include(('td_biblio.urls', 'bibliography'),

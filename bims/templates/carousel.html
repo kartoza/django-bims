@@ -12,8 +12,10 @@
             {% else %}
             <div class="carousel-item">
             {% endif %}
-                <div class="carousel-title">
-                    {{ header.description | safe }}
+                <div class="carousel-overlay" style="background-color: {{ header.overlay }}; opacity: {{ header.overlay_opacity }}"></div>
+                <div class="carousel-title" style="color: {{ header.color }}">
+                    <h2>{{ header.title }}</h2>
+                    <h5>{{ header.paragraph | safe }}</h5>
                 </div>
                 <div class="d-block w-100 header-image header-{{ header.id }}" alt="slide">
                     <style>

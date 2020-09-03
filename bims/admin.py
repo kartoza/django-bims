@@ -44,7 +44,6 @@ from bims.models import (
     Boundary,
     BoundaryType,
     Cluster,
-    CarouselHeader,
     BiologicalCollectionRecord,
     LinkCategory,
     Link,
@@ -79,8 +78,7 @@ from bims.models import (
     AlgaeData,
     UploadSession,
     DashboardConfiguration,
-    HarvestSession,
-    CustomTheme
+    HarvestSession
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -282,10 +280,6 @@ class PermissionContenTypeFilter(SimpleListFilter):
 class PermissionAdmin(admin.ModelAdmin):
     list_display = ('content_type', 'name', 'codename')
     list_filter = ('content_type', 'name', PermissionContenTypeFilter)
-
-
-class CarouselHeaderAdmin(OrderedModelAdmin):
-    list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
@@ -923,15 +917,6 @@ class AlgaeDataAdmin(admin.ModelAdmin):
     )
 
 
-class CustomThemeAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'description',
-        'date',
-        'is_enabled'
-    )
-
-
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -993,7 +978,6 @@ admin.site.register(TaxonGroup)
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
 admin.site.register(Cluster, ClusterAdmin)
-admin.site.register(CarouselHeader, CarouselHeaderAdmin)
 admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
 
 admin.site.register(ShapefileUploadSession, ShapefileUploadSessionAdmin)
@@ -1024,7 +1008,6 @@ admin.site.register(Chem, ChemAdmin)
 admin.site.register(UploadSession)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
-admin.site.register(CustomTheme, CustomThemeAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(

@@ -11,7 +11,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
-    <title>{% block title %} {{ APPLICATION_NAME }} | {% block subtitle %}{% endblock %} {% endblock %}</title>
+    <title>{% block title %} {% if custom_theme.site_name %}{{ custom_theme.site_name }}{% else %}{{ APPLICATION_NAME }}{% endif %} | {% block subtitle %}{% endblock %} {% endblock %}</title>
 
     <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet">
