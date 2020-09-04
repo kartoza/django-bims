@@ -22,7 +22,6 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
     list_display = ('order', 'description', 'banner', 'move_up_down_links')
 
 
-
 class PartnerAdmin(OrderedModelAdmin):
     list_display = ('order', 'name', 'link', 'move_up_down_links')
 

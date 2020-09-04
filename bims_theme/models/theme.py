@@ -5,6 +5,8 @@ from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from colorfield.fields import ColorField
+from bims_theme.models.carousel_header import CarouselHeader
+from bims_theme.models.partner import Partner
 
 
 THEME_CACHE_KEY = 'bims_theme'
@@ -83,5 +85,9 @@ def disable_other(sender, instance, **kwargs):
 # Invalidate the cached theme if a partner or a theme is updated.
 @receiver(post_save, sender=CustomTheme)
 @receiver(post_delete, sender=CustomTheme)
+@receiver(post_save, sender=Partner)
+@receiver(post_delete, sender=Partner)
+@receiver(post_save, sender=CarouselHeader)
+@receiver(post_delete, sender=CarouselHeader)
 def invalidate_cache(sender, instance, **kwargs):
     cache.delete(THEME_CACHE_KEY)

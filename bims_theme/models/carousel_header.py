@@ -47,6 +47,7 @@ class CarouselHeader(OrderedModel):
 
     class Meta:
         verbose_name_plural = 'Carousel Headers'
+        ordering = ['order']
 
     def __str__(self):
         if self.title:
