@@ -350,43 +350,14 @@ class LocationSite(DocumentLinksMixin):
 
     def update_location_context_document(self):
         """Update location context document."""
+        from bims.utils.location_context import get_location_context_data
         LOGGER.debug('update_location_context_document')
-        geocontext_url = get_key('GEOCONTEXT_URL')
-        geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
-        if not geocontext_url:
-            message = (
-                'Can not update location context document because geocontext '
-                'url is None. Please set it.')
-            return False, message
-        if not geocontext_collection_key:
-            message = (
-                'Can not update location context document because geocontext '
-                'collection key is None. Please set it.')
-            return False, message
-        if not self.get_centroid():
-            message = (
-                'Can not update location context document because centroid is '
-                'None. Please set it.')
-            return False, message
-        longitude = self.get_centroid().x
-        latitude = self.get_centroid().y
 
-        # build url
-        url = self.geocontext_url_format.format(
-            geocontext_url=geocontext_url,
-            longitude=longitude,
-            latitude=latitude,
-            geocontext_collection_key=geocontext_collection_key,
+        # Update location context in background
+        get_location_context_data(
+            site_id=str(self.id),
+            only_empty=False
         )
-
-        r = requests.get(url)
-        if r.status_code != 200:
-            message = (
-                'Request to url %s got %s [%s], can not update location '
-                'context document.' % (url, r.status_code, r.reason))
-            return False, message
-
-        self.location_context_document = json.dumps(r.json())
         return True, 'Successfully update location context document.'
 
     # noinspection PyClassicStyleClass
