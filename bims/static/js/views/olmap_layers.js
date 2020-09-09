@@ -795,10 +795,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             let url_provider = layerProvider;
             let url_key = layerName;
+            let source = this.layers[layerKey].source
             var abstract_result = "";
             $.ajax({
                 type: 'GET',
-                url: `/bims_proxy/https://maps.kartoza.com/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
+                url: `/bims_proxy/http://${source}/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,
                 dataType: `xml`,
                 success: function (response) {
                     let xml_response, parser, xmlDoc;

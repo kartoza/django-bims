@@ -1,6 +1,8 @@
 from django.contrib.gis.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+from bims.models.location_context_group import LocationContextGroup
+from bims.models.location_context_filter import LocationContextFilter
 
 
 class LocationContextFilterGroupOrder(models.Model):
@@ -34,6 +36,8 @@ class LocationContextFilterGroupOrder(models.Model):
 
 
 @receiver(post_save, sender=LocationContextFilterGroupOrder)
+@receiver(post_save, sender=LocationContextGroup)
+@receiver(post_save, sender=LocationContextFilter)
 def site_visit_post_save_handler(**kwargs):
     from bims.tasks.location_context import generate_spatial_scale_filter
     import os

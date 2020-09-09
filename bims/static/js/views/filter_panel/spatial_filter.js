@@ -10,8 +10,8 @@ define([
     return Backbone.View.extend({
         template: _.template($('#spatial-filter-panel').html()),
         selectedPoliticalRegions: [],
-        selectedSpatialFilters: [],
-        selectedSpatialFilterLayers: {},
+        selectedSpatialFilters: [], // List of the selected filter values e.g ['1', 2']
+        selectedSpatialFilterLayers: {}, // Dictionary of selected filter with the values e.g. {'boundary': ['1', '2']}
         politicalBoundaryInputName: 'political-boundary-value',
         riverCatchmentInputName: 'river-catchment-value',
         layerGroup: null,
@@ -213,6 +213,9 @@ define([
                 dataValue = 'value,' + data[i]['key'] + ',' + data[i]['query'];
 
                 let dataLayerName = '';
+                let dataWMSURL = '';
+                let dataWMSFormat = '';
+                let dataLayerIdentifier = '';
 
                 if (data[i].hasOwnProperty('query')) {
                     label = data[i]['query'];
@@ -223,6 +226,9 @@ define([
                     dataName = data[i]['key'];
                     dataValue = 'group,' + dataName;
                     dataLayerName = `data-layer-name="${data[i]['layer_name']}"`;
+                    dataWMSURL = `data-wms-url="${data[i]['wms_url']}"`;
+                    dataWMSFormat = `data-wms-format="${data[i]['wms_format']}"`;
+                    dataLayerIdentifier = `data-layer-identifier="${data[i]['layer_identifier']}"`;
                 }
                 if (selectedArray.includes(dataValue.toString())) {
                     _isChecked = true;
@@ -234,7 +240,7 @@ define([
                 var $item = $('<div class="boundary-item"></div>');
                 $item.append('<input class="boundary-item-input" type="checkbox" ' +
                     'data-level="' + level + '" name="' + dataName + '" ' +
-                    'value="' + dataValue + '" ' + checked + ' ' + dataLayerName + '>');
+                    'value="' + dataValue + '" ' + checked + ' ' + dataLayerName + ' ' + dataWMSURL + ' ' + dataWMSFormat + ' ' + dataLayerIdentifier + '>');
                 $item.append('<label> ' + label + '</label>');
                 wrapper.append($item);
 
@@ -257,7 +263,7 @@ define([
             } else {
                 value = this.groupKeyLabel;
             }
-            let layerName = $checkbox.data('layer-name');
+            let layerName = $checkbox.attr('name');
             if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
                 if (this.selectedSpatialFilterLayers[layerName].indexOf(value) === -1) {
                     this.selectedSpatialFilterLayers[layerName].push(value);
@@ -299,16 +305,12 @@ define([
             } else {
                 value = this.groupKeyLabel;
             }
-            let layerName = $checkbox.data('layer-name');
+            let layerName = $checkbox.attr('name');
             if (this.selectedSpatialFilterLayers.hasOwnProperty(layerName)) {
-                // if (this.selectedSpatialFilterLayers[layerName].length <= 1) {
-                //     delete this.selectedSpatialFilterLayers[layerName];
-                // } else {
                 let index = this.selectedSpatialFilterLayers[layerName].indexOf(value);
                 if (index > -1) {
                     this.selectedSpatialFilterLayers[layerName].splice(index, 1);
                 }
-                //}
             }
         },
         itemInputClicked: function (e) {
@@ -320,9 +322,9 @@ define([
             if ($target.is(':checked')) {
                 this.addSelectedValue(targetName, value);
                 this.addSelectedSpatialFilterLayer($target);
-                var $children = $wrapper.children().find('input:checkbox:not(:checked)');
+                let $children = $wrapper.children().find('input:checkbox:not(:checked)');
                 $children.prop('checked', true);
-                var $checkedChildren = $wrapper.children().find('input:checkbox:checked');
+                let $checkedChildren = $wrapper.children().find('input:checkbox:checked');
                 for (var j = 0; j < $checkedChildren.length; j++) {
                     var childrenValue = $($checkedChildren[j]).val();
                     this.removeSelectedSpatialFilterLayer($($checkedChildren[j]));
@@ -496,6 +498,7 @@ define([
         },
         clearSelected: function (e) {
             this.applyFilterButton.prop('disabled', true);
+            this.selectedSpatialFilterLayers = {};
 
             this.clearFilterButton.prop('disabled', true);
             $.each(Shared.UserBoundarySelected, function (index, id) {
@@ -536,7 +539,8 @@ define([
                 this.$el.find('.subtitle').removeClass('filter-panel-selected');
             }
         },
-        showLayersInMap: function () {
+        showBoundary: function () {
+            // Show border in red outline to map for selected filter
             if (this.selectedSpatialFilterLayers.length < 1) {
                 return true;
             }
@@ -544,11 +548,17 @@ define([
             Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
-            let wmsUrl = '/bims_proxy/https://maps.kartoza.com/geoserver/wms';
-            let wmsFormat = 'image/png';
 
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
+                let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0]);
+                let wmsUrl = $filterContainer.data('wms-url');
+                let wmsLayer = $filterContainer.data('layer-name');
+                let wmsFormat = $filterContainer.data('wms-format');
+                let layerIdentifier = $filterContainer.data('layer-identifier');
                 let cqlFilters = null;
+                if (!wmsUrl) {
+                    return true;
+                }
                 if (selectedLayer.length === 0) {
                     return true;
                 } else if (selectedLayer.length > 0 && selectedLayer[0] !== self.groupKeyLabel) {
@@ -563,13 +573,19 @@ define([
                         }
                     }
                     cqlFilters += ")";
-                    if (key === 'geoclass') {
-                        cqlFilters = "description in " + cqlFilters;
+                    if (layerIdentifier) {
+                        cqlFilters = `${layerIdentifier} in ${cqlFilters}`;
                     } else {
-                        cqlFilters = "name in " + cqlFilters;
+                        if (key === 'geoclass') {
+                            cqlFilters = "description in " + cqlFilters;
+                        } else {
+                            cqlFilters = "name in " + cqlFilters;
+                        }
                     }
                 }
-                let wmsLayer = 'kartoza:' + key;
+                if (!wmsLayer) {
+                  wmsLayer = 'kartoza:' + key;
+                }
                 let options = {
                     url: wmsUrl,
                     params: {
