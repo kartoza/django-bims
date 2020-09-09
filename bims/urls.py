@@ -5,6 +5,7 @@ from django.conf.urls import url, include
 from django.urls import reverse_lazy
 from django.views.generic import RedirectView
 from django.views.decorators.csrf import csrf_exempt
+from proxy.views import proxy_view
 
 from bims.views.map import MapPageView
 from bims.views.tracking import dashboard
@@ -46,7 +47,6 @@ from bims.views.autocomplete_search import (
     site_autocomplete,
     abiotic_autocomplete
 )
-from bims.views.proxy import proxy_request
 from bims.views.collections_form import (
     FishFormView,
     InvertFormView,
@@ -131,7 +131,7 @@ urlpatterns = [
     url(r'^abiotic-autocomplete/$',
         abiotic_autocomplete,
         name='abiotic-autocomplete-search'),
-    url(r'^bims_proxy/(?P<path>.*)', proxy_request),
+    url(r'^bims_proxy/(?P<url>.*)', proxy_view),
     url(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
     url(r'^invert-form/$', InvertFormView.as_view(), name='invert-form'),
     url(r'^algae-form/$', AlgaeFormView.as_view(), name='algae-form'),
