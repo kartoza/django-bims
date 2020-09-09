@@ -150,7 +150,10 @@ def generate_spatial_scale_filter(file_path=None):
                 'key': group.key,
                 'name': group.name,
                 'value': spatial_tree_value_sorted,
-                'layer_name': layer_name
+                'layer_name': layer_name,
+                'wms_url': group.wms_url,
+                'wms_format': group.wms_format,
+                'layer_identifier': group.layer_identifier,
             }
             spatial_tree_data['children'].append(spatial_tree_children)
 
