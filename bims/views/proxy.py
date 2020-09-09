@@ -1,7 +1,7 @@
 import sys
 import urllib.parse
 from django.views.decorators.csrf import requires_csrf_token
-from geonode.proxy.views import proxy
+from proxy.views import proxy_view
 
 
 @requires_csrf_token
@@ -33,4 +33,4 @@ def proxy_request(request, path):
         path = '://'.join(new_path)
 
     request.session['access_token'] = None
-    return proxy(request, url=path)
+    return proxy_view(request, url=path)
