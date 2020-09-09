@@ -2,9 +2,6 @@
 from datetime import timedelta
 from datetime import date
 import json
-from pygments import highlight
-from pygments.lexers.data import JsonLexer
-from pygments.formatters.html import HtmlFormatter
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
 
@@ -109,13 +106,9 @@ class HasLocationContextDocument(django_admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value == 'Yes':
-            return queryset.filter(
-                location_context_document__isnull=False).exclude(
-                location_context_document__exact='')
+            return queryset.filter(locationcontext__isnull=False)
         elif value == 'No':
-            return queryset.filter(models.Q(
-                location_context_document__isnull=True) | models.Q(
-                location_context_document__exact=''))
+            return queryset.filter(locationcontext__isnull=True)
         return queryset
 
 
@@ -135,8 +128,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     default_lon = 25
 
     readonly_fields = (
-        'location_context_prettified',
-        'original_geomorphological')
+        'original_geomorphological',)
 
     list_display = (
         'name',
@@ -149,40 +141,51 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     raw_id_fields = ('river', )
     list_display_links = ['name', 'site_code']
 
-    actions = ['update_location_context', 'delete_location_context']
+    actions = [
+        'update_location_context',
+        'delete_location_context',
+        'update_location_context_in_background']
     inlines = [LocationContextInline, ]
 
     def get_readonly_fields(self, request, obj=None):
         return ['original_geomorphological']
 
     def has_location_context(self, obj):
-        return bool(obj.location_context_document)
+        return LocationContext.objects.filter(site=obj).exists()
+
+    def update_location_context_in_background(self, request, queryset):
+        """Action method to update location context in background"""
+        site_names = []
+        for location_site in queryset:
+            location_site.save()
+            site_names.append(location_site.location_site_identifier)
+        full_message = 'Updating location context for {} in background'.format(
+            ','.join(site_names)
+        )
+        self.message_user(request, full_message)
 
     def update_location_context(self, request, queryset):
         """Action method to update selected location contexts."""
         if len(queryset) > 5:
-            message = 'You can not update for more than 5 location site.'
+            message = 'You can not update for more than 5 location sites.'
             self.message_user(request, message)
             return
         rows_updated = 0
         rows_failed = 0
         error_message = ''
+        site_names = []
         for location_site in queryset:
             success, message = location_site.update_location_context_document()
             if success:
                 rows_updated += 1
-                location_site.save()
+                site_names.append(location_site.location_site_identifier)
             else:
                 rows_failed += 1
                 error_message += (
                     'Failed to update site [%s] because [%s]\n') % (
-                    location_site.name, message)
+                    location_site.location_site_identifier, message)
 
-        if rows_updated == 1:
-            message_bit = "1 location context"
-        else:
-            message_bit = "%s location contexts" % rows_updated
-        full_message = "%s successfully updated." % message_bit
+        full_message = "%s successfully updated." % ','.join(site_names)
 
         if rows_failed > 0:
             error_message_bit = 'There are %s not updated site.' % rows_failed
@@ -193,39 +196,23 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def delete_location_context(self, request, queryset):
         """Action method to delete selected location contexts."""
-        rows_updated = queryset.update(location_context_document='')
-        if rows_updated == 1:
+        LocationContext.objects.filter(
+            site__in=queryset
+        ).delete()
+        if queryset.count() == 1:
             message_bit = "1 location context"
         else:
-            message_bit = "%s location contexts" % rows_updated
+            message_bit = "%s location contexts" % queryset.count()
         self.message_user(request, "%s successfully deleted." % message_bit)
 
     update_location_context.short_description = (
-        'Update the selected location context documents.')
+        'Update location context data for selected sites.')
+
+    update_location_context_in_background.short_description = (
+        'Update location context data for selected sites in background.')
 
     delete_location_context.short_description = (
-        'Delete the selected location context documents.')
-
-    def location_context_prettified(self, instance):
-        """Function to display pretty format of location context."""
-        # Convert the data to sorted, indented JSON
-        if instance.location_context_document:
-            data = json.loads(instance.location_context_document)
-            json_data_string = json.dumps(data, indent=2)
-
-            # Get the Pygments formatter
-            formatter = HtmlFormatter(style='colorful', noclasses=True)
-
-            # Highlight the data
-            response = highlight(json_data_string, JsonLexer(), formatter)
-
-            # Get the stylesheet
-            style = "<style>" + formatter.get_style_defs() + "</style><br>"
-
-            # Safe the output
-            return mark_safe(style + response)
-
-    location_context_prettified.short_description = 'Pretty Location Context'
+        'Delete location context data for selected sites.')
 
     def save_model(self, request, obj, form, change):
         if not obj.creator:

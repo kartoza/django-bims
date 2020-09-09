@@ -140,7 +140,7 @@ def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
             current_outcome, message = (
                 location_site.add_context_group(group_key))
             success = current_outcome
-            log('[{status}] [{site_id}] [{group}] - {message}'.format(
+            log(str('[{status}] [{site_id}] [{group}] - {message}').format(
                 status='SUCCESS' if success else 'FAILED',
                 site_id=location_site.id,
                 message=message,
