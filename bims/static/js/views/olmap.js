@@ -842,6 +842,7 @@ define([
                 $('#ripple-loading').show();
                 $('.map-control-panel').hide();
                 $('.zoom-control').hide();
+                $('.bug-report-wrapper').hide();
                 $('.print-map-control').addClass('control-panel-selected');
                 that.whenMapIsReady(function () {
                     var canvas = document.getElementsByClassName('map-wrapper');
@@ -864,6 +865,7 @@ define([
                             $('.zoom-control').show();
                             $('.map-control-panel').show();
                             $('#ripple-loading').hide();
+                            $('.bug-report-wrapper').show();
                             $('.print-map-control').removeClass('control-panel-selected');
                         }
                     })

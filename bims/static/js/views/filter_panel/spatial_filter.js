@@ -551,7 +551,7 @@ define([
 
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
                 let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0]);
-                let wmsUrl = $filterContainer.data('wms-url');
+                let wmsUrl = '/bims_proxy/' + $filterContainer.data('wms-url');
                 let wmsLayer = $filterContainer.data('layer-name');
                 let wmsFormat = $filterContainer.data('wms-format');
                 let layerIdentifier = $filterContainer.data('layer-identifier');
@@ -592,7 +592,7 @@ define([
                         LAYERS: wmsLayer,
                         FORMAT: wmsFormat,
                         TILED: true,
-                        STYLES: spatialFilterLayerStyle,
+                        STYLES: spatialFilterLayerStyle
                     }
                 };
                 if (cqlFilters) {
