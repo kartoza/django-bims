@@ -51,6 +51,12 @@ class CustomTheme(models.Model):
         blank=True,
         help_text='List of partners that will appear on the landing page'
     )
+    menu_items = models.ManyToManyField(
+        'bims_theme.MenuItem',
+        null=True,
+        blank=True,
+        help_text='Extra menu items'
+    )
     date = models.DateTimeField(
         auto_now_add=True,
         blank=True

@@ -121,6 +121,18 @@
                         <a class="dropdown-item" href="{{ domain_name }}/pages/about_us/">About Us</a>
                     </div>
                 </li>
+                {% if custom_theme.menu_items.all %}
+                    <li class="nav-item active dropdown">
+                        <a class="nav-link dropdown-toggle" href="#"
+                           id="dropdown01" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">More</a>
+                        <div class="dropdown-menu" aria-labelledby="dropdown01">
+                            {% for menu_item in custom_theme.menu_items.all %}
+                                <a class="dropdown-item" href="{{ menu_item.url }}" {% if menu_item.blank_target %}target="_blank"{% endif %}>{{ menu_item.title }}</a>
+                            {% endfor %}
+                        </div>
+                    </li>
+                {% endif %}
             </ul>
         </div>
         {% if request.get_host in domain_name %}

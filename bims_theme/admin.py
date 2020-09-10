@@ -7,7 +7,8 @@ from bims_theme.models import (
     CarouselHeader,
     Partner,
     LandingPageSection,
-    LandingPageSectionContent
+    LandingPageSectionContent,
+    MenuItem
 )
 
 
@@ -36,8 +37,13 @@ class LandingPageSectionContentAdmin(OrderedModelAdmin):
     list_display = ('name', 'move_up_down_links')
 
 
+class MenuItemAdmin(OrderedModelAdmin):
+    list_display = ('title', 'move_up_down_links')
+
+
 admin.site.register(CustomTheme, CustomThemeAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)
 admin.site.register(Partner, PartnerAdmin)
 admin.site.register(LandingPageSection, LandingPageSectionAdmin)
 admin.site.register(LandingPageSectionContent, LandingPageSectionContentAdmin)
+admin.site.register(MenuItem, MenuItemAdmin)
