@@ -1,0 +1,72 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load wagtailcore_tags %}
+{% load jsonify %}
+
+{% block subtitle %}
+    {{ self.title }}
+{% endblock %}
+
+{% block pre-head %}
+
+    <link href="{% static "css/clean-blog.css" %}" rel="stylesheet">
+    <style>
+        .blog-content {
+            margin-bottom: 50px;
+        }
+
+        hr {
+            max-width: 100%;
+        }
+
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <!-- Page Header -->
+    <header class="{% if self.get_ancestors.count > 1 %}posthead{% else %}masthead{% endif %}">
+        <div class="overlay"></div>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 col-md-12 p-0">
+                    <div class="{% if self.get_ancestors.count > 1 %}post-heading{% else %}site-heading{% endif %}">
+                        <h1>{{ self.title | safe }}</h1>
+                        <span class="subheading">{{ self.intro | safe }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container blog-content">
+        <div class="row">
+            {{ self.body | safe }}
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+{% endblock %}
+
+{% block foot %}
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script>
+        window.twttr = (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0],
+                t = window.twttr || {};
+            if (d.getElementById(id)) return t;
+            js = d.createElement(s);
+            js.id = id;
+            js.src = "https://platform.twitter.com/widgets.js";
+            fjs.parentNode.insertBefore(js, fjs);
+
+            t._e = [];
+            t.ready = function (f) {
+                t._e.push(f);
+            };
+
+            return t;
+        }(document, "script", "twitter-wjs"));
+    </script>
+{% endblock %}
