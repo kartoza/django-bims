@@ -33,6 +33,12 @@ class CustomTheme(models.Model):
         null=True,
         blank=True
     )
+    landing_page_sections = models.ManyToManyField(
+        'bims_theme.LandingPageSection',
+        null=True,
+        blank=True,
+        help_text='Landing page sections'
+    )
     carousels = models.ManyToManyField(
         'bims_theme.CarouselHeader',
         null=True,

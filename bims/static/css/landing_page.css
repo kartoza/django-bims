@@ -18,7 +18,6 @@ body {
 
 section {
     padding: 1rem 0;
-    border-bottom: none !important;
 }
 
 #section-wrapper {
@@ -469,6 +468,7 @@ html, body {
 .biodiversity-data-container {
     padding-top: 100px;
     padding-bottom: 100px;
+    border-bottom: 1px solid var(--main-accent-color);
 }
 
 .btn-explore-map {
@@ -504,4 +504,9 @@ html, body {
     max-height: 200px !important;
     max-width: 400px !important;
     margin-bottom: 20px;
+}
+
+.custom-sections .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }

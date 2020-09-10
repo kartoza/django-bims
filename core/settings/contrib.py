@@ -403,3 +403,20 @@ if (
         'geonode.security.middleware.SessionControlMiddleware'
     )
     MIDDLEWARE = tuple(MIDDLEWARE_CLASSES_LIST)
+
+
+# CKEDITOR configurations
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': '100%',
+        'contentsCss': [
+            '/static/js/libs/bootstrap-4.0.0/css/bootstrap.min.css',
+            '/static/css/base.css'
+        ],
+        'removePlugins': 'stylesheetparser',
+        'allowedContent': True,
+        'extraAllowedContent': 'span(*) btn(*)'
+    },
+}
