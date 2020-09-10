@@ -40,6 +40,24 @@
                     </div>
                 </div>
             </section>
+            {% if custom_theme.landing_page_sections %}
+                {% for landing_page_section in custom_theme.landing_page_sections.all %}
+                    <section class="biodiversity-data-container custom-sections" style="position: relative;">
+                        <div class="container">
+                            <div class="row" style="margin-bottom: 50px;">
+                                <div class="col-lg-8 mx-auto text-center">
+                                    <h2 class="section-heading">{{ landing_page_section.title }}</h2>
+                                </div>
+                            </div>
+                            {% for section_content in landing_page_section.contents.all %}
+                                <div class="row">
+                                    {{ section_content.content | safe }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endfor %}
+            {% endif %}
             {% if custom_theme.partners.all %}
             <section class="biodiversity-data-container grid-logos" style="position: relative; background-color: #f5f5f5a6">
                 <div class="container" style="margin-bottom: 25px">
