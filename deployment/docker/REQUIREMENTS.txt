@@ -17,7 +17,7 @@ django-allauth==0.35.0
 
 # Django Easy Audit
 # https://github.com/soynatan/django-easy-audit
-git+https://github.com/soynatan/django-easy-audit.git
+django-easy-audit==1.2.2
 django-grappelli==2.11.1
 
 djangorestframework==3.9.1
