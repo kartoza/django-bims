@@ -77,7 +77,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     substratum = serializers.SerializerMethodField()
     taxon = serializers.SerializerMethodField()
     collector_or_owner = serializers.SerializerMethodField()
-    study_reference = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
     conservation_status = serializers.SerializerMethodField()
@@ -91,7 +91,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     species = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
     doi_or_url = serializers.SerializerMethodField()
-    sampling_effort = serializers.SerializerMethodField()
+    sampling_effort_measure = serializers.SerializerMethodField()
     sampling_effort_value = serializers.SerializerMethodField()
     abundance_measure = serializers.SerializerMethodField()
     abundance_value = serializers.SerializerMethodField()
@@ -209,7 +209,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_province(self, obj):
         return self.spatial_data(obj, 'sa_provinces')
 
-    def get_sampling_effort(self, obj):
+    def get_sampling_effort_measure(self, obj):
         if obj.sampling_effort:
             return ' '.join(obj.sampling_effort.split(' ')[1:])
         return '-'
@@ -268,7 +268,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         if obj.collection_date:
             return obj.collection_date.isoformat().split('T')[0]
 
-    def get_study_reference(self, obj):
+    def get_title(self, obj):
         if obj.source_reference:
             return obj.source_reference.title.encode('utf-8')
         else:
@@ -471,7 +471,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'taxon',
             'taxon_rank',
             'sampling_method',
-            'sampling_effort',
+            'sampling_effort_measure',
             'sampling_effort_value',
             'abundance_measure',
             'abundance_value',
@@ -489,7 +489,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'year',
             'source',
             'reference_category',
-            'study_reference',
+            'title',
             'doi_or_url',
             'geomorphological_zone',
             'primary_catchment',
