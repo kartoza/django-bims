@@ -1,7 +1,6 @@
 import csv
 import logging
 from celery import shared_task
-from hashlib import md5
 from django.core.management import call_command
 
 from bims.models.boundary_type import BoundaryType

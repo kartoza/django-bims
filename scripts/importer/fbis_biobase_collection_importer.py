@@ -122,7 +122,6 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
 
         collection, created = BiologicalCollectionRecord.objects.get_or_create(
             original_species_name=original_species_name,
-            taxonomy=taxonomy,
             site=site,
             biotope=biotope,
             present=present == 1,
@@ -162,5 +161,5 @@ class FbisBiobaseCollectionImporter(FbisPostgresImporter):
 
         self.save_uuid(
             uuid=self.get_row_value('BioSiteVisitBioBiotopeTaxonID'),
-            object_id=biotope.id
+            object_id=collection.id
         )
