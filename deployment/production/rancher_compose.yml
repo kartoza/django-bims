@@ -1,0 +1,379 @@
+version: '2'
+volumes:
+  nginx-logs: {}
+  nginx-conf-data: {}
+  django-static: {}
+  django-logs: {}
+  postgis-data: {}
+  django-media: {}
+  geoserver-data-dir: {}
+  django-reports: {}
+services:
+  geoserver:
+    image: geonode/spcgeonode:geoserver-3.0
+    environment:
+      ADMIN_PASSWORD: admingeoserver
+      ADMIN_USERNAME: admin
+      DATABASE_URL: postgres://docker:docker@db:5432/gis
+      GEODATABASE_URL: postgis://docker:docker@geonode-db:5432/geonode_data
+      GEOSERVER_ADMIN_PASSWORD: admingeoserver
+      HTTP_HOST: rbis.kartoza.com
+      HTTP_PORT: '80'
+      SITEURL: http:///
+    volumes:
+    - geodatadir:/spcgeonode-geodatadir/
+    - sync-data:/sync-data
+    links:
+    - uwsgi:nginx
+    - geonode-db:geonode-db
+    - db:db
+  cache:
+    image: memcached
+    stdin_open: true
+    entrypoint:
+    - memcached
+    - -m 64
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+  smtp:
+    image: catatnight/postfix
+    environment:
+      maildomain: kartoza.com
+      smtp_user: noreply:docker
+  clear-search-results:
+    image: dimasciput/rbis_uwsgi:latest
+    environment:
+      ADMIN_EMAILS: dimas@kartoza.com
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","staging.rbis.kartoza.com","blog.rbis.kartoza.com","docs.rbis.kartoza.com","geonode.rbis.kartoza.com"]'
+      APPLICATION_NAME: RBIS
+      APP_NAME: rbis
+      ASYNC_SIGNALS_GEONODE: 'True'
+      AUTH_WITH_EMAIL_ONLY: 'True'
+      BROKER_URL: amqp://rabbitmq:5672
+      CONSERVATION_STATUS_FILTER: 'True'
+      CONTACT_US_EMAIL: dimas@kartoza.com
+      C_FORCE_ROOT: '1'
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_URL: postgis://docker:docker@db:5432/gis
+      DATABASE_USERNAME: docker
+      DEFAULT_BACKEND_DATASTORE: datastore
+      DJANGO_SETTINGS_MODULE: rbis_core.settings.prod_docker
+      GEOCONTEXT_URL: https://geocontext.kartoza.com/
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_PASSWORD: docker
+      GEONODE_DATABASE_USER: docker
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_GEODATABASE_HOST: geonode-db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_INSTANCE_NAME: geonode
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      INSTITUTION_ID_DEFAULT: RBIS
+      IS_CELERY: 'False'
+      MEDIA_ROOT: /home/web/media
+      MONITORING_ENABLED: 'False'
+      PYTHONPATH: /usr/src/rbis:/usr/src/app:/usr/src/bims:/home/web/django_project
+      RABBITMQ_HOST: rabbitmq
+      ROOT_URLCONF: rbis_core.urls
+      SPATIAL_SCALE_TITLE: SPATIAL SCALE
+      STATIC_ROOT: /home/web/static
+      UWSGI_CMD: uwsgi --ini /usr/src/rbis/uwsgi.conf
+      VIRTUAL_PORT: '8000'
+    entrypoint:
+    - /bin/sh
+    volumes:
+    - django-static:/home/web/static:rw
+    - django-media:/home/web/media:rw
+    - django-reports:/home/web/reports
+    - django-logs:/var/log/
+    - sync-data:/data
+    - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    links:
+    - geoserver:geoserver
+    - geonode-db:geonode-db
+    - db:db
+    command:
+    - -c
+    - cd /usr/src/bims; python manage.py clear_search_results
+    labels:
+      io.rancher.container.start_once: 'true'
+      cron.schedule: 0 */5 * * *
+  data-dir-conf:
+    image: geosolutionsit/geoserver_data:2.12.x
+    volumes:
+    - geoserver-data-dir:/geoserver_data/data
+    labels:
+      io.rancher.container.start_once: 'true'
+  dbrestore:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      ALLOW_IP_RANGE: 10.42.0.0/16
+      POSTGRES_DB: gis
+      POSTGRES_PASS: docker
+      POSTGRES_USER: docker
+    volumes:
+    - /home/RBIS-backups:/backups
+    - postgis-data:/sql
+    command:
+    - bash
+    - -c
+    - su - postgres -c 'dropdb gis'; createdb -O docker -T template_postgis gis; pg_restore /backups/latest.dmp | psql gis
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: 'true'
+  mediabackup:
+    image: kartoza/sftp-backup:1.0
+    environment:
+      DAILY: '3'
+      DUMPPREFIX: MEDIA_bims
+      MONTHLY: '2'
+      TARGET_FOLDER: /media_backup
+      USE_SFTP_BACKUP: 'False'
+      YEARLY: '1'
+    volumes:
+    - /home/RBIS-media-backups:/backups
+    - django-media:/media_backup
+  geonode-db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      ALLOW_IP_RANGE: 10.42.0.0/16
+      POSTGRES_DB: geonode_data
+      POSTGRES_PASS: docker
+      POSTGRES_USER: docker
+    stdin_open: true
+    volumes:
+    - /home/RBIS-backups:/backups
+    - postgis-data:/sql
+    - sync-data:/raw
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+  rabbitmq:
+    image: rabbitmq:3.7-alpine
+    environment:
+      RABBITMQ_NODENAME: rabbit
+      RABBIT_PASSWORD: rabbit_test_password
+      USER: rabbit_user
+    volumes:
+    - rabbitmq:/var/lib/rabbitmq
+  dbbackups:
+    image: kartoza/pg-backup:9.6
+    hostname: pg-backups
+    environment:
+      DUMPPREFIX: PG_bims
+      PGDATABASE: gis
+      PGHOST: db
+      PGPASSWORD: docker
+      PGPORT: '5432'
+      PGUSER: docker
+    volumes:
+    - /home/RBIS-backups:/backups
+  nginx-conf-data:
+    image: dimasciput/rbis_nginx_conf:latest
+    environment:
+      ALWASY_INIT: 'True'
+      TARGET: /etc/nginx/sites-available
+    volumes:
+    - nginx-conf-data-testing:/etc/nginx/sites-available
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.container.start_once: 'true'
+  web:
+    image: nginx
+    environment:
+      GEOSERVER_FORWARD: '''True'''
+    stdin_open: true
+    entrypoint:
+    - /etc/nginx/sites-available/docker-entrypoint.sh
+    volumes:
+    - django-static:/home/web/static:ro
+    - django-media:/home/web/media:ro
+    - nginx-conf-data-testing:/etc/nginx/sites-available
+    - nginx-logs:/var/log/nginx
+    tty: true
+    links:
+    - uwsgi:django
+    - geoserver:geoserver
+    command:
+    - prod
+    labels:
+      io.rancher.container.pull_image: always
+  uwsgi:
+    image: dimasciput/rbis_uwsgi:latest
+    environment:
+      ADMIN_EMAILS: dimas@kartoza.com
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","staging.rbis.kartoza.com","blog.rbis.kartoza.com","docs.rbis.kartoza.com","geonode.rbis.kartoza.com"]'
+      APPLICATION_NAME: RBIS
+      APP_NAME: rbis
+      ASYNC_SIGNALS: 'True'
+      ASYNC_SIGNALS_GEONODE: 'True'
+      AUTH_WITH_EMAIL_ONLY: 'True'
+      BING_MAP_KEY: { REQUIRED }
+      BROKER_URL: amqp://rabbitmq:5672
+      CONSERVATION_STATUS_FILTER: 'True'
+      CONTACT_US_EMAIL: dimas@kartoza.com
+      C_FORCE_ROOT: '1'
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_URL: postgis://docker:docker@db:5432/gis
+      DATABASE_USERNAME: docker
+      DEFAULT_BACKEND_DATASTORE: datastore
+      DJANGO_SETTINGS_MODULE: rbis_core.settings.prod_docker
+      ECOLOGICAL_CONDITION_FILTER: 'False'
+      ENABLE_MODULE_FILTER: 'True'
+      ENABLE_UPLOAD_DATA: 'False'
+      GEOCONTEXT_URL: https://geocontext.kartoza.com/
+      GEODATABASE_URL: postgis://geonode_data:docker@db:5432/geonode_data
+      GEOFENCE_SECURITY_ENABLED: 'False'
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_PASSWORD: docker
+      GEONODE_DATABASE_USER: docker
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_GEODATABASE_HOST: geonode-db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_INSTANCE_NAME: geonode
+      GEOSERVER_ADMIN_PASSWORD: admingeoserver
+      GEOSERVER_LOCATION: http://geoserver:8080/geoserver/
+      GEOSERVER_LOCATION_SITE_LAYER: bims:location_site_view
+      GEOSERVER_PUBLIC_LOCATION: http://staging.rbis.kartoza.com/geoserver/
+      GEOSERVER_WEB_UI_LOCATION: http://staging.rbis.kartoza.com/geoserver/
+      INSTITUTION_ID_DEFAULT: RBIS
+      IS_CELERY: 'False'
+      IUCN_API_KEY: { REQUIRED }
+      MAP_TILER_KEY: { REQUIRED }
+      RAVEN_CONFIG_DSN: { REQUIRED }
+      RECAPTCHA_KEY: { REQUIRED }
+      MEDIA_ROOT: /home/web/media
+      MONITORING_ENABLED: 'False'
+      PROXY_ALLOWED_HOSTS: kartoza.com,rbis.kartoza.com,blog.rbis.kartoza.com,docs.rbis.kartoza.com,geonode.rbis.kartoza.com,maps.kartoza.com
+      PYTHONPATH: /usr/src/bims:/usr/src/rbis:/usr/src/geonode
+      RABBITMQ_HOST: rabbitmq
+      ROOT_URLCONF: core.urls
+      SASS_ENABLED: 'False'
+      SITEURL: http://staging.rbis.kartoza.com/
+      SITE_DOMAIN_NAME: http://staging.rbis.kartoza.com/
+      SITE_READY: 'True'
+      SPATIAL_SCALE_TITLE: SPATIAL
+      STATIC_ROOT: /home/web/static
+      UWSGI_CMD: uwsgi --ini /usr/src/rbis/uwsgi.conf
+      VIRTUAL_HOST: rbis.kartoza.com
+      VIRTUAL_PORT: '8000'
+      DEFAULT_BACKEND_UPLOADER: geonode.rest
+    working_dir: /usr/src/rbis
+    entrypoint:
+    - /bin/sh
+    dns_search:
+    - geonode.rbis.kartoza.com
+    - rbis.kartoza.com
+    volumes:
+    - django-static:/home/web/static:rw
+    - django-media:/home/web/media:rw
+    - django-reports:/home/web/reports
+    - django-logs:/var/log/
+    - sync-data:/data
+    - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    - /home/RBIS-backups:/home/web/backups
+    dns:
+    - 10.20.60.242
+    domainname: rbis.kartoza.com
+    links:
+    - rabbitmq:rabbitmq
+    - geonode-db:geonode-db
+    - geoserver:geoserver
+    - db:db
+    command:
+    - -c
+    - uwsgi --ini /usr/src/rbis/uwsgi.conf
+    labels:
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.affinity:host_label: mode=production
+  worker:
+    image: dimasciput/rbis_uwsgi:latest
+    environment:
+      ADMIN_EMAILS: dimas@kartoza.com
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","staging.rbis.kartoza.com"]'
+      APPLICATION_NAME: RBIS
+      APP_NAME: RBIS
+      ASYNC_SIGNALS: 'True'
+      BROKER_URL: amqp://rabbitmq:5672
+      CONTACT_US_EMAIL: dimas@kartoza.com
+      C_FORCE_ROOT: 'True'
+      DATABASE_HOST: db
+      DATABASE_NAME: gis
+      DATABASE_PASSWORD: docker
+      DATABASE_URL: postgis://docker:docker@db:5432/gis
+      DATABASE_USERNAME: docker
+      DEFAULT_BACKEND_DATASTORE: datastore
+      DEFAULT_BACKEND_UPLOADER: geonode.rest
+      DJANGO_SETTINGS_MODULE: core.settings.prod_worker
+      GEOCONTEXT_URL: https://geocontext.kartoza.com/
+      GEODATABASE_URL: postgis://geonode_data:docker@db:5432/geonode_data
+      GEOIP_PATH: /home/web/media/geoip.db
+      GEONODE_DATABASE: gis
+      GEONODE_DATABASE_PASSWORD: docker
+      GEONODE_DATABASE_USER: docker
+      GEONODE_GEODATABASE: geonode_data
+      GEONODE_GEODATABASE_HOST: geonode-db
+      GEONODE_GEODATABASE_PASSWORD: docker
+      GEONODE_GEODATABASE_USERNAME: docker
+      GEONODE_INSTANCE_NAME: geonode
+      GEOSERVER_ADMIN_PASSWORD: admingeoserver
+      GEOSERVER_LOCATION: http://geoserver/geoserver/
+      GEOSERVER_LOCATION_SITE_LAYER: bims:location_site_view
+      GEOSERVER_PUBLIC_LOCATION: http://staging.rbis.kartoza.com/geoserver/
+      IUCN_API_KEY: { REQUIRED }
+      MAP_TILER_KEY: { REQUIRED }
+      RAVEN_CONFIG_DSN: { REQUIRED }
+      MEDIA_ROOT: /home/web/media
+      MONITORING_ENABLED: 'False'
+      PROXY_ALLOWED_HOSTS: kartoza.com,staging.rbis.kartoza.com
+      PYTHONPATH: /usr/src/bims:/usr/src/rbis:/usr/src/geonode
+      RABBITMQ_HOST: rabbitmq
+      ROOT_URLCONF: core.urls
+      SASS_ENABLED: 'False'
+      SITEURL: http://staging.rbis.kartoza.com/
+      SITE_DOMAIN_NAME: http://staging.rbis.kartoza.com/
+      STATIC_ROOT: /home/web/static
+      VIRTUAL_HOST: rbis.kartoza.com
+      VIRTUAL_PORT: '8000'
+    working_dir: /usr/src/bims
+    volumes:
+    - django-static:/home/web/static:rw
+    - django-media:/home/web/media:rw
+    - django-reports:/home/web/reports
+    - django-logs:/var/log/
+    - sync-data:/data
+    - geoserver-data-dir:/usr/src/geonode/geoserver/data/data
+    links:
+    - rabbitmq:rabbitmq
+    - uwsgi:uwsgi
+    - geonode-db:geonode-db
+    - geoserver:geoserver
+    - db:db
+    - cache:cache
+    command:
+    - celery
+    - worker
+    - --app=bims.celery:app
+    - -B
+    - -l
+    - debug
+    labels:
+      io.rancher.container.pull_image: always
+  db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      ALLOW_IP_RANGE: 10.42.0.0/16
+      POSTGRES_DB: gis
+      POSTGRES_PASS: docker
+      POSTGRES_USER: docker
+    volumes:
+    - /home/RBIS-backups/:/backups
+    - postgis-data:/sql
