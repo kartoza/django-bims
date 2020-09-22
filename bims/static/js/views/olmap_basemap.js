@@ -85,11 +85,15 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             return layer
         },
         getDarkMatterBasemap: function () {
-            var layer = this.getOpenMapTilesTile(
-                '/static/mapbox-style/dark-matter-gl-style.json',
-                'Data from <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-                'contributors; Tiles &copy; <a href="http://carto.com/attributions#basemaps">Carto</a>\n'
-                );
+            var layer = new ol.layer.Tile({
+                title: 'Plain B&W',
+                source: new ol.source.XYZ({
+                    attributions: ['<a id="home-link" target="_top" href="../">Map tiles</a> by ' +
+                    '<a target="_top" href="http://stamen.com">Stamen Design</a>, under <a target="_top" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by ' +
+                    '<a target="_top" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'],
+                    url: '/bims_proxy/http://a.tile.stamen.com/toner/{z}/{x}/{y}.png'
+                })
+            });
             layer.set('title', 'Plain B&W');
             return layer
         },
