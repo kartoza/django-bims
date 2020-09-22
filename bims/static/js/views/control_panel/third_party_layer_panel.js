@@ -106,10 +106,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                         type: 'GET',
                         url: this.inWARDSStationsUrl,
                         success: function (data) {
+                            const regex = /"id":null,/gi;
+                            const updatedData = JSON.parse(JSON.stringify(data).replaceAll(regex, ''));
                             let source = new ol.source.Vector({
                                 features: (
                                     new ol.format.GeoJSON({featureProjection: 'EPSG:3857'})
-                                ).readFeatures(data, {featureProjection: 'EPSG:3857'})
+                                ).readFeatures(updatedData, {featureProjection: 'EPSG:3857'})
                             });
                             self.inWARDSLayer.setSource(source);
                             $(e.target).parent().find('.fetching').remove();
