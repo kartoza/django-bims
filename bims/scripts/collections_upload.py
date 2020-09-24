@@ -586,6 +586,7 @@ class CollectionsCSVUpload(DataCSVUpload):
                     error_row=row,
                     error_message=str(e)
                 )
+                return
         if not uuid_value:
             row[UUID] = record.uuid
 
