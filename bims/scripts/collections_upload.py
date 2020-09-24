@@ -575,11 +575,17 @@ class CollectionsCSVUpload(DataCSVUpload):
                 fields['uuid'] = uuid_value
 
         if not record:
-            record, _ = (
-                BiologicalCollectionRecord.objects.get_or_create(
-                    **fields
+            try:
+                record, _ = (
+                    BiologicalCollectionRecord.objects.get_or_create(
+                        **fields
+                    )
                 )
-            )
+            except Exception as e:  # noqa
+                self.error_file(
+                    error_row=row,
+                    error_message=str(e)
+                )
         if not uuid_value:
             row[UUID] = record.uuid
 
