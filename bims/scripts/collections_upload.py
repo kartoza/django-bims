@@ -415,6 +415,7 @@ class CollectionsCSVUpload(DataCSVUpload):
         collector = collectors
         optional_data['collector'] = self.row_value(row, COLLECTOR_OR_OWNER)
         if len(collectors) > 0:
+            collector = collectors[0]
             optional_data['collector_user'] = collectors[0]
             optional_data['owner'] = collectors[0]
             # Add owner and creator to location site
@@ -425,9 +426,9 @@ class CollectionsCSVUpload(DataCSVUpload):
                 location_site.creator = collectors[0]
             location_site.save()
             if custodian:
-                for collector in collectors:
-                    collector.organization = self.row_value(row, CUSTODIAN)
-                    collector.save()
+                for _collector in collectors:
+                    _collector.organization = self.row_value(row, CUSTODIAN)
+                    _collector.save()
 
         # -- Get or create a survey
         self.process_survey(
