@@ -44,11 +44,13 @@
                 {% for landing_page_section in custom_theme.landing_page_sections.all %}
                     <section class="biodiversity-data-container custom-sections" style="position: relative;">
                         <div class="container">
-                            <div class="row" style="margin-bottom: 50px;">
-                                <div class="col-lg-8 mx-auto text-center">
-                                    <h2 class="section-heading">{{ landing_page_section.title }}</h2>
+                            {% if landing_page_section.title %}
+                                <div class="row">
+                                    <div class="col-lg-8 mx-auto text-center">
+                                        <h2 class="section-heading">{{ landing_page_section.title }}</h2>
+                                    </div>
                                 </div>
-                            </div>
+                            {% endif %}
                             {% for section_content in landing_page_section.contents.all %}
                                 <div class="row">
                                     {{ section_content.content | safe }}
@@ -80,6 +82,70 @@
                     </div>
                 </div>
             </section>
+            {% endif %}
+
+            {% if custom_theme.is_footer_enabled %}
+                <footer>
+                <div class="section-1-padding footer-bg bgimage-property ">
+                    <div class="container">
+                        <div class="row rowsafari">
+                            <div class="col-sm-6 col-md-4 col-lg-4 res2-bot-pad res1-bot-pad count-res" style="text-align: center; margin-bottom: 25px;">
+                                 {% if custom_theme.logo %}
+                                     <img src="{{ custom_theme.logo.url }}" style="max-width: 100%; width: 120px"/>
+                                 {% endif %}
+                                <div style="margin-top: 20px;">
+                                    {% if custom_theme.twitter_link %}
+                                        <a href="{{ custom_theme.twitter_link }}" target="_blank"><img src="{% static 'img/twitter.png' %}" class="footer-icon"/></a>
+                                    {% endif %}
+                                    {% if custom_theme.facebook_link %}
+                                        <a href="{{ custom_theme.facebook_link }}" target="_blank"><img src="{% static 'img/facebook.png' %}" class="footer-icon"/></a>
+                                    {% endif %}
+                                    {% if custom_theme.instagram_link %}
+                                        <a href="{{ custom_theme.instagram_link }}" target="_blank"><img src="{% static 'img/instagram.png' %}" class="footer-icon"/></a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-8 col-lg-8 res1-bot-pad res2-bot-pad count-res">
+                                <h5 style="font-weight: bold; margin-bottom: 25px;">GET IN TOUCH</h5>
+                                <div class="marg-top15 res-marg-top10 res2-top-marg10">
+                                    <div class="dis-tab-cell icon-width">
+                                        <i class="fa fa-envelope footer-font-size"
+                                           aria-hidden="true"></i>
+                                    </div>
+                                    <div class="dis-tab-cell-top">
+                                        <p class="lt-space word-br marg-bot5">
+                                            <a href="mailto:{{ custom_theme.email_1 }}">{{ custom_theme.email_1 }}</a>
+                                        </p>
+                                        <p class="lt-space marg-bot5 word-br">
+                                            <a href="mailto:{{ custom_theme.email_2 }}">{{ custom_theme.email_2 }}</a>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="marg-top10">
+                                    <div class="dis-tab-cell icon-width">
+                                        <i class="fa fa-phone footer-font-size"
+                                           aria-hidden="true"></i>
+                                    </div>
+                                    <div class="dis-tab-cell-top">
+                                        <p class="lt-space marg-bot5">{{ custom_theme.phone_1 }}</p>
+                                        <p class="lt-space marg-bot5">{{ custom_theme.phone_2 }}</p>
+                                    </div>
+                                </div>
+                                <div class="marg-top10">
+                                    <div class="dis-tab-cell icon-width">
+                                        <i class="fa fa-map-marker footer-font-size"
+                                           aria-hidden="true"></i>
+                                    </div>
+                                    <div class="dis-tab-cell-top">
+                                        {{ custom_theme.address_1 | linebreaks }}
+                                        <p class="lt-space word-br"></p>{{ custom_theme.address_2 | linebreaks }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </footer>
             {% endif %}
         </div>
     </div>

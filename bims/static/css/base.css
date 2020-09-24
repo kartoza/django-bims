@@ -352,3 +352,8 @@ h6 {
     padding-right: 10px;
     margin-left: 5px;
 }
+
+.navbar-toggler-icon {
+    color: white;
+    padding-top: 5px;
+}
