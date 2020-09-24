@@ -79,6 +79,58 @@ class CustomTheme(models.Model):
     is_enabled = models.BooleanField(
         default=True
     )
+    is_footer_enabled = models.BooleanField(
+        default=False
+    )
+    facebook_link = models.URLField(
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    twitter_link = models.URLField(
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    instagram_link = models.URLField(
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    email_1 = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    email_2 = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    phone_1 = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    phone_2 = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    address_1 = models.TextField(
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
+    address_2 = models.TextField(
+        blank=True,
+        default='',
+        help_text='To be displayed in the footer'
+    )
 
     class Meta:
         ordering = ("date", )

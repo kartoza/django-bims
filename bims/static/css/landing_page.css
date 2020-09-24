@@ -500,13 +500,50 @@ html, body {
 .flex-item {
     margin: auto;
 }
+
 .flex-item img {
     max-height: 200px !important;
-    max-width: 400px !important;
+    max-width: 100%;
     margin-bottom: 20px;
+}
+
+@media (min-width: 400px) {
+    .flex-item img {
+        max-width: 400px !important;
+    }
 }
 
 .custom-sections .row {
     margin-left: 0 !important;
     margin-right: 0 !important;
+}
+
+.dis-tab{
+	display:inline-block;
+}
+.dis-tab-cell-top{
+	display:table-cell;
+	vertical-align:top;
+}
+.dis-tab-cell-middle{
+	display:table-cell;
+	vertical-align:middle;
+}
+.dis-tab-cell-middle1{
+	vertical-align:middle;
+}
+.dis-tab-cell{
+	display:table-cell;
+}
+.icon-width {
+    width: 60px !important;
+}
+.footer-font-size {
+    font-size: 35px;
+    color: var(--main-accent-color);
+}
+.footer-icon {
+    margin-right: 10px;
+    margin-left: 10px;
+    width: 50px
 }
