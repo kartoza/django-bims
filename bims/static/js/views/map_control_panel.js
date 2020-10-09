@@ -37,6 +37,7 @@ define(
                 'click .spatial-filter-container-close': 'closeSpatialFilterPanel',
                 'click .layers-selector-container-close': 'closeFilterPanel',
                 'click .locate-options-container-close': 'closeLocatePanel',
+                'click .lasso-control-close': 'closeLassoPanel',
                 'click .sub-filter': 'closeSubFilter',
                 'click .locate-coordinates': 'openLocateCoordinates',
                 'click .locate-farm': 'openLocateFarm',

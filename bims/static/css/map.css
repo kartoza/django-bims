@@ -2542,6 +2542,8 @@ div:hover::-webkit-scrollbar {
     margin-top: 10px;
     margin-bottom: 10px;
     width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 #species-ssdd-site-details .col-6 {

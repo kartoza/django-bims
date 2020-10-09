@@ -2,7 +2,7 @@ import json
 from django.utils import timezone
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import JSONField
-from bims.models import LocationSite, SourceReference
+from bims.models import LocationSite, SourceReference, Survey
 
 
 class ChemicalRecord(models.Model):
@@ -23,6 +23,7 @@ class ChemicalRecord(models.Model):
         models.CASCADE,
         null=True,
         related_name='chemical_collection_record',
+        blank=True
     )
 
     survey = models.ForeignKey(
@@ -30,6 +31,7 @@ class ChemicalRecord(models.Model):
         models.CASCADE,
         related_name='chemical_collection_record',
         null=True,
+        blank=True
     )
 
     chem = models.ForeignKey(
@@ -52,10 +54,27 @@ class ChemicalRecord(models.Model):
         on_delete=models.SET_NULL
     )
 
+    def __str__(self):
+        site = self.location_site
+        if not site and self.survey:
+            site = self.survey.site
+        return '{site} - {value} - {date}'.format(
+            site=site.location_site_identifier,
+            value=self.value,
+            date=self.date
+        )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
         is_dictionary = False
+
+        if not self.survey and self.location_site:
+            survey, _ = Survey.objects.get_or_create(
+                site=self.location_site,
+                date=self.date
+            )
+            self.survey = survey
 
         while not is_dictionary and attempt < max_allowed:
             if not self.additional_data:

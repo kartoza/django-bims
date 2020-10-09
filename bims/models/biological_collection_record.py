@@ -466,8 +466,6 @@ def collection_post_save_handler(sender, instance, **kwargs):
         collection_post_save_handler,
     )
     instance.on_post_save()
-    if instance.is_cluster_generation_applied():
-        SearchProcess.objects.all().delete()
     models.signals.post_save.connect(
         collection_post_save_handler,
     )

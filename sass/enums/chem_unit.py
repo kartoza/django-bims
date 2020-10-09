@@ -19,3 +19,4 @@ class ChemUnit(Enum):
     APHA_UNITS = 'APHA units'
     MG_S = 'mg/s'
     MG_M2 = 'mg/m2'
+    M_S = 'm/s'

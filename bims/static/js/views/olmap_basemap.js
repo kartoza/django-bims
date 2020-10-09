@@ -75,15 +75,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 layers: [layer_NGIOSMPhotos_0, baseMapLayer]
             });
         },
-        getPositronBasemap: function () {
-            var layer = this.getOpenMapTilesTile(
-                '/static/mapbox-style/positron-gl-style.json',
-                'Data from <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-                'contributors; Tiles &copy; <a href="http://carto.com/attributions#basemaps">Carto</a>\n'
-                );
-            layer.set('title', 'Plain greyscale');
-            return layer
-        },
         getDarkMatterBasemap: function () {
             var layer = new ol.layer.Tile({
                 title: 'Plain B&W',
@@ -121,11 +112,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 })
             });
 
-            // OPENMAPTILES
-            if (mapTilerKey) {
-                baseSourceLayers.push(this.getPositronBasemap());
-                baseSourceLayers.push(this.getDarkMatterBasemap());
-            }
+            baseSourceLayers.push(this.getDarkMatterBasemap());
 
             // add bing
             if (bingMapKey) {
@@ -141,17 +128,12 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
 
             baseSourceLayers.push(ngiMap);
 
-            if (mapSurferKey) {
-                // OSM MAPSURFER ROADS - Make default
-                var mapSurfer = new ol.layer.Tile({
-                    title: 'OpenStreetMap',
-                    source: new ol.source.XYZ({
-                        attributions: ['Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @University of Heidelberg</a>; Map data from <a href="http://openstreetmap.org">OpenStreetMap</a> contributors; <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'],
-                        url: '/bims_proxy/https://api.openrouteservice.org/mapsurfer/{z}/{x}/{y}.png?api_key=' + mapSurferKey
-                    })
-                });
-                baseSourceLayers.push(mapSurfer);
-            }
+            // OSM
+            let osm = new ol.layer.Tile({
+                title: 'OpenStreetMap',
+                source: new ol.source.OSM()
+            });
+            baseSourceLayers.push(osm);
             baseSourceLayers.push(toposheet);
 
             baseSourceLayers.push(this.getKartozaBaseMap());
