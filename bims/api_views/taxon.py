@@ -78,7 +78,7 @@ class TaxonDetail(APIView):
             common_names = list(
                 taxon.vernacular_names.all().filter(language='eng').values())
         if len(common_names) == 0:
-            data['common_name'] = 'Unknown'
+            data['common_name'] = taxon.canonical_name
         else:
             data['common_name'] = str(common_names[0]['name']).capitalize()
 

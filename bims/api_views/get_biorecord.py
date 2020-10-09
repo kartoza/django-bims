@@ -148,7 +148,7 @@ class BioCollectionSummary(APIView):
         elif taxonomy.vernacular_names.all().values().exists():
             common_names = list(taxonomy.vernacular_names.all().values())
         if len(common_names) == 0:
-            response_data['common_name'] = 'Unknown'
+            response_data['common_name'] = taxonomy.canonical_name
         else:
             response_data['common_name'] = str(
                 common_names[0]['name']).capitalize()
