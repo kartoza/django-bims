@@ -44,6 +44,9 @@ class Chem(models.Model):
         default=False
     )
 
+    def __str__(self):
+        return self.chem_code
+
     def __unicode__(self):
         return self.chem_code
 

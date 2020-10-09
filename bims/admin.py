@@ -270,6 +270,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
+    date_hierarchy = 'collection_date'
     class Media:
         css = {
             'all': ('admin/custom-admin.css',)
@@ -804,15 +805,36 @@ class BimsDocumentAdmin(DocumentAdmin):
 
 
 class ChemicalRecordAdmin(admin.ModelAdmin):
+    date_hierarchy = 'date'
     list_display = (
         'value',
         'chem',
         'date',
-        'location_site'
+        'get_site_code'
     )
     raw_id_fields = (
         'location_site',
+        'survey',
+        'source_reference'
     )
+    list_filter = (
+        ('date', DateRangeFilter),
+        'chem',
+    )
+    search_fields = (
+        'location_site__site_code',
+        'survey__site__site_code'
+    )
+
+    def get_site_code(self, obj):
+        if obj.location_site:
+            return obj.location_site.location_site_identifier
+        elif obj.survey:
+            return obj.survey.site.location_site_identifier
+        return '-'
+
+    get_site_code.short_description = 'Site Code'
+    get_site_code.admin_order_field = 'site__site_code'
 
 
 class ChemAdmin(admin.ModelAdmin):
