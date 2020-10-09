@@ -102,7 +102,6 @@ class CollectionsCSVUpload(DataCSVUpload):
             source_reference_post_save_handler,
             sender=SourceReferenceDocument
         )
-        SearchProcess.objects.all().delete()
         if self.site_ids:
             update_location_context(
                 location_site_id=','.join(self.site_ids)
