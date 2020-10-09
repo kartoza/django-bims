@@ -1,6 +1,7 @@
 import json
 from django.views.generic import TemplateView
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin
 from sass.enums.chem_unit import ChemUnit
@@ -49,8 +50,8 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
         context = super(AbioticFormView, self).get_context_data(**kwargs)
         context['chemical_records'] = []
         for chem in Chem.objects.filter(
-                show_in_abiotic_list=True
-        ).order_by('chem_description'):
+            show_in_abiotic_list=True
+        ).order_by(Lower('chem_description')):
             value = 0
             record_id = None
             if self.update_form:
