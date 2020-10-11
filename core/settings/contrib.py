@@ -261,6 +261,7 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.Pageview',
     'bims.Visitor',
     'bims.Taxonomy',
+    'bims.LocationContext',
     'flatpages.FlatPage'
 ]
 
