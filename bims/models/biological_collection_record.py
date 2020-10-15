@@ -458,7 +458,6 @@ def collection_post_save_handler(sender, instance, **kwargs):
     """
     Fetch taxon from original species name.
     """
-    from bims.models import SearchProcess
 
     if not issubclass(sender, BiologicalCollectionRecord):
         return

@@ -28,7 +28,6 @@ from bims.models import (
     SurveyData,
     SurveyDataOption,
     SurveyDataValue,
-    SearchProcess,
     source_reference_post_save_handler,
     SourceReferenceDatabase,
     SourceReferenceDocument

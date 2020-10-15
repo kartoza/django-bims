@@ -348,7 +348,7 @@ class LocationSite(DocumentLinksMixin):
         self.location_context_document = ""
         return True, "Document cleared"
 
-    def update_location_context_document(self):
+    def update_location_context_document(self, group_keys=None):
         """Update location context document."""
         from bims.utils.location_context import get_location_context_data
         LOGGER.debug('update_location_context_document')
@@ -356,7 +356,8 @@ class LocationSite(DocumentLinksMixin):
         # Update location context in background
         get_location_context_data(
             site_id=str(self.id),
-            only_empty=False
+            only_empty=False,
+            group_keys=group_keys
         )
         return True, 'Successfully update location context document.'
 
@@ -503,3 +504,57 @@ def location_site_post_save_handler(sender, instance, **kwargs):
 
     # Update location context in background
     update_location_context.delay(instance.id)
+
+
+def generate_site_code(location_site=None, lat=None, lon=None):
+    """Generate site code"""
+    from bims.utils.site_code import (
+        fbis_catchment_generator,
+        rbis_catchment_generator
+    )
+    from preferences import preferences
+
+    site_code = ''
+    catchment_site_code = ''
+    catchment_generator_method = preferences.SiteSetting.site_code_generator
+    if catchment_generator_method == 'fbis':
+        catchment_site_code = fbis_catchment_generator(
+            location_site=location_site,
+            lat=lat,
+            lon=lon
+        )
+    elif catchment_generator_method == 'rbis':
+        catchment_site_code = rbis_catchment_generator(
+            location_site=location_site,
+            lat=lat,
+            lon=lon
+        )
+    else:
+        if location_site:
+            catchment_site_code += location_site.name[:2].upper()
+            catchment_site_code += location_site.site_description[:4].upper()
+    site_code += catchment_site_code
+
+    # Add hyphen
+    site_code += '-'
+
+    # Add five letters describing location e.g. 00001
+    existed_location_sites = LocationSite.objects.filter(
+        site_code__startswith=site_code
+    )
+    if location_site:
+        existed_location_sites = existed_location_sites.exclude(
+            id=location_site.id)
+
+    site_code_number = len(existed_location_sites) + 1
+    site_code_string = str(site_code_number).zfill(5)
+    site_code_full = site_code
+    site_code_full += site_code_string
+
+    while LocationSite.objects.filter(site_code=site_code_full).exists():
+        site_code_number += 1
+        site_code_string = str(site_code_number).zfill(5)
+        site_code_full = site_code
+        site_code_full += site_code_string
+
+    return site_code_full

@@ -75,7 +75,9 @@ from bims.models import (
     AlgaeData,
     UploadSession,
     DashboardConfiguration,
-    HarvestSession
+    HarvestSession,
+    generate_site_code,
+    location_site_post_save_handler
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -142,6 +144,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     list_display_links = ['name', 'site_code']
 
     actions = [
+        'update_site_code',
         'update_location_context',
         'delete_location_context',
         'update_location_context_in_background']
@@ -152,6 +155,29 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def has_location_context(self, obj):
         return LocationContext.objects.filter(site=obj).exists()
+
+    def update_site_code(self, request, queryset):
+        """Action to update site code"""
+        models.signals.post_save.disconnect(
+            location_site_post_save_handler,
+            sender=LocationSite
+        )
+
+        for location_site in queryset:
+            location_site.site_code = generate_site_code(
+                location_site=location_site
+            )
+            location_site.save()
+
+        models.signals.post_save.connect(
+            location_site_post_save_handler,
+            sender=LocationSite
+        )
+
+        self.message_user(
+            request,
+            'Site codes has been updated for {} sites'.format(
+                queryset.count()))
 
     def update_location_context_in_background(self, request, queryset):
         """Action method to update location context in background"""
@@ -271,6 +297,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 class BiologicalCollectionAdmin(admin.ModelAdmin):
     date_hierarchy = 'collection_date'
+
     class Media:
         css = {
             'all': ('admin/custom-admin.css',)
