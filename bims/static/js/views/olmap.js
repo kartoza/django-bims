@@ -617,6 +617,8 @@ define([
                     ])
             });
 
+            this.map.getView().fit(extent);
+
             // Create a popup overlay which will be used to dispgitlay feature info
             this.popup = new ol.Overlay({
                 element: document.getElementById('popup'),
