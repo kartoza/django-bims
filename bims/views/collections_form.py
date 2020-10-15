@@ -11,6 +11,7 @@ from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.contrib.gis.measure import Distance
 from django.http import HttpResponseRedirect, Http404
 from bims.utils.get_key import get_key
 from bims.models import (
@@ -45,8 +46,9 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     session_identifier = 'collection-form'
     taxon_group_name = ''
     survey = None
+    all_taxa = None
 
-    def all_species(self, taxon_group):
+    def get_all_taxa(self, taxon_group):
         """
         Get all taxon
         :param taxon_group: taxon group object
@@ -58,16 +60,35 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             ).distinct('taxonomy').values_list('taxonomy')
         ).values_list('id', flat=True)
 
+    def nearest_taxa(self):
+        """
+        Find nearest taxa within radius
+        :return: list of taxa
+        """
+        radius = 25
+        return list(LocationSite.objects.filter(
+            geometry_point__distance_lte=(
+                self.location_site.geometry_point,
+                Distance(km=radius))
+        ).values(
+            taxon_id=F('biological_collection_record__taxonomy'),
+            taxon_name=F(
+                'biological_collection_record__taxonomy__'
+                'canonical_name'),
+            rank=F('biological_collection_record__taxonomy__rank')
+        ).distinct('taxon_name').filter(
+            taxon_id__isnull=False,
+            taxon_id__in=self.all_taxa,
+        ).order_by(
+            'taxon_name'
+        ))
+
     def taxa_from_river_catchment(self):
         """
         Get taxa from nearest river_catchment
         :return: list of taxa
         """
         river_catchment_query = {}
-        taxon_group, created = TaxonGroup.objects.get_or_create(
-            name=self.taxon_group_name
-        )
-        all_species = self.all_species(taxon_group)
         location_contexts = LocationContext.objects.filter(
             site=self.location_site
         )
@@ -92,7 +113,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                     rank=F('biological_collection_record__taxonomy__rank')
                 ).distinct('taxon_name').filter(
                     taxon_id__isnull=False,
-                    taxon_id__in=all_species,
+                    taxon_id__in=self.all_taxa,
                 ).order_by(
                     'taxon_name'
                 )
@@ -144,7 +165,22 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
-        context['taxa'] = self.taxa_from_river_catchment()
+
+        # -- Taxa list
+        taxon_group, created = TaxonGroup.objects.get_or_create(
+            name=self.taxon_group_name
+        )
+        self.all_taxa = self.get_all_taxa(taxon_group)
+
+        # Get from same river catchment
+        taxa = self.taxa_from_river_catchment()
+
+        if not taxa:
+            # Get nearest taxa
+            taxa = self.nearest_taxa()
+
+        context['taxa'] = taxa
+
         context['taxon_rank'] = list(
             rank.name for rank in TaxonomicRank.hierarchy()
         )
