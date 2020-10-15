@@ -22,6 +22,8 @@
         const locationSiteLong = '{{ location_site_long }}';
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
         const siteId = '{{ site_id }}';
+        const siteCodeGeneratorMethod = '{{ preferences.SiteSetting.site_code_generator }}';
+
     </script>
     <style>
         .carousel {

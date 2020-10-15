@@ -167,25 +167,28 @@ class LocationSiteFormView(TemplateView):
                             'key']
                     ).delete()
 
-        if catchment_geocontext:
-            catchment_data = json_loads_byteified(
-                catchment_geocontext
-            )
-            for registry in catchment_data['service_registry_values']:
-                if not registry['value']:
-                    continue
-                group, group_created = (
-                    LocationContextGroup.objects.get_or_create(
-                        key=registry['key'],
-                        name=registry['name'],
-                        geocontext_group_key=catchment_data['key']
+        try:
+            if catchment_geocontext:
+                catchment_data = json_loads_byteified(
+                    catchment_geocontext
+                )
+                for registry in catchment_data['service_registry_values']:
+                    if not registry['value']:
+                        continue
+                    group, group_created = (
+                        LocationContextGroup.objects.get_or_create(
+                            key=registry['key'],
+                            name=registry['name'],
+                            geocontext_group_key=catchment_data['key']
+                        )
                     )
-                )
-                LocationContext.objects.get_or_create(
-                    site=location_site,
-                    value=registry['value'],
-                    group=group
-                )
+                    LocationContext.objects.get_or_create(
+                        site=location_site,
+                        value=registry['value'],
+                        group=group
+                    )
+        except TypeError:
+            pass
 
         if refined_geomorphological_zone:
             location_site.refined_geomorphological = (

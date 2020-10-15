@@ -13,23 +13,25 @@ let validator = $('#site-form').validate({
         let riverName = $('#river_name').val();
         let originalRiverName = $('#original_river_name').val();
 
-        if (!riverName && !originalRiverName) {
-            formAlert.show();
-            formAlert.html('River name is required.');
-            return false;
-        }
+        if (siteCodeGeneratorMethod === 'fbis') {
+            if (!riverName && !originalRiverName) {
+                formAlert.show();
+                formAlert.html('River name is required.');
+                return false;
+            }
 
-        // Check length
-        if (siteCode.length !== 12) {
-            showSiteCodeError();
-            return false;
-        }
-        // Check regex
-        let regex = /(\w{6})-(\w{5})/g;
-        let regexResult = regex.test(siteCode);
-        if (!regexResult) {
-            showSiteCodeError();
-            return false;
+            // Check length
+            if (siteCode.length !== 12) {
+                showSiteCodeError();
+                return false;
+            }
+            // Check regex
+            let regex = /(\w{6})-(\w{5})/g;
+            let regexResult = regex.test(siteCode);
+            if (!regexResult) {
+                showSiteCodeError();
+                return false;
+            }
         }
         form.submit();
     }
@@ -141,8 +143,8 @@ const updateSiteCode = (e) => {
         url += '&site_id=' + siteId
     }
 
-    checkSiteInSA(latitude, longitude, function (isInSA) {
-        if (isInSA) {
+    checkSiteInCountry(latitude, longitude, function (isInCountry) {
+        if (isInCountry) {
             $.ajax({
                 url: url,
                 success: function (data) {
@@ -156,7 +158,7 @@ const updateSiteCode = (e) => {
         } else {
             document.getElementById('update-site-code').disabled = false;
             button.html(buttonLabel);
-            alert('Site is not in South Africa');
+            alert('Site is not inside country');
         }
     });
 
@@ -375,19 +377,23 @@ $('.open-image-btn').click(function () {
     window.open(imageUrl,'Image','width=largeImage.stylewidth,height=largeImage.style.height,resizable=1');
 });
 
-let checkSiteInSA = (latitude, longitude, callback) => {
+let checkSiteInCountry = (latitude, longitude, callback) => {
 
-    let url = `https://geocontext.kartoza.com/api/v1/geocontext/value/group/${longitude}/${latitude}/province/`;
+    let url = `/api/site-in-country/?lon=${longitude}&lat=${latitude}`;
     $.ajax({
         url: url,
         success: function (data) {
             try {
-                let values = data['service_registry_values'];
-                let value = values[0];
-                let province = value['value'];
-                callback(province !== null);
+                if (data) {
+                    callback(true);
+                }
             } catch (e) {
                 callback(false);
+            }
+        },
+        error:function (xhr, ajaxOptions, thrownError){
+            if(xhr.status === 404) {
+                callback(false)
             }
         }
     });

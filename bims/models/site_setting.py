@@ -128,6 +128,16 @@ class SiteSetting(Preferences):
         help_text='How site code generated'
     )
 
+    base_country_code = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Base country code for the site, '
+                  'using ISO 3166-1 (See here for the list : '
+                  'https://wiki.openstreetmap.org/wiki/Nominatim/'
+                  'Country_Codes)'
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
