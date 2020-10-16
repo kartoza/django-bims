@@ -421,3 +421,7 @@ CKEDITOR_CONFIGS = {
         'extraAllowedContent': 'span(*) btn(*)'
     },
 }
+
+# SORL THUMBNAIL SETTINGS
+THUMBNAIL_COLORSPACE = None
+THUMBNAIL_PRESERVE_FORMAT = True
