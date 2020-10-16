@@ -44,6 +44,9 @@ class TaxonGroup(models.Model):
         blank=True
     )
 
+    class Meta:
+        ordering = ('display_order',)
+
     def __unicode__(self):
         return self.name
 

@@ -74,7 +74,8 @@ from bims.views.harvest_collection_data import HarvestSessionStatusView
 from bims.api_views.taxon_group import (
     UpdateTaxonGroupOrder,
     RemoveTaxaFromTaxonGroup,
-    AddTaxaToTaxonGroup
+    AddTaxaToTaxonGroup,
+    UpdateTaxonGroup
 )
 from bims.api_views.landing_page_summary import LandingPageSummary
 from bims.api_views.site_in_country import SiteInCountry
@@ -217,6 +218,9 @@ urlpatterns = [
     url(r'^add-taxa-to-taxon-group/$',
         AddTaxaToTaxonGroup.as_view(),
         name='add-taxa-to-taxon-group'),
+    url(r'^update-taxon-group/$',
+        UpdateTaxonGroup.as_view(),
+        name='update-taxon-group'),
     url(r'^landing-page-summary/$',
         LandingPageSummary.as_view(),
         name='landing-page-summary'),

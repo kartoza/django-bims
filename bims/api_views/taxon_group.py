@@ -136,3 +136,36 @@ class AddTaxaToTaxonGroup(TaxaUpdateMixin):
                 ).taxonomies.all().count()
             }
         )
+
+
+class UpdateTaxonGroup(TaxaUpdateMixin):
+    """Api to update taxon group.
+    Post data required:
+    {
+        'module_id': id
+    }
+    Post data optional:
+    {
+        'module_name': 'Module' // Name of the taxon group
+        'module_logo': File img // Img file of the logo
+    }
+    """
+    def post(self, request, *args):
+        module_name = self.request.POST.get('module_name', None)
+        module_logo = self.request.FILES.get('module_logo', None)
+        module_id = self.request.POST.get('module_id', None)
+        if not module_id:
+            raise Http404('Missing required parameter')
+        try:
+            taxon_group = TaxonGroup.objects.get(id=module_id)
+        except TaxonGroup.DoesNotExist:
+            raise Http404('Taxon group does not exist')
+
+        if module_name:
+            taxon_group.name = module_name
+
+        if module_logo:
+            taxon_group.logo = module_logo
+
+        taxon_group.save()
+        return Response('Updated')

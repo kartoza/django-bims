@@ -36,7 +36,7 @@ define([
         mapInteractionEnabled: false,
         previousZoom: 0,
         sidePanelView: null,
-        initZoom: 7,
+        initZoom: 8,
         numInFlightTiles: 0,
         scaleLineControl: null,
         mapIsReady: false,

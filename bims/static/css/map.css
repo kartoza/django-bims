@@ -1907,6 +1907,9 @@ div:hover::-webkit-scrollbar {
 }
 
 .module-species {
+    width: 40px;
+    height: 40px;
+    position: relative;
     filter: grayscale(50%);
     opacity: 0.4;
     filter: alpha(opacity=40);
@@ -1916,6 +1919,19 @@ div:hover::-webkit-scrollbar {
     filter: grayscale(0%);
     opacity: 1;
     filter: alpha(opacity=100);
+}
+
+.module-species > img {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
 }
 
 .tooltip {

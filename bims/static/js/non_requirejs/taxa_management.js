@@ -15,6 +15,7 @@ let $loadingOverlay = $('.loading');
 let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
 let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
+let $updateLogoBtn = $('.update-logo-btn');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -120,6 +121,52 @@ $findTaxonButton.click(function () {
         }
     });
 });
+
+$updateLogoBtn.click((event) => {
+    event.preventDefault();
+    const _maxTries = 10;
+    let _element = $(event.target);
+    let _currentTry = 1
+    while (!_element.hasClass('ui-sortable-handle') && _currentTry < _maxTries) {
+        _element = _element.parent();
+        _currentTry += 1;
+    }
+    const moduleName = _element.find('.taxon-group-title').html().trim();
+    $('#edit-module-img-container').html(
+        `<img style="max-width: 100%" src=${_element.find('img').attr('src')}>`
+    )
+    $('#edit-module-name').val(moduleName);
+    $('#edit-module-id').val(_element.data('id'));
+    $('#editModuleModal').modal({
+        keyboard: false
+    })
+    return false;
+});
+
+$('#moduleEditForm').on('submit', function (e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    console.log(formData.get('module_name'));
+    console.log(formData.get('module_logo'));
+    console.log(formData);
+    let url = '/api/update-taxon-group/';
+    $.ajax({
+        type: 'POST',
+        headers:{ "X-CSRFToken": csrfToken },
+        url: url,
+        data: formData,
+        cache: false,
+        contentType: false,
+        processData: false,
+        success: function (data) {
+            location.reload();
+        },
+        error: function (data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+})
 
 // ----- Functions ----- //
 const getTaxaList = (url) => {

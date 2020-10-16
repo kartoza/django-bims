@@ -68,9 +68,12 @@ class SiteVisitListView(ListView):
                 pass
 
         # Get source collection if exist in request
-        context['source_collection'] = ast.literal_eval(
-            self.request.GET.get('sourceCollection', '[]')
-        )
+        try:
+            context['source_collection'] = ast.literal_eval(
+                self.request.GET.get('sourceCollection', '[]')
+            )
+        except SyntaxError:
+            context['source_collection'] = []
 
         context['total_sites'] = total_sites
         context['total_records'] = total_records

@@ -155,6 +155,9 @@
                                     Total taxonomy
                                     : <span id="taxon_group_{{ taxa_group.id }}">{{ taxa_group.taxonomies.count }}</span>
                                 </div>
+                                <div>
+                                    <div class="btn btn-warning update-logo-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</div>
+                                </div>
                             </div>
                         </div>
                     </li>
@@ -315,6 +318,54 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="editModuleModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form id="moduleEditForm" enctype="multipart/form-data" >
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">
+                        Edit Module
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                        <input type="hidden" class="form-control"
+                                   id="edit-module-id" name="module_id">
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Label:</label>
+                            <input type="text" class="form-control"
+                                   id="edit-module-name" name="module_name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">Logo:</label>
+                            <div class="row">
+                                <div class="col-4" id="edit-module-img-container">
+
+                                </div>
+                                <div class="col-8">
+                                    <input type="file" class="form-control" id="inputLogo" name="module_logo">
+                                </div>
+                            </div>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block foot %}
