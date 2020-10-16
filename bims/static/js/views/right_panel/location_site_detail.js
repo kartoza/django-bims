@@ -368,24 +368,26 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $dashboardRow.append('<td style="padding-top: 12px;"><b>Dashboard</b></td>');
             $formRow.append('<td style="padding-top: 12px;"><b>Form</b></td>');
 
-            let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 50%;">SASS Dashboard</button>');
-            let $addSassButton = $('<button class="fbis-button-small fbis-red" style="width: 50%;">Add SASS</button>');
-            let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
-            $sassDashboarRow.append($sassDashboardButtonContainer);
-            $sassDashboardButtonContainer.append($sassDashboardButton);
-            $sassDashboardButtonContainer.append($addSassButton);
-            if (data['sass_exist']) {
-                $sassDashboardButton.click(function () {
-                    let sassUrl = '/sass/dashboard/' + self.siteId + '/';
-                    sassUrl += self.apiParameters(filterParameters);
-                    window.location.href = sassUrl;
+            if (is_sass_enabled) {
+                let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 50%;">SASS Dashboard</button>');
+                let $addSassButton = $('<button class="fbis-button-small fbis-red" style="width: 50%;">Add SASS</button>');
+                let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
+                $sassDashboarRow.append($sassDashboardButtonContainer);
+                $sassDashboardButtonContainer.append($sassDashboardButton);
+                $sassDashboardButtonContainer.append($addSassButton);
+                if (data['sass_exist']) {
+                    $sassDashboardButton.click(function () {
+                        let sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                        sassUrl += self.apiParameters(filterParameters);
+                        window.location.href = sassUrl;
+                    });
+                } else {
+                    $sassDashboardButton.addClass('disabled');
+                }
+                $addSassButton.click(function () {
+                    window.location.href = '/sass/' + self.siteId;
                 });
-            } else {
-                $sassDashboardButton.addClass('disabled');
             }
-            $addSassButton.click(function () {
-                window.location.href = '/sass/' + self.siteId;
-            });
 
             $.each(data['biodiversity_data'], function (key, value) {
                 $iconHead.append('<td class="overview-data"><img width="30" src="/uploaded/' + value['icon'] + '"></td></td>');

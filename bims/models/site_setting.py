@@ -143,6 +143,11 @@ class SiteSetting(Preferences):
         help_text='Show third party layer selector in Map screen'
     )
 
+    enable_sass = models.BooleanField(
+        default=False,
+        help_text='Enable or disable SASS'
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
