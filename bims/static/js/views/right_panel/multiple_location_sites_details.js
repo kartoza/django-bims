@@ -101,18 +101,20 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             $numTaxaRow.append('<td><b>Number of Taxa</b></td>');
             $dashboardRow.append('<td style="padding-top: 12px;"><b>Dashboard</b></td>');
 
-            let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
-            let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
-            $sassDashboarRow.append($sassDashboardButtonContainer);
-            $sassDashboardButtonContainer.append($sassDashboardButton);
-            if (data['sass_exist']) {
-                $sassDashboardButton.click(function () {
-                    let sassUrl = '/sass/dashboard-multi-sites/';
-                    sassUrl += self.apiParameters(filterParameters);
-                    window.location.href = sassUrl;
-                });
-            } else {
-                $sassDashboardButton.addClass('disabled');
+            if (is_sass_enabled) {
+                let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
+                let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
+                $sassDashboarRow.append($sassDashboardButtonContainer);
+                $sassDashboardButtonContainer.append($sassDashboardButton);
+                if (data['sass_exist']) {
+                    $sassDashboardButton.click(function () {
+                        let sassUrl = '/sass/dashboard-multi-sites/';
+                        sassUrl += self.apiParameters(filterParameters);
+                        window.location.href = sassUrl;
+                    });
+                } else {
+                    $sassDashboardButton.addClass('disabled');
+                }
             }
 
             $.each(data['biodiversity_data'], function (key, value) {

@@ -57,7 +57,7 @@
         const geoserverPublicUrl = '/bims_proxy/{{ geoserver_public_location }}';
         var filterParameters = {};
         var conservationStatusData = [];
-        const is_sass_enabled = {% if is_sass_enabled %}true{% else %}false{% endif %};
+        const is_sass_enabled = {% if preferences.SiteSetting.enable_sass %}true{% else %}false{% endif %};
         {% if use_conservation_status %}
             conservationStatusData = {{ conservation_status_data | safe }};
         {% endif %}
