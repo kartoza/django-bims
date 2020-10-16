@@ -77,6 +77,7 @@ from bims.api_views.taxon_group import (
     AddTaxaToTaxonGroup
 )
 from bims.api_views.landing_page_summary import LandingPageSummary
+from bims.api_views.site_in_country import SiteInCountry
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -144,6 +145,8 @@ urlpatterns = [
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-site-code/$',
         GetSiteCode.as_view(), name='get-site-code'),
+    url(r'^site-in-country/$',
+        SiteInCountry.as_view(), name='site-in-country'),
     url(r'^get-river-name/$',
         GetRiverName.as_view(), name='get-river-name'),
     url(r'^get-geomorphological-zone/$',

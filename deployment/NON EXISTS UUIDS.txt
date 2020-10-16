@@ -1,0 +1,28 @@
+NON EXISTS UUIDS : 
+FOR BIO REFERENCE = 9ea54be0-afd1-4900-bef4-a54680c67606 A study of a Cape Mountain stream ecosystem and its response to fire.
+
+['c1800d61-d69b-4c44-9a67-a4cbe3f2d9dc',
+ 'b6b2f6d0-a04b-421a-979b-1f99ba38d875',
+ '884e924f-eff0-4177-a83a-a9c58b53d4ca',
+ '6fa0ac3d-5689-48cc-b70f-23c2e655f254',
+ 'ee59e1fe-fd07-4b06-af48-1547eb83931c',
+ 'f1c29df4-0cd8-4d85-8d20-51dfc4719fc6',
+ '3f1009f2-7514-4998-9a3e-cb330907a8bb',
+ 'f16675e7-6ec4-44e1-92d0-c83e30039af5',
+ 'ac024891-aaf1-4505-9769-f1eedcd771a1',
+ '270a539a-50ee-476f-a2c4-0fbe0e865f57',
+ '7db57791-7cc3-4b1e-b2fb-759d8bd83df2',
+ '67d631d1-2eed-4bef-8a87-7284de95b9be',
+ '05549a5f-c3f8-4e6c-9a47-6c5ac11ec18c',
+ '537f3bdb-8b09-483b-8cf7-57b46f8b9064',
+ '9ae2fb35-2b95-441a-8f66-3d4f88f7c7e5']
+
+
+FOR BIO REFERENCE = 597687c1-af7c-4005-a778-9ecd8f4c37f5 The effect of regulation by two impoundments on an acid, blackwater, Cape mountain stream.
+
+ ['f8ded8fe-5d87-4496-a737-0237c242fc1e',
+ '2d190ac8-a043-4a48-8580-4a3bdc8ccd9a',
+ 'b0b7c674-a9f2-4f1f-93ea-0f6604e79632',
+ '7559bb6e-b2bd-4720-b7a0-65b636ed15a1']
+
+

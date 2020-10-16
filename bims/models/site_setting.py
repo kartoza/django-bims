@@ -5,6 +5,14 @@ from preferences.models import Preferences
 
 
 class SiteSetting(Preferences):
+    SITE_CODE_GENERATOR_CHOICES = (
+        ('bims', 'BIMS (2 Site Name + 2 Site Description + Site count)'),
+        ('fbis', 'FBIS (2 Secondary catchment + 4 River + Site count)'),
+        (
+            'rbis',
+            'RBIS (1 Catchment 0 + 2 Catchment 1 + 1 Catchment 2 + Site count)'
+        ),
+    )
     site_notice = models.TextField(
         null=True,
         blank=True
@@ -110,6 +118,24 @@ class SiteSetting(Preferences):
         blank=True,
         max_length=100,
         help_text='Link to docs page'
+    )
+
+    site_code_generator = models.CharField(
+        max_length=50,
+        choices=SITE_CODE_GENERATOR_CHOICES,
+        blank=True,
+        default='bims',
+        help_text='How site code generated'
+    )
+
+    base_country_code = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Base country code for the site, '
+                  'using ISO 3166-1 (See here for the list : '
+                  'https://wiki.openstreetmap.org/wiki/Nominatim/'
+                  'Country_Codes)'
     )
 
     def save(self, *args, **kwargs):
