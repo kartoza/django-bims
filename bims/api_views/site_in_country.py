@@ -1,5 +1,4 @@
 # coding=utf-8
-import requests
 from django.http import Http404
 from geopy.geocoders import Nominatim
 from braces.views import LoginRequiredMixin
