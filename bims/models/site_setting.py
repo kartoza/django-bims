@@ -138,6 +138,11 @@ class SiteSetting(Preferences):
                   'Country_Codes)'
     )
 
+    show_third_party_layer = models.BooleanField(
+        default=False,
+        help_text='Show third party layer selector in Map screen'
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
