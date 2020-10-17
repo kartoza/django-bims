@@ -249,10 +249,12 @@
                 <div class="col-8 value-column"><%= value %></div>
             </div>
         <% }); %>
+        <% if (site_detail_info.river) { %>
         <div class="row">
             <div class="col-4 caption-column">River</div>
             <div class="col-8 value-column"><%= site_detail_info.river %></div>
         </div>
+        <% } %>
     </div>
 </script>
 
