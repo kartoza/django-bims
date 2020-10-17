@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
+from django.db.models import Count
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -43,6 +44,13 @@ class SummaryReportGeneralApiView(APIView):
 
         return Response({
             'total_sites': LocationSite.objects.all().count(),
+            'total_duplicated_sites': LocationSite.objects.exclude(
+                site_code=''
+            ).values('site_code').annotate(
+                count=Count('site_code')
+            ).values('site_code', 'count').filter(
+                count__gt=1
+            ).count(),
             'total_records': BiologicalCollectionRecord.objects.all().count(),
             'total_modules': taxon_modules.count(),
             'total_species': (
