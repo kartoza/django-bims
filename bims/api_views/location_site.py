@@ -626,22 +626,27 @@ class LocationSitesSummary(APIView):
                 location_site.name
             )
 
-        river_and_geo = OrderedDict()
-        river_and_geo['River'] = site_river
-        river_and_geo['Original River Name'] = location_site.legacy_river_name
-        river_and_geo['Geomorphological zone'] = (
-            location_context.value_from_key(
-                'geo_class_recoded')
-        )
-        refined_geomorphological = '-'
-        if location_site.refined_geomorphological:
-            refined_geomorphological = location_site.refined_geomorphological
-        river_and_geo['Refined Geomorphological zone'] = \
-            refined_geomorphological
-
         result = dict()
         result['Overview'] = overview
-        result['River and Geomorphological Zone'] = river_and_geo
+
+        if preferences.SiteSetting.site_code_generator == 'fbis':
+            river_and_geo = OrderedDict()
+            river_and_geo['River'] = site_river
+            river_and_geo[
+                'Original River Name'] = location_site.legacy_river_name
+            river_and_geo['Geomorphological zone'] = (
+                location_context.value_from_key(
+                    'geo_class_recoded')
+            )
+            refined_geomorphological = '-'
+            if location_site.refined_geomorphological:
+                refined_geomorphological = (
+                    location_site.refined_geomorphological
+                )
+            river_and_geo['Refined Geomorphological zone'] = (
+                refined_geomorphological
+            )
+            result['River and Geomorphological Zone'] = river_and_geo
 
         # Location context group data
         location_context_filters = (
