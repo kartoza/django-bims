@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from preferences import preferences
 from django.views.generic import TemplateView
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
 from bims.models import (
     LocationSite,
@@ -19,7 +20,13 @@ WARNING_TEMPLATE = '<span style="color: orange">{}</span>'
 OK_TEMPLATE = '<span style="color: green">{}</span>'
 
 
-class SummaryReportView(TemplateView):
+class SummaryReportView(UserPassesTestMixin, TemplateView):
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+        return False
+
     template_name = 'summary_report.html'
 
 
@@ -30,30 +37,45 @@ class SummaryReportGeneralApiView(APIView):
         taxon_modules = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         )
-
-        # - Species per module
-        species_per_modules = {}
-        for taxon_module in taxon_modules:
-            species_per_modules[taxon_module.name] = (
-                taxon_module.taxonomies.all().count()
-            )
-
-        # - Records per module
-        records_per_modules = {}
-        for taxon_module in taxon_modules:
-            records_per_modules[taxon_module.name] = (
-                BiologicalCollectionRecord.objects.filter(
-                    module_group=taxon_module
-                ).count()
-            )
-
-        # -- Records per source collection
         records_per_source_collection = {}
         source_collections = (
             BiologicalCollectionRecord.objects.all().values_list(
                 'source_collection', flat=True
             ).distinct('source_collection')
         )
+
+        # - Data per module
+        species_per_modules = {}
+        records_per_modules = {}
+        sites_per_modules = {}
+        for taxon_module in taxon_modules:
+            species_per_modules[taxon_module.name] = {}
+            records_per_modules[taxon_module.name] = {}
+            sites_per_modules[taxon_module.name] = {}
+            for source_collection in source_collections:
+                species_per_modules[taxon_module.name][
+                    str(source_collection)] = (
+                    taxon_module.taxonomies.filter(
+                        biologicalcollectionrecord__source_collection=
+                        source_collection
+                    ).distinct('id').count()
+                )
+                records_per_modules[taxon_module.name][
+                    str(source_collection)] = (
+                    BiologicalCollectionRecord.objects.filter(
+                        module_group=taxon_module,
+                        source_collection=source_collection
+                    ).count()
+                )
+                sites_per_modules[taxon_module.name][
+                    str(source_collection)] = (
+                    BiologicalCollectionRecord.objects.filter(
+                        module_group=taxon_module,
+                        source_collection=source_collection
+                    ).distinct('site').count()
+                )
+
+        # -- Records per source collection
         for source_collection in source_collections:
             records_per_source_collection[str(source_collection)] = (
                 BiologicalCollectionRecord.objects.filter(
@@ -62,12 +84,21 @@ class SummaryReportGeneralApiView(APIView):
             )
 
         # -- Species per source collection
-        species_per_source_collection = {}
+        total_species_per_source_collection = {}
         for source_collection in source_collections:
-            species_per_source_collection[str(source_collection)] = (
+            total_species_per_source_collection[str(source_collection)] = (
                 BiologicalCollectionRecord.objects.filter(
                     source_collection=source_collection
                 ).distinct('taxonomy').count()
+            )
+
+        # -- Sites per source collection
+        total_sites_per_source_collection = {}
+        for source_collection in source_collections:
+            total_sites_per_source_collection[str(source_collection)] = (
+                BiologicalCollectionRecord.objects.filter(
+                    source_collection=source_collection
+                ).distinct('site').count()
             )
 
         return Response({
@@ -86,8 +117,16 @@ class SummaryReportGeneralApiView(APIView):
             ),
             'species_per_module': species_per_modules,
             'records_per_modules': records_per_modules,
-            'records_per_source_collection': records_per_source_collection,
-            'species_per_source_collection': species_per_source_collection
+            'sites_per_modules': sites_per_modules,
+            'total_records_per_source_collection': (
+                records_per_source_collection
+            ),
+            'total_species_per_source_collection': (
+                total_species_per_source_collection
+            ),
+            'total_sites_per_source_collection': (
+                total_sites_per_source_collection
+            )
         })
 
 
