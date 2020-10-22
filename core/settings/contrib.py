@@ -63,7 +63,8 @@ INSTALLED_APPS += (
     'rangefilter',
     'preferences',
     'sorl.thumbnail',
-    'ckeditor'
+    'ckeditor',
+    'celery_inspect'
 )
 
 # Wagtail configurations

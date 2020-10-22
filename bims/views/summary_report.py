@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from preferences import preferences
 from django.views.generic import TemplateView
-from django.db.models import Count, Sum
+from django.db.models import Count
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -13,6 +13,10 @@ from bims.models import (
 from bims.enums import (
     TaxonomicGroupCategory
 )
+
+DANGER_TEMPLATE = '<span style="color: red">{}</span>'
+WARNING_TEMPLATE = '<span style="color: orange">{}</span>'
+OK_TEMPLATE = '<span style="color: green">{}</span>'
 
 
 class SummaryReportView(TemplateView):
@@ -92,8 +96,29 @@ class SummaryReportLocationContextApiView(APIView):
 
     def get(self, *args):
         summary_data = dict()
-        summary_data['total_sites_without_location_context'] = (
+        location_site_total = LocationSite.objects.all().count()
+
+        total_sites_without_location_context = (
             LocationSite.objects.filter(locationcontext__isnull=True).count()
+        )
+        if total_sites_without_location_context == 0:
+            total_sites_without_location_context = (
+                OK_TEMPLATE.format(total_sites_without_location_context)
+            )
+        elif (
+            total_sites_without_location_context > (location_site_total / 2)
+        ):
+            total_sites_without_location_context = (
+                DANGER_TEMPLATE.format(
+                    total_sites_without_location_context
+                )
+            )
+        else:
+            total_sites_without_location_context = (
+                WARNING_TEMPLATE.format(total_sites_without_location_context)
+            )
+        summary_data['total_sites_without_location_context'] = (
+            total_sites_without_location_context
         )
 
         # - Total group keys
@@ -102,21 +127,40 @@ class SummaryReportLocationContextApiView(APIView):
             LocationContextGroup.objects.filter(
                 geocontext_group_key__in=registered_groups)
         )
+        incomplete_count = LocationSite.objects.annotate(
+            total_group=Count('locationcontext__group')).filter(
+                total_group__lt=location_context_groups.count()
+        ).count()
+        if incomplete_count == 0:
+            incomplete_count = OK_TEMPLATE.format(incomplete_count)
+        elif incomplete_count > (location_site_total / 2):
+            incomplete_count = DANGER_TEMPLATE.format(incomplete_count)
+        else:
+            incomplete_count = WARNING_TEMPLATE.format(incomplete_count)
         summary_data['total_sites_with_incomplete_location_context'] = (
-            LocationSite.objects.annotate(
-                total_group=Count('locationcontext__group')).filter(
-                    total_group__lt=location_context_groups.count()
-            ).count()
+            incomplete_count
         )
+
 
         # - Summary per location context group
         groups_summary = {}
         for location_context_group in location_context_groups:
-            groups_summary[location_context_group.name] = (
-                LocationSite.objects.filter(
+            groups_summary_count = LocationSite.objects.filter(
                     locationcontext__group_id=location_context_group.id
-                ).distinct('id').count()
-            )
+            ).distinct('id').count()
+            if groups_summary_count == location_site_total:
+                groups_summary_count = OK_TEMPLATE.format(
+                    groups_summary_count
+                )
+            elif groups_summary_count < (location_site_total / 2):
+                groups_summary_count = DANGER_TEMPLATE.format(
+                    groups_summary_count
+                )
+            else:
+                groups_summary_count = WARNING_TEMPLATE.format(
+                    groups_summary_count
+                )
+            groups_summary[location_context_group.name] = groups_summary_count
 
         summary_data['total_sites_per_location_context_group'] = groups_summary
         return Response(summary_data)

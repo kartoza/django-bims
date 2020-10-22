@@ -45,10 +45,16 @@
 
     <script>
 
+        const BACKGROUND_PROCESS = 'Current Background Process'
+
         const reportsApi = [
             {
                 'title': 'General Data Report',
                 'url': '/api/summary-general-report/'
+            },
+            {
+                'title': BACKGROUND_PROCESS,
+                'url': '/api/v1/celery-inspect/active/'
             },
             {
                 'title': 'Location Context Report',
@@ -120,6 +126,37 @@
             return tbody.html();
         }
 
+        const renderBackgroundProcessTable = (data) => {
+            let stringData = JSON.stringify(data);
+            let div = $('<div>');
+            let tableElm = $('<table class="table table-bordered table-summary">');
+            div.append(tableElm);
+            let tbody = $('<tbody>');
+            tableElm.append(tbody);
+
+            let updateLocationContextCount = (stringData.match(/bims.tasks.update_location_context/g) || []).length;
+            let tr1 = $('<tr>');
+            tr1.append(`<th>Updating Location Context</th>`);
+            if (updateLocationContextCount > 0) {
+                tr1.append(`<td><span style="color: red">Running</td></td>`);
+            } else {
+                tr1.append(`<td><span style="color: green">Not Running</td></td>`);
+            }
+            tbody.append(tr1);
+
+            let harvestGbifCount = (stringData.match(/bims.tasks.harvest_collections/g) || []).length;
+            let tr2 = $('<tr>');
+            tr2.append(`<th>Harvesting GBIF data</th>`);
+            if (harvestGbifCount > 0) {
+                tr2.append(`<td><span style="color: red">Running</td></td>`);
+            } else {
+                tr2.append(`<td><span style="color: green">Not Running</td></td>`);
+            }
+            tbody.append(tr2);
+
+            return div.html();
+        }
+
         const fetchReportsData = (reportsApi) => {
 
             let title = reportsApi['title'];
@@ -128,7 +165,7 @@
 
             const container = $(`<div>`);
             $('.summary-container').append(container)
-            container.append(`<h3 class="summary-title" data-toggle="collapse" aria-expanded="true" data-target="#${slug}">${title}</h3>`);
+            container.append(`<h3 class="summary-title" aria-expanded="true" data-target="#${slug}">${title}</h3>`);
             let collapse = $(`<div class="panel-collapse collapse show" id="${slug}">`);
             container.append(collapse);
 
@@ -141,7 +178,11 @@
                 (response) => {
                     setTimeout(() => {
                         loading.remove();
-                        collapse.append(`<table class="table table-bordered table-summary">${objectToTable(response)}</table>`)
+                        if (title === BACKGROUND_PROCESS) {
+                            collapse.append(renderBackgroundProcessTable(response));
+                        } else {
+                            collapse.append(`<table class="table table-bordered table-summary">${objectToTable(response)}</table>`)
+                        }
                     }, 1000)
                 }
             )
