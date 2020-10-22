@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from preferences import preferences
 from django.views.generic import TemplateView
-from django.db.models import Count
+from django.db.models import Count, Sum
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -42,6 +43,29 @@ class SummaryReportGeneralApiView(APIView):
                 ).count()
             )
 
+        # -- Records per source collection
+        records_per_source_collection = {}
+        source_collections = (
+            BiologicalCollectionRecord.objects.all().values_list(
+                'source_collection', flat=True
+            ).distinct('source_collection')
+        )
+        for source_collection in source_collections:
+            records_per_source_collection[str(source_collection)] = (
+                BiologicalCollectionRecord.objects.filter(
+                    source_collection=source_collection
+                ).count()
+            )
+
+        # -- Species per source collection
+        species_per_source_collection = {}
+        for source_collection in source_collections:
+            species_per_source_collection[str(source_collection)] = (
+                BiologicalCollectionRecord.objects.filter(
+                    source_collection=source_collection
+                ).distinct('taxonomy').count()
+            )
+
         return Response({
             'total_sites': LocationSite.objects.all().count(),
             'total_duplicated_sites': LocationSite.objects.exclude(
@@ -57,7 +81,9 @@ class SummaryReportGeneralApiView(APIView):
                 Taxonomy.objects.filter(taxongroup__isnull=False).count()
             ),
             'species_per_module': species_per_modules,
-            'records_per_modules': records_per_modules
+            'records_per_modules': records_per_modules,
+            'records_per_source_collection': records_per_source_collection,
+            'species_per_source_collection': species_per_source_collection
         })
 
 
@@ -70,17 +96,27 @@ class SummaryReportLocationContextApiView(APIView):
             LocationSite.objects.filter(locationcontext__isnull=True).count()
         )
 
+        # - Total group keys
+        registered_groups = preferences.SiteSetting.geocontext_keys.split(',')
+        location_context_groups = (
+            LocationContextGroup.objects.filter(
+                geocontext_group_key__in=registered_groups)
+        )
+        summary_data['total_sites_with_incomplete_location_context'] = (
+            LocationSite.objects.annotate(
+                total_group=Count('locationcontext__group')).filter(
+                    total_group__lt=location_context_groups.count()
+            ).count()
+        )
+
         # - Summary per location context group
         groups_summary = {}
-        location_context_groups = (
-            LocationContextGroup.objects.all()
-        )
         for location_context_group in location_context_groups:
             groups_summary[location_context_group.name] = (
                 LocationSite.objects.filter(
                     locationcontext__group_id=location_context_group.id
                 ).distinct('id').count()
             )
-        summary_data['total_sites_with_group'] = groups_summary
 
+        summary_data['total_sites_per_location_context_group'] = groups_summary
         return Response(summary_data)
