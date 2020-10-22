@@ -1,0 +1,199 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    Summary report
+{% endblock %}
+
+{% block head %}
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+        .table-summary th {
+            max-width: 100px;
+            min-width: 80px;
+        }
+        .loading {
+            width: 100%;
+            text-align: center;
+        }
+        .summary-title {
+            margin-top: 50px;
+            font-weight: bold;
+            border-bottom: 1px solid #4f4f4f;
+            padding-bottom: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <div class="container" style="margin-top: 120px; margin-bottom: 50px;">
+        <div class="summary-container"></div>
+        <div class="loading" style="display: none">
+            <img src="/static/img/small-loading.svg" width="150"
+                 style="filter: brightness(104%) contrast(97%);"
+                 alt="Loading view">
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+
+    <script>
+
+        const BACKGROUND_PROCESS = 'Current Background Process'
+
+        const reportsApi = [
+            {
+                'title': 'General Data Report',
+                'url': '/api/summary-general-report/'
+            },
+            {
+                'title': BACKGROUND_PROCESS,
+                'url': '/api/v1/celery-inspect/active/'
+            },
+            {
+                'title': 'Location Context Report',
+                'url': '/api/location-context-report/'
+            }
+        ]
+
+        function toTitleCase(str) {
+            return str.replace(
+                /\w\S*/g,
+                function (txt) {
+                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+                }
+            );
+        }
+
+        function numberWithCommas(x) {
+            if (!isNaN(x)) {
+                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+            return x;
+        }
+
+        const objectToTable = (data, parent = 0, totalColumn = 1) => {
+
+            // Calculate total column
+            if (parent === 0) {
+                let _data = data;
+                let maxTry = 20;
+                let currentTry = 1;
+                while (typeof _data === 'object' && _data !== null && currentTry < maxTry) {
+                    currentTry += 1;
+                    totalColumn += 1;
+                    let _newData = null;
+                    $.each(_data, function(key, value) {
+                        if (typeof value === 'object' && value !== null) {
+                            _newData = value;
+                            return true;
+                        }
+                    });
+                    if (_newData) {
+                        _data = _newData;
+                    } else {
+                        _data = null;
+                    }
+                }
+            }
+
+            const tbody = $('<span>');
+            $.each(data, function(key, value) {
+                const tr = $('<tr></tr>');
+                if (parent > 0) {
+                    for (let i = 0; i < parent; i++) {
+                        tr.append(`<td></td>`);
+                    }
+                    tr.append(`<td>${toTitleCase(key.replace(/_/g, ' '))}</td>`);
+                } else {
+                    tr.append(`<th>${toTitleCase(key.replace(/_/g, ' '))}</th>`);
+                }
+                if (typeof value === 'object' && value !== null) {
+                    tr.append(`<td colspan="${totalColumn - (parent+1)}"></td>`);
+                    tbody.append(tr);
+                    tbody.append(objectToTable(value, parent + 1, totalColumn));
+                } else {
+                    tr.append(`<td colspan="${totalColumn - (parent+1)}">${numberWithCommas(value)}</td>`);
+                    tbody.append(tr);
+                }
+            })
+            return tbody.html();
+        }
+
+        const renderBackgroundProcessTable = (data) => {
+            let stringData = JSON.stringify(data);
+            let div = $('<div>');
+            let tableElm = $('<table class="table table-bordered table-summary">');
+            div.append(tableElm);
+            let tbody = $('<tbody>');
+            tableElm.append(tbody);
+
+            let updateLocationContextCount = (stringData.match(/bims.tasks.update_location_context/g) || []).length;
+            let tr1 = $('<tr>');
+            tr1.append(`<th>Updating Location Context</th>`);
+            if (updateLocationContextCount > 0) {
+                tr1.append(`<td><span style="color: red">Running</td></td>`);
+            } else {
+                tr1.append(`<td><span style="color: green">Not Running</td></td>`);
+            }
+            tbody.append(tr1);
+
+            let harvestGbifCount = (stringData.match(/bims.tasks.harvest_collections/g) || []).length;
+            let tr2 = $('<tr>');
+            tr2.append(`<th>Harvesting GBIF data</th>`);
+            if (harvestGbifCount > 0) {
+                tr2.append(`<td><span style="color: red">Running</td></td>`);
+            } else {
+                tr2.append(`<td><span style="color: green">Not Running</td></td>`);
+            }
+            tbody.append(tr2);
+
+            return div.html();
+        }
+
+        const fetchReportsData = (reportsApi) => {
+
+            let title = reportsApi['title'];
+            let url = reportsApi['url'];
+            let slug = title.replace(/ /g,"_");
+
+            const container = $(`<div>`);
+            $('.summary-container').append(container)
+            container.append(`<h3 class="summary-title" aria-expanded="true" data-target="#${slug}">${title}</h3>`);
+            let collapse = $(`<div class="panel-collapse collapse show" id="${slug}">`);
+            container.append(collapse);
+
+            const loading = $('.loading').clone();
+            loading.removeClass('loading');
+            loading.show();
+            collapse.append(loading);
+
+            $.get(url).then(
+                (response) => {
+                    setTimeout(() => {
+                        loading.remove();
+                        if (title === BACKGROUND_PROCESS) {
+                            collapse.append(renderBackgroundProcessTable(response));
+                        } else {
+                            collapse.append(`<table class="table table-bordered table-summary">${objectToTable(response)}</table>`)
+                        }
+                    }, 1000)
+                }
+            )
+        }
+
+        $(() => {
+            for (let i=0; i < reportsApi.length; i++) {
+                fetchReportsData(reportsApi[i]);
+            }
+        });
+
+    </script>
+
+{% endblock %}

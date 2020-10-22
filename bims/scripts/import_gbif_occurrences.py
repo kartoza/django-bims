@@ -4,6 +4,7 @@ import datetime
 import simplejson
 from dateutil.parser import parse
 from requests.exceptions import HTTPError
+from preferences import preferences
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db import models
 from django.conf import settings
@@ -75,8 +76,9 @@ def import_gbif_occurrences(
     api_url += '&hasCoordinate=true'
     # We don't need data with geospatial issue
     api_url += '&hasGeospatialIssue=false'
-    # Only fetch from Rwanda
-    api_url += '&country=RW'
+    # Only fetch from Specific country
+    api_url += '&country={}'.format(
+        preferences.SiteSetting.base_country_code.upper())
 
     if log_file:
         log_file.write('URL : {}\n'.format(api_url))
