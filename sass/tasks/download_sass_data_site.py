@@ -78,9 +78,12 @@ def download_sass_data_site_task(
 
 
 @shared_task(name='sass.tasks.download_sass_summary_data', queue='update')
-def download_sass_summary_data_task(filename, filters, path_file):
+def download_sass_summary_data_task(
+        filename, filters, path_file, user_id, send_email = False):
     from bims.utils.celery import memcache_lock
     import random
+
+    user = Profile.objects.get(id=user_id)
 
     lock_id = '{0}-lock-{1}'.format(
         filename,
@@ -176,6 +179,14 @@ def download_sass_summary_data_task(filename, filters, path_file):
                     except ValueError:
                         writer.fieldnames = row.keys()
                         writer.writerow(row)
+
+            if send_email:
+                send_csv_via_email(
+                    user=user,
+                    csv_file=path_file,
+                    file_name=filters.get('csvName', 'SASS-Summary')
+                )
+
             return
     logger.info(
         'Csv %s is already being processed by another worker',

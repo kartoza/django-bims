@@ -72,7 +72,7 @@ def download_sass_data_site(request, **kwargs):
     filters = request.GET
     search = CollectionSearch(filters)
     collection_records = search.process_search()
-    csv_name = request.GET.get('csvName', 'SASS-Summary')
+    csv_name = request.GET.get('csvName', 'SASS-Data')
 
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
@@ -115,6 +115,7 @@ def download_sass_summary_data(request):
     filters = request.GET
     search = CollectionSearch(filters)
     collection_records = search.process_search()
+    csv_name = request.GET.get('csvName', 'SASS-Summary')
 
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
@@ -132,12 +133,19 @@ def download_sass_summary_data(request):
     path_file, filename = get_filename(search_uri, site_visit_taxa.count())
 
     if os.path.exists(path_file):
+        send_csv_via_email(
+            user=request.user,
+            csv_file=path_file,
+            file_name=csv_name
+        )
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_summary_data_task.delay(
         filename,
         filters,
-        path_file
+        path_file,
+        user_id=request.user.id,
+        send_email=True
     )
 
     return JsonResponse(get_response(PROCESSING_STATUS, filename))
