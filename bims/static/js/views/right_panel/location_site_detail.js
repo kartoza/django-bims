@@ -333,9 +333,10 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
 
             let $sectionContainer = $('<div class="container-fluid"></div>');
             container.append($sectionContainer);
-
+            let $tableContainer = $('<div style="overflow-x: auto">');
             let $table = $('<table class="table table-striped table-condensed table-sm"></table>');
-            $sectionContainer.append($table);
+            $tableContainer.append($table);
+            $sectionContainer.append($tableContainer);
 
             // create row
             let $iconHead = $('<thead></thead>');
@@ -346,7 +347,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             let $consStatusRow = $('<tr></tr>');
             let $numTaxaRow = $('<tr></tr>');
             let $dashboardRow = $('<tr></tr>');
-            let $sassDashboarRow = $('<tr></tr>');
+            let $sassDashboarRow = $('<div class="row dashboard-row" style="margin-bottom: 10px">');
             let $formRow = $('<tr></tr>');
             $table.append($iconHead);
             $table.append($occurrenceRow);
@@ -357,7 +358,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $table.append($numTaxaRow);
             $table.append($dashboardRow);
             $table.append($formRow);
-            $table.append($sassDashboarRow);
+            $tableContainer.after($sassDashboarRow);
 
             $iconHead.append('<td></td>');
             $occurrenceRow.append('<td><b>Occurrences</b></td>');
@@ -369,12 +370,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $formRow.append('<td style="padding-top: 12px;"><b>Form</b></td>');
 
             if (is_sass_enabled) {
-                let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 50%;">SASS Dashboard</button>');
-                let $addSassButton = $('<button class="fbis-button-small fbis-red" style="width: 50%;">Add SASS</button>');
-                let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
+                let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
+                let $addSassButton = $('<button class="fbis-button-small fbis-red" style="width: 100%;">Add SASS</button>');
+                let $sassDashboardButtonContainer = $('<div class="col-sm-6" style="padding-right: 0">');
+                let $addSassButtonContainer = $('<div class="col-sm-6" style="padding-left: 0">');
                 $sassDashboarRow.append($sassDashboardButtonContainer);
+                $sassDashboarRow.append($addSassButtonContainer);
                 $sassDashboardButtonContainer.append($sassDashboardButton);
-                $sassDashboardButtonContainer.append($addSassButton);
+                $addSassButtonContainer.append($addSassButton);
                 if (data['sass_exist']) {
                     $sassDashboardButton.click(function () {
                         let sassUrl = '/sass/dashboard/' + self.siteId + '/';

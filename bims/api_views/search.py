@@ -617,7 +617,7 @@ class CollectionSearch(object):
         # Get order_by
         order_by = self.get_request_data('orderBy', 'name')
         valid_order = [
-            'total', '-total', 'name', '-name'
+            'total', '-total', 'name', '-name', 'total_survey', '-total_survey'
         ]
         if order_by not in valid_order:
             order_by = 'name'
@@ -632,9 +632,12 @@ class CollectionSearch(object):
         collections = (
             self.collection_records.annotate(
                 name=F('taxonomy__canonical_name'),
-                taxon_id=F('taxonomy_id')).values(
-                'taxon_id', 'name').annotate(
-                total=Count('taxonomy')
+                taxon_id=F('taxonomy_id')
+            ).values(
+                'taxon_id', 'name'
+            ).annotate(
+                total=Count('taxonomy'),
+                total_survey=Count('survey', distinct=True)
             ).order_by(order_by)
         )
 
@@ -646,8 +649,10 @@ class CollectionSearch(object):
                     default=F('site__site_code')
                 )
             ).values(
-                'site_id', 'name').annotate(
-                total=Count('site')
+                'site_id', 'name'
+            ).annotate(
+                total=Count('site'),
+                total_survey=Count('survey', distinct=True)
             ).order_by(order_by)
         )
 
