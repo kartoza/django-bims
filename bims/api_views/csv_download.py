@@ -68,11 +68,12 @@ class CsvDownload(APIView):
         })
 
 
-def send_csv_via_email(user, csv_file):
+def send_csv_via_email(user, csv_file, file_name = 'OccurrenceData'):
     """
     Send an email to requesting user with csv file attached
     :param user: User object
     :param csv_file: Path of csv file
+    :param file_name: Name of the file
     :return:
     """
     email_template = 'csv_download/csv_created'
@@ -97,9 +98,9 @@ def send_csv_via_email(user, csv_file):
         settings.MEDIA_ROOT, 'csv_processed', user.username)
     if not os.path.exists(zip_folder):
         os.mkdir(zip_folder)
-    zip_file = os.path.join(zip_folder, 'OccurrenceData.zip')
+    zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        zf.write(csv_file, 'OccurrenceData.csv')
+        zf.write(csv_file, '{}.csv'.format(file_name))
     msg.attach_file(zip_file, 'application/octet-stream')
     msg.content_subtype = 'html'
     msg.send()

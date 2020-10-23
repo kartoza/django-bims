@@ -1,8 +1,11 @@
-function downloadCSV(url, downloadButton, csv_name=null) {
+function downloadCSV(url, downloadButton, csv_name=null, email = false) {
     var downloadCSVXhr = $.get({
         url: url,
         dataType: 'json',
         success: function (data) {
+            if (email) {
+                return
+            }
             if (data['status'] !== "success") {
                 if (data['status'] === "failed") {
                     if (downloadCSVXhr) {
