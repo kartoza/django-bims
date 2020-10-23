@@ -8,7 +8,9 @@ from django.db.models import (
 from django.db.models.functions import Cast, Concat
 from bims.api_views.search import CollectionSearch
 from sass.models import SiteVisitTaxon
+from geonode.people.models import Profile
 from bims.models.location_context import LocationContext
+from bims.api_views.csv_download import send_csv_via_email
 from sass.serializers.sass_data_serializer import SassDataSerializer
 from sass.serializers.sass_data_serializer import SassSummaryDataSerializer
 
@@ -16,8 +18,11 @@ logger = logging.getLogger('bims')
 
 
 @shared_task(name='sass.tasks.download_sass_data_site', queue='update')
-def download_sass_data_site_task(filename, filters, path_file):
+def download_sass_data_site_task(
+        filename, filters, path_file, user_id, send_email = False):
     from bims.utils.celery import memcache_lock
+
+    user = Profile.objects.get(id=user_id)
 
     lock_id = '{0}-lock-{1}'.format(
         filename,
@@ -58,6 +63,14 @@ def download_sass_data_site_task(filename, filters, path_file):
                     except ValueError:
                         writer.fieldnames = row.keys()
                         writer.writerow(row)
+
+            if send_email:
+                send_csv_via_email(
+                    user=user,
+                    csv_file=path_file,
+                    file_name=filters.get('csvName', 'SASS-Data')
+                )
+
             return
     logger.info(
         'Csv %s is already being processed by another worker',
@@ -65,9 +78,12 @@ def download_sass_data_site_task(filename, filters, path_file):
 
 
 @shared_task(name='sass.tasks.download_sass_summary_data', queue='update')
-def download_sass_summary_data_task(filename, filters, path_file):
+def download_sass_summary_data_task(
+        filename, filters, path_file, user_id, send_email = False):
     from bims.utils.celery import memcache_lock
     import random
+
+    user = Profile.objects.get(id=user_id)
 
     lock_id = '{0}-lock-{1}'.format(
         filename,
@@ -153,7 +169,7 @@ def download_sass_summary_data_task(filename, filters, path_file):
                 header = ' '.join(header_split)
                 formatted_headers.append(header)
 
-            with open(path_file, 'wb') as csv_file:
+            with open(path_file, 'w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
                 writer.fieldnames = headers
@@ -163,6 +179,14 @@ def download_sass_summary_data_task(filename, filters, path_file):
                     except ValueError:
                         writer.fieldnames = row.keys()
                         writer.writerow(row)
+
+            if send_email:
+                send_csv_via_email(
+                    user=user,
+                    csv_file=path_file,
+                    file_name=filters.get('csvName', 'SASS-Summary')
+                )
+
             return
     logger.info(
         'Csv %s is already being processed by another worker',

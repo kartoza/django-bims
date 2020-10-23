@@ -677,15 +677,14 @@ define([
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
             } else {
-                $.get({
-                    url: self.csvDownloadEmailUrl,
-                    dataType: 'json',
-                    success: function (data) {
-                        alertModalBody.html('Your data download is underway. ' +
+                alertModalBody.html('Your data download is underway. ' +
                             'This may take some time. ' +
                             'You will be notified by email when your download is ready. ' +
                             'Thank you for your patience.');
-                    }
+                $.get({
+                    url: self.csvDownloadEmailUrl,
+                    dataType: 'json',
+                    success: function (data) {}
                 });
 
             }

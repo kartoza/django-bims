@@ -144,18 +144,30 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
         return obj.site_visit.site_visit_date
 
     def get_accredited(self, obj):
-        if obj.site_visit.owner.bims_profile.is_accredited(
-            collection_date=obj.site_visit.site_visit_date
-        ):
-            return 'Y'
-        else:
+        owner = obj.site_visit.owner
+        if not owner:
+            owner = obj.survey.owner
+        try:
+            if owner.bims_profile.is_accredited(
+                collection_date=obj.site_visit.site_visit_date
+            ):
+                return 'Y'
+            else:
+                return 'N'
+        except AttributeError:
             return 'N'
 
     def get_sass_version(self, obj):
         return obj.site_visit.sass_version
 
     def get_collector_or_owner(self, obj):
-        return obj.site_visit.owner.username
+        owner = obj.site_visit.owner
+        if not owner:
+            owner = obj.survey.owner
+        try:
+            return owner.username
+        except AttributeError:
+            return '-'
 
     def get_sass_taxa(self, obj):
         if obj.sass_taxon.taxon_sass_4:

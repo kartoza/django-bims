@@ -12,6 +12,7 @@ from sass.tasks.download_sass_data_site import (
     download_sass_summary_data_task
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.api_views.csv_download import send_csv_via_email
 
 
 FAILED_STATUS = 'failed'
@@ -43,10 +44,10 @@ def get_filename(uri, additional_parameter):
     """
     today_date = datetime.date.today()
     filename = sha256(
-        '%s%s%s' % (
+        str('%s%s%s' % (
             uri,
             additional_parameter,
-            today_date).encode('utf-8')
+            today_date)).encode('utf-8')
     ).hexdigest()
     filename += '.csv'
 
@@ -71,6 +72,8 @@ def download_sass_data_site(request, **kwargs):
     filters = request.GET
     search = CollectionSearch(filters)
     collection_records = search.process_search()
+    csv_name = request.GET.get('csvName', 'SASS-Data')
+
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
         id__in=list(collection_records.values_list('id', flat=True)),
@@ -87,12 +90,19 @@ def download_sass_data_site(request, **kwargs):
     path_file, filename = get_filename(search_uri, site_visit_taxa.count())
 
     if os.path.exists(path_file):
+        send_csv_via_email(
+            user=request.user,
+            csv_file=path_file,
+            file_name=csv_name
+        )
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_data_site_task.delay(
         filename,
         filters,
-        path_file
+        path_file,
+        user_id=request.user.id,
+        send_email=True
     )
 
     return JsonResponse(get_response(PROCESSING_STATUS, filename))
@@ -105,6 +115,7 @@ def download_sass_summary_data(request):
     filters = request.GET
     search = CollectionSearch(filters)
     collection_records = search.process_search()
+    csv_name = request.GET.get('csvName', 'SASS-Summary')
 
     # Get SASS data
     site_visit_taxa = SiteVisitTaxon.objects.filter(
@@ -122,12 +133,19 @@ def download_sass_summary_data(request):
     path_file, filename = get_filename(search_uri, site_visit_taxa.count())
 
     if os.path.exists(path_file):
+        send_csv_via_email(
+            user=request.user,
+            csv_file=path_file,
+            file_name=csv_name
+        )
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_summary_data_task.delay(
         filename,
         filters,
-        path_file
+        path_file,
+        user_id=request.user.id,
+        send_email=True
     )
 
     return JsonResponse(get_response(PROCESSING_STATUS, filename))

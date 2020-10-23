@@ -628,13 +628,27 @@ function getCsvName(title, identifier) {
 
 function onDownloadCSVClicked(e) {
     let downloadButton = $(e.target);
-    let csv_name = getCsvName('SASS data', downloadButton.data('identifier'));
-    let currentUrl = window.location.href;
-    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
-    let url = '/sass/download-sass-data-site/?' + queryString;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton, csv_name);
+    let csvName = getCsvName('SASS data', downloadButton.data('identifier'));
+    let currentUrl = window.location.href;
+    let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
+    let url = `/sass/download-sass-data-site/?csvName=${csvName}&${queryString}`;
+
+    const alertModalBody = $('#alertModalBody');
+    if (!is_logged_in) {
+        alertModalBody.html('Please log in first.')
+    } else {
+        alertModalBody.html('Your data download is underway. ' +
+            'This may take some time. ' +
+            'You will be notified by email when your download is ready. ' +
+            'Thank you for your patience.');
+    }
+    $('#alertModal').modal({
+        'keyboard': false,
+        'backdrop': 'static'
+    });
+    downloadCSV(url, downloadButton, csvName, true);
 }
 
 function onDownloadChemCSVClicked(e) {
@@ -650,13 +664,27 @@ function onDownloadChemCSVClicked(e) {
 
 function onDownloadSummaryCSVClicked(e) {
     let downloadButton = $(e.target);
-    let csv_name = getCsvName('SASS summary data', downloadButton.data('identifier'));
+    let csvName = getCsvName('SASS summary data', downloadButton.data('identifier'));
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
-    let url = '/sass/download-sass-summary-data/?' + queryString;
+    let url = `/sass/download-sass-summary-data/?csvName=${csvName}&${queryString}`;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton, csv_name);
+
+    const alertModalBody = $('#alertModalBody');
+    if (!is_logged_in) {
+        alertModalBody.html('Please log in first.')
+    } else {
+        alertModalBody.html('Your data download is underway. ' +
+            'This may take some time. ' +
+            'You will be notified by email when your download is ready. ' +
+            'Thank you for your patience.');
+    }
+    $('#alertModal').modal({
+        'keyboard': false,
+        'backdrop': 'static'
+    });
+    downloadCSV(url, downloadButton, csvName, true)
 }
 
 function onDownloadChartNewClicked(e) {
