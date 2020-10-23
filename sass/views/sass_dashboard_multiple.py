@@ -27,7 +27,7 @@ def timing(f):
         ret = f(*args, **kwargs)
         time2 = time.time()
         log('%s function took %0.3f ms' % (
-            f.func_name, (time2 - time1) * 1000.0))
+            f.__name__, (time2 - time1) * 1000.0))
         return ret
     return wrap
 
@@ -195,7 +195,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                         then='sass_taxon__sass_5_score'),
                     default='sass_taxon__score'
                 ),
-                site_id=F('site_visit__location_site__id'),
+                location_site_id=F('site_visit__location_site__id'),
                 canonical_name=F('taxonomy__canonical_name'),
                 abundance=F('taxon_abundance__abc'),
                 score=F('sass_score'),
@@ -209,7 +209,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                     default='sass_taxon__display_order_sass_4'
                 ),
             ).values(
-                'site_id',
+                'location_site_id',
                 'site_code',
                 'sass_taxon_id',
                 'canonical_name',
@@ -229,9 +229,9 @@ class SassDashboardMultipleSitesApiView(APIView):
                 canonical_name=F('taxon__canonical_name'),
                 abundance=F('taxon_abundance__abc'),
                 biotope_name=F('biotope__name'),
-                site_id=F('site_visit__location_site__id'),
+                location_site_id=F('site_visit__location_site__id'),
             ).values(
-                'site_id',
+                'location_site_id',
                 'biotope_name',
                 'sass_taxon_id',
                 'canonical_name',
@@ -243,7 +243,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 name=taxon_data['canonical_name'],
                 sass_taxon_id=taxon_data['sass_taxon_id']
             )
-            site_id = taxon_data['site_id']
+            site_id = taxon_data['location_site_id']
             if name not in sass_taxon_data_dict:
                 sass_taxon_data_dict[name] = taxon_data
                 sass_taxon_data_dict[name]['site_abundance'] = {}
@@ -262,7 +262,7 @@ class SassDashboardMultipleSitesApiView(APIView):
                 name=biotope['canonical_name'],
                 sass_taxon_id=biotope['sass_taxon_id']
             )
-            site_id = str(biotope['site_id'])
+            site_id = str(biotope['location_site_id'])
             if key in sass_taxon_data_dict:
                 if 'biotope_data' not in sass_taxon_data_dict[key]:
                     sass_taxon_data_dict[key]['biotope_data'] = {}
@@ -305,7 +305,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             if site_id not in data:
                 data[site_id] = {}
             rate = rating_data['rate']
-            biotope = rating_data['biotope_name'].encode('utf-8')
+            biotope = str(rating_data['biotope_name'])
             if not rate:
                 rate = 0
             data[site_id]['date'] = date
