@@ -443,11 +443,26 @@ function renderBiotopeRatingsChart(data) {
 function onDownloadCSVClicked(e) {
     let downloadButton = $(e.target);
     let currentUrl = window.location.href;
+    let csvName = 'Multiple SASS Sites'
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
-    let url = '/sass/download-sass-data-site/?' + queryString;
+    let url = `/sass/download-sass-data-site/?csvName=${csvName}&${queryString}`;
     downloadButton.html("Processing...");
     downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton);
+
+    const alertModalBody = $('#alertModalBody');
+    if (!is_logged_in) {
+        alertModalBody.html('Please log in first.')
+    } else {
+        alertModalBody.html('Your data download is underway. ' +
+            'This may take some time. ' +
+            'You will be notified by email when your download is ready. ' +
+            'Thank you for your patience.');
+    }
+    $('#alertModal').modal({
+        'keyboard': false,
+        'backdrop': 'static'
+    });
+    downloadCSV(url, downloadButton, csvName, true);
 }
 
 function onDownloadChartClicked(e) {
