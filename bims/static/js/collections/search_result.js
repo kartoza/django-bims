@@ -181,7 +181,7 @@ define([
 
             let totalSearchResults = $('<div>');
             totalSearchResults.addClass('total-search-results');
-            totalSearchResults.html(this.totalRecords.toString() + ' records');
+            totalSearchResults.html(numberWithCommas(this.totalRecords) + ' records');
 
             var searchResultHeader = $('<div>');
             searchResultHeader.append(searchResultTitleDiv);
@@ -218,9 +218,9 @@ define([
             });
             this.viewCollection = [];
 
-            var recordsCount = this.totalRecords.toString();
-            var siteCount = this.totalSites.toString();
-            var taxaCount = this.totalTaxa.toString();
+            var recordsCount = numberWithCommas(this.totalRecords);
+            var siteCount = numberWithCommas(this.totalSites);
+            var taxaCount = numberWithCommas(this.totalTaxa);
             var speciesListName = [];
 
             if (self.status === 'finished' && this.sitesData.length > 0 && this.recordsData.length > 0) {
@@ -235,7 +235,8 @@ define([
                 $.each(this.recordsData, function (key, data) {
                     var searchModel = new SearchModel({
                         id: data['taxon_id'],
-                        count: data['total'],
+                        count: numberWithCommas(data['total']),
+                        survey: numberWithCommas(data['total_survey']),
                         name: data['name'],
                         highlight: data['name'],
                         record_type: 'taxa'
@@ -249,7 +250,8 @@ define([
                 $.each(this.sitesData, function (key, data) {
                     var searchModel = new SearchModel({
                         id: data['site_id'],
-                        count: data['total'],
+                        count: numberWithCommas(data['total']),
+                        survey: numberWithCommas(data['total_survey']),
                         name: data['name'],
                         record_type: 'site'
                     });

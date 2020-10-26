@@ -337,6 +337,8 @@
                 <option value="-name">Name : Descending</option>
                 <option value="-total">Occurrences : High to low</option>
                 <option value="total">Occurrences : Low to high</option>
+                <option value="-total_survey">Site Visits : High to low</option>
+                <option value="total_survey">Site Visits : Low to high</option>
             </select>
         </div>
         <div class="row" style="margin-top: 10px; margin-bottom: 12px">
@@ -1053,14 +1055,14 @@
     <div class="result-search" data-search-result-id=""
          data-taxon-id="<%= id %>">
         <p class="group-title"><%= highlight %></p>
-        <a class="group-description"><%= count %> occurrences</a>
+        <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> </a>
     </div>
 </script>
 
 <script type="text/template" id="search-result-site-template">
     <div class="result-search" data-search-result-id="">
         <p class="group-title"><%= name %></p>
-        <a class="group-description"><%= count %> occurrences</a>
+        <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> </a>
     </div>
 </script>
 
