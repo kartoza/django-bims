@@ -887,6 +887,7 @@ define([
             let iucnCategoryList = data['iucn_name_list'];
             if (!container) {
                 container = this.$el.find('#species-ssdd-cons-status-bar-chart');
+                container.find('')
             }
             let baseUrl = '/api/location-sites-cons-chart-data/';
             let canvasContainer = container.find('.canvas-container');

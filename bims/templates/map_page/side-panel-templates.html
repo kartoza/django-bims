@@ -229,30 +229,30 @@
 <script type='text/html' id='site-details-template'>
     <div class="container-fluid" id="site-details-wrapper">
         <div class="row">
-            <div class="col-4 caption-column">Site Code</div>
-            <div class="col-8 value-column"><%= site_detail_info.site_code %></div>
+            <div class="col-5 caption-column">Site Code</div>
+            <div class="col-7 value-column"><%= site_detail_info.site_code %></div>
         </div>
         <div class="row">
-            <div class="col-4 caption-column">Site Description</div>
-            <div class="col-8 value-column"><%= site_detail_info.site_description %></div>
+            <div class="col-5 caption-column">Site Description</div>
+            <div class="col-7 value-column"><%= site_detail_info.site_description %></div>
         </div>
         <div class="row">
-            <div class="col-4 caption-column">Site Coordinates</div>
-            <div class="col-8 value-column"><%= site_detail_info.site_coordinates %></div>
+            <div class="col-5 caption-column">Site Coordinates</div>
+            <div class="col-7 value-column"><%= site_detail_info.site_coordinates %></div>
         </div>
         <% _.each(location_context, function (value, key) { %>
             <% if (key.indexOf("Geomorphological") > -1 && refined_geomorphological) {
                 value = refined_geomorphological
             } %>
             <div class="row">
-                <div class="col-4 caption-column"><%= key %></div>
-                <div class="col-8 value-column"><%= value %></div>
+                <div class="col-5 caption-column"><%= key %></div>
+                <div class="col-7 value-column"><%= value %></div>
             </div>
         <% }); %>
         <% if (site_detail_info.river) { %>
         <div class="row">
-            <div class="col-4 caption-column">River</div>
-            <div class="col-8 value-column"><%= site_detail_info.river %></div>
+            <div class="col-5 caption-column">River</div>
+            <div class="col-7 value-column"><%= site_detail_info.river %></div>
         </div>
         <% } %>
     </div>
