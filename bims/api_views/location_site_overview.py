@@ -6,7 +6,7 @@ from django.http import Http404
 from bims.api_views.search import CollectionSearch
 from bims.models import (
     TaxonGroup,
-    BiologicalCollectionRecord,
+    Taxonomy,
     IUCNStatus,
 )
 from bims.enums import TaxonomicGroupCategory
@@ -78,9 +78,9 @@ class LocationSiteOverviewData(object):
                 'name', 'count'
             ).order_by('name')
             group_origins = group_records.annotate(
-                name=Case(When(category='',
+                name=Case(When(taxonomy__origin='',
                                then=Value('Unknown')),
-                          default=F('category'))
+                          default=F('taxonomy__origin'))
             ).values(
                 'name'
             ).annotate(
@@ -89,7 +89,7 @@ class LocationSiteOverviewData(object):
                 'name', 'count'
             ).order_by('name')
             if group_origins:
-                category = dict(BiologicalCollectionRecord.CATEGORY_CHOICES)
+                category = dict(Taxonomy.CATEGORY_CHOICES)
                 for group_origin in group_origins:
                     if group_origin['name'] in category:
                         group_origin['name'] = category[group_origin['name']]
