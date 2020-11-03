@@ -16,6 +16,7 @@ let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
 let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
+let $removeAllBtn = $('.remove-all-btn');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -122,6 +123,36 @@ $findTaxonButton.click(function () {
     });
 });
 
+const $removeModuleName = $('#remove-module-name');
+const $removeModuleBtn = $('#remove-module-btn');
+let currentRemoveModuleName = '-';
+$removeModuleName.on('input', (e) => {
+    if ($removeModuleName.val() === currentRemoveModuleName) {
+        $removeModuleBtn.attr('disabled', false);
+    } else {
+        $removeModuleBtn.attr('disabled', true);
+    }
+});
+
+$removeAllBtn.click((event) => {
+    event.preventDefault();
+    $removeModuleBtn.attr('disabled', true);
+    const _maxTries = 10;
+    let _element = $(event.target);
+    let _currentTry = 1
+    while (!_element.hasClass('ui-sortable-handle') && _currentTry < _maxTries) {
+        _element = _element.parent();
+        _currentTry += 1;
+    }
+    currentRemoveModuleName = _element.find('.taxon-group-title').html().trim();
+    $removeModuleName.val('');
+    $('#remove-module-id').val(_element.data('id'));
+    $('#removeModuleModal').modal({
+        keyboard: false
+    })
+    return false;
+});
+
 $updateLogoBtn.click((event) => {
     event.preventDefault();
     const _maxTries = 10;
@@ -143,12 +174,31 @@ $updateLogoBtn.click((event) => {
     return false;
 });
 
+$('#moduleRemoveForm').on('submit', function (e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    let url = '/api/delete-taxon-group/';
+    $.ajax({
+        type: 'POST',
+        headers:{ "X-CSRFToken": csrfToken },
+        url: url,
+        data: formData,
+        cache: false,
+        contentType: false,
+        processData: false,
+        success: function (data) {
+            location.reload();
+        },
+        error: function (data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+})
+
 $('#moduleEditForm').on('submit', function (e) {
     e.preventDefault();
     let formData = new FormData(this);
-    console.log(formData.get('module_name'));
-    console.log(formData.get('module_logo'));
-    console.log(formData);
     let url = '/api/update-taxon-group/';
     $.ajax({
         type: 'POST',

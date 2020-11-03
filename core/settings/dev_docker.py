@@ -46,3 +46,17 @@ CACHES = {
         'LOCATION': 'cache:11211',
     }
 }
+
+# See fig.yml file for postfix container definition
+#
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Host for sending e-mail.
+EMAIL_HOST = 'smtp.gmail.com'
+# Port for sending e-mail.
+EMAIL_PORT = 587
+# SMTP authentication information for EMAIL_HOST.
+# See fig.yml for where these are defined
+EMAIL_HOST_USER = 'bob.joko.test@gmail.com'
+EMAIL_HOST_PASSWORD = '~XG&K`aQvH9/y_8z'
+EMAIL_USE_TLS = True
+EMAIL_SUBJECT_PREFIX = os.environ.get('EMAIL_SUBJECT_PREFIX', '[BIMS]')

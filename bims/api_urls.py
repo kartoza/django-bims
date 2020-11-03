@@ -75,7 +75,8 @@ from bims.api_views.taxon_group import (
     UpdateTaxonGroupOrder,
     RemoveTaxaFromTaxonGroup,
     AddTaxaToTaxonGroup,
-    UpdateTaxonGroup
+    UpdateTaxonGroup,
+    DeleteTaxonGroupAndContents
 )
 from bims.api_views.landing_page_summary import LandingPageSummary
 from bims.api_views.site_in_country import SiteInCountry
@@ -222,6 +223,9 @@ urlpatterns = [
     url(r'^update-taxon-group/$',
         UpdateTaxonGroup.as_view(),
         name='update-taxon-group'),
+    url(r'^delete-taxon-group/$',
+        DeleteTaxonGroupAndContents.as_view(),
+        name='delete-taxon-group'),
     url(r'^landing-page-summary/$',
         LandingPageSummary.as_view(),
         name='landing-page-summary'),

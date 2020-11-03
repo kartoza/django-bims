@@ -1,9 +1,10 @@
 import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import Http404
+from django.db import connection
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bims.models import TaxonGroup, Taxonomy, BiologicalCollectionRecord
+from bims.models import TaxonGroup, Taxonomy, BiologicalCollectionRecord, LocationSite, Survey
 
 
 def update_taxon_group_orders(taxon_group_ids):
@@ -169,3 +170,102 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
 
         taxon_group.save()
         return Response('Updated')
+
+
+class DeleteTaxonGroupAndContents(TaxaUpdateMixin):
+    """Api to delete taxon group and all of its contents (
+        CollectionRecords, Taxonomy)
+    Post data required:
+    {
+        'module_id': id,
+        'module_name': 'Module' // Name of the taxon group
+    }
+    """
+    def post(self, request, *args):
+        module_name = self.request.POST.get('module_name', None)
+        module_id = self.request.POST.get('module_id', None)
+
+        if not module_id or not module_name:
+            raise Http404('Missing required parameter')
+        try:
+            taxon_group = TaxonGroup.objects.get(id=module_id)
+        except TaxonGroup.DoesNotExist:
+            raise Http404('Taxon group does not exist')
+
+        if module_name != taxon_group.name:
+            raise Http404('Incorrect module name')
+
+        module_id = int(module_id)
+
+        # - Delete collection records
+        query = (
+            "DELETE FROM bims_biologicalcollectionrecord WHERE module_group_id = '%s'"
+        )
+
+        # - Delete species
+        query_taxon = (
+            "DELETE FROM bims_taxonomy T USING bims_taxongroup_taxonomies X WHERE T.id = X.taxonomy_id AND X.taxongroup_id = '%s'"
+        )
+
+        # - Delete site visits
+        query_survey = (
+            "WITH tmp AS "
+            "(SELECT survey_id FROM bims_biologicalcollectionrecord bb where "
+            "bb.module_group_id = '%s'), "
+            "upd AS (UPDATE bims_biologicalcollectionrecord bb "
+            "SET survey_id = NULL WHERE bb.module_group_id = '%s') "
+            "DELETE FROM bims_survey bs WHERE id IN "
+            "SELECT survey_id FROM tmp);"
+        )
+
+        # - Delete taxon group taxonomies m2m
+        query_taxon_group_taxonomies = (
+            "DELETE FROM bims_taxongroup_taxonomies WHERE taxongroup_id = '%s'"
+        )
+
+        # - Delete location sites
+        query_sites = (
+            "DELETE FROM bims_locationsite S USING bims_biologicalcollectionrecord B WHERE S.id = B.site_id AND B.module_group_id = '%s'"
+        )
+
+        sites_queryset = LocationSite.objects.filter(
+            biological_collection_record__module_group_id=module_id
+        )
+        surveys_queryset = Survey.objects.filter(
+            biological_collection_record__module_group_id=module_id
+        )
+        taxa_queryset = Taxonomy.objects.filter(
+            taxongroup__id=module_id
+        )
+        records_queryset = BiologicalCollectionRecord.objects.filter(
+            module_group_id=module_id
+        )
+
+        sites_queryset._raw_delete(sites_queryset.db)
+        surveys_queryset._raw_delete(surveys_queryset.db)
+        taxa_queryset._raw_delete(taxa_queryset.db)
+        taxa_queryset._raw_delete(taxa_queryset.db)
+
+        # with connection.cursor() as cursor:
+        #     cursor.execute(
+        #         query_sites,
+        #         [module_id]
+        #     )
+        #
+        #     cursor.execute(
+        #         query_survey,
+        #         [module_id]
+        #     )
+        #
+        #     cursor.execute(
+        #         query,
+        #         [module_id]
+        #     )
+        #
+        #     cursor.execute(
+        #         query_taxon,
+        #         [module_id]
+        #     )
+        #     taxon_group.delete()
+
+        return Response('Deleted')
