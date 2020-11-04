@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django import template
 from django.contrib.sites.models import Site
+from django.conf import settings
 
 register = template.Library()
 
@@ -26,3 +27,8 @@ def hex_to_rgb(hex_string, format_string='{r},{g},{b}'):
         'g': int(hex_string[2:4], 16),
         'b': int(hex_string[4:6], 16)}
     return format_string.format(**out)
+
+
+@register.filter(name='remove_media_path')
+def remove_media_path(value):
+    return value.replace(settings.MEDIA_ROOT, '')

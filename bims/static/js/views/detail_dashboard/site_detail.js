@@ -656,7 +656,7 @@ define([
                         }
                     } else {
                         let a = window.document.createElement('a');
-                        a.href = '/uploaded/csv_processed/' + data['filename'];
+                        a.href = '/uploaded/processed_csv/' + data['filename'];
                         a.download = 'OccurrenceData.csv';
                         a.click();
                         downloadButton.html('Download as CSV');

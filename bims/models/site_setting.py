@@ -148,6 +148,14 @@ class SiteSetting(Preferences):
         help_text='Enable or disable SASS'
     )
 
+    enable_download_request_approval = models.BooleanField(
+        default=False,
+        help_text=(
+            'Download requests must be approved by the staff before they '
+            'are sent to users'
+        )
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

@@ -43,7 +43,7 @@ class ChemicalRecordDownloader(APIView):
         filename += '.csv'
 
         # Check if filename exists
-        folder = 'csv_processed'
+        folder = settings.PROCESSED_CSV_PATH
         path_folder = os.path.join(settings.MEDIA_ROOT, folder)
         path_file = os.path.join(path_folder, filename)
 
