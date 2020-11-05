@@ -677,10 +677,7 @@ define([
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
             } else {
-                alertModalBody.html('Your data download is underway. ' +
-                            'This may take some time. ' +
-                            'You will be notified by email when your download is ready. ' +
-                            'Thank you for your patience.');
+                alertModalBody.html(downloadRequestMessage);
                 $.get({
                     url: self.csvDownloadEmailUrl,
                     dataType: 'json',

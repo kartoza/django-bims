@@ -43,6 +43,7 @@
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const reportUrl = '{% url "bug-report" %}';
         const githubRepo = '{{ preferences.SiteSetting.github_feedback_repo }}';
+        const downloadRequestMessage = '{{ download_request_message }}';
     </script>
 
     <script src="{% static 'js/non_requirejs/cookies.js' %}"></script>

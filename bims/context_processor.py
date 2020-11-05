@@ -5,6 +5,7 @@ Our custom context processors
 import ast
 import os
 from django.conf import settings
+from preferences import preferences
 from bims.utils.get_key import get_key
 
 
@@ -61,6 +62,30 @@ def site_ready(request):
     except (ValueError, SyntaxError):
         is_site_ready = False
     return {'site_ready': is_site_ready}
+
+
+def download_request_message(request):
+    is_approval_enabled = (
+        preferences.SiteSetting.enable_download_request_approval
+    )
+    if is_approval_enabled:
+        return {
+            'download_request_message': (
+                'Your download request has been sent to our staff. ' +
+                'This may take some time. ' +
+                'You will be notified by email when your request has '
+                'been accepted. ' +
+                'Thank you for your patience.'
+            )
+        }
+    return {
+        'download_request_message': (
+            'Your data download is underway. ' +
+            'This may take some time. ' +
+            'You will be notified by email when your download is ready. ' +
+            'Thank you for your patience.'
+        )}
+
 
 
 def custom_navbar_url(request):

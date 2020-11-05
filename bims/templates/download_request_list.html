@@ -27,9 +27,9 @@
                 <div class="col-lg-2">
                     <form method="get" action="" class="custom" id="download-request-filters">
                         <h5 style="border-bottom: 1px solid #b1b1b1; padding-bottom: 10px;">Filter by: </h5>
-                        <label class="my-1 mr-2" for="inlineFormCustomSelectPref">Approved/Rejected</label>
+                        <label class="my-1 mr-2" for="inlineFormCustomSelectPref">Status</label>
                         <select class="custom-select my-1 mr-sm-2" name="approved_or_rejected">
-                            <option value="" {% if not approved_or_rejected %}selected{% endif %}>All</option>
+                            <option value="" {% if not approved_or_rejected %}selected{% endif %}>Pending</option>
                             <option value="approved" {% if approved_or_rejected == 'approved' %}selected{% endif %}>Approved</option>
                             <option value="rejected" {% if approved_or_rejected == 'rejected' %}selected{% endif %}>Rejected</option>
                         </select>
@@ -60,7 +60,7 @@
                         {% for obj in download_requests %}
                             <tr>
                                 <td>
-                                    {{ obj.request_date }}
+                                    {{ obj.request_date|date:'M. d, Y' }}
                                 </td>
                                 <td>
                                     {{ obj.get_formatted_name }}
