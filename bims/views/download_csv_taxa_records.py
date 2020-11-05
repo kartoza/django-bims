@@ -35,7 +35,7 @@ def download_csv_site_taxa_records(request):
             raise
         pass
 
-    download_data_to_csv.delay(
+    download_data_to_csv(
         path_file,
         request.GET,
         send_email=False,
