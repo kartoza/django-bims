@@ -10,7 +10,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=0">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+    {% if custom_theme.logo %}
+        <link rel="icon" type="image/png" href="{{ custom_theme.logo.url }}" />
+    {% else %}
+        <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+    {% endif %}
     <title>{% block title %} {% if custom_theme.site_name %}{{ custom_theme.site_name }}{% else %}{{ APPLICATION_NAME }}{% endif %} | {% block subtitle %}{% endblock %} {% endblock %}</title>
 
     <link href="{% static "js/libs/bootstrap-4.0.0/css/bootstrap.min.css" %}" rel="stylesheet">
