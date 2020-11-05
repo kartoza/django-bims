@@ -74,6 +74,7 @@ from bims.views.source_reference import SourceReferenceListView
 from bims.views.profile import ProfileView
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
+from bims.views.download_request import DownloadRequestListView
 
 
 urlpatterns = [
@@ -187,6 +188,8 @@ urlpatterns = [
         name='summary-report'),
     url(r'^profile/(?P<slug>\w+)/$', ProfileView.as_view(),
         name='profile'),
+    url(r'^download-request/$', DownloadRequestListView.as_view(),
+        name='download-request'),
     url(r'^profile/$',
         login_required(lambda request: RedirectView.as_view(
             url=reverse_lazy('profile', kwargs={

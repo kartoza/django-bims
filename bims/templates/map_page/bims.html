@@ -54,7 +54,7 @@
         const isHealthyrivers = {% if is_healthyrivers %} true {% else %} false {% endif %}
         const ogcServerDefaultLocation = "{{ OGC_SERVER.default.PUBLIC_LOCATION }}";
         const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
-        const geoserverPublicUrl = '/bims_proxy/{{ geoserver_public_location }}';
+        const geoserverPublicUrl = '/cobims_proxy/{{ geoserver_public_location }}';
         var filterParameters = {};
         var conservationStatusData = [];
         const is_sass_enabled = {% if preferences.SiteSetting.enable_sass %}true{% else %}false{% endif %};

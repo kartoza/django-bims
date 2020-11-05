@@ -656,7 +656,7 @@ define([
                         }
                     } else {
                         let a = window.document.createElement('a');
-                        a.href = '/uploaded/csv_processed/' + data['filename'];
+                        a.href = '/uploaded/processed_csv/' + data['filename'];
                         a.download = 'OccurrenceData.csv';
                         a.click();
                         downloadButton.html('Download as CSV');
@@ -677,10 +677,7 @@ define([
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
             } else {
-                alertModalBody.html('Your data download is underway. ' +
-                            'This may take some time. ' +
-                            'You will be notified by email when your download is ready. ' +
-                            'Thank you for your patience.');
+                alertModalBody.html(downloadRequestMessage);
                 $.get({
                     url: self.csvDownloadEmailUrl,
                     dataType: 'json',

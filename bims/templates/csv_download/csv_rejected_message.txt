@@ -1,0 +1,11 @@
+{% load i18n %}
+You have received the following notice from {{ current_site }}:
+
+
+<p>
+    {% if not rejection_message %}
+        {% trans "Sorry, your request cannot be accepted." %}
+    {% else %}
+        {{ rejection_message }}
+    {% endif %}
+</p>

@@ -120,6 +120,7 @@ try:
         'bims.context_processor.bims_preferences',
         'bims.context_processor.application_name',
         'bims.context_processor.site_ready',
+        'bims.context_processor.download_request_message',
         'bims_theme.context_processor.bims_custom_theme',
         'preferences.context_processors.preferences_cp',
     ]
@@ -148,6 +149,7 @@ except KeyError:
                     'bims.context_processor.custom_navbar_url',
                     'bims.context_processor.google_analytic_key',
                     'bims.context_processor.application_name',
+                    'bims.context_processor.download_request_message',
                     'bims_theme.context_processor.bims_custom_theme',
                 ],
             },

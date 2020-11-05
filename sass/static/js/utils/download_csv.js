@@ -33,7 +33,7 @@ function downloadCSV(url, downloadButton, csv_name=null, email = false) {
                 } else {
                     a.download = filename;
                 }
-                a.href = '/uploaded/csv_processed/' + filename;
+                a.href = '/uploaded/processed_csv/' + filename;
                 a.click();
 
                 downloadButton.html('Download as CSV');
