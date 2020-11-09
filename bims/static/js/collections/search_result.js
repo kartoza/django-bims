@@ -340,7 +340,8 @@ define([
                     for (var i = 0; i < taxaData.length; i++) {
                         var searchModel = new SearchModel({
                             id: taxaData[i]['taxon_id'],
-                            count: taxaData[i]['total'],
+                            count: numberWithCommas(taxaData[i]['total']),
+                            survey: numberWithCommas(taxaData[i]['total_survey']),
                             name: taxaData[i]['name'],
                             highlight: taxaData[i]['name'],
                             record_type: 'taxa'
@@ -374,9 +375,10 @@ define([
                     for (var i = 0; i < siteData.length; i++) {
                         var searchModel = new SearchModel({
                             id: siteData[i]['site_id'],
-                            count: siteData[i]['total'],
                             name: siteData[i]['name'],
-                            record_type: 'site'
+                            record_type: 'site',
+                            count: numberWithCommas(siteData[i]['total']),
+                            survey: numberWithCommas(siteData[i]['total_survey']),
                         });
                         var searchResultView = new SearchResultView({
                             model: searchModel
