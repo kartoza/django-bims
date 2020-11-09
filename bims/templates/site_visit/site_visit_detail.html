@@ -297,13 +297,13 @@
                             name="curation_process" disabled>
                         <option value=""> Not specified
                         </option>
-                        <option value="Acid cleaned (diatoms)">
+                        <option value="Acid cleaned (diatoms)" {% if 'Acid cleaned' in algae_data.curation_process %}selected{% endif %}>
                             Acid cleaned (diatoms)
                         </option>
-                        <option value="Preserved lugols">
+                        <option value="Preserved lugols" {% if algae_data.curation_process == 'Preserved lugols' %}selected{% endif %}>
                             Preserved lugols
                         </option>
-                        <option value="Frozen">
+                        <option value="Frozen" {% if algae_data.curation_process == 'Frozen' %}selected{% endif %}>
                             Frozen
                         </option>
                     </select>

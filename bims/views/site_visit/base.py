@@ -1,9 +1,12 @@
 from django.views.generic import View
+from django.db.models.functions import Length
 from bims.models.biotope import Biotope
 from bims.models.sampling_method import SamplingMethod
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.site_image import SiteImage
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.models.algae_data import AlgaeData
+from bims.models.chemical_record import ChemicalRecord
 
 
 class SiteVisitBaseView(View):
@@ -64,14 +67,14 @@ class SiteVisitBaseView(View):
         """Get existing sampling effort value from collections"""
         sampling_effort = self.collection_records.exclude(
             sampling_effort=''
-        )
+        ).order_by(Length('sampling_effort').desc())
         try:
             if sampling_effort.exists():
                 sampling_effort_str = sampling_effort[0].sampling_effort
                 sampling_effort_arr = sampling_effort_str.split(' ')
                 return (
                     sampling_effort_arr[0].strip(),
-                    sampling_effort_arr[1].strip()
+                    sampling_effort_arr[1].strip().lower()
                 )
         except IndexError:
             pass
@@ -111,6 +114,14 @@ class SiteVisitBaseView(View):
         context['specific_biotope'] = self.biotope('specific_biotope')
         context['substratum'] = self.biotope('substratum')
         context['sampling_method'] = self.sampling_method()
+        context['chemical_records'] = ChemicalRecord.objects.filter(
+            date=self.object.date,
+            location_site=self.object.site,
+            survey=self.object,
+        )
+        algae_data = AlgaeData.objects.filter(survey=self.object)
+        if algae_data.exists():
+            context['algae_data'] = algae_data[0]
         sampling_effort_value, sampling_effort_unit = self.sampling_effort()
         context['sampling_effort_value'] = sampling_effort_value
         context['sampling_effort_unit'] = sampling_effort_unit
