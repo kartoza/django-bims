@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     'wagtail.search',
     'wagtail.admin',
     'wagtail.core',
+    'rest_framework.authtoken'
 ) + INSTALLED_APPS
 WAGTAIL_SITE_NAME = 'BIMS Wagtail'
 
