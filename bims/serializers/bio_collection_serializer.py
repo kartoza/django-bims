@@ -241,8 +241,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_site_description(self, obj):
         if obj.site.site_description:
-            return obj.site.site_description.encode('utf8')
-        return obj.site.name.encode('utf8')
+            return obj.site.site_description
+        return obj.site.name
 
     def get_latitude(self, obj):
         lat = obj.site.get_centroid().y
@@ -270,43 +270,43 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_title(self, obj):
         if obj.source_reference:
-            return obj.source_reference.title.encode('utf-8')
+            return obj.source_reference.title
         else:
             return '-'
 
     def get_taxon(self, obj):
         if obj.original_species_name:
-            return obj.original_species_name.encode('utf-8')
+            return obj.original_species_name
         return '-'
 
     def get_class_name(self, obj):
         class_name = obj.taxonomy.class_name
         if class_name:
-            return class_name.encode('utf-8')
+            return class_name
         return '-'
 
     def get_phylum(self, obj):
         phylum_name = obj.taxonomy.phylum_name
         if phylum_name:
-            return phylum_name.encode('utf-8')
+            return phylum_name
         return '-'
 
     def get_order(self, obj):
         order_name = obj.taxonomy.order_name
         if order_name:
-            return order_name.encode('utf-8')
+            return order_name
         return '-'
 
     def get_family(self, obj):
         family_name = obj.taxonomy.family_name
         if family_name:
-            return family_name.encode('utf-8')
+            return family_name
         return '-'
 
     def get_genus(self, obj):
         genus_name = obj.taxonomy.genus_name
         if genus_name:
-            return genus_name.encode('utf-8')
+            return genus_name
         return '-'
 
     def get_species(self, obj):
@@ -315,13 +315,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             genus_name = obj.taxonomy.genus_name
             if genus_name:
                 species_name = species_name.replace(genus_name, '')
-            return species_name.encode('utf-8').strip()
+            return species_name.strip()
         return '-'
 
     def get_kingdom(self, obj):
         kingdom_name = obj.taxonomy.kingdom_name
         if kingdom_name:
-            return kingdom_name.encode('utf-8')
+            return kingdom_name
         return '-'
 
     def get_taxon_rank(self, obj):
@@ -336,13 +336,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_authors(self, obj):
         if obj.source_reference:
-            return obj.source_reference.authors.encode('utf-8')
+            return obj.source_reference.authors
         return '-'
 
     def get_source(self, obj):
         if obj.source_reference:
             if obj.source_reference.source_name:
-                return obj.source_reference.source_name.encode('utf-8')
+                return obj.source_reference.source_name
         return '-'
 
     def get_year(self, obj):
@@ -353,8 +353,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_collector_or_owner(self, obj):
         if obj.collector_user:
             return '{first_name} {last_name}'.format(
-                first_name=obj.collector_user.first_name.encode('utf-8'),
-                last_name=obj.collector_user.last_name.encode('utf-8')
+                first_name=obj.collector_user.first_name,
+                last_name=obj.collector_user.last_name
             )
         if obj.additional_data:
             # If this is BioBase data, return a collector name from author of
@@ -375,11 +375,11 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                     s = ', and '.join(s.rsplit(', ', 1))  # last author case
                     return s
         if obj.collector:
-            return obj.collector.encode('utf8')
+            return obj.collector
         try:
             return '{first_name} {last_name}'.format(
-                first_name=obj.owner.first_name.encode('utf-8'),
-                last_name=obj.owner.last_name.encode('utf-8')
+                first_name=obj.owner.first_name,
+                last_name=obj.owner.last_name
             )
         except Exception as e:  # noqa
             return '-'
