@@ -359,7 +359,7 @@ class Entry(models.Model):
              'Can Add Bibliography Entry'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         """Format entry with a default bibliography style"""
         # Authors
         author_str = '%(last_name)s %(first_initial)s'
@@ -388,6 +388,11 @@ class Entry(models.Model):
 
         s += '.'
         return s
+
+    def __unicode__(self):
+        """Format entry with a default bibliography style"""
+        # Authors
+        return self.__str__()
 
     def _get_first_author(self):
         """

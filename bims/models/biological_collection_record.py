@@ -20,6 +20,7 @@ from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
 from bims.models.survey import Survey
+from td_biblio.models import Entry
 
 
 class BiologicalCollectionQuerySet(models.QuerySet):
@@ -76,10 +77,17 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                         col.source_reference.source.journal.name
                     )
                 except AttributeError:
-                    source = col.source_reference.__unicode__()
+                    if isinstance(col.source_reference.source, Entry):
+                        source = '-'
+                    else:
+                        source = col.source_reference.__str__()
 
-            note = \
+            note = (
                 col.source_reference.note if col.source_reference.note else '-'
+            )
+
+            if note is None:
+                note = '-'
 
             item = {
                 'Reference Category': col.source_reference.reference_type,
@@ -94,7 +102,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
             if json.dumps(item) not in unique_source_references:
                 source_references.append(item)
                 unique_source_references.append(json.dumps(item))
-        return source_references
+        return sorted(
+            source_references, key = lambda i: (
+                i['Reference Category'], i['Author/s']))
 
 
 class BiologicalCollectionManager(models.Manager):
