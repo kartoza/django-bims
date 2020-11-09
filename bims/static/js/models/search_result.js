@@ -2,7 +2,10 @@ define(['backbone'], function (Backbone) {
     return Backbone.Model.extend({
         defaults: {
             name: '',
-            highlight: ''
+            highlight: '',
+            count: 0,
+            survey: 0,
+            record_type: ''
         },
         destroy: function () {
             this.unbind();

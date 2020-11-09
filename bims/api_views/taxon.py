@@ -74,13 +74,13 @@ class TaxonDetail(APIView):
         common_names = []
 
         # Common name
-        if taxon.vernacular_names.filter(language='eng').exists():
+        if taxon.vernacular_names.exists():
             common_names = list(
-                taxon.vernacular_names.all().filter(language='eng').values())
+                taxon.vernacular_names.all().values_list('name', flat=True))
         if len(common_names) == 0:
-            data['common_name'] = taxon.canonical_name
+            data['common_name'] = 'Unknown'
         else:
-            data['common_name'] = str(common_names[0]['name']).capitalize()
+            data['common_name'] = ', '.join(common_names)
 
         return Response(data)
 
