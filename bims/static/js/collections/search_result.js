@@ -330,6 +330,10 @@ define([
 
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', speciesListName);
         },
+        clearPagination: function () {
+            this.pageMoreTaxa = 2;
+            this.pageMoreSites = 2;
+        },
         fetchMoreTaxa: function () {
             var self = this;
             var siteResultUrl = this.taxaResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreTaxa;
@@ -340,11 +344,11 @@ define([
                     for (var i = 0; i < taxaData.length; i++) {
                         var searchModel = new SearchModel({
                             id: taxaData[i]['taxon_id'],
-                            count: numberWithCommas(taxaData[i]['total']),
-                            survey: numberWithCommas(taxaData[i]['total_survey']),
                             name: taxaData[i]['name'],
                             highlight: taxaData[i]['name'],
-                            record_type: 'taxa'
+                            record_type: 'taxa',
+                            count: numberWithCommas(taxaData[i]['total']),
+                            survey: numberWithCommas(taxaData[i]['total_survey']),
                         });
                         var searchResultView = new SearchResultView({
                             model: searchModel

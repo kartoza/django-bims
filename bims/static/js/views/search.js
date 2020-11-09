@@ -297,6 +297,9 @@ define([
             }
         },
         search: function (searchValue) {
+
+            this.searchResultCollection.clearPagination();
+
             $('#filter-validation-error').hide();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
