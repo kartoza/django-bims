@@ -1,5 +1,6 @@
 import json
 import uuid
+from preferences import preferences
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
@@ -19,6 +20,9 @@ from bims.models.chemical_record import (
 )
 from bims.models.iucn_status import IUCNStatus
 from bims.models.location_context import LocationContext
+from bims.models.algae_data import AlgaeData
+from bims.models.survey import SurveyData, SurveyDataValue
+from bims.scripts.collection_csv_keys import *  # noqa
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -520,28 +524,119 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 date=instance.collection_date
             )
         )
+
         if 'chem_records_cached' not in self.context:
             self.context['chem_records_cached'] = {}
         if 'header' not in self.context:
             self.context['header'] = list(result.keys())
-        if chem_records_identifier in self.context['chem_records_cached']:
-            result.update(
-                self.context['chem_records_cached'][chem_records_identifier])
+
+        is_algae = False
+        if instance.module_group:
+            is_algae = 'algae' in instance.module_group.name.lower()
+
+        if is_algae:
+            algae_keys = [
+                'Curation process',
+                'Biomass Indicator: Chl A',
+                'Biomass Indicator: AFDM',
+                'Autotrophic Index (AI)',
+            ]
+
+            algae_data = AlgaeData.objects.filter(survey=instance.survey)
+            if algae_data.exists():
+                algae_data = algae_data[0]
+            else:
+                algae_data = None
+
+            for algae_key in algae_keys:
+                if algae_key not in self.context['header']:
+                    self.context['header'].append(algae_key)
+                if algae_data:
+                    if algae_key == 'Curation process':
+                        result[algae_key] = algae_data.curation_process
+                    elif algae_key == 'Biomass Indicator: Chl A':
+                        result[algae_key] = algae_data.indicator_chl_a
+                    elif algae_key == 'Biomass Indicator: AFDM':
+                        result[algae_key] = algae_data.indicator_afdm
+                    elif algae_key == 'Autotrophic Index (AI)':
+                        result[algae_key] = algae_data.ai
+
+        # FBIS ONLY
+        if preferences.SiteSetting.default_data_source == 'fbis':
+            all_survey_data = [
+                'Water Level',
+                'Water Turbidity',
+                'Embeddedness'
+            ]
+            for survey_data_key in all_survey_data:
+                if survey_data_key not in self.context['header']:
+                    self.context['header'].append(survey_data_key)
+                survey_data = SurveyData.objects.filter(
+                    name__iexact=survey_data_key
+                )
+                if survey_data.exists():
+                    sdv = SurveyDataValue.objects.filter(
+                        survey=instance.survey,
+                        survey_data=survey_data[0]
+                    )
+                    if sdv.exists():
+                        result[survey_data_key] = (
+                            sdv[0].survey_data_option.option
+                        )
+            chemical_units = {
+                TEMP: TEMP,
+                CONDUCTIVITY: CONDUCTIVITY,
+                PH: PH,
+                DISSOLVED_OXYGEN_MG: DISSOLVED_OXYGEN_MG,
+                DISSOLVED_OXYGEN_PERCENT: DISSOLVED_OXYGEN_PERCENT,
+                TURBIDITY: TURBIDITY,
+                DEPTH_M: DEPTH_M,
+                NBV: NBV,
+                ORTHOPHOSPHATE: ORTHOPHOSPHATE,
+                TOT: TOT,
+                SILICA: SILICA,
+                NH3_N: NH3_N,
+                NH4_N: NH4_N,
+                NO3_NO2_N: NO3_NO2_N,
+                NO2_N: NO2_N,
+                NO3_N: NO3_N,
+                TIN: TIN,
+                CHLA_B: CHLA_B,
+                AFDM: AFDM
+            }
+            for chem_key in chemical_units:
+                if chem_key not in self.context['header']:
+                    self.context['header'].append(chem_key)
+                chem_record = ChemicalRecord.objects.filter(
+                    chem__chem_code__iexact=chemical_units[chem_key],
+                    survey__site=instance.site,
+                    survey__date=instance.collection_date
+                )
+                if chem_record.exists():
+                    result[chem_key] = chem_record[0].value
+
         else:
-            chem_record_data = {}
-            chem_records = ChemicalRecord.objects.filter(
-                survey__site=instance.site,
-                survey__date=instance.collection_date
-            ).distinct('chem__chem_code')
-            for chem_record in chem_records:
-                chem_code = chem_record.chem.chem_code.upper()
-                if chem_code not in self.context['header']:
-                    self.context['header'].append(chem_code)
-                chem_record_data[chem_code] = chem_record.value
-            self.context['chem_records_cached'][chem_records_identifier] = (
-                chem_record_data
-            )
-            result.update(chem_record_data)
+            if chem_records_identifier in self.context['chem_records_cached']:
+                result.update(
+                    self.context[
+                        'chem_records_cached'][chem_records_identifier]
+                )
+            else:
+                chem_record_data = {}
+                chem_records = ChemicalRecord.objects.filter(
+                    survey__site=instance.site,
+                    survey__date=instance.collection_date
+                ).distinct('chem__chem_code')
+                for chem_record in chem_records:
+                    chem_code = chem_record.chem.chem_code.upper()
+                    if chem_code not in self.context['header']:
+                        self.context['header'].append(chem_code)
+                    chem_record_data[chem_code] = chem_record.value
+                self.context[
+                    'chem_records_cached'][chem_records_identifier] = (
+                    chem_record_data
+                )
+                result.update(chem_record_data)
         return result
 
 
