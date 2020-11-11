@@ -94,7 +94,7 @@ NO3_NO2_N = 'NO3+NO2-N'
 NO2_N = 'NO2-N'
 NO3_N = 'NO3-N'
 TIN = 'TIN'
-AFDM = 'AFDM'
+AFDM = 'AFDM-B'
 CHLA_B = 'CHLA-B'
 
 DEPTH_M = 'Depth'
@@ -205,19 +205,23 @@ class Command(BaseCommand):
             self.warnings.append(error_message)
 
     def row_value(self, row, key):
-        value = ''
-        if key in row and row[key]:
-            value = row[key]
-            value = value.replace('\xa0', ' ')
-            value = value.replace('\xc2', '')
-            value = value.replace('\\xa0', '')
-            value = value.strip()
-            value = re.sub(' +', ' ', value)
-            try:
-                value.decode('utf-8')
-            except ValueError:
-                value = value.decode('windows-1252')
-        return value
+        """
+        Get row value by key
+        :param row: row data
+        :param key: key
+        :return: row value
+        """
+        row_value = ''
+        try:
+            row_value = row[key]
+            row_value = row_value.replace('\xa0', ' ')
+            row_value = row_value.replace('\xc2', '')
+            row_value = row_value.replace('\\xa0', '')
+            row_value = row_value.strip()
+            row_value = re.sub(' +', ' ', row_value)
+        except KeyError:
+            pass
+        return row_value
 
     def import_additional_data(self, collection_record, record):
         """
@@ -1018,6 +1022,7 @@ class Command(BaseCommand):
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
                     collection_record.survey = self.survey
+                    print(collection_record.sampling_method, self.survey.id)
                     if self.group:
                         collection_record.module_group = self.group
                     for field in optional_records:
@@ -1057,11 +1062,11 @@ class Command(BaseCommand):
 
                 except KeyError as e:
                     self.add_to_error_summary(
-                        'KeyError : {}'.format(e.message), index)
+                        'KeyError : {}'.format(e), index)
                     continue
                 except ValueError as e:
                     self.add_to_error_summary(
-                        'ValueError : {}'.format(e.message), index)
+                        'ValueError : {}'.format(e), index)
                     continue
 
         self.summary['data_added'] = self.data_added

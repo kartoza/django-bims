@@ -521,12 +521,12 @@ function onDownloadSummaryCSVClicked(e) {
         alertModalBody.html('Please log in first.')
     } else {
         alertModalBody.html(downloadRequestMessage);
+        downloadCSV(url, downloadButton, csvName, true);
     }
     $('#alertModal').modal({
         'keyboard': false,
         'backdrop': 'static'
     });
-    downloadCSV(url, downloadButton, csvName, true);
 }
 
 function renderDataSources(data) {
