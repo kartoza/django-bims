@@ -4,7 +4,7 @@ from bims.utils.user import create_users_from_string
 
 
 ANALYST = 'Analyst'
-ANALYST_INSTITUTE = 'Analyst Institute'
+ANALYST_INSTITUTE = 'Institute'
 CURATION_PROCESS = 'Curation process'
 INDICATOR_CHL_A = 'Biomass Indicator: Chl A'
 INDICATOR_AFDM = 'Biomass Indicator: AFDM'
@@ -30,6 +30,9 @@ class Command(BaseCommand):
             algae_data = AlgaeData.objects.filter(
                 survey=self.survey
             )[0]
+            AlgaeData.objects.filter(survey=self.survey).exclude(
+                id=algae_data.id
+            ).delete()
             print('Duplicated algae data')
         algae_data.curation_process = record[CURATION_PROCESS]
         algae_data.indicator_chl_a = record[INDICATOR_CHL_A]

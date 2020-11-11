@@ -948,9 +948,12 @@ class AlgaeDataAdmin(admin.ModelAdmin):
         'indicator_afdm',
         'ai'
     )
+    search_fields = (
+        'survey__site__site_code',
+    )
     list_filter = (
         'indicator_chl_a',
-        'indicator_afdm'
+        'indicator_afdm',
     )
 
 

@@ -105,7 +105,7 @@ def download_sass_summary_data_task(
                 id__in=collection_ids
             )
             summary = site_visit_taxa.annotate(
-                date=F('collection_date'),
+                date=F('site_visit__site_visit_date'),
             ).values('date').annotate(
                 sampling_date=F('site_visit__site_visit_date'),
                 full_name=Concat(
