@@ -126,9 +126,33 @@ class SiteVisitUpdateView(
         chl_a = form.data.get('chl_a', None)
         if chl_type and chl_a:
             chem_units[chl_type] = chl_a
+            # Check existing data first, then remove it
+            chla_codes = ['CHLA-B', 'CHLA-W']
+            chla_records = ChemicalRecord.objects.filter(
+                date=self.object.date,
+                location_site=self.object.site,
+                survey=self.object,
+                chem__in=Chem.objects.filter(
+                    chem_code__in=chla_codes
+                )
+            )
+            if chla_records.exists():
+                chla_records.delete()
         afdm = form.data.get('afdm', None)
         if afdm_type and afdm:
             chem_units[afdm_type] = afdm
+            # Check existing data first, then remove it
+            afdm_codes = ['AFDM-B', 'AFDM-W']
+            afdm_records = ChemicalRecord.objects.filter(
+                date=self.object.date,
+                location_site=self.object.site,
+                survey=self.object,
+                chem__in=Chem.objects.filter(
+                    chem_code__in=afdm_codes
+                )
+            )
+            if afdm_records.exists():
+                afdm_records.delete()
         for chem_unit in chem_units:
             chem = Chem.objects.filter(
                 chem_code__iexact=chem_unit
