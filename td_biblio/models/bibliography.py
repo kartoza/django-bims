@@ -34,6 +34,9 @@ class AbstractHuman(models.Model):
     def __unicode__(self):
         return self.get_formatted_name()
 
+    def __str__(self):
+        return self.__unicode__()
+
     def save(self, *args, **kwargs):
         """Set initials and try to set django user before saving"""
 
@@ -118,6 +121,9 @@ class AbstractEntity(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 class Journal(AbstractEntity):

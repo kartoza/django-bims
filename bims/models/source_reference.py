@@ -232,18 +232,27 @@ class SourceReferenceBibliography(SourceReference):
 
     @property
     def authors(self):
-        authors = None
+        authors = self.source.get_authors()
         if self.document:
             try:
                 bims_document = BimsDocument.objects.get(
                     document__id=self.document.id
                 )
                 if bims_document.authors.all().exists():
-                    authors = bims_document.authors.all()
+                    _authors = bims_document.authors.all()
+                    different = False
+                    if _authors.count() != len(authors):
+                        authors = _authors
+                        different = True
+                    if not different:
+                        for _author in authors:
+                            if _author not in authors:
+                                different = True
+                                break
+                    if different:
+                        authors = _authors
             except BimsDocument.DoesNotExist:
                 pass
-        if not authors:
-            authors = self.source.get_authors()
         authors_name = format_authors(authors)
         return authors_name if authors_name else '-'
 
