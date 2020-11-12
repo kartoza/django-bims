@@ -92,10 +92,11 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th scope="col" style="width:200px">Site code/name</th>
-                        <th scope="col">Collection date</th>
-                        <th scope="col">Owner</th>
-                        <th scope="col">Collector</th>
+                        <th scope="col" style="width:200px">Site code</th>
+                        <th scope="col" style="width:200px">Site description</th>
+                        <th scope="col">Sampling date</th>
+                        <th scope="col">Source collection</th>
+                        <th scope="col">Collector/Owner</th>
                         <th scope="col">Total occurrences</th>
                         <th scope="col">Actions</th>
                     </tr>
@@ -103,17 +104,33 @@
                     <tbody>
                     {% for site_visit in survey_list %}
                         <tr>
-                            <td>{{ site_visit.site.location_site_identifier }}</td>
+                            <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}</td>
+                            <td>
+                                {% if site_visit.site.site_description %}{{ site_visit.site.site_description }}{% elif site_visit.site.name %}{{ site_visit.site.name }}{% else %}-{% endif %}
+                                <br/>
+                                {% if user.is_superuser or site_visit.site.owner == user or site_visit.site.collector_user == user %}
+                                    <a href="/location-site-form/update/?id={{ site_visit.site.id }}"
+                                       class="btn btn-warning btn-sm">Edit Site</a>
+                                {% endif %}
+                            </td>
                             <td>{{ site_visit.date }}</td>
-                            <td><a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a></td>
-                            <td><a href="/profile/{{ site_visit.collector_user.username }}/">{{ site_visit.collector_user.get_full_name }}</a></td>
+                            <td>{{ site_visit.source_collection|upper }}</td>
+                            <td>
+                                {% if site_visit.source_collection.upper != 'GBIF' %}
+                                    <a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a>
+                                    {% if site_visit.collector_user.get_full_name != site_visit.owner.get_full_name  %}
+                                        , <a href="/profile/{{ site_visit.collector_user.username }}/">{{ site_visit.collector_user.get_full_name }}</a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             <td>{{ site_visit.total }}</td>
                             <td>
                                 <a href="/site-visit/detail/{{ site_visit.id }}/"
-                                   class="btn btn-primary btn-sm">View</a>
+                                   class="btn btn-primary btn-sm" style="width:80px">View</a>
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
+                                    <br/>
                                     <a href="/site-visit/update/{{ site_visit.id }}/"
-                                       class="btn btn-primary btn-sm">Edit</a>
+                                       class="btn btn-primary btn-sm" style="width:80px; margin-top: 5px;">Edit</a>
                                 {% endif %}
                             </td>
                         </tr>

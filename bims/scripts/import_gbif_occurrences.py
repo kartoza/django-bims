@@ -7,7 +7,6 @@ from requests.exceptions import HTTPError
 from preferences import preferences
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db import models
-from django.conf import settings
 from django.contrib.gis.measure import D
 from geonode.people.models import Profile
 from bims.models import (
@@ -108,20 +107,10 @@ def import_gbif_occurrences(
         ))
 
     source_collection = 'gbif'
-
-    if not owner:
-        admins = settings.ADMINS
-        superusers = Profile.objects.filter(is_superuser=True)
-        if admins:
-            for admin in admins:
-                superuser_list = superusers.filter(email=admin[1])
-                if superuser_list.exists():
-                    superusers = superuser_list
-                    break
-        if superusers.exists():
-            owner = superusers[0]
-        else:
-            owner = None
+    gbif_owner, _ = Profile.objects.get_or_create(
+        username='GBIF',
+        first_name='GBIF.org'
+    )
 
     models.signals.post_save.disconnect(
         collection_post_save_handler,
@@ -178,7 +167,8 @@ def import_gbif_occurrences(
             location_site = LocationSite.objects.create(
                 geometry_point=site_point,
                 name=locality,
-                location_type=location_type
+                location_type=location_type,
+                site_description=locality
             )
 
         try:
@@ -216,7 +206,7 @@ def import_gbif_occurrences(
         else:
             pass
         collection_record.taxonomy = taxonomy
-        collection_record.owner = owner
+        collection_record.owner = gbif_owner
         collection_record.original_species_name = species
         collection_record.collector = collector
         collection_record.source_collection = source_collection

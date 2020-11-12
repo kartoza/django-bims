@@ -3,6 +3,7 @@ import ast
 from django.views.generic.list import ListView
 from django.db.models import Count
 from django.contrib.auth import get_user_model
+from django.db.models import Subquery, OuterRef
 from bims.models.survey import Survey
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.api_views.search import CollectionSearch
@@ -32,12 +33,17 @@ class SiteVisitListView(ListView):
             self.collection_results = search.process_search()
             qs = qs.filter(
                 id__in=self.collection_results.values('survey')
-            ).annotate(
-                total=Count('biological_collection_record')
             )
         else:
             self.collection_results = BiologicalCollectionRecord.objects.all()
 
+        qs = qs.annotate(
+            total=Count('biological_collection_record'),
+            source_collection=Subquery(
+                BiologicalCollectionRecord.objects.filter(
+                    survey__id=OuterRef('id')
+                ).values('source_collection')[:1])
+        )
         return qs.order_by('-date')
 
     def get_context_data(self, **kwargs):
