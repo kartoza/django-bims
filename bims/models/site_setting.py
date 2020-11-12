@@ -156,6 +156,21 @@ class SiteSetting(Preferences):
         )
     )
 
+    show_module_summary_on_dashboard = models.BooleanField(
+        default=False,
+        help_text=(
+            'Show summative figure for data by taxon group'
+        )
+    )
+
+    show_summary_data_on_dashboard = models.BooleanField(
+        default=True,
+        help_text=(
+            'Show summary data on the dashboard ('
+            'Total Location Sites, Collection Records, Site Visits)'
+        )
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

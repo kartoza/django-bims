@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from preferences import preferences
 from django.db.models import Count, F, Case, When, Value
 from bims.models import (
     TaxonGroup,
@@ -30,18 +31,16 @@ class ModuleSummary(APIView):
     INVERTEBRATE_KEY = 'invert'
     ALGAE_KEY = 'algae'
 
-    def fish_data(self):
+    def module_summary_data(self, taxon_group):
         """
-        Returns fish summary
-        :return: dict of fish summary
+        Return summary data for module
+        :param taxon_group: taxon group object
+        :return: dict of summary data
         """
-        fish_group = get_species_group(self.FISH_KEY)
-        if not fish_group:
-            return {}
         collections = BiologicalCollectionRecord.objects.filter(
-            module_group=fish_group
+            module_group=taxon_group
         )
-        fish_summary = dict(
+        summary = dict(
             collections.exclude(category__exact='').annotate(
                 value=Case(When(category__isnull=False,
                                 then=F('category')),
@@ -51,17 +50,32 @@ class ModuleSummary(APIView):
             ).values_list('value', 'count')
         )
         unspecified = collections.filter(category__exact='').count()
-        if 'Unspecified' in fish_summary:
-            fish_summary['Unspecified'] += unspecified
+        if 'Unspecified' in summary:
+            summary['Unspecified'] += unspecified
         else:
-            fish_summary['Unspecified'] = unspecified
-        fish_summary[
+            summary['Unspecified'] = unspecified
+        summary[
             'total'] = collections.count()
-        fish_summary[
+        summary[
             'total_site'] = (
             collections.distinct('site').count()
         )
-        return fish_summary
+        summary[
+            'total_site_visit'] = (
+            collections.distinct('survey').count()
+        )
+        summary['icon'] = taxon_group.logo.url
+        return summary
+
+    def fish_data(self):
+        """
+        Returns fish summary
+        :return: dict of fish summary
+        """
+        fish_group = get_species_group(self.FISH_KEY)
+        if not fish_group:
+            return {}
+        return self.module_summary_data(fish_group)
 
     def invertebrate_data(self):
         """
@@ -118,7 +132,17 @@ class ModuleSummary(APIView):
 
     def get(self, request, *args):
         response_data = dict()
-        response_data[self.FISH_KEY] = self.fish_data()
-        response_data[self.INVERTEBRATE_KEY] = self.invertebrate_data()
-        response_data[self.ALGAE_KEY] = self.algae_data()
+        if preferences.SiteSetting.default_data_source == 'fbis':
+            response_data[self.FISH_KEY] = self.fish_data()
+            response_data[self.INVERTEBRATE_KEY] = self.invertebrate_data()
+            response_data[self.ALGAE_KEY] = self.algae_data()
+        else:
+            taxon_groups = TaxonGroup.objects.filter(
+                category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            )
+            for taxon_group in taxon_groups:
+                taxon_group_name = taxon_group.name
+                response_data[taxon_group_name] = (
+                    self.module_summary_data(taxon_group)
+                )
         return Response(response_data)

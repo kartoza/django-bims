@@ -48,6 +48,8 @@
         const reportUrl = '{% url "bug-report" %}';
         const githubRepo = '{{ preferences.SiteSetting.github_feedback_repo }}';
         const downloadRequestMessage = '{{ download_request_message }}';
+        const mainAccentColor = '{% if custom_theme.main_accent_color %}{{ custom_theme.main_accent_color }}{% else %}#18A090{% endif %}';
+        const secondaryAccentColor = '{% if custom_theme.secondary_accent_color %}{{ custom_theme.secondary_accent_color }}{% else %}#ffc107{% endif %}';
     </script>
 
     <script src="{% static 'js/non_requirejs/cookies.js' %}"></script>
