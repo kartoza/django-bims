@@ -547,3 +547,20 @@ html, body {
     margin-left: 10px;
     width: 50px
 }
+.module-icon {
+    position: absolute;
+    margin-left: -50px;
+    width: 100px;
+}
+
+.module-name {
+    margin-top: 15px;
+    color: #525351;
+}
+
+.module-container {
+    padding-right: 80px;
+    padding-left: 80px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}

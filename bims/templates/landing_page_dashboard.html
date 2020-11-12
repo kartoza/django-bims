@@ -5,18 +5,138 @@
     function getNumberWithCommas(number) {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
-    $.get('/api/landing-page-summary/').then(
-        function(data) {
-            const $container = $('.summary-data');
 
-            $.each(data, function(index, summaryData) {
-               $container.append(
-                   `<div class="col-md-4">
+    function createDonutGraph(container, data) {
+        let donutChart = new Chart(container, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                cutoutPercentage: 70,
+                legend: {
+                    display: false
+                }
+            }
+        });
+    }
+
+    function createModuleCharts(moduleData, moduleName, container) {
+        if (!moduleData) {
+            return;
+        }
+        const img = new Image();
+        img.onload = function () {
+            const height = img.height;
+            let marginTop = 0;
+            if (height < 80) {
+                marginTop = 75
+            } else if (height <= 110) {
+                marginTop = 60
+            } else {
+                marginTop = 50
+            }
+            img.style.marginTop = marginTop + 'px';
+        }
+        img.classList = 'module-icon';
+        img.src = moduleData['icon'];
+        container.append(img);
+        let canvas = $(`<canvas id="chart-${moduleName}" width="150px" height="150px"></canvas>`);
+        container.append(canvas);
+
+        let native = 0;
+        let non_native = 0;
+        let translocated = 0;
+        let totalRecords = 0;
+        let totalSite = 0;
+        let totalSiteVisit = 0;
+        let alienInvasive = 0;
+        let alienNonInvasive = 0;
+
+        if (moduleData.hasOwnProperty('total')) {
+            totalRecords += moduleData['total'];
+        }
+        if (moduleData.hasOwnProperty('alien')) {
+            non_native += moduleData['alien'];
+        }
+        if (moduleData.hasOwnProperty('indigenous')) {
+            native += moduleData['indigenous'];
+        }
+        if (moduleData.hasOwnProperty('translocated')) {
+            translocated += moduleData['translocated'];
+        }
+        if (moduleData.hasOwnProperty('alien-invasive')) {
+            alienInvasive += moduleData['alien-invasive'];
+        }
+        if (moduleData.hasOwnProperty('alien-non-invasive')) {
+            alienNonInvasive += moduleData['alien-non-invasive'];
+        }
+        if (moduleData.hasOwnProperty('total_site')) {
+            totalSite += moduleData['total_site'];
+        }
+        if (moduleData.hasOwnProperty('total_site_visit')) {
+            totalSiteVisit += moduleData['total_site_visit'];
+        }
+        container.append(
+            `<h4 class="module-name">${moduleName}</h4>`
+        )
+        container.append(
+            `<p style="margin-bottom: 0; font-size: 1.5em">${getNumberWithCommas(totalRecords)} Records</p>`
+        )
+        container.append(
+            `<p style="margin-top: 0; margin-bottom: 0;font-size: 1.5em">${getNumberWithCommas(totalSite)} Sites</p>`
+        )
+        container.append(
+            `<p style="margin-top: 0;font-size: 1.5em">${getNumberWithCommas(totalSiteVisit)} Site Visits</p>`
+        )
+
+        let moduleContainer = document.getElementById("chart-" + moduleName);
+        let moduleChartDataset = {
+            labels: ["Native", "Non-Native", "Translocated", "Non-Native: Invasive", "Non-Native: Non-Invasive"],
+            datasets: [{
+                data: [native, non_native, translocated, alienInvasive, alienNonInvasive],
+                backgroundColor: [
+                    mainAccentColor,
+                    '#142341',
+                    '#e0d43f',
+                    secondaryAccentColor,
+                    '#d70e73',
+                ],
+                borderWidth: 1
+            }]
+        };
+        createDonutGraph(moduleContainer, moduleChartDataset)
+    }
+
+
+    if (showDataSummaries) {
+        $.get('/api/landing-page-summary/').then(
+            function (data) {
+                const $container = $('.summary-data');
+
+                $.each(data, function (index, summaryData) {
+                    $container.append(
+                        `<div class="col-md-4">
                         <i class="fa ${summaryData['icon']}"></i>
                         <p>${getNumberWithCommas(summaryData['value'])} ${summaryData['title']}</p>
                    </div>`
-               )
-            });
-        }
-    )
+                    )
+                });
+            }
+        )
+    }
+    if (showModuleSummaries) {
+        $.get('/api/module-summary').then(
+            function (data) {
+                const $container = $('.summary-data');
+                 $.each(data, function(key, summaryData) {
+                     let _container = $(`<div class="col-md-4 module-container"></div>`);
+                     $container.append(_container);
+                     createModuleCharts(
+                         summaryData,
+                         key,
+                         _container
+                     )
+                 });
+            }
+        )
+    }
 </script>
