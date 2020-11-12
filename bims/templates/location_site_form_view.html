@@ -83,7 +83,7 @@
                  style="display: none;">
             </div>
             <div id="site-map"></div>
-            {% if update %}
+            {% if update and preferences.SiteSetting.default_data_source.lower == 'fbis'%}
                 <div class="form-group row">
                     <div class="col-lg-12">
                         <a href="/fish-form/?siteId={{ site_id }}" class="btn btn-info">Add fish data</a>
@@ -117,6 +117,7 @@
                     </button>
                 </div>
             </div>
+            {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
             <div class="form-group row">
                 <label for="river_name" class="col-sm-2 col-form-label">
                     River Name
@@ -140,6 +141,7 @@
                            placeholder="" value="{% if legacy_river_name %}{{ legacy_river_name }}{% else %}{% endif %}" >
                 </div>
             </div>
+            {% endif %}
             <div class="form-group row">
                 <label for="site_name"
                        class="col-sm-2 col-form-label col-form-label">Site
@@ -170,6 +172,7 @@
                            placeholder="" value="{% if legacy_site_code %}{{ legacy_site_code }}{% else %}{% endif %}" >
                 </div>
             </div>
+            {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
             <div class="form-group row">
                 <label for="site_name"
                        class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>
@@ -198,6 +201,7 @@
                     </select>
                 </div>
             </div>
+            {% endif %}
             <div class="form-group row">
                 <label for="site_name"
                        class="col-sm-2 col-form-label col-form-label">Site
