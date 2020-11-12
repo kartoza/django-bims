@@ -10,7 +10,7 @@ class SiteSetting(Preferences):
         ('fbis', 'FBIS (2 Secondary catchment + 4 River + Site count)'),
         (
             'rbis',
-            'RBIS (1 Catchment 0 + 2 Catchment 1 + 1 Catchment 2 + Site count)'
+            'RBIS (Catchment + Province ID + District ID + Site count)'
         ),
     )
     site_notice = models.TextField(
