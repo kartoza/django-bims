@@ -64,7 +64,8 @@ class ModuleSummary(APIView):
             'total_site_visit'] = (
             collections.distinct('survey').count()
         )
-        summary['icon'] = taxon_group.logo.url
+        if taxon_group.logo:
+            summary['icon'] = taxon_group.logo.url
         return summary
 
     def fish_data(self):
