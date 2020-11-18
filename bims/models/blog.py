@@ -32,7 +32,9 @@ class BlogPage(Page):
         APIField('intro'),
         APIField('body'),
         APIField('authors'),
-        APIField('intro_image')
+        APIField('intro_image'),
+        APIField('last_published_at'),
+        APIField('latest_revision_created_at'),
     ]
 
     content_panels = Page.content_panels + [

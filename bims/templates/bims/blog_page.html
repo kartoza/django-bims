@@ -68,9 +68,9 @@
                                 <p class="post-meta">
                                     {% if self.owner %}{{ page.owner.first_name | upper }} {{ page.owner.last_name | upper }} - {% endif %}{{ page.first_published_at|date|upper }}
                                 </p>
-                                <h4 class="post-subtitle">
+                                <h6 class="post-subtitle" style="font-weight: 500 !important;">
                                     {{ page.blogpage.intro | safe }}
-                                </h4>
+                                </h6>
                             </div>
 
                         </div>
