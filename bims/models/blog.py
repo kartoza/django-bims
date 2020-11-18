@@ -1,13 +1,24 @@
 from wagtail.core.models import Page
 from wagtail.core.fields import RichTextField
-from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.api import APIField
+from wagtail.admin.edit_handlers import (
+    FieldPanel,
+    PageChooserPanel
+)
+from wagtail.images.edit_handlers import ImageChooserPanel
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from wagtail.admin.edit_handlers import PageChooserPanel
 from django.db import models
 
 
 class BlogPage(Page):
     intro = RichTextField(blank=True)
+    intro_image = models.ForeignKey(
+        'wagtailimages.Image',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+'
+    )
     body = RichTextField(blank=True)
     related_page = models.ForeignKey(
         'wagtailcore.Page',
@@ -16,9 +27,17 @@ class BlogPage(Page):
         on_delete=models.SET_NULL,
         related_name='+',
     )
+    # Export fields over the API
+    api_fields = [
+        APIField('intro'),
+        APIField('body'),
+        APIField('authors'),
+        APIField('intro_image')
+    ]
 
     content_panels = Page.content_panels + [
         FieldPanel('intro', classname="full"),
+        ImageChooserPanel('intro_image'),
         FieldPanel('body', classname="full"),
         PageChooserPanel('related_page', ['bims.BlogPage', 'bims.ManualPage']),
     ]
