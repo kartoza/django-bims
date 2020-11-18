@@ -551,6 +551,7 @@ html, body {
     position: absolute;
     margin-left: -50px;
     width: 100px;
+    z-index: 0;
 }
 
 .module-name {
@@ -559,8 +560,12 @@ html, body {
 }
 
 .module-container {
-    padding-right: 80px;
-    padding-left: 80px;
     padding-top: 20px;
     padding-bottom: 20px;
+}
+
+.module-container > .chartjs-render-monitor {
+    margin-top: -60px;
+    z-index: 999;
+    position: absolute;
 }

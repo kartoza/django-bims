@@ -14,7 +14,14 @@
                 cutoutPercentage: 70,
                 legend: {
                     display: false
-                }
+                },
+                layout: {
+                    padding: {
+                        left: 60,
+                        right: 60,
+                        bottom: 0
+                    }
+                },
             }
         });
     }
@@ -76,7 +83,7 @@
             totalSiteVisit += moduleData['total_site_visit'];
         }
         container.append(
-            `<h4 class="module-name">${moduleName}</h4>`
+            `<h4 class="module-name" style="margin-top: 250px;">${moduleName}</h4>`
         )
         container.append(
             `<p style="margin-bottom: 0; font-size: 1.5em">${getNumberWithCommas(totalRecords)} Records</p>`
@@ -90,7 +97,7 @@
 
         let moduleContainer = document.getElementById("chart-" + moduleName);
         let moduleChartDataset = {
-            labels: ["Native", "Non-Native", "Translocated", "Non-Native: Invasive", "Non-Native: Non-Invasive"],
+            labels: ["Native Occurrences", "Non-Native Occurrences", "Translocated Occurrences", "Non-Native: Invasive Occurrences", "Non-Native: Non-Invasive Occurrences"],
             datasets: [{
                 data: [native, non_native, translocated, alienInvasive, alienNonInvasive],
                 backgroundColor: [
