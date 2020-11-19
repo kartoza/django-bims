@@ -208,7 +208,7 @@ class CollectionSearch(object):
     def categories(self):
         categories = self.parse_request_json('category')
         # Add invasive alien
-        if 'alien' in categories:
+        if categories and 'alien' in categories:
             categories.append('alien-non-invasive')
             categories.append('alien-invasive')
         return categories
