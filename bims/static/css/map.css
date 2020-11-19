@@ -471,6 +471,23 @@ html, body, .map, .map-wrapper, #map-container {
     height: 40px;
 }
 
+.endemic-dropdown-item {
+    max-width: 250px;
+    width: 250px;
+    height: auto !important;
+    font-size: 10pt;
+    /* These are technically the same, but use both */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+
+    -ms-word-break: break-all;
+    /* This is the dangerous one in WebKit, as it breaks things wherever */
+    word-break: break-all;
+    /* Instead use this non-standard one: */
+    word-break: break-word;
+
+}
+
 .map-control-panel-box li.disabled {
     color: #acacac;
 }
