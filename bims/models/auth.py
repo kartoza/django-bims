@@ -40,8 +40,21 @@ user_logged_out.connect(do_logout)
 
 @receiver(user_signed_up, dispatch_uid="user_signed_up")
 def user_signed_up_(request, user, **kwargs):
-    username = request.POST.get('username')
-    user_email = request.POST.get('email')
+    from geonode.people.models import Profile
+    user_email = user.email
+
+    # Try to change the username
+    new_username = '{first_name}_{last_name}'.format(
+        first_name=user.first_name.lower(),
+        last_name=user.last_name.lower()
+    )
+
+    if not Profile.objects.filter(username=new_username).exists():
+        user.username = new_username
+        user.save()
+
+    username = user.username
+
     try:
         site = Site.objects.first()
         bims_site_name = site.name

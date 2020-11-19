@@ -215,8 +215,6 @@ define([
                     let $dashboardWrapper = self.$el.find('.dashboard-wrapper');
                     let dashboardHeader = self.$el.find('.dashboard-header');
 
-                    console.log(data);
-
                     if (data['is_multi_sites']) {
                         dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
                     } else {
@@ -656,7 +654,7 @@ define([
                         }
                     } else {
                         let a = window.document.createElement('a');
-                        a.href = '/uploaded/csv_processed/' + data['filename'];
+                        a.href = '/uploaded/processed_csv/' + data['filename'];
                         a.download = 'OccurrenceData.csv';
                         a.click();
                         downloadButton.html('Download as CSV');
@@ -677,10 +675,7 @@ define([
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
             } else {
-                alertModalBody.html('Your data download is underway. ' +
-                            'This may take some time. ' +
-                            'You will be notified by email when your download is ready. ' +
-                            'Thank you for your patience.');
+                alertModalBody.html(downloadRequestMessage);
                 $.get({
                     url: self.csvDownloadEmailUrl,
                     dataType: 'json',
@@ -1259,7 +1254,6 @@ define([
             if (!container) {
                 container = $('#species-ssdd-occurrence-data');
             }
-            console.log('occurrenceDataSub', container)
             // let occurrenceDataSub = occurrenceDataWrapper.find('#occurrence-data');
             let occurrenceDataSub = container.find('.content-body');
             if (data['occurrence_data'].length > 0 || data['iucn_name_list'].length > 0 || data['origin_name_list'].length > 0) {
@@ -1280,17 +1274,17 @@ define([
             let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
             let hiddenKeys = ['is_doc']; // Don't show this key in table
             let orderedDataSources = [];
-            for (var j=0; j<dataSources.length; j++) {
+            for (let j=0; j<dataSources.length; j++) {
                 orderedDataSources.push({});
-                for (var i = 0; i < order.length; i++) {
+                for (let i = 0; i < order.length; i++) {
                     orderedDataSources[j][order[i]] = dataSources[j][order[i]];
                 }
             }
 
-            var headerDiv = $('<thead><tr></tr></thead>');
+            let headerDiv = $('<thead><tr></tr></thead>');
             if(orderedDataSources.length > 0) {
-                var keys = Object.keys(orderedDataSources[0]);
-                for (var i = 0; i < keys.length; i++) {
+                let keys = Object.keys(orderedDataSources[0]);
+                for (let i = 0; i < keys.length; i++) {
                     if (hiddenKeys.includes(keys[i])) {
                         continue;
                     }
@@ -1299,12 +1293,12 @@ define([
             }
             ulDiv.append(headerDiv);
 
-            var bodyDiv = $('<tbody></tbody>');
+            let bodyDiv = $('<tbody></tbody>');
             $.each(orderedDataSources, function (index, source) {
-                var itemDiv = $('<tr></tr>');
-                var keys = Object.keys(source);
-                var document = false;
-                for(var i=0; i<keys.length; i++){
+                let itemDiv = $('<tr></tr>');
+                let keys = Object.keys(source);
+                let document = false;
+                for(let i=0; i<keys.length; i++){
                     if (keys[i] === 'is_doc') {
                         if (source[keys[i]]) {
                             document = true;
@@ -1318,12 +1312,16 @@ define([
                         }
                     }
 
-                    if(keys[i] === 'DOI/URL' && document){
+                    if(keys[i] === 'DOI/URL' && document && source[keys[i]].indexOf('/uploaded/') > -1) {
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
                     } else if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) !== 'http') {
                         itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
                     } else {
-                        itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                        if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) === 'http') {
+                            itemDiv.append(`<td><a href="${source[keys[i]]}" target="_blank">${source[keys[i]]}<a/></td>`);
+                        } else {
+                            itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                        }
                     }
                 }
                 bodyDiv.append(itemDiv);

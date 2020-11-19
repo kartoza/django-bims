@@ -10,7 +10,7 @@ class SiteSetting(Preferences):
         ('fbis', 'FBIS (2 Secondary catchment + 4 River + Site count)'),
         (
             'rbis',
-            'RBIS (1 Catchment 0 + 2 Catchment 1 + 1 Catchment 2 + Site count)'
+            'RBIS (Catchment + Province ID + District ID + Site count)'
         ),
     )
     site_notice = models.TextField(
@@ -146,6 +146,29 @@ class SiteSetting(Preferences):
     enable_sass = models.BooleanField(
         default=False,
         help_text='Enable or disable SASS'
+    )
+
+    enable_download_request_approval = models.BooleanField(
+        default=False,
+        help_text=(
+            'Download requests must be approved by the staff before they '
+            'are sent to users'
+        )
+    )
+
+    show_module_summary_on_dashboard = models.BooleanField(
+        default=False,
+        help_text=(
+            'Show summative figure for data by taxon group'
+        )
+    )
+
+    show_summary_data_on_dashboard = models.BooleanField(
+        default=True,
+        help_text=(
+            'Show summary data on the dashboard ('
+            'Total Location Sites, Collection Records, Site Visits)'
+        )
     )
 
     def save(self, *args, **kwargs):

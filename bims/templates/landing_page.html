@@ -12,6 +12,8 @@
     <link href="{% static "css/landing_page.css" %}" rel="stylesheet">
     <script type="text/javascript">
         const summaries = '{{ summaries|jsonify|safe }}';
+        const showModuleSummaries = {% if preferences.SiteSetting.show_module_summary_on_dashboard %}true{% else %}false{% endif %};
+        const showDataSummaries = {% if preferences.SiteSetting.show_summary_data_on_dashboard %}true{% else %}false{% endif %};
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
 
@@ -29,7 +31,7 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading">BIODIVERSITY
+                            <h2 class="section-heading">BIODIVERSITY OCCURRENCE
                                 RECORDS</h2>
                         </div>
                     </div>

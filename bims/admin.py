@@ -77,7 +77,8 @@ from bims.models import (
     DashboardConfiguration,
     HarvestSession,
     generate_site_code,
-    location_site_post_save_handler
+    location_site_post_save_handler,
+    DownloadRequest
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -947,9 +948,26 @@ class AlgaeDataAdmin(admin.ModelAdmin):
         'indicator_afdm',
         'ai'
     )
+    search_fields = (
+        'survey__site__site_code',
+    )
     list_filter = (
         'indicator_chl_a',
-        'indicator_afdm'
+        'indicator_afdm',
+    )
+
+
+class DownloadRequestAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'requester',
+    )
+    list_display = (
+        'requester',
+        'request_date',
+        'request_file',
+        'request_category',
+        'approved',
+        'rejected'
     )
 
 
@@ -1044,6 +1062,7 @@ admin.site.register(Chem, ChemAdmin)
 admin.site.register(UploadSession)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
+admin.site.register(DownloadRequest, DownloadRequestAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(

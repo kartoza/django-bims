@@ -11,6 +11,9 @@ from bims.models.biological_collection_record import (
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.models.site_image import SiteImage
 from bims.views.site_visit.base import SiteVisitBaseView
+from bims.models.algae_data import AlgaeData
+from bims.models.chem import Chem
+from bims.models.chemical_record import ChemicalRecord
 
 
 class SiteVisitUpdateView(
@@ -91,6 +94,82 @@ class SiteVisitUpdateView(
         self.object.validated = False
         self.object.owner = self.collection_records[0].owner
         self.object.collector_user = self.collection_records[0].collector_user
+
+        # -- Algae data
+        curation_process = form.data.get('curation_process', None)
+        indicator_chl_a = form.data.get('indicator_chl_a', None)
+        indicator_afdm = form.data.get('indicator_afdm', None)
+        ai = form.data.get('ai', '')
+        if not ai:
+            ai = None
+        if curation_process or indicator_afdm or indicator_chl_a:
+            algae_data = AlgaeData.objects.filter(
+                survey=self.object
+            )
+            if algae_data.exists():
+                if algae_data.count() > 1:
+                    algae_data.exclude(id=algae_data[0].id).delete()
+            else:
+                AlgaeData.objects.create(survey=self.object)
+                algae_data = AlgaeData.objects.filter(survey=self.object)
+            algae_data.update(
+                curation_process=curation_process,
+                indicator_afdm=indicator_afdm,
+                indicator_chl_a=indicator_chl_a,
+                ai=ai
+            )
+
+        # -- Biomass chemical records
+        chem_units = {}
+        chl_type = form.data.get('chl_type', None)
+        afdm_type = form.data.get('afdm_type', None)
+        chl_a = form.data.get('chl_a', None)
+        if chl_type and chl_a:
+            chem_units[chl_type] = chl_a
+            # Check existing data first, then remove it
+            chla_codes = ['CHLA-B', 'CHLA-W']
+            chla_records = ChemicalRecord.objects.filter(
+                date=self.object.date,
+                location_site=self.object.site,
+                survey=self.object,
+                chem__in=Chem.objects.filter(
+                    chem_code__in=chla_codes
+                )
+            )
+            if chla_records.exists():
+                chla_records.delete()
+        afdm = form.data.get('afdm', None)
+        if afdm_type and afdm:
+            chem_units[afdm_type] = afdm
+            # Check existing data first, then remove it
+            afdm_codes = ['AFDM-B', 'AFDM-W']
+            afdm_records = ChemicalRecord.objects.filter(
+                date=self.object.date,
+                location_site=self.object.site,
+                survey=self.object,
+                chem__in=Chem.objects.filter(
+                    chem_code__in=afdm_codes
+                )
+            )
+            if afdm_records.exists():
+                afdm_records.delete()
+        for chem_unit in chem_units:
+            chem = Chem.objects.filter(
+                chem_code__iexact=chem_unit
+            )
+            if chem.exists():
+                chem = chem[0]
+            else:
+                chem = Chem.objects.create(
+                    chem_code=chem_unit
+                )
+            chem_record, _ = ChemicalRecord.objects.get_or_create(
+                date=self.object.date,
+                chem=chem,
+                location_site=self.object.site,
+                survey=self.object,
+                value=chem_units[chem_unit]
+            )
 
         return super(SiteVisitUpdateView, self).form_valid(form)
 

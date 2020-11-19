@@ -1,9 +1,13 @@
 from django.views.generic import View
+from django.db.models.functions import Length
 from bims.models.biotope import Biotope
 from bims.models.sampling_method import SamplingMethod
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.site_image import SiteImage
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.models.algae_data import AlgaeData
+from bims.models.chemical_record import ChemicalRecord
+from bims.models.chem import Chem
 
 
 class SiteVisitBaseView(View):
@@ -46,6 +50,26 @@ class SiteVisitBaseView(View):
                 return None
         return None
 
+    def biomass(self):
+        """Return biomass data"""
+        biomass_codes = ['CHLA-B', 'CHLA-W', 'AFDM-B', 'AFDM-W']
+        chems = ChemicalRecord.objects.filter(
+            date=self.object.date,
+            location_site=self.object.site,
+            survey=self.object,
+            chem__in= Chem.objects.filter(
+                chem_code__in=biomass_codes
+            )
+        )
+        if chems.exists():
+            chems_data = {}
+            for _chem in chems:
+                chems_data[_chem.chem.chem_code.replace('-', '_')] = (
+                    _chem.value
+                )
+            return chems_data
+        return None
+
     def sampling_method(self):
         """Get existing sampling method value from collections"""
         sampling_method = self.collection_records.values(
@@ -64,14 +88,14 @@ class SiteVisitBaseView(View):
         """Get existing sampling effort value from collections"""
         sampling_effort = self.collection_records.exclude(
             sampling_effort=''
-        )
+        ).order_by(Length('sampling_effort').desc())
         try:
             if sampling_effort.exists():
                 sampling_effort_str = sampling_effort[0].sampling_effort
                 sampling_effort_arr = sampling_effort_str.split(' ')
                 return (
                     sampling_effort_arr[0].strip(),
-                    sampling_effort_arr[1].strip()
+                    sampling_effort_arr[1].strip().lower()
                 )
         except IndexError:
             pass
@@ -111,6 +135,10 @@ class SiteVisitBaseView(View):
         context['specific_biotope'] = self.biotope('specific_biotope')
         context['substratum'] = self.biotope('substratum')
         context['sampling_method'] = self.sampling_method()
+        context['biomass'] = self.biomass()
+        algae_data = AlgaeData.objects.filter(survey=self.object)
+        if algae_data.exists():
+            context['algae_data'] = algae_data[0]
         sampling_effort_value, sampling_effort_unit = self.sampling_effort()
         context['sampling_effort_value'] = sampling_effort_value
         context['sampling_effort_unit'] = sampling_effort_unit

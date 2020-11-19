@@ -34,6 +34,9 @@ class AbstractHuman(models.Model):
     def __unicode__(self):
         return self.get_formatted_name()
 
+    def __str__(self):
+        return self.__unicode__()
+
     def save(self, *args, **kwargs):
         """Set initials and try to set django user before saving"""
 
@@ -118,6 +121,9 @@ class AbstractEntity(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 class Journal(AbstractEntity):
@@ -359,7 +365,7 @@ class Entry(models.Model):
              'Can Add Bibliography Entry'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         """Format entry with a default bibliography style"""
         # Authors
         author_str = '%(last_name)s %(first_initial)s'
@@ -388,6 +394,11 @@ class Entry(models.Model):
 
         s += '.'
         return s
+
+    def __unicode__(self):
+        """Format entry with a default bibliography style"""
+        # Authors
+        return self.__str__()
 
     def _get_first_author(self):
         """

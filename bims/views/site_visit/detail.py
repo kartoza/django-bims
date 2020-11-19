@@ -10,5 +10,5 @@ class SiteVisitDetailView(SiteVisitBaseView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(SiteVisitDetailView, self).get_context_data(**kwargs)
-        context['ok'] = 'pl'
+        context['detail'] = True
         return context

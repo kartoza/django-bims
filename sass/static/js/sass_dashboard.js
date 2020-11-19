@@ -639,10 +639,7 @@ function onDownloadCSVClicked(e) {
     if (!is_logged_in) {
         alertModalBody.html('Please log in first.')
     } else {
-        alertModalBody.html('Your data download is underway. ' +
-            'This may take some time. ' +
-            'You will be notified by email when your download is ready. ' +
-            'Thank you for your patience.');
+        alertModalBody.html(downloadRequestMessage);
     }
     $('#alertModal').modal({
         'keyboard': false,
@@ -673,18 +670,15 @@ function onDownloadSummaryCSVClicked(e) {
 
     const alertModalBody = $('#alertModalBody');
     if (!is_logged_in) {
-        alertModalBody.html('Please log in first.')
+        alertModalBody.html('Please log in first.');
     } else {
-        alertModalBody.html('Your data download is underway. ' +
-            'This may take some time. ' +
-            'You will be notified by email when your download is ready. ' +
-            'Thank you for your patience.');
+        alertModalBody.html(downloadRequestMessage)
+        downloadCSV(url, downloadButton, csvName, true)
     }
     $('#alertModal').modal({
         'keyboard': false,
         'backdrop': 'static'
     });
-    downloadCSV(url, downloadButton, csvName, true)
 }
 
 function onDownloadChartNewClicked(e) {
@@ -785,7 +779,8 @@ function renderLocationContextTable() {
 
     if (politicalBoundary) {
         try {
-            tableData['Province'] = politicalBoundary['sa_provinces'];
+            if (politicalBoundary['sa_provinces'])
+                tableData['Province'] = politicalBoundary['sa_provinces'];
         } catch (e) {
         }
     }

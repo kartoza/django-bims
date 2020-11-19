@@ -175,7 +175,7 @@ def process_source_reference(
             # should be bibliography type
             # If url, title, year, and author(s) exists, crete new entry
             if (
-                    document_url and
+                    document_url is not None and
                     document_title and
                     document_author and
                     source_year

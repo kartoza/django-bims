@@ -18,7 +18,7 @@ class Command(BaseCommand):
         all_search_process.delete()
         csv_path = os.path.join(
             settings.MEDIA_ROOT,
-            'csv_processed'
+            settings.PROCESSED_CSV_PATH
         )
         shutil.rmtree(csv_path)
         os.mkdir(csv_path)

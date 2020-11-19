@@ -72,7 +72,8 @@ class SeleniumTest(LiveServerTestCase):
             'section-heading'
         )
 
-        self.assertEqual(section_heading.text, u'BIODIVERSITY RECORDS')
+        self.assertEqual(section_heading.text,
+                         u'BIODIVERSITY OCCURRENCE RECORDS')
 
     # TODO : Fix this test
     # def test_sass_page_get_404(self):

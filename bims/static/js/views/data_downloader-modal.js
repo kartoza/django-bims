@@ -100,11 +100,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi'], function (Sha
             var is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
             if(is_safari) {
                 var a = window.document.createElement('a');
-                a.href = '/uploaded/csv_processed/' + data['filename'];
+                a.href = '/uploaded/processed_csv/' + data['filename'];
                 a.download = data['filename'];
                 a.click();
             } else {
-                location.replace('/uploaded/csv_processed/' + data['filename']);
+                location.replace('/uploaded/processed_csv/' + data['filename']);
             }
 
             this.resetModal();

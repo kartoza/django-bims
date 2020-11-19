@@ -16,32 +16,31 @@
                     Chl A
                 </div>
                 <div class="col-8">
-                    <select class="form-control biomass-indicator" name="chl_type" id="chl_type">
-                        <option value="CHLA-B" data-hide="CHLA-W">CHLA-B</option>
-                        <option value="CHLA-W" data-hide="CHLA-B">CHLA-W</option>
+                    <select class="form-control biomass-indicator" name="chl_type" id="chl_type" {% if detail %}disabled{% endif %}>
+                        <option value="CHLA-B" data-hide="CHLA-W" {% if biomass.CHLA_B %}selected{% endif %}>CHLA-B</option>
+                        <option value="CHLA-W" data-hide="CHLA-B" {% if biomass.CHLA_W %}selected{% endif %}>CHLA-W</option>
                     </select>
                 </div>
             </div>
         </th>
-
         <td>
             <select class="form-control CHLA-B"
-                    name="indicator_chl_a">
-                <option value="Whole cobble">
+                    name="indicator_chl_a" {% if biomass.CHLA_B %}style="display: block"{% elif biomass.CHLA_W %}style="display: none"{% endif %} {% if detail %}disabled{% endif %}>
+                <option value="Whole cobble" {% if algae_data.indicator_chl_a == 'Whole cobble' %}selected{% endif %}>
                     Whole cobble
                 </option>
-                <option value="Soft bottom">
+                <option value="Soft bottom" {% if algae_data.indicator_chl_a == 'Soft bottom' %}selected{% endif %}>
                     Soft bottom
                 </option>
-                <option value="In situ">
+                <option value="In situ" {% if algae_data.indicator_chl_a == 'In situ' %}selected{% endif %}>
                     In situ
                 </option>
-                <option value="Artificial substrate">
+                <option value="Artificial substrate" {% if algae_data.indicator_chl_a == 'Artificial substrate' %}selected{% endif %}>
                     Artificial substrate
                 </option>
             </select>
              <select class="form-control CHLA-W"
-                    name="indicator_chl_a" style="display: none">
+                    {% if biomass and biomass.CHLA_W %}name="indicator_chl_a" style="display: block"{% else %}name="" style="display: none"{% endif %} {% if detail %}disabled{% endif %}>
                 <option value="Water column">
                     Water column
                 </option>
@@ -52,12 +51,11 @@
             <div class="row">
                 <div class="col-10">
                     <input type="number" min="0" class="form-control"
-                           name="chl_a"/>
+                           name="chl_a" {% if biomass.CHLA_B %}value="{{ biomass.CHLA_B }}"{% elif biomass.CHLA_W %}value="{{ biomass.CHLA_W }}"{% endif %} {% if detail %}disabled{% endif %}/>
                 </div>
                 <div class="col-2">
-                    <span class="measurement CHLA-B">mg/m2</span>
-                    <span class="measurement CHLA-W"
-                          style="display: none">mg/L</span>
+                    <span class="measurement CHLA-B" {% if biomass.CHLA_B %}style="display: block"{% elif biomass.CHLA_W %}style="display: none"{% endif %}>mg/m2</span>
+                    <span class="measurement CHLA-W" {% if biomass.CHLA_W %}style="display: block"{% else %}style="display: none"{% endif %}>mg/L</span>
                 </div>
             </div>
         </td>
@@ -69,28 +67,28 @@
                      AFDM
                 </div>
                 <div class="col-8">
-                    <select class="form-control biomass-indicator" name="afdm_type">
-                        <option value="AFDM-B" data-hide="AFDM-W">AFDM-B</option>
-                        <option value="AFDM-W" data-hide="AFDM-B">AFDM-W</option>
+                    <select class="form-control biomass-indicator" name="afdm_type" {% if detail %}disabled{% endif %}>
+                        <option value="AFDM-B" data-hide="AFDM-W" {% if biomass.AFDM_B %}selected{% endif %}>AFDM-B</option>
+                        <option value="AFDM-W" data-hide="AFDM-B" {% if biomass.AFDM_W %}selected{% endif %}>AFDM-W</option>
                     </select>
                 </div>
             </div>
         </th>
         <td>
             <select class="form-control AFDM-B"
-                    name="indicator_afdm">
-                <option value="Whole cobble">
+                    name="indicator_afdm" {% if biomass.AFDM_B %}style="display: block"{% elif biomass.AFDM_W %}style="display: none"{% endif %} {% if detail %}disabled{% endif %}>
+                <option value="Whole cobble" {% if algae_data.indicator_afdm == 'Whole cobble' %}selected{% endif %}>
                     Whole cobble
                 </option>
-                <option value="Soft bottom">
+                <option value="Soft bottom" {% if algae_data.indicator_afdm == 'Soft bottom' %}selected{% endif %}>
                     Soft bottom
                 </option>
-                <option value="Artificial substrate">
+                <option value="Artificial substrate" {% if algae_data.indicator_afdm == 'Artificial substrate' %}selected{% endif %}>
                     Artificial substrate
                 </option>
             </select>
             <select class="form-control AFDM-W"
-                    name="indicator_afdm" style="display: none">
+                   {% if biomass and biomass.AFDM_W %}name="indicator_afdm" style="display: block"{% else %}name="" style="display: none"{% endif %} {% if detail %}disabled{% endif %}>
                 <option value="Water column">
                     Water column
                 </option>
@@ -100,12 +98,11 @@
              <div class="row">
                 <div class="col-10">
                     <input type="number" min="0" class="form-control"
-                           name="afdm"/>
+                           name="afdm" {% if biomass.AFDM_B %}value="{{ biomass.AFDM_B }}"{% elif biomass.AFDM_W %}value="{{ biomass.AFDM_W }}"{% endif %} {% if detail %}disabled{% endif %}/>
                 </div>
                 <div class="col-2">
-                    <span class="measurement AFDM-B">mg/m2</span>
-                    <span class="measurement AFDM-W"
-                          style="display: none">mg/L</span>
+                    <span class="measurement AFDM-B" {% if biomass.AFDM_B %}style="display: block"{% elif biomass.AFDM_W %}style="display: none"{% endif %}>mg/m2</span>
+                    <span class="measurement AFDM-W" {% if biomass.AFDM_W %}style="display: block"{% else %}style="display: none"{% endif %}>mg/L</span>
                 </div>
             </div>
         </td>
@@ -113,7 +110,7 @@
     <tr>
         <th colspan="2" scope="row" style="vertical-align: middle">Autotrophic Index (AI)</th>
         <td >
-             <input type="number" min="0" class="form-control taxon-abundance" name="ai"/>
+             <input type="number" min="0" class="form-control taxon-abundance" name="ai" {% if algae_data.ai %}value="{{ algae_data.ai }}"{% endif %} }} {% if detail %}disabled{% endif %}/>
         </td>
     </tr>
     </tbody>
@@ -123,8 +120,18 @@
 
     function biomassIndicatorChanged () {
         let classToHide = this.options[this.selectedIndex].getAttribute('data-hide');
-        for (let el of document.querySelectorAll(`.${classToHide}`)) el.style.display = 'none';
-        for (let el of document.querySelectorAll(`.${this.value}`)) el.style.display = 'block';
+        for (let el of document.querySelectorAll(`.${classToHide}`)) {
+            el.style.display = 'none';
+            el.name = '';
+        }
+        for (let el of document.querySelectorAll(`.${this.value}`)) {
+            el.style.display = 'block';
+            if (classToHide.includes('CHLA')) {
+                el.name = 'indicator_chl_a';
+            } else {
+                el.name = 'indicator_afdm';
+            }
+        }
     }
 
     [].forEach.call(document.querySelectorAll('.biomass-indicator'), function (el) {

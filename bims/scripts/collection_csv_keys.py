@@ -42,7 +42,7 @@ NO3_NO2_N = 'NO3+NO2-N'
 NO2_N = 'NO2-N'
 NO3_N = 'NO3-N'
 TIN = 'TIN'
-AFDM = 'AFDM'
+AFDM = 'AFDM-B'
 CHLA_B = 'CHLA-B'
 
 DEPTH_M = 'Depth'

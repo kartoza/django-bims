@@ -93,3 +93,6 @@ if PROXY_ALLOWED_HOSTS_ENV:
     proxy_list = PROXY_ALLOWED_HOSTS_ENV.split(',')
     for proxy in proxy_list:
         PROXY_ALLOWED_HOSTS += (proxy,)
+
+
+PROCESSED_CSV_PATH = 'processed_csv'
