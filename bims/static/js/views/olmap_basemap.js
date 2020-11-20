@@ -93,13 +93,24 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             var baseSourceLayers = [];
 
             // TOPOSHEET MAP
-            var toposheet = new ol.layer.Tile({
+            // var toposheet = new ol.layer.Tile({
+            //     title: 'Topography',
+            //     source: new ol.source.XYZ({
+            //         attributions: ['Data &copy; <a href="http://www.ngi.gov.za/">' +
+            //         'National Geospatial Information (NGI)</a>; Tiles from ' +
+            //         '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
+            //         url: '/bims_proxy/https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+            //     })
+            // });
+
+            let toposheet = new ol.layer.Tile({
                 title: 'Topography',
+                type: 'base',
+                visible: true,
                 source: new ol.source.XYZ({
-                    attributions: ['Data &copy; <a href="http://www.ngi.gov.za/">' +
-                    'National Geospatial Information (NGI)</a>; Tiles from ' +
-                    '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'],
-                    url: '/bims_proxy/https://htonl.dev.openstreetmap.org/ngi-tiles/tiles/50k/{z}/{x}/{-y}.png'
+                    attributions: ['Kartendaten: © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, SRTM | Kartendarstellung: © <a href="http://opentopomap.org/">OpenTopoMap</a> ' +
+                    '<a href="https://creativecommons.org/licenses/by-sa/3.0/">(CC-BY-SA)</a>'],
+                    url: '/bims_proxy/https://a.tile.opentopomap.org/{z}/{x}/{y}.png'
                 })
             });
 
@@ -126,7 +137,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 baseSourceLayers.push(bingMap);
             }
 
-            baseSourceLayers.push(ngiMap);
+            // baseSourceLayers.push(ngiMap);
 
             // OSM
             let osm = new ol.layer.Tile({
@@ -134,9 +145,9 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 source: new ol.source.OSM()
             });
             baseSourceLayers.push(osm);
-            baseSourceLayers.push(toposheet);
 
-            baseSourceLayers.push(this.getKartozaBaseMap());
+            baseSourceLayers.push(toposheet);
+            // baseSourceLayers.push(this.getKartozaBaseMap());
 
             let defaultLayer = null;
             let defaultLayerIndex = null;
