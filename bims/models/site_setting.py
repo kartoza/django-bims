@@ -171,6 +171,13 @@ class SiteSetting(Preferences):
         )
     )
 
+    enable_remove_all_occurrences_tool = models.BooleanField(
+        default=False,
+        help_text=(
+            'Enable tool to remove all occurrences for a taxon group'
+        )
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

@@ -80,6 +80,7 @@ from bims.api_views.taxon_group import (
 from bims.api_views.landing_page_summary import LandingPageSummary
 from bims.api_views.site_in_country import SiteInCountry
 from bims.views.summary_report import *  # noqa
+from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -231,4 +232,7 @@ urlpatterns = [
     url(r'^summary-general-report/$',
         SummaryReportGeneralApiView.as_view(),
         name='summary-general-report'),
+    url(r'^remove-occurrences/$',
+        RemoveOccurrencesApiView.as_view(),
+        name='remove-occurrences'),
 ]
