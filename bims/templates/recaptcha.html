@@ -1,11 +1,12 @@
-{% if bims_preferences.recaptcha_key %}
+{% if preferences.SiteSetting.recaptcha_site_key %}
     <script type="text/javascript">
         var enableSubmitButton = function(response) {
             document.getElementById("submit-button").disabled = false;
+            document.getElementById("recaptcha-token-input").value = response;
         };
         var onloadCallback = function() {
             grecaptcha.render('html_element', {
-                'sitekey' : '{{ bims_preferences.recaptcha_key }}',
+                'sitekey' : '{{ preferences.SiteSetting.recaptcha_site_key }}',
                 'callback': enableSubmitButton
             });
         };
