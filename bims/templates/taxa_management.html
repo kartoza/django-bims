@@ -157,7 +157,9 @@
                                 </div>
                                 <div style="margin-top: 3px">
                                     <span class="btn btn-warning update-logo-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</span>
-                                    <span class="btn btn-danger remove-all-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-trash-o" aria-hidden="true"></i> Remove All</span>
+                                    {% if preferences.SiteSetting.enable_remove_all_occurrences_tool %}
+                                        <span class="btn btn-danger remove-all-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0" data-module-id="{{ taxa_group.id }}"><i class="fa fa-trash-o" aria-hidden="true"></i> Remove All</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

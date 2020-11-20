@@ -146,12 +146,35 @@ $removeAllBtn.click((event) => {
     }
     currentRemoveModuleName = _element.find('.taxon-group-title').html().trim();
     $removeModuleName.val('');
-    $('#remove-module-id').val(_element.data('id'));
+    $('#remove-module-btn').attr('data-module-id', _element.data('id'));
     $('#removeModuleModal').modal({
         keyboard: false
     })
     return false;
 });
+
+$removeModuleBtn.click((e) => {
+    e.preventDefault();
+    $removeModuleBtn.html('Processing...')
+    $removeModuleBtn.attr('disabled', true)
+    const moduleId = $(e.target).data('module-id');
+    const url = `/api/remove-occurrences/?taxon_module=${moduleId}`
+    $.ajax({
+        type: 'GET',
+        headers:{ "X-CSRFToken": csrfToken },
+        url: url,
+        cache: false,
+        contentType: false,
+        processData: false,
+        success: function () {
+            location.reload();
+        },
+        error: function (data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+})
 
 $updateLogoBtn.click((event) => {
     event.preventDefault();

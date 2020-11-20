@@ -75,12 +75,12 @@ from bims.api_views.taxon_group import (
     UpdateTaxonGroupOrder,
     RemoveTaxaFromTaxonGroup,
     AddTaxaToTaxonGroup,
-    UpdateTaxonGroup,
-    DeleteTaxonGroupAndContents
+    UpdateTaxonGroup
 )
 from bims.api_views.landing_page_summary import LandingPageSummary
 from bims.api_views.site_in_country import SiteInCountry
 from bims.views.summary_report import *  # noqa
+from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -223,9 +223,6 @@ urlpatterns = [
     url(r'^update-taxon-group/$',
         UpdateTaxonGroup.as_view(),
         name='update-taxon-group'),
-    url(r'^delete-taxon-group/$',
-        DeleteTaxonGroupAndContents.as_view(),
-        name='delete-taxon-group'),
     url(r'^landing-page-summary/$',
         LandingPageSummary.as_view(),
         name='landing-page-summary'),
@@ -235,4 +232,7 @@ urlpatterns = [
     url(r'^summary-general-report/$',
         SummaryReportGeneralApiView.as_view(),
         name='summary-general-report'),
+    url(r'^remove-occurrences/$',
+        RemoveOccurrencesApiView.as_view(),
+        name='remove-occurrences'),
 ]

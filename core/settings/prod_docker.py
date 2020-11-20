@@ -2,7 +2,6 @@
 """Configuration for production server"""
 # noinspection PyUnresolvedReferences
 from .prod import *  # noqa
-import ast
 import os
 
 DEBUG = False
