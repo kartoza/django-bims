@@ -16,6 +16,8 @@
         const showDataSummaries = {% if preferences.SiteSetting.show_summary_data_on_dashboard %}true{% else %}false{% endif %};
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
 
 {% endblock %}
 
@@ -31,8 +33,7 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading">BIODIVERSITY OCCURRENCE
-                                RECORDS</h2>
+                            <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_occurrence_records_title }}</h2>
                         </div>
                     </div>
                     {% include 'landing_page_dashboard.html' %}
@@ -67,7 +68,7 @@
                 <div class="container" style="margin-bottom: 25px">
                     <div class="row">
                         <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading">PARTNERS</h2>
+                            <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_partners_title }}</h2>
                         </div>
                         <div class="partner-container">
                             <div class="flex-container">
@@ -156,8 +157,6 @@
 
 {% block foot %}
     <!-- Plugin JavaScript -->
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
-    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/landing-page.js" %}"></script>
     <script>
         $(document).ready(function () {

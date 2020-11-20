@@ -1,4 +1,7 @@
 import re
+import requests
+import json
+from preferences import preferences
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -12,6 +15,29 @@ from bims.models import Profile
 
 
 class AccountAdapter(LocalAccountAdapter):
+
+    def _verify_recaptcha(self, token):
+        url = 'https://www.google.com/recaptcha/api/siteverify'
+        post_data = {
+            'secret': preferences.SiteSetting.recaptcha_secret_key,
+            'response': token
+        }
+        response = requests.post(url, data = post_data)
+        response_obj = json.loads(response.text)
+        if not response_obj['success']:
+            raise ValidationError('Sign up failed!')
+
+    def save_user(self, request, user, form, commit=True):
+        recaptcha_token = request.POST.get('recaptcha_token', None)
+        if not recaptcha_token:
+            raise ValidationError('Sign up failed!')
+        self._verify_recaptcha(recaptcha_token)
+        user = super(LocalAccountAdapter, self).save_user(
+            request, user, form, commit=commit)
+        if settings.ACCOUNT_APPROVAL_REQUIRED:
+            user.is_active = False
+            user.save()
+        return user
 
     def get_login_redirect_url(self, request):
         map_path = reverse('map-page')

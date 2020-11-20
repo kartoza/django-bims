@@ -47,6 +47,21 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    landing_page_occurrence_records_title = models.CharField(
+        default='BIODIVERSITY OCCURRENCE RECORDS',
+        help_text=(
+            'Header title for Biodiversity Occurrence Records section in '
+            'landing page'
+        ),
+        max_length=150
+    )
+
+    landing_page_partners_title = models.CharField(
+        default='PARTNERS',
+        help_text='Header title for Partners section in landing page',
+        max_length=150
+    )
+
     spatial_filter_layer_style = models.CharField(
         max_length=100,
         help_text='Style name for spatial filter layer',
@@ -73,6 +88,16 @@ class SiteSetting(Preferences):
                   'from Geocontext, separated by commas.',
         default='political_boundary_group,rainfall_group',
         blank=True
+    )
+
+    recaptcha_site_key = models.CharField(
+        default='',
+        max_length=150
+    )
+
+    recaptcha_secret_key = models.CharField(
+        default='',
+        max_length=150
     )
 
     disclaimer_form_text = models.CharField(
