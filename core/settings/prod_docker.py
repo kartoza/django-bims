@@ -2,6 +2,7 @@
 """Configuration for production server"""
 # noinspection PyUnresolvedReferences
 from .prod import *  # noqa
+import ast
 import os
 
 DEBUG = False
@@ -38,12 +39,12 @@ if os.getenv('DEFAULT_BACKEND_DATASTORE'):
 #
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # Host for sending e-mail.
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp')
 # Port for sending e-mail.
-EMAIL_PORT = 587
+EMAIL_PORT = os.environ.get('EMAIL_PORT', 25)
 # SMTP authentication information for EMAIL_HOST.
 # See fig.yml for where these are defined
-EMAIL_HOST_USER = 'bob.joko.test@gmail.com'
-EMAIL_HOST_PASSWORD = '~XG&K`aQvH9/y_8z'
-EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'noreply@kartoza.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'docker')
+EMAIL_USE_TLS = ast.literal_eval(os.environ.get('EMAIL_USE_TLS', 'False'))
 EMAIL_SUBJECT_PREFIX = os.environ.get('EMAIL_SUBJECT_PREFIX', '[BIMS]')
