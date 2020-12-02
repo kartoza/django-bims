@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from django import template
 from django.contrib.sites.models import Site
 from django.conf import settings
@@ -32,3 +33,8 @@ def hex_to_rgb(hex_string, format_string='{r},{g},{b}'):
 @register.filter(name='remove_media_path')
 def remove_media_path(value):
     return value.replace(settings.MEDIA_ROOT, '')
+
+@register.filter
+def filename(value):
+    file_name = value.split('/')
+    return file_name[len(file_name) - 1]
