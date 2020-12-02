@@ -47,6 +47,12 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    readme_download = models.FileField(
+        null=True,
+        blank=True,
+        help_text='README that bundled with the downloaded occurrence data'
+    )
+
     landing_page_occurrence_records_title = models.CharField(
         default='BIODIVERSITY OCCURRENCE RECORDS',
         help_text=(
