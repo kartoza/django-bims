@@ -30,7 +30,7 @@ $sortable.sortable({
         showLoading();
         $.ajax({
             url: taxonGroupUpdateOrderUrl,
-            headers:{ "X-CSRFToken": csrfToken },
+            headers: {"X-CSRFToken": csrfToken},
             type: 'POST',
             data: {
                 'taxonGroups': JSON.stringify(ids)
@@ -68,15 +68,18 @@ $downloadCsvButton.click(function (e) {
 });
 
 $removeTaxonFromGroupBtn.click(function (e) {
-    let $target = $(e.target);
-    let maxTry = 10;
-    let currentTry = 0;
-    while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
-        currentTry += 1;
-        $target = $target.parent();
+    let r = confirm("Are you sure you want to remove this taxon from the group?");
+    if (r === true) {
+        let $target = $(e.target);
+        let maxTry = 10;
+        let currentTry = 0;
+        while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
+            currentTry += 1;
+            $target = $target.parent();
+        }
+        let id = $target.data('id');
+        removeTaxonFromTaxonGroup(id);
     }
-    let id = $target.data('id');
-    removeTaxonFromTaxonGroup(id);
 });
 
 $taxonGroupCard.click(function (e) {
@@ -161,7 +164,7 @@ $removeModuleBtn.click((e) => {
     const url = `/api/remove-occurrences/?taxon_module=${moduleId}`
     $.ajax({
         type: 'GET',
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         url: url,
         cache: false,
         contentType: false,
@@ -203,7 +206,7 @@ $('#moduleRemoveForm').on('submit', function (e) {
     let url = '/api/delete-taxon-group/';
     $.ajax({
         type: 'POST',
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         url: url,
         data: formData,
         cache: false,
@@ -225,7 +228,7 @@ $('#moduleEditForm').on('submit', function (e) {
     let url = '/api/update-taxon-group/';
     $.ajax({
         type: 'POST',
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         url: url,
         data: formData,
         cache: false,
@@ -391,7 +394,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
         $.ajax({
             url: addNewTaxonUrl,
             type: 'POST',
-            headers:{ "X-CSRFToken": csrfToken },
+            headers: {"X-CSRFToken": csrfToken},
             data: postData,
             success: function (response) {
                 $('#addNewTaxonModal').modal('toggle');
@@ -414,7 +417,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
     showLoading();
     $.ajax({
         url: addTaxaToTaxonGroupUrl,
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         type: 'POST',
         data: {
             'taxaIds': JSON.stringify([taxaId]),
@@ -432,7 +435,7 @@ function removeTaxonFromTaxonGroup(taxaId) {
     showLoading();
     $.ajax({
         url: removeTaxaFromTaxonGroupUrl,
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         type: 'POST',
         data: {
             'taxaIds': JSON.stringify([taxaId]),
