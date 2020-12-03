@@ -31,4 +31,4 @@ class VernacularName(models.Model):
     )
 
     def __str__(self):
-        return str(self.name.encode('utf-8'))
+        return self.name

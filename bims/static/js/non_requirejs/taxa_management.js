@@ -119,7 +119,7 @@ $findTaxonButton.click(function () {
             if (data.length > 0) {
                 populateFindTaxonTable(table, data);
             } else {
-                // showNewTaxonForm(taxonName);
+                showNewTaxonForm(taxonName);
             }
             loading.hide();
         }
@@ -448,5 +448,20 @@ function removeTaxonFromTaxonGroup(taxaId) {
         }
     });
 }
+
+function showNewTaxonForm(taxonName) {
+    let $taxonForm = $('.new-taxon-form');
+    let $button = $taxonForm.find('.add-new-taxon-btn');
+    let $rank = $taxonForm.find('.new-taxon-rank');
+    let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
+    let $newTaxonNameInput = $('#new-taxon-name');
+    $button.click(function () {
+        $taxonForm.hide();
+        addNewTaxonToObservedList(capitalizedTaxonName, '', $rank.val());
+    });
+    $newTaxonNameInput.val(capitalizedTaxonName);
+    $taxonForm.show();
+}
+
 
 hideLoading();

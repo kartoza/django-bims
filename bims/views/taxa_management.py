@@ -4,6 +4,7 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from bims.models.taxon_group import TaxonGroup
+from bims.enums.taxonomic_rank import TaxonomicRank
 
 
 class TaxaManagementView(
@@ -23,4 +24,7 @@ class TaxaManagementView(
         context['taxa_groups'] = TaxonGroup.objects.filter(
             category='SPECIES_MODULE'
         ).order_by('display_order')
+        context['taxon_rank'] = list(
+            rank.name for rank in TaxonomicRank.hierarchy()
+        )
         return context
