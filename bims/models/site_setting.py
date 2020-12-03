@@ -53,6 +53,22 @@ class SiteSetting(Preferences):
         help_text='README that bundled with the downloaded occurrence data'
     )
 
+    taxonomic_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for taxonomic uploader'
+        )
+    )
+
+    occurrence_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for occurrence uploader'
+        )
+    )
+
     landing_page_occurrence_records_title = models.CharField(
         default='BIODIVERSITY OCCURRENCE RECORDS',
         help_text=(
