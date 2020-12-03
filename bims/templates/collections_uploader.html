@@ -31,7 +31,7 @@
                     {% block download_example_button %}
                         {% if preferences.SiteSetting.occurrence_upload_template %}
                             <a href="{{ preferences.SiteSetting.occurrence_upload_template.url }}"
-                               download="occurrence_template_file.csv">Download Template</a>
+                               download="{{ preferences.SiteSetting.taxonomic_upload_template.name }}">Download Template</a>
                         {% else %}
                             <a href="{% static "data/data_example.csv" %}"
                                download="occurrence_template_file.csv">Download Template</a>

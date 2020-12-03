@@ -31,7 +31,7 @@
                     {% block download_example_button %}
                         {% if preferences.SiteSetting.taxonomic_upload_template %}
                             <a href="{{ preferences.SiteSetting.taxonomic_upload_template.url }}"
-                               download="taxonomic_template_file.csv">Download Template</a>
+                               download="{{ preferences.SiteSetting.taxonomic_upload_template.name }}">Download Template</a>
                         {% else %}
                             <a href="{% static "data/taxa_sample.csv" %}"
                                download="taxonomic_template_file.csv">Download Template</a>
