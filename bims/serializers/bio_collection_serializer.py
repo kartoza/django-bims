@@ -23,6 +23,7 @@ from bims.models.location_context import LocationContext
 from bims.models.algae_data import AlgaeData
 from bims.models.survey import SurveyData, SurveyDataValue
 from bims.scripts.collection_csv_keys import *  # noqa
+from bims.models.location_context_group import LocationContextGroup
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -66,7 +67,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     """
     uuid = serializers.SerializerMethodField()
     original_river_name = serializers.SerializerMethodField()
-    fbis_site_code = serializers.SerializerMethodField()
+    site_code = serializers.SerializerMethodField()
     original_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     refined_geomorphological_zone = serializers.SerializerMethodField()
@@ -105,18 +106,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
-    geomorphological_zone = serializers.SerializerMethodField()
-    primary_catchment = serializers.SerializerMethodField()
-    secondary_catchment = serializers.SerializerMethodField()
-    tertiary_catchment = serializers.SerializerMethodField()
-    quaternary_catchment = serializers.SerializerMethodField()
-    water_management_area = serializers.SerializerMethodField()
-    sub_water_management_area = serializers.SerializerMethodField()
-    river_management_unit = serializers.SerializerMethodField()
-    sa_ecoregion_level_1 = serializers.SerializerMethodField()
-    sa_ecoregion_level_2 = serializers.SerializerMethodField()
-    freshwater_ecoregion = serializers.SerializerMethodField()
-    province = serializers.SerializerMethodField()
 
     def spatial_data(self, obj, key):
         if 'context_cache' not in self.context:
@@ -177,42 +166,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.site.refined_geomorphological
         return '-'
 
-    def get_geomorphological_zone(self, obj):
-        return self.spatial_data(obj, 'geo_class_recoded')
-
-    def get_primary_catchment(self, obj):
-        return self.spatial_data(obj, 'primary_catchment_area')
-
-    def get_secondary_catchment(self, obj):
-        return self.spatial_data(obj, 'secondary_catchment_area')
-
-    def get_tertiary_catchment(self, obj):
-        return self.spatial_data(obj, 'tertiary_catchment_area')
-
-    def get_quaternary_catchment(self, obj):
-        return self.spatial_data(obj, 'quaternary_catchment_area')
-
-    def get_water_management_area(self, obj):
-        return self.spatial_data(obj, 'water_management_area')
-
-    def get_sub_water_management_area(self, obj):
-        return self.spatial_data(obj, 'sub_wmas')
-
-    def get_river_management_unit(self, obj):
-        return self.spatial_data(obj, 'river_management_unit')
-
-    def get_sa_ecoregion_level_1(self, obj):
-        return self.spatial_data(obj, 'eco_region_1')
-
-    def get_sa_ecoregion_level_2(self, obj):
-        return self.spatial_data(obj, 'eco_region_2')
-
-    def get_freshwater_ecoregion(self, obj):
-        return self.spatial_data(obj, 'feow_hydrosheds')
-
-    def get_province(self, obj):
-        return self.spatial_data(obj, 'sa_provinces')
-
     def get_sampling_effort_measure(self, obj):
         if obj.sampling_effort:
             return ' '.join(obj.sampling_effort.split(' ')[1:])
@@ -232,7 +185,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 pass
         return 'Not evaluated'
 
-    def get_fbis_site_code(self, obj):
+    def get_site_code(self, obj):
         return obj.site.site_code
 
     def get_original_site_code(self, obj):
@@ -463,7 +416,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'original_river_name',
             'river_name',
             'original_site_code',
-            'fbis_site_code',
+            'site_code',
             'site_description',
             'refined_geomorphological_zone',
             'latitude',
@@ -499,18 +452,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'reference_category',
             'title',
             'doi_or_url',
-            'geomorphological_zone',
-            'primary_catchment',
-            'secondary_catchment',
-            'tertiary_catchment',
-            'quaternary_catchment',
-            'water_management_area',
-            'sub_water_management_area',
-            'river_management_unit',
-            'sa_ecoregion_level_1',
-            'sa_ecoregion_level_2',
-            'freshwater_ecoregion',
-            'province',
             'notes',
         ]
 
@@ -637,6 +578,30 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                     chem_record_data
                 )
                 result.update(chem_record_data)
+
+        geocontext_keys = (
+            preferences.SiteSetting.geocontext_keys.split(',')
+        )
+        if 'geocontext_groups' not in self.context:
+            self.context['geocontext_groups'] = []
+            context_groups = (
+                LocationContextGroup.objects.filter(
+                    geocontext_group_key__in=geocontext_keys
+                )
+            )
+            for context_group in context_groups:
+                self.context['header'].append(context_group.name)
+                self.context['geocontext_groups'].append({
+                    'name': context_group.name,
+                    'key': context_group.key
+                })
+
+        if 'geocontext_groups' in self.context:
+            for _group in self.context['geocontext_groups']:
+                _group_name = _group['name']
+                _group_key = _group['key']
+                result[_group_name] = self.spatial_data(instance, _group_key)
+
         return result
 
 
