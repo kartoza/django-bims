@@ -29,7 +29,7 @@
                     <div class="help-block-space"></div>
                     <strong>You can download the template here :</strong>
                     {% block download_example_button %}
-                        {% if preferences.SiteSetting.occurrence_upload_template %}
+                        {% if preferences.SiteSetting.taxonomic_upload_template %}
                             <a href="{{ preferences.SiteSetting.taxonomic_upload_template.url }}"
                                download="taxonomic_template_file.csv">Download Template</a>
                         {% else %}
