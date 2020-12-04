@@ -56,6 +56,42 @@ BIOTOPE_GSM = 'G/S/M'
 BSS_STONES_IN_CURRENT = 'Stones in current (SIC)'
 BSS_STONES_OUT_OF_CURRENT = 'Stones out of current (SOOC)'
 
+SASS_SCORE = ['D', 'C', 'B', 'A', '1']
+
+
+def get_greatest_sass_scores(scores):
+    sass_score_index = 0
+    for score in scores:
+        if not score:
+            continue
+        if score in SASS_SCORE:
+            score_index = SASS_SCORE.index(score)
+            if score_index > sass_score_index:
+                sass_score_index = score_index
+    return SASS_SCORE[sass_score_index]
+
+
+def check_biotope(biotope_name):
+    """
+    Check which biotope this data belongs to
+    :param biotope_name: biotope name, e.g. 'vegetation'
+    :return: general biotope name
+    """
+    stones_identifier = ['sic', 'sooc', 'stones']
+    veg_identifier = ['vegetation', 'mv', 'aqv', 'mvic', 'mvoc']
+    gsm_identifier = ['g/s/m', 'gravel', 'sand', 'silt/mud/clay']
+    biotope_name = biotope_name.lower()
+
+    for stone in stones_identifier:
+        if stone in biotope_name:
+            return BIOTOPE_STONES
+    for veg in veg_identifier:
+        if veg in biotope_name:
+            return BIOTOPE_VEGETATION
+    for gsm in gsm_identifier:
+        if gsm in biotope_name:
+            return BIOTOPE_GSM
+
 
 class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
     """Template view for Sass Form"""
@@ -586,7 +622,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 for sass_taxon_biotope in sass_taxon_biotope_list:
                     biotope_name = sass_taxon_biotope[0].lower()
                     biotope_value = sass_taxon_biotope[1]
-                    biotope_identifier = self.check_biotope(
+                    biotope_identifier = check_biotope(
                         biotope_name
                     )
                     if biotope_identifier == BIOTOPE_STONES:
@@ -600,32 +636,18 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 taxon_dict['tot_value'] = (
                     site_visit_taxon_list[sass_taxon.id]
                 )
+            # The total value is missing, fix it
+            # if not empty_taxon_biotope_value and not taxon_dict['tot_value']:
+            #     taxon_dict['tot_value'] = get_greatest_sass_scores([
+            #         taxon_dict['s_value'],
+            #         taxon_dict['gsm_value'],
+            #         taxon_dict['veg_value'],
+            #     ])
             # If read only, don't show empty taxon row
             if self.read_only and empty_taxon_biotope_value:
                 continue
             taxon_list_form.append(taxon_dict)
         return taxon_list_form
-
-    def check_biotope(self, biotope_name):
-        """
-        Check which biotope this data belongs to
-        :param biotope_name: biotope name, e.g. 'vegetation'
-        :return: general biotope name
-        """
-        stones_identifier = ['sic', 'sooc', 'stones']
-        veg_identifier = ['vegetation', 'mv', 'aqv', 'mvic', 'mvoc']
-        gsm_identifier = ['g/s/m', 'gravel', 'sand', 'silt/mud/clay']
-        biotope_name = biotope_name.lower()
-
-        for stone in stones_identifier:
-            if stone in biotope_name:
-                return BIOTOPE_STONES
-        for veg in veg_identifier:
-            if veg in biotope_name:
-                return BIOTOPE_VEGETATION
-        for gsm in gsm_identifier:
-            if gsm in biotope_name:
-                return BIOTOPE_GSM
 
     def get_context_data(self, **kwargs):
         context = super(SassFormView, self).get_context_data(**kwargs)
