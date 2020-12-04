@@ -78,7 +78,8 @@ class SiteVisitUpdateView(
             substratum=form.data.get('substratum', None),
             sampling_method=form.data.get('sampling_method', None),
             abundance_type=form.data.get('abundance_type', ''),
-            owner=form.data.get('owner_id', None)
+            owner=form.data.get('owner_id', None),
+            collector_user=form.data.get('collector_id', None)
         )
 
         # Add site image

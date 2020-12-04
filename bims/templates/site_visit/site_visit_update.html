@@ -158,6 +158,16 @@
                            value="{{ owner.id }}">
                 </div>
             </div>
+            <div class="form-group row even-row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Collector</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control form-control-sm"
+                           id="collector" placeholder="" name="collector" value="{% if collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}" onClick="this.setSelectionRange(0, this.value.length)">
+                    <input type="hidden" name="collector_id" id="collector_id"
+                               value="{{ collector.id }}">
+                </div>
+            </div>
             <div class="form-group row">
                 <label for="data-source" class="col-sm-2">Source Reference</label>
                 <div class="col-sm-10">
