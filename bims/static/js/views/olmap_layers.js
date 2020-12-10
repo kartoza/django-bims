@@ -265,11 +265,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         );
                     });
 
-                    let administrativeOrder = self.administrativeOrder + 1;
-                    self.orders[administrativeOrder] = self.administrativeKeyword;
-
-                    self.addAdministrativeLayerToMap(data);
+                    // let administrativeOrder = self.administrativeOrder + 1;
+                    // self.orders[administrativeOrder] = self.administrativeKeyword;
+                    // self.addAdministrativeLayerToMap(data);
                     // Render available layers first because fetching layer from geonode takes time
+
                     self.renderLayers(true);
 
                     $('.layer-source').click(function (e) {
@@ -297,9 +297,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 dataType: 'json',
                 success: function (data) {
                     $.each(data['objects'].reverse(), function (index, value) {
-                        if (value['title'].indexOf(self.administrativeKeyword) >= 0) {
-                            return;
-                        }
                         var options = {
                             url: default_wms_url,
                             params: {
@@ -313,8 +310,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             return true;
                         }
 
-                        if (layerName.indexOf(self.administrativeKeyword) >= 0 ||
-                            layerName === 'null' ||
+                        if (layerName === 'null' ||
                             layerName === 'Sites') {
                             return true;
                         }
@@ -364,7 +360,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     _administrativeLayer.setVisible(false);
                 }
             }
-            this.changeLayerTransparency(this.administrativeKeyword, this.administrativeTransparency);
+            // this.changeLayerTransparency(this.administrativeKeyword, this.administrativeTransparency);
         },
         changeLayerVisibility: function (layerName, visible) {
             if (Object.keys(this.layers).length === 0) {

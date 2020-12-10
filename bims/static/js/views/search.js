@@ -523,6 +523,11 @@ define([
                         filterParameters['siteIdOpen'], '', true);
                 }
             }
+
+            // Enable permalink button
+            let permalinkButton = $('#permalink-control');
+            permalinkButton.removeClass('sub-control-panel-disabled');
+            permalinkButton.attr('data-content', 'Copy sharable link for this map');
         },
         searchClick: function () {
             // if (Shared.CurrentState.FETCH_CLUSTERS) {
@@ -576,6 +581,11 @@ define([
 
             // Clear polygon
             this.lassoPanel.clearLasso();
+
+            // Disable permalink
+            let permalinkButton = $('#permalink-control');
+            permalinkButton.addClass('sub-control-panel-disabled');
+            permalinkButton.attr('data-content', 'No filters applied');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {

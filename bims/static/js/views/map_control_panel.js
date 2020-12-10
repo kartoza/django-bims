@@ -382,9 +382,13 @@ define(
                 document.body.removeChild(textArea);
             },
             handlePermalinkClicked: function (e) {
-                var $target = $(e.target);
+                let $target = $(e.target);
                 if ($target.hasClass('fa-link')) {
                     $target = $target.parent();
+                }
+
+                if ($target.hasClass('sub-control-panel-disabled')) {
+                    return;
                 }
 
                 var text = window.location.href;
