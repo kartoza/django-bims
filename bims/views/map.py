@@ -11,6 +11,8 @@ from bims.models.biological_collection_record import (
 from bims.models.profile import Profile as BimsProfile
 from bims.models.iucn_status import IUCNStatus
 from bims.permissions.api_permission import user_has_permission_to_validate
+from bims.models.basemap_layer import BaseMapLayer
+from bims.serializers.basemap_serializer import BaseMapLayerSerializer
 
 
 class MapPageView(TemplateView):
@@ -35,6 +37,9 @@ class MapPageView(TemplateView):
         :rtype: dict
         """
         context = super(MapPageView, self).get_context_data(**kwargs)
+        context['basemap_layers'] = BaseMapLayerSerializer(
+            BaseMapLayer.objects.all().order_by('order'),
+            many=True).data
         context['bing_map_key'] = get_key('BING_MAP_KEY')
         context['map_tiler_key'] = get_key('MAP_TILER_KEY')
         context['map_surfer_key'] = get_key('MAP_SURFER_KEY')
