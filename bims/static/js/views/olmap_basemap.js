@@ -169,7 +169,51 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 baseSourceLayers.push(defaultLayer);
             }
 
-            return baseSourceLayers
+            let _baseMapLayers = [];
+            $.each(baseMapLayers.reverse(), function (index, baseMapData) {
+                let _baseMap = null;
+                if (baseMapData['source_type'] === "xyz") {
+                    _baseMap = new ol.layer.Tile({
+                        title: baseMapData['title'],
+                        source: new ol.source.XYZ({
+                            attributions: [baseMapData['attributions']],
+                            url: '/bims_proxy/' + baseMapData['url']
+                        })
+                    })
+                } else if (baseMapData['source_type'] === "bing") {
+                    _baseMap = new ol.layer.Tile({
+                        title: baseMapData['title'],
+                        source: new ol.source.BingMaps({
+                            key: baseMapData['key'],
+                            imagerySet: 'AerialWithLabels'
+                        })
+                    });
+                } else if (baseMapData['source_type'] === "stamen") {
+                    _baseMap = new ol.layer.Tile({
+                        title: baseMapData['title'],
+                        source: new ol.source.Stamen({
+                            layer: baseMapData['layer_name']
+                        })
+                    });
+                }
+                if (_baseMap) {
+                    _baseMap.set('visible', baseMapData['default_basemap']);
+                    _baseMap.set('type', 'base');
+                    _baseMap.set('preload', Infinity);
+                    _baseMapLayers.push(_baseMap);
+                }
+            });
+            if (_baseMapLayers.length === 0) {
+                _baseMapLayers.push(
+                    new ol.layer.Tile({
+                        title: 'OpenStreetMap',
+                        type: 'base',
+                        visible: true,
+                        source: new ol.source.OSM()
+                    })
+                )
+            }
+            return _baseMapLayers
         }
     })
 });

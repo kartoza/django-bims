@@ -47,3 +47,4 @@ from bims.models.harvest_session import *  # noqa
 from bims.models.manual_page import *  # noqa
 from bims.models.content_page import *  # noqa
 from bims.models.download_request import *  # noqa
+from bims.models.basemap_layer import *  # noqa
