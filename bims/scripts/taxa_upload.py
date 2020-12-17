@@ -19,12 +19,17 @@ from bims.scripts.data_upload import DataCSVUpload
 logger = logging.getLogger('bims')
 
 
-class TaxaCSVUpload(DataCSVUpload):
-    model_name = 'taxonomy'
+class TaxaProcessor(object):
+
+    def handle_error(self, row, message):
+        pass
+
+    def finish_processing_row(self, row, taxonomy):
+        pass
 
     def endemism(self, row):
         """Processing endemism data"""
-        endemism_value = self.row_value(row, ENDEMISM)
+        endemism_value = DataCSVUpload.row_value(row, ENDEMISM)
         if not endemism_value:
             return None
         try:
@@ -39,7 +44,7 @@ class TaxaCSVUpload(DataCSVUpload):
 
     def conservation_status(self, row):
         """Processing conservation status"""
-        cons_status = self.row_value(row, CONSERVATION_STATUS)
+        cons_status = DataCSVUpload.row_value(row, CONSERVATION_STATUS)
         if not cons_status:
             return None
         if cons_status.lower() not in IUCN_CATEGORIES:
@@ -51,7 +56,7 @@ class TaxaCSVUpload(DataCSVUpload):
 
     def common_name(self, row):
         """Common name of species"""
-        common_name_value = self.row_value(row, COMMON_NAME)
+        common_name_value = DataCSVUpload.row_value(row, COMMON_NAME)
         if not common_name_value:
             return None
         try:
@@ -67,8 +72,8 @@ class TaxaCSVUpload(DataCSVUpload):
         return vernacular_name
 
     def origin(self, row):
-        """Proccessing origin"""
-        origin_value = self.row_value(row, ORIGIN)
+        """Processing origin"""
+        origin_value = DataCSVUpload.row_value(row, ORIGIN)
         if not origin_value:
             return ''
         if origin_value.lower() not in ORIGIN_CATEGORIES:
@@ -102,15 +107,18 @@ class TaxaCSVUpload(DataCSVUpload):
             if 'SUB' in parent_rank:
                 parent_rank = self.parent_rank(parent_rank)
             try:
-                csv_data = self.row_value(row, parent_rank.capitalize())
+                csv_data = DataCSVUpload.row_value(
+                    row, parent_rank.capitalize())
                 if parent_rank.capitalize() == SPECIES:
-                    csv_data = self.row_value(row, GENUS) + ' ' + csv_data
+                    csv_data = DataCSVUpload.row_value(
+                        row, GENUS) + ' ' + csv_data
             except KeyError:
                 parent = parent.parent
                 continue
             while not csv_data and current_try < max_try:
                 parent_rank = self.parent_rank(parent_rank)
-                csv_data = self.row_value(row, parent_rank.capitalize())
+                csv_data = DataCSVUpload.row_value(
+                    row, parent_rank.capitalize())
                 current_try += 1
             if (
                     csv_data not in parent.canonical_name and
@@ -174,11 +182,11 @@ class TaxaCSVUpload(DataCSVUpload):
         return parent
 
     def get_parent(self, row, current_rank=GENUS):
-        taxon_name = self.row_value(row, current_rank)
+        taxon_name = DataCSVUpload.row_value(row, current_rank)
         if not taxon_name:
             return None
         if current_rank == SPECIES:
-            taxon_name = self.row_value(row, GENUS) + ' ' + taxon_name
+            taxon_name = DataCSVUpload.row_value(row, GENUS) + ' ' + taxon_name
         taxon = self.get_taxonomy(
             taxon_name,
             taxon_name,
@@ -200,30 +208,30 @@ class TaxaCSVUpload(DataCSVUpload):
                     taxon.save()
         return taxon
 
-    def process_row(self, row):
+    def process_data(self, row):
         """Processing row of the csv files"""
-        taxon_name = self.row_value(row, TAXON)
+        taxon_name = DataCSVUpload.row_value(row, TAXON)
         if not taxon_name:
-            self.error_file(
-                error_row=row,
-                error_message='Missing Taxon value'
+            self.handle_error(
+                row=row,
+                message='Missing Taxon value'
             )
             return
         if SCIENTIFIC_NAME in row:
-            scientific_name = (self.row_value(row, SCIENTIFIC_NAME)
-                               if self.row_value(row, SCIENTIFIC_NAME)
+            scientific_name = (DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
+                               if DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
                                else taxon_name)
         else:
             scientific_name = taxon_name
         scientific_name = scientific_name.strip()
         # Get rank
-        rank = self.row_value(row, TAXON_RANK)
+        rank = DataCSVUpload.row_value(row, TAXON_RANK)
         if not rank:
-            rank = self.row_value(row, TAXON_RANK)
+            rank = DataCSVUpload.row_value(row, TAXON_RANK)
         if not rank:
-            self.error_file(
-                error_row=row,
-                error_message='Missing taxon rank'
+            self.handle_error(
+                row=row,
+                message='Missing taxon rank'
             )
             return
         taxa = Taxonomy.objects.filter(
@@ -239,8 +247,8 @@ class TaxaCSVUpload(DataCSVUpload):
                 ))
             if not taxonomy:
                 # Fetch from gbif
-                if self.row_value(row, ON_GBIF) == 'Yes':
-                    gbif_link = self.row_value(row, GBIF_LINK)
+                if DataCSVUpload.row_value(row, ON_GBIF) == 'Yes':
+                    gbif_link = DataCSVUpload.row_value(row, GBIF_LINK)
                     gbif_key = (
                         gbif_link.split('/')[len(gbif_link.split('/')) - 1]
                     )
@@ -256,7 +264,7 @@ class TaxaCSVUpload(DataCSVUpload):
                         fetch_vernacular_names=False,
                         use_name_lookup=True
                     )
-            else:
+            if not taxonomy:
                 # Try again with lookup
                 logger.debug('Use different method')
                 taxonomy = fetch_all_species_from_gbif(
@@ -276,9 +284,9 @@ class TaxaCSVUpload(DataCSVUpload):
             if not taxonomy:
                 parent = self.get_parent(row, rank)
                 if not parent:
-                    self.error_file(
-                        error_row=row,
-                        error_message=(
+                    self.handle_error(
+                        row=row,
+                        message=(
                             'Data not found from gbif for this taxon and '
                             'its parents'
                         )
@@ -301,7 +309,7 @@ class TaxaCSVUpload(DataCSVUpload):
                     legacy_canonical_name.replace('\\xa0', '')
                 )
                 if FORMER_SPECIES_NAME in row:
-                    former_species_name = self.row_value(
+                    former_species_name = DataCSVUpload.row_value(
                         row, FORMER_SPECIES_NAME)
                     if len(former_species_name) > 500:
                         former_species_name = former_species_name[:500]
@@ -309,14 +317,6 @@ class TaxaCSVUpload(DataCSVUpload):
                         legacy_canonical_name += ';' + former_species_name
                 taxonomy.legacy_canonical_name = (
                     legacy_canonical_name[:700]
-                )
-                # -- Import date
-                taxonomy.import_date = (
-                    self.upload_session.uploaded_at.date()
-                )
-                self.success_file(
-                    row,
-                    taxonomy.id
                 )
                 # -- Validate parents
                 self.validate_parents(
@@ -350,16 +350,38 @@ class TaxaCSVUpload(DataCSVUpload):
                 if taxonomy.canonical_name != taxon_name:
                     taxonomy.canonical_name = taxon_name
                 taxonomy.save()
-
-                # -- Add to taxon group
-                taxon_group = self.upload_session.module_group
-                if not taxon_group.taxonomies.filter(
-                        id=taxonomy.id
-                ).exists():
-                    taxon_group.taxonomies.add(taxonomy)
-
+                self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa
-            self.error_file(
-                error_row=row,
-                error_message=str(e)
-            )
+            self.handle_error(row, str(e))
+
+
+class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
+    model_name = 'taxonomy'
+
+    def finish_processing_row(self, row, taxonomy):
+        # -- Add to taxon group
+        taxon_group = self.upload_session.module_group
+        if not taxon_group.taxonomies.filter(
+                id=taxonomy.id
+        ).exists():
+            taxon_group.taxonomies.add(taxonomy)
+
+        # -- Add import date
+        taxonomy.import_date = (
+            self.upload_session.uploaded_at.date()
+        )
+        taxonomy.save()
+
+        self.success_file(
+            row,
+            taxonomy.id
+        )
+
+    def handle_error(self, row, message):
+        self.error_file(
+            error_row=row,
+            error_message=message
+        )
+
+    def process_row(self, row):
+        self.process_data(row)

@@ -1,7 +1,6 @@
 from sass.views.sass_form import *
 from sass.models.sass_taxon import SassTaxon
 from sass.models.taxon_abundance import TaxonAbundance
-from django.db.models import Value
 
 
 site_visits = SiteVisit.objects.filter(
