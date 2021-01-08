@@ -157,7 +157,6 @@ class Command(BaseCommand):
             f'http://api.adu.org.za/vmus/v2/dwc/OdonataMAP/'
             f'{self.api_token}/all/csv/{start_index},{limit}'
         )
-        print(url)
         r = requests.get(url, allow_redirects=True)
         odonata_folder = os.path.join(
             settings.MEDIA_ROOT, 'Odonata'
@@ -193,10 +192,8 @@ class Command(BaseCommand):
         import_occurrences = ast.literal_eval(
             options.get('import_occurrences')
         )
-        print(start_index, limit)
         odonata_zip_file = self.download_csv_data(start_index, limit)
         index = 1
-        print('odonata', odonata_zip_file)
         with DwCAReader(odonata_zip_file) as dwca:
             bims_occurrence_data = []
             bims_species_data = []
