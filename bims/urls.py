@@ -5,6 +5,7 @@ from django.conf.urls import url, include
 from django.urls import reverse_lazy
 from django.views.generic import RedirectView
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
@@ -73,6 +74,7 @@ from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
 from bims.api_router import api_router
+from bims.views.custom_contact_us import CustomContactUsView
 
 
 urlpatterns = [
@@ -190,6 +192,11 @@ urlpatterns = [
             url=reverse_lazy('profile', kwargs={
                 'slug': request.user.username
             }), permanent=False)(request)), name='user-profile'),
+    url(r'^contact/$', CustomContactUsView.as_view(),
+        name='contact'),
+    url(r'^contact/success/$', TemplateView.as_view(
+        template_name='contactus/contact_success.html'),
+        {}, 'contactus-success'),
 ]
 
 # Api urls

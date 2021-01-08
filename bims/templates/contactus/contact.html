@@ -26,6 +26,7 @@
                 <div class="custom-form-container">
                     <h1>{% trans "Contact Us" %}</h1>
                     <form class="signup" id="signup_form" method="POST">{% csrf_token %}
+                        <input type="hidden" name="recaptcha_token" id="recaptcha-token-input" value="">
                         {% if form.non_field_errors %}
                             <div class="alert alert-warning">
                                 {% for error in form.non_field_errors %}
