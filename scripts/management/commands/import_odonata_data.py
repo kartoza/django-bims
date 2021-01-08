@@ -3,7 +3,6 @@ import time
 import logging
 import uuid
 import ast
-import json
 import requests
 import zipfile
 from dwca.read import DwCAReader
@@ -127,11 +126,11 @@ class Command(BaseCommand):
             help='An index of the first entity to retrieve'
         )
         parser.add_argument(
-            '-e',
-            '--end-index',
-            dest='end_index',
+            '-l',
+            '--limit',
+            dest='limit',
             default=10,
-            help='An index of the last entity to retrieve'
+            help='How many data should be retrieved'
         )
 
     @property
@@ -149,15 +148,16 @@ class Command(BaseCommand):
             )
         )
 
-    def download_csv_data(self, start_index=0, end_index=10):
+    def download_csv_data(self, start_index=0, limit=10):
         """
         Download csv data from odonata server
         :return name of the zipped odonata data
         """
         url = (
             f'http://api.adu.org.za/vmus/v2/dwc/OdonataMAP/'
-            f'{self.api_token}/all/csv/{start_index},{end_index}'
+            f'{self.api_token}/all/csv/{start_index},{limit}'
         )
+        print(url)
         r = requests.get(url, allow_redirects=True)
         odonata_folder = os.path.join(
             settings.MEDIA_ROOT, 'Odonata'
@@ -171,7 +171,7 @@ class Command(BaseCommand):
         open(csv_file, 'wb').write(r.content)
 
         # Zip the file
-        zip_name = time.ctime() + f' - Data: {start_index},{end_index}.zip'
+        zip_name = (time.ctime() + f' - Data: {start_index}-{limit}.zip').replace(' ', '_')
         zip_file = os.path.join(odonata_folder, zip_name)
         with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
             zf.write(csv_file, 'Odonata.csv')
@@ -185,7 +185,7 @@ class Command(BaseCommand):
             print('Missing API TOKEN')
             return
         start_index = options.get('start_index', 0)
-        end_index = options.get('end_index', 10)
+        limit = options.get('limit', 10)
         source_year = options.get('source_year')
         source_name = options.get('source_name')
         notes = options.get('notes')
@@ -193,10 +193,10 @@ class Command(BaseCommand):
         import_occurrences = ast.literal_eval(
             options.get('import_occurrences')
         )
-
-        odonata_zip_file = self.download_csv_data(start_index, end_index)
+        print(start_index, limit)
+        odonata_zip_file = self.download_csv_data(start_index, limit)
         index = 1
-
+        print('odonata', odonata_zip_file)
         with DwCAReader(odonata_zip_file) as dwca:
             bims_occurrence_data = []
             bims_species_data = []

@@ -31,7 +31,6 @@ from bims.views.documents import document_metadata, BimsDocumentUploadView
 urlpatterns = [
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^accounts/', include('allauth.urls')),
-    url(r'^contact/', include('contactus.urls')),
     url(r'^pages/', include('django.contrib.flatpages.urls')),
     url(r'^', include('bims.urls')),
     url(r'^', include('bims_theme.urls')),
