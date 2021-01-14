@@ -17,7 +17,7 @@ FILE_HEADERS = [
 def collections_upload(session_id):
     from bims.utils.logger import log
     from bims.models import UploadSession as TaxaUploadSession
-    from bims.scripts.collections_upload import CollectionsCSVUpload
+    from bims.scripts.occurrences_upload import OccurrencesCSVUpload
     try:
         upload_session = (
             TaxaUploadSession.objects.get(id=session_id)
@@ -62,6 +62,6 @@ def collections_upload(session_id):
 
     upload_session.progress = 'Processing'
     upload_session.save()
-    taxa_csv_upload = CollectionsCSVUpload()
-    taxa_csv_upload.upload_session = upload_session
-    taxa_csv_upload.start()
+    uploader = OccurrencesCSVUpload()
+    uploader.upload_session = upload_session
+    uploader.start()

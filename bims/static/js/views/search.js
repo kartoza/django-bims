@@ -172,8 +172,9 @@ define([
                         if ($.inArray(data[i], self.initialSelectedEndemic) > -1) {
                             checked = 'checked';
                         }
-                        var liElement = $('<li class="dropdown-item endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
-                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> ' + data[i] + '</li>');
+                        let endemicLabel = data[i].replace(/ *\([^)]*\) */g, "");
+                        var liElement = $('<li class="endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> <span>' + endemicLabel + ' </span></li>');
                         nativeOriginDropdown.append(liElement);
                         if (typeof endemicPopoverData[data[i].toLowerCase()] !== 'undefined') {
                             liElement.popover({
@@ -297,6 +298,9 @@ define([
             }
         },
         search: function (searchValue) {
+
+            this.searchResultCollection.clearPagination();
+
             $('#filter-validation-error').hide();
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             if ($('#search-error-text').is(":visible")) {
@@ -519,6 +523,11 @@ define([
                         filterParameters['siteIdOpen'], '', true);
                 }
             }
+
+            // Enable permalink button
+            let permalinkButton = $('#permalink-control');
+            permalinkButton.removeClass('sub-control-panel-disabled');
+            permalinkButton.attr('data-content', 'Copy sharable link for this map');
         },
         searchClick: function () {
             // if (Shared.CurrentState.FETCH_CLUSTERS) {
@@ -572,6 +581,11 @@ define([
 
             // Clear polygon
             this.lassoPanel.clearLasso();
+
+            // Disable permalink
+            let permalinkButton = $('#permalink-control');
+            permalinkButton.addClass('sub-control-panel-disabled');
+            permalinkButton.attr('data-content', 'No filters applied');
         },
         datePickerToDate: function (element) {
             if ($(element).val()) {

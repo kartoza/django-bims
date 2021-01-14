@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.db.models.fields.related import ForeignObjectRel
 from bims.models.spatial_scale import SpatialScale
 from bims.models.spatial_scale_group import SpatialScaleGroup
-from bims.models.location_site import LocationSite
+from bims.models.location_site import LocationSite, generate_site_code
 from bims.models.location_context import LocationContext
 from bims.utils.logger import log
 from preferences import preferences
@@ -90,7 +90,22 @@ def process_spatial_scale_data(location_context_data, group=None):
                 )
 
 
-def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
+def get_location_context_data(
+        group_keys=None,
+        site_id=None,
+        only_empty=False,
+        should_generate_site_code=False):
+    """
+    Get the location context for specific site or all sites
+    :param group_keys: Group keys used to fetch geocontext data
+        (separated by comma), if empty then use geocontext keys from
+        site setting
+    :param site_id: Sites that will be updated, can be multiple sites
+        if separated by comma. If empty then update all sites
+    :param only_empty: Only add empty missing context data
+    :param should_generate_site_code: Generate the site code after updating
+    :return:
+    """
     # Get location context data from GeoContext
 
     if not group_keys:
@@ -146,6 +161,20 @@ def get_location_context_data(group_keys=None, site_id=None, only_empty=False):
                 message=message,
                 group=group_key
             ))
+
+            if should_generate_site_code:
+                site_code = generate_site_code(
+                    location_site,
+                    lat=location_site.latitude,
+                    lon=location_site.longitude
+                )
+                location_site.site_code = site_code
+                location_site.save()
+                log(str('Site code {site_code} '
+                    'generated for {site_id}').format(
+                    site_code=site_code,
+                    site_id=location_site.id
+                ))
 
 
 def merge_context_group(excluded_group=None, group_list=None):

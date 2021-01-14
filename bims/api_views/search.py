@@ -206,7 +206,12 @@ class CollectionSearch(object):
 
     @property
     def categories(self):
-        return self.parse_request_json('category')
+        categories = self.parse_request_json('category')
+        # Add invasive alien
+        if categories and 'alien' in categories:
+            categories.append('alien-non-invasive')
+            categories.append('alien-invasive')
+        return categories
 
     @property
     def collector(self):
@@ -408,7 +413,11 @@ class CollectionSearch(object):
         if self.site_ids:
             filters['site__in'] = self.site_ids
         if self.categories:
-            filters['category__in'] = self.categories
+            self.filter_taxa_records(
+                {
+                    'origin__in': self.categories
+                }
+            )
         if self.year_ranges:
             filters['collection_date__range'] = self.year_ranges
         if self.months:

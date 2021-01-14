@@ -29,8 +29,13 @@
                     <div class="help-block-space"></div>
                     <strong>You can download the template here :</strong>
                     {% block download_example_button %}
-                    <a href="{% static "data/taxa_sample.csv" %}"
-                       download="taxa_sample.csv">Download Template</a>
+                        {% if preferences.SiteSetting.taxonomic_upload_template %}
+                            <a href="{{ preferences.SiteSetting.taxonomic_upload_template.url }}"
+                               download="{{ preferences.SiteSetting.taxonomic_upload_template.name }}">Download Template</a>
+                        {% else %}
+                            <a href="{% static "data/taxa_sample.csv" %}"
+                               download="taxonomic_template_file.csv">Download Template</a>
+                        {% endif %}
                     {% endblock %}
 
                     {% if not upload_sessions %}

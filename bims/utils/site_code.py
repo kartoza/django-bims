@@ -105,9 +105,8 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
         1 characters from catchment level_2
     """
     catchment_key = 'rwanda_catchments'
-    level_0 = ''
-    level_1 = ''
     level_2 = ''
+    district_id = ''
     catchments = _get_catchments_data(
         location_site=location_site,
         lat=lat,
@@ -115,10 +114,19 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
         catchment_key=catchment_key
     )
     for key, value in catchments.items():
-        if 'level_0' in key and not level_0:
-            level_0 = value[:1].upper()
-        if 'level_1' in key and not level_1:
-            level_1 = value[:2].upper()
         if 'level_2' in key and not level_2:
-            level_2 = value[:1].upper()
-    return level_0 + level_1 + level_2
+            level_2 = value[:6].upper()
+            level_2 = level_2.replace('_', '')
+
+    # Get district id
+    geocontext_key = 'rwanda_district_id'
+    district_data = _get_catchments_data(
+        location_site=location_site,
+        lat=lat,
+        lon=lon,
+        catchment_key=geocontext_key
+    )
+    if district_data and 'districts_id' in district_data:
+        district_id = district_data['districts_id']
+
+    return level_2 + district_id

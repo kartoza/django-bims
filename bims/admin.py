@@ -78,7 +78,8 @@ from bims.models import (
     HarvestSession,
     generate_site_code,
     location_site_post_save_handler,
-    DownloadRequest
+    DownloadRequest,
+    BaseMapLayer
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -579,6 +580,16 @@ class CustomUserAdmin(ProfileAdmin):
             request, obj, post_url_continue)
 
 
+class BaseMapLayerAdmin(OrderedModelAdmin):
+    list_display = (
+        'title',
+        'url',
+        'default_basemap',
+        'move_up_down_links')
+    list_filter = ('title',)
+    ordering = ('order',)
+
+
 class NonBiodiversityLayerAdmin(OrderedModelAdmin):
     list_display = (
         'order',
@@ -948,9 +959,12 @@ class AlgaeDataAdmin(admin.ModelAdmin):
         'indicator_afdm',
         'ai'
     )
+    search_fields = (
+        'survey__site__site_code',
+    )
     list_filter = (
         'indicator_chl_a',
-        'indicator_afdm'
+        'indicator_afdm',
     )
 
 
@@ -1060,6 +1074,7 @@ admin.site.register(UploadSession)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
+admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(

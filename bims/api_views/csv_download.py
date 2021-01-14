@@ -187,6 +187,11 @@ def send_csv_via_email(
     zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(csv_file, '{}.csv'.format(file_name))
+        if preferences.SiteSetting.readme_download:
+            zf.write(
+                preferences.SiteSetting.readme_download.path,
+                os.path.basename(preferences.SiteSetting.readme_download.path)
+            )
     msg.attach_file(zip_file, 'application/octet-stream')
     msg.content_subtype = 'html'
     msg.send()

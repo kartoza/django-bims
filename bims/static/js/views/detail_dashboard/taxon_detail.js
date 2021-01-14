@@ -14,12 +14,14 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         objectDataByYear: 'object_data_by_year',
         yearsArray: 'years_array',
         isOpen: false,
+        csvDownloadsBaseUrl: '/api/csv-download/',
         chartConfigs: {},
         events: {
             'click .close-dashboard': 'closeDashboard',
             'click #export-taxasite-map': 'exportTaxasiteMap',
             'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline',
-            'click .ssdd-export': 'downloadElementEvent'
+            'click .ssdd-export': 'downloadElementEvent',
+            'click .download-as-csv': 'downloadAsCSV',
         },
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
 
@@ -44,7 +46,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.recordsTable = this.$el.find('.records-table');
             this.recordsAreaTable = this.$el.find('.records-area-table');
             this.mapTaxaSite = null;
-            this.csvDownloadsBaseUrl = '/download-csv-taxa-records/';
             this.csvDownloadsUrl = '';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
@@ -91,13 +92,38 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         self.parameters['taxon'] = self.taxonId;
                     }
                     Shared.Router.updateUrl('species-detail/' + self.apiParameters(filterParameters).substr(1), true);
-                    var params = self.apiParameters(self.parameters);
+                    let params = self.apiParameters(self.parameters);
                     self.csvDownloadsUrl = self.csvDownloadsBaseUrl + params;
                     self.url += params;
                 }
 
                 self.fetchRecords();
             });
+        },
+        downloadAsCSV: function (e) {
+            let button = $(e.target);
+            let name = button.html();
+            let self = this;
+            button.html('Checking...');
+            button.prop('disabled', true);
+            let alertModalBody = $('#alertModalBody');
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.')
+            } else {
+                alertModalBody.html(downloadRequestMessage);
+                $.get({
+                    url: self.csvDownloadsUrl,
+                    dataType: 'json',
+                    success: function (data) {}
+                });
+
+            }
+            $('#alertModal').modal({
+                'keyboard': false,
+                'backdrop': 'static'
+            });
+            button.html(name);
+            button.prop('disabled', false);
         },
         fetchRecords: function () {
             var self = this;
@@ -155,10 +181,16 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         document = true
                     }
 
-                    if(keys[i] === 'DOI/URL' && document){
+                    if (keys[i] === 'DOI/URL' && document && source[keys[i]].indexOf('/uploaded/') > -1) {
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
-                    }else {
-                        itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                    } else if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) !== 'http') {
+                        itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
+                    } else {
+                        if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) === 'http') {
+                            itemDiv.append(`<td><a href="${source[keys[i]]}" target="_blank">${source[keys[i]]}<a/></td>`);
+                        } else {
+                            itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                        }
                     }
                 }
                 bodyDiv.append(itemDiv);

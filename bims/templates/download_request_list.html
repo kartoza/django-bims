@@ -69,7 +69,7 @@
                                     {{ obj.request_category }}
                                 </td>
                                 <td>
-                                    <a href="{{ obj.request_file.url|remove_media_path }}"
+                                    <a download="{{ obj.request_file.name|filename }}.csv" href="{{ obj.request_file.url|remove_media_path }}"
                                        class="btn btn-sm btn-primary"
                                        style="font-size: 10pt; margin-top: -10px">Download</a>
                                 </td>

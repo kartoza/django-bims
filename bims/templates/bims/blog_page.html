@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
 {% load wagtailcore_tags %}
+{% load wagtailimages_tags %}
 {% load jsonify %}
 
 {% block subtitle %}
@@ -33,6 +34,9 @@
                         {% if self.get_ancestors.count > 1 %}
                             <span class="meta">{% if self.owner %}{{ self.owner.first_name | upper }} {{ self.owner.last_name | upper }} - {% endif %}{{ self.first_published_at|date|upper }}</span>
                         {% endif %}
+                        <div style="padding-top: 10px; padding-bottom: 10px">
+                             {% image page.blogpage.intro_image width-500 %}
+                        </div>
                         <h1>{{ self.title | safe }}</h1>
                         <span class="subheading">{{ self.intro | safe }}</span>
                     </div>
@@ -53,16 +57,21 @@
                     </div>
                 {% else %}
                     {% for page in posts %}
-                        <div class="post-preview">
-                            <a href="{% pageurl page %}">
-                                <h2 class="post-title">{{ page.title }}</h2>
-                            </a>
-                            <p class="post-meta">
-                                {% if self.owner %}{{ page.owner.first_name | upper }} {{ page.owner.last_name | upper }} - {% endif %}{{ page.first_published_at|date|upper }}
-                            </p>
-                            <h4 class="post-subtitle">
-                                {{ page.blogpage.intro | safe }}
-                            </h4>
+                        <div class="post-preview row">
+                            <div class="col-3">
+                                {% image page.blogpage.intro_image fill-150x150 %}
+                            </div>
+                            <div class="col-9">
+                                <a href="{% pageurl page %}">
+                                    <h2 class="post-title">{{ page.title }}</h2>
+                                </a>
+                                <p class="post-meta">
+                                    {% if self.owner %}{{ page.owner.first_name | upper }} {{ page.owner.last_name | upper }} - {% endif %}{{ page.first_published_at|date|upper }}
+                                </p>
+                                <h6 class="post-subtitle" style="font-weight: 500 !important;">
+                                    {{ page.blogpage.intro | safe }}
+                                </h6>
+                            </div>
 
                         </div>
                         <hr/>

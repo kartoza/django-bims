@@ -10,7 +10,7 @@ class SiteSetting(Preferences):
         ('fbis', 'FBIS (2 Secondary catchment + 4 River + Site count)'),
         (
             'rbis',
-            'RBIS (1 Catchment 0 + 2 Catchment 1 + 1 Catchment 2 + Site count)'
+            'RBIS (Catchment + Province ID + District ID + Site count)'
         ),
     )
     site_notice = models.TextField(
@@ -47,6 +47,43 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    readme_download = models.FileField(
+        null=True,
+        blank=True,
+        help_text='README that bundled with the downloaded occurrence data'
+    )
+
+    taxonomic_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for taxonomic uploader'
+        )
+    )
+
+    occurrence_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for occurrence uploader'
+        )
+    )
+
+    landing_page_occurrence_records_title = models.CharField(
+        default='BIODIVERSITY OCCURRENCE RECORDS',
+        help_text=(
+            'Header title for Biodiversity Occurrence Records section in '
+            'landing page'
+        ),
+        max_length=150
+    )
+
+    landing_page_partners_title = models.CharField(
+        default='PARTNERS',
+        help_text='Header title for Partners section in landing page',
+        max_length=150
+    )
+
     spatial_filter_layer_style = models.CharField(
         max_length=100,
         help_text='Style name for spatial filter layer',
@@ -73,6 +110,16 @@ class SiteSetting(Preferences):
                   'from Geocontext, separated by commas.',
         default='political_boundary_group,rainfall_group',
         blank=True
+    )
+
+    recaptcha_site_key = models.CharField(
+        default='',
+        max_length=150
+    )
+
+    recaptcha_secret_key = models.CharField(
+        default='',
+        max_length=150
     )
 
     disclaimer_form_text = models.CharField(
@@ -153,6 +200,28 @@ class SiteSetting(Preferences):
         help_text=(
             'Download requests must be approved by the staff before they '
             'are sent to users'
+        )
+    )
+
+    show_module_summary_on_dashboard = models.BooleanField(
+        default=False,
+        help_text=(
+            'Show summative figure for data by taxon group'
+        )
+    )
+
+    show_summary_data_on_dashboard = models.BooleanField(
+        default=True,
+        help_text=(
+            'Show summary data on the dashboard ('
+            'Total Location Sites, Collection Records, Site Visits)'
+        )
+    )
+
+    enable_remove_all_occurrences_tool = models.BooleanField(
+        default=False,
+        help_text=(
+            'Enable tool to remove all occurrences for a taxon group'
         )
     )
 

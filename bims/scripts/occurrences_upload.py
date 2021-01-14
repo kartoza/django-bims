@@ -28,9 +28,13 @@ from bims.models import (
     SurveyData,
     SurveyDataOption,
     SurveyDataValue,
+    LocationContextGroup,
+    LocationContextFilter,
+    LocationContextFilterGroupOrder,
     source_reference_post_save_handler,
     SourceReferenceDatabase,
-    SourceReferenceDocument
+    SourceReferenceDocument,
+    location_context_post_save_handler
 )
 from bims.utils.user import create_users_from_string
 from bims.scripts.data_upload import DataCSVUpload
@@ -38,6 +42,7 @@ from bims.tasks.location_site import update_location_context
 from bims.scripts.collections_upload_source_reference import (
     process_source_reference
 )
+from bims.tasks.location_context import generate_spatial_scale_filter
 from bims.tasks.source_reference import (
     generate_source_reference_filter
 )
@@ -46,11 +51,12 @@ from bims.tasks.source_reference import (
 logger = logging.getLogger('bims')
 
 
-class CollectionsCSVUpload(DataCSVUpload):
-    model_name = 'biologicalcollectionrecord'
+class OccurrenceProcessor(object):
+
     site_ids = []
+    module_group = None
 
-    def process_started(self):
+    def start_process(self):
         signals.post_save.disconnect(
             collection_post_save_handler,
             sender=BiologicalCollectionRecord
@@ -75,44 +81,64 @@ class CollectionsCSVUpload(DataCSVUpload):
             source_reference_post_save_handler,
             sender=SourceReferenceDocument
         )
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextGroup
+        )
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextFilter
+        )
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextFilterGroupOrder
+        )
 
-    def process_ended(self):
-        signals.post_save.connect(
-            collection_post_save_handler,
-            sender=BiologicalCollectionRecord
-        )
-        signals.post_save.connect(
-            location_site_post_save_handler,
-            sender=LocationSite
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReference
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceDatabase
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceBibliography
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceDocument
-        )
+    def finish_process(self):
         if self.site_ids:
             update_location_context(
-                location_site_id=','.join(self.site_ids)
+                location_site_id=','.join(self.site_ids),
+                generate_site_code=True
             )
+        signals.post_save.connect(
+            collection_post_save_handler,
+            sender=BiologicalCollectionRecord
+        )
+        signals.post_save.connect(
+            location_site_post_save_handler,
+            sender=LocationSite
+        )
+        signals.post_save.connect(
+            source_reference_post_save_handler,
+            sender=SourceReference
+        )
+        signals.post_save.connect(
+            source_reference_post_save_handler,
+            sender=SourceReferenceDatabase
+        )
+        signals.post_save.connect(
+            source_reference_post_save_handler,
+            sender=SourceReferenceBibliography
+        )
+        signals.post_save.connect(
+            source_reference_post_save_handler,
+            sender=SourceReferenceDocument
+        )
+        generate_spatial_scale_filter()
         # Update source reference filter
         generate_source_reference_filter()
+
+    def handle_error(self, row, message):
+        pass
+
+    def finish_processing_row(self, row, record):
+        pass
 
     def parse_date(self, row):
         # Parse date string to date object
         # Raise value error if date string is not in a valid format
         sampling_date = None
-        date_string = self.row_value(row, SAMPLING_DATE)
+        date_string = DataCSVUpload.row_value(row, SAMPLING_DATE)
         try:
             sampling_date = datetime.strptime(
                 date_string, '%Y/%m/%d')
@@ -121,9 +147,9 @@ class CollectionsCSVUpload(DataCSVUpload):
                 date_string, '%m/%d/%Y')
         finally:
             if not sampling_date:
-                self.error_file(
-                    error_row=row,
-                    error_message='Incorrect date format'
+                self.handle_error(
+                    row=row,
+                    message='Incorrect date format'
                 )
             return sampling_date
 
@@ -145,20 +171,23 @@ class CollectionsCSVUpload(DataCSVUpload):
             )[0]
 
         for survey_data_key in SURVEY_DATA:
-            if survey_data_key in record and self.row_value(record,
-                                                            survey_data_key):
+            if survey_data_key in record and DataCSVUpload.row_value(
+                    record,
+                    survey_data_key):
                 survey_data, _ = SurveyData.objects.get_or_create(
                     name=SURVEY_DATA[survey_data_key]
                 )
                 survey_option = SurveyDataOption.objects.filter(
-                    option__iexact=self.row_value(record,
-                                                  survey_data_key).strip(),
+                    option__iexact=DataCSVUpload.row_value(
+                        record,
+                        survey_data_key).strip(),
                     survey_data=survey_data
                 )
                 if not survey_option.exists():
                     survey_option = SurveyDataOption.objects.create(
-                        options=self.row_value(record,
-                                               survey_data_key).strip(),
+                        options=DataCSVUpload.row_value(
+                            record,
+                            survey_data_key).strip(),
                         survey_data=survey_data
                     )
                 else:
@@ -176,27 +205,28 @@ class CollectionsCSVUpload(DataCSVUpload):
             name='PointObservation',
             allowed_geometry='POINT'
         )
-        site_description = self.row_value(record, SITE_DESCRIPTION)
-        refined_geo = self.row_value(record, REFINED_GEO_ZONE)
-        legacy_river_name = self.row_value(record, ORIGINAL_RIVER_NAME)
-        longitude = self.row_value(record, LONGITUDE)
-        latitude = self.row_value(record, LATITUDE)
+        site_description = DataCSVUpload.row_value(record, SITE_DESCRIPTION)
+        refined_geo = DataCSVUpload.row_value(record, REFINED_GEO_ZONE)
+        legacy_river_name = DataCSVUpload.row_value(
+            record, ORIGINAL_RIVER_NAME)
+        longitude = DataCSVUpload.row_value(record, LONGITUDE)
+        latitude = DataCSVUpload.row_value(record, LATITUDE)
         if not longitude or not latitude:
-            self.error_file(
-                error_row=record,
-                error_message='Missing latitude/longitude'
+            self.handle_error(
+                row=record,
+                message='Missing latitude/longitude'
             )
             return None
         record_point = Point(
-            float(self.row_value(record, LONGITUDE)),
-            float(self.row_value(record, LATITUDE)))
+            float(DataCSVUpload.row_value(record, LONGITUDE)),
+            float(DataCSVUpload.row_value(record, LATITUDE)))
         # Create or get location site
-        legacy_site_code = self.row_value(record, ORIGINAL_SITE_CODE)
+        legacy_site_code = DataCSVUpload.row_value(record, ORIGINAL_SITE_CODE)
         location_site_name = ''
-        if self.row_value(record, LOCATION_SITE):
-            location_site_name = self.row_value(record, LOCATION_SITE)
-        elif self.row_value(record, WETLAND_NAME):
-            location_site_name = self.row_value(record, WETLAND_NAME)
+        if DataCSVUpload.row_value(record, LOCATION_SITE):
+            location_site_name = DataCSVUpload.row_value(record, LOCATION_SITE)
+        elif DataCSVUpload.row_value(record, WETLAND_NAME):
+            location_site_name = DataCSVUpload.row_value(record, WETLAND_NAME)
         try:
             location_site, status = (
                 LocationSite.objects.get_or_create(
@@ -229,20 +259,22 @@ class CollectionsCSVUpload(DataCSVUpload):
         """Process biotope data"""
         biotope = None
         if (
-                self.row_value(record, biotope_record_type) and
-                self.row_value(
+                DataCSVUpload.row_value(record, biotope_record_type) and
+                DataCSVUpload.row_value(
                     record, biotope_record_type).lower() != 'unspecified'):
             try:
                 biotope, biotope_created = (
                     Biotope.objects.get_or_create(
                         biotope_type=biotope_type,
-                        name=self.row_value(record, biotope_record_type)
+                        name=DataCSVUpload.row_value(
+                            record, biotope_record_type)
                     )
                 )
             except Biotope.MultipleObjectsReturned:
                 biotopes = Biotope.objects.filter(
                     biotope_type=biotope_type,
-                    name=self.row_value(record, biotope_record_type)
+                    name=DataCSVUpload.row_value(
+                        record, biotope_record_type)
                 )
                 if biotopes.filter(display_order__isnull=False).exists():
                     biotope = biotopes.filter(display_order__isnull=False)[0]
@@ -277,7 +309,7 @@ class CollectionsCSVUpload(DataCSVUpload):
         for chem_key in chemical_units:
             if chem_key not in record:
                 continue
-            chem_value = self.row_value(record, chem_key).strip()
+            chem_value = DataCSVUpload.row_value(record, chem_key).strip()
             if not chem_value:
                 continue
             chem = Chem.objects.filter(
@@ -303,44 +335,46 @@ class CollectionsCSVUpload(DataCSVUpload):
         # from database, if it exists, use that,
         # otherwise create a new one
         endemism = None
-        if ENDEMISM in record and self.row_value(record, ENDEMISM):
+        if ENDEMISM in record and DataCSVUpload.row_value(record, ENDEMISM):
             endemism, endemism_created = (
                 Endemism.objects.get_or_create(
-                    name=self.row_value(record, ENDEMISM)
+                    name=DataCSVUpload.row_value(record, ENDEMISM)
                 )
             )
         # -- Processing taxon species --
-        species_name = self.row_value(record, SPECIES_NAME)
-        taxon_rank = self.row_value(record, TAXON_RANK).upper().strip()
+        species_name = DataCSVUpload.row_value(record, SPECIES_NAME)
+        taxon_rank = DataCSVUpload.row_value(
+            record, TAXON_RANK).upper().strip()
         # Find existing taxonomy with ACCEPTED taxonomic status
+        print('module group', self.module_group, taxon_rank, species_name)
         taxa = Taxonomy.objects.filter(
             Q(canonical_name__iexact=species_name) |
             Q(legacy_canonical_name__icontains=species_name),
             rank=taxon_rank,
             taxonomic_status='ACCEPTED',
-            taxongroup=self.upload_session.module_group
+            taxongroup=self.module_group
         )
         if not taxa.exists():
-            # Find existing taxonomy with any taxonomic status
+            # Find existing taxonomy with any tafoxonomic status
             taxa = Taxonomy.objects.filter(
                 Q(canonical_name__iexact=species_name) |
                 Q(legacy_canonical_name__icontains=species_name),
                 rank=taxon_rank,
-                taxongroup=self.upload_session.module_group
+                taxongroup=self.module_group
             )
         if taxa.exists():
             taxonomy = taxa[0]
         else:
-            self.error_file(
-                error_row=record,
-                error_message='Taxonomy does not exist for this group'
+            self.handle_error(
+                row=record,
+                message='Taxonomy does not exist for this group'
             )
             return None
         if (
                 taxonomy and
-                self.row_value(
+                DataCSVUpload.row_value(
                     record, SPECIES_NAME) not in str(taxonomy.canonical_name)):
-            taxonomy.legacy_canonical_name = self.row_value(
+            taxonomy.legacy_canonical_name = DataCSVUpload.row_value(
                 record, SPECIES_NAME)
         # update the taxonomy endemism if different or empty
         if not taxonomy.endemism or taxonomy.endemism != endemism:
@@ -348,7 +382,7 @@ class CollectionsCSVUpload(DataCSVUpload):
             taxonomy.save()
         return taxonomy
 
-    def process_row(self, row):
+    def process_data(self, row):
         optional_data = {}
         # -- Location site
         location_site = self.location_site(row)
@@ -359,32 +393,34 @@ class CollectionsCSVUpload(DataCSVUpload):
         # If no uuid provided then it will be generated after collection record
         # saved
         uuid_value = ''
-        if self.row_value(row, UUID):
+        if DataCSVUpload.row_value(row, UUID):
             try:
-                uuid_value = uuid.UUID(self.row_value(row, UUID)[0:36]).hex
+                uuid_value = uuid.UUID(
+                    DataCSVUpload.row_value(row, UUID)[0:36]).hex
             except ValueError:
-                self.error_file(
-                    error_row=row,
-                    error_message='Bad UUID format'
+                self.handle_error(
+                    row=row,
+                    message='Bad UUID format'
                 )
                 return
 
         # -- Source reference
         message, source_reference = process_source_reference(
-            reference=self.row_value(row, SOURCE),
-            reference_category = self.row_value(row, REFERENCE_CATEGORY),
-            doi = self.row_value(row, DOI),
-            document_title = self.row_value(row, DOCUMENT_TITLE),
-            document_link = self.row_value(row, DOCUMENT_UPLOAD_LINK),
-            document_url = self.row_value(row, DOCUMENT_URL),
-            document_author = self.row_value(row, DOCUMENT_AUTHOR),
-            source_year = self.row_value(row, SOURCE_YEAR)
+            reference=DataCSVUpload.row_value(row, SOURCE),
+            reference_category=DataCSVUpload.row_value(
+                row, REFERENCE_CATEGORY),
+            doi=DataCSVUpload.row_value(row, DOI),
+            document_title=DataCSVUpload.row_value(row, DOCUMENT_TITLE),
+            document_link=DataCSVUpload.row_value(row, DOCUMENT_UPLOAD_LINK),
+            document_url=DataCSVUpload.row_value(row, DOCUMENT_URL),
+            document_author=DataCSVUpload.row_value(row, DOCUMENT_AUTHOR),
+            source_year=DataCSVUpload.row_value(row, SOURCE_YEAR)
         )
         if message and not source_reference:
             # Source reference data from csv exists but not created
-            self.error_file(
-                error_row=row,
-                error_message=message
+            self.handle_error(
+                row=row,
+                message=message
             )
             return
         else:
@@ -401,17 +437,18 @@ class CollectionsCSVUpload(DataCSVUpload):
             return
 
         # -- Processing collectors
-        custodian = self.row_value(row, CUSTODIAN)
+        custodian = DataCSVUpload.row_value(row, CUSTODIAN)
         collectors = create_users_from_string(
-            self.row_value(row, COLLECTOR_OR_OWNER))
+            DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER))
         if not collectors:
-            self.error_file(
-                error_row=row,
-                error_message='Missing collector/owner'
+            self.handle_error(
+                row=row,
+                message='Missing collector/owner'
             )
             return
         collector = collectors
-        optional_data['collector'] = self.row_value(row, COLLECTOR_OR_OWNER)
+        optional_data['collector'] = DataCSVUpload.row_value(
+            row, COLLECTOR_OR_OWNER)
         if len(collectors) > 0:
             collector = collectors[0]
             optional_data['collector_user'] = collectors[0]
@@ -425,7 +462,8 @@ class CollectionsCSVUpload(DataCSVUpload):
             location_site.save()
             if custodian:
                 for _collector in collectors:
-                    _collector.organization = self.row_value(row, CUSTODIAN)
+                    _collector.organization = DataCSVUpload.row_value(
+                        row, CUSTODIAN)
                     _collector.save()
 
         # -- Get or create a survey
@@ -438,14 +476,15 @@ class CollectionsCSVUpload(DataCSVUpload):
 
         # -- Optional data - Present
         if PRESENT in row:
-            optional_data['present'] = bool(self.row_value(row, PRESENT))
+            optional_data['present'] = bool(DataCSVUpload.row_value(
+                row, PRESENT))
 
         # -- Process origin
         category = None
         if CATEGORY in row:
-            category = self.row_value(row, CATEGORY).lower()
-        if ORIGIN in row and self.row_value(row, ORIGIN):
-            origin = self.row_value(row, ORIGIN)
+            category = DataCSVUpload.row_value(row, CATEGORY).lower()
+        if ORIGIN in row and DataCSVUpload.row_value(row, ORIGIN):
+            origin = DataCSVUpload.row_value(row, ORIGIN)
             if (
                     'translocated' in origin.lower() or
                     'non-native' in origin.lower()):
@@ -459,35 +498,37 @@ class CollectionsCSVUpload(DataCSVUpload):
         optional_data['category'] = category
 
         # -- Optional data - Habitat
-        if HABITAT in row and self.row_value(row, HABITAT):
+        if HABITAT in row and DataCSVUpload.row_value(row, HABITAT):
             habitat_choices = {
                 v: k for k, v in
                 BiologicalCollectionRecord.HABITAT_CHOICES
             }
             optional_data['collection_habitat'] = (
-                habitat_choices[self.row_value(row, HABITAT)]
+                habitat_choices[DataCSVUpload.row_value(row, HABITAT)]
             )
 
         # -- Optional data - Sampling method
         sampling_method = None
-        if SAMPLING_METHOD in row and self.row_value(
+        if SAMPLING_METHOD in row and DataCSVUpload.row_value(
                 row,
                 SAMPLING_METHOD):
-            if self.row_value(
+            if DataCSVUpload.row_value(
                     row,
                     SAMPLING_METHOD).lower() != 'unspecified':
                 try:
                     sampling_method, sm_created = (
                         SamplingMethod.objects.get_or_create(
-                            sampling_method=self.row_value(row,
-                                                           SAMPLING_METHOD)
+                            sampling_method=DataCSVUpload.row_value(
+                                row,
+                                SAMPLING_METHOD)
                         )
                     )
                 except SamplingMethod.MultipleObjectsReturned:
                     sampling_method = (
                         SamplingMethod.objects.filter(
-                            sampling_method=self.row_value(row,
-                                                           SAMPLING_METHOD)
+                            sampling_method=DataCSVUpload.row_value(
+                                row,
+                                SAMPLING_METHOD)
                         )
                     )[0]
         if sampling_method:
@@ -495,13 +536,13 @@ class CollectionsCSVUpload(DataCSVUpload):
 
         # -- Optional data - Sampling effort
         sampling_effort = ''
-        if SAMPLING_EFFORT_VALUE in row and self.row_value(
+        if SAMPLING_EFFORT_VALUE in row and DataCSVUpload.row_value(
                 row, SAMPLING_EFFORT_VALUE):
-            sampling_effort += self.row_value(
+            sampling_effort += DataCSVUpload.row_value(
                 row,
                 SAMPLING_EFFORT_VALUE) + ' '
-        if self.row_value(row, SAMPLING_EFFORT):
-            sampling_effort += self.row_value(row, SAMPLING_EFFORT)
+        if DataCSVUpload.row_value(row, SAMPLING_EFFORT):
+            sampling_effort += DataCSVUpload.row_value(row, SAMPLING_EFFORT)
         optional_data['sampling_effort'] = sampling_effort
 
         # -- Optional data - Processing biotope
@@ -528,18 +569,19 @@ class CollectionsCSVUpload(DataCSVUpload):
         abundance_type = ''
         abundance_number = None
 
-        if self.row_value(row, ABUNDANCE_MEASURE):
-            abundance_type = self.row_value(row, ABUNDANCE_MEASURE).lower()
+        if DataCSVUpload.row_value(row, ABUNDANCE_MEASURE):
+            abundance_type = DataCSVUpload.row_value(
+                row, ABUNDANCE_MEASURE).lower()
             if 'count' in abundance_type:
                 abundance_type = 'number'
             elif 'density' in abundance_type:
                 abundance_type = 'density'
             elif 'percentage' in abundance_type:
                 abundance_type = 'percentage'
-        if self.row_value(row, ABUNDANCE_VALUE):
+        if DataCSVUpload.row_value(row, ABUNDANCE_VALUE):
             try:
                 abundance_number = float(
-                    self.row_value(row, ABUNDANCE_VALUE))
+                    DataCSVUpload.row_value(row, ABUNDANCE_VALUE))
             except ValueError:
                 pass
         if abundance_number:
@@ -557,7 +599,8 @@ class CollectionsCSVUpload(DataCSVUpload):
         record = None
         fields = {
             'site': location_site,
-            'original_species_name': self.row_value(row, SPECIES_NAME),
+            'original_species_name': DataCSVUpload.row_value(
+                row, SPECIES_NAME),
             'collection_date': sampling_date,
             'taxonomy': taxonomy,
             'category': category,
@@ -581,9 +624,9 @@ class CollectionsCSVUpload(DataCSVUpload):
                     )
                 )
             except Exception as e:  # noqa
-                self.error_file(
-                    error_row=row,
-                    error_message=str(e)
+                self.handle_error(
+                    row=row,
+                    message=str(e)
                 )
                 return
         if not uuid_value:
@@ -592,11 +635,12 @@ class CollectionsCSVUpload(DataCSVUpload):
         # Update existing data
         if self.survey:
             record.survey = self.survey
-        if self.upload_session.module_group:
-            record.module_group = self.upload_session.module_group
         for field in optional_data:
             setattr(
                 record, field, optional_data[field])
+
+        if self.module_group:
+            record.module_group = self.module_group
 
         # -- Additional data
         record.additional_data = json.dumps(row)
@@ -608,6 +652,23 @@ class CollectionsCSVUpload(DataCSVUpload):
                 str(record.site.id)
             )
 
+        self.finish_processing_row(row, record)
+
+
+class OccurrencesCSVUpload(DataCSVUpload, OccurrenceProcessor):
+    model_name = 'biologicalcollectionrecord'
+
+    def process_row(self, row):
+        self.module_group = self.upload_session.module_group
+        self.process_data(row)
+
+    def handle_error(self, row, message):
+        self.error_file(
+            error_row=row,
+            error_message=message
+        )
+
+    def finish_processing_row(self, row, record):
         self.success_file(
             success_row=row,
             data_id=record.id

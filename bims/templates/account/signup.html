@@ -32,6 +32,7 @@
                 <div class="custom-form-container" style="margin-top: 40px;">
                     <h1>{% trans "SIGN UP" %}</h1>
                     <form class="signup" id="signup_form" method="POST" action="{% url 'account_signup' %}">{% csrf_token %}
+                        <input type="hidden" name="recaptcha_token" id="recaptcha-token-input" value="">
                         {% if form.non_field_errors %}
                             <div class="alert alert-warning">
                                 {% for error in form.non_field_errors %}

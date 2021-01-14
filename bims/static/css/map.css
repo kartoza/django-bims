@@ -213,6 +213,10 @@ html, body, .map, .map-wrapper, #map-container {
     margin-right: -6px;
 }
 
+.sub-control-panel-disabled {
+    color: #d6d6d6;
+}
+
 .control-panel-selected {
     background-color: var(--main-accent-color);
     padding-right: 0;
@@ -222,6 +226,11 @@ html, body, .map, .map-wrapper, #map-container {
 .sub-control-panel:hover, .sub-zoom-control:hover {
     cursor: pointer;
     color: #323437;
+}
+
+.sub-control-panel-disabled:hover {
+    color: #d6d6d6;
+    cursor: default;
 }
 
 @media (max-width: 800px) and (min-width: 500px) {
@@ -469,6 +478,23 @@ html, body, .map, .map-wrapper, #map-container {
     border: none;
     cursor: pointer;
     height: 40px;
+}
+
+.endemic-dropdown-item {
+    max-width: 250px;
+    width: 250px;
+    height: auto !important;
+    font-size: 10pt;
+    /* These are technically the same, but use both */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+
+    -ms-word-break: break-all;
+    /* This is the dangerous one in WebKit, as it breaks things wherever */
+    word-break: break-all;
+    /* Instead use this non-standard one: */
+    word-break: break-word;
+
 }
 
 .map-control-panel-box li.disabled {
@@ -2338,6 +2364,11 @@ div:hover::-webkit-scrollbar {
 .sub-control-panel:active {
     background-color: var(--main-accent-color);
     color: white;
+}
+
+.sub-control-panel-disabled:active {
+    color: #d6d6d6;
+    background-color: white;
 }
 
 .layer-source-info {

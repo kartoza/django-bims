@@ -91,7 +91,7 @@
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item active">
-                    <a class="nav-link" href="{{ domain_name }}/map">Map</a>
+                    <a class="nav-link" href="{{ domain_name }}/map">Explore</a>
                 </li>
                 <li class="nav-item active dropdown">
                     <a class="nav-link dropdown-toggle" href="#"
@@ -104,7 +104,7 @@
                 </li>
                 {%  if preferences.SiteSetting.blog_page_link %}
                  <li class="nav-item active">
-                    <a class="nav-link" href="{{ preferences.SiteSetting.blog_page_link }}">Blog</a>
+                    <a class="nav-link" href="{{ preferences.SiteSetting.blog_page_link }}">News</a>
                  </li>
                 {% endif %}
                 {%  if preferences.SiteSetting.docs_page_link %}
@@ -125,7 +125,7 @@
                     <li class="nav-item active dropdown">
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown01" data-toggle="dropdown"
-                           aria-haspopup="true" aria-expanded="false">More</a>
+                           aria-haspopup="true" aria-expanded="false">Discover</a>
                         <div class="dropdown-menu" aria-labelledby="dropdown01">
                             {% for menu_item in custom_theme.menu_items.all %}
                                 <a class="dropdown-item" href="{{ menu_item.url }}" {% if menu_item.blank_target %}target="_blank"{% endif %}>{{ menu_item.title }}</a>

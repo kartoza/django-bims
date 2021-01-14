@@ -17,6 +17,11 @@ class Profile(models.Model):
         ('consultant', 'Consultant'),
         ('conservation_planner', 'Conservation Planner'),
         ('citizen', 'Citizen'),
+        ('national_park_management', 'National Park management'),
+        ('district_environmental_officer', 'District Environmental Officer'),
+        ('government_staff', 'Government staff'),
+        ('academic_staff', 'Academic staff'),
+        ('policy_maker', 'Policy maker')
     )
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

@@ -28,6 +28,7 @@
         };
         const max_year_filter = '{{ date_filter.max }}';
         const min_year_filter = '{{ date_filter.min }}';
+        const baseMapLayers = {{ basemap_layers|jsonify|safe }};
         const bingMapKey = '{{ bing_map_key }}';
         const mapTilerKey = '{{ map_tiler_key }}';
         const mapSurferKey = '{{ map_surfer_key }}';

@@ -547,3 +547,25 @@ html, body {
     margin-left: 10px;
     width: 50px
 }
+.module-icon {
+    position: absolute;
+    margin-left: -50px;
+    width: 100px;
+    z-index: 0;
+}
+
+.module-name {
+    margin-top: 15px;
+    color: #525351;
+}
+
+.module-container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.module-container > .chartjs-render-monitor {
+    margin-top: -60px;
+    z-index: 999;
+    position: absolute;
+}

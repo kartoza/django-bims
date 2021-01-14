@@ -16,6 +16,7 @@ let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
 let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
+let $removeAllBtn = $('.remove-all-btn');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -29,7 +30,7 @@ $sortable.sortable({
         showLoading();
         $.ajax({
             url: taxonGroupUpdateOrderUrl,
-            headers:{ "X-CSRFToken": csrfToken },
+            headers: {"X-CSRFToken": csrfToken},
             type: 'POST',
             data: {
                 'taxonGroups': JSON.stringify(ids)
@@ -67,15 +68,18 @@ $downloadCsvButton.click(function (e) {
 });
 
 $removeTaxonFromGroupBtn.click(function (e) {
-    let $target = $(e.target);
-    let maxTry = 10;
-    let currentTry = 0;
-    while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
-        currentTry += 1;
-        $target = $target.parent();
+    let r = confirm("Are you sure you want to remove this taxon from the group?");
+    if (r === true) {
+        let $target = $(e.target);
+        let maxTry = 10;
+        let currentTry = 0;
+        while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
+            currentTry += 1;
+            $target = $target.parent();
+        }
+        let id = $target.data('id');
+        removeTaxonFromTaxonGroup(id);
     }
-    let id = $target.data('id');
-    removeTaxonFromTaxonGroup(id);
 });
 
 $taxonGroupCard.click(function (e) {
@@ -115,12 +119,65 @@ $findTaxonButton.click(function () {
             if (data.length > 0) {
                 populateFindTaxonTable(table, data);
             } else {
-                // showNewTaxonForm(taxonName);
+                showNewTaxonForm(taxonName);
             }
             loading.hide();
         }
     });
 });
+
+const $removeModuleName = $('#remove-module-name');
+const $removeModuleBtn = $('#remove-module-btn');
+let currentRemoveModuleName = '-';
+$removeModuleName.on('input', (e) => {
+    if ($removeModuleName.val() === currentRemoveModuleName) {
+        $removeModuleBtn.attr('disabled', false);
+    } else {
+        $removeModuleBtn.attr('disabled', true);
+    }
+});
+
+$removeAllBtn.click((event) => {
+    event.preventDefault();
+    $removeModuleBtn.attr('disabled', true);
+    const _maxTries = 10;
+    let _element = $(event.target);
+    let _currentTry = 1
+    while (!_element.hasClass('ui-sortable-handle') && _currentTry < _maxTries) {
+        _element = _element.parent();
+        _currentTry += 1;
+    }
+    currentRemoveModuleName = _element.find('.taxon-group-title').html().trim();
+    $removeModuleName.val('');
+    $('#remove-module-btn').attr('data-module-id', _element.data('id'));
+    $('#removeModuleModal').modal({
+        keyboard: false
+    })
+    return false;
+});
+
+$removeModuleBtn.click((e) => {
+    e.preventDefault();
+    $removeModuleBtn.html('Processing...')
+    $removeModuleBtn.attr('disabled', true)
+    const moduleId = $(e.target).data('module-id');
+    const url = `/api/remove-occurrences/?taxon_module=${moduleId}`
+    $.ajax({
+        type: 'GET',
+        headers: {"X-CSRFToken": csrfToken},
+        url: url,
+        cache: false,
+        contentType: false,
+        processData: false,
+        success: function () {
+            location.reload();
+        },
+        error: function (data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+})
 
 $updateLogoBtn.click((event) => {
     event.preventDefault();
@@ -143,16 +200,35 @@ $updateLogoBtn.click((event) => {
     return false;
 });
 
+$('#moduleRemoveForm').on('submit', function (e) {
+    e.preventDefault();
+    let formData = new FormData(this);
+    let url = '/api/delete-taxon-group/';
+    $.ajax({
+        type: 'POST',
+        headers: {"X-CSRFToken": csrfToken},
+        url: url,
+        data: formData,
+        cache: false,
+        contentType: false,
+        processData: false,
+        success: function (data) {
+            location.reload();
+        },
+        error: function (data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+})
+
 $('#moduleEditForm').on('submit', function (e) {
     e.preventDefault();
     let formData = new FormData(this);
-    console.log(formData.get('module_name'));
-    console.log(formData.get('module_logo'));
-    console.log(formData);
     let url = '/api/update-taxon-group/';
     $.ajax({
         type: 'POST',
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         url: url,
         data: formData,
         cache: false,
@@ -318,7 +394,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
         $.ajax({
             url: addNewTaxonUrl,
             type: 'POST',
-            headers:{ "X-CSRFToken": csrfToken },
+            headers: {"X-CSRFToken": csrfToken},
             data: postData,
             success: function (response) {
                 $('#addNewTaxonModal').modal('toggle');
@@ -341,7 +417,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
     showLoading();
     $.ajax({
         url: addTaxaToTaxonGroupUrl,
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         type: 'POST',
         data: {
             'taxaIds': JSON.stringify([taxaId]),
@@ -359,7 +435,7 @@ function removeTaxonFromTaxonGroup(taxaId) {
     showLoading();
     $.ajax({
         url: removeTaxaFromTaxonGroupUrl,
-        headers:{ "X-CSRFToken": csrfToken },
+        headers: {"X-CSRFToken": csrfToken},
         type: 'POST',
         data: {
             'taxaIds': JSON.stringify([taxaId]),
@@ -372,5 +448,20 @@ function removeTaxonFromTaxonGroup(taxaId) {
         }
     });
 }
+
+function showNewTaxonForm(taxonName) {
+    let $taxonForm = $('.new-taxon-form');
+    let $button = $taxonForm.find('.add-new-taxon-btn');
+    let $rank = $taxonForm.find('.new-taxon-rank');
+    let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
+    let $newTaxonNameInput = $('#new-taxon-name');
+    $button.click(function () {
+        $taxonForm.hide();
+        addNewTaxonToObservedList(capitalizedTaxonName, '', $rank.val());
+    });
+    $newTaxonNameInput.val(capitalizedTaxonName);
+    $taxonForm.show();
+}
+
 
 hideLoading();

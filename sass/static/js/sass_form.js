@@ -236,6 +236,8 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
 }
 
 $(document).ready(function () {
+    console.log('biotope', biotope);
+    console.log('biotope_number', biotope_number);
     let totalTaxa = $.extend({}, biotope);
     let totalTaxaNumber = $.extend({}, biotope_number);
     let totalTaxaScore = $.extend({}, biotope_number);

@@ -155,8 +155,11 @@
                                     Total taxonomy
                                     : <span id="taxon_group_{{ taxa_group.id }}">{{ taxa_group.taxonomies.count }}</span>
                                 </div>
-                                <div>
-                                    <div class="btn btn-warning update-logo-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</div>
+                                <div style="margin-top: 3px">
+                                    <span class="btn btn-warning update-logo-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</span>
+                                    {% if preferences.SiteSetting.enable_remove_all_occurrences_tool %}
+                                        <span class="btn btn-danger remove-all-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0" data-module-id="{{ taxa_group.id }}"><i class="fa fa-trash-o" aria-hidden="true"></i> Remove All</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -273,7 +276,7 @@
                     </div>
                     <div class="container new-taxon-form" style="margin-top: 15px; display: none">
                         <div class="alert alert-info" role="alert">
-                            Whilst FBIS will accept taxa that are not listed in GBIF,
+                            Whilst the system will accept taxa that are not listed in GBIF,
                             you should use the capability only for taxa where the classification is partly unresolved.
                             <br><br>
                             Click ADD to add this taxon even though it is not listed in GBIF,
@@ -359,6 +362,44 @@
                     </button>
                     <button type="submit" class="btn btn-primary">
                         Save
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="removeModuleModal" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form id="moduleRemoveForm" enctype="multipart/form-data" >
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">
+                        Delete Module
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" class="form-control"
+                               id="remove-module-id" name="module_id">
+                    <div class="warning">
+                        This will delete the module, all the species, and all the occurrences.
+                        This action is irreversible.
+                        Do you wish to proceed? Please confirm by entering the module name.
+                    </div>
+                    <div class="form-group">
+                        <label for="recipient-name" class="col-form-label">Module:</label>
+                        <input type="text" class="form-control"
+                               id="remove-module-name" name="module_name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="remove-module-btn" type="submit" class="btn btn-danger" disabled style="width: 100%">
+                        DELETE MODULE
                     </button>
                 </div>
             </div>

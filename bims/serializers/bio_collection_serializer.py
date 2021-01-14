@@ -1,5 +1,6 @@
 import json
 import uuid
+from preferences import preferences
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
@@ -19,6 +20,10 @@ from bims.models.chemical_record import (
 )
 from bims.models.iucn_status import IUCNStatus
 from bims.models.location_context import LocationContext
+from bims.models.algae_data import AlgaeData
+from bims.models.survey import SurveyData, SurveyDataValue
+from bims.scripts.collection_csv_keys import *  # noqa
+from bims.models.location_context_group import LocationContextGroup
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -62,7 +67,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     """
     uuid = serializers.SerializerMethodField()
     original_river_name = serializers.SerializerMethodField()
-    fbis_site_code = serializers.SerializerMethodField()
+    site_code = serializers.SerializerMethodField()
     original_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     refined_geomorphological_zone = serializers.SerializerMethodField()
@@ -101,18 +106,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
-    geomorphological_zone = serializers.SerializerMethodField()
-    primary_catchment = serializers.SerializerMethodField()
-    secondary_catchment = serializers.SerializerMethodField()
-    tertiary_catchment = serializers.SerializerMethodField()
-    quaternary_catchment = serializers.SerializerMethodField()
-    water_management_area = serializers.SerializerMethodField()
-    sub_water_management_area = serializers.SerializerMethodField()
-    river_management_unit = serializers.SerializerMethodField()
-    sa_ecoregion_level_1 = serializers.SerializerMethodField()
-    sa_ecoregion_level_2 = serializers.SerializerMethodField()
-    freshwater_ecoregion = serializers.SerializerMethodField()
-    province = serializers.SerializerMethodField()
 
     def spatial_data(self, obj, key):
         if 'context_cache' not in self.context:
@@ -173,42 +166,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.site.refined_geomorphological
         return '-'
 
-    def get_geomorphological_zone(self, obj):
-        return self.spatial_data(obj, 'geo_class_recoded')
-
-    def get_primary_catchment(self, obj):
-        return self.spatial_data(obj, 'primary_catchment_area')
-
-    def get_secondary_catchment(self, obj):
-        return self.spatial_data(obj, 'secondary_catchment_area')
-
-    def get_tertiary_catchment(self, obj):
-        return self.spatial_data(obj, 'tertiary_catchment_area')
-
-    def get_quaternary_catchment(self, obj):
-        return self.spatial_data(obj, 'quaternary_catchment_area')
-
-    def get_water_management_area(self, obj):
-        return self.spatial_data(obj, 'water_management_area')
-
-    def get_sub_water_management_area(self, obj):
-        return self.spatial_data(obj, 'sub_wmas')
-
-    def get_river_management_unit(self, obj):
-        return self.spatial_data(obj, 'river_management_unit')
-
-    def get_sa_ecoregion_level_1(self, obj):
-        return self.spatial_data(obj, 'eco_region_1')
-
-    def get_sa_ecoregion_level_2(self, obj):
-        return self.spatial_data(obj, 'eco_region_2')
-
-    def get_freshwater_ecoregion(self, obj):
-        return self.spatial_data(obj, 'feow_hydrosheds')
-
-    def get_province(self, obj):
-        return self.spatial_data(obj, 'sa_provinces')
-
     def get_sampling_effort_measure(self, obj):
         if obj.sampling_effort:
             return ' '.join(obj.sampling_effort.split(' ')[1:])
@@ -228,7 +185,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 pass
         return 'Not evaluated'
 
-    def get_fbis_site_code(self, obj):
+    def get_site_code(self, obj):
         return obj.site.site_code
 
     def get_original_site_code(self, obj):
@@ -241,8 +198,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_site_description(self, obj):
         if obj.site.site_description:
-            return obj.site.site_description.encode('utf8')
-        return obj.site.name.encode('utf8')
+            return obj.site.site_description
+        return obj.site.name
 
     def get_latitude(self, obj):
         lat = obj.site.get_centroid().y
@@ -270,43 +227,43 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_title(self, obj):
         if obj.source_reference:
-            return obj.source_reference.title.encode('utf-8')
+            return obj.source_reference.title
         else:
             return '-'
 
     def get_taxon(self, obj):
         if obj.original_species_name:
-            return obj.original_species_name.encode('utf-8')
+            return obj.original_species_name
         return '-'
 
     def get_class_name(self, obj):
         class_name = obj.taxonomy.class_name
         if class_name:
-            return class_name.encode('utf-8')
+            return class_name
         return '-'
 
     def get_phylum(self, obj):
         phylum_name = obj.taxonomy.phylum_name
         if phylum_name:
-            return phylum_name.encode('utf-8')
+            return phylum_name
         return '-'
 
     def get_order(self, obj):
         order_name = obj.taxonomy.order_name
         if order_name:
-            return order_name.encode('utf-8')
+            return order_name
         return '-'
 
     def get_family(self, obj):
         family_name = obj.taxonomy.family_name
         if family_name:
-            return family_name.encode('utf-8')
+            return family_name
         return '-'
 
     def get_genus(self, obj):
         genus_name = obj.taxonomy.genus_name
         if genus_name:
-            return genus_name.encode('utf-8')
+            return genus_name
         return '-'
 
     def get_species(self, obj):
@@ -315,13 +272,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             genus_name = obj.taxonomy.genus_name
             if genus_name:
                 species_name = species_name.replace(genus_name, '')
-            return species_name.encode('utf-8').strip()
+            return species_name.strip()
         return '-'
 
     def get_kingdom(self, obj):
         kingdom_name = obj.taxonomy.kingdom_name
         if kingdom_name:
-            return kingdom_name.encode('utf-8')
+            return kingdom_name
         return '-'
 
     def get_taxon_rank(self, obj):
@@ -336,13 +293,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_authors(self, obj):
         if obj.source_reference:
-            return obj.source_reference.authors.encode('utf-8')
+            return obj.source_reference.authors
         return '-'
 
     def get_source(self, obj):
         if obj.source_reference:
             if obj.source_reference.source_name:
-                return obj.source_reference.source_name.encode('utf-8')
+                return obj.source_reference.source_name
         return '-'
 
     def get_year(self, obj):
@@ -353,8 +310,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_collector_or_owner(self, obj):
         if obj.collector_user:
             return '{first_name} {last_name}'.format(
-                first_name=obj.collector_user.first_name.encode('utf-8'),
-                last_name=obj.collector_user.last_name.encode('utf-8')
+                first_name=obj.collector_user.first_name,
+                last_name=obj.collector_user.last_name
             )
         if obj.additional_data:
             # If this is BioBase data, return a collector name from author of
@@ -375,11 +332,11 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                     s = ', and '.join(s.rsplit(', ', 1))  # last author case
                     return s
         if obj.collector:
-            return obj.collector.encode('utf8')
+            return obj.collector
         try:
             return '{first_name} {last_name}'.format(
-                first_name=obj.owner.first_name.encode('utf-8'),
-                last_name=obj.owner.last_name.encode('utf-8')
+                first_name=obj.owner.first_name,
+                last_name=obj.owner.last_name
             )
         except Exception as e:  # noqa
             return '-'
@@ -459,7 +416,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'original_river_name',
             'river_name',
             'original_site_code',
-            'fbis_site_code',
+            'site_code',
             'site_description',
             'refined_geomorphological_zone',
             'latitude',
@@ -495,18 +452,6 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'reference_category',
             'title',
             'doi_or_url',
-            'geomorphological_zone',
-            'primary_catchment',
-            'secondary_catchment',
-            'tertiary_catchment',
-            'quaternary_catchment',
-            'water_management_area',
-            'sub_water_management_area',
-            'river_management_unit',
-            'sa_ecoregion_level_1',
-            'sa_ecoregion_level_2',
-            'freshwater_ecoregion',
-            'province',
             'notes',
         ]
 
@@ -520,28 +465,143 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 date=instance.collection_date
             )
         )
+
         if 'chem_records_cached' not in self.context:
             self.context['chem_records_cached'] = {}
         if 'header' not in self.context:
             self.context['header'] = list(result.keys())
-        if chem_records_identifier in self.context['chem_records_cached']:
-            result.update(
-                self.context['chem_records_cached'][chem_records_identifier])
+
+        is_algae = False
+        if instance.module_group:
+            is_algae = 'algae' in instance.module_group.name.lower()
+
+        if is_algae:
+            algae_keys = [
+                'Curation process',
+                'Biomass Indicator: Chl A',
+                'Biomass Indicator: AFDM',
+                'Autotrophic Index (AI)',
+            ]
+
+            algae_data = AlgaeData.objects.filter(survey=instance.survey)
+            if algae_data.exists():
+                algae_data = algae_data[0]
+            else:
+                algae_data = None
+
+            for algae_key in algae_keys:
+                if algae_key not in self.context['header']:
+                    self.context['header'].append(algae_key)
+                if algae_data:
+                    if algae_key == 'Curation process':
+                        result[algae_key] = algae_data.curation_process
+                    elif algae_key == 'Biomass Indicator: Chl A':
+                        result[algae_key] = algae_data.indicator_chl_a
+                    elif algae_key == 'Biomass Indicator: AFDM':
+                        result[algae_key] = algae_data.indicator_afdm
+                    elif algae_key == 'Autotrophic Index (AI)':
+                        result[algae_key] = algae_data.ai
+
+        # FBIS ONLY
+        if preferences.SiteSetting.default_data_source == 'fbis':
+            all_survey_data = [
+                'Water Level',
+                'Water Turbidity',
+                'Embeddedness'
+            ]
+            for survey_data_key in all_survey_data:
+                if survey_data_key not in self.context['header']:
+                    self.context['header'].append(survey_data_key)
+                survey_data = SurveyData.objects.filter(
+                    name__iexact=survey_data_key
+                )
+                if survey_data.exists():
+                    sdv = SurveyDataValue.objects.filter(
+                        survey=instance.survey,
+                        survey_data=survey_data[0]
+                    )
+                    if sdv.exists():
+                        result[survey_data_key] = (
+                            sdv[0].survey_data_option.option
+                        )
+            chemical_units = {
+                TEMP: TEMP,
+                CONDUCTIVITY: CONDUCTIVITY,
+                PH: PH,
+                DISSOLVED_OXYGEN_MG: DISSOLVED_OXYGEN_MG,
+                DISSOLVED_OXYGEN_PERCENT: DISSOLVED_OXYGEN_PERCENT,
+                TURBIDITY: TURBIDITY,
+                DEPTH_M: DEPTH_M,
+                NBV: NBV,
+                ORTHOPHOSPHATE: ORTHOPHOSPHATE,
+                TOT: TOT,
+                SILICA: SILICA,
+                NH3_N: NH3_N,
+                NH4_N: NH4_N,
+                NO3_NO2_N: NO3_NO2_N,
+                NO2_N: NO2_N,
+                NO3_N: NO3_N,
+                TIN: TIN,
+                CHLA_B: CHLA_B,
+                AFDM: AFDM
+            }
+            for chem_key in chemical_units:
+                if chem_key not in self.context['header']:
+                    self.context['header'].append(chem_key)
+                chem_record = ChemicalRecord.objects.filter(
+                    chem__chem_code__iexact=chemical_units[chem_key],
+                    survey__site=instance.site,
+                    survey__date=instance.collection_date
+                )
+                if chem_record.exists():
+                    result[chem_key] = chem_record[0].value
+
         else:
-            chem_record_data = {}
-            chem_records = ChemicalRecord.objects.filter(
-                survey__site=instance.site,
-                survey__date=instance.collection_date
-            ).distinct('chem__chem_code')
-            for chem_record in chem_records:
-                chem_code = chem_record.chem.chem_code.upper()
-                if chem_code not in self.context['header']:
-                    self.context['header'].append(chem_code)
-                chem_record_data[chem_code] = chem_record.value
-            self.context['chem_records_cached'][chem_records_identifier] = (
-                chem_record_data
+            if chem_records_identifier in self.context['chem_records_cached']:
+                result.update(
+                    self.context[
+                        'chem_records_cached'][chem_records_identifier]
+                )
+            else:
+                chem_record_data = {}
+                chem_records = ChemicalRecord.objects.filter(
+                    survey__site=instance.site,
+                    survey__date=instance.collection_date
+                ).distinct('chem__chem_code')
+                for chem_record in chem_records:
+                    chem_code = chem_record.chem.chem_code.upper()
+                    if chem_code not in self.context['header']:
+                        self.context['header'].append(chem_code)
+                    chem_record_data[chem_code] = chem_record.value
+                self.context[
+                    'chem_records_cached'][chem_records_identifier] = (
+                    chem_record_data
+                )
+                result.update(chem_record_data)
+
+        geocontext_keys = (
+            preferences.SiteSetting.geocontext_keys.split(',')
+        )
+        if 'geocontext_groups' not in self.context:
+            self.context['geocontext_groups'] = []
+            context_groups = (
+                LocationContextGroup.objects.filter(
+                    geocontext_group_key__in=geocontext_keys
+                )
             )
-            result.update(chem_record_data)
+            for context_group in context_groups:
+                self.context['header'].append(context_group.name)
+                self.context['geocontext_groups'].append({
+                    'name': context_group.name,
+                    'key': context_group.key
+                })
+
+        if 'geocontext_groups' in self.context:
+            for _group in self.context['geocontext_groups']:
+                _group_name = _group['name']
+                _group_key = _group['key']
+                result[_group_name] = self.spatial_data(instance, _group_key)
+
         return result
 
 

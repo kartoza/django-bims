@@ -84,7 +84,8 @@ PROXY_ALLOWED_HOSTS = (
     '.tilehosting.com',
     '.maptiler.com',
     '.openrouteservice.org',
-    '.award.org.za'
+    '.award.org.za',
+    '.fastly.net'
 )
 
 PROXY_ALLOWED_HOSTS_ENV = os.environ.get('PROXY_ALLOWED_HOSTS', None)

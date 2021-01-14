@@ -5,6 +5,7 @@ from django.conf.urls import url, include
 from django.urls import reverse_lazy
 from django.views.generic import RedirectView
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
@@ -33,9 +34,6 @@ from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
 from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
-from bims.views.download_csv_taxa_records import (
-    download_csv_site_taxa_records
-)
 from bims.views.download_csv_taxa_list import (
     download_csv_taxa_list
 )
@@ -75,6 +73,8 @@ from bims.views.profile import ProfileView
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
+from bims.api_router import api_router
+from bims.views.custom_contact_us import CustomContactUsView
 
 
 urlpatterns = [
@@ -111,9 +111,6 @@ urlpatterns = [
         name='get-feature'),
     url(r'^collection/check_process/$',
         CollectionDownloader.as_view()),
-    url(r'^download-csv-taxa-records/$',
-        download_csv_site_taxa_records,
-        name='taxa-site-download'),
     url(r'^download-csv-taxa-list/$',
         download_csv_taxa_list,
         name='taxa-list-download'),
@@ -195,10 +192,16 @@ urlpatterns = [
             url=reverse_lazy('profile', kwargs={
                 'slug': request.user.username
             }), permanent=False)(request)), name='user-profile'),
+    url(r'^contact/$', CustomContactUsView.as_view(),
+        name='contact'),
+    url(r'^contact/success/$', TemplateView.as_view(
+        template_name='contactus/contact_success.html'),
+        {}, 'contactus-success'),
 ]
 
 # Api urls
 urlpatterns += [  # '',
     url(r'^api/',
         include('bims.api_urls')),
+    url(r'^wagtail-api/v2/', api_router.urls),
 ]
