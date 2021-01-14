@@ -2,6 +2,8 @@ import os
 import time
 import logging
 import uuid
+import csv
+import json
 import ast
 import requests
 import zipfile
@@ -155,7 +157,7 @@ class Command(BaseCommand):
         """
         url = (
             f'http://api.adu.org.za/vmus/v2/dwc/OdonataMAP/'
-            f'{self.api_token}/all/csv/{start_index},{limit}'
+            f'{self.api_token}/all/json/{start_index},{limit}'
         )
         r = requests.get(url, allow_redirects=True)
         odonata_folder = os.path.join(
@@ -167,7 +169,17 @@ class Command(BaseCommand):
             odonata_folder,
             'Odonata.csv'
         )
-        open(csv_file, 'wb').write(r.content)
+        with open(csv_file, 'w') as data_file:
+            csv_writer = csv.writer(data_file)
+            count = 0
+            content_data = json.loads(r.content)
+            for data in content_data['data']['result']:
+                if count == 0:
+                    header = data.keys()
+                    csv_writer.writerow(header)
+                    count += 1
+                csv_writer.writerow(
+                    list(map(lambda s: s.strip() if s else '', data.values())))
 
         # Zip the file
         zip_name = (time.ctime() + f' - Data: {start_index}-{limit}.zip').replace(' ', '_')
@@ -199,15 +211,15 @@ class Command(BaseCommand):
             bims_species_data = []
             stored_taxon_id = []
             for row in dwca:
-                month = row.data['month']
-                day = row.data['day']
-                if month == '0':
-                    month = '01'
-                if day == '0':
-                    day = '01'
-
-                index += 1
                 try:
+                    month = row.data['month']
+                    day = row.data['day']
+                    if month == '0':
+                        month = '01'
+                    if day == '0':
+                        day = '01'
+
+                    index += 1
                     taxon_rank = row.data['taxonRank']
                     if taxon_rank == 'species':
                         species_name = '{genus} {spc}'.format(
@@ -215,6 +227,8 @@ class Command(BaseCommand):
                             spc=row.data['specificEpithet']
                         )
                     else:
+                        if 'sub' in taxon_rank:
+                            taxon_rank = taxon_rank.replace('sub', '')
                         species_name = row.data[taxon_rank]
                     if row.data['taxonID'] not in stored_taxon_id:
                         stored_taxon_id.append(row.data['taxonID'])
