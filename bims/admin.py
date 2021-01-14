@@ -79,7 +79,8 @@ from bims.models import (
     generate_site_code,
     location_site_post_save_handler,
     DownloadRequest,
-    BaseMapLayer
+    BaseMapLayer,
+    RequestLog
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -982,6 +983,16 @@ class DownloadRequestAdmin(admin.ModelAdmin):
     )
 
 
+class RequestLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'remote_address',
+        'request_path',
+        'response_status',
+        'run_time'
+    )
+
+
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -1075,6 +1086,7 @@ admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
 admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
+admin.site.register(RequestLog, RequestLogAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(
