@@ -4,7 +4,7 @@ from celery import shared_task
 
 
 @shared_task(name='bims.tasks.update_location_context', queue='update')
-def update_location_context(location_site_id):
+def update_location_context(location_site_id, generate_site_code=False):
     from bims.utils.logger import log
     from bims.models import LocationSite
     from bims.utils.location_context import get_location_context_data
@@ -12,7 +12,8 @@ def update_location_context(location_site_id):
         if ',' in location_site_id:
             get_location_context_data(
                 site_id=str(location_site_id),
-                only_empty=False
+                only_empty=False,
+                should_generate_site_code=generate_site_code
             )
             return
     try:
@@ -23,5 +24,6 @@ def update_location_context(location_site_id):
 
     get_location_context_data(
         site_id=str(location_site_id),
-        only_empty=False
+        only_empty=False,
+        should_generate_site_code=generate_site_code
     )
