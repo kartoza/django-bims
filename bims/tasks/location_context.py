@@ -138,13 +138,20 @@ def generate_spatial_scale_filter(file_path=None):
                     query=F('value'),
                     key=F('group__key')
                 ).values('query', 'key'))
-            spatial_tree_value_sorted = sorted(
-                spatial_tree_value,
-                key=lambda i: (
-                    int(i['query'].split(' ')[0])
-                    if i['query'].split(' ')[0].isdigit()
-                    else i['query'])
-            )
+            try:
+                # Check empty query
+                for index, value in enumerate(spatial_tree_value):
+                    if value['query'] == "":
+                        del(spatial_tree_value[index])
+                spatial_tree_value_sorted = sorted(
+                    spatial_tree_value,
+                    key=lambda i: (
+                        int(i['query'].split(' ')[0])
+                        if i['query'].split(' ')[0].isdigit()
+                        else i['query'])
+                )
+            except TypeError:
+                continue
             layer_name = group.layer_name
             spatial_tree_children = {
                 'key': group.key,

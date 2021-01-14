@@ -28,9 +28,13 @@ from bims.models import (
     SurveyData,
     SurveyDataOption,
     SurveyDataValue,
+    LocationContextGroup,
+    LocationContextFilter,
+    LocationContextFilterGroupOrder,
     source_reference_post_save_handler,
     SourceReferenceDatabase,
-    SourceReferenceDocument
+    SourceReferenceDocument,
+    location_context_post_save_handler
 )
 from bims.utils.user import create_users_from_string
 from bims.scripts.data_upload import DataCSVUpload
@@ -38,6 +42,7 @@ from bims.tasks.location_site import update_location_context
 from bims.scripts.collections_upload_source_reference import (
     process_source_reference
 )
+from bims.tasks.location_context import generate_spatial_scale_filter
 from bims.tasks.source_reference import (
     generate_source_reference_filter
 )
@@ -76,8 +81,25 @@ class OccurrenceProcessor(object):
             source_reference_post_save_handler,
             sender=SourceReferenceDocument
         )
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextGroup
+        )
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextFilter
+        )
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextFilterGroupOrder
+        )
 
     def finish_process(self):
+        if self.site_ids:
+            update_location_context(
+                location_site_id=','.join(self.site_ids),
+                generate_site_code=True
+            )
         signals.post_save.connect(
             collection_post_save_handler,
             sender=BiologicalCollectionRecord
@@ -102,10 +124,7 @@ class OccurrenceProcessor(object):
             source_reference_post_save_handler,
             sender=SourceReferenceDocument
         )
-        if self.site_ids:
-            update_location_context(
-                location_site_id=','.join(self.site_ids)
-            )
+        generate_spatial_scale_filter()
         # Update source reference filter
         generate_source_reference_filter()
 
