@@ -606,7 +606,6 @@ define([
                     zoom: this.initZoom,
                     minZoom: 5,
                     maxZoom: 19, // prevent zooming past 50m
-                    extent: extent
                 }),
                 controls: ol.control.defaults({
                     zoom: false
