@@ -171,7 +171,7 @@ def get_location_context_data(
                 location_site.site_code = site_code
                 location_site.save()
                 log(str('Site code {site_code} '
-                    'generated for {site_id').format(
+                    'generated for {site_id}').format(
                     site_code=site_code,
                     site_id=location_site.id
                 ))
