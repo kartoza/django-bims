@@ -30,6 +30,13 @@ class Command(BaseCommand):
             default='10',
             help='Limit count'
         )
+        parser.add_argument(
+            '-s',
+            '--start-index',
+            dest='start_index',
+            default='0',
+            help='Start index'
+        )
 
     def handle(self, *args, **options):
         api_token = options.get('token', '')
@@ -39,7 +46,7 @@ class Command(BaseCommand):
 
         total_records = int(options.get('total_records', '100'))
         limit = int(options.get('limit', '10'))
-        start_index = 0
+        start_index = int(options.get('start_index', '0'))
 
         with open('import_all_odonata_log.txt', 'w') as the_file:
             the_file.write('')
