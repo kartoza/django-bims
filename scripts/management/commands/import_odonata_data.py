@@ -179,7 +179,7 @@ class Command(BaseCommand):
                     csv_writer.writerow(header)
                     count += 1
                 csv_writer.writerow(
-                    list(map(lambda s: s.strip() if s else '', data.values())))
+                    list(map(lambda s: s.strip().replace('\n', '').replace('\r', '') if s else '', data.values())))
 
         # Zip the file
         zip_name = (time.ctime() + f' - Data: {start_index}-{limit}.zip').replace(' ', '_')
