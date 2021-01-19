@@ -50,9 +50,6 @@ def process_source_reference(
     document = None
     source_reference_found = False
 
-    if not document_author:
-        return 'Missing author', None
-
     if (
         not reference and
         not reference_category and

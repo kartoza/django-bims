@@ -70,6 +70,8 @@ def create_users_from_string(user_string):
     :return: List of user object
     """
     list_user = []
+    if not user_string:
+        return list_user
     and_username = ''
     for user_split_1 in user_string.split(','):
         for user_name in user_split_1.split(' and '):
