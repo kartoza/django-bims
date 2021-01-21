@@ -191,14 +191,13 @@ h6 {
 }
 
 .fbis-button-small {
+    font-size: 9pt;
     background-color: var(--main-accent-color);
     border-radius: 2.5px;
-    padding: 0.4rem;
     font-weight: normal;
     color: white;
     border-color: white;
     border-style: solid;
-    height: 100%;
     border-width: 1px;
     text-align: center;
     border-right: 0;

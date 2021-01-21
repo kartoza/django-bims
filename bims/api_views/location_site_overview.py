@@ -2,6 +2,7 @@ from collections import OrderedDict
 from django.db.models import F, Value, Case, When, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from sorl.thumbnail import get_thumbnail
 from django.http import Http404
 from bims.api_views.search import CollectionSearch
 from bims.models import (
@@ -47,7 +48,9 @@ class LocationSiteOverviewData(object):
 
         for group in groups:
             group_data = dict()
-            group_data[self.GROUP_ICON] = group.logo.name
+            group_data[self.GROUP_ICON] = get_thumbnail(
+                    group.logo, 'x50', crop='center'
+                ).name
             group_data[self.MODULE] = group.id
 
             biodiversity_data[group.name] = group_data

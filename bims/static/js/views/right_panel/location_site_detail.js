@@ -330,137 +330,52 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         },
         renderBiodiversityDataSection: function (container, data) {
             let self = this;
-
-            let $sectionContainer = $('<div class="container-fluid"></div>');
-            container.append($sectionContainer);
-            let $tableContainer = $('<div style="overflow-x: auto">');
-            let $table = $('<table class="table table-striped table-condensed table-sm"></table>');
-            $tableContainer.append($table);
-            $sectionContainer.append($tableContainer);
-
-            // create row
-            let $iconHead = $('<thead></thead>');
-            let $occurrenceRow = $('<tr></tr>');
-            let $siteRow = $('<tr></tr>');
-            let $originRow = $('<tr></tr>');
-            let $endemismRow = $('<tr></tr>');
-            let $consStatusRow = $('<tr></tr>');
-            let $numTaxaRow = $('<tr></tr>');
-            let $dashboardRow = $('<tr></tr>');
-            let $sassDashboarRow = $('<div class="row dashboard-row" style="margin-bottom: 10px">');
-            let $formRow = $('<tr></tr>');
-            $table.append($iconHead);
-            $table.append($occurrenceRow);
-            $table.append($siteRow);
-            $table.append($originRow);
-            $table.append($endemismRow);
-            $table.append($consStatusRow);
-            $table.append($numTaxaRow);
-            $table.append($dashboardRow);
-            $table.append($formRow);
-            $tableContainer.after($sassDashboarRow);
-
-            $iconHead.append('<td></td>');
-            $occurrenceRow.append('<td><b>Occurrences</b></td>');
-            $originRow.append('<td><b>Origin</b><div class="origin-legends"></div></td>');
-            $endemismRow.append('<td><b>Endemism</b><div class="endemism-legends"></div></td>');
-            $consStatusRow.append('<td><b>Cons. Status</b><div class="cons-status-legends"></div></td>');
-            $numTaxaRow.append('<td><b>Number of Taxa</b></td>');
-            $dashboardRow.append('<td style="padding-top: 12px;"><b>Dashboard</b></td>');
-            $formRow.append('<td style="padding-top: 12px;"><b>Form</b></td>');
-
-            if (is_sass_enabled) {
-                let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
-                let $addSassButton = $('<button class="fbis-button-small fbis-red" style="width: 100%;">Add SASS</button>');
-                let $sassDashboardButtonContainer = $('<div class="col-sm-6" style="padding-right: 0">');
-                let $addSassButtonContainer = $('<div class="col-sm-6" style="padding-left: 0">');
-                $sassDashboarRow.append($sassDashboardButtonContainer);
-                $sassDashboarRow.append($addSassButtonContainer);
-                $sassDashboardButtonContainer.append($sassDashboardButton);
-                $addSassButtonContainer.append($addSassButton);
-                if (data['sass_exist']) {
-                    $sassDashboardButton.click(function () {
-                        let sassUrl = '/sass/dashboard/' + self.siteId + '/';
-                        sassUrl += self.apiParameters(filterParameters);
-                        window.location.href = sassUrl;
-                    });
-                } else {
-                    $sassDashboardButton.addClass('disabled');
-                }
-                $addSassButton.click(function () {
-                    window.location.href = '/sass/' + self.siteId;
-                });
-            }
-
+            let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
+            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist }));
             $.each(data['biodiversity_data'], function (key, value) {
-                $iconHead.append('<td class="overview-data"><img width="30" src="/uploaded/' + value['icon'] + '"></td></td>');
-                $occurrenceRow.append('<td class="overview-data">' + value['occurrences'] + '</td>');
-                $numTaxaRow.append('<td class="overview-data">' + value['number_of_taxa'] + '</td>');
-
-                let $dashboardButton = $('<button class="fbis-button-small" style="width: 100%">' + key + '</button>');
-                if (value['occurrences'] === 0) {
-                    $dashboardButton.addClass('disabled');
-                } else {
-                    $dashboardButton.click(function () {
-                        let parameters = $.extend(true, {}, filterParameters);
-                        parameters['modules'] = value['module'];
-                        Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
-                    });
-                }
-                let $dashboardRowContainer = $('<td>');
-                $dashboardRowContainer.append($dashboardButton);
-                $dashboardRow.append($dashboardRowContainer);
-
-                // Form button
-                let buttonName = key;
-                let $formButton = $('<button class="fbis-button-small fbis-red" style="width: 100%"> <span>Add ' + buttonName + '</span> </button>');
-                let $formRowContainer = $('<td>');
-                $formRowContainer.append($formButton);
-                $formRow.append($formRowContainer);
-                $formButton.click(function () {
-                    let url = '#';
-                    if (buttonName.toLowerCase() === 'fish') {
-                        url = '/fish-form/?siteId=' + self.siteId;
-                    } else if (buttonName.toLowerCase() === 'invertebrates') {
-                        url = '/invert-form/?siteId=' + self.siteId;
-                    } else if (buttonName.toLowerCase() === 'algae') {
-                        url = '/algae-form/?siteId=' + self.siteId;
-                    } else {
-                        url = `/module-form/?siteId=${self.siteId}&module=${value['module']}`;
-                    }
-                    window.location = url;
-                });
-
-                let $originColumn = $('<td class="overview-data"></td>');
-                let $originCanvas = $('<canvas class="overview-chart"></canvas>');
-                $originColumn.append($originCanvas);
-                $originRow.append($originColumn);
                 self.charts.push({
-                    'canvas': $originCanvas,
+                    'canvas': $("#origin-chart-" + value.module),
                     'data': value['origin'],
                     'legends': self.originLegends
                 });
-
-                let $endemismColumn = $('<td class="overview-data"></td>');
-                let $endemismCanvas = $('<canvas class="overview-chart"></canvas>');
-                $endemismColumn.append($endemismCanvas);
-                $endemismRow.append($endemismColumn);
                 self.charts.push({
-                    'canvas': $endemismCanvas,
+                    'canvas': $("#endemism-chart-" + value.module),
                     'data': value['endemism'],
                     'legends': self.endemismLegends
                 });
-
-                let $consStatusColumn = $('<td class="overview-data"></td>');
-                let $consStatusCanvas = $('<canvas class="overview-chart"></canvas>');
-                $consStatusColumn.append($consStatusCanvas);
-                $consStatusRow.append($consStatusColumn);
                 self.charts.push({
-                    'canvas': $consStatusCanvas,
+                    'canvas': $("#cons-chart-" + value.module),
                     'data': value['cons_status'],
                     'legends': self.consStatusLegends
                 });
-
+            });
+            $('.sp-open-dashboard').click(function (e) {
+                let parameters = $.extend(true, {}, filterParameters);
+                parameters['modules'] = $(e.target).data('module');
+                Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
+            });
+            $('.sp-add-record').click(function (e) {
+                let url = '#';
+                const moduleId = $(e.target).data('module-id');
+                const moduleName = $(e.target).data('module-name');
+                if (moduleName.toLowerCase() === 'fish') {
+                    url = '/fish-form/?siteId=' + self.siteId;
+                } else if (moduleName.toLowerCase() === 'invertebrates') {
+                    url = '/invert-form/?siteId=' + self.siteId;
+                } else if (moduleName.toLowerCase() === 'algae') {
+                    url = '/algae-form/?siteId=' + self.siteId;
+                } else {
+                    url = `/module-form/?siteId=${self.siteId}&module=${moduleId}`;
+                }
+                window.location = url;
+            });
+            $('.sp-sass-dashboard').click(function () {
+                let sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                sassUrl += self.apiParameters(filterParameters);
+                window.location.href = sassUrl;
+            });
+            $('.sp-add-sass').click(function () {
+                window.location.href = '/sass/' + self.siteId;
             });
         },
         flatten_arr: function (arr) {
