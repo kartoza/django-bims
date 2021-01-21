@@ -26,6 +26,60 @@
 </script>
 
 
+<script type='text/html' id='biodiversity-data-template-new'>
+    <div class="container-fluid" id="biodiversity-data-wrapper">
+        <div class="row" style="padding-top: 10px; font-weight: bold">
+            <div class="col-2"></div>
+            <div class="col-1" style="padding-left: 0; padding-right: 0; text-align: center">Occur<br/>rences</div>
+            <div class="col-2" style="padding-left: 0; padding-right: 0; text-align: center">
+                Origin
+                <div style="font-weight: normal" class="origin-legends"></div>
+            </div>
+            <div class="col-2" style="padding-left: 0; padding-right: 0; text-align: center">Endemism<div style="font-weight: normal" class="endemism-legends"></div></div>
+            <div class="col-2" style="padding-left: 0; padding-right: 0; text-align: center">Cons. Status<div style="font-weight: normal"  class="cons-status-legends"></div></div>
+            <div class="col-1" style="padding-left: 0; padding-right: 0; text-align: center">Number of Taxa</div>
+        </div>
+        <% _.each(data, function (value, key) { %>
+            <div class="row" style="height: 70px; padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 12pt" >
+                <div class="col-2" style="text-align: center">
+                    <div class="module-icon"><img height="50" src="/uploaded/<%= value.icon %>"></div>
+                </div>
+                <div class="col-1" style="height: 50px; line-height: 50px; text-align: center">
+                    <span style="display: inline-block; vertical-align: middle; line-height: normal"><%= value.occurrences %></span>
+                </div>
+                <div class="col-2 no-padding">
+                    <canvas class="overview-chart" id="origin-chart-<%= value.module %>"></canvas>
+                </div>
+                <div class="col-2 no-padding">
+                    <canvas class="overview-chart" id="endemism-chart-<%= value.module %>"></canvas>
+                </div>
+                <div class="col-2 no-padding">
+                    <canvas class="overview-chart" id="cons-chart-<%= value.module %>"></canvas>
+                </div>
+                <div class="col-1" style="height: 50px; line-height: 50px; text-align: center">
+                    <span style="display: inline-block; vertical-align: middle; line-height: normal"><%= value.number_of_taxa %></span>
+                </div>
+                <div class="col-2 no-padding" style="padding-right: 10px">
+                    <button class="fbis-button-small fbis-red sp-add-record" data-module-id="<%= value.module %>" data-module-name="<%= key %>" style="width: 100%"> + Add </button>
+                    <button class="fbis-button-small <% if (value.number_of_taxa == 0) { %> disabled <% } %> sp-open-dashboard" data-module="<%= value.module %>" style="width: 100%">
+                        Dashboard
+                    </button>
+                </div>
+            </div>
+        <% }); %>
+        <% if (is_sass_enabled) { %>
+            <div class="row" style="padding: 10px">
+                <div class="col-sm-6" style="padding-right: 0">
+                    <button class="fbis-button-small <% if (sass_exist) { %> sp-sass-dashboard <% } else { %> disabled <% } %>" style="width: 100%; height: 30px">SASS Dashboard</button>
+                </div>
+                <div class="col-sm-6" style="padding-left: 0">
+                    <button class="fbis-button-small fbis-red sp-add-sass" style="width: 100%; height: 30px">Add SASS</button>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</script>
+
 <script type='text/html' id='biodiversity-data-template'>
     <div class="container-fluid" id="biodiversity-data-wrapper">
         <div class="container-fluid">
