@@ -522,13 +522,12 @@ class CollectionSearch(object):
             ).filter(full_name__in=self.collector)
             collector_list = list(collectors.values_list('id', flat=True))
             bio = bio.filter(
-                Q(collector_user__in=collector_list) |
+                Q(survey__owner__in=collector_list) |
                 Q(sitevisittaxon__site_visit__owner__in=collector_list)
             )
 
         if self.collectors:
             bio = bio.filter(
-                Q(survey__collector_user__in=self.collectors) |
                 Q(survey__owner__in=self.collectors) |
                 Q(sitevisittaxon__site_visit__owner__in=self.collectors)
             )

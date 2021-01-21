@@ -258,12 +258,14 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.notes = 'from sass'
                 site_visit_taxon.collection_date = date
                 site_visit_taxon.taxon_abundance = taxon_abundance
-                site_visit_taxon.owner = site_visit.owner
                 site_visit_taxon.collector_user = site_visit.collector
                 site_visit_taxon.source_collection = self.source_collection
+                # Set correct owner
+                site_visit_taxon.owner = site_visit.owner
+                site_visit_taxon.survey.owner = site_visit.owner
+                site_visit_taxon.survey.save()
 
                 if created:
-                    site_visit.owner = self.request.user
                     clear_finished_search_process()
 
                 site_visit_taxon.save()

@@ -2,12 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.models import (
     BiologicalCollectionRecord,
-    LocationSite,
-    Survey,
     TaxonGroup,
     TaxonomicGroupCategory
 )
-from sass.models.site_visit import SiteVisit
 
 
 
@@ -38,7 +35,7 @@ class LandingPageSummary(APIView):
                 'records': _summary_data,
                 'icon': taxon_group.logo.url,
                 'total_records': total_all_records,
-                'site_visit':BiologicalCollectionRecord.objects.filter(
+                'site_visit': BiologicalCollectionRecord.objects.filter(
                     module_group=taxon_group
                 ).distinct('survey').count()
             })
