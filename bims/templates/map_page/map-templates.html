@@ -87,6 +87,16 @@
                             <%= rank %>
                         </td>
                     </tr>
+                    <% if (additional_data["BDI Link"]) { %>
+                     <tr class="species-detail-row">
+                        <td class="species-detail-cell cell-header">
+                            BDI Link
+                        </td>
+                        <td class="species-detail-cell cell-content">
+                            <a href='<%= additional_data["BDI Link"] %>' target="_blank"><%= additional_data["BDI Link"] %></a>
+                        </td>
+                    </tr>
+                    <% } %>
                 </table>
             </div>
             <div id="species-detail-summary-origin">
