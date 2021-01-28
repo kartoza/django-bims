@@ -351,13 +351,21 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             });
             $('.sp-open-dashboard').click(function (e) {
                 let parameters = $.extend(true, {}, filterParameters);
-                parameters['modules'] = $(e.target).data('module');
+                const $target = $(e.target);
+                if ($target.hasClass("disabled")) {
+                    return false;
+                }
+                parameters['modules'] = $target.data('module');
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
             $('.sp-add-record').click(function (e) {
                 let url = '#';
-                const moduleId = $(e.target).data('module-id');
-                const moduleName = $(e.target).data('module-name');
+                const $target = $(e.target);
+                if ($target.hasClass("disabled")) {
+                    return false;
+                }
+                const moduleId = $target.data('module-id');
+                const moduleName = $target.data('module-name');
                 if (moduleName.toLowerCase() === 'fish') {
                     url = '/fish-form/?siteId=' + self.siteId;
                 } else if (moduleName.toLowerCase() === 'invertebrates') {
