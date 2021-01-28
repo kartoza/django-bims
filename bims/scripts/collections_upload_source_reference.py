@@ -68,6 +68,11 @@ def process_source_reference(
     if not document_title and reference:
         document_title = reference
 
+    # If the reference is published report or thesis, author is required
+    if (reference_category.lower().startswith('published') or
+            'thesis' in reference_category.lower()) and not document_author:
+        return 'Missing author for published report or thesis', None
+
     # if there is document link, get the id of the document
     if document_link:
         try:
