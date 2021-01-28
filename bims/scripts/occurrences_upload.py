@@ -55,6 +55,9 @@ class OccurrenceProcessor(object):
 
     site_ids = []
     module_group = None
+    # Whether the script should also fetch location context after ingesting
+    # collection data
+    fetch_location_context = True
 
     def start_process(self):
         signals.post_save.disconnect(
@@ -95,7 +98,7 @@ class OccurrenceProcessor(object):
         )
 
     def finish_process(self):
-        if self.site_ids:
+        if self.site_ids and self.fetch_location_context:
             update_location_context(
                 location_site_id=','.join(self.site_ids),
                 generate_site_code=True
