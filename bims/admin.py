@@ -80,7 +80,8 @@ from bims.models import (
     location_site_post_save_handler,
     DownloadRequest,
     BaseMapLayer,
-    RequestLog
+    RequestLog,
+    IngestedData
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -993,6 +994,29 @@ class RequestLogAdmin(admin.ModelAdmin):
     )
 
 
+class IngestedDataAdmin(admin.ModelAdmin):
+    list_display = (
+        'datetime',
+        'is_valid',
+        'content_object',
+        'category',
+        'data_key'
+    )
+    list_filter = (
+        'is_valid',
+        'category',
+    )
+    sortable_by = (
+        'datetime',
+        'is_valid',
+        'category',
+        'data_key'
+    )
+    search_fields = (
+        'data_key',
+    )
+
+
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -1087,6 +1111,7 @@ admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
 admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
 admin.site.register(RequestLog, RequestLogAdmin)
+admin.site.register(IngestedData, IngestedDataAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(
