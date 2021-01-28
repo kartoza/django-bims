@@ -59,115 +59,44 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
         },
         renderBiodiversityDataSection: function (container, data) {
             let self = this;
+            let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
             let $sectionWrapper = $(
                 '<div id="biodiversity-data" class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="false"> ' +
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             container.append($sectionWrapper);
-
-            let $sectionContainer = $('<div class="container-fluid"></div>');
-            $sectionWrapper.append($sectionContainer);
-
-            let $table = $('<table class="table table-striped table-condensed table-sm"></table>');
-            $sectionContainer.append($table);
-
-            // create row
-            let $iconHead = $('<thead></thead>');
-            let $occurrenceRow = $('<tr></tr>');
-            let $siteRow = $('<tr></tr>');
-            let $originRow = $('<tr></tr>');
-            let $endemismRow = $('<tr></tr>');
-            let $consStatusRow = $('<tr></tr>');
-            let $numTaxaRow = $('<tr></tr>');
-            let $dashboardRow = $('<tr></tr>');
-            let $sassDashboarRow = $('<tr></tr>');
-            $table.append($iconHead);
-            $table.append($occurrenceRow);
-            $table.append($siteRow);
-            $table.append($originRow);
-            $table.append($endemismRow);
-            $table.append($consStatusRow);
-            $table.append($numTaxaRow);
-            $table.append($dashboardRow);
-            $table.append($sassDashboarRow);
-
-            $iconHead.append('<td></td>');
-            $occurrenceRow.append('<td><b>Occurrences</b></td>');
-            $siteRow.append('<td><b>Sites</b></td>');
-            $originRow.append('<td><b>Origin</b><div class="origin-legends"></div></td>');
-            $endemismRow.append('<td><b>Endemism</b><div class="endemism-legends"></div></td>');
-            $consStatusRow.append('<td><b>Cons. Status</b><div class="cons-status-legends"></div></td>');
-            $numTaxaRow.append('<td><b>Number of Taxa</b></td>');
-            $dashboardRow.append('<td style="padding-top: 12px;"><b>Dashboard</b></td>');
-
-            if (is_sass_enabled) {
-                let $sassDashboardButton = $('<button class="fbis-button-small" style="width: 100%;">SASS Dashboard</button>');
-                let $sassDashboardButtonContainer = $('<td colspan="' + (Object.keys(data['biodiversity_data']).length + 1) + '">');
-                $sassDashboarRow.append($sassDashboardButtonContainer);
-                $sassDashboardButtonContainer.append($sassDashboardButton);
-                if (data['sass_exist']) {
-                    $sassDashboardButton.click(function () {
-                        let sassUrl = '/sass/dashboard-multi-sites/';
-                        sassUrl += self.apiParameters(filterParameters);
-                        window.location.href = sassUrl;
-                    });
-                } else {
-                    $sassDashboardButton.addClass('disabled');
-                }
-            }
-
+            $sectionWrapper.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist, add_data: false }));
             $.each(data['biodiversity_data'], function (key, value) {
-                $iconHead.append('<td class="overview-data"><img width="30" src="/uploaded/' + value['icon'] + '"></td></td>');
-                $occurrenceRow.append('<td class="overview-data">' + value['occurrences'] + '</td>');
-                $siteRow.append('<td class="overview-data">' + value['sites'] + '</td>');
-                $numTaxaRow.append('<td class="overview-data">' + value['number_of_taxa'] + '</td>');
-
-                let $dashboardButton = $('<button class="fbis-button-small" style="width: 100%">' + key + '</button>');
-                if (value['occurrences'] === 0) {
-                    $dashboardButton.addClass('disabled');
-                } else {
-                    $dashboardButton.click(function () {
-                        let parameters = $.extend(true, {}, filterParameters);
-                        parameters['modules'] = value['module'];
-                        parameters['siteId'] = '';
-                        Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
-                    });
-                }
-                let $dashboardRowContainer = $('<td>');
-                $dashboardRowContainer.append($dashboardButton);
-                $dashboardRow.append($dashboardRowContainer);
-
-                let $originColumn = $('<td class="overview-data"></td>');
-                let $originCanvas = $('<canvas class="overview-chart"></canvas>');
-                $originColumn.append($originCanvas);
-                $originRow.append($originColumn);
                 self.charts.push({
-                    'canvas': $originCanvas,
+                    'canvas': $sectionWrapper.find("#origin-chart-" + value.module),
                     'data': value['origin'],
                     'legends': self.originLegends
                 });
-
-                let $endemismColumn = $('<td class="overview-data"></td>');
-                let $endemismCanvas = $('<canvas class="overview-chart"></canvas>');
-                $endemismColumn.append($endemismCanvas);
-                $endemismRow.append($endemismColumn);
                 self.charts.push({
-                    'canvas': $endemismCanvas,
+                    'canvas': $sectionWrapper.find("#endemism-chart-" + value.module),
                     'data': value['endemism'],
                     'legends': self.endemismLegends
                 });
-
-                let $consStatusColumn = $('<td class="overview-data"></td>');
-                let $consStatusCanvas = $('<canvas class="overview-chart"></canvas>');
-                $consStatusColumn.append($consStatusCanvas);
-                $consStatusRow.append($consStatusColumn);
                 self.charts.push({
-                    'canvas': $consStatusCanvas,
+                    'canvas': $sectionWrapper.find("#cons-chart-" + value.module),
                     'data': value['cons_status'],
                     'legends': self.consStatusLegends
                 });
-
+            });
+            $sectionWrapper.find('.sp-open-dashboard').click(function (e) {
+                let parameters = $.extend(true, {}, filterParameters);
+                const $target = $(e.target);
+                if ($target.hasClass("disabled")) {
+                    return false;
+                }
+                parameters['modules'] = $target.data('module');
+                Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
+            });
+            $sectionWrapper.find('.sp-sass-dashboard').click(function () {
+                let sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                sassUrl += self.apiParameters(filterParameters);
+                window.location.href = sassUrl;
             });
         },
         createPieChart: function (chartData) {

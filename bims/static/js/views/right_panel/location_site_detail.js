@@ -331,7 +331,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         renderBiodiversityDataSection: function (container, data) {
             let self = this;
             let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
-            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist }));
+            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist, add_data: true }));
             $.each(data['biodiversity_data'], function (key, value) {
                 self.charts.push({
                     'canvas': $("#origin-chart-" + value.module),
