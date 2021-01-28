@@ -63,6 +63,6 @@ class Command(BaseCommand):
                          start_index=start_index,
                          limit=limit,
                          import_occurrences='True',
-                         import_species='True',
+                         import_species='False',
                          token=api_token)
             start_index += limit

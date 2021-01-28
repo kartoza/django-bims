@@ -324,7 +324,7 @@ class Command(BaseCommand):
                     print(e)
 
             module_group, _ = TaxonGroup.objects.get_or_create(
-                name='Odonata',
+                name='Odonate Adults',
                 category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             )
 
