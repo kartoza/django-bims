@@ -111,10 +111,11 @@ class Command(BaseCommand):
     """
     api_token = ''
     source_name = (
-        'OdonataMap Virtual Museum, Animal Demography Unit, '
+        'OdonataMap Virtual Museum, '
+        'FitzPatrick Institute of African Ornithology, '
         'University of Cape Town'
     )
-    source_year = '2020'
+    source_year = '2021'
     notes = (
         'Data extracted from the Odonata VM database, 28 Sep 2020'
     )
