@@ -1939,6 +1939,7 @@ div:hover::-webkit-scrollbar {
     filter: grayscale(50%);
     opacity: 0.4;
     filter: alpha(opacity=40);
+    margin-bottom: 10px;
 }
 
 .module-species.selected {
