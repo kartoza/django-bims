@@ -248,7 +248,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 count: data['total_records'],
                 taxon_class: data['taxon'],
                 gbif_id: gbif_key,
-                common_name: data['common_name']
+                common_name: data['common_name'],
+                additional_data: data['taxon_additional_data']
             }));
 
             let recordsOverTimeData = data['records_over_time_data'];

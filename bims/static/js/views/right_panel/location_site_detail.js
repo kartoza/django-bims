@@ -331,7 +331,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         renderBiodiversityDataSection: function (container, data) {
             let self = this;
             let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
-            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist }));
+            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist, add_data: true }));
             $.each(data['biodiversity_data'], function (key, value) {
                 self.charts.push({
                     'canvas': $("#origin-chart-" + value.module),
@@ -351,13 +351,21 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             });
             $('.sp-open-dashboard').click(function (e) {
                 let parameters = $.extend(true, {}, filterParameters);
-                parameters['modules'] = $(e.target).data('module');
+                const $target = $(e.target);
+                if ($target.hasClass("disabled")) {
+                    return false;
+                }
+                parameters['modules'] = $target.data('module');
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
             $('.sp-add-record').click(function (e) {
                 let url = '#';
-                const moduleId = $(e.target).data('module-id');
-                const moduleName = $(e.target).data('module-name');
+                const $target = $(e.target);
+                if ($target.hasClass("disabled")) {
+                    return false;
+                }
+                const moduleId = $target.data('module-id');
+                const moduleName = $target.data('module-name');
                 if (moduleName.toLowerCase() === 'fish') {
                     url = '/fish-form/?siteId=' + self.siteId;
                 } else if (moduleName.toLowerCase() === 'invertebrates') {

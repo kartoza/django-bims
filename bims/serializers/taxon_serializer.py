@@ -26,8 +26,8 @@ class TaxonSerializer(serializers.ModelSerializer):
             module = TaxonGroup.objects.filter(id__in=taxon_module)
             if module.exists():
                 return {
-                    'logo': module[0].logo.name,
-                    'name': module[0].name
+                    'logo': module[len(module)-1].logo.name,
+                    'name': module[len(module)-1].name
                 }
         return {}
 

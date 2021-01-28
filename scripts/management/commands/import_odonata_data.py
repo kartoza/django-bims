@@ -111,10 +111,11 @@ class Command(BaseCommand):
     """
     api_token = ''
     source_name = (
-        'OdonataMap Virtual Museum, Animal Demography Unit, '
+        'OdonataMap Virtual Museum, '
+        'FitzPatrick Institute of African Ornithology, '
         'University of Cape Town'
     )
-    source_year = '2020'
+    source_year = '2021'
     notes = (
         'Data extracted from the Odonata VM database, 28 Sep 2020'
     )
@@ -323,7 +324,7 @@ class Command(BaseCommand):
                     print(e)
 
             module_group, _ = TaxonGroup.objects.get_or_create(
-                name='Odonata',
+                name='Odonate Adults',
                 category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             )
 

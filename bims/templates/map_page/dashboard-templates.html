@@ -225,6 +225,15 @@
         <div class="col-4 title_column">Records</div>
         <div class="col-8"><%= count %></div>
     </div>
+    <% if (additional_data["BDI Link"]) { %>
+     <div class="row">
+        <div class="col-4 title_column">BDI Link</div>
+        <div class="col-8">
+            <a href='<%= additional_data["BDI Link"] %>' target="_blank"><%=
+                additional_data["BDI Link"] %></a>
+        </div>
+    </div>
+    <% } %>
     <div class="row">
         <div class="col-4 title_column">Sites</div>
         <div class="col-8">
