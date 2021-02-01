@@ -220,6 +220,13 @@ define([
                     } else {
                         dashboardHeader.html('Single Site - ' + data['modules'].join());
                     }
+                    // Remove default height for chart containers
+                    $('#species-ssdd-occurrences-line-chart').css("height", "")
+                    $('#species-ssdd-taxa-occurrences-bar-chart').css("height", "")
+                    $('#species-ssdd-origin-bar-chart').css("height", "")
+                    $('#species-ssdd-endemism-bar-chart').css("height", "")
+                    $('#species-ssdd-cons-status-bar-chart').css("height", "")
+                    $('#species-ssdd-occurrence-data').css("height", "")
 
                     if (Object.keys(data['dashboard_configuration']).length !== 0) {
 
@@ -320,7 +327,13 @@ define([
                             $('#ssdd-chem-chart-wrapper').hide();
                         }
                     }
-
+                    // Set default height for chart containers
+                    $('#species-ssdd-occurrences-line-chart').css("height", 0.35 * screen.height + 'px')
+                    $('#species-ssdd-taxa-occurrences-bar-chart').css("height", 0.35 * screen.height + 'px')
+                    $('#species-ssdd-origin-bar-chart').css("height", 0.35 * screen.height + 'px')
+                    $('#species-ssdd-endemism-bar-chart').css("height", 0.35 * screen.height + 'px')
+                    $('#species-ssdd-cons-status-bar-chart').css("height", 0.35 * screen.height + 'px')
+                    $('#species-ssdd-occurrence-data').css("height", 0.6 * screen.height + 'px')
                     // Render filter list
                     renderFilterList($('#filter-history-table'));
                     // Map
@@ -1361,29 +1374,6 @@ define([
             });
             occurrenceTable.append(tableBody);
             return occurrenceTable;
-        },
-        parseNameFromAliases: function (alias, alias_type, data) {
-            name = '';
-            // var name = alias;
-            // var choices = [];
-            // var index = 0;
-            // if (alias_type === 'cons_status') {
-            //     choices = this.flatten_arr(data['iucn_name_list']);
-            // }
-            // if (alias_type === 'origin') {
-            //     choices = this.flatten_arr(data['origin_name_list']);
-            // }
-            // if (choices.length > 0) {
-            //     index = choices.indexOf(alias) + 1;
-            //     name = choices[index];
-            // }
-            return name;
-        },
-        flatten_arr: function (arr) {
-            self = this;
-            return arr.reduce(function (flat, toFlatten) {
-                return flat.concat(Array.isArray(toFlatten) ? self.flatten_arr(toFlatten) : toFlatten);
-            }, []);
         },
         resetCanvas: function (chartCanvas) {
             var chartParent = chartCanvas.parentElement;
