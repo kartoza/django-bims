@@ -180,6 +180,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
         rank = self.request.POST.get('rank', None)
+        family_id = self.request.POST.get('familyId', None)
+        family = None
+        if family_id:
+            family = Taxonomy.objects.get(id=int(family_id))
         if gbif_key:
             taxonomy = process_taxon_identifier(
                 key=gbif_key,
@@ -201,6 +205,9 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
+            if family:
+                taxonomy.parent = family
+                taxonomy.save()
 
         return Response(response)
 

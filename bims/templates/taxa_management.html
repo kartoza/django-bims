@@ -126,6 +126,15 @@
             background: -webkit-radial-gradient(rgba(130, 130, 130, 0.8), rgba(73, 73, 73, 0.8));
         }
 
+        .ui-menu .ui-menu-item {
+            margin: 0;
+            padding: 0;
+            zoom: 1;
+            float: left;
+            clear: left;
+            width: 100%;
+        }
+
     </style>
 
 {% endblock %}
@@ -287,13 +296,16 @@
                         <table class="table table-sm">
                             <thead>
                             <tr>
-                                <th scope="col">Taxon Name</th>
-                                <th scope="col">Rank</th>
+                                <th scope="col" style="width: 30%">Family</th>
+                                <th scope="col" style="width: 30%">Taxon Name</th>
+                                <th scope="col" style="width: 30%">Rank</th>
                                 <th scope="col">Action</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr>
+                                <td><input type="text" class="form-control new-taxon-family-name" placeholder="Family">
+                                    <input type="hidden" class="new-taxon-family-id"></td>
                                 <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
                                 <td>
                                     <select class="form-control new-taxon-rank">
@@ -306,6 +318,11 @@
                                         type="button"
                                         class="btn btn-success add-new-taxon-btn"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
                                 </button></td>
+                            </tr>
+                            <tr>
+                                <td style="border-top-width: 0"><span class="text-muted" style="font-size: 10pt; font-style: italic">
+                                    This is an autocomplete search, if the family does not exist in the system, please add it first.</span>
+                                </td>
                             </tr>
                             </tbody>
                         </table>
@@ -421,6 +438,7 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/helpers.js" %}"></script>
     <script src="{% static "js/non_requirejs/taxa_management.js" %}"></script>
 
     <script>
