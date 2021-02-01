@@ -41,8 +41,8 @@
         </div>
         <% _.each(data, function (value, key) { %>
             <div class="row" style="height: 70px; padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 12pt" >
-                <div class="col-2" style="text-align: center">
-                    <div class="module-icon" title="<%= key %>"><img height="50" src="/uploaded/<%= value.icon %>"></div>
+                <div class="col-2" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Test"  style="text-align: center">
+                    <div class="module-icon"><img height="50" src="/uploaded/<%= value.icon %>"></div>
                 </div>
                 <div class="col-1" style="height: 50px; line-height: 50px; text-align: center">
                     <span style="font-size: 10pt; display: inline-block; vertical-align: middle; line-height: normal"><%= value.occurrences %></span>

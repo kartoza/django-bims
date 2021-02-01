@@ -24,7 +24,8 @@ class TaxaManagementView(
         context['taxa_groups'] = TaxonGroup.objects.filter(
             category='SPECIES_MODULE'
         ).order_by('display_order')
-        context['taxon_rank'] = list(
-            rank.name for rank in TaxonomicRank.hierarchy()
-        )
+        context['taxon_rank'] = [
+            TaxonomicRank.GENUS.name,
+            TaxonomicRank.SPECIES.name
+        ]
         return context

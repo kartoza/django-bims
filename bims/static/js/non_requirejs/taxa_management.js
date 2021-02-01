@@ -354,6 +354,7 @@ function populateFindTaxonTable(table, data) {
 
         if (source === 'gbif') {
             source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
+            scientificName = `<a href="https://www.gbif.org/species/${key}" target="_blank">${scientificName}</a>`;
         } else if (source === 'local') {
             source = fontAwesomeIcon('database');
         }
@@ -379,12 +380,15 @@ function populateFindTaxonTable(table, data) {
     table.show();
 }
 
-function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
+function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId = "") {
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,
         'rank': rank
     };
+    if (familyId) {
+        postData['familyId'] = familyId
+    }
     let table = $('.find-taxon-table');
     table.hide();
     let loading = $('.find-taxon-loading');
@@ -449,19 +453,33 @@ function removeTaxonFromTaxonGroup(taxaId) {
     });
 }
 
+const $newTaxonFamilyIdInput = $('.new-taxon-family-id');
+const $newTaxonFamilyInput = $('.new-taxon-family-name');
+const $taxonForm = $('.new-taxon-form');
+const $button = $taxonForm.find('.add-new-taxon-btn');
+const $newTaxonNameInput = $('#new-taxon-name');
+
 function showNewTaxonForm(taxonName) {
-    let $taxonForm = $('.new-taxon-form');
-    let $button = $taxonForm.find('.add-new-taxon-btn');
-    let $rank = $taxonForm.find('.new-taxon-rank');
     let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
-    let $newTaxonNameInput = $('#new-taxon-name');
-    $button.click(function () {
-        $taxonForm.hide();
-        addNewTaxonToObservedList(capitalizedTaxonName, '', $rank.val());
-    });
+    speciesAutoComplete($newTaxonFamilyInput, '&rank=family').then(value => {
+        $newTaxonFamilyIdInput.val(value);
+    })
     $newTaxonNameInput.val(capitalizedTaxonName);
     $taxonForm.show();
 }
+
+$button.click(function () {
+    let $rank = $taxonForm.find('.new-taxon-rank');
+    const familyId = $newTaxonFamilyIdInput.val();
+    if (!familyId) {
+        alert("Missing family");
+        return
+    }
+    addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, familyId);
+    $taxonForm.hide();
+    $newTaxonFamilyInput.val("")
+    $newTaxonFamilyIdInput.val("")
+});
 
 
 hideLoading();

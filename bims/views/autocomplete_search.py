@@ -158,25 +158,35 @@ def species_autocomplete(request):
     :return: dict of species with id and name
     """
     q = request.GET.get('term', '').capitalize()
+    rank = request.GET.get('rank', '').lower()
     exclude = request.GET.get('exclude', '')
     exclude_list = exclude.split(',')
     exclude_list = filter(None, exclude_list)
     taxon_group_request = request.GET.get('taxonGroup', '')
     taxon_group_species = []
+
+    optional_query = {}
     if taxon_group_request:
         taxon_group, created = TaxonGroup.objects.get_or_create(
             name=taxon_group_request
         )
+        optional_query['biologicalcollectionrecord__module_group'] = (
+            taxon_group
+        )
         taxon_group_species = taxon_group.taxonomies.values_list(
             'id', flat=True
         )
+
+    if rank:
+        optional_query['rank__iexact'] = rank
 
     if not request.is_ajax() and len(q) < 2:
         data = 'fail'
     else:
         search_qs = Taxonomy.objects.filter(
             Q(canonical_name__icontains=q) |
-            Q(scientific_name__icontains=q)
+            Q(scientific_name__icontains=q),
+            **optional_query
         ).filter(
             Q(id__in=taxon_group_species) |
             Q(parent__in=taxon_group_species) |
@@ -191,7 +201,7 @@ def species_autocomplete(request):
             search_qs = Taxonomy.objects.filter(
                 Q(canonical_name__icontains=q) |
                 Q(scientific_name__icontains=q),
-                biologicalcollectionrecord__module_group=taxon_group
+                **optional_query
             ).exclude(
                 id__in=exclude_list
             ).distinct('canonical_name')
@@ -200,6 +210,7 @@ def species_autocomplete(request):
             results.append({
                 'id': r.id,
                 'species': r.canonical_name,
+                'rank': r.rank
             })
         data = json.dumps(results)
     mime_type = 'application/json'
