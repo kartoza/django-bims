@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block pre-head %}
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <style>
         .card {
             margin-bottom: 10px;
@@ -84,6 +86,24 @@
                         </div>
                     </article> <!-- card-group-item.// -->
                 </div> <!-- card.// -->
+
+                <div class="card">
+                    <article class="card-group-item">
+                        <header class="card-header">
+                            <h6 class="title reference-filter-title">Author</h6>
+                        </header>
+                        <div class="filter-content">
+                            <div class="card-body" data-filter="type">
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       onClick="this.setSelectionRange(0, this.value.length)"
+                                       id="owner" placeholder="" name="owner"
+                                       value="{% if collector_owner %}{% if collector_owner.0.get_full_name %}{{ collector_owner.0.get_full_name }}{% else %}{{ collector_owner.0.username }}{% endif %}{% endif %}">
+                            </div> <!-- card-body.// -->
+                        </div>
+                    </article> <!-- card-group-item.// -->
+                </div> <!-- card.// -->
+
             </div>
             <div class="col-lg-9 col-md-8 col-xs-12">
                 {% for source_reference in object_list %}
@@ -127,6 +147,7 @@
 {% block foot %}
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script>
@@ -144,5 +165,42 @@
             let value =  $('#search-input').val();
             insertParam('q', value);
         })
+
+        $('#owner').autocomplete({
+            source: function (request, response) {
+                console.log(request.term)
+                $.ajax({
+                    url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        response($.map(data, function (item) {
+                            return {
+                                label: item.first_name + ' ' + item.last_name,
+                                value: item.id
+                            }
+                        }));
+                    }
+                });
+            },
+            minLength: 3,
+            open: function (event, ui) {
+                setTimeout(function () {
+                    $('.ui-autocomplete').css('z-index', 99);
+                }, 0);
+            },
+            change: function (event, ui) {
+                let value = $(event.target).val();
+                if (value === '') {
+                    insertParam('collectors', '');
+                }
+            },
+            select: function (e, u) {
+                e.preventDefault();
+                let userId = u.item.value;
+                $('#owner').val(u.item.label);
+                insertParam('collectors', `${userId}`);
+            }
+        });
     </script>
 {% endblock %}
