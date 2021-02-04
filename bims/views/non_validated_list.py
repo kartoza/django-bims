@@ -61,7 +61,6 @@ class NonValidatedObjectsView(
             queryset = \
                 BiologicalCollectionRecord.objects.filter(
                     taxonomy__in=allowed_taxon,
-                    ready_for_validation=True,
                     validated=False).order_by('original_species_name')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
