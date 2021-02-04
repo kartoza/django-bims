@@ -331,7 +331,11 @@ class LocationSite(DocumentLinksMixin):
                         site=self,
                         group=location_context_group
                     )
-                location_context_group.name = geocontext_value['name']
+                if (
+                    not location_context_group.name or
+                    location_context_group.name == '-'
+                ):
+                    location_context_group.name = geocontext_value['name']
                 location_context_group.key = geocontext_value['key']
                 location_context_group.geocontext_group_key = (
                     geocontext_data['key']
