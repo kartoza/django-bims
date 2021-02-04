@@ -118,9 +118,20 @@ def user_autocomplete(request):
             app_label=user_model_str.split('.')[0],
             model_name=user_model_str.split('.')[1]
         )
-        search_qs = user_model.objects.filter(
-            Q(first_name__istartswith=q) |
-            Q(last_name__istartswith=q))
+        first_name = q
+        last_name = q
+        if ' ' in last_name:
+            names = q.split(' ')
+            if len(names[1]) > 2:
+                last_name = names[1].strip()
+        if first_name != last_name:
+            search_qs = user_model.objects.filter(
+                first_name__istartswith=first_name,
+                last_name__istartswith=last_name)
+        else:
+            search_qs = user_model.objects.filter(
+                Q(first_name__istartswith=first_name) |
+                Q(last_name__istartswith=last_name))
         results = []
         for r in search_qs:
             results.append({

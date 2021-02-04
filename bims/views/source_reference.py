@@ -1,5 +1,6 @@
 from django.views.generic import ListView
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
@@ -94,6 +95,18 @@ class SourceReferenceListView(ListView):
     def get_context_data(self, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         data = self.get_queryset()
+        # - Get owner object from the id passed from the request
+        collector_owner = None
+        if self.request.GET.get('collectors'):
+            try:
+                ids = self.request.GET.get('collectors').split(',')
+                user_model = get_user_model()
+                collector_owner = user_model.objects.filter(
+                    id__in=ids
+                )
+            except ValueError:
+                # Couldn't parse the ids
+                pass
         context['type'] = [
             {
                 'title': 'Unpublished',
@@ -131,4 +144,5 @@ class SourceReferenceListView(ListView):
             }
         ]
         context['search'] = self.search_query
+        context['collector_owner'] = collector_owner
         return context
