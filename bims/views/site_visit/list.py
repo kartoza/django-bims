@@ -20,10 +20,17 @@ class SiteVisitListView(ListView):
         Add GET requests filters
         """
         search_filters = self.request.GET.dict()
+        order = '-date'
 
         # Remove page in filters
         if 'page' in search_filters:
             del search_filters['page']
+
+        if 'site_code' in search_filters:
+            search_filters['search'] = search_filters['site_code']
+
+        if 'o' in search_filters:
+            order = search_filters['o']
 
         # Base queryset
         qs = super(SiteVisitListView, self).get_queryset()
@@ -44,7 +51,7 @@ class SiteVisitListView(ListView):
                     survey__id=OuterRef('id')
                 ).values('source_collection')[:1])
         )
-        return qs.order_by('-date')
+        return qs.order_by(order)
 
     def get_context_data(self, **kwargs):
         """
@@ -72,6 +79,9 @@ class SiteVisitListView(ListView):
             except ValueError:
                 # Couldn't parse the ids
                 pass
+
+        if self.request.GET.get('site_code'):
+            context['site_code'] = self.request.GET.get('site_code')
 
         # Get source collection if exist in request
         try:

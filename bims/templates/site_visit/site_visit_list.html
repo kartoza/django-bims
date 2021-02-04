@@ -33,6 +33,14 @@
             padding-top: 8px;
             padding-bottom: 8px;
         }
+
+        .order-button {
+            color: #6e6e6e;
+        }
+
+        .order-button:hover {
+            cursor: pointer;
+        }
     </style>
 
 {% endblock %}
@@ -80,6 +88,13 @@
                                id="owner" placeholder="" name="owner" value="{% if collector_owner %}{% if collector_owner.0.get_full_name %}{{ collector_owner.0.get_full_name }}{% else %}{{ collector_owner.0.username }}{% endif %}{% endif %}"
                                required>
                     </div>
+                    <div class="filter-title">Site code</div>
+                    <div class="filter-value">
+                        <input type="text" class="form-control form-control-sm"
+                               onClick="this.setSelectionRange(0, this.value.length)"
+                               id="site_code" placeholder="" name="site_code" value="{% if site_code %}{{ site_code }}{% else %}{% endif %}"
+                               required>
+                    </div>
                     <div class="filter-title">Source Collection</div>
                     <div class="filter-value">
                         <select class="form-control form-control-sm source-collection-select">
@@ -92,12 +107,12 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th scope="col" style="width:200px">Site code</th>
-                        <th scope="col" style="width:200px">Site description</th>
-                        <th scope="col">Sampling date</th>
+                        <th scope="col" style="width:200px">Site code <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_code"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_code"></i></th>
+                        <th scope="col" style="width:200px">Site description <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_description"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_description"></i></th>
+                        <th scope="col">Sampling date <br/><i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="date"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-date"></i></th>
                         <th scope="col">Source collection</th>
                         <th scope="col">Owner</th>
-                        <th scope="col">Total occurrences</th>
+                        <th scope="col">Total occurrences <br/><i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="total"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-total"></i></th>
                         <th scope="col">Actions</th>
                     </tr>
                     </thead>
@@ -202,6 +217,22 @@
                     })
                 }
             )
+        });
+
+        $('.order-button').click(function (event) {
+            let $target = $(event.target);
+            let order = $target.data('order');
+            if (order) {
+                insertParam('o', order);
+            }
+        })
+
+        $('#site_code').keypress(function (e) {
+            if (e.which === 13) {
+                let siteCode = $(e.target).val()
+                insertParam('site_code', siteCode.trim())
+                return false;
+            }
         });
 
         $('#owner').autocomplete({
