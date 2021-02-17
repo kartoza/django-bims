@@ -2,6 +2,8 @@
 from django import template
 from django.contrib.sites.models import Site
 from django.conf import settings
+from django.utils.safestring import mark_safe
+from preferences import preferences
 
 register = template.Library()
 
@@ -38,3 +40,38 @@ def remove_media_path(value):
 def filename(value):
     file_name = value.split('/')
     return file_name[len(file_name) - 1]
+
+
+@register.simple_tag
+def current_version():
+    from git import Repo
+
+    from datetime import datetime
+    try:
+        repo = Repo(preferences.SiteSetting.github_repo_path)
+    except Exception as e:  # noqa
+        return '-'
+    tag = next(
+        (tag for tag in repo.tags if tag.commit == repo.head.commit), None
+    )
+    version = tag.name if tag else ''
+    if not version:
+        version = repo.head.commit.hexsha if repo.head.commit else ''
+        version_text = '{commit} ({date})'.format(
+            commit=version[:8],
+            date=(
+                datetime.fromtimestamp(
+                    repo.head.commit.committed_date).strftime(
+                    '%Y-%m-%d'
+                ) if repo.head.commit else ''
+            )
+        )
+        version = (
+            '<a target="_blank" '
+            'href="https://github.com/kartoza/django-bims/commit/{commit}">'
+            '{version_text}</a>'.format(
+                commit=version,
+                version_text=version_text
+            )
+        )
+    return mark_safe(version)

@@ -225,6 +225,16 @@ class SiteSetting(Preferences):
         )
     )
 
+    github_repo_path = models.CharField(
+        default='',
+        blank=True,
+        max_length=255,
+        help_text=(
+            'Path to git repository from where the version info can be '
+            'retrieved'
+        )
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
