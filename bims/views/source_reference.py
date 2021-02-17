@@ -87,7 +87,7 @@ class SourceReferenceListView(ListView):
                 Q(source_name__icontains = self.search_query)
             )
 
-        qs = qs.filter(**filters)
+        qs = qs.filter(**filters).distinct('id')
 
         # Return filtered queryset
         return qs
