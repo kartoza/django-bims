@@ -1,3 +1,4 @@
+{% load site %}
 <style>
     footer {
         padding: 50px 0 65px;
@@ -26,4 +27,5 @@
 <!-- Footer -->
 <footer>
     <p class="copyright text-muted">Copyright &copy; Kartoza {% now 'Y' %}</p>
+    <p class="copyright text-muted"> Version : {% current_version %} </p>
 </footer>

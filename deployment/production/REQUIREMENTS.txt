@@ -62,3 +62,5 @@ service-identity==18.1.0
 django-proxy==1.2.1
 geopy==2.0.0
 django-celery-inspect==0.2.1
+python-dwca-reader==0.15.0
+gitpython==3.1.13
