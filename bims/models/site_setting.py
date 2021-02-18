@@ -122,6 +122,14 @@ class SiteSetting(Preferences):
         max_length=150
     )
 
+    iucn_api_key = models.CharField(
+        max_length=255,
+        default='',
+        help_text=(
+            'Token key for IUCN api'
+        )
+    )
+
     disclaimer_form_text = models.CharField(
         max_length=300,
         default='I agree to these data being shared via the FBIS '
