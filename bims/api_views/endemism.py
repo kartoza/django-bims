@@ -11,14 +11,10 @@ class EndemismList(APIView):
     def get(self, request, *args):
         endemism_list = Endemism.objects.filter(
             name__isnull=False,
-        ).distinct(
-            'name'
-        ).values_list(
+        ).order_by('display_order').values_list(
             'name', flat=True
         ).exclude(
             name__exact=''
-        ).order_by(
-            'name'
         )
 
         endemism_list = list(endemism_list)
@@ -26,9 +22,7 @@ class EndemismList(APIView):
         if 'Unknown' not in endemism_list:
             endemism_list.append('Unknown')
 
-        endemism_list.sort()
-
         return HttpResponse(
-            json.dumps(list(endemism_list)),
+            json.dumps(list(dict.fromkeys(endemism_list))),
             content_type='application/json'
         )

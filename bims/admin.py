@@ -662,7 +662,8 @@ class EndemismAdmin(admin.ModelAdmin):
 
     list_display = (
         'name',
-        'description'
+        'description',
+        'display_order'
     )
 
 

@@ -19,6 +19,13 @@ class Endemism(models.Model):
         null=True
     )
 
+    display_order = models.IntegerField(
+        default=0
+    )
+
+    class Meta:
+        ordering = ['display_order']
+
     def __unicode__(self):
         return self.name
 
