@@ -61,6 +61,27 @@ def get_user(user_name):
     )
 
 
+def get_user_reverse(user_name):
+    """
+    Get or create User object from username
+    :param user_name: string of username
+    :return: User object
+    """
+    user_name = user_name.split(', ')
+    if len(user_name) > 1:
+        first_name = user_name[len(user_name) - 1]
+        last_name = ' '.join(user_name[0:len(user_name) - 1])
+    else:
+        first_name = user_name[0]
+        last_name = ''
+    first_name = first_name[0:30]
+    last_name = last_name[0:30]
+    return get_user_from_name(
+        first_name,
+        last_name
+    )
+
+
 def create_users_from_string(user_string):
     """
     Create user objects from users string.

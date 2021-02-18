@@ -18,11 +18,13 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.scripts.occurrences_upload import OccurrenceProcessor
 from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
 from bims.models.ingested_data import IngestedData
+from bims.utils.user import get_user_reverse
 
 logger = logging.getLogger('bims')
 
 ALL_DATA = 'ALL_DATA'
 TAXON_ID = 'TAXON_ID'
+COLLECTOR_ONLY = 'Collector'
 
 
 class TaxaDarwinCore(TaxaProcessor):
@@ -81,6 +83,11 @@ class OccurrenceDarwinCore(OccurrenceProcessor):
     def finish_processing_row(self, row, record):
         print(f'FINISH - {row}')
         record.additional_data = row['ALL_DATA']
+        if row[COLLECTOR_ONLY]:
+            collector = get_user_reverse(row[COLLECTOR_ONLY])
+            record.collector_user = collector
+            record.survey.collector_user = collector
+            record.survey.save()
         record.save()
         self.create_history_data(row, record)
 
@@ -299,6 +306,7 @@ class Command(BaseCommand):
                     bims_occurrence_data.append({
                         SAMPLING_METHOD: row.data['basisOfRecord'],
                         COLLECTOR_OR_OWNER: f'{row.data["datasetName"]} VM',
+                        COLLECTOR_ONLY: row.data['recordedBy'],
                         CUSTODIAN: row.data['institutionCode'],
                         DOCUMENT_AUTHOR: row.data['recordedBy'],
                         SITE_DESCRIPTION: row.data['locality'],
