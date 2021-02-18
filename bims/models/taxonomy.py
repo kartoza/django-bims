@@ -324,8 +324,18 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
 
     if instance.is_species and not instance.iucn_status:
         iucn_status = get_iucn_status(
-            species_name=instance.canonical_name
+            species_name=instance.canonical_name,
+            only_returns_json=True
         )
+        if iucn_status and 'result' in iucn_status:
+            iucn, _ = IUCNStatus.objects.get_or_create(
+                category=iucn_status['result'][0]['category']
+            )
+            instance.iucn_status = iucn
+            instance.iucn_redlist_id = iucn_status['result'][0]['taxonid']
+            instance.iucn_data = json.dumps(
+                iucn_status['result'][0],
+                indent=4)
         if not iucn_status:
             # Get not evaluated
             try:
@@ -336,5 +346,4 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
                 iucn_status = IUCNStatus.objects.filter(
                     category='NE'
                 )[0]
-        if iucn_status:
             instance.iucn_status = iucn_status
