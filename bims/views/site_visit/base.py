@@ -16,9 +16,7 @@ class SiteVisitBaseView(View):
     def taxon_group(self):
         """Get taxon group for the current site visit"""
         if self.collection_records.exists():
-            return self.collection_records[0].taxonomy.taxongroup_set.filter(
-                category=TaxonomicGroupCategory.SPECIES_MODULE.name
-            )[0]
+            return self.collection_records[0].module_group
         return None
 
     def owner(self):
