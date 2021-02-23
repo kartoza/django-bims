@@ -4,13 +4,18 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.contrib.contenttypes.models import ContentType
 from django.views.generic import TemplateView
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.db.models import Count
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.source_reference import (
     DatabaseRecord,
     SourceReference,
+    SourceReferenceDatabase,
+    SourceReferenceDocument,
+    SourceReferenceBibliography,
     CategoryIsNotRecognized,
     SourceIsNotFound
 )
@@ -72,6 +77,25 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
                 additional_context_data['note'] = (
                     self.collection_record.source_reference.note
                 )
+        all_unpublished = SourceReference.objects.exclude(
+            polymorphic_ctype__in=[ContentType.objects.get_for_model(
+                SourceReferenceDatabase
+            ), ContentType.objects.get_for_model(
+                SourceReferenceBibliography
+            ), ContentType.objects.get_for_model(
+                SourceReferenceDocument
+            )]
+        )
+
+        list_unpublished = list(BiologicalCollectionRecord.objects.filter(
+            source_reference__in=all_unpublished
+        ).values('source_reference').annotate(
+            total_reference=Count('source_reference')
+        ).values('source_reference__note', 'source_reference__id',
+                 'total_reference').order_by(
+            'total_reference'
+        ).order_by('-total_reference'))[:10]
+
         context.update({
             'documents': source_reference_document,
             'database': DatabaseRecordSerializer(
@@ -80,6 +104,16 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
                 ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES]),
             'additional_context_data': additional_context_data
         })
+        context['list_unpublished'] = list_unpublished
+        context['unpublished_data_in_list'] = False
+        for published_data in list_unpublished:
+            if additional_context_data:
+                if (
+                    additional_context_data['note'] == published_data[
+                        'source_reference__note']
+                ):
+                    context['unpublished_data_in_list'] = True
+
         return context
 
     @method_decorator(login_required)

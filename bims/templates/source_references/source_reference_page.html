@@ -1,5 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
+{% load site %}
 {% block subtitle %}
     Source Reference
 {% endblock %}
@@ -242,6 +243,19 @@
                     <label for="notes-reference"
                            class="col-sm-2 col-form-label col-form-label">Notes</label>
                     <div class="col-sm-10">
+                        <select id="unpublished-list" class="form-control" onchange="$('#notes-reference').html($(this).val())" style="margin-bottom: 20px;">
+                        {% for unpublished in list_unpublished %}
+                            {% if unpublished.source_reference__note == additional_context_data.note %}
+                                {% setvar "OKEEE" as unpublished_in_list %}
+                                <option value="{{ unpublished.source_reference__note }}" selected>{{ unpublished.source_reference__note }}</option>
+                            {% else %}
+                                <option value="{{ unpublished.source_reference__note }}">{{ unpublished.source_reference__note }}</option>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not unpublished_data_in_list %}
+                            {% if additional_context_data.note %}<option value="{{ additional_context_data.note }}" selected>{{ additional_context_data.note }}</option>{% else %}<option value="" selected>-</option>{% endif %}
+                        {% endif %}
+                        </select>
                         <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note">{% if additional_context_data.note %}{{ additional_context_data.note }}{% endif %}</textarea>
                     </div>
                 </div>

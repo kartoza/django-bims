@@ -3,6 +3,7 @@ let $studyReference = $('#study-reference');
 let $databaseReference = $('#database-reference');
 let $notesReference = $('#notes-reference');
 let $referenceCategory = $('#reference-category');
+let $unpublishedList = $('#unpublished-list');
 let $notes = $('#notes-reference');
 
 let showReferenceRow = ($row) => {
@@ -16,6 +17,7 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
         case 'database':
             showReferenceRow($databaseReference);
             showReferenceRow($notesReference);
+            $unpublishedList.hide();
             if(_sourceReferenceId) {
                 $databaseReference.val(_sourceReferenceId);
             }
@@ -26,6 +28,7 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
         case 'bibliography':
             showReferenceRow($bibliographyReference);
             showReferenceRow($notesReference);
+            $unpublishedList.hide();
             if(_sourceReferenceId) {
                 $("#doi-input").val(_sourceReferenceId);
                 $('#fetch-doi-button').click();
@@ -37,6 +40,7 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
         case 'document':
             showReferenceRow($studyReference);
             showReferenceRow($notesReference);
+            $unpublishedList.hide();
             if(_sourceReferenceId) {
                 $studyReference.val(_sourceReferenceId);
             }
@@ -46,6 +50,7 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
             break;
         case 'no-source':
             showReferenceRow($notesReference);
+            $unpublishedList.show();
             $notesReference.attr(
                 "placeholder",
                 "Please specify the purpose of the data collected.");
