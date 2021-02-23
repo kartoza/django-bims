@@ -100,6 +100,7 @@ class CollectionSearch(object):
     location_sites_raw_query = ''
     collection_records = None
     filtered_taxa_records = None
+    sass_only = False
 
     def __init__(self, parameters):
         self.parameters = parameters
@@ -143,6 +144,8 @@ class CollectionSearch(object):
 
     def is_sass_records_only(self):
         """Check if the search only for SASS records"""
+        if self.sass_only:
+            return True
         if self.ecological_category:
             return True
         validated_values = self.parse_request_json('validated')

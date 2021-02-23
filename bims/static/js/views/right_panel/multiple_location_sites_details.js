@@ -94,7 +94,12 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
             $sectionWrapper.find('.sp-sass-dashboard').click(function () {
-                let sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                let sassUrl = '';
+                if (typeof self.siteId !== 'undefined') {
+                    sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                } else {
+                    sassUrl = '/sass/dashboard-multi-sites/';
+                }
                 sassUrl += self.apiParameters(filterParameters);
                 window.location.href = sassUrl;
             });

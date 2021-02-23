@@ -590,25 +590,25 @@ function renderEcologicalChart(data) {
         })
     }
 
+    // Merge combined data with same key
     let mergedEcologicalChartData = [];
     let combinedData = {};
-
-    // Merge combined data with same key
     $.each(ecologicalChartData, function (index, chartData) {
-       if (chartData['site_data']['geo_class'].toLowerCase() !== 'combined') {
+        const key = `${chartData['site_data']['eco_region']}-${chartData['site_data']['geo_class']}`; // SOUTPANSBERG - combined
+        if (chartData['site_data']['geo_class'].toLowerCase() !== 'combined') { // If not combined data, then continue
             mergedEcologicalChartData.push(chartData);
             return true;
-       }
-       if (!combinedData.hasOwnProperty(chartData['site_data']['geo_class'])) {
-           mergedEcologicalChartData.push(chartData);
-           combinedData[chartData['site_data']['geo_class']] = mergedEcologicalChartData.length - 1;
-       } else {
-            let indexCombined = combinedData[chartData['site_data']['geo_class']];
+        }
+        if (!combinedData.hasOwnProperty(key)) {
+            mergedEcologicalChartData.push(chartData);
+            combinedData[key] = mergedEcologicalChartData.length - 1;
+        } else {
+            let indexCombined = combinedData[key];
             mergedEcologicalChartData[indexCombined]['site_data']['site_ids'].push.apply(
                 mergedEcologicalChartData[indexCombined]['site_data']['site_ids'],
                 chartData['site_data']['site_ids']
             )
-       }
+        }
     });
 
     $.each(mergedEcologicalChartData, function (index, chartData) {

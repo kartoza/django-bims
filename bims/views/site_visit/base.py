@@ -4,7 +4,6 @@ from bims.models.biotope import Biotope
 from bims.models.sampling_method import SamplingMethod
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.site_image import SiteImage
-from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.algae_data import AlgaeData
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.chem import Chem
