@@ -181,7 +181,8 @@
                    class="col-sm-2 col-form-label col-form-label">Collector</label>
             <div class="col-sm-10">
                 <input type="text" class="form-control form-control-sm"
-                       id="collector" placeholder="" name="owner" value="{% if collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}"
+                       id="collector" placeholder="" name="owner"
+                       value="{% if collector_string %}{{ collector_string }}{% elif collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}"
                        disabled>
             </div>
         </div>
