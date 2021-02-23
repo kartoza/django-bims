@@ -1,6 +1,5 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
-{% load site %}
 {% block subtitle %}
     Source Reference
 {% endblock %}
@@ -246,7 +245,6 @@
                         <select id="unpublished-list" class="form-control" onchange="$('#notes-reference').html($(this).val())" style="margin-bottom: 20px;">
                         {% for unpublished in list_unpublished %}
                             {% if unpublished.source_reference__note == additional_context_data.note %}
-                                {% setvar "OKEEE" as unpublished_in_list %}
                                 <option value="{{ unpublished.source_reference__note }}" selected>{{ unpublished.source_reference__note }}</option>
                             {% else %}
                                 <option value="{{ unpublished.source_reference__note }}">{{ unpublished.source_reference__note }}</option>
