@@ -22,6 +22,15 @@ class Survey(AbstractValidation):
         default=timezone.now
     )
 
+    collector_string = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='Collector name in string value, this is useful for '
+                  'collector values from GBIF and other third party sources',
+        verbose_name='collector or observer',
+    )
+
     @property
     def data_name(self):
         if not self.site:

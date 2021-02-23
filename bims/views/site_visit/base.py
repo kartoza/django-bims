@@ -38,6 +38,21 @@ class SiteVisitBaseView(View):
             return collector_from_collection[0].collector_user
         return None
 
+    def collector_string(self):
+        """Get the collector string of the site visit"""
+        if self.object.collector_string:
+            return self.object.collector_string
+        collector_from_collection = (
+            self.collection_records.exclude(collector="")
+        )
+        if collector_from_collection.exists():
+            self.object.collector_string = (
+                collector_from_collection[0].collector
+            )
+            self.object.save()
+            return collector_from_collection[0].collector
+        return ""
+
     def biotope(self, biotope_type):
         """Get a biotope from collection records"""
         biotope = self.collection_records.values(biotope_type)
@@ -129,6 +144,7 @@ class SiteVisitBaseView(View):
         context['taxon_group'] = self.taxon_group()
         context['owner'] = self.owner()
         context['collector'] = self.collector()
+        context['collector_string'] = self.collector_string()
         context['biotope'] = self.biotope('biotope')
         context['specific_biotope'] = self.biotope('specific_biotope')
         context['substratum'] = self.biotope('substratum')

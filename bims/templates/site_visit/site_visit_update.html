@@ -163,7 +163,8 @@
                        class="col-sm-2 col-form-label col-form-label">Collector</label>
                 <div class="col-sm-10">
                     <input type="text" class="form-control form-control-sm"
-                           id="collector" placeholder="" name="collector" value="{% if collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}" onClick="this.setSelectionRange(0, this.value.length)">
+                           id="collector" placeholder="" name="collector"
+                           value="{% if collector_string %}{{ collector_string }}{% elif collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}" onClick="this.setSelectionRange(0, this.value.length)">
                     <input type="hidden" name="collector_id" id="collector_id"
                                value="{{ collector.id }}">
                 </div>
