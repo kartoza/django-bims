@@ -378,7 +378,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 window.location = url;
             });
             $('.sp-sass-dashboard').click(function () {
-                let sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                let sassUrl = '';
+                if (typeof self.siteId !== 'undefined') {
+                    sassUrl = '/sass/dashboard/' + self.siteId + '/';
+                } else {
+                    sassUrl = '/sass/dashboard-multi-sites/';
+                }
                 sassUrl += self.apiParameters(filterParameters);
                 window.location.href = sassUrl;
             });

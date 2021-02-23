@@ -69,8 +69,8 @@ class SassDashboardMultipleSitesApiView(APIView):
                 continue
 
             # Average
-            averages = SiteVisitTaxon.objects.filter(
-                site_visit__in=site_visit
+            averages = self.site_visit_taxa.filter(
+                site=data
             ).annotate(
                 sass_id=F('site_visit__id'),
             ).values('sass_id').annotate(
@@ -121,7 +121,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             site_visit_taxon = None
             site_visit_data = None
             while sass_score_isnull:
-                site_visit_taxon = SiteVisitTaxon.objects.filter(
+                site_visit_taxon = self.site_visit_taxa.filter(
                     site_visit=latest_site_visit
                 )
                 site_visit_data = site_visit_taxon.aggregate(
@@ -279,7 +279,6 @@ class SassDashboardMultipleSitesApiView(APIView):
         data = {}
 
         biotope_ratings = self.site_visit_taxa.filter(
-            site_visit_id__in=sass_ids,
             site_visit__sass_biotope_fraction__sass_biotope__biotope_form=1
         ).annotate(
             site_code=Case(
@@ -426,12 +425,10 @@ class SassDashboardMultipleSitesApiView(APIView):
         filters = request.GET.dict()
         filters['validated'] = ''
         search = CollectionSearch(filters)
+        search.sass_only = True
         page = int(filters.get('page', 1))
-        collection_records = search.process_search()
-        collection_records_ids = collection_records.values_list(
-            'id', flat=True
-        )
-        collection_records_site_ids = collection_records.distinct(
+        self.site_visit_taxa = search.process_search()
+        collection_records_site_ids = self.site_visit_taxa.distinct(
             'site'
         ).values_list(
             'site__id', flat=True
@@ -446,8 +443,7 @@ class SassDashboardMultipleSitesApiView(APIView):
         current_page = paginator.page(page)
         self.location_sites = current_page.object_list
 
-        self.site_visit_taxa = SiteVisitTaxon.objects.filter(
-            id__in=list(collection_records_ids),
+        self.site_visit_taxa = self.site_visit_taxa.filter(
             site__in=list(self.location_sites.values_list('id', flat=True))
         )
         sass_score_chart_data = self.get_sass_score_chart_data()
