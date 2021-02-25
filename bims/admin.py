@@ -485,6 +485,7 @@ class CustomUserAdmin(ProfileAdmin):
         SassAccreditedStatusFilter,
         UserHasEmailFilter,
     )
+    readonly_fields = ()
 
     actions = ['merge_users']
 

@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.http import Http404
+from django.contrib.auth.mixins import UserPassesTestMixin
 from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
     SourceReference,
@@ -154,10 +155,17 @@ class SourceReferenceListView(ListView):
         return context
 
 
-class EditSourceReferenceView(UpdateView):
+class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
     template_name = 'edit_source_reference.html'
     model = SourceReference
     fields = '__all__'
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        return self.request.user.has_perm('bims.change_sourcereference')
 
     def get_success_url(self):
         next_url = self.request.GET.get('next')

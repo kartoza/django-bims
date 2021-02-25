@@ -129,9 +129,11 @@
                                 {% else %}
                                     <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
                                 {% endif %}
-                                <div class="float-right">
-                                    <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>
-                                </div>
+                                {% if perms.bims.change_sourcereference %}
+                                    <div class="float-right">
+                                        <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
