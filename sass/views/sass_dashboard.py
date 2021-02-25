@@ -36,9 +36,12 @@ class SassDashboardView(TemplateView):
         filters = self.request.GET.dict()
         filters['validated'] = ''
         search = CollectionSearch(filters)
-        self.site_visit_taxa = search.process_search()
+        collection_records = search.process_search()
+        self.site_visit_taxa = SiteVisitTaxon.objects.filter(
+            id__in=collection_records
+        )
 
-    def get_sass_score_chart_data(self):
+def get_sass_score_chart_data(self):
         data = {}
         summary = self.site_visit_taxa.annotate(
             date=F('site_visit__site_visit_date'),
