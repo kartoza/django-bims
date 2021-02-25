@@ -41,7 +41,7 @@ class SassDashboardView(TemplateView):
             id__in=collection_records
         )
 
-def get_sass_score_chart_data(self):
+    def get_sass_score_chart_data(self):
         data = {}
         summary = self.site_visit_taxa.annotate(
             date=F('site_visit__site_visit_date'),
