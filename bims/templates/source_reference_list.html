@@ -121,7 +121,7 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <p class="card-text">
+                            <div class="card-text">
                                 {% if source_reference.occurrences > 0 %}
                                     <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
                                             class="badge badge-info badge-occurrences">{{ source_reference.occurrences }} records</span>
@@ -129,7 +129,10 @@
                                 {% else %}
                                     <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
                                 {% endif %}
-                            </p>
+                                <div class="float-right">
+                                    <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}

@@ -14,6 +14,7 @@ class BimsDocument(models.Model):
     authors = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
         blank=True,
+        through='BimsDocumentAuthorship'
     )
 
     def __unicode__(self):
@@ -59,6 +60,26 @@ class BimsDocument(models.Model):
         except ValueError:
             pass
         super(BimsDocument, self).save(*args, **kwargs)
+
+
+class BimsDocumentAuthorship(models.Model):
+    """Author model for bims document"""
+    bimsdocument = models.ForeignKey(
+        BimsDocument,
+        on_delete=models.CASCADE,
+        null=False,
+    )
+    profile = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    ordering = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        db_table = 'bims_bimsdocument_authors'
+        ordering = ('ordering', )
 
 
 @receiver(models.signals.post_save, sender=BimsDocument)

@@ -1,0 +1,192 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Edit Source Reference
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <style>
+        hr {
+            max-width: 100% !important;
+        }
+
+        #addAuthor {
+            margin-top: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+     <!-- Page Header -->
+    <div class="body-container container">
+        <div class="dashboard-title">
+            <h2>Edit Source Reference</h2>
+            <div class="dashboard-close" onclick="window.location.href='{% if past_url %}{{ past_url }}{% else %}/source-references/{% endif %}'"><i class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
+        <div class="container" style="margin-top: 40px">
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group row">
+                    <label for="name" class="col-sm-2 col-form-label">Type</label>
+                    <div class="col-sm-10">
+                        <input type="text" readonly class="form-control-plaintext" name="reference_type" value="{{ object.reference_type }}">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="title" class="col-sm-2 col-form-label">Title</label>
+                    <div class="col-sm-10">
+                        <textarea name="title" id="title" class="form-control">{% if object.is_unpublished %}{{ object.note }}{% else %}{{ object.title }}{% endif %}</textarea>
+                    </div>
+                </div>
+                {% if object.is_bibliography %}
+                    <div class="form-group row">
+                        <label for="doi" class="col-sm-2 col-form-label">DOI</label>
+                        <div class="col-sm-10">
+                            <input name="doi" id="doi" class="form-control" value="{{ object.source.doi }}"/>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="source_id" class="col-sm-2 col-form-label">Source</label>
+                        <div class="col-sm-10">
+                            <input name="source" id="source" class="form-control" value="{% if object.source.journal %}{{ object.source.journal }}{% endif %}"/>
+                            {% if object.source.journal %}
+                            <input type="hidden" name="source_id" id="source_id" class="form-control" value="{{ object.source.journal.id }}"/>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if object.is_published_report %}
+                    <div class="form-group row">
+                        <label for="source_id" class="col-sm-2 col-form-label">Source</label>
+                        <div class="col-sm-10">
+                            <input name="source" id="source" class="form-control" value="{{ source_name }}"/>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if object.is_published_report or object.is_bibliography %}
+                <div class="form-group row">
+                    <label for="year" class="col-sm-2 col-form-label">Year</label>
+                    <div class="col-sm-10">
+                        <input type="number" name="year" id="year" class="form-control" value="{{ year }}"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="authors" class="col-sm-2 col-form-label">Author(s)</label>
+                    <div class="col-sm-10">
+                        <div class="author-group">
+                        {% for author in object.author_list %}
+                            <div class="row" style="margin-top: 10px;">
+                                <div class="col-11">
+                                    <input
+{#                                         name="author_{{ forloop.counter0 }}"#}
+                                           data-index="{{ forloop.counter0 }}"
+                                           onClick="this.setSelectionRange(0, this.value.length)" class="form-control authors"
+                                           value="{{ author.first_name }} {{ author.last_name }}" placeholder="Author's name with following format: [First name] [Space] [Last name]">
+                                    <input name="author_id_{{ forloop.counter0 }}" type="hidden" value="{{ author.id }}">
+                                </div>
+                                <div class="col-1">
+                                    <button class="btn btn-danger deleteAuthor">Delete</button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                        <button class="btn btn-default" id="addAuthor">Add new author</button>
+                    </div>
+                </div>
+                {% endif %}
+                <div style="height: 20px"></div>
+                <div class="row" style="text-align: center">
+                    <input style="margin-left: auto; margin-right: auto; width: 150px;" class="btn btn-primary" type="submit" value="Save">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row author-template" style="margin-top: 10px; display: none">
+        <div class="col-11">
+            <input onClick="this.setSelectionRange(0, this.value.length)" type="text" class="form-control authors" value=""
+                   placeholder="Author's name with following format: [First name] [Space] [Last name]"
+                   name="">
+        </div>
+        <div class="col-1">
+            <button class="btn btn-danger deleteAuthor">Delete
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let $addAuthorBtn = $('#addAuthor');
+        let $deleteAuthorBtn = $('.deleteAuthor');
+        $(".authors").on("input", function(e) {
+            const $input = $(e.target);
+            const index = $input.data('index');
+            $input.parent().find(`[name ="author_id_${index}"]`).remove()
+        });
+        $addAuthorBtn.click(function (e) {
+            e.preventDefault();
+            let input = $('.author-template');
+            let authors = $('.author-group').find('.authors');
+            let newInput = input.clone(true);
+            newInput.show();
+            newInput.find('input').removeClass('ui-autocomplete-input');
+            newInput.removeClass('author-template');
+            newInput.find('input').attr('name', 'author_' + ( authors.length ));
+            newInput.find('input').attr('data-index', ( authors.length ));
+            newInput.val('');
+            $('.author-group').append(newInput);
+            newInput.find('input').focus();
+        });
+        $deleteAuthorBtn.click(function (e) {
+            e.preventDefault();
+            let target = $(e.target);
+            target.parent().parent().remove();
+        });
+        $(document).on("focus", ".authors", function() {
+            $(this).autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
+                        type: 'get',
+                        dataType: 'json',
+                        success: function (data) {
+                            response($.map(data, function (item) {
+                                return {
+                                    label: item.first_name + ' ' + item.last_name,
+                                    value: item.id
+                                }
+                            }));
+                        }
+                    });
+                },
+                minLength: 3,
+                open: function (event, ui) {
+                    setTimeout(function () {
+                        $('.ui-autocomplete').css('z-index', 99);
+                    }, 0);
+                },
+                change: function (event, ui) {
+                },
+                select: function (e, u) {
+                    e.preventDefault();
+                    const $input = $(e.target);
+                    const index = $input.data('index');
+                    $input.parent().find(`[name ="author_id_${index}"]`).remove()
+                    $input.after(
+                        `<input name="author_id_${index}" type="hidden" value="${u.item.value}">`
+                    )
+                    $input.removeAttr('name');
+                    $input.val(u.item.label);
+                }
+            })
+        });
+
+    </script>
+{% endblock %}

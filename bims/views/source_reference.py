@@ -1,12 +1,18 @@
-from django.views.generic import ListView
+import json
+from django.views.generic import ListView, UpdateView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.http import Http404
+from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
     SourceReferenceDatabase,
     SourceReferenceDocument
 )
+from td_biblio.models.bibliography import Author, AuthorEntryRank, Journal
+from bims.models.bims_document import BimsDocument, BimsDocumentAuthorship
 
 
 class SourceReferenceListView(ListView):
@@ -145,4 +151,237 @@ class SourceReferenceListView(ListView):
         ]
         context['search'] = self.search_query
         context['collector_owner'] = collector_owner
+        return context
+
+
+class EditSourceReferenceView(UpdateView):
+    template_name = 'edit_source_reference.html'
+    model = SourceReference
+    fields = '__all__'
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        else:
+            return reverse(
+                'edit-source-reference',
+                args=(
+                    self.object.id,
+                ))
+
+    def get_user_from_string(self, user_string):
+        """Return user object from string of user name"""
+        first_name = user_string.split(' ')[0]
+        last_name = ' '.join(user_string.split(' ')[1:])
+        user = get_user_from_name(
+            first_name=first_name,
+            last_name=last_name
+        )
+        return user
+
+    def update_published_report_reference(self, post_dict):
+        order = 1
+        year = post_dict.get('year', None)
+        title = post_dict.get('title', None)
+        source = post_dict.get('source', None)
+        try:
+            bims_doc = BimsDocument.objects.get(
+                document__id=self.object.source.id)
+        except BimsDocument.DoesNotExist:
+            bims_doc = BimsDocument.objects.create(
+                document=self.object.source
+            )
+        bims_doc.year = year
+        bims_doc.authors.clear()
+        # - Update title
+        if title:
+            self.object.source.title = title
+
+        # - Update source
+        if source:
+            try:
+                self.object.source.supplemental_information = json.dumps({
+                    'document_source': source
+                })
+            except KeyError:
+                pass
+        for key in post_dict:
+            author_user = None
+            # From user id
+            if 'author_id' in key:
+                author_id = post_dict[key].strip()
+                try:
+                    author_user = get_user_model().objects.get(
+                        id=author_id
+                    )
+                except get_user_model().DoesNotExist:
+                    continue
+            # From user name
+            elif 'author' in key:
+                user_string = post_dict[key].strip()
+                author_user = self.get_user_from_string(user_string)
+            if author_user:
+                bims_doc_author, _ = (
+                    BimsDocumentAuthorship.objects.get_or_create(
+                        bimsdocument=bims_doc,
+                        profile=author_user
+                    )
+                )
+                bims_doc_author.ordering = order
+                bims_doc_author.save()
+            order += 1
+        self.object.source.save()
+        bims_doc.save()
+
+    def update_bibliography_reference(self, post_dict):
+        rank = 0
+        title = post_dict.get('title', None)
+        year = post_dict.get('year', None)
+        doi = post_dict.get('doi', None)
+        source = post_dict.get('source', None)
+        source_id = post_dict.get('source_id', None)
+        # - Check required fields
+        if not title or not year:
+            raise Http404('Incorrect POST body')
+        # - Update title
+        self.object.source.title = title
+        # - Update year
+        if year:
+            self.object.source.publication_date = (
+                self.object.source.publication_date.replace(
+                    year=int(year)
+                )
+            )
+        # - Update DOI
+        if doi:
+            self.object.source.doi = doi
+        # - Update journal name
+        if source_id:
+            try:
+                journal = Journal.objects.get(id=source_id)
+                if source:
+                    journal.name = source
+                    journal.save()
+                    self.object.source.journal = journal
+                else:
+                    self.object.source.journal = None
+            except Journal.DoesNotExist:
+                pass
+        else:
+            if source:
+                journals = Journal.objects.filter(
+                    name__iexact=source.strip()
+                )
+                if journals.exists():
+                    self.object.source.journal = journals[0]
+                else:
+                    journal = Journal.objects.create(
+                        name=source.strip()
+                    )
+                    self.object.source.journal = journal
+        self.object.source.authors.clear()
+        # - Update authors
+        for key in post_dict:
+            author_user = None
+            if 'author_id' in key:
+                author_id = post_dict[key].strip()
+                try:
+                    author_user = get_user_model().objects.get(
+                        id=author_id
+                    )
+                except get_user_model().DoesNotExist:
+                    continue
+            elif 'author' in key:
+                user_string = post_dict[key].strip()
+                author_user = self.get_user_from_string(user_string)
+            if author_user:
+                try:
+                    author = Author.objects.get(
+                        user=author_user
+                    )
+                except Author.MultipleObjectsReturned:
+                    author = Author.objects.filter(user=author_user)[0]
+                except Author.DoesNotExist:
+                    author = Author.objects.create(
+                        first_name=author_user.first_name,
+                        last_name=author_user.last_name,
+                        user=author_user
+                    )
+                try:
+                    author_entry_rank = AuthorEntryRank.objects.get(
+                        author=author,
+                        entry=self.object.source
+                    )
+                    author_entry_rank.rank = rank
+                    author_entry_rank.save()
+                except AuthorEntryRank.DoesNotExist:
+                    AuthorEntryRank.objects.create(
+                        author=author,
+                        entry=self.object.source,
+                        rank=rank
+                    )
+                    rank += 1
+        self.object.source.save()
+
+    def update_database_reference(self, post_dict):
+        title = post_dict.get('title', '')
+        self.object.source.name = title
+        self.object.source.save()
+
+    def update_unpublished(self, post_dict):
+        title = post_dict.get('title', '')
+        source_reference = SourceReference.objects.filter(
+            note=title.strip()
+        )
+        if source_reference.exists():
+            source_reference = source_reference[0]
+            self.object.biologicalcollectionrecord_set.all().update(
+                source_reference=source_reference
+            )
+            self.object.chemicalrecord_set.all().update(
+                source_reference=source_reference
+            )
+            self.object.delete()
+        else:
+            self.object.note = title
+            self.object.save()
+
+    def form_valid(self, form):
+        post_dict = self.request.POST.dict()
+        if self.object.is_published_report():
+            self.update_published_report_reference(
+                post_dict
+            )
+        elif self.object.is_database():
+            self.update_database_reference(
+                post_dict
+            )
+        elif self.object.is_bibliography():
+            self.update_bibliography_reference(
+                post_dict
+            )
+        else:
+            self.update_unpublished(
+                post_dict
+            )
+
+        return super(EditSourceReferenceView, self).form_valid(
+            form
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(
+            EditSourceReferenceView, self).get_context_data(**kwargs)
+        context['title'] = self.object.title
+        context['reference_type'] = self.object.reference_type
+        context['year'] = self.object.year
+        context['past_url'] = self.request.GET.get('next')
+        if self.object.is_published_report():
+            try:
+                context['source_name'] = json.loads(
+                    self.object.source.supplemental_information
+                )['document_source']
+            except:  # noqa
+                pass
         return context

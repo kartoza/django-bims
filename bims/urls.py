@@ -68,7 +68,10 @@ from bims.views.site_visit import (
 from bims.views.taxa_management import TaxaManagementView
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
-from bims.views.source_reference import SourceReferenceListView
+from bims.views.source_reference import (
+    SourceReferenceListView,
+    EditSourceReferenceView
+)
 from bims.views.profile import ProfileView
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
@@ -181,6 +184,9 @@ urlpatterns = [
         name='harvest-collections'),
     url(r'^source-references/$', SourceReferenceListView.as_view(),
         name='source-references'),
+    url(r'^edit-source-reference/(?P<pk>\d+)/$',
+        EditSourceReferenceView.as_view(),
+        name='edit-source-reference'),
     url(r'^summary-report/$', SummaryReportView.as_view(),
         name='summary-report'),
     url(r'^profile/(?P<slug>\w+)/$', ProfileView.as_view(),
