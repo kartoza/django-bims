@@ -20,6 +20,12 @@
         #addAuthor {
             margin-top: 10px;
         }
+        .ui-state-default {
+            padding: 10px; margin-right: 0; margin-left: 0;
+        }
+        .author-template {
+            display: none;
+        }
     </style>
 {% endblock %}
 
@@ -81,16 +87,16 @@
                 <div class="form-group row">
                     <label for="authors" class="col-sm-2 col-form-label">Author(s)</label>
                     <div class="col-sm-10">
-                        <div class="author-group">
+                        <div class="author-group" id="sortable">
                         {% for author in object.author_list %}
-                            <div class="row" style="margin-top: 10px;">
-                                <div class="col-11">
+                            <div class="ui-state-default row">
+                                <span class="ui-icon ui-icon-arrowthick-2-n-s" style="margin-top: 10px;"></span>
+                                <div class="col-10" style="padding-left: 10px">
                                     <input
-{#                                         name="author_{{ forloop.counter0 }}"#}
                                            data-index="{{ forloop.counter0 }}"
                                            onClick="this.setSelectionRange(0, this.value.length)" class="form-control authors"
                                            value="{{ author.first_name }} {{ author.last_name }}" placeholder="Author's name with following format: [First name] [Space] [Last name]">
-                                    <input name="author_id_{{ forloop.counter0 }}" type="hidden" value="{{ author.id }}">
+                                    <input name="author_id_{{ forloop.counter0 }}" class="author-id" type="hidden" value="{{ author.id }}">
                                 </div>
                                 <div class="col-1">
                                     <button class="btn btn-danger deleteAuthor">Delete</button>
@@ -110,8 +116,9 @@
         </div>
     </div>
 
-    <div class="row author-template" style="margin-top: 10px; display: none">
-        <div class="col-11">
+    <div class="ui-state-default row author-template">
+        <span class="ui-icon ui-icon-arrowthick-2-n-s" style="margin-top: 10px;"></span>
+        <div class="col-10" style="padding-left: 10px">
             <input onClick="this.setSelectionRange(0, this.value.length)" type="text" class="form-control authors" value=""
                    placeholder="Author's name with following format: [First name] [Space] [Last name]"
                    name="">
@@ -125,6 +132,23 @@
     <script>
         let $addAuthorBtn = $('#addAuthor');
         let $deleteAuthorBtn = $('.deleteAuthor');
+        $(function () {
+            $("#sortable").sortable({
+                stop: function( event, ui ) {
+                    let authors = $(event.target).find('.authors');
+                    for (let index = 0; index < authors.length; index++) {
+                        const $author = $(authors[index]);
+                        $author.attr('data-index', index);
+                        if ($author.attr('name')) {
+                            $author.attr('name', `author_${index}`)
+                        } else {
+                            $author.parent().find('.author-id').attr('name', `author_id_${index}`)
+                        }
+                    }
+                }
+            });
+            $("#sortable").disableSelection();
+        });
         $(".authors").on("input", function(e) {
             const $input = $(e.target);
             const index = $input.data('index');
@@ -180,7 +204,7 @@
                     const index = $input.data('index');
                     $input.parent().find(`[name ="author_id_${index}"]`).remove()
                     $input.after(
-                        `<input name="author_id_${index}" type="hidden" value="${u.item.value}">`
+                        `<input name="author_id_${index}" type="hidden" class="author-id" value="${u.item.value}">`
                     )
                     $input.removeAttr('name');
                     $input.val(u.item.label);
@@ -189,4 +213,5 @@
         });
 
     </script>
+    {% include 'footer.html' %}
 {% endblock %}

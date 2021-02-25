@@ -3,6 +3,7 @@
     Source reference that overridden with it's own source
 """
 import re
+import json
 from collections import OrderedDict
 from django.db import models
 from django.conf import settings
@@ -91,6 +92,13 @@ class SourceReference(PolymorphicModel):
         default='',
         max_length=512
     )
+
+    @property
+    def reference_source(self):
+        """Source of the reference"""
+        if self.source_name:
+            return self.source_name
+        return '-'
 
     @property
     def occurrences(self):
@@ -247,6 +255,14 @@ class SourceReferenceBibliography(SourceReference):
         Document, null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
+    def reference_source(self):
+        """Source of the reference"""
+        source = '-'
+        if self.source.journal:
+            source = self.source.journal.name
+        return source
+
+    @property
     def title(self):
         return self.source.title
 
@@ -383,6 +399,16 @@ class SourceReferenceDatabase(SourceReference):
 class SourceReferenceDocument(SourceReference):
     """ Source reference with database source"""
     source = models.ForeignKey(Document, on_delete=models.CASCADE)
+
+    @property
+    def reference_source(self):
+        try:
+            source = json.loads(
+                self.source.supplemental_information
+            )['document_source']
+        except:  # noqa
+            source = '-'
+        return source
 
     @property
     def year(self):
