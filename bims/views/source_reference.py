@@ -381,9 +381,6 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super(
             EditSourceReferenceView, self).get_context_data(**kwargs)
-        context['title'] = self.object.title
-        context['reference_type'] = self.object.reference_type
-        context['year'] = self.object.year
         context['past_url'] = self.request.GET.get('next')
         if self.object.is_published_report():
             try:

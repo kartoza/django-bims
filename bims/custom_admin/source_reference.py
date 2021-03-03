@@ -46,8 +46,16 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
     )
 
 
-admin.site.register(DatabaseRecord, DatabaseRecordAdmin)
+try:
+    admin.site.unregister(DatabaseRecord)
+    admin.site.unregister(SourceReferenceBibliography)
+    admin.site.unregister(SourceReferenceDatabase)
+    admin.site.unregister(SourceReferenceDocument)
+    admin.site.unregister(SourceReference)
+except Exception:  # noqa
+    pass
 
+admin.site.register(DatabaseRecord, DatabaseRecordAdmin)
 admin.site.register(
     SourceReferenceBibliography, SourceReferenceBibliographyAdmin)
 admin.site.register(SourceReferenceDatabase, SourceReferenceDatabaseAdmin)
