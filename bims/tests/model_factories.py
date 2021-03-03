@@ -8,6 +8,7 @@ from django.db.models import signals
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from geonode.documents.models import Document
+from bims.factories import EntryFactory
 from bims.models import (
     LocationType,
     LocationSite,
@@ -346,6 +347,8 @@ class SourceReferenceF(factory.django.DjangoModelFactory):
 class SourceReferenceBibliographyF(factory.django.DjangoModelFactory):
     class Meta:
         model = SourceReferenceBibliography
+
+    source = factory.SubFactory(EntryFactory)
 
 
 class SourceReferenceDatabaseF(factory.django.DjangoModelFactory):

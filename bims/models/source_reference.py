@@ -3,6 +3,7 @@
     Source reference that overridden with it's own source
 """
 import re
+import json
 from collections import OrderedDict
 from django.db import models
 from django.conf import settings
@@ -12,7 +13,7 @@ from td_biblio.models.bibliography import Entry
 from geonode.documents.models import Document
 from bims.helpers.remove_duplicates import remove_duplicates
 from bims.utils.decorator import prevent_recursion
-from bims.models.bims_document import BimsDocument
+from bims.models.bims_document import BimsDocument, BimsDocumentAuthorship
 
 
 def format_authors(users):
@@ -22,6 +23,8 @@ def format_authors(users):
     index = 0
     author = u''
     for doc_author in users:
+        if not doc_author:
+            continue
         if (0 < index <
                 len(users) - 1):
             author += ', '
@@ -91,6 +94,13 @@ class SourceReference(PolymorphicModel):
     )
 
     @property
+    def reference_source(self):
+        """Source of the reference"""
+        if self.source_name:
+            return self.source_name
+        return '-'
+
+    @property
     def occurrences(self):
         from bims.models.biological_collection_record import (
             BiologicalCollectionRecord
@@ -107,7 +117,13 @@ class SourceReference(PolymorphicModel):
         return '-'
 
     @property
+    def author_list(self):
+        """Return list of authors object"""
+        return None
+
+    @property
     def authors(self):
+        """Return list of authors in string"""
         return '-'
 
     @property
@@ -136,6 +152,18 @@ class SourceReference(PolymorphicModel):
     @property
     def source(self):
         return self
+
+    def is_published_report(self):
+        return self.reference_type == 'Published report or thesis'
+
+    def is_database(self):
+        return self.reference_type == 'Database'
+
+    def is_bibliography(self):
+        return self.reference_type == 'Peer-reviewed scientific article'
+
+    def is_unpublished(self):
+        return self.reference_type == 'Unpublished data'
 
     def __unicode__(self):
         if not self.get_source_unicode():
@@ -227,12 +255,29 @@ class SourceReferenceBibliography(SourceReference):
         Document, null=True, blank=True, on_delete=models.SET_NULL)
 
     @property
+    def reference_source(self):
+        """Source of the reference"""
+        source = '-'
+        if self.source.journal:
+            source = self.source.journal.name
+        return source
+
+    @property
     def title(self):
         return self.source.title
 
     @property
-    def authors(self):
+    def author_list(self):
         authors = self.source.get_authors()
+        if authors:
+            users = []
+            for author in authors:
+                if author.user:
+                    users.append(author.user)
+                else:
+                    author.save()
+                    users.append(author.user)
+            authors = users
         if self.document:
             try:
                 bims_document = BimsDocument.objects.get(
@@ -253,7 +298,11 @@ class SourceReferenceBibliography(SourceReference):
                         authors = _authors
             except BimsDocument.DoesNotExist:
                 pass
-        authors_name = format_authors(authors)
+        return authors
+
+    @property
+    def authors(self):
+        authors_name = format_authors(self.author_list)
         return authors_name if authors_name else '-'
 
     @property
@@ -277,10 +326,6 @@ class SourceReferenceBibliography(SourceReference):
     @property
     def reference_type(self):
         return 'Peer-reviewed scientific article'
-
-    @property
-    def is_bibliography(self):
-        return True
 
     def link_template(self):
         """Returns html template containing the reference data"""
@@ -313,6 +358,10 @@ class SourceReferenceDatabase(SourceReference):
     @property
     def reference_type(self):
         return 'Database'
+
+    @property
+    def author_list(self):
+        return []
 
     @property
     def authors(self):
@@ -352,6 +401,16 @@ class SourceReferenceDocument(SourceReference):
     source = models.ForeignKey(Document, on_delete=models.CASCADE)
 
     @property
+    def reference_source(self):
+        try:
+            source = json.loads(
+                self.source.supplemental_information
+            )['document_source']
+        except:  # noqa
+            source = '-'
+        return source
+
+    @property
     def year(self):
         try:
             bims_doc = BimsDocument.objects.get(
@@ -370,20 +429,26 @@ class SourceReferenceDocument(SourceReference):
         return self.source.title
 
     @property
-    def authors(self):
+    def author_list(self):
         try:
             bims_doc = BimsDocument.objects.get(
                 document=self.source
             )
-            authors = bims_doc.authors.all()
+            authors = BimsDocumentAuthorship.objects.filter(
+                bimsdocument_id=bims_doc
+            )
             if authors.exists():
-                return format_authors(authors)
+                users = []
+                for author in authors:
+                    users.append(author.profile)
+                return users
         except BimsDocument.DoesNotExist:
             pass
-        return '%(first_name)s %(last_name)s' % {
-            'first_name': self.source.owner.first_name,
-            'last_name': self.source.owner.last_name
-        }
+        return [self.source.owner]
+
+    @property
+    def authors(self):
+        return format_authors(self.author_list)
 
     def link_template(self):
         """Returns html template containing the reference data"""
