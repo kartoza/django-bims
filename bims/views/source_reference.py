@@ -193,6 +193,9 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         year = post_dict.get('year', None)
         title = post_dict.get('title', None)
         source = post_dict.get('source', None)
+        doc_url = post_dict.get('doc_url', None)
+        doc_type = post_dict.get('doc_type', None)
+        doc_file = self.request.FILES.get('doc_file', None)
         try:
             bims_doc = BimsDocument.objects.get(
                 document__id=self.object.source.id)
@@ -205,6 +208,14 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         # - Update title
         if title:
             self.object.source.title = title
+
+        # - Update file
+        if doc_type == 'doc_url' and doc_url:
+            self.object.source.doc_url = doc_url
+            self.object.source.doc_file = None
+        elif doc_type == 'doc_file' and doc_file:
+            self.object.source.doc_url = None
+            self.object.source.doc_file = doc_file
 
         # - Update source
         if source:

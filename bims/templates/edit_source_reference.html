@@ -38,7 +38,7 @@
         </div>
         <div class="container" style="margin-top: 40px">
 
-            <form method="post">
+            <form enctype="multipart/form-data" name="source_reference_form" method="post">
                 {% csrf_token %}
                 <div class="form-group row">
                     <label for="name" class="col-sm-2 col-form-label">Type</label>
@@ -74,6 +74,45 @@
                         <label for="source_id" class="col-sm-2 col-form-label">Source</label>
                         <div class="col-sm-10">
                             <input name="source" id="source" class="form-control" value="{{ source_name }}"/>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="file" class="col-sm-2 col-form-label">Document</label>
+                        <div class="col-sm-10">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       name="doc_type" id="doc_url"
+                                       value="doc_url" {% if object.source.doc_url %}checked{% endif %}>
+                                <label class="form-check-label"
+                                       for="doc_url">
+                                    Provide url
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       name="doc_type" id="doc_file"
+                                       value="doc_file" onchange="" {% if object.source.doc_file %}checked{% endif %}>
+                                <label class="form-check-label"
+                                       for="doc_file">
+                                    Upload a file
+                                </label>
+                            </div>
+                            <div class="form-control doc_type_input" id="doc_url_input" style="{% if object.source.doc_file %}display: none{% endif %}">
+                                <div class="row">
+                                    <label for="file" class="col-1 col-form-label">Url</label>
+                                    <input name="doc_url" id="doc_url" class="form-control col-11" value="{% if object.source.doc_url %}{{ object.source.doc_url }}{% else %}{% endif %}" style="margin-left: -10px"/>
+                                </div>
+                            </div>
+                            <div class="form-control doc_type_input" id="doc_file_input" style="{% if object.source.doc_url %}display: none{% endif %}">
+                                <div class="row">
+                                    <label for="file" class="col-1 col-form-label">File</label>
+                                    <input type="file" name="doc_file" id="doc_file" class="form-control col-11" value="" style="margin-left: -10px"/>
+                                </div>
+                                {% if object.source.doc_file %}
+                                    <div style="margin-top: 20px">Current file : </div>
+                                    <p><a href="{{ object.source.doc_file.url }}">{{ object.source.doc_file }}</a></p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% endif %}
@@ -132,7 +171,18 @@
     <script>
         let $addAuthorBtn = $('#addAuthor');
         let $deleteAuthorBtn = $('.deleteAuthor');
+        let prev = null;
         $(function () {
+            const rad = document.source_reference_form.doc_type;
+            for (let i = 0; i < rad.length; i++) {
+                rad[i].addEventListener('change', function () {
+                    if (this !== prev) {
+                        prev = this;
+                    }
+                    $(`.doc_type_input`).hide();
+                    $(`#${this.value}_input`).show();
+                });
+            }
             $("#sortable").sortable({
                 stop: function( event, ui ) {
                     let authors = $(event.target).find('.authors');
