@@ -13,7 +13,16 @@ from bims.models.source_reference import (
     SourceReferenceDocument
 )
 from td_biblio.models.bibliography import Author, AuthorEntryRank, Journal
-from bims.models.bims_document import BimsDocument, BimsDocumentAuthorship
+from bims.models.bims_document import (
+    BimsDocument,
+    BimsDocumentAuthorship
+)
+from bims.models.biological_collection_record import (
+    BiologicalCollectionRecord
+)
+from bims.models.chemical_record import (
+    ChemicalRecord
+)
 
 
 class SourceReferenceListView(ListView):
@@ -345,26 +354,33 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
 
     def update_database_reference(self, post_dict):
         title = post_dict.get('title', '')
+        source_name = post_dict.get('source_name', '')
+        self.object.source_name = source_name
         self.object.source.name = title
         self.object.source.save()
 
     def update_unpublished(self, post_dict):
         title = post_dict.get('title', '')
-        source_reference = SourceReference.objects.filter(
-            note=title.strip()
+        source_name = post_dict.get('source_name', '')
+        self.object.note = title
+        self.object.save()
+        source_references = SourceReference.objects.filter(
+            note=title.strip(),
+            source_name=source_name.strip()
+        ).exclude(
+            Q(instance_of=SourceReferenceDatabase) |
+            Q(instance_of=SourceReferenceBibliography) |
+            Q(instance_of=SourceReferenceDocument)
         )
-        if source_reference.exists():
-            source_reference = source_reference[0]
-            self.object.biologicalcollectionrecord_set.all().update(
-                source_reference=source_reference
-            )
-            self.object.chemicalrecord_set.all().update(
-                source_reference=source_reference
-            )
-            self.object.delete()
-        else:
-            self.object.note = title
-            self.object.save()
+        if source_references.count() > 1:
+            source_reference = source_references[0]
+            BiologicalCollectionRecord.objects.filter(
+                source_reference__in=source_references
+            ).update(source_reference=source_reference)
+            ChemicalRecord.objects.filter(
+                source_reference__in=source_references
+            ).update(source_reference=source_reference)
+            source_references.exclude(id=source_reference.id).delete()
 
     def form_valid(self, form):
         post_dict = self.request.POST.dict()

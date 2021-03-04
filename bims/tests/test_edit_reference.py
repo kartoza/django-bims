@@ -7,10 +7,13 @@ from bims.factories import (
     AuthorEntryRankFactory
 )
 from bims.models import (
-    SourceReference
+    SourceReference,
+    BiologicalCollectionRecord
 )
 from bims.tests.model_factories import (
-    SourceReferenceBibliographyF
+    SourceReferenceBibliographyF,
+    SourceReferenceF,
+    BiologicalCollectionRecordF
 )
 
 
@@ -79,6 +82,67 @@ class TestEditReference(TestCase):
             response.status_code,
             403
         )
+
+    def test_unpublished_data(self):
+        self.client.login(
+            username='@.test',
+            password='psst'
+        )
+        source_reference_1 = SourceReferenceF.create(
+            note='test',
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=source_reference_1
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=source_reference_1
+        )
+        source_reference_2 = SourceReferenceF.create(
+            note='test2'
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=source_reference_2
+        )
+        source_reference_3 = SourceReferenceF.create(
+            note='test2'
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=source_reference_3
+        )
+        # Update first source reference
+        post_dict = {
+            'title': 'updated test'
+        }
+        self.client.post(
+            '/edit-source-reference/{}/'.format(
+                source_reference_1.id
+            ),
+            post_dict
+        )
+        updated_reference = SourceReference.objects.get(
+            id=source_reference_1.id
+        )
+        self.assertEqual(updated_reference.note, post_dict['title'])
+        self.assertEqual(BiologicalCollectionRecord.objects.filter(
+            source_reference=updated_reference
+        ).count(), 2)
+
+        # Merge source reference 1 with source reference 2
+        post_dict['title'] = 'test2'
+        self.client.post(
+            '/edit-source-reference/{}/'.format(
+                source_reference_1.id
+            ),
+            post_dict
+        )
+        updated_reference = SourceReference.objects.filter(
+            note='test2'
+        )[0]
+        self.assertEqual(updated_reference.note, post_dict['title'])
+        self.assertEqual(BiologicalCollectionRecord.objects.filter(
+            source_reference=updated_reference
+        ).count(), 4)
+
 
     def test_edit_bibliography(self):
         self.client.login(
