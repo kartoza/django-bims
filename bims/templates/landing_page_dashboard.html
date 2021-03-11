@@ -57,6 +57,7 @@
         let totalSiteVisit = 0;
         let alienInvasive = 0;
         let alienNonInvasive = 0;
+        let unspecified = 0;
 
         if (moduleData.hasOwnProperty('total')) {
             totalRecords += moduleData['total'];
@@ -75,6 +76,9 @@
         }
         if (moduleData.hasOwnProperty('alien-non-invasive')) {
             alienNonInvasive += moduleData['alien-non-invasive'];
+        }
+        if (moduleData.hasOwnProperty('Unspecified')) {
+            unspecified += moduleData['Unspecified'];
         }
         if (moduleData.hasOwnProperty('total_site')) {
             totalSite += moduleData['total_site'];
@@ -97,15 +101,16 @@
 
         let moduleContainer = document.getElementById("chart-" + moduleName);
         let moduleChartDataset = {
-            labels: ["Native Occurrences", "Non-Native Occurrences", "Translocated Occurrences", "Non-Native: Invasive Occurrences", "Non-Native: Non-Invasive Occurrences"],
+            labels: ["Native Occurrences", "Non-Native Occurrences", "Translocated Occurrences", "Non-Native: Invasive Occurrences", "Non-Native: Non-Invasive Occurrences", "Unspecified"],
             datasets: [{
-                data: [native, non_native, translocated, alienInvasive, alienNonInvasive],
+                data: [native, non_native, translocated, alienInvasive, alienNonInvasive, unspecified],
                 backgroundColor: [
                     mainAccentColor,
                     '#142341',
                     '#e0d43f',
                     secondaryAccentColor,
                     '#d70e73',
+                    '#bbbbbb'
                 ],
                 borderWidth: 1
             }]
