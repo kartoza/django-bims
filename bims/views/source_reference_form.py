@@ -19,7 +19,6 @@ from bims.models.source_reference import (
     CategoryIsNotRecognized,
     SourceIsNotFound
 )
-from geonode.base.models import HierarchicalKeyword
 from geonode.documents.models import Document
 from bims.views.mixin.session_form import SessionFormMixin
 from bims.views.mixin.session_form.exception import (
@@ -44,14 +43,10 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         context.update(self.additional_context)
         additional_context_data = {}
 
-        source_reference_document = []
-        try:
-            keyword = HierarchicalKeyword.objects.get(
-                slug='bims_source_reference')
-            source_reference_document = Document.objects.filter(
-                keywords=keyword)
-        except HierarchicalKeyword.DoesNotExist:
-            pass
+        source_reference_document = (
+            Document.objects.filter(
+                id__in=SourceReferenceDocument.objects.values('source'))
+        )
 
         if 'records' in context:
             # check if there is existing source_reference from collection
