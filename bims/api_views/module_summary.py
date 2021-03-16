@@ -25,11 +25,12 @@ def get_species_group(species):
 
 class ModuleSummary(APIView):
     """
-    Summary for species module created in TaxonGroup
+    Summary for FBIS species module
     """
     FISH_KEY = 'fish'
     INVERTEBRATE_KEY = 'invert'
     ALGAE_KEY = 'algae'
+    ODONATE_KEY = 'odonate'
 
     def module_summary_data(self, taxon_group):
         """
@@ -131,12 +132,42 @@ class ModuleSummary(APIView):
         algae_summary['total_site'] = collections.distinct('site').count()
         return algae_summary
 
+    def odonate_data(self):
+        taxon_group = get_species_group(self.ODONATE_KEY)
+        if not taxon_group:
+            return {}
+        collections = BiologicalCollectionRecord.objects.filter(
+            module_group=taxon_group
+        )
+        summary = dict()
+        summary['endemism'] = dict(
+            collections.annotate(
+                value=Case(When(taxonomy__endemism__isnull=False,
+                                then=F('taxonomy__endemism__name')),
+                           default=Value('Unknown'))
+            ).values('value').annotate(
+                count=Count('value')
+            ).values_list('value', 'count')
+        )
+        summary[
+            'total'] = collections.count()
+        summary[
+            'total_site'] = (
+            collections.distinct('site').count()
+        )
+        summary[
+            'total_site_visit'] = (
+            collections.distinct('survey').count()
+        )
+        return summary
+
     def get(self, request, *args):
         response_data = dict()
         if preferences.SiteSetting.default_data_source == 'fbis':
             response_data[self.FISH_KEY] = self.fish_data()
             response_data[self.INVERTEBRATE_KEY] = self.invertebrate_data()
             response_data[self.ALGAE_KEY] = self.algae_data()
+            response_data[self.ODONATE_KEY] = self.odonate_data()
         else:
             taxon_groups = TaxonGroup.objects.filter(
                 category=TaxonomicGroupCategory.SPECIES_MODULE.name,
