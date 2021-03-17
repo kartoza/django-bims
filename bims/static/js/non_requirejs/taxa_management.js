@@ -249,6 +249,7 @@ const getTaxaList = (url) => {
     taxaListCurrentUrl = url;
     showLoading();
     $('.download-button-container').show();
+    console.log(url)
     $.get(url).then(
         function (response) {
             hideLoading();
@@ -284,6 +285,8 @@ const getTaxaList = (url) => {
                 $taxaList.append($row);
                 $row.append(`<td>${name}</td>`);
                 $row.append(`<td>${data['rank']}</td>`);
+                $row.append(`<td>${data['origin_name']}</td>`);
+                $row.append(`<td>${data['endemism_name']}</td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
                 let $tdAction = $(`<td></td>`);
                 $row.append($tdAction);

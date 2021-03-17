@@ -14,6 +14,20 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_colour = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
     taxon_group = serializers.SerializerMethodField()
+    origin_name = serializers.SerializerMethodField()
+    endemism_name = serializers.SerializerMethodField()
+
+    def get_origin_name(self, obj):
+        try:
+            return dict(Taxonomy.CATEGORY_CHOICES)[obj.origin]
+        except Exception:  # noqa
+            return '-'
+
+    def get_endemism_name(self, obj):
+        try:
+            return obj.endemism.name
+        except AttributeError:
+            return '-'
 
     def get_record_type(self, obj):
         return 'bio'
