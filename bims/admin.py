@@ -309,7 +309,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
     # exclude = ['source_reference',]
     list_display = (
         'taxonomy',
-        'category',
+        'get_origin',
         'collection_date',
         'is_validated',
         'is_rejected',
@@ -327,7 +327,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
     list_filter = (
         ('collection_date', DateRangeFilter),
         'taxonomy',
-        'category'
+        'taxonomy__origin'
     )
     search_fields = (
         'taxonomy__scientific_name',
@@ -335,6 +335,15 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'original_species_name',
         'uuid'
     )
+
+    def get_origin(self, obj):
+        try:
+            return dict(Taxonomy.CATEGORY_CHOICES)[obj.taxonomy.origin]
+        except KeyError:
+            return '-'
+
+    get_origin.short_description = 'Origin'
+    get_origin.admin_order_field = 'taxonomy__origin'
 
 
 class ShapefileInline(admin.TabularInline):

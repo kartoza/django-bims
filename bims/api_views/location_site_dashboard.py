@@ -64,9 +64,9 @@ class OccurrencesChartData(ChartDataApiView):
     """
     def categories(self, collection_results):
         return list(collection_results.annotate(
-            name=Case(When(category='',
+            name=Case(When(taxonomy__origin='',
                            then=Value('Unknown')),
-                      default=F('category'))
+                      default=F('taxonomy__origin'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -74,9 +74,9 @@ class OccurrencesChartData(ChartDataApiView):
     def chart_data(self, collection_results):
         return collection_results.annotate(
             year=ExtractYear('collection_date'),
-            name=Case(When(category='',
+            name=Case(When(taxonomy__origin='',
                            then=Value('Unknown')),
-                      default=F('category'))
+                      default=F('taxonomy__origin'))
         ).values(
             'year', 'name'
         ).annotate(
