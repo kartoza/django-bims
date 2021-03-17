@@ -17,6 +17,8 @@ let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
 let $removeAllBtn = $('.remove-all-btn');
+let $clearSearchBtn = $('#clear-search-button');
+let $sortBtn = $('.sort-button');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -49,8 +51,20 @@ $searchButton.click(function (e) {
     }
     let taxonNameInput = $('#taxon-name-input');
     let taxonName = taxonNameInput.val();
-    getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&taxon=${taxonName}`);
+    insertParam('taxon', taxonName);
 });
+
+$clearSearchBtn.click(function (e) {
+     insertParam('taxon', '');
+});
+
+$sortBtn.click(function (event) {
+    let $target = $(event.target);
+    let order = $target.data('order');
+    if (order) {
+        insertParam('o', order);
+    }
+})
 
 $downloadCsvButton.click(function (e) {
     let a = document.createElement("a");
@@ -94,7 +108,7 @@ $taxonGroupCard.click(function (e) {
     $elm.addClass('selected');
     selectedTaxonGroup = $elm.data('id');
     $('#taxon-name-input').val('');
-    getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`);
+    insertParam('selected', selectedTaxonGroup);
 })
 
 $findTaxonButton.click(function () {
@@ -482,6 +496,36 @@ $button.click(function () {
     $taxonForm.hide();
     $newTaxonFamilyInput.val("")
     $newTaxonFamilyIdInput.val("")
+});
+
+$(document).ready(function () {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let url = ''
+    let taxonName = ''
+    if (urlParams.get('selected')) {
+        selectedTaxonGroup = urlParams.get('selected');
+        $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
+        url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
+    }
+    if (urlParams.get('taxon')) {
+        taxonName = urlParams.get('taxon');
+        if (url) {
+            url += `&taxon=${taxonName}`
+            $('#taxon-name-input').val(taxonName)
+            $clearSearchBtn.show();
+        }
+    }
+    if (urlParams.get('o')) {
+        const order = urlParams.get('o');
+        if (url) {
+            $(`.sort-button[data-order="${order}"]`).addClass('sort-button-selected');
+            url += `&o=${order}`
+        }
+    }
+    if (url) {
+        getTaxaList(url);
+    }
 });
 
 

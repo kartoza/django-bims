@@ -21,7 +21,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         try:
             return dict(Taxonomy.CATEGORY_CHOICES)[obj.origin]
         except Exception:  # noqa
-            return '-'
+            return 'Unknown'
 
     def get_endemism_name(self, obj):
         try:
