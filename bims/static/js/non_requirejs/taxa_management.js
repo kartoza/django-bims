@@ -292,7 +292,15 @@ const getTaxaList = (url) => {
                 if (!name) {
                     name = data['scientific_name'];
                 }
-                name += `<br/><p style="font-size: 9pt">${data['scientific_name']}</p>`;
+                name += `<br/><span style="font-size: 9pt">${data['scientific_name']}</span><br/>`;
+                if (data['common_name'].length > 0) {
+                    $.each(data['common_name'], function (i, common_name) {
+                        name += ` <span class="badge badge-info">${common_name}</span>`
+                    });
+                }
+                if (data['gbif_key'] || data['iucn_redlist_id']) {
+                    name += '<br/><div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
+                }
                 if (data['gbif_key']) {
                     name += ` <a href="https://www.gbif.org/species/${data['gbif_key']}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
                 }
