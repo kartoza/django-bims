@@ -292,6 +292,13 @@ const getTaxaList = (url) => {
                 if (!name) {
                     name = data['scientific_name'];
                 }
+                name += `<br/><p style="font-size: 9pt">${data['scientific_name']}</p>`;
+                if (data['gbif_key']) {
+                    name += ` <a href="https://www.gbif.org/species/${data['gbif_key']}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
+                }
+                if (data['iucn_redlist_id']) {
+                    name += ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data['iucn_redlist_id']}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
+                }
                 let $rowAction = $('.row-action').clone(true, true);
                 $rowAction.removeClass('row-action');
                 $rowAction.show();
@@ -299,6 +306,7 @@ const getTaxaList = (url) => {
                 $taxaList.append($row);
                 $row.append(`<td>${name}</td>`);
                 $row.append(`<td>${data['rank']}</td>`);
+                $row.append(`<td>${data['iucn_status_full_name']}</td>`);
                 $row.append(`<td>${data['origin_name']}</td>`);
                 $row.append(`<td>${data['endemism_name']}</td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
