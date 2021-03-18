@@ -134,6 +134,9 @@
                                     <div class="float-right">
                                         <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>
                                     </div>
+                                     <div class="float-right">
+                                        <a href="#" class="badge badge-danger badge-occurrences delete-reference" data-reference-id="{{ source_reference.id }}">Delete</a>&nbsp;
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -158,6 +161,8 @@
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script>
 
+        const csrfToken = '{{ csrf_token }}';
+
         $('.custom-control-input').change(function (e) {
             let $parent = $(e.target).parent().parent();
             let filterName = $parent.data('filter');
@@ -170,6 +175,25 @@
         $('.input-group-append').click(function (e) {
             let value =  $('#search-input').val();
             insertParam('q', value);
+        })
+
+        $('.delete-reference').click(function (e) {
+            e.preventDefault();
+            const referenceId = $(e.target).data('reference-id');
+            let r = confirm("Are you sure you want to remove this reference?");
+            if (r === true) {
+                $.ajax({
+                    url: "/delete-source-reference/",
+                    headers: {"X-CSRFToken": csrfToken},
+                    type: 'POST',
+                    data: {
+                        'reference_id': referenceId
+                    },
+                    success: function (res) {
+                        location.reload();
+                    }
+                });
+            }
         })
 
         $('#owner').autocomplete({

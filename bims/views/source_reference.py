@@ -1,9 +1,11 @@
 import json
-from django.views.generic import ListView, UpdateView
+from django.views.generic import ListView, UpdateView, View
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.http import HttpResponseRedirect
 from django.http import Http404
+from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
@@ -162,6 +164,35 @@ class SourceReferenceListView(ListView):
         context['search'] = self.search_query
         context['collector_owner'] = collector_owner
         return context
+
+
+class DeleteSourceReferenceView(UserPassesTestMixin, View):
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        return self.request.user.has_perm('bims.change_sourcereference')
+
+    def post(self, request, *args, **kwargs):
+        reference_id = self.request.POST.get('reference_id', None)
+        next_path = request.POST.get('next', reverse('source-references'))
+        try:
+            source_reference = SourceReference.objects.get(
+                id=reference_id
+            )
+        except SourceReference.DoesNotExist:
+            raise Http404('Source reference does not exist')
+        source_reference_name = source_reference.title
+        source_reference.delete()
+        messages.success(
+            request,
+            'Source reference {} successfully deleted!'.format(
+                source_reference_name
+            ),
+            extra_tags='source_reference')
+        return HttpResponseRedirect(next_path)
 
 
 class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
