@@ -253,13 +253,13 @@ class LocationSitesSummary(APIView):
             collection_results)
 
         category_summary = collection_results.exclude(
-            category=''
+            taxonomy__origin=''
         ).annotate(
-            origin=F('category')
+            origin=F('taxonomy__origin')
         ).values_list(
             'origin'
         ).annotate(
-            count=Count('category')
+            count=Count('taxonomy__origin')
         )
         is_multi_sites = False
         is_sass_exists = False
@@ -418,9 +418,9 @@ class LocationSitesSummary(APIView):
         """
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
-            origin=Case(When(category='',
+            origin=Case(When(taxonomy__origin='',
                              then=Value('Unknown')),
-                        default=F('category')),
+                        default=F('taxonomy__origin')),
             cons_status=Case(When(taxonomy__iucn_status__isnull=False,
                                   then=F('taxonomy__iucn_status__category')),
                              default=Value('Not evaluated')),
@@ -465,9 +465,9 @@ class LocationSitesSummary(APIView):
         biodiversity_data['species']['sampling_method_chart'] = {}
         biodiversity_data['species']['biotope_chart'] = {}
         origin_by_name_data = collection_results.annotate(
-            name=Case(When(category='',
+            name=Case(When(taxonomy__origin='',
                            then=Value('Unknown')),
-                      default=F('category'))
+                      default=F('taxonomy__origin'))
         ).values(
             'name'
         ).annotate(
@@ -688,7 +688,7 @@ class LocationSitesSummary(APIView):
 
     def get_origin_data(self, collection_results):
         origin_data = collection_results.annotate(
-            value=F('category')
+            value=F('taxonomy__origin')
         ).values(
             'value'
         ).annotate(

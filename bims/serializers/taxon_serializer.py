@@ -14,6 +14,26 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_colour = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
     taxon_group = serializers.SerializerMethodField()
+    origin_name = serializers.SerializerMethodField()
+    endemism_name = serializers.SerializerMethodField()
+    common_name = serializers.SerializerMethodField()
+
+    def get_common_name(self, obj):
+        return list(
+            obj.vernacular_names.all().values_list('name', flat=True)
+        )
+
+    def get_origin_name(self, obj):
+        try:
+            return dict(Taxonomy.CATEGORY_CHOICES)[obj.origin]
+        except Exception:  # noqa
+            return 'Unknown'
+
+    def get_endemism_name(self, obj):
+        try:
+            return obj.endemism.name
+        except AttributeError:
+            return '-'
 
     def get_record_type(self, obj):
         return 'bio'

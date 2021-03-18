@@ -249,6 +249,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
         taxon_name = request.GET.get('taxon', '')
+        order = request.GET.get('o', '')
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
         try:
@@ -262,6 +263,24 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if order:
+            if 'origin' not in order:
+                taxon_list = taxon_list.order_by(order)
+            else:
+                origin_order = [
+                    'indigenous',
+                    'alien',
+                    'alien-invasive',
+                    'alien-non-invasive',
+                    'unknown',
+                    ''
+                ]
+                if '-' in order:
+                    origin_order.reverse()
+                taxon_list = sorted(
+                    taxon_list,
+                    key=lambda x: origin_order.index(x.origin)
+                )
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(

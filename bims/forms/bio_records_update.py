@@ -14,7 +14,6 @@ class BioRecordsForm(forms.ModelForm):
         model = BiologicalCollectionRecord
         fields = (
             'original_species_name',
-            'category',
             'present',
             'collection_date',
             'abundance_number',
@@ -37,7 +36,6 @@ class BioRecordsForm(forms.ModelForm):
                 form_title,
                 Field('original_species_name', css_class='form-control'),
                 Field('ready_for_validation', css_class=''),
-                Field('category', css_class='form-control'),
                 Field('present', css_class=''),
                 Field('collection_date', css_class='form-control'),
                 Field('abundance_number', css_class='form-control'),

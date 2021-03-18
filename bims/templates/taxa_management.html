@@ -95,6 +95,10 @@
             background-color: #179f9026 !important;
         }
 
+        .sort-button-selected {
+            color: #28a745;
+        }
+
         .btn-action {
             font-size: 10pt;
         }
@@ -189,6 +193,10 @@
                         class="btn btn-success btn-md my-0 ml-sm-2"
                         style="height: 31px; padding-top: 3px">Search
                 </button>
+                <button id="clear-search-button"
+                        class="btn btn-danger btn-md my-0 ml-sm-2"
+                        style="height: 31px; padding-top: 3px; display: none">Clear
+                </button>
             </div>
 
 
@@ -207,9 +215,30 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
-                    <th scope="col" style="width: 30%">Taxon Name</th>
-                    <th scope="col" style="width: 20%">Rank</th>
-                    <th scope="col" style="width: 25%">Import date</th>
+                    <th scope="col" style="width: 25%">Taxon Name
+                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="canonical_name"></i>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i></th>
+                    <th scope="col" style="width: 10%">Rank
+                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="rank"></i>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-rank"></i>
+                    </th>
+                    <th scope="col" style="width: 10%">Cons. Status
+                        <br/>
+                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="iucn_status__category"></i>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-iucn_status__category"></i>
+                    </th>
+                    <th scope="col" style="width: 20%">Origin
+                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="origin"></i>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-origin"></i>
+                    </th>
+                    <th scope="col" style="width: 20%">Endemism
+                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="endemism__name"></i>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-endemism__name"></i>
+                    </th>
+                    <th scope="col" style="width: 15%">Import date
+                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="import_date"></i>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
+                    </th>
                     <th scope="col">Action</th>
                 </tr>
                 </thead>
@@ -237,9 +266,9 @@
 
     <div class="row-action" style="display: none">
         <td>
-            <button class="btn btn-action btn-danger remove-taxon-from-group">Remove from group
+            <button class="btn btn-action btn-danger remove-taxon-from-group" style="width: 100%">Remove from group
             </button>
-            <a href="" class="btn btn-action btn-warning edit-taxon" onclick="windowpop(this.href, 800, 600)">Edit
+            <a href="" class="btn btn-action btn-warning edit-taxon" style="width: 100%; margin-top: 5px" onclick="windowpop(this.href, 800, 600)">Edit
             </a>
         </td>
     </div>
@@ -438,6 +467,7 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/helpers.js" %}"></script>
     <script src="{% static "js/non_requirejs/taxa_management.js" %}"></script>
 

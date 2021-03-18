@@ -17,6 +17,8 @@ let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
 let $removeAllBtn = $('.remove-all-btn');
+let $clearSearchBtn = $('#clear-search-button');
+let $sortBtn = $('.sort-button');
 
 // ----- Bind element to events ----- //
 $sortable.sortable({
@@ -49,8 +51,20 @@ $searchButton.click(function (e) {
     }
     let taxonNameInput = $('#taxon-name-input');
     let taxonName = taxonNameInput.val();
-    getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&taxon=${taxonName}`);
+    insertParam('taxon', taxonName);
 });
+
+$clearSearchBtn.click(function (e) {
+     insertParam('taxon', '');
+});
+
+$sortBtn.click(function (event) {
+    let $target = $(event.target);
+    let order = $target.data('order');
+    if (order) {
+        insertParam('o', order);
+    }
+})
 
 $downloadCsvButton.click(function (e) {
     let a = document.createElement("a");
@@ -94,7 +108,7 @@ $taxonGroupCard.click(function (e) {
     $elm.addClass('selected');
     selectedTaxonGroup = $elm.data('id');
     $('#taxon-name-input').val('');
-    getTaxaList(`/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`);
+    insertParam('selected', selectedTaxonGroup);
 })
 
 $findTaxonButton.click(function () {
@@ -249,6 +263,7 @@ const getTaxaList = (url) => {
     taxaListCurrentUrl = url;
     showLoading();
     $('.download-button-container').show();
+    console.log(url)
     $.get(url).then(
         function (response) {
             hideLoading();
@@ -277,6 +292,21 @@ const getTaxaList = (url) => {
                 if (!name) {
                     name = data['scientific_name'];
                 }
+                name += `<br/><span style="font-size: 9pt">${data['scientific_name']}</span><br/>`;
+                if (data['common_name'].length > 0) {
+                    $.each(data['common_name'], function (i, common_name) {
+                        name += ` <span class="badge badge-info">${common_name}</span>`
+                    });
+                }
+                if (data['gbif_key'] || data['iucn_redlist_id']) {
+                    name += '<br/><div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
+                }
+                if (data['gbif_key']) {
+                    name += ` <a href="https://www.gbif.org/species/${data['gbif_key']}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
+                }
+                if (data['iucn_redlist_id']) {
+                    name += ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data['iucn_redlist_id']}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
+                }
                 let $rowAction = $('.row-action').clone(true, true);
                 $rowAction.removeClass('row-action');
                 $rowAction.show();
@@ -284,6 +314,9 @@ const getTaxaList = (url) => {
                 $taxaList.append($row);
                 $row.append(`<td>${name}</td>`);
                 $row.append(`<td>${data['rank']}</td>`);
+                $row.append(`<td>${data['iucn_status_full_name']}</td>`);
+                $row.append(`<td>${data['origin_name']}</td>`);
+                $row.append(`<td>${data['endemism_name']}</td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
                 let $tdAction = $(`<td></td>`);
                 $row.append($tdAction);
@@ -479,6 +512,36 @@ $button.click(function () {
     $taxonForm.hide();
     $newTaxonFamilyInput.val("")
     $newTaxonFamilyIdInput.val("")
+});
+
+$(document).ready(function () {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let url = ''
+    let taxonName = ''
+    if (urlParams.get('selected')) {
+        selectedTaxonGroup = urlParams.get('selected');
+        $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
+        url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
+    }
+    if (urlParams.get('taxon')) {
+        taxonName = urlParams.get('taxon');
+        if (url) {
+            url += `&taxon=${taxonName}`
+            $('#taxon-name-input').val(taxonName)
+            $clearSearchBtn.show();
+        }
+    }
+    if (urlParams.get('o')) {
+        const order = urlParams.get('o');
+        if (url) {
+            $(`.sort-button[data-order="${order}"]`).addClass('sort-button-selected');
+            url += `&o=${order}`
+        }
+    }
+    if (url) {
+        getTaxaList(url);
+    }
 });
 
 

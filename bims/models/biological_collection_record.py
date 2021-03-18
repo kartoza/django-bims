@@ -158,13 +158,6 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True,
         default='',
     )
-    category = models.CharField(
-        max_length=50,
-        choices=CATEGORY_CHOICES,
-        blank=True,
-        default='',
-        help_text='Origin'
-    )
     present = models.BooleanField(
         default=True,
     )
@@ -379,19 +372,6 @@ class BiologicalCollectionRecord(AbstractValidation):
             ).exists():
                 collection_uuid = str(uuid.uuid4())
             self.uuid = collection_uuid
-
-        # Try to get category if empty
-        if not self.category and self.taxonomy:
-            if self.taxonomy.origin:
-                self.category = self.taxonomy.origin
-            else:
-                bio_with_category = BiologicalCollectionRecord.objects.filter(
-                    taxonomy__canonical_name__icontains=
-                    self.taxonomy.canonical_name,
-                    category__isnull=False
-                )
-                if bio_with_category.exists():
-                    self.category = bio_with_category[0].category
 
         if not self.original_species_name:
             self.original_species_name = self.taxonomy.canonical_name
