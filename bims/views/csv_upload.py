@@ -227,16 +227,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                         optional_records['institution_id'] = \
                             record['custodian']
 
-                    category = ''
-                    if 'category' in record:
-                        category = record['category'].lower()
-                    if 'origin' in record:
-                        origin_choices = {
-                            v: k for k, v in
-                            BiologicalCollectionRecord.CATEGORY_CHOICES
-                        }
-                        category = origin_choices[record['origin']]
-
                     if 'habitat' in record:
                         habitat_choices = {
                             v: k for k, v in
@@ -325,7 +315,6 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                                 collection_date=datetime.strptime(
                                     record['date'], '%Y-%m-%d'),
                                 taxonomy=taxonomy,
-                                category=category,
                                 collector=record['collector'],
                             )
                         )

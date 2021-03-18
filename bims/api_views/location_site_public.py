@@ -318,7 +318,7 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
 
     def get_origin_data(self, collection_results):
         origin_data = collection_results.annotate(
-            value=F('category')
+            value=F('taxonomy__origin')
         ).values(
             'value'
         ).annotate(

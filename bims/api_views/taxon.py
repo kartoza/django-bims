@@ -57,9 +57,9 @@ class TaxonDetail(APIView):
 
         # Origins
         origin_value = ''
-        origin = records.values_list('category', flat=True).distinct()
+        origin = records.values_list('taxonomy__origin', flat=True).distinct()
         if origin:
-            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+            for category in Taxonomy.CATEGORY_CHOICES:
                 if category[0] == origin[0]:
                     origin_value = category[1]
         data['origin'] = origin_value

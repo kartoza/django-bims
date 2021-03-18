@@ -24,6 +24,7 @@ from bims.models.algae_data import AlgaeData
 from bims.models.survey import SurveyData, SurveyDataValue
 from bims.scripts.collection_csv_keys import *  # noqa
 from bims.models.location_context_group import LocationContextGroup
+from bims.models.taxonomy import Taxonomy
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -210,8 +211,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return lon
 
     def get_origin(self, obj):
-        category = obj.category
-        if category in ORIGIN:
+        category = obj.taxonomy.origin
+        if category in Taxonomy.CATEGORY_CHOICES:
             return ORIGIN[category]
         else:
             return 'Unknown'

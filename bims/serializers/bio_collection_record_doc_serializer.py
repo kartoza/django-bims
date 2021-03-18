@@ -29,7 +29,6 @@ class BiologicalCollectionRecordDocSerializer(serializers.ModelSerializer):
             'id',
             'original_species_name',
             'collector',
-            'category',
             'collection_date',
             'geometry',
             'taxon_gbif_id',
