@@ -194,9 +194,9 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
             site_visit_id=F('survey_id'),
-            origin=Case(When(category='',
+            origin=Case(When(taxonomy__origin='',
                              then=Value('Unknown')),
-                        default=F('category')),
+                        default=F('taxonomy__origin')),
             cons_status=Case(When(taxonomy__iucn_status__isnull=False,
                                   then=F('taxonomy__iucn_status__category')),
                              default=Value('Not evaluated')),

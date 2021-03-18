@@ -42,15 +42,15 @@ class ModuleSummary(APIView):
             module_group=taxon_group
         )
         summary = dict(
-            collections.exclude(category__exact='').annotate(
-                value=Case(When(category__isnull=False,
-                                then=F('category')),
+            collections.exclude(taxonomy__origin__exact='').annotate(
+                value=Case(When(taxonomy__origin__isnull=False,
+                                then=F('taxonomy__origin')),
                            default=Value('Unspecified'))
             ).values('value').annotate(
                 count=Count('value')
             ).values_list('value', 'count')
         )
-        unspecified = collections.filter(category__exact='').count()
+        unspecified = collections.filter(taxonomy__origin__exact='').count()
         if 'Unspecified' in summary:
             summary['Unspecified'] += unspecified
         else:
