@@ -115,7 +115,10 @@ class BioCollectionSummary(APIView):
         response_data['gbif_id'] = taxonomy.gbif_key
         response_data['total_records'] = len(collection_results)
         response_data['conservation_status'] = iucn_status
-        response_data['origin'] = collection_results[0].category
+        if taxonomy.origin:
+            response_data['origin'] = taxonomy.origin
+        else:
+            response_data['origin'] = '-'
         response_data['endemism'] = endemic
         response_data['records_over_time_labels'] = (
             list(records_over_time.values_list('year', flat=True))
