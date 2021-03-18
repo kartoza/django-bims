@@ -265,7 +265,6 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     site = factory.SubFactory(LocationSiteF)
     original_species_name = factory.Sequence(
             lambda n: u'Test original species name %s' % n)
-    category = 'alien'
     present = True
     collection_date = timezone.now()
     collector = factory.Sequence(
