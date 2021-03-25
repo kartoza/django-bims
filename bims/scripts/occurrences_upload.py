@@ -482,24 +482,6 @@ class OccurrenceProcessor(object):
             optional_data['present'] = bool(DataCSVUpload.row_value(
                 row, PRESENT))
 
-        # -- Process origin
-        category = None
-        if CATEGORY in row:
-            category = DataCSVUpload.row_value(row, CATEGORY).lower()
-        if ORIGIN in row and DataCSVUpload.row_value(row, ORIGIN):
-            origin = DataCSVUpload.row_value(row, ORIGIN)
-            if (
-                    'translocated' in origin.lower() or
-                    'non-native' in origin.lower()):
-                category = 'alien'
-            elif 'native' == origin.lower():
-                category = 'native'
-            else:
-                category = None
-        if not category:
-            category = taxonomy.origin
-        optional_data['category'] = category
-
         # -- Optional data - Habitat
         if HABITAT in row and DataCSVUpload.row_value(row, HABITAT):
             habitat_choices = {
@@ -606,7 +588,6 @@ class OccurrenceProcessor(object):
                 row, SPECIES_NAME),
             'collection_date': sampling_date,
             'taxonomy': taxonomy,
-            'category': category,
             'collector_user': collector
         }
         if uuid_value:
