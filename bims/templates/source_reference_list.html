@@ -8,6 +8,8 @@
 {% block pre-head %}
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet"
+          href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <style>
         .card {
             margin-bottom: 10px;
@@ -94,11 +96,13 @@
                         </header>
                         <div class="filter-content">
                             <div class="card-body" data-filter="type">
-                                <input type="text"
-                                       class="form-control form-control-sm"
-                                       onClick="this.setSelectionRange(0, this.value.length)"
-                                       id="owner" placeholder="" name="owner"
-                                       value="{% if collector_owner %}{% if collector_owner.0.get_full_name %}{{ collector_owner.0.get_full_name }}{% else %}{{ collector_owner.0.username }}{% endif %}{% endif %}">
+                                <select class="form-control owner-auto-complete" multiple="multiple">
+                                    {% for author in collector_owner %}
+                                        <option selected value="{{ author.id }}">{{ author.first_name }} {{ author.last_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <br/><br/>
+                                <button class="btn btn-primary apply-author-filter" style="width: 100%">Apply</button>
                             </div> <!-- card-body.// -->
                         </div>
                     </article> <!-- card-group-item.// -->
@@ -157,11 +161,21 @@
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script>
 
         const csrfToken = '{{ csrf_token }}';
+        const authorIds = [];
+
+        function split(val) {
+            return val.split(/,\s*/);
+        }
+
+        function extractLast(term) {
+            return split(term).pop();
+        }
 
         $('.custom-control-input').change(function (e) {
             let $parent = $(e.target).parent().parent();
@@ -196,41 +210,67 @@
             }
         })
 
-        $('#owner').autocomplete({
-            source: function (request, response) {
-                console.log(request.term)
-                $.ajax({
-                    url: '/user-autocomplete/?term=' + encodeURIComponent(request.term),
-                    type: 'get',
-                    dataType: 'json',
-                    success: function (data) {
-                        response($.map(data, function (item) {
-                            return {
-                                label: item.first_name + ' ' + item.last_name,
-                                value: item.id
-                            }
-                        }));
-                    }
-                });
-            },
-            minLength: 3,
-            open: function (event, ui) {
-                setTimeout(function () {
-                    $('.ui-autocomplete').css('z-index', 99);
-                }, 0);
-            },
-            change: function (event, ui) {
-                let value = $(event.target).val();
-                if (value === '') {
-                    insertParam('collectors', '');
-                }
-            },
-            select: function (e, u) {
-                e.preventDefault();
-                let userId = u.item.value;
-                $('#owner').val(u.item.label);
-                insertParam('collectors', `${userId}`);
+        function formatAuthor(author) {
+            if (author.loading) {
+                return author.text;
             }
-        });
+
+            let $container = $(
+                "<div class='select2-result-repository clearfix'>" +
+                "<div class='select2-result-repository__meta'>" +
+                "<div class='select2-result-repository__title'></div>" +
+                "</div>" +
+                "</div>"
+            );
+
+            $container.find(".select2-result-repository__title").text(author.first_name + ' ' + author.last_name);
+
+            return $container;
+        }
+
+        function formatAuthorSelection(author) {
+            const authorName = author.text || author.first_name + " " + author.last_name
+            return $(`<span class="author_result" data-author-id="${author.id}">${authorName}</span>`);
+        }
+
+        let authorSelect = $('.owner-auto-complete').select2({
+            ajax: {
+                url: "/user-autocomplete/",
+                dataType: "json",
+                delay: 250,
+                data: function (params) {
+                    return {
+                        term: params.term
+                    }
+                },
+                processResults: function (data, params) {
+                    // parse the results into the format expected by Select2
+                    // since we are using custom formatting functions we do not need to
+                    // alter the remote JSON data, except to indicate that infinite
+                    // scrolling can be used
+                    params.page = params.page || 1;
+                    return {
+                        results: data,
+                        pagination: {
+                            more: (params.page * 30) < data.total_count
+                        }
+                    };
+                },
+                cache: true
+            },
+            placeholder: 'Search for a author',
+            minimumInputLength: 3,
+            templateResult: formatAuthor,
+            templateSelection: formatAuthorSelection
+        })
+
+        $('.apply-author-filter').click(function(e) {
+            const $target = $(e.target).parent();
+            const authorIds = $target.find('.author_result').map(function () {
+                return $(this).data("author-id");
+            }).get();
+            insertParam('collectors', authorIds.join(','))
+        })
+
     </script>
 {% endblock %}
