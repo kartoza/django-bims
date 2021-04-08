@@ -43,7 +43,7 @@ let authorSelect = $('.owner-auto-complete').select2({
         },
         cache: true
     },
-    placeholder: 'Search for a author',
+    placeholder: 'Search for an author',
     minimumInputLength: 3,
     templateResult: formatAuthor,
     templateSelection: formatAuthorSelection
