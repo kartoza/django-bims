@@ -7,8 +7,6 @@
 
 {% block pre-head %}
     <link rel="stylesheet"
-          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <link rel="stylesheet"
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <style>
         .card {
@@ -160,23 +158,13 @@
 {% block foot %}
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
-    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
-    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/multi_author_select.js" %}"></script>
     <script>
 
         const csrfToken = '{{ csrf_token }}';
         const authorIds = [];
-
-        function split(val) {
-            return val.split(/,\s*/);
-        }
-
-        function extractLast(term) {
-            return split(term).pop();
-        }
 
         $('.custom-control-input').change(function (e) {
             let $parent = $(e.target).parent().parent();
