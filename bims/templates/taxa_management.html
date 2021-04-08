@@ -268,7 +268,7 @@
         <td>
             <button class="btn btn-action btn-danger remove-taxon-from-group" style="width: 100%">Remove from group
             </button>
-            <a href="" class="btn btn-action btn-warning edit-taxon" style="width: 100%; margin-top: 5px" onclick="windowpop(this.href, 800, 600)">Edit
+            <a href="" class="btn btn-action btn-warning edit-taxon" style="width: 100%; margin-top: 5px">Edit
             </a>
         </td>
     </div>
@@ -462,7 +462,23 @@
     <!-- Plugin JavaScript -->
     <script>
         let csrfToken = '{{ csrf_token }}';
+        function dismissAddAnotherPopup(win) {
+            win.close();
+        }
+        function dismissChangeRelatedObjectPopup(window, value, obj, new_obj) {
+            window.close();
+            location.reload();
+        }
 
+        function dismissDeleteRelatedObjectPopup(window, value) {
+            window.close();
+            location.reload();
+        }
+
+        function dismissAddRelatedObjectPopup(window, value, obj) {
+            window.close();
+            location.reload();
+        }
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>

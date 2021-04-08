@@ -20,6 +20,30 @@ let $removeAllBtn = $('.remove-all-btn');
 let $clearSearchBtn = $('#clear-search-button');
 let $sortBtn = $('.sort-button');
 
+const popupCenter = ({url, title, w, h}) => {
+    // Fixes dual-screen position                             Most browsers      Firefox
+    const dualScreenLeft = window.screenLeft !==  undefined ? window.screenLeft : window.screenX;
+    const dualScreenTop = window.screenTop !==  undefined   ? window.screenTop  : window.screenY;
+
+    const width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
+    const height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
+
+    const systemZoom = width / window.screen.availWidth;
+    const left = (width - w) / 2 / systemZoom + dualScreenLeft
+    const top = (height - h) / 2 / systemZoom + dualScreenTop
+    const newWindow = window.open(url, title,
+      `
+      scrollbars=yes,
+      width=${w / systemZoom}, 
+      height=${h / systemZoom}, 
+      top=${top}, 
+      left=${left}
+      `
+    )
+
+    if (window.focus) newWindow.focus();
+}
+
 // ----- Bind element to events ----- //
 $sortable.sortable({
     stop: function (event, ui) {
@@ -321,8 +345,12 @@ const getTaxaList = (url) => {
                 let $tdAction = $(`<td></td>`);
                 $row.append($tdAction);
                 $tdAction.append($rowAction);
-                $rowAction.find('.edit-taxon').click((event) => event.preventDefault());
-                $rowAction.find('.edit-taxon').attr('href', `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`);
+                $rowAction.find('.edit-taxon').click((event) => {
+                    event.preventDefault();
+                    popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
+
+                    return false;
+                });
             });
             if (response['next'] == null && response['previous'] == null) {
                 $pagination.hide();

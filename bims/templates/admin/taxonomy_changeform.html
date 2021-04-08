@@ -1,0 +1,47 @@
+{% extends 'admin/change_form.html' %}
+
+{% block submit_buttons_bottom %}
+    {{ block.super }}
+    <script>
+
+        (function($) {
+            $(document).ready(function() {
+                $('#grp-content').find('.iucn_status ').find('.c-2').append(
+                    `<button class="grp-button" style="width: 150px;" id="find-iucn">Find IUCN</button>`
+                );
+                $('#find-iucn').click(function(e) {
+                    e.preventDefault();
+                    const $target = $(e.target);
+                    const originalButtonText = $target.html();
+                    const $iucnStatus = $('#id_iucn_status');
+                    const $iucnId = $('#id_iucn_redlist_id');
+                    const $iucnData = $('#id_iucn_data');
+                    $target.html('Fetching...')
+                    const speciesName = $('#grp-content').find('[name="canonical_name"]').val();
+                    const iucnKey = '{{ preferences.SiteSetting.iucn_api_key }}';
+                    let iucnApiUrl = 'http://apiv3.iucnredlist.org/api/v3';
+                    iucnApiUrl += '/species/' + speciesName + '?token=' + iucnKey;
+                    $.ajax({
+                        type: 'GET',
+                        url: iucnApiUrl,
+                        success: function (data) {
+                            if (data['result'].length > 0) {
+                                $target.html(originalButtonText);
+                                const result = data['result'][0];
+                                $("#id_iucn_status option:contains(" + result['category'] + ")").attr('selected', 'selected');
+                                $iucnId.val(result['taxonid']);
+                                $iucnData.val(JSON.stringify(result, null, 2));
+                            } else {
+                                $target.html("IUCN Data not found");
+                                $target.attr('disabled', 'disabled')
+                                $target.css('background', '#adadad');
+                                $target.css('border-color', '#adadad');
+                            }
+                        }
+                    })
+                })
+            });
+        })(grp.jQuery);
+
+    </script>
+{% endblock %}

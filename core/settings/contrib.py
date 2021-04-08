@@ -64,7 +64,8 @@ INSTALLED_APPS += (
     'preferences',
     'sorl.thumbnail',
     'ckeditor',
-    'celery_inspect'
+    'celery_inspect',
+    'django_json_widget',
 )
 
 # Wagtail configurations

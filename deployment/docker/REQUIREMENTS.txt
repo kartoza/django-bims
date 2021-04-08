@@ -64,3 +64,4 @@ geopy==2.0.0
 django-celery-inspect==0.2.1
 python-dwca-reader==0.15.0
 gitpython==3.1.13
+django-json-widget==1.1.1
