@@ -17,6 +17,12 @@ class TaxonSerializer(serializers.ModelSerializer):
     origin_name = serializers.SerializerMethodField()
     endemism_name = serializers.SerializerMethodField()
     common_name = serializers.SerializerMethodField()
+    total_records = serializers.SerializerMethodField()
+
+    def get_total_records(self, obj):
+        return BiologicalCollectionRecord.objects.filter(
+            taxonomy=obj
+        ).count()
 
     def get_common_name(self, obj):
         return list(
