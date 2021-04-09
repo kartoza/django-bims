@@ -16,4 +16,4 @@ jobs:
           cd deployment
           docker-compose -f docker-compose.test.yml up --build -d db-test uwsgi-test
           sleep 30
-          docker-compose -f docker-compose.test.yml exec -T uwsgi-lite python manage.py test --verbosity=2
+          docker-compose -f docker-compose.test.yml exec -T uwsgi-test /home/web/django_project/test.sh
