@@ -4,16 +4,25 @@ on:
   pull_request:
 
 jobs:
-  docker:
-      runs-on: ubuntu-latest
-      steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-        name: Checkout
-      - name: Build and Test
-        run: |
-          cd deployment
-          docker-compose -f docker-compose.test.yml up --build -d db-test uwsgi-test
-          sleep 30
-          docker-compose -f docker-compose.test.yml exec -T uwsgi-test /home/web/django_project/test.sh
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgis:
+        image: kartoza/postgis:9.6-2.4
+        env:
+          POSTGRES_USER: docker
+          POSTGRES_PASSWORD: docker
+          ALLOW_IP_RANGE: 0.0.0.0/0
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+     - uses: actions/checkout@v1
+     - name: Set up Python 3.5.7
+     - uses: actions/setup-python@v1
+       with:
+        python-version: 3.5.7
+     - name: Install dependencies
+       run: pip install -r deployment/docker/requirements.txt
+     - name: Run tests
+       run: python manage.py test
