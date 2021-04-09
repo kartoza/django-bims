@@ -2,10 +2,30 @@ let map = null;
 let markerSource = null;
 let riversLayer = 'https://maps.kartoza.com/geoserver/wms';
 
+const modal = `<!-- Modal -->
+<div id="error-modal" class="modal hide fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="myModalLabel">Error!</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Site is not in the correct country</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+`;
+
 let validator = $('#site-form').validate({
     submitHandler: function(form) {
         let siteCode = $('#site_code').val();
         let formAlert = $('#form-alert');
+        let submitButton = $('.submit-button');
         formAlert.html('');
         formAlert.hide();
 
@@ -19,7 +39,6 @@ let validator = $('#site-form').validate({
                 formAlert.html('River name is required.');
                 return false;
             }
-
             // Check length
             if (siteCode.length !== 12) {
                 showSiteCodeError();
@@ -33,7 +52,22 @@ let validator = $('#site-form').validate({
                 return false;
             }
         }
-        form.submit();
+
+        let latitude = $('#latitude').val();
+        let longitude = $('#longitude').val();
+        let originalSubmitButtonVal = submitButton.val();
+        submitButton.val('Checking...')
+        submitButton.attr('disabled', 'disabled')
+        checkSiteInCountry(latitude, longitude, function (isInCountry) {
+            if (isInCountry) {
+                form.submit();
+            } else {
+                $('#error-modal').modal('show');
+                submitButton.val(originalSubmitButtonVal)
+                submitButton.removeAttr('disabled')
+            }
+        })
+
     }
 });
 
@@ -44,6 +78,7 @@ let showSiteCodeError = function () {
 };
 
 $(function () {
+    $('body').append(modal);
     let southAfrica = [2910598.850835484, -3326258.3640110902];
     let mapView = new ol.View({
         center: southAfrica,
@@ -158,7 +193,7 @@ const updateSiteCode = (e) => {
         } else {
             document.getElementById('update-site-code').disabled = false;
             button.html(buttonLabel);
-            alert('Site is not inside country');
+            $('#error-modal').modal('show');
         }
     });
 
@@ -171,7 +206,6 @@ let fetchRiverName = (e) => {
     let button = $('#fetch-river-name');
     let url = '/api/get-river-name/?lon=' + longitude + '&lat=' + latitude;
     let buttonLabel = button.html();
-    console.log(url);
 
     document.getElementById('fetch-river-name').disabled = true;
     button.html('Fetching...');
