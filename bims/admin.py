@@ -19,7 +19,9 @@ from django.db import models
 from django.utils.html import format_html
 from django.urls import reverse
 from django.contrib import messages
+from django.contrib.postgres import fields
 
+from django_json_widget.widgets import JSONEditorWidget
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -678,6 +680,14 @@ class EndemismAdmin(admin.ModelAdmin):
 
 
 class TaxonomyAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        fields.JSONField: {'widget': JSONEditorWidget},
+    }
+    change_form_template = 'admin/taxonomy_changeform.html'
+
+    autocomplete_fields = (
+        'vernacular_names',
+    )
 
     list_display = (
         'canonical_name',
@@ -745,6 +755,10 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
+
+    search_fields = (
+        'name',
+    )
 
     list_display = (
         'name',
