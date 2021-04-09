@@ -14,6 +14,6 @@ jobs:
       - name: Build and Test
         run: |
           cd deployment
-          docker-compose -f docker-compose.yml up --build -d db uwsgi
+          docker-compose -f docker-compose.test.yml up --build -d db-test uwsgi-test
           sleep 30
-          docker-compose exec -T uwsgi test
+          docker-compose -f docker-compose.test.yml exec -T uwsgi-lite python manage.py test --verbosity=2

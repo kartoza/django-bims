@@ -1,0 +1,8 @@
+deployment/backups
+deployment/ansible
+deployment/pg
+deployment/media
+deployment/logs
+deployment/static
+.pycharm_helpers
+rancher-catalogue

@@ -1,0 +1,41 @@
+version: '2'
+services:
+
+  db-test:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - POSTGRES_USER=docker
+      - POSTGRES_PASS=docker
+    restart: unless-stopped
+
+  uwsgi-test:
+    build:
+      context: ../
+      dockerfile: deployment/docker/Dockerfile
+    hostname: uwsgi
+    working_dir: /home/web/django_project
+    entrypoint: []
+    environment:
+      - GEONODE_DATABASE_USER=docker
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db-test
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+      - BROKER_URL=amqp://rabbitmq:5672
+      - PYTHONPATH=/home/web/django_project:/usr/src/geonode
+      - DATABASE_URL=postgres://docker:docker@db-test:5432/gis
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - DATABASE_URL=postgis://docker:docker@db-test:5432/gis
+      - GEODATABASE_URL=postgis://geonode_data:docker@db-test:5432/geonode_data
+      - APP_NAME=bims
+    links:
+      - db-test:db-test
+    restart: unless-stopped
+    user: root

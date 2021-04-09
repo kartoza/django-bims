@@ -46,7 +46,6 @@ RUN cd /usr/src/geonode/; pip install -r requirements.txt --no-cache-dir; pip in
 # Install pygdal (after requirements https://github.com/GeoNode/geonode/pull/4599)
 RUN pip install pygdal==$(gdal-config --version).*
 
-COPY . /usr/src/app
 #
 #RUN chmod +x /usr/src/app/tasks.py \
 #    && chmod +x /usr/src/app/entrypoint.sh
@@ -55,7 +54,7 @@ COPY . /usr/src/app
 #RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
 #RUN pip install -e /usr/src/app
 
-ADD REQUIREMENTS.txt /REQUIREMENTS.txt
+ADD deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt; pip install uwsgi
 RUN npm -g install yuglify
 
@@ -67,14 +66,15 @@ RUN npm -g install yuglify
 
 # Install grunt
 RUN npm install -g grunt-cli
-ADD package.json /package.json
-ADD Gruntfile.js /Gruntfile.js
+ADD deployment/docker/package.json /package.json
+ADD deployment/docker/Gruntfile.js /Gruntfile.js
 RUN cd / && npm install
 
 #USER www-data
+ADD . /home/web/django_project
 WORKDIR /home/web/django_project
 
-ADD uwsgi.conf /uwsgi.conf
+ADD deployment/docker/uwsgi.conf /uwsgi.conf
 
 # Open port 8080 as we will be running our uwsgi socket on that
 EXPOSE 8080
