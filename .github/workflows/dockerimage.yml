@@ -1,21 +1,19 @@
-name: Build and Push Docker Image
+name: Test Django App
 
 on: 
-  push: 
-    branches:
-      - '3.x'
+  pull_request:
 
 jobs:
-  build:	
-    name: Build and Push Docker Django BIMS Image	
-    runs-on: ubuntu-16.04	
-    steps:	
-    - uses: actions/checkout@master	
-    - name: Build and Publish the Docker Django Bims Image	
-      uses: elgohr/Publish-Docker-Github-Action@master	
-      with:	
-        name: kartoza/kbims_uwsgi:v3.0
-        workdir: deployment/production
-        username: ${{ secrets.DOCKER_USERNAME }}	
-        password: ${{ secrets.DOCKER_PASSWORD }}	
-        buildargs: BIMS_TAG=3.x	
+  docker:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+        name: Checkout
+      - name: Build and Test
+        run: |
+          cd deployment
+          docker-compose -f docker-compose.yml up --build -d db uwsgi
+          sleep 30
+          docker-compose exec -T uwsgi test
