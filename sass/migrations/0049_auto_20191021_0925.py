@@ -10,17 +10,3 @@ class Migration(migrations.Migration):
     dependencies = [
         ('sass', '0048_auto_20191021_0924'),
     ]
-
-    database_operations = [
-        migrations.AlterModelTable('chem', 'bims_chem')
-    ]
-
-    state_operations = [
-        migrations.DeleteModel('chem')
-    ]
-
-    operations = [
-        migrations.SeparateDatabaseAndState(
-            database_operations=database_operations,
-            state_operations=state_operations)
-    ]

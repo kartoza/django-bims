@@ -13,13 +13,12 @@
                     e.preventDefault();
                     const $target = $(e.target);
                     const originalButtonText = $target.html();
-                    const $iucnStatus = $('#id_iucn_status');
                     const $iucnId = $('#id_iucn_redlist_id');
                     const $iucnData = $('#id_iucn_data');
                     $target.html('Fetching...')
                     const speciesName = $('#grp-content').find('[name="canonical_name"]').val();
                     const iucnKey = '{{ preferences.SiteSetting.iucn_api_key }}';
-                    let iucnApiUrl = 'http://apiv3.iucnredlist.org/api/v3';
+                    let iucnApiUrl = '/bims_proxy/http://apiv3.iucnredlist.org/api/v3';
                     iucnApiUrl += '/species/' + speciesName + '?token=' + iucnKey;
                     $.ajax({
                         type: 'GET',
