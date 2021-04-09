@@ -1,5 +1,6 @@
 # coding=utf8
 from django.http import Http404
+from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -264,7 +265,11 @@ class TaxaList(LoginRequiredMixin, APIView):
                 canonical_name__icontains=taxon_name
             )
         if order:
-            if 'origin' not in order:
+            if 'total_records' in order:
+                taxon_list = taxon_list.annotate(
+                    total_records=Count('biologicalcollectionrecord')
+                ).order_by(order)
+            elif 'origin' not in order:
                 taxon_list = taxon_list.order_by(order)
             else:
                 origin_order = [

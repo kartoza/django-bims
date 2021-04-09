@@ -341,6 +341,7 @@ const getTaxaList = (url) => {
                 $row.append(`<td>${data['iucn_status_full_name']}</td>`);
                 $row.append(`<td>${data['origin_name']}</td>`);
                 $row.append(`<td>${data['endemism_name']}</td>`);
+                $row.append(`<td>${data['total_records']}</td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
                 let $tdAction = $(`<td></td>`);
                 $row.append($tdAction);
@@ -363,7 +364,8 @@ const getTaxaList = (url) => {
                     paginationNext.show();
                     paginationNext.off('click');
                     paginationNext.click(() => {
-                        getTaxaList(response['next']);
+                        const urlParams = new URLSearchParams(response['next']);
+                        insertParam('page', urlParams.get('page'), false);
                     })
                 } else {
                     paginationNext.hide();
@@ -372,7 +374,8 @@ const getTaxaList = (url) => {
                     paginationPrev.show();
                     paginationPrev.off('click');
                     paginationPrev.click(() => {
-                        getTaxaList(response['previous']);
+                        const urlParams = new URLSearchParams(response['previous']);
+                        insertParam('page', urlParams.get('page'), false);
                     })
                 } else {
                     paginationPrev.hide();
@@ -566,6 +569,9 @@ $(document).ready(function () {
             $(`.sort-button[data-order="${order}"]`).addClass('sort-button-selected');
             url += `&o=${order}`
         }
+    }
+    if (urlParams.get('page')) {
+        url += `&page=${urlParams.get('page')}`;
     }
     if (url) {
         getTaxaList(url);
