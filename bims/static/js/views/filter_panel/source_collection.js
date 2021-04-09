@@ -10,7 +10,7 @@ define([
         dataSourceCaptions: {
             "fbis": "Data not available via GBIF that have been sourced and collated from reputable " +
                 "databases, peer-reviewed scientific articles, published reports, theses and other unpublished data sources.",
-            "gbif_fbis": "Freshwater species occurrence data available for South Africa" +
+            "gbif": "Freshwater species occurrence data available for South Africa" +
                 " that are currently available via the Global Biodiversity Information " +
                 "Facility (GBIF). GBIF includes periodically-updated data from the South" +
                 " African Institute for Aquatic Biodiversity (SAIAB), as well as 'Research Grade' " +
