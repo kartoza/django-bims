@@ -21,16 +21,19 @@ class SiteInCountry(LoginRequiredMixin, APIView):
             return Response(True)
 
         geo_locator = Nominatim(user_agent='bims')
-        location = geo_locator.reverse('{lat}, {lon}'.format(
-            lat=lat,
-            lon=lon
-        ))
-        base_country_code = preferences.SiteSetting.base_country_code
-        if (
-            location.raw['address']['country_code'] ==
-            base_country_code.lower()
-        ):
-            return Response(True)
+        try:
+            location = geo_locator.reverse('{lat}, {lon}'.format(
+                lat=lat,
+                lon=lon
+            ))
+            base_country_code = preferences.SiteSetting.base_country_code
+            if (
+                location.raw['address']['country_code'] ==
+                base_country_code.lower()
+            ):
+                return Response(True)
+        except Exception as e:  # noqa
+            pass
 
         return Response({
             'data': 'Site is not in the country'},
