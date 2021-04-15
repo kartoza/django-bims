@@ -4,6 +4,7 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from bims.models.taxon_group import TaxonGroup
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.enums.taxonomic_rank import TaxonomicRank
 
 
@@ -24,6 +25,11 @@ class TaxaManagementView(
         context['taxa_groups'] = TaxonGroup.objects.filter(
             category='SPECIES_MODULE'
         ).order_by('display_order')
+        context['source_collections'] = list(
+            BiologicalCollectionRecord.objects.all().values_list(
+                'source_collection', flat=True
+            ).distinct('source_collection')
+        )
         context['taxon_rank'] = [
             TaxonomicRank.GENUS.name,
             TaxonomicRank.SPECIES.name

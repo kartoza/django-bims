@@ -382,7 +382,8 @@ class CollectionSearch(object):
             })
         elif self.search_query and bio is None:
             bio = collection_record_model.objects.filter(
-                original_species_name__icontains=self.search_query
+                Q(original_species_name__icontains=self.search_query) |
+                Q(taxonomy__canonical_name__icontains=self.search_query)
             )
             if not bio.exists():
                 bio = collection_record_model.objects.filter(
