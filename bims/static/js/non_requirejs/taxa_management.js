@@ -316,6 +316,7 @@ const getTaxaList = (url) => {
                 if (!name) {
                     name = data['scientific_name'];
                 }
+                let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
                 name += `<br/><span style="font-size: 9pt">${data['scientific_name']}</span><br/>`;
                 if (data['common_name'].length > 0) {
                     $.each(data['common_name'], function (i, common_name) {
@@ -341,7 +342,7 @@ const getTaxaList = (url) => {
                 $row.append(`<td>${data['iucn_status_full_name']}</td>`);
                 $row.append(`<td>${data['origin_name']}</td>`);
                 $row.append(`<td>${data['endemism_name']}</td>`);
-                $row.append(`<td>${data['total_records']}</td>`);
+                $row.append(`<td>${data['total_records']}&nbsp;<a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a></td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
                 let $tdAction = $(`<td></td>`);
                 $row.append($tdAction);
