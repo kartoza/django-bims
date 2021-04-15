@@ -160,26 +160,6 @@ class LocationSite(DocumentLinksMixin):
         null=True,
     )
 
-    def generate_site_code(self):
-        """
-        Generate site code from site details
-        """
-        # Get first 4 letter from site name
-        name = ''
-        if self.name:
-            name = self.name.replace(' ', '')
-            name = name[0:4]
-            name = name.upper()
-        # Total sites with same name
-        total_sites = LocationSite.objects.filter(
-            name=self.name
-        ).exclude(id = self.id).count()
-        site_code = '{name}-{number}'.format(
-            name=name,
-            number='{:04d}'.format(total_sites)
-        )
-        return site_code
-
     @property
     def location_site_identifier(self):
         """
@@ -520,15 +500,16 @@ def generate_site_code(location_site=None, lat=None, lon=None):
 
     site_code = ''
     catchment_site_code = ''
+    catchments_data = {}
     catchment_generator_method = preferences.SiteSetting.site_code_generator
     if catchment_generator_method == 'fbis':
-        catchment_site_code = fbis_catchment_generator(
+        catchment_site_code, catchments_data = fbis_catchment_generator(
             location_site=location_site,
             lat=lat,
             lon=lon
         )
     elif catchment_generator_method == 'rbis':
-        catchment_site_code = rbis_catchment_generator(
+        catchment_site_code, catchments_data = rbis_catchment_generator(
             location_site=location_site,
             lat=lat,
             lon=lon
@@ -561,4 +542,4 @@ def generate_site_code(location_site=None, lat=None, lon=None):
         site_code_full = site_code
         site_code_full += site_code_string
 
-    return site_code_full
+    return site_code_full, catchments_data
