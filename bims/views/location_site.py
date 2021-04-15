@@ -74,7 +74,7 @@ class LocationSiteFormView(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        owner = request.POST.get('owner', None)
+        owner = request.POST.get('owner', '').strip()
         if not owner:
             owner = None
         latitude = request.POST.get('latitude', None)
@@ -108,7 +108,7 @@ class LocationSiteFormView(TemplateView):
                 owner = get_user_model().objects.get(
                     id=owner
                 )
-            except get_user_model().DoesNotExist:
+            except (get_user_model().DoesNotExist, ValueError):
                 raise Http404('User does not exist')
 
         river, river_created = River.objects.get_or_create(
@@ -209,7 +209,7 @@ class LocationSiteFormView(TemplateView):
         if geo_class.exists():
             if geomorphological_fetched:
                 location_site.original_geomorphological = (
-                    geo_class[0].value.encode('utf-8')
+                    geo_class[0].value
                 )
         else:
             if not location_site.original_geomorphological:
@@ -288,6 +288,14 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         if self.location_site.owner:
             context_data['fullname'] = self.location_site.owner.get_full_name()
             context_data['user_id'] = self.location_site.owner.id
+        elif self.location_site.creator:
+            context_data['fullname'] = (
+                self.location_site.creator.get_full_name()
+            )
+            context_data['user_id'] = self.location_site.creator.id
+        else:
+            context_data['fullname'] = ''
+            context_data['user_id'] = ''
         if self.location_site.river:
             context_data['river_name'] = self.location_site.river.name
         return context_data
