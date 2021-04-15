@@ -21,14 +21,16 @@ class GetSiteCode(LoginRequiredMixin, APIView):
             except LocationSite.DoesNotExist:
                 pass
 
-        catchment = ''
-
         river_name = fetch_river_name(lat, lon)
+
+        site_code, catchment = generate_site_code(
+            location_site=location_site,
+            lat=lat,
+            lon=lon
+        )
 
         return Response({
             'river': river_name,
             'catchment': catchment,
-            'site_code': generate_site_code(
-                location_site=location_site
-            )
+            'site_code': site_code
         })

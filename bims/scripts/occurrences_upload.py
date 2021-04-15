@@ -46,6 +46,7 @@ from bims.tasks.location_context import generate_spatial_scale_filter
 from bims.tasks.source_reference import (
     generate_source_reference_filter
 )
+from bims.models.location_site import generate_site_code
 
 
 logger = logging.getLogger('bims')
@@ -253,7 +254,11 @@ class OccurrenceProcessor(object):
         if legacy_river_name:
             location_site.legacy_river_name = legacy_river_name
         if not location_site.site_code:
-            site_code = location_site.generate_site_code()
+            site_code, catchments_data = generate_site_code(
+                location_site,
+                lat=location_site.latitude,
+                lon=location_site.longitude
+            )
             location_site.site_code = site_code
         location_site.save()
         return location_site

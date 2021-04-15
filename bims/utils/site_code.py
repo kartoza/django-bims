@@ -11,9 +11,10 @@ def _fetch_catchments_data(catchment_key, lon, lat):
     :param catchment_key: catchment key in geocontext
     :param lon: longitude
     :param lon: latitude
-    :return: list of catchment data
+    :return: list of catchment data, catchments object
     """
     catchments = {}
+    catchment_data = {}
     catchment_url = (
         '{base_url}/api/v1/geocontext/value/group/'
         '{lon}/{lat}/{catchment_key}/'
@@ -31,7 +32,7 @@ def _fetch_catchments_data(catchment_key, lon, lat):
                 catchments[_catchment['key']] = _catchment['value']
     except (HTTPError, ValueError, KeyError):
         pass
-    return catchments
+    return catchments, catchment_data
 
 
 def _get_catchments_data(
@@ -44,8 +45,9 @@ def _get_catchments_data(
 
     catchment_key = catchment_key
     catchments = {}
+    catchments_data = {}
     if not location_site:
-        catchments = _fetch_catchments_data(
+        catchments, catchments_data = _fetch_catchments_data(
             catchment_key=catchment_key,
             lon=lon,
             lat=lat
@@ -58,7 +60,7 @@ def _get_catchments_data(
         if not catchments:
             location_site.update_location_context_document(catchment_key)
             catchments = location_contexts.values_from_group(catchment_key)
-    return catchments
+    return catchments, catchments_data
 
 
 def fbis_catchment_generator(location_site=None, lat=None, lon=None):
@@ -70,10 +72,11 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
     :return: catchment string :
         2 characters from secondary catchment area
         4 characters from river name
+        , catchments data in dictionary
     """
     catchment_key = 'river_catchment_areas_group'
     catchment_code = ''
-    catchments = _get_catchments_data(
+    catchments, catchments_data = _get_catchments_data(
         location_site=location_site,
         lat=lat,
         lon=lon,
@@ -90,7 +93,7 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
             location_site.geometry_point[1],
             location_site.geometry_point[0]
         )[:4].upper()
-    return catchment_code
+    return catchment_code, catchments_data
 
 
 def rbis_catchment_generator(location_site=None, lat=None, lon=None):
@@ -103,11 +106,12 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
         1 character from catchment level_0 +
         2 characters from catchment level_1 +
         1 characters from catchment level_2
+        , catchments data
     """
     catchment_key = 'rwanda_catchments'
     level_2 = ''
     district_id = ''
-    catchments = _get_catchments_data(
+    catchments, catchments_data = _get_catchments_data(
         location_site=location_site,
         lat=lat,
         lon=lon,
@@ -120,7 +124,7 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
 
     # Get district id
     geocontext_key = 'rwanda_district_id'
-    district_data = _get_catchments_data(
+    district_data, district_geocontext_data = _get_catchments_data(
         location_site=location_site,
         lat=lat,
         lon=lon,
@@ -129,4 +133,4 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
     if district_data and 'districts_id' in district_data:
         district_id = district_data['districts_id']
 
-    return level_2 + district_id
+    return level_2 + district_id, catchments_data

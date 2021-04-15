@@ -170,8 +170,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         )
 
         for location_site in queryset:
-            location_site.site_code = generate_site_code(
-                location_site=location_site
+            location_site.site_code, catchments_data = generate_site_code(
+                location_site=location_site,
+                lat=location_site.latitude,
+                lon=location_site.longitude
             )
             location_site.save()
 
