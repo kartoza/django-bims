@@ -365,8 +365,11 @@ const getTaxaList = (url) => {
                     paginationNext.show();
                     paginationNext.off('click');
                     paginationNext.click(() => {
-                        const urlParams = new URLSearchParams(response['next']);
-                        insertParam('page', urlParams.get('page'), false);
+                        const nextUrl = response['next'].split('?');
+                        if (nextUrl.length > 1) {
+                            const urlParams = new URLSearchParams(nextUrl[1]);
+                            insertParam('page', urlParams.get('page'), false);
+                        }
                     })
                 } else {
                     paginationNext.hide();
@@ -375,8 +378,11 @@ const getTaxaList = (url) => {
                     paginationPrev.show();
                     paginationPrev.off('click');
                     paginationPrev.click(() => {
-                        const urlParams = new URLSearchParams(response['previous']);
-                        insertParam('page', urlParams.get('page'), false);
+                        const prevUrl = response['previous'].split('?');
+                        if (prevUrl.length > 1) {
+                            const urlParams = new URLSearchParams(prevUrl[1]);
+                            insertParam('page', urlParams.get('page'), false);
+                        }
                     })
                 } else {
                     paginationPrev.hide();
