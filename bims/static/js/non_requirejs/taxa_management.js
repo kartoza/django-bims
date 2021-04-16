@@ -577,6 +577,7 @@ $(document).ready(function () {
     if (url) {
         getTaxaList(url);
     }
+    $('.select-multiple').select2();
 });
 
 

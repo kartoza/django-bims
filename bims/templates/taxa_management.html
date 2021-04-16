@@ -10,6 +10,8 @@
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
+    <link rel="stylesheet"
+          href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <style>
@@ -138,7 +140,9 @@
             clear: left;
             width: 100%;
         }
-
+        .select2-selection__choice, .select2-results__options {
+            font-size: 0.7em !important;
+        }
     </style>
     <script>
         const sourceCollection = {{ source_collections | safe }};
@@ -219,12 +223,13 @@
                 <tr>
                     <th scope="col" style="width: 25%">Taxon Name
                         <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="canonical_name"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i></th>
+                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i>
+                    </th>
                     <th scope="col" style="width: 10%">Rank
                         <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="rank"></i>
                         <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-rank"></i>
                     </th>
-                    <th scope="col" style="width: 10%">Cons. Status
+                    <th scope="col" style="width: 20%">Cons. Status
                         <br/>
                         <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="iucn_status__category"></i>
                         <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-iucn_status__category"></i>
@@ -246,6 +251,27 @@
                         <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
                     </th>
                     <th scope="col">Action</th>
+                </tr>
+                <tr>
+                    <td>
+                        <input class="form-control form-control-sm" type="text" id="taxon-name-filter">
+                    </td>
+                    <td>
+                        <select class="select-multiple" name="states[]" multiple="multiple" style="font-size: 0.8em">
+                            <option value="CLASS">CLASS</option>
+                            <option value="SPECIES">SPECIES</option>
+                            <option value="FAMILY">FAMILY</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="form-control form-control-sm" type="text" id="const-status-filter">
+                    </td>
+                    <td>
+                        <input class="form-control form-control-sm" type="text" id="origin-filter">
+                    </td>
+                    <td>
+                        <input class="form-control form-control-sm" type="text" id="endemism-filter">
+                    </td>
                 </tr>
                 </thead>
                 <tbody id="taxa-list">
@@ -489,6 +515,7 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/helpers.js" %}"></script>
     <script src="{% static "js/non_requirejs/taxa_management.js" %}"></script>
