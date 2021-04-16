@@ -378,7 +378,7 @@ const getTaxaList = (url) => {
                     paginationPrev.show();
                     paginationPrev.off('click');
                     paginationPrev.click(() => {
-                        const prevUrl = response['next'].split('?');
+                        const prevUrl = response['previous'].split('?');
                         if (prevUrl.length > 1) {
                             const urlParams = new URLSearchParams(prevUrl[1]);
                             insertParam('page', urlParams.get('page'), false);
