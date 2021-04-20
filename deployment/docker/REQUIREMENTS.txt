@@ -57,7 +57,7 @@ sorl-thumbnail==12.6.3
 svglib==1.0.0
 simplejson==3.17.0
 django-extensions==2.2.9
-wagtail==2.9.3
+wagtail==2.11.6
 service-identity==18.1.0
 django-proxy==1.2.1
 geopy==2.0.0
