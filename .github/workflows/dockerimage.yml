@@ -27,7 +27,7 @@ jobs:
        with:
         repository: GeoNode/geonode
         fetch-depth: 1
-        ref: "3.0"
+        ref: 3.1.x
         path: geonode
      - name: Install dependencies
        run: |
