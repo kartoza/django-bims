@@ -18,9 +18,9 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
      - uses: actions/checkout@v1
-     - name: Set up Python 3.5.7
+     - name: Set up Python 3.7.10
        uses: actions/setup-python@v1
        with:
-        python-version: 3.5.10
+        python-version: 3.7.10
      - name: Install dependencies
        run: pip3 install -r deployment/docker/REQUIREMENTS.txt
