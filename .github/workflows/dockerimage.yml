@@ -23,4 +23,4 @@ jobs:
        with:
         python-version: 3.5.10
      - name: Install dependencies
-       run: pip install -r deployment/docker/REQUIREMENTS.txt
+       run: pip3 install -r deployment/docker/REQUIREMENTS.txt
