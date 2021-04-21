@@ -24,7 +24,7 @@ pygbif==0.4.0
 
 # bibliography
 bibtexparser==1.1.0
-eutils==0.6.0
+eutils==0.5.2
 habanero==0.7.2
 
 # documentation generation
