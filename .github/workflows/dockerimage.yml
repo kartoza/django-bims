@@ -32,4 +32,11 @@ jobs:
         ref: 3.1.x
         path: geonode
      - name: Install dependencies
-       run: ls -la
+       run: |
+        pip3 install -r geonode/requirements.txt
+        pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
+     - name: Run tests
+       env:
+         PYTHONPATH: bims;geonode
+         DJANGO_SETTINGS_MODULE: core.settings.dev_docker
+       run: python manage.py test
