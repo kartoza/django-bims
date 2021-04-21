@@ -22,7 +22,15 @@ jobs:
        uses: actions/setup-python@v1
        with:
         python-version: 3.7.10
+     - name: Checkout tools repo
+       uses: actions/checkout@v2
+       with:
+        repository: GeoNode/geonode
+        ref: 3.0
+        path: geonode
      - name: Install dependencies
-       run: pip3 install -r deployment/docker/REQUIREMENTS.txt
+       run: |
+        pip3 install -r geonode/requirements.txt
+        pip3 install -r deployment/docker/REQUIREMENTS.txt
      - name: Run tests
        run: python manage.py test
