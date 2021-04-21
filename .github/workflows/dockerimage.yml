@@ -38,7 +38,7 @@ jobs:
         pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
      - name: set pythonpath
        run: |
-        echo "PYTHONPATH=/home/runner/work/django-bims/django-bims/bims;/home/runner/work/django-bims/django-bims/geonode" >> $GITHUB_ENV
+        echo "PYTHONPATH=/home/runner/work/django-bims/bims;/home/runner/work/django-bims/geonode" >> $GITHUB_ENV
      - name: Run tests
        env:
          DJANGO_SETTINGS_MODULE: core.settings.dev_docker
