@@ -24,3 +24,5 @@ jobs:
         python-version: 3.7.10
      - name: Install dependencies
        run: pip3 install -r deployment/docker/REQUIREMENTS.txt
+     - name: Run tests
+       run: python manage.py test
