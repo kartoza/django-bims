@@ -1044,6 +1044,16 @@ class IngestedDataAdmin(admin.ModelAdmin):
     )
 
 
+class UploadSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        'uploader',
+        'module_group',
+        'uploaded_at',
+        'category',
+        'processed',
+        'canceled'
+    )
+
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -1132,7 +1142,7 @@ admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
-admin.site.register(UploadSession)
+admin.site.register(UploadSession, UploadSessionAdmin)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
