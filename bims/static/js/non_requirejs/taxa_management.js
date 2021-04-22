@@ -6,6 +6,7 @@ let taxonGroupUpdateOrderUrl = '/api/update-taxon-group-order/';
 let removeTaxaFromTaxonGroupUrl = '/api/remove-taxa-from-taxon-group/';
 let addTaxaToTaxonGroupUrl = '/api/add-taxa-to-taxon-group/';
 let addNewTaxonUrl = '/api/add-new-taxon/';
+let filterSelected = {};
 
 // ----- Global elements ----- //
 let $sortable = $('#sortable');
@@ -79,7 +80,14 @@ $searchButton.click(function (e) {
 });
 
 $clearSearchBtn.click(function (e) {
-     insertParam('taxon', '');
+    let urlParams = document.location.search.substr(1);
+    if (Object.keys(filterSelected).length > 0) {
+        $.each(filterSelected, function (key, value) {
+            urlParams = insertParam(key, '', true, false, urlParams);
+        })
+    }
+    urlParams = insertParam('taxon', '', true, false, urlParams);
+    document.location.search = urlParams;
 });
 
 $sortBtn.click(function (event) {
@@ -291,6 +299,7 @@ const getTaxaList = (url) => {
     $.get(url).then(
         function (response) {
             hideLoading();
+            $('#total-taxa').html(response.count);
             let $taxaList = $('#taxa-list');
             let $pagination = $('.pagination-centered');
             let paginationNext = $('.pagination-next');
@@ -365,7 +374,7 @@ const getTaxaList = (url) => {
                     paginationNext.show();
                     paginationNext.off('click');
                     paginationNext.click(() => {
-                        const urlParams = new URLSearchParams(response['next']);
+                        const urlParams = new URLSearchParams(new URL(response['next']).search);
                         insertParam('page', urlParams.get('page'), false);
                     })
                 } else {
@@ -375,7 +384,7 @@ const getTaxaList = (url) => {
                     paginationPrev.show();
                     paginationPrev.off('click');
                     paginationPrev.click(() => {
-                        const urlParams = new URLSearchParams(response['previous']);
+                        const urlParams = new URLSearchParams(new URL(response['previous']).search);
                         insertParam('page', urlParams.get('page'), false);
                     })
                 } else {
@@ -523,6 +532,7 @@ const $newTaxonFamilyInput = $('.new-taxon-family-name');
 const $taxonForm = $('.new-taxon-form');
 const $button = $taxonForm.find('.add-new-taxon-btn');
 const $newTaxonNameInput = $('#new-taxon-name');
+const $applyFiltersBtn = $('#apply-filters');
 
 function showNewTaxonForm(taxonName) {
     let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
@@ -546,9 +556,38 @@ $button.click(function () {
     $newTaxonFamilyIdInput.val("")
 });
 
+$applyFiltersBtn.click(function () {
+    const ranks = $('#rank-filters').select2('data').map(function(data) {
+        return data['text'];
+    })
+    let urlParams = insertParam('ranks', ranks.join(), true, false);
+    const origins = $('#origin-filters').select2('data').map(function(data) {
+        return data['id'];
+    })
+    urlParams = insertParam('origins', origins.join(), true, false, urlParams);
+    const endemism = $('#endemism-filters').select2('data').map(function(data) {
+        return data['text'];
+    })
+    urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
+    const consStatus = $('#cons-status-filters').select2('data').map(function(data) {
+        return data['id'];
+    })
+    urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
+    document.location.search = urlParams;
+})
+
+$('#collapseFilter').on('shown.bs.collapse', function() {
+    $('#add-filters').find('i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+})
+
+$('#collapseFilter').on('hidden.bs.collapse', function() {
+    $('#add-filters').find('i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+})
+
 $(document).ready(function () {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
+    let totalAllFilters = 0;
     let url = ''
     let taxonName = ''
     if (urlParams.get('selected')) {
@@ -573,6 +612,44 @@ $(document).ready(function () {
     }
     if (urlParams.get('page')) {
         url += `&page=${urlParams.get('page')}`;
+    }
+    if (urlParams.get('ranks')) {
+        const ranksArray = urlParams.get('ranks').split(',');
+        $('#rank-filters').val(ranksArray);
+        filterSelected['ranks'] = ranksArray;
+        totalAllFilters += ranksArray.length;
+        url += `&ranks=${urlParams.get('ranks')}`;
+    }
+    if (urlParams.get('origins')) {
+        const originsArray = urlParams.get('origins').split(',');
+        $('#origin-filters').val(originsArray);
+        filterSelected['origins'] = originsArray;
+        totalAllFilters += originsArray.length;
+        url += `&origins=${urlParams.get('origins')}`;
+    }
+    if (urlParams.get('endemism')) {
+        const endemismArray = urlParams.get('endemism').split(',');
+        $('#endemism-filters').val(endemismArray);
+        filterSelected['endemism'] = endemismArray;
+        totalAllFilters += endemismArray.length;
+        url += `&endemism=${urlParams.get('endemism')}`;
+    }
+    if (urlParams.get('is_gbif')) {
+        url += `&is_gbif=${urlParams.get('is_gbif')}`;
+    }
+    if (urlParams.get('is_iucn')) {
+        url += `&is_iucn=${urlParams.get('is_iucn')}`;
+    }
+    if (urlParams.get('cons_status')) {
+        const consStatusArray = urlParams.get('cons_status').split(',');
+        $('#cons-status-filters').val(consStatusArray);
+        filterSelected['cons_status'] = consStatusArray;
+        totalAllFilters += consStatusArray.length;
+        url += `&cons_status=${urlParams.get('cons_status')}`;
+    }
+    if (Object.keys(filterSelected).length > 0) {
+        $clearSearchBtn.show();
+        $('#total-selected-filter').html(totalAllFilters);
     }
     if (url) {
         getTaxaList(url);

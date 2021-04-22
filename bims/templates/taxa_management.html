@@ -15,6 +15,13 @@
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <style>
+        .total-data {
+            background-color: var(--main-accent-color);
+            color: white;
+            border-radius: 10px;
+            padding: 0.48em;
+            margin-left: 0.5em;
+        }
         .btn-sm {
             font-size: 10pt !important;
         }
@@ -141,7 +148,7 @@
             width: 100%;
         }
         .select2-selection__choice, .select2-results__options {
-            font-size: 0.7em !important;
+            font-size: 0.8em !important;
         }
     </style>
     <script>
@@ -197,15 +204,89 @@
                        aria-label="Search" id="taxon-name-input">
                 <button id="search-button"
                         class="btn btn-success btn-md my-0 ml-sm-2"
-                        style="height: 31px; padding-top: 3px">Search
+                        style="height: 31px; padding-top: 3px"><i class="fa fa-search" aria-hidden="true"></i> Search
                 </button>
+                <button id="add-filters"
+                        class="btn btn-info btn-md my-0 ml-sm-2" data-toggle="collapse"  data-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter"
+                        style="height: 31px; padding-top: 3px"><span class="badge badge-sm badge-warning" id="total-selected-filter"></span> Filters <i class="fa fa-chevron-down" aria-hidden="true"></i></button>
                 <button id="clear-search-button"
                         class="btn btn-danger btn-md my-0 ml-sm-2"
                         style="height: 31px; padding-top: 3px; display: none">Clear
                 </button>
+                <div class="total-data">Total Taxa : <span id="total-taxa">-</span></div>
             </div>
 
-
+            <div class="row" style="font-size: 0.9em;">
+                <div class="col-md-6">
+                    <div class="collapse" id="collapseFilter"  style="width: 100%; position: absolute;">
+                        <div class="card card-body" style="background: #f2f2f2;">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group row">
+                                        <label for="staticEmail"
+                                               class="col-sm-2 col-form-label">Rank</label>
+                                        <div class="col-sm-10">
+                                            <select id="rank-filters" class="select-multiple"
+                                                    name="states[]" multiple="multiple"
+                                                    style="font-size: 1em; width: 100%">
+                                                {% for rank in all_ranks %}
+                                                    <option value="{{ rank }}">{{ rank }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="staticEmail"
+                                               class="col-sm-2 col-form-label">Cons. Status</label>
+                                        <div class="col-sm-10">
+                                            <select id="cons-status-filters" class="select-multiple"
+                                                    name="states[]" multiple="multiple"
+                                                    style="font-size: 1em; width: 100%">
+                                                {% for status in all_cons_status %}
+                                                    <option value="{{ status.value }}">{{ status.label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="staticEmail"
+                                               class="col-sm-2 col-form-label">Origin</label>
+                                        <div class="col-sm-10">
+                                            <select id="origin-filters" class="select-multiple"
+                                                    name="states[]" multiple="multiple"
+                                                    style="font-size: 1em; width: 100%">
+                                                {% for origin in all_origins %}
+                                                    <option value="{{ origin.value }}">{{ origin.label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="staticEmail"
+                                               class="col-sm-2 col-form-label">Endemism</label>
+                                        <div class="col-sm-10">
+                                            <select id="endemism-filters" class="select-multiple"
+                                                    name="states[]" multiple="multiple"
+                                                    style="font-size: 1em; width: 100%">
+                                                {% for endemism in all_endemism %}
+                                                    <option value="{{ endemism }}">{{ endemism }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                 <button id="apply-filters"
+                                    class="btn btn-success btn-md my-0 ml-sm-2 pull-right" style="font-size: 0.9em">
+                                     Apply
+                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6"></div>
+            </div>
             <!-- Download button -->
             <div class="float-right download-button-container"
                  style="margin-top: -47px; display: none">
@@ -251,27 +332,6 @@
                         <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
                     </th>
                     <th scope="col">Action</th>
-                </tr>
-                <tr>
-                    <td>
-                        <input class="form-control form-control-sm" type="text" id="taxon-name-filter">
-                    </td>
-                    <td>
-                        <select class="select-multiple" name="states[]" multiple="multiple" style="font-size: 0.8em">
-                            <option value="CLASS">CLASS</option>
-                            <option value="SPECIES">SPECIES</option>
-                            <option value="FAMILY">FAMILY</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input class="form-control form-control-sm" type="text" id="const-status-filter">
-                    </td>
-                    <td>
-                        <input class="form-control form-control-sm" type="text" id="origin-filter">
-                    </td>
-                    <td>
-                        <input class="form-control form-control-sm" type="text" id="endemism-filter">
-                    </td>
                 </tr>
                 </thead>
                 <tbody id="taxa-list">
