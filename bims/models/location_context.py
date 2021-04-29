@@ -6,6 +6,8 @@ class LocationContextQuerySet(models.QuerySet):
     def value_from_key(self, key):
         values = self.filter(
             group__key=key
+        ).order_by(
+            '-fetch_time'
         ).values_list(
             'value', flat=True
         )
