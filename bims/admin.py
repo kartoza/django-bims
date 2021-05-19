@@ -88,6 +88,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
+from bims.utils.gbif import search_exact_match
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 
@@ -754,6 +755,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 '<a href="{}" target="_blank">{}</a>', link, label)
         else:
             return '-'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['key'] = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        return super().change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
