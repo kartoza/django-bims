@@ -83,7 +83,8 @@ from bims.models import (
     DownloadRequest,
     BaseMapLayer,
     RequestLog,
-    IngestedData
+    IngestedData,
+    TaxonImage
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -146,7 +147,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'has_location_context')
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
-    raw_id_fields = ('river', )
+    raw_id_fields = ('river',)
     list_display_links = ['name', 'site_code']
 
     actions = [
@@ -216,8 +217,8 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             else:
                 rows_failed += 1
                 error_message += (
-                    'Failed to update site [%s] because [%s]\n') % (
-                    location_site.location_site_identifier, message)
+                                     'Failed to update site [%s] because [%s]\n') % (
+                                     location_site.location_site_identifier, message)
 
         full_message = "%s successfully updated." % ','.join(site_names)
 
@@ -310,6 +311,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         css = {
             'all': ('admin/custom-admin.css',)
         }
+
     # exclude = ['source_reference',]
     list_display = (
         'taxonomy',
@@ -530,7 +532,7 @@ class CustomUserAdmin(ProfileAdmin):
         false_response = format_html(
             '<img src="/static/admin/img/icon-no.svg" alt="False">')
         true_response = format_html(
-                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         try:
             profile = BimsProfile.objects.get(user=obj)
             valid_to = profile.sass_accredited_date_to
@@ -651,7 +653,6 @@ class VisitorAdmin(admin.ModelAdmin):
 
 
 class SearchProcessAdmin(admin.ModelAdmin):
-
     list_display = (
         'file_path',
         'category',
@@ -665,7 +666,6 @@ class PageviewAdmin(admin.ModelAdmin):
 
 
 class ReferenceLinkAdmin(admin.ModelAdmin):
-
     list_display = (
         'collection_record',
         'reference'
@@ -673,12 +673,15 @@ class ReferenceLinkAdmin(admin.ModelAdmin):
 
 
 class EndemismAdmin(admin.ModelAdmin):
-
     list_display = (
         'name',
         'description',
         'display_order'
     )
+
+
+class TaxonImagesInline(admin.TabularInline):
+    model = TaxonImage
 
 
 class TaxonomyAdmin(admin.ModelAdmin):
@@ -722,6 +725,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     actions = ['merge_taxa']
 
+    inlines = [TaxonImagesInline]
+
     def merge_taxa(self, request, queryset):
         verified = queryset.filter(verified=True)
         if queryset.count() <= 1:
@@ -757,7 +762,6 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
-
     search_fields = (
         'name',
     )
@@ -770,7 +774,6 @@ class VernacularNameAdmin(admin.ModelAdmin):
 
 
 class RiverCatchmentAdmin(admin.ModelAdmin):
-
     list_display = (
         'key',
         'value',
@@ -786,7 +789,7 @@ class FbisUUIDAdmin(admin.ModelAdmin):
     list_display = ('uuid', 'content_type', 'content_object')
     list_filter = ('content_type',)
     ordering = ('content_type', 'uuid')
-    search_fields = ('uuid', )
+    search_fields = ('uuid',)
 
 
 class SassBiotopeAdmin(admin.ModelAdmin):
@@ -858,6 +861,7 @@ class SiteImageAdmin(admin.ModelAdmin):
 
     def get_site_code(self, obj):
         return obj.site.location_site_identifier
+
     get_site_code.short_description = 'Site'
     get_site_code.admin_order_field = 'site__site_code'
 
@@ -1158,7 +1162,8 @@ admin.site.register(AlgaeData, AlgaeDataAdmin)
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
 
-from bims.custom_admin import * # noqa
+from bims.custom_admin import *  # noqa
 from geonode.themes.models import *  # noqa
+
 admin.site.unregister(GeoNodeThemeCustomization)
 admin.site.unregister(Partner)
