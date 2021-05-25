@@ -39,6 +39,7 @@ define([
         },
         renderList: function () {
             var data = this.collection.models;
+            let isFBIS = false;
             if (data.length === 0) {
                 this.$el.hide();
                 return false;
@@ -54,13 +55,14 @@ define([
                     checked = 'checked';
                 }
 
-                // If source_collection called fbis is first, then set it disabled
+                // If source_collection named fbis is first => set the checkbox disabled
                 if (data[i].get('source_collection') === 'fbis' && i === 0) {
+                    isFBIS = true;
                     checked += ' disabled';
                 }
 
                 let dataSourceCaption = '';
-                if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase())) {
+                if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase()) && isFBIS) {
                     dataSourceCaption = '<br/><small class="text-muted">'+ this.dataSourceCaptions[label.toLowerCase()] +'</small>';
                 }
                 this.listWrapper.append('<div style="padding-bottom: 10px;">' +

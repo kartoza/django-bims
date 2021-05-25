@@ -1,8 +1,8 @@
-function insertParam(key, value, resetPage = true) {
+function insertParam(key, value, resetPage = true, reload = true, urlParams = document.location.search.substr(1)) {
     key = encodeURIComponent(key);
     value = encodeURIComponent(value);
     // kvp looks like ['key1=value1', 'key2=value2', ...]
-    var kvp = document.location.search.substr(1).split('&');
+    var kvp = urlParams.split('&');
     let i = 0;
     let j = 0;
     for (; i < kvp.length; i++) {
@@ -16,7 +16,6 @@ function insertParam(key, value, resetPage = true) {
 
     if (resetPage)  {
         for (; j < kvp.length; j++) {
-            console.log(kvp)
             if (kvp[j].startsWith('page=')) {
                 let pair = kvp[j].split('=');
                 pair[1] = '';
@@ -31,5 +30,9 @@ function insertParam(key, value, resetPage = true) {
     // can return this or...
     let params = kvp.join('&');
     // reload page with new params
-    document.location.search = params;
+    if (reload) {
+        document.location.search = params;
+    } else {
+        return params;
+    }
 }

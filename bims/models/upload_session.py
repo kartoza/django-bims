@@ -70,24 +70,28 @@ class UploadSession(models.Model):
 
     process_file = models.FileField(
         upload_to='taxa-file/',
+        max_length=512,
         null=True
     )
 
     success_file = models.FileField(
         upload_to='taxa-file/',
         null=True,
+        max_length=512,
         blank=True
     )
 
     error_file = models.FileField(
         upload_to='taxa-file/',
         null=True,
+        max_length=512,
         blank=True
     )
 
     updated_file = models.FileField(
         upload_to='taxa-file/',
         null=True,
+        max_length=512,
         blank=True
     )
 
