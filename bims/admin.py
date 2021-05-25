@@ -88,7 +88,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
-from bims.utils.gbif import search_exact_match
+from bims.utils.gbif import search_exact_match, get_species
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 
@@ -758,7 +758,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        extra_context['key'] = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        species = get_species(gbif_key)
+        extra_context['key'] = gbif_key
+        extra_context['taxonomicStatus'] = species['taxonomicStatus']
+        extra_context['authorship'] = species['authorship']
+        extra_context['scientificName'] = species['scientificName']
+        extra_context['canonicalName'] = species['canonicalName']
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
