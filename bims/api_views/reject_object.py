@@ -1,4 +1,5 @@
 # coding=utf-8
+from bims.models.location_site import LocationSite
 from rest_framework.views import APIView
 from rest_framework import status
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
@@ -34,6 +35,36 @@ class RejectCollectionData(UserPassesTestMixin, LoginRequiredMixin, APIView):
             )
             return JsonResponse({'status': 'success'})
         except BiologicalCollectionRecord.DoesNotExist:
+            return HttpResponse(
+                'Object Does Not Exist',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class RejectSite(UserPassesTestMixin, LoginRequiredMixin, APIView):
+
+    def test_func(self):
+        site_pk = self.request.GET.get('pk', None)
+        if not site_pk:
+            return False
+        site = LocationSite.objects.get(pk=site_pk)
+        return site
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to validate location site')
+        return super(RejectSite, self).handle_no_permission()
+
+    def get(self, request):
+        object_pk = request.GET.get('pk', None)
+        rejection_message = request.GET.get('rejection_message', None)
+        try:
+            site = LocationSite.objects.get(pk=object_pk)
+            site.reject(
+                rejection_message=rejection_message
+            )
+            return JsonResponse({'status': 'success'})
+        except LocationSite.DoesNotExist:
             return HttpResponse(
                 'Object Does Not Exist',
                 status=status.HTTP_400_BAD_REQUEST
