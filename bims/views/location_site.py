@@ -1,4 +1,5 @@
-from django.views.generic import TemplateView, View
+from bims.permissions.api_permission import user_has_permission_to_validate
+from django.views.generic import TemplateView, View, ListView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
@@ -6,7 +7,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.contrib import messages
 from django.shortcuts import reverse
 from django.contrib.gis.geos import Point
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.shortcuts import get_object_or_404
 
 from bims.utils.get_key import get_key
@@ -379,3 +380,62 @@ class LocationSiteFormDeleteView(UserPassesTestMixin, View):
             extra_tags='location_site_form'
         )
         return HttpResponseRedirect(reverse('location-site-form'))
+
+
+class NonValidatedSiteView(
+        UserPassesTestMixin,
+        LoginRequiredMixin,
+        ListView):
+
+    model = LocationSite
+    context_object_name = 'location_sites'
+    template_name = 'non_validated_location_site.html'
+    paginate_by = 10
+
+    def test_func(self):
+        return user_has_permission_to_validate(self.request.user)
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to validate location site')
+        return super(NonValidatedSiteView, self).handle_no_permission()
+
+    def get_context_data(self, **kwargs):
+        filter_owner = self.request.GET.get('owner', None)
+        filter_site_code = self.request.GET.get('site_code', None)
+        filter_river_name = self.request.GET.get('river_name', None)
+        context = super(
+            NonValidatedSiteView, self).get_context_data(**kwargs)
+        context['custom_url'] = ''
+        if filter_site_code:
+            context['custom_url'] = \
+                '&site_code={}'.format(filter_site_code)
+        elif filter_owner:
+            context['custom_url'] = \
+                '&owner={}'.format(filter_owner)
+        if filter_river_name:
+            '&river_name={}'.format(filter_river_name)
+        return context
+
+    def get_queryset(self):
+        filter_owner = self.request.GET.get('owner', None)
+        filter_site_code = self.request.GET.get('site_code', None)
+        filter_river_name = self.request.GET.get('river_name', None)
+        filter_pk = self.request.GET.get('pk', None)
+        if self.queryset is None:
+            queryset = \
+                LocationSite.objects.filter(
+                    validated=False).order_by('site_code')
+            if filter_pk is not None:
+                queryset = queryset.filter(pk=filter_pk)
+            if filter_site_code is not None:
+                queryset = queryset.filter(
+                    site_code=filter_site_code)
+            if filter_owner is not None:
+                queryset = queryset.filter(
+                    owner__last_name__icontains=filter_owner.split(' ')[-1])
+            if filter_river_name is not None:
+                queryset = queryset.filter(
+                    river__name__icontains=filter_river_name)
+            return queryset
+        return self.queryset

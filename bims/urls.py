@@ -54,7 +54,7 @@ from bims.views.collections_form import (
 from bims.views.location_site import (
     LocationSiteFormView,
     LocationSiteFormUpdateView,
-    LocationSiteFormDeleteView
+    LocationSiteFormDeleteView, NonValidatedSiteView
 )
 from bims.views.source_reference_form import SourceReferenceView
 from bims.views.bug_report import BugReportView
@@ -79,7 +79,6 @@ from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
 from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
-
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -206,6 +205,8 @@ urlpatterns = [
     url(r'^contact/success/$', TemplateView.as_view(
         template_name='contactus/contact_success.html'),
         {}, 'contactus-success'),
+    url(r'^nonvalidated-site/$',
+        NonValidatedSiteView.as_view(), name='nonvalidated-site'),
 ]
 
 # Api urls
