@@ -61,6 +61,7 @@ jobs:
         python -m pip install uwsgi
         python -m pip install celery==4.4.0
         python -m pip install pygdal==$(gdal-config --version).*
+        python -m pip install Django==2.2.12
      - name: set pythonpath
        run: |
         echo "PYTHONPATH='/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'" >> $GITHUB_ENV
@@ -74,4 +75,4 @@ jobs:
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
        run: |
         cd bims
-        python manage.py test
+        python manage.py test bims
