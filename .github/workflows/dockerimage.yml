@@ -3,7 +3,8 @@ name: Test Django App
 on: 
   push: 
     branches:
-      - '3.x'
+      - '3.x.new'
+      
 jobs:
   tests:
     runs-on: ubuntu-18.04
