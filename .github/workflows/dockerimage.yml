@@ -24,6 +24,7 @@ jobs:
      - name: Install dependencies
        run: |
         pwd
+        ls /home/runner/work/django-bims/django-bims/geonode/
         pip3 install -r geonode/requirements.txt
         pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
      - name: set pythonpath
