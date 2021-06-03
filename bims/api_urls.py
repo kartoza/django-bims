@@ -84,6 +84,7 @@ from bims.api_views.location_site_public import (
     LocationSiteSummaryPublic
 )
 from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
+from bims.api_views.merge_sites import MergeSites
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -240,4 +241,7 @@ urlpatterns = [
     url(r'^remove-occurrences/$',
         RemoveOccurrencesApiView.as_view(),
         name='remove-occurrences'),
+    url(r'^merge-sites/$',
+        MergeSites.as_view(),
+        name='merge-sites')
 ]

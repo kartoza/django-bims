@@ -6,7 +6,7 @@ from collections import OrderedDict
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count, Value, Case, When
 from django.db.models.functions import ExtractYear
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
@@ -22,17 +22,10 @@ from bims.serializers.chemical_records_serializer import \
     ChemicalRecordsSerializer
 from bims.serializers.location_site_serializer import (
     LocationSiteSerializer,
-    LocationSiteClusterSerializer,
     LocationSitesCoordinateSerializer
 )
 from bims.serializers.location_site_detail_serializer import \
     LocationSiteDetailSerializer
-from bims.utils.cluster_point import (
-    within_bbox,
-    overlapping_area,
-    update_min_bbox,
-    geo_serializer
-)
 from bims.api_views.collection import GetCollectionAbstract
 from bims.utils.search_process import (
     get_or_create_search_process,

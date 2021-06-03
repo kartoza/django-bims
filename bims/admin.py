@@ -758,7 +758,10 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        extra_context['key'] = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        extra_context['key'] = (
+            search_exact_match(
+                Taxonomy.objects.get(pk=object_id).scientific_name)
+        )
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
@@ -1061,6 +1064,7 @@ class UploadSessionAdmin(admin.ModelAdmin):
         'processed',
         'canceled'
     )
+
 
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
