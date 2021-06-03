@@ -6,8 +6,6 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
-    container: node:10.18-jessie
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
