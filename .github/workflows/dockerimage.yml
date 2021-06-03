@@ -30,11 +30,14 @@ jobs:
      - name: set pythonpath
        run: |
         echo "PYTHONPATH=/home/runner/work/django-bims/django-bims/geonode;/home/runner/work/django-bims/django-bims/bims" >> $GITHUB_ENV
+        echo "DJANGO_SETTINGS_MODULE=core.settings.dev_docker" >> $GITHUB_ENV
      - name: Use the value
        run: |
-        echo "${{ env.PYTHONPATH }}" # This will output 'yellow'
+        echo "${{ env.PYTHONPATH }}"
+        echo "${{ env.DJANGO_SETTINGS_MODULE }}"
      - name: Run tests
        env:
          DJANGO_SETTINGS_MODULE: core.settings.dev_docker
+         PYTHONPATH: /home/runner/work/django-bims/django-bims/geonode;/home/runner/work/django-bims/django-bims/bims
        working-directory: bims
        run: python manage.py test
