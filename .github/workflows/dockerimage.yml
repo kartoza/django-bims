@@ -1,8 +1,9 @@
 name: Test Django App
 
 on: 
-  pull_request:
-
+  push: 
+    branches:
+      - '3.x'
 jobs:
   tests:
     runs-on: ubuntu-18.04
