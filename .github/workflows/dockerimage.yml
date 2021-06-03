@@ -64,14 +64,15 @@ jobs:
         python -m pip install pygdal==$(gdal-config --version).*
      - name: set pythonpath
        run: |
+        echo "PYTHONPATH=bims" >> $GITHUB_ENV
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
      - name: Use the value
        run: |
         echo "${{ env.DJANGO_SETTINGS_MODULE }}"
      - name: Run tests
        env:
+         PYTHONPATH: bims
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
-       working-directory: bims
        run: |
-        ls
+        cd bims
         python manage.py test --noinput --settings=core.settings.test_docker
