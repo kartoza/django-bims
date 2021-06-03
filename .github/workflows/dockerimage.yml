@@ -53,12 +53,12 @@ jobs:
        run: |
         pwd
         mv geonode/geonode bims/
-        pip3 install -r geonode/requirements.txt
-        pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
-        pip3 install kombu==4.6.8
-        pip3 install uwsgi
-        pip3 install celery==4.4.0
-        pip3 install pygdal==$(gdal-config --version).*
+        pip install -r geonode/requirements.txt
+        pip install -r bims/deployment/docker/REQUIREMENTS.txt
+        pip install kombu==4.6.8
+        pip install uwsgi
+        pip install celery==4.4.0
+        pip install pygdal==$(gdal-config --version).*
      - name: set pythonpath
        run: |
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
