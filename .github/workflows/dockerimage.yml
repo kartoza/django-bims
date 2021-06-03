@@ -54,6 +54,7 @@ jobs:
      - name: Install dependencies
        run: |
         pwd
+        mv geonode/geonode bims/
         python -m pip install -r geonode/requirements.txt
         python -m pip install -r bims/deployment/docker/REQUIREMENTS.txt
         python -m pip install -r bims/deployment/docker/REQUIREMENTS-dev.txt
@@ -63,14 +64,14 @@ jobs:
         python -m pip install pygdal==$(gdal-config --version).*
      - name: set pythonpath
        run: |
-        echo "PYTHONPATH=bims:geonode" >> $GITHUB_ENV
+        echo "PYTHONPATH=bims:bims/geonode" >> $GITHUB_ENV
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
      - name: Use the value
        run: |
         echo "${{ env.DJANGO_SETTINGS_MODULE }}"
      - name: Run tests
        env:
-         PYTHONPATH: bims:geonode
+         PYTHONPATH: bims:bims/geonode
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
        run: |
         cd bims
