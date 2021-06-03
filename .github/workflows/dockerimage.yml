@@ -55,6 +55,7 @@ jobs:
         mv geonode/geonode bims/
         python -m pip install -r geonode/requirements.txt
         python -m pip install -r bims/deployment/docker/REQUIREMENTS.txt
+        python -m pip install -r bims/deployment/docker/REQUIREMENTS-dev.txt
         python -m pip install kombu==4.6.8
         python -m pip install uwsgi
         python -m pip install celery==4.4.0
