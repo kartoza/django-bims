@@ -72,4 +72,6 @@ jobs:
        env:
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
        working-directory: bims
-       run: python manage.py test bims --noinput --settings=core.settings.test_docker
+       run: |
+        ls
+        python manage.py test --noinput --settings=core.settings.test_docker
