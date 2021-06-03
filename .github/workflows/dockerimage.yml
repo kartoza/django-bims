@@ -6,7 +6,7 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    container: python:3.6.8-slim-stretch
+    container: python:3.7.10-slim-stretch
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
@@ -27,10 +27,10 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-     - name: Set up Python 3.6.8
+     - name: Set up Python 3.7.10
        uses: actions/setup-python@v1
        with:
-        python-version: 3.6.8
+        python-version: 3.7.10
      - name: Install system dependencies
        run: |
          apt-get update
