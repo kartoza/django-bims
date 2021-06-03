@@ -35,6 +35,7 @@ jobs:
         python-version: 3.7
      - name: Install system dependencies
        run: |
+         mkdir static
          apt-get update
          apt-get install -y gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++
          apt-get install -y libgeos-dev libgdal-dev
@@ -67,7 +68,7 @@ jobs:
         echo "PYTHONPATH='/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'" >> $GITHUB_ENV
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
         echo "ROOT_URLCONF=core.urls" >> $GITHUB_ENV
-        echo "STATIC_ROOT=/__w/django-bims/django-bims/bims/bims/static" >> $GITHUB_ENV
+        echo "STATIC_ROOT=/__w/django-bims/django-bims/static" >> $GITHUB_ENV
      - name: Use the value
        run: |
         echo "${{ env.DJANGO_SETTINGS_MODULE }}"
@@ -76,8 +77,9 @@ jobs:
          PYTHONPATH: '/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
          ROOT_URLCONF: core.urls
-         STATIC_ROOT: /__w/django-bims/django-bims/bims/bims/static
+         STATIC_ROOT: /__w/django-bims/django-bims/static
          APP_NAME: bims
        run: |
         cd bims
+        python manage.py gruntserver
         python manage.py test bims
