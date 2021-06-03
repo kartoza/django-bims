@@ -19,9 +19,6 @@ jobs:
          sudo apt-get install -y libxml2-dev libxslt-dev
          sudo apt-get install -y geoip-bin geoip-database
          sudo apt-get install -y curl
-         pip3 install kombu==4.6.8
-         pip3 install uwsgi
-         pip3 install celery==4.4.0
      - uses: actions/checkout@v2
        with:
         path: bims
@@ -38,6 +35,9 @@ jobs:
         mv geonode/geonode bims/
         pip3 install -r geonode/requirements.txt
         pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
+        pip3 install kombu==4.6.8
+        pip3 install uwsgi
+        pip3 install celery==4.4.0
         pip3 install pygdal==$(gdal-config --version).*
      - name: set pythonpath
        run: |
