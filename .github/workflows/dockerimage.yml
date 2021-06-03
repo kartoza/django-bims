@@ -71,5 +71,4 @@ jobs:
          PYTHONPATH: '.'
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
        run: |
-        cd bims
         python manage.py test
