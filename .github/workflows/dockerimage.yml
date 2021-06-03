@@ -6,6 +6,27 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    # Docker Hub image that `container-job` executes in
+    container: node:10.18-jessie
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      db:
+        # Docker Hub image
+        image: kartoza/postgis:9.6-2.4
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: docker
+          POSTGRES_PASS: docker
+          POSTGRES_DBNAME: gis
+          POSTGRES_PASSWORD: docker
+          ALLOW_IP_RANGE: 0.0.0.0/0
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
      - name: Set up Python 3.7.10
        uses: actions/setup-python@v1
