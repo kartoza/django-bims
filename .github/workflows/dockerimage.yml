@@ -24,7 +24,7 @@ jobs:
      - name: Install dependencies
        run: |
         pwd
-        move geonode/geonode bims/
+        mv geonode/geonode bims/
         pip3 install -r geonode/requirements.txt
         pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
      - name: set pythonpath
