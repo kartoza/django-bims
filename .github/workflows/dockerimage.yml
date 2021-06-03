@@ -11,6 +11,16 @@ jobs:
        uses: actions/setup-python@v1
        with:
         python-version: 3.7.10
+     - name: Install system dependencies
+       run: |
+         apt-get update
+         apt-get install -y gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++
+         apt-get install -y libgeos-dev libgdal-dev
+         apt-get install -y libxml2-dev libxslt-dev
+         apt-get install -y geoip-bin geoip-database
+         apt-get install -y curl
+         pip3 install uwsgi
+         pip3 install celery==4.4.0
      - uses: actions/checkout@v2
        with:
         path: bims
