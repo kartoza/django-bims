@@ -20,16 +20,16 @@ jobs:
         repository: GeoNode/geonode
         fetch-depth: 1
         ref: 3.1.x
-        path: geonode
+        path: bims/geonode
      - name: Install dependencies
        run: |
         pwd
-        ls /home/runner/work/django-bims/django-bims/geonode/
-        pip3 install -r geonode/requirements.txt
+        ls /home/runner/work/django-bims/django-bims/bims/geonode/
+        pip3 install -r bims/geonode/requirements.txt
         pip3 install -r bims/deployment/docker/REQUIREMENTS.txt
      - name: set pythonpath
        run: |
-        echo "PYTHONPATH=/home/runner/work/django-bims/django-bims/geonode;/home/runner/work/django-bims/django-bims/bims" >> $GITHUB_ENV
+        echo "PYTHONPATH=/home/runner/work/django-bims/django-bims/bims/geonode;/home/runner/work/django-bims/django-bims/bims" >> $GITHUB_ENV
         echo "DJANGO_SETTINGS_MODULE=core.settings.dev_docker" >> $GITHUB_ENV
      - name: Use the value
        run: |
