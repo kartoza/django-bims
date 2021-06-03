@@ -61,15 +61,12 @@ jobs:
         pip3 install pygdal==$(gdal-config --version).*
      - name: set pythonpath
        run: |
-        echo "PYTHONPATH=/__w/django-bims/django-bims/bims/geonode;/__w/django-bims/django-bims/bims" >> $GITHUB_ENV
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
      - name: Use the value
        run: |
-        echo "${{ env.PYTHONPATH }}"
         echo "${{ env.DJANGO_SETTINGS_MODULE }}"
      - name: Run tests
        env:
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
-         PYTHONPATH: /__w/django-bims/django-bims/bims/geonode;/__w/django-bims/django-bims/bims
        working-directory: bims
        run: python manage.py test bims --noinput --settings=core.settings.test_docker
