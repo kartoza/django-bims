@@ -6,7 +6,6 @@ from bims.utils.fetch_gbif import merge_taxa_data
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup
 
 
-
 class TestTaxaHelpers(TestCase):
     """Test all taxa helpers e.g. helper to merge to duplicated taxa"""
 

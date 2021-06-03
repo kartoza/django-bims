@@ -36,7 +36,6 @@ class TestTaxonGroup(TestCase):
         self.assertEqual(TaxonGroup.objects.get(id=1).display_order, 1)
         self.assertEqual(TaxonGroup.objects.get(id=2).display_order, 0)
 
-
     def test_remove_taxa_from_taxon_group(self):
         taxonomy_1 = TaxonomyF.create()
         taxonomy_2 = TaxonomyF.create()

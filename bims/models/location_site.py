@@ -174,6 +174,10 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
             return self.legacy_site_code
         return self.name
 
+    @property
+    def data_name(self):
+        self.location_site_identifier
+
     def location_context_group_values(self, group_name):
         """
         Returns location group data by group name
