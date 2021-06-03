@@ -72,4 +72,4 @@ jobs:
          DJANGO_SETTINGS_MODULE: core.settings.dev_docker
          PYTHONPATH: /home/runner/work/django-bims/django-bims/bims/geonode;/home/runner/work/django-bims/django-bims/bims
        working-directory: bims
-       run: python manage.py test
+       run: python manage.py test --noinput bims
