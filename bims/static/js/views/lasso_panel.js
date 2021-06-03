@@ -42,7 +42,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 self.polygonExist = true;
                 self.$el.find('.update-search').removeClass('disabled');
                 self.$el.find('.clear-lasso').removeClass('disabled');
-                Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false);
+                Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false, false);
+                Shared.Dispatcher.trigger('map:setPolygonDrawn', polygonExtent);
             });
             this.polygonDraw.on('drawstart', function () {
                 self.source.clear();
@@ -110,6 +111,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             }
             this.$el.find('.clear-lasso').addClass('disabled');
             this.stopDrawing();
+            Shared.Dispatcher.trigger('map:setPolygonDrawn', null);
         },
         drawPolygonFromJSON: function (jsonCoordinates) {
             if (this.polygonExist) {
