@@ -42,6 +42,8 @@ jobs:
          apt-get install -y geoip-bin geoip-database
          apt-get install -y curl
      - uses: actions/checkout@v2
+       with:
+        path: bims
      - name: Checkout tools repo
        uses: actions/checkout@v2
        with:
@@ -61,14 +63,15 @@ jobs:
         python -m pip install pygdal==$(gdal-config --version).*
      - name: set pythonpath
        run: |
-        echo "PYTHONPATH=." >> $GITHUB_ENV
+        echo "PYTHONPATH='/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'" >> $GITHUB_ENV
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
      - name: Use the value
        run: |
         echo "${{ env.DJANGO_SETTINGS_MODULE }}"
      - name: Run tests
        env:
-         PYTHONPATH: '.'
+         PYTHONPATH: '/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'
          DJANGO_SETTINGS_MODULE: core.settings.test_docker
        run: |
+        cd bims
         python manage.py test
