@@ -1,0 +1,85 @@
+name: Test Django App
+
+on: 
+  pull_request: 
+    branches:
+      - '3.x'
+      
+jobs:
+  tests:
+    runs-on: ubuntu-18.04
+    container: python:3.7
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      db:
+        # Docker Hub image
+        image: kartoza/postgis:9.6-2.4
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: docker
+          POSTGRES_PASS: docker
+          POSTGRES_DBNAME: gis
+          POSTGRES_PASSWORD: docker
+          ALLOW_IP_RANGE: 0.0.0.0/0
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+     - name: Set up Python 3.7
+       uses: actions/setup-python@v1
+       with:
+        python-version: 3.7
+     - name: Install system dependencies
+       run: |
+         mkdir static
+         apt-get update
+         apt-get install -y gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++
+         apt-get install -y libgeos-dev libgdal-dev
+         apt-get install -y libxml2-dev libxslt-dev
+         apt-get install -y geoip-bin geoip-database
+         apt-get install -y curl
+     - uses: actions/checkout@v2
+       with:
+        path: bims
+     - name: Checkout tools repo
+       uses: actions/checkout@v2
+       with:
+        repository: GeoNode/geonode
+        fetch-depth: 1
+        ref: 3.1.x
+        path: geonode
+     - name: Install dependencies
+       run: |
+        pwd
+        python -m pip install -r /__w/django-bims/django-bims/geonode/requirements.txt
+        python -m pip install -r /__w/django-bims/django-bims/bims/deployment/docker/REQUIREMENTS.txt
+        python -m pip install -r /__w/django-bims/django-bims/bims/deployment/docker/REQUIREMENTS-dev.txt
+        python -m pip install kombu==4.6.8
+        python -m pip install uwsgi
+        python -m pip install celery==4.4.0
+        python -m pip install pygdal==$(gdal-config --version).*
+        python -m pip install Django==2.2.12
+     - name: set pythonpath
+       run: |
+        echo "PYTHONPATH='/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'" >> $GITHUB_ENV
+        echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
+        echo "ROOT_URLCONF=core.urls" >> $GITHUB_ENV
+        echo "STATIC_ROOT=/__w/django-bims/django-bims/static" >> $GITHUB_ENV
+     - name: Use the value
+       run: |
+        echo "${{ env.DJANGO_SETTINGS_MODULE }}"
+     - name: Run tests
+       env:
+         PYTHONPATH: '/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'
+         DJANGO_SETTINGS_MODULE: core.settings.test_docker
+         ROOT_URLCONF: core.urls
+         STATIC_ROOT: /__w/django-bims/django-bims/static
+         APP_NAME: bims
+       run: |
+        cd bims
+        python manage.py collectstatic
+        python manage.py test bims
