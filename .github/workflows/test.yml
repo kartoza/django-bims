@@ -69,9 +69,6 @@ jobs:
         echo "DJANGO_SETTINGS_MODULE=core.settings.test_docker" >> $GITHUB_ENV
         echo "ROOT_URLCONF=core.urls" >> $GITHUB_ENV
         echo "STATIC_ROOT=/__w/django-bims/django-bims/static" >> $GITHUB_ENV
-     - name: Use the value
-       run: |
-        echo "${{ env.DJANGO_SETTINGS_MODULE }}"
      - name: Run tests
        env:
          PYTHONPATH: '/__w/django-bims/django-bims/bims:/__w/django-bims/django-bims/geonode'

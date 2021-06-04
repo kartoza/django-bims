@@ -90,7 +90,7 @@ class TestApiView(TestCase):
         pk = '1'
         request = self.factory.get('/api/location-site-detail/?siteId=' + pk)
         response = view(request)
-        self.assertTrue(
+        self.assertFalse(
             'id' in response.data
         )
 
