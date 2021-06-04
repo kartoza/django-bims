@@ -81,5 +81,5 @@ jobs:
          APP_NAME: bims
        run: |
         cd bims
-        python manage.py gruntserver
+        python manage.py collectstatic
         python manage.py test bims
