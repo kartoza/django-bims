@@ -85,17 +85,28 @@ $(function () {
         center: southAfrica,
         zoom: 5
     });
-
-    map = new ol.Map({
-        target: 'site-map',
-        layers: [
+    const baseLayer = [];
+    if(bingKey){
+        baseLayer.push(
             new ol.layer.Tile({
                 source: new ol.source.BingMaps({
                 key: bingKey,
                 imagerySet: 'AerialWithLabels'
             })
-            }),
-        ],
+            })
+        )
+    }
+    else {
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            })
+        )
+    }
+
+    map = new ol.Map({
+        target: 'site-map',
+        layers: baseLayer,
         view: mapView
     });
 
