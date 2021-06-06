@@ -38,8 +38,32 @@
                             }
                         }
                     })
-                })
-            });
+                });
+                $('#grp-content').find('.gbif_key').find('.c-2').append(
+                    `<button class="grp-button" style="width: 150px; margin-left: 10px" id="find-gbif">Find GBIF</button>`
+                );
+                $('#find-gbif').click(function(e) {
+                    e.preventDefault();
+                    const $target = $(e.target);
+                    const originalButtonText = $target.html();
+                    const $gbifKey = $('#id_gbif_key');
+                    $target.html('Fetching...');
+                    let key = '{{ key }}';
+                    if(key === "None") key = "";
+                    if(key !== "") {
+                        $target.html(originalButtonText);
+                        $gbifKey.val(key);
+                    }
+                    else{
+                        $target.html("GBIF Key not found");
+                        $target.attr('disabled', 'disabled')
+                        $target.css('background', '#adadad');
+                        $target.css('border-color', '#adadad')
+                    }
+
+                });
+            }
+            );
         })(grp.jQuery);
 
     </script>
