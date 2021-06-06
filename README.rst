@@ -14,10 +14,9 @@ The latest source code is available at http://github.com/kartoza/django-bims.
 Project Activity
 ----------------
 
-* Current test status master: |test_status_master| 
+|Test Badge| 
 
-* Current test status develop: |test_status_develop| 
-
+|Build Badge| 
 
 Quick Project Setup
 -------------------
@@ -87,10 +86,13 @@ _________
 Thank you to the individual contributors who have helped to build HealthyRivers:
 
 * Tim Sutton (Lead developer): tim@kartoza.com
-* Dimas Ciptura: dimas@kartoza.com
+* Dimas Ciputra: dimas@kartoza.com
 * Irwan Fathurrahman: irwan@kartoza.com
+* Fanevanjanahary: faneva@kartoza.com
 * Anita Hapsari: anita@kartoza.com
 
+.. |Test Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/test.yml/badge.svg 
+.. |Build Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/dockerimage.yml/badge.svg
 .. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
 .. _docker: http://docker.com
 .. _project setup guide: deployment/ansible/README.md
