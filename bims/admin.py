@@ -89,6 +89,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
+from bims.utils.gbif import search_exact_match
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 
@@ -760,6 +761,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
         else:
             return '-'
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['key'] = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        return super().change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
+
 
 class VernacularNameAdmin(admin.ModelAdmin):
     search_fields = (
@@ -1048,6 +1056,16 @@ class IngestedDataAdmin(admin.ModelAdmin):
     )
 
 
+class UploadSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        'uploader',
+        'module_group',
+        'uploaded_at',
+        'category',
+        'processed',
+        'canceled'
+    )
+
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -1136,7 +1154,7 @@ admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
-admin.site.register(UploadSession)
+admin.site.register(UploadSession, UploadSessionAdmin)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)

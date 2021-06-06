@@ -327,7 +327,7 @@ class SassDashboardMultipleSitesApiView(APIView):
 
         eco_geo_data = LocationContext.objects.filter(
                 site__in=list(self.location_sites)
-        ).distinct('site__id', 'value')
+        ).distinct('site__id', 'value', 'fetch_time')
         unique_eco_geo = {}
         for site in self.location_sites:
             eco_region = eco_geo_data.filter(

@@ -328,14 +328,17 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
             only_returns_json=True
         )
         if iucn_status and 'result' in iucn_status:
-            iucn, _ = IUCNStatus.objects.get_or_create(
-                category=iucn_status['result'][0]['category']
-            )
-            instance.iucn_status = iucn
-            instance.iucn_redlist_id = iucn_status['result'][0]['taxonid']
-            instance.iucn_data = json.dumps(
-                iucn_status['result'][0],
-                indent=4)
+            if len(iucn_status['result']) > 0:
+                iucn, _ = IUCNStatus.objects.get_or_create(
+                    category=iucn_status['result'][0]['category']
+                )
+                instance.iucn_status = iucn
+                instance.iucn_redlist_id = iucn_status['result'][0]['taxonid']
+                instance.iucn_data = json.dumps(
+                    iucn_status['result'][0],
+                    indent=4)
+            else:
+                iucn_status = None
         if not iucn_status:
             # Get not evaluated
             try:

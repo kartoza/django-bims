@@ -1,14 +1,25 @@
 from django.contrib.gis.db import models
 from django.utils import timezone
+from django.db import ProgrammingError
 
 
 class LocationContextQuerySet(models.QuerySet):
     def value_from_key(self, key):
-        values = self.filter(
-            group__key=key
-        ).values_list(
-            'value', flat=True
-        )
+        try:
+            values = self.filter(
+                group__key=key
+            ).order_by(
+                '-fetch_time'
+            ).values_list(
+                'value', flat=True
+            )
+        except ProgrammingError:
+            values = self.filter(
+                group__key=key
+            ).values_list(
+                'value', flat=True
+            )
+
         if len(values) > 0:
             return values[0]
         else:

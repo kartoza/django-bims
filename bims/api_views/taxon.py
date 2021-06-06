@@ -1,4 +1,5 @@
 # coding=utf8
+import ast
 from django.http import Http404
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -249,7 +250,17 @@ class TaxaList(LoginRequiredMixin, APIView):
     def get(self, request, *args):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
+        ranks = request.GET.get('ranks', '').split(',')
+        ranks = list(filter(None, ranks))
+        origins = request.GET.get('origins', '').split(',')
+        origins = list(filter(None, origins))
+        cons_status = request.GET.get('cons_status', '').split(',')
+        cons_status = list(filter(None, cons_status))
+        endemism = request.GET.get('endemism', '').split(',')
+        endemism = list(filter(None, endemism))
         taxon_name = request.GET.get('taxon', '')
+        is_gbif = request.GET.get('is_gbif', '')
+        is_iucn = request.GET.get('is_iucn', '')
         order = request.GET.get('o', '')
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
@@ -260,10 +271,52 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_list = taxon_group.taxonomies.all()
         if rank:
             taxon_list = taxon_list.filter(rank=rank)
+        if len(ranks) > 0:
+            taxon_list = taxon_list.filter(
+                rank__in=ranks
+            )
+        if len(origins) > 0:
+            taxon_list = taxon_list.filter(
+                origin__in=origins
+            )
+        if len(cons_status) > 0:
+            taxon_list = taxon_list.filter(
+                iucn_status__category__in=cons_status
+            )
+        if len(endemism) > 0:
+            taxon_list = taxon_list.filter(
+                endemism__name__in=endemism
+            )
         if taxon_name:
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if is_gbif:
+            try:
+                is_gbif = ast.literal_eval(is_gbif)
+                if is_gbif:
+                    taxon_list = taxon_list.exclude(
+                        gbif_key__isnull=True
+                    )
+                else:
+                    taxon_list = taxon_list.filter(
+                        gbif_key__isnull=True
+                    )
+            except ValueError:
+                pass
+        if is_iucn:
+            try:
+                is_iucn = ast.literal_eval(is_iucn)
+                if is_iucn:
+                    taxon_list = taxon_list.exclude(
+                        iucn_redlist_id__isnull=True
+                    )
+                else:
+                    taxon_list = taxon_list.filter(
+                        iucn_redlist_id__isnull=True
+                    )
+            except ValueError:
+                pass
         if order:
             if 'total_records' in order:
                 taxon_list = taxon_list.annotate(
