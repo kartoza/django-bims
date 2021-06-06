@@ -12,11 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='bimsdocument',
-            name='authors',
-            field=models.ManyToManyField(blank=True, through='bims.BimsDocumentAuthorship', to=settings.AUTH_USER_MODEL),
-        ),
         migrations.CreateModel(
             name='TaxonImage',
             fields=[
