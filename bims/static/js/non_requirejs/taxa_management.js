@@ -573,6 +573,12 @@ $applyFiltersBtn.click(function () {
         return data['id'];
     })
     urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
+
+    const parent = $('.taxa-auto-complete').select2('data').map(function(data) {
+        return data['id'];
+    })
+    urlParams = insertParam('parent', parent.join(), true, false, urlParams);
+
     document.location.search = urlParams;
 })
 
@@ -583,6 +589,30 @@ $('#collapseFilter').on('shown.bs.collapse', function() {
 $('#collapseFilter').on('hidden.bs.collapse', function() {
     $('#add-filters').find('i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
 })
+
+function formatTaxa (taxa) {
+    if (taxa.loading) {
+        return taxa.text;
+    }
+    var $container = $(
+    "<div class='select2-result-repository clearfix'>" +
+      "<div class='select2-result-repository__meta'>" +
+        "<div class='select2-result-repository__title'></div>" +
+        "<div class='select2-result-repository__description'></div>" +
+      "</div>" +
+    "</div>"
+  );
+  $container.find(".select2-result-repository__title").text(taxa.species);
+  $container.find(".select2-result-repository__description").text(taxa.rank);
+  return $container;
+}
+
+function formatTaxaSelection (taxa) {
+    if (taxa.species) {
+        return `${taxa.species} (${taxa.rank})`
+    }
+    return taxa.text;
+}
 
 $(document).ready(function () {
     const queryString = window.location.search;
@@ -595,6 +625,32 @@ $(document).ready(function () {
         $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
         url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
     }
+
+    $('.taxa-auto-complete').select2({
+        ajax: {
+            url: '/species-autocomplete/',
+            dataType: 'json',
+            data: function (params) {
+                let query = {
+                    term: params.term,
+                    taxonGroupId: urlParams.get('selected')
+                }
+                return query;
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                }
+            },
+            cache: true
+        },
+        placeholder: 'Search for a Taxonomy',
+        minimumInputLength: 3,
+        templateResult: formatTaxa,
+        templateSelection: formatTaxaSelection,
+        theme: "classic"
+    });
+
     if (urlParams.get('taxon')) {
         taxonName = urlParams.get('taxon');
         if (url) {
@@ -646,6 +702,13 @@ $(document).ready(function () {
         filterSelected['cons_status'] = consStatusArray;
         totalAllFilters += consStatusArray.length;
         url += `&cons_status=${urlParams.get('cons_status')}`;
+    }
+    if (urlParams.get('parent')) {
+        const parentArray = urlParams.get('parent').split(',');
+        $('.taxa-auto-complete').val(parentArray);
+        filterSelected['parent'] = parentArray;
+        totalAllFilters += parentArray.length;
+        url += `&parent=${urlParams.get('parent')}`;
     }
     if (Object.keys(filterSelected).length > 0) {
         $clearSearchBtn.show();
