@@ -432,5 +432,5 @@ CKEDITOR_CONFIGS = {
 THUMBNAIL_COLORSPACE = None
 THUMBNAIL_PRESERVE_FORMAT = True
 
-# add bims url 
+# add bims url
 ROOT_URLCONF = 'core.urls'
