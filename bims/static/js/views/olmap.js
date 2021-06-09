@@ -40,6 +40,7 @@ define([
         numInFlightTiles: 0,
         scaleLineControl: null,
         mapIsReady: false,
+        polygonDrawn: false,
         initCenter: [22.948492328125, -31.12543669218031],
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
         events: {
@@ -111,6 +112,7 @@ define([
             Shared.Dispatcher.on('map:downloadMap', this.downloadMap, this);
             Shared.Dispatcher.on('map:resetSitesLayer', this.resetSitesLayer, this);
             Shared.Dispatcher.on('map:toggleMapInteraction', this.toggleMapInteraction, this);
+            Shared.Dispatcher.on('map:setPolygonDrawn', this.setPolygonDrawn, this);
 
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this);
@@ -169,7 +171,7 @@ define([
         clearPoint: function () {
             this.pointVectorSource.clear();
         },
-        zoomToExtent: function (coordinates, shouldTransform=true) {
+        zoomToExtent: function (coordinates, shouldTransform=true, updateZoom=true) {
             if (this.isBoundaryEnabled) {
                 this.fetchingRecords();
                 return false;
@@ -179,14 +181,22 @@ define([
             if (shouldTransform) {
                 ext = ol.proj.transformExtent(coordinates, ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
             }
+            if (this.polygonDrawn) {
+                ext = this.polygonDrawn;
+            }
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [
                     0, $('.right-panel').width(), 0, 250
                 ]
             });
-            if (this.map.getView().getZoom() > 8) {
-                this.map.getView().setZoom(8);
+            if (updateZoom && !this.polygonDrawn) {
+                if (this.map.getView().getZoom() > 8) {
+                    this.map.getView().setZoom(8);
+                }
             }
+        },
+        setPolygonDrawn: function (polygon) {
+           this.polygonDrawn = polygon
         },
         mapClicked: function (e) {
             // Event handler when the map is clicked

@@ -2,7 +2,7 @@ define(['backbone', 'models/location_site', 'views/location_site', 'shared'], fu
     return Backbone.Collection.extend({
         model: LocationSiteModel,
         baseAPI: "/api/location-site/",
-        collectionAPI: _.template("/api/location-site/cluster/?icon_pixel_x=<%= clusterSize %>&icon_pixel_y=<%= clusterSize %>&zoom=<%= zoom %>&bbox=<%= bbox %>"),
+        collectionAPI: _.template(""),
         url: "",
         viewCollection: [],
         updateUrl: function (bbox, zoom) {

@@ -638,6 +638,7 @@ define([
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
             html2canvas(element, {
+                height: 1000,
                 onrendered: function (canvas) {
                     var link = document.createElement('a');
                     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");

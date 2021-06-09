@@ -7,7 +7,6 @@ from bims.api_views.boundary import (
 )
 from bims.api_views.location_site import (
     LocationSiteList,
-    LocationSiteClusterList,
     LocationSitesSummary,
     LocationSitesCoordinate
 )
@@ -85,11 +84,11 @@ from bims.api_views.location_site_public import (
     LocationSiteSummaryPublic
 )
 from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
+from bims.api_views.merge_sites import MergeSites
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
         LocationTypeAllowedGeometryDetail.as_view()),
-    url(r'^location-site/cluster/$', LocationSiteClusterList.as_view()),
     url(r'^location-site/$', LocationSiteList.as_view()),
     url(r'^location-site-detail/$',
         SingleLocationSiteOverview.as_view(),
@@ -242,4 +241,7 @@ urlpatterns = [
     url(r'^remove-occurrences/$',
         RemoveOccurrencesApiView.as_view(),
         name='remove-occurrences'),
+    url(r'^merge-sites/$',
+        csrf_exempt(MergeSites.as_view()),
+        name='merge-sites')
 ]
