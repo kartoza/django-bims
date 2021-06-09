@@ -7,6 +7,7 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.survey import Survey
 from bims.models.site_image import SiteImage
+from bims.models.search_process import SearchProcess
 from sass.models.site_visit import SiteVisit
 
 
@@ -49,6 +50,14 @@ class MergeSites(APIView):
     def put(self, request, *args):
         primary_site_id = request.data.get('primary_site', None)
         merged_site_ids = request.data.get('merged_sites', None)
+        query_url = request.data.get('query_url', None)
+
+        if query_url:
+            query_params = query_url.split('#search//')
+            if len(query_params) > 1:
+                SearchProcess.objects.filter(
+                    query__contains=query_params[1]
+                ).delete()
 
         if not primary_site_id or not merged_site_ids:
             return Response(

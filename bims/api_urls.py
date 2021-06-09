@@ -242,6 +242,6 @@ urlpatterns = [
         RemoveOccurrencesApiView.as_view(),
         name='remove-occurrences'),
     url(r'^merge-sites/$',
-        MergeSites.as_view(),
+        csrf_exempt(MergeSites.as_view()),
         name='merge-sites')
 ]
