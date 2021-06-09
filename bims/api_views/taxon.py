@@ -265,6 +265,12 @@ class TaxaList(LoginRequiredMixin, APIView):
         # Filter by parent
         parent_ids = request.GET.get('parent', '').split(',')
         parent_ids = list(filter(None, parent_ids))
+        id = request.GET.get('id', '')
+        if id:
+            return Response(
+                TaxonSerializer(
+                    Taxonomy.objects.filter(id=id), many=True).data
+            )
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
         try:
@@ -276,7 +282,8 @@ class TaxaList(LoginRequiredMixin, APIView):
             parents = taxon_list.filter(id__in=parent_ids)
             if parents.exists():
                 taxon_list = parents[0].get_all_children()
-
+            else:
+                taxon_list = parents
         if rank:
             taxon_list = taxon_list.filter(rank=rank)
         if len(ranks) > 0:

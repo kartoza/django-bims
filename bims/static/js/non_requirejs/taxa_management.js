@@ -295,7 +295,6 @@ const getTaxaList = (url) => {
     taxaListCurrentUrl = url;
     showLoading();
     $('.download-button-container').show();
-    console.log(url)
     $.get(url).then(
         function (response) {
             hideLoading();
@@ -574,7 +573,7 @@ $applyFiltersBtn.click(function () {
     })
     urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
 
-    const parent = $('.taxa-auto-complete').select2('data').map(function(data) {
+    const parent = $('#taxa-auto-complete').select2('data').map(function(data) {
         return data['id'];
     })
     urlParams = insertParam('parent', parent.join(), true, false, urlParams);
@@ -626,7 +625,7 @@ $(document).ready(function () {
         url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
     }
 
-    $('.taxa-auto-complete').select2({
+    $('#taxa-auto-complete').select2({
         ajax: {
             url: '/species-autocomplete/',
             dataType: 'json',
@@ -705,8 +704,24 @@ $(document).ready(function () {
     }
     if (urlParams.get('parent')) {
         const parentArray = urlParams.get('parent').split(',');
-        $('.taxa-auto-complete').val(parentArray);
+        const taxaAutoComplete = $('#taxa-auto-complete');
         filterSelected['parent'] = parentArray;
+        $.ajax({
+            type: 'GET',
+            url: `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&id=${urlParams.get('parent')}`,
+        }).then(function (data) {
+            // create the option and append to Select2
+            if (data.length === 0) return false;
+            let result = data[0];
+            let option = new Option(`${result['canonical_name']} (${result['rank']})`, result.id, true, true);
+            taxaAutoComplete.append(option).trigger('change');
+            taxaAutoComplete.trigger({
+                type: 'select2:select',
+                params: {
+                    data: data
+                }
+            });
+        });
         totalAllFilters += parentArray.length;
         url += `&parent=${urlParams.get('parent')}`;
     }
