@@ -1,7 +1,7 @@
 # coding=utf8
 import ast
 from django.http import Http404
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -262,6 +262,15 @@ class TaxaList(LoginRequiredMixin, APIView):
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
         order = request.GET.get('o', '')
+        # Filter by parent
+        parent_ids = request.GET.get('parent', '').split(',')
+        parent_ids = list(filter(None, parent_ids))
+        id = request.GET.get('id', '')
+        if id:
+            return Response(
+                TaxonSerializer(
+                    Taxonomy.objects.filter(id=id), many=True).data
+            )
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
         try:
@@ -269,6 +278,12 @@ class TaxaList(LoginRequiredMixin, APIView):
         except TaxonGroup.DoesNotExist:
             raise Http404('Taxon group does not exist')
         taxon_list = taxon_group.taxonomies.all()
+        if parent_ids:
+            parents = taxon_list.filter(id__in=parent_ids)
+            if parents.exists():
+                taxon_list = parents[0].get_all_children()
+            else:
+                taxon_list = parents
         if rank:
             taxon_list = taxon_list.filter(rank=rank)
         if len(ranks) > 0:
