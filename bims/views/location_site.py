@@ -53,7 +53,6 @@ class LocationSiteFormView(TemplateView):
             except SiteImage.DoesNotExist:
                 pass
 
-
     def get_context_data(self, **kwargs):
         context = super(LocationSiteFormView, self).get_context_data(**kwargs)
         context['geoserver_public_location'] = get_key(
@@ -408,11 +407,9 @@ class NonValidatedSiteView(
             NonValidatedSiteView, self).get_context_data(**kwargs)
         context['custom_url'] = ''
         if filter_site_code:
-            context['custom_url'] = \
-                '&site_code={}'.format(filter_site_code)
+            context['custom_url'] = '&site_code={}'.format(filter_site_code)
         elif filter_owner:
-            context['custom_url'] = \
-                '&owner={}'.format(filter_owner)
+            context['custom_url'] = '&owner={}'.format(filter_owner)
         if filter_river_name:
             '&river_name={}'.format(filter_river_name)
         return context
@@ -423,9 +420,7 @@ class NonValidatedSiteView(
         filter_river_name = self.request.GET.get('river_name', None)
         filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
-            queryset = \
-                LocationSite.objects.filter(
-                    validated=False).order_by('site_code')
+            queryset = LocationSite.objects.filter(validated=False).order_by('site_code')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
             if filter_site_code is not None:
