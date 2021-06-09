@@ -391,7 +391,7 @@ class SassDashboardView(TemplateView):
         )
         context['political_boundary'] = (
             json.dumps(self.location_context.values_from_group(
-                'political_boundary_group'
+                'province'
             ))
         )
         context['geomorphological_group'] = (
