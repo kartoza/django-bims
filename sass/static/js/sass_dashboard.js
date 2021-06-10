@@ -64,6 +64,7 @@ function drawMap() {
 function renderSASSSummaryChart() {
     // Process data by ecological
     let sassChartBackgroundColor = [];
+    let sassChartLegendLabels = [];
     let defaultColor = '#c6c6c6';
 
     $.each(sassScores, function (sasScoreIndex, sassScore) {
@@ -71,6 +72,7 @@ function renderSASSSummaryChart() {
         $.each(ecologicalChartData, function (index, ecologicalData) {
             if (sassScore > ecologicalData['sass_score_precentile'] || asptList[sasScoreIndex] > ecologicalData['aspt_score_precentile']) {
                 sassChartBackgroundColor.push(ecologicalData['ecological_colour']);
+                sassChartLegendLabels.push(ecologicalData['ecological_category_name'])
                 foundColor = true;
                 return false;
             }
@@ -79,7 +81,7 @@ function renderSASSSummaryChart() {
             sassChartBackgroundColor.push(defaultColor);
         }
     });
-
+    sassChartLegendLabels = [...new Set(sassChartLegendLabels)];
     let data = {
         'labels': dateLabels,
         'datasets': [{
@@ -160,12 +162,26 @@ function renderSASSSummaryChart() {
                     }
                 }
             },
-            legend: {
-                display: false
+            legend: false,
+            legendCallback: function(chart) {
+                let ul = document.createElement('ul');
+                sassChartBackgroundColor = [...new Set(sassChartBackgroundColor)]
+                sassChartLegendLabels.forEach(function (label, index){
+                    ul.innerHTML += `<li>
+                        <span style="background-color: ${sassChartBackgroundColor[index]}";></span> 
+                        ${label}
+                        </li>
+                        `;
+                });
+                return ul.outerHTML;
+
             }
+
         }
     };
-    new Chart($('#aspt-chart'), chartConfig);
+    const aspt = new Chart($('#aspt-chart'), chartConfig);
+    let legend = document.getElementById("legend-summary-id");
+    legend.innerHTML= aspt.generateLegend()
     chartConfigs['ASPT'] = chartConfig;
 }
 
