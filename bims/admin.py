@@ -460,6 +460,43 @@ class UserHasEmailFilter(SimpleListFilter):
         return queryset
 
 
+class RoleFilter(SimpleListFilter):
+    title = 'Role'
+    parameter_name = 'role'
+
+    def lookups(self, request, model_admin):
+        return BimsProfile.ROLE_CHOICES
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(bims_profile__role__iexact=self.value())
+        return queryset
+
+
+class SignedUpFilter(SimpleListFilter):
+    title = 'Signed up'
+    parameter_name = 'signed_up'
+
+    def lookups(self, request, model_admin):
+        return [
+            (True, 'Yes'),
+            (False, 'No')
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'False':
+            return queryset.filter(
+                models.Q(email__isnull=True) |
+                models.Q(email='')
+            )
+        elif self.value() == 'True':
+            return queryset.filter(
+                models.Q(last_login__isnull=False) |
+                models.Q(email__isnull=False)
+            ).exclude(email='')
+        return queryset
+
+
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
@@ -487,10 +524,14 @@ class CustomUserAdmin(ProfileAdmin):
         'email',
         'first_name',
         'last_name',
+        'organization',
+        'role',
         'is_staff',
         'is_active',
         'signed_up',
-        'sass_accredited_status'
+        'sass_accredited_status',
+        'date_joined',
+        'last_login'
     )
     list_filter = (
         'is_staff',
@@ -499,6 +540,9 @@ class CustomUserAdmin(ProfileAdmin):
         'groups',
         SassAccreditedStatusFilter,
         UserHasEmailFilter,
+        'organization',
+        SignedUpFilter,
+        RoleFilter
     )
     readonly_fields = ()
 
@@ -527,6 +571,15 @@ class CustomUserAdmin(ProfileAdmin):
         self.message_user(request, 'Users has been merged')
 
     merge_users.short_description = 'Merge users'
+
+    def role(self, obj):
+        try:
+            profile = BimsProfile.objects.get(user=obj)
+            role = [(v) for k, v in BimsProfile.ROLE_CHOICES if k == profile.role]
+            return role[0] if len(role) > 0 else '-'
+        except BimsProfile.DoesNotExist:
+            return '-'
+    role.admin_order_field = 'bims_profile__role'
 
     def sass_accredited_status(self, obj):
         false_response = format_html(
