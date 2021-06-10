@@ -546,7 +546,56 @@ class CustomUserAdmin(ProfileAdmin):
     )
     readonly_fields = ()
 
-    actions = ['merge_users']
+    actions = ['merge_users', 'download_csv']
+
+    def download_csv(self, request, queryset):
+        import csv
+        from django.http import HttpResponse
+        try:
+            from StringIO import StringIO # for Python 2
+        except ImportError:
+            from io import StringIO # for Python 3
+
+        f = StringIO()
+        writer = csv.writer(f)
+        writer.writerow([
+            'Username', 
+            'Email', 
+            'First Name', 
+            'Last Name',
+            'Organization Name',
+            'Role',
+            'Staff status',
+            'Active',
+            'Signed up',
+            'SASS Accredited Status',
+            'Date joined', 
+            'Last login'])
+
+        for s in queryset:
+            sass_accredited_status = (
+                self.sass_accredited_status(s, text_only='True')
+            )
+            writer.writerow([
+                s.username, s.email, 
+                s.first_name, s.last_name, 
+                s.organization,
+                self.role(s),
+                s.is_staff,
+                s.is_active,
+                self.signed_up(s, text_only='True'),
+                sass_accredited_status,
+                s.date_joined,
+                s.last_login])
+
+        f.seek(0)
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=users.csv'
+        return response
+    
+    download_csv.short_description =(
+        "Download CSV file for selected users"
+    )
 
     def merge_users(self, request, queryset):
         active_user = queryset.filter(is_active=True)
@@ -581,11 +630,16 @@ class CustomUserAdmin(ProfileAdmin):
             return '-'
     role.admin_order_field = 'bims_profile__role'
 
-    def sass_accredited_status(self, obj):
-        false_response = format_html(
-            '<img src="/static/admin/img/icon-no.svg" alt="False">')
-        true_response = format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+    def sass_accredited_status(self, obj, **kwargs):
+        text_only = kwargs.get('text_only', 'False')
+        if text_only == 'True':
+            false_response = 'False'
+            true_response = 'True'
+        else:
+            false_response = format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">')
+            true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         try:
             profile = BimsProfile.objects.get(user=obj)
             valid_to = profile.sass_accredited_date_to
@@ -599,11 +653,16 @@ class CustomUserAdmin(ProfileAdmin):
         except BimsProfile.DoesNotExist:
             return '-'
 
-    def signed_up(self, obj):
-        false_response = format_html(
-            '<img src="/static/admin/img/icon-no.svg" alt="False">')
-        true_response = format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+    def signed_up(self, obj, **kwargs):
+        text_only = kwargs.get('text_only', 'False')
+        if text_only == 'True':
+            false_response = 'False'
+            true_response = 'True'
+        else:
+            false_response = format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">')
+            true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         if not obj.email:
             return false_response
         if obj.last_login:
