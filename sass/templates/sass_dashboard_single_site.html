@@ -40,6 +40,26 @@
             right: 0;
             margin: auto;
         }
+        #legend-summary-id{
+            width: 90%;
+            margin-top: auto;
+            color: gray;
+            position:absolute;
+        }
+        #legend-summary-id ul {
+            list-style: none;
+            font-size: 12px;
+        }
+        #legend-summary-id li {
+            display: inline;
+            margin-right: 10px;
+        }
+        #legend-summary-id li span{
+            width: 40px;
+            height: 12px;
+            display: inline-block;
+
+        }
     </style>
 
 {% endblock %}
@@ -352,6 +372,8 @@
                         <canvas id="sass-score-chart"></canvas>
                         <canvas id="taxa-numbers-chart"></canvas>
                         <canvas id="aspt-chart"></canvas>
+                        <center><div id="legend-summary-id"></div></center>
+                        <center><div class="ecological-legend-info" style="margin-top: 15pt">A: Natural - B: Good - C: Fair - D: Poor - E/F: Seriously/Critically modified</div></center>
                     </div>
                     <div class="vertical-space"></div>
                     <div class="chart-container">
