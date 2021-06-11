@@ -31,7 +31,7 @@ from bims.models import (
     DatabaseRecord,
     LocationContext,
     LocationContextGroup,
-    VernacularName
+    VernacularName, TaxonImage
 )
 
 
@@ -363,3 +363,9 @@ class DatabaseRecordF(factory.django.DjangoModelFactory):
 class DocumentF(factory.django.DjangoModelFactory):
     class Meta:
         model = Document
+
+
+class TaxonImageF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = TaxonImage
+    taxonomy = factory.SubFactory(TaxonomyF)
