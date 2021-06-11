@@ -47,12 +47,21 @@
                     const $target = $(e.target);
                     const originalButtonText = $target.html();
                     const $gbifKey = $('#id_gbif_key');
+                    const $scientificName = $('#id_scientific_name');
+                    const $canonicalName = $('#id_canonical_name');
+                    const $taxonomicStatus = $('#id_taxonomic_status')
+                    const $author = $('#id_author');
                     $target.html('Fetching...');
                     let key = '{{ key }}';
                     if(key === "None") key = "";
                     if(key !== "") {
                         $target.html(originalButtonText);
                         $gbifKey.val(key);
+                        $scientificName.val("{{ scientificName }}");
+                        $canonicalName.val("{{ canonicalName }}");
+                        $taxonomicStatus.val("{{taxonomicStatus}}");
+                        $author.val("{{ authorship }}");
+                        
                     }
                     else{
                         $target.html("GBIF Key not found");

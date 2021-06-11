@@ -7,17 +7,23 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         source: null,
         polygonDraw: null,
         polygonCoordinates: null,
+        searchResultCollection: null,
         displayed: false,
         polygonExist: false,
+        maxSites: 10,
+        minSites: 2,
         events: {
             'click .polygonal-lasso-tool': 'drawPolygon',
             'click .clear-lasso': 'clearLasso',
-            'click .update-search': 'updateSearch'
+            'click .update-search': 'updateSearch',
+            'click .merge-sites': 'mergeSitesModal',
+            'click #merge-site-btn': 'mergeSites'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.map = options.map;
             this.createPolygonInteraction();
+            Shared.Dispatcher.on('search:finished', this.toggleMergeSites, this);
         },
         createPolygonInteraction: function () {
             let self = this;
@@ -42,7 +48,8 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 self.polygonExist = true;
                 self.$el.find('.update-search').removeClass('disabled');
                 self.$el.find('.clear-lasso').removeClass('disabled');
-                Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false);
+                Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false, false);
+                Shared.Dispatcher.trigger('map:setPolygonDrawn', polygonExtent);
             });
             this.polygonDraw.on('drawstart', function () {
                 self.source.clear();
@@ -51,6 +58,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         render: function () {
             this.$el.html(this.template());
             this.$el.hide();
+            if (isSuperUser) {
+                this.$el.find('.merge-sites').show();
+            }
             return this;
         },
         getPolygonCoordinates: function () {
@@ -110,6 +120,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             }
             this.$el.find('.clear-lasso').addClass('disabled');
             this.stopDrawing();
+            Shared.Dispatcher.trigger('map:setPolygonDrawn', null);
         },
         drawPolygonFromJSON: function (jsonCoordinates) {
             if (this.polygonExist) {
@@ -135,6 +146,65 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 return;
             }
             Shared.Dispatcher.trigger('search:doSearch');
+        },
+        toggleMergeSites: function (status) {
+            if (this.polygonExist && status && this.searchResultCollection.sitesData.length <= this.maxSites && this.searchResultCollection.sitesData.length >= this.minSites) {
+                this.$el.find('.merge-sites').removeClass('disabled');
+                return true;
+            }
+            this.$el.find('.merge-sites').addClass('disabled');
+        },
+        mergeSitesModal: function (evt) {
+            const $modal = this.$el.find('#merge-sites-modal');
+            const $sitesOptionContainer = $modal.find('#sites-selection');
+            $sitesOptionContainer.html('');
+            $.each(this.searchResultCollection.sitesData, function(index, value) {
+                $sitesOptionContainer.append(`<option value=${value['site_id']}>${value['name']}</option>`);
+            });
+            $modal.modal('show');
+        },
+        mergeSites: function (evt) {
+            if ($(evt.target).hasClass('disabled')) return false;
+            const $modal = this.$el.find('#merge-sites-modal');
+            const $selectedSite = $("#sites-selection option:selected")
+            const selectedPrimarySite = $selectedSite.val();
+            const selectedSiteLabel = $selectedSite.html();
+            const secondarySites = this.searchResultCollection.sitesData.filter(
+                function (data) {
+                    return '' + data['site_id'] !== selectedPrimarySite
+                }
+            ).map(function(data) {
+                return data['site_id'];
+            })
+            const putData = {
+                'primary_site': selectedPrimarySite,
+                'merged_sites': secondarySites.join(','),
+                'query_url': window.location.href
+            }
+            let r = confirm(`Are you sure you want to merge the sites to ${selectedSiteLabel}?`);
+            if (r) {
+                // Show loading...
+                $('#merge-site-btn').addClass("disabled").html(
+                    '<img src="/static/img/small-loading.svg" width="20" style="filter: brightness(104%) contrast(97%);" alt="Loading view">'
+                )
+                $.ajax({
+                    url: '/api/merge-sites/',
+                    type: 'PUT',
+                    data: putData,
+                    headers: {"X-CSRFToken": csrfmiddlewaretoken},
+                    success: function (result) {
+                        // Do something with the result
+                        $('#merge-site-btn').removeClass("disabled").html('Merge')
+                        $modal.modal('hide');
+                        Shared.Dispatcher.trigger('search:doSearch');
+                    },
+                    error: function (e) {
+                        alert(e.responseText);
+                        $('#merge-site-btn').removeClass("disabled").html('Merge')
+                    }
+                });
+            }
+
         }
     })
 });

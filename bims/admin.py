@@ -89,7 +89,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
-from bims.utils.gbif import search_exact_match
+from bims.utils.gbif import search_exact_match, get_species
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 
@@ -461,6 +461,43 @@ class UserHasEmailFilter(SimpleListFilter):
         return queryset
 
 
+class RoleFilter(SimpleListFilter):
+    title = 'Role'
+    parameter_name = 'role'
+
+    def lookups(self, request, model_admin):
+        return BimsProfile.ROLE_CHOICES
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(bims_profile__role__iexact=self.value())
+        return queryset
+
+
+class SignedUpFilter(SimpleListFilter):
+    title = 'Signed up'
+    parameter_name = 'signed_up'
+
+    def lookups(self, request, model_admin):
+        return [
+            (True, 'Yes'),
+            (False, 'No')
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'False':
+            return queryset.filter(
+                models.Q(email__isnull=True) |
+                models.Q(email='')
+            )
+        elif self.value() == 'True':
+            return queryset.filter(
+                models.Q(last_login__isnull=False) |
+                models.Q(email__isnull=False)
+            ).exclude(email='')
+        return queryset
+
+
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
@@ -488,10 +525,14 @@ class CustomUserAdmin(ProfileAdmin):
         'email',
         'first_name',
         'last_name',
+        'organization',
+        'role',
         'is_staff',
         'is_active',
         'signed_up',
-        'sass_accredited_status'
+        'sass_accredited_status',
+        'date_joined',
+        'last_login'
     )
     list_filter = (
         'is_staff',
@@ -500,10 +541,62 @@ class CustomUserAdmin(ProfileAdmin):
         'groups',
         SassAccreditedStatusFilter,
         UserHasEmailFilter,
+        'organization',
+        SignedUpFilter,
+        RoleFilter
     )
     readonly_fields = ()
 
-    actions = ['merge_users']
+    actions = ['merge_users', 'download_csv']
+
+    def download_csv(self, request, queryset):
+        import csv
+        from django.http import HttpResponse
+        try:
+            from StringIO import StringIO # for Python 2
+        except ImportError:
+            from io import StringIO # for Python 3
+
+        f = StringIO()
+        writer = csv.writer(f)
+        writer.writerow([
+            'Username', 
+            'Email', 
+            'First Name', 
+            'Last Name',
+            'Organization Name',
+            'Role',
+            'Staff status',
+            'Active',
+            'Signed up',
+            'SASS Accredited Status',
+            'Date joined', 
+            'Last login'])
+
+        for s in queryset:
+            sass_accredited_status = (
+                self.sass_accredited_status(s, text_only='True')
+            )
+            writer.writerow([
+                s.username, s.email, 
+                s.first_name, s.last_name, 
+                s.organization,
+                self.role(s),
+                s.is_staff,
+                s.is_active,
+                self.signed_up(s, text_only='True'),
+                sass_accredited_status,
+                s.date_joined,
+                s.last_login])
+
+        f.seek(0)
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=users.csv'
+        return response
+    
+    download_csv.short_description =(
+        "Download CSV file for selected users"
+    )
 
     def merge_users(self, request, queryset):
         active_user = queryset.filter(is_active=True)
@@ -534,6 +627,25 @@ class CustomUserAdmin(ProfileAdmin):
             '<img src="/static/admin/img/icon-no.svg" alt="False">')
         true_response = format_html(
             '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+    def role(self, obj):
+        try:
+            profile = BimsProfile.objects.get(user=obj)
+            role = [(v) for k, v in BimsProfile.ROLE_CHOICES if k == profile.role]
+            return role[0] if len(role) > 0 else '-'
+        except BimsProfile.DoesNotExist:
+            return '-'
+    role.admin_order_field = 'bims_profile__role'
+
+    def sass_accredited_status(self, obj, **kwargs):
+        text_only = kwargs.get('text_only', 'False')
+        if text_only == 'True':
+            false_response = 'False'
+            true_response = 'True'
+        else:
+            false_response = format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">')
+            true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         try:
             profile = BimsProfile.objects.get(user=obj)
             valid_to = profile.sass_accredited_date_to
@@ -547,11 +659,16 @@ class CustomUserAdmin(ProfileAdmin):
         except BimsProfile.DoesNotExist:
             return '-'
 
-    def signed_up(self, obj):
-        false_response = format_html(
-            '<img src="/static/admin/img/icon-no.svg" alt="False">')
-        true_response = format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+    def signed_up(self, obj, **kwargs):
+        text_only = kwargs.get('text_only', 'False')
+        if text_only == 'True':
+            false_response = 'False'
+            true_response = 'True'
+        else:
+            false_response = format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">')
+            true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         if not obj.email:
             return false_response
         if obj.last_login:
@@ -763,7 +880,18 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        extra_context['key'] = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        if gbif_key is None:
+            extra_context['key'] = None
+            return super().change_view(
+                request, object_id, form_url, extra_context=extra_context,
+            )
+        species = get_species(gbif_key)
+        extra_context['key'] = gbif_key
+        extra_context['taxonomicStatus'] = species['taxonomicStatus']
+        extra_context['authorship'] = species['authorship']
+        extra_context['scientificName'] = species['scientificName']
+        extra_context['canonicalName'] = species['canonicalName']
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
@@ -1065,6 +1193,7 @@ class UploadSessionAdmin(admin.ModelAdmin):
         'processed',
         'canceled'
     )
+
 
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (

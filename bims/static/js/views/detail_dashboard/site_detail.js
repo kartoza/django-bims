@@ -638,6 +638,7 @@ define([
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
             html2canvas(element, {
+                height: 1000,
                 onrendered: function (canvas) {
                     var link = document.createElement('a');
                     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
@@ -1169,9 +1170,9 @@ define([
                 '#8D2641', '#D7CD47',
                 '#18A090', '#A2CE89',
                 '#4E6440', '#525351',
-                '#D7CD47', '#8D2641',
-                '#A2CE89', '#18A090',
-                '#525351', '#4E6440']
+                '#BCD39C', '#B1F8F2',
+                '#004346', '#508991',
+                '#666A86', '#788AA3']
 
             var chartConfig = {
                 type: 'pie',
