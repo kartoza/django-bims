@@ -1,0 +1,91 @@
+{% extends 'main_base.html' %}
+{% load render_table from django_tables2 %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Nonvalidated Records
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
+
+    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+{% endblock %}
+
+{% load render_table from django_tables2 %}
+{% block body_content %}
+<div style="min-height: 100%; height: auto;">
+    <div id="message-success" style="display: none; float: left; width: 100%; height: 50px"></div>
+
+    <div class="container header-wrapper">
+        Update Site Visit
+        <hr/>
+    </div>
+    <div class="container">
+    <div class="row">
+    <div class="col-lg-12">
+        {% render_table table %}
+    </div>
+    <div id="popup"></div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="confirmDeleteModal" data-id="">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Data</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="deleteBtn">
+                        Delete
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+     <div class="modal fade" tabindex="-1" role="dialog" id="detailModal" data-id="">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail Collection</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
+    <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
+    <script>
+        var validateUrl = '{% url "validate-object" %}';
+        let deleteDataUrl = '{% url "collection-delete" col_id=0 %}';
+        let currentUrl = '{% url "nonvalidated-user-list" %}';
+        var customUrl = '{{ custom_url }}';
+        var pageUrl = '/nonvalidated-user-list/';
+        $('.del').click(function(e) {
+            $('#confirmDeleteModal').modal('show');
+        })
+    </script>
+    <script src="{% static 'js/map-review-validation.js' %}"></script>
+{% endblock %}

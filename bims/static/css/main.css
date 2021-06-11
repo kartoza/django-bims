@@ -1,7 +1,8 @@
 .dashboard-title {
     border-bottom: 3px solid var(--main-accent-color);
     margin-bottom: 10px;
-    text-align: center;
+    color: #444444;
+    padding-top: 0.5em;
 }
 
 .dashboard-title h2 {
@@ -99,4 +100,12 @@
 .body-container {
     padding-top: 100px;
     padding-bottom: 50px;
+}
+
+.body-form {
+    padding: 20px;
+    margin-top: 5em;
+    margin-bottom: 3em;
+    border-radius: 0.3em;
+    box-shadow: 3px 2px 8px 0 rgb(122 122 122 / 14%), 0 6px 20px 0 rgb(47 47 47 / 15%);
 }
