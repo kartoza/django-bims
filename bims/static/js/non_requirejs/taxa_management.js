@@ -99,18 +99,26 @@ $sortBtn.click(function (event) {
 })
 
 $downloadCsvButton.click(function (e) {
-    let a = document.createElement("a");
-    let url = urlDownload + '?taxonGroup=' + selectedTaxonGroup;
-    let taxonName = $('#taxon-name-input').val();
-    if (taxonName) {
-        url += '&taxon=' + taxonName;
-    }
-    a.href = url;
-    a.download = 'taxa-list.csv';
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(urlDownload);
-    a.remove();
+    const $target = $(e.target);
+    const targetHtml = $target.html();
+    const targetWidth = $target.width();
+    $target.prop('disabled', true);
+    $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`)
+    fetch(taxaListCurrentUrl.replace('/api/taxa-list/', urlDownload))
+        .then(resp => resp.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'Taxa_list.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            $target.prop('disabled', false);
+            $target.html(targetHtml);
+        })
+        .catch(() => alert('Cannot download the file'));
 });
 
 $removeTaxonFromGroupBtn.click(function (e) {

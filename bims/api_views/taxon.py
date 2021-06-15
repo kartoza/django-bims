@@ -223,31 +223,8 @@ class TaxaList(LoginRequiredMixin, APIView):
     """Returns list of taxa filtered by taxon group"""
     pagination_class = TaxaPagination
 
-    @property
-    def paginator(self):
-        if not hasattr(self, '_paginator'):
-            if self.pagination_class is None:
-                self._paginator = None
-            else:
-                self._paginator = self.pagination_class()
-        else:
-            pass
-        return self._paginator
-
-    def paginate_queryset(self, queryset):
-
-        if self.paginator is None:
-            return None
-        return self.paginator.paginate_queryset(
-            queryset,
-            self.request,
-            view=self)
-
-    def get_paginated_response(self, data):
-        assert self.paginator is not None
-        return self.paginator.get_paginated_response(data)
-
-    def get(self, request, *args):
+    @staticmethod
+    def get_taxa_by_parameters(request):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
         ranks = request.GET.get('ranks', '').split(',')
@@ -267,10 +244,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         parent_ids = list(filter(None, parent_ids))
         id = request.GET.get('id', '')
         if id:
-            return Response(
-                TaxonSerializer(
-                    Taxonomy.objects.filter(id=id), many=True).data
-            )
+            return Taxonomy.objects.filter(id=id)
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
         try:
@@ -354,6 +328,34 @@ class TaxaList(LoginRequiredMixin, APIView):
                     taxon_list,
                     key=lambda x: origin_order.index(x.origin)
                 )
+        return taxon_list
+
+    @property
+    def paginator(self):
+        if not hasattr(self, '_paginator'):
+            if self.pagination_class is None:
+                self._paginator = None
+            else:
+                self._paginator = self.pagination_class()
+        else:
+            pass
+        return self._paginator
+
+    def paginate_queryset(self, queryset):
+
+        if self.paginator is None:
+            return None
+        return self.paginator.paginate_queryset(
+            queryset,
+            self.request,
+            view=self)
+
+    def get_paginated_response(self, data):
+        assert self.paginator is not None
+        return self.paginator.get_paginated_response(data)
+
+    def get(self, request, *args):
+        taxon_list = self.get_taxa_by_parameters(request)
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(
