@@ -532,7 +532,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                  success: function (data) {
                      if (data.length > 0) {
                          data.forEach(function (image){
-                             var $firstColumnDiv = $('<div class="col-6" "></div>');
+                             var $firstColumnDiv = $('<div class="col-6"></div>');
                              $firstColumnDiv.append('<a target="_blank" href="'+image['url']+'">' +
                                 '<img src="' + image['url'] + '" width="100%"/></a>');
                             $rowWrapper.append($firstColumnDiv);
