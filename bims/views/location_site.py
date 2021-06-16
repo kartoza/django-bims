@@ -1,3 +1,5 @@
+from rest_framework.test import APIClient
+
 from bims.permissions.api_permission import user_has_permission_to_validate
 from django.views.generic import TemplateView, View, ListView
 from django.contrib.auth.decorators import login_required
@@ -231,6 +233,10 @@ class LocationSiteFormView(TemplateView):
             extra_tags='location_site_form'
         )
 
+        client = APIClient()
+        api_url = '/api/send-email-validation/'
+        res = client.get(api_url, {'pk': location_site.pk, 'model': 'Site'})
+
         return HttpResponseRedirect(
             '{url}?id={id}'.format(
                 url=reverse('location-site-update-form'),
@@ -240,7 +246,6 @@ class LocationSiteFormView(TemplateView):
 
 
 class LocationSiteFormUpdateView(LocationSiteFormView):
-
     location_site = None
     success_message = 'Site has been successfully updated'
 
@@ -387,10 +392,9 @@ class LocationSiteFormDeleteView(UserPassesTestMixin, View):
 
 
 class NonValidatedSiteView(
-        UserPassesTestMixin,
-        LoginRequiredMixin,
-        ListView):
-
+    UserPassesTestMixin,
+    LoginRequiredMixin,
+    ListView):
     model = LocationSite
     context_object_name = 'location_sites'
     template_name = 'non_validated_location_site.html'

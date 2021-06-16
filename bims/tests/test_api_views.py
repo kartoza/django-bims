@@ -1,6 +1,9 @@
 import json
 from django.urls import reverse
-from rest_framework.test import APIRequestFactory
+from rest_framework import status
+from rest_framework.test import APIRequestFactory, APIClient
+
+from bims.models import BiologicalCollectionRecord
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     UserF,
@@ -230,3 +233,27 @@ class TestApiView(TestCase):
 
         content = json.loads(response.content)
         self.assertTrue(len(content['results']) > 0)
+
+    def test_send_notification_to_validator(self):
+        client = APIClient()
+        user = UserF.create(is_superuser=True)
+        client.login(
+            username=user.username,
+            password='password'
+        )
+        new_site = LocationSiteF.create()
+        api_url = '/api/send-email-validation/'
+        res = client.get(api_url, {'pk': new_site.pk, 'model': 'Site'})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        aves_collection = BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 1',
+            site=self.location_site,
+            validated=True,
+            ready_for_validation=True,
+            taxonomy=self.taxonomy_1
+        )
+        res = client.get(api_url, {'pk': aves_collection.pk})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        aves_collection = BiologicalCollectionRecord.objects.get(pk=aves_collection.id)
+        self.assertEqual(aves_collection.ready_for_validation, True)
