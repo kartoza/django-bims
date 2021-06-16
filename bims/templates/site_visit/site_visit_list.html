@@ -1,5 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
+{% load site_visit_extras %}
 {% block subtitle %}
     Site visit list
 {% endblock %}
@@ -41,16 +42,97 @@
         .order-button:hover {
             cursor: pointer;
         }
+
+        .btn-action {
+            width:40px;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .message-bar {
+            background-color: #28a745;
+            color: #FFFFFF;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .message-bar .close-bar {
+            float: right;
+        }
+
+        .message-bar .close-bar:hover {
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.8);
+        }
     </style>
 
 {% endblock %}
 
 {% block body_content %}
+    {% can_validate_site_visit as validator %}
     <div class="body-form container">
         <div class="dashboard-title">
             <h2>Site visits&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count|intcomma }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
-{#            <div class="dashboard-close" data-destination="/map"><i#}
-{#                    class="fa fa-times" aria-hidden="true"></i></div>#}
+        </div>
+
+        <div class="modal fade" tabindex="-1" role="dialog"
+             id="confirmValidateModal" data-id="">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Validate Data</h5>
+                        <button type="button" class="close"
+                                data-dismiss="modal"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to validate this data?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary"
+                                id="validateBtn">
+                            Validate
+                        </button>
+                        <button type="button" class="btn btn-secondary"
+                                data-dismiss="modal">Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" tabindex="-1" role="dialog"
+             id="confirmRejectModal" data-id="">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Reject Data</h5>
+                        <button type="button" class="close"
+                                data-dismiss="modal"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>What is the reason for rejecting this data?</p>
+                        <div class="form-group">
+                            <input class="form-control rejection-message">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary"
+                                id="rejectBtn">
+                            Reject
+                        </button>
+                        <button type="button" class="btn btn-secondary"
+                                data-dismiss="modal">Close
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row">
@@ -104,6 +186,13 @@
                 </div>
             </div>
             <div class="col-10">
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if "site_visit_validation" in message.tags %}
+                            <div class="message-bar"><span class="message"></span>{{ message }}<span class="close-bar">✖</span></div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
                 <table class="table table-striped">
                     <thead>
                     <tr>
@@ -119,7 +208,9 @@
                     <tbody>
                     {% for site_visit in survey_list %}
                         <tr>
-                            <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}</td>
+                            <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}<br>
+                                {{ site_visit.validation_status | safe }}
+                            </td>
                             <td>
                                 {% if site_visit.site.site_description %}{{ site_visit.site.site_description }}{% elif site_visit.site.name %}{{ site_visit.site.name }}{% else %}-{% endif %}
                                 <br/>
@@ -133,7 +224,7 @@
                             <td>
                                 {% if site_visit.source_collection.upper != 'GBIF' %}
                                     <a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a>
-                                    {% if site_visit.collector_user.get_full_name != site_visit.owner.get_full_name  %}
+                                    {% if site_visit.collector_user and site_visit.collector_user.get_full_name != site_visit.owner.get_full_name  %}
                                         , <a href="/profile/{{ site_visit.collector_user.username }}/">{{ site_visit.collector_user.get_full_name }}</a>
                                     {% endif %}
                                 {% endif %}
@@ -141,11 +232,31 @@
                             <td>{{ site_visit.total }}</td>
                             <td>
                                 <a href="/site-visit/detail/{{ site_visit.id }}/"
-                                   class="btn btn-primary btn-sm" style="width:80px">View</a>
+                                   class="btn btn-primary btn-sm btn-action"><i class="fa fa-eye" aria-hidden="true"></i> </a>
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
                                     <br/>
                                     <a href="/site-visit/update/{{ site_visit.id }}/"
-                                       class="btn btn-primary btn-sm" style="width:80px; margin-top: 5px;">Edit</a>
+                                       class="btn btn-primary btn-sm btn-action" style="margin-top: 5px;"><i class="fa fa-pencil"></i> </a>
+                                {% endif %}
+                                {% if site_visit.owner == user and not site_visit.ready_for_validation and not site_visit.validated %}
+                                    <br/>
+                                    <a href="#" onclick="sendEmailValidation({{ site_visit.pk }}, this)"
+                                       class="btn btn-primary btn-sm btn-action" style="margin-top: 5px;">
+                                        <i class="fa fa-send" aria-hidden="true"></i>
+                                    </a>
+                                {% endif %}
+                                {% if validator and site_visit.ready_for_validation %}
+                                    <span class="validation-action">
+                                        <a href="#" onclick="validateObject({{ site_visit.pk }})"
+                                           class="btn btn-success btn-sm btn-action"
+                                           data-toggle="tooltip" style="margin-top: 5px;" title="Validate this data">
+                                            <i class="fa fa-check-circle"></i></a>
+                                        <br/>
+                                        <a href="#" onclick="rejectObject({{ site_visit.pk }})"
+                                           class="btn btn-danger btn-sm btn-action"
+                                           data-toggle="tooltip" style="margin-top: 5px;" title="Reject this data">
+                                            <i class="fa fa-times-circle"></i></a>
+                                    </span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -189,6 +300,62 @@
             }
             window.location.href = previousUrl;
         }
+
+        $('.close-bar').click(function(e) {
+            $(e.target).parent().hide();
+        });
+
+        function sendEmailValidation(pk, btn) {
+            $.ajax({
+                url: '{% url "send-email-validation" %}',
+                data: {'pk': pk},
+                success: function () {
+                    location.reload();
+                }
+            });
+        }
+
+        function validateObject(pk) {
+            const modal = $('#confirmValidateModal');
+            modal.modal('show');
+            modal.data('id', pk);
+        }
+
+        $('#validateBtn').click(function () {
+            const modal = $('#confirmValidateModal');
+            const id = modal.data('id');
+            $.ajax({
+                url: '{% url "validate-object" %}',
+                data: {'pk': id},
+                success: function () {
+                    location.reload()
+                }
+            })
+        });
+
+        function rejectObject(pk) {
+            const modal = $('#confirmRejectModal');
+            modal.find('.rejection-message').val('');
+            modal.modal('show');
+            modal.data('id', pk);
+        }
+
+        $('#rejectBtn').click(function () {
+            const modal = $('#confirmRejectModal');
+            const id = modal.data('id');
+            const rejectionMessage = modal.find('.rejection-message');
+            $.ajax({
+                url: '{% url "reject-data" %}',
+                data: {
+                    'pk': id,
+                    'rejection_message': rejectionMessage.val()
+                },
+                success: function () {
+                    location.reload()
+                }
+            })
+        });
+
 
         $(function () {
             $('.dashboard-close').click(dashboardClose);
