@@ -539,7 +539,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                             $fetchingInfoDiv.hide();
                      });
                           $wrapper.append($rowWrapper);
-                     }else {
+                     } else {
                          if (this_GBIF_ID) {
                              $.get({
                                 url: 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + this_GBIF_ID + '&limit=4',
