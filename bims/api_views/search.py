@@ -588,6 +588,9 @@ class CollectionSearch(object):
                 filtered_location_sites = LocationSite.objects.filter(
                     geometry_point__within=self.polygon
                 )
+                bio = bio.filter(
+                    site__in=filtered_location_sites
+                )
             else:
                 filtered_location_sites = filtered_location_sites.filter(
                     geometry_point__within=self.polygon

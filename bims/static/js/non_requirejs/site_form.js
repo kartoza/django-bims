@@ -2,6 +2,7 @@ let map = null;
 let markerSource = null;
 let riversLayer = 'https://maps.kartoza.com/geoserver/wms';
 
+
 const modal = `<!-- Modal -->
 <div id="error-modal" class="modal hide fade" tabindex="-1" role="dialog">
     <div class="modal-dialog">
@@ -84,14 +85,28 @@ $(function () {
         center: southAfrica,
         zoom: 5
     });
+    const baseLayer = [];
+    if(bingKey){
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.BingMaps({
+                key: bingKey,
+                imagerySet: 'AerialWithLabels'
+            })
+            })
+        )
+    }
+    else {
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            })
+        )
+    }
 
     map = new ol.Map({
         target: 'site-map',
-        layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
-            }),
-        ],
+        layers: baseLayer,
         view: mapView
     });
 

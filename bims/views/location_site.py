@@ -16,7 +16,7 @@ from bims.enums.geomorphological_zone import (
 )
 from bims.models import (
     LocationSite, LocationType, LocationContext, LocationContextGroup,
-    SiteImage, Survey, ChemicalRecord
+    SiteImage, Survey, ChemicalRecord, BaseMapLayer
 )
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
@@ -60,6 +60,11 @@ class LocationSiteFormView(TemplateView):
         context['geomorphological_zone_category'] = [
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
+        try:
+            context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            context['bing_key'] = ''
+
         if self.request.user.get_full_name():
             context['fullname'] = self.request.user.get_full_name()
         else:

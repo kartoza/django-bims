@@ -1,7 +1,7 @@
 # coding=utf8
 import ast
 from django.http import Http404
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -223,31 +223,8 @@ class TaxaList(LoginRequiredMixin, APIView):
     """Returns list of taxa filtered by taxon group"""
     pagination_class = TaxaPagination
 
-    @property
-    def paginator(self):
-        if not hasattr(self, '_paginator'):
-            if self.pagination_class is None:
-                self._paginator = None
-            else:
-                self._paginator = self.pagination_class()
-        else:
-            pass
-        return self._paginator
-
-    def paginate_queryset(self, queryset):
-
-        if self.paginator is None:
-            return None
-        return self.paginator.paginate_queryset(
-            queryset,
-            self.request,
-            view=self)
-
-    def get_paginated_response(self, data):
-        assert self.paginator is not None
-        return self.paginator.get_paginated_response(data)
-
-    def get(self, request, *args):
+    @staticmethod
+    def get_taxa_by_parameters(request):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
         ranks = request.GET.get('ranks', '').split(',')
@@ -262,6 +239,12 @@ class TaxaList(LoginRequiredMixin, APIView):
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
         order = request.GET.get('o', '')
+        # Filter by parent
+        parent_ids = request.GET.get('parent', '').split(',')
+        parent_ids = list(filter(None, parent_ids))
+        id = request.GET.get('id', '')
+        if id:
+            return Taxonomy.objects.filter(id=id)
         if not taxon_group_id:
             raise Http404('Missing taxon group id')
         try:
@@ -269,6 +252,12 @@ class TaxaList(LoginRequiredMixin, APIView):
         except TaxonGroup.DoesNotExist:
             raise Http404('Taxon group does not exist')
         taxon_list = taxon_group.taxonomies.all()
+        if parent_ids:
+            parents = taxon_list.filter(id__in=parent_ids)
+            if parents.exists():
+                taxon_list = parents[0].get_all_children()
+            else:
+                taxon_list = parents
         if rank:
             taxon_list = taxon_list.filter(rank=rank)
         if len(ranks) > 0:
@@ -339,6 +328,34 @@ class TaxaList(LoginRequiredMixin, APIView):
                     taxon_list,
                     key=lambda x: origin_order.index(x.origin)
                 )
+        return taxon_list
+
+    @property
+    def paginator(self):
+        if not hasattr(self, '_paginator'):
+            if self.pagination_class is None:
+                self._paginator = None
+            else:
+                self._paginator = self.pagination_class()
+        else:
+            pass
+        return self._paginator
+
+    def paginate_queryset(self, queryset):
+
+        if self.paginator is None:
+            return None
+        return self.paginator.paginate_queryset(
+            queryset,
+            self.request,
+            view=self)
+
+    def get_paginated_response(self, data):
+        assert self.paginator is not None
+        return self.paginator.get_paginated_response(data)
+
+    def get(self, request, *args):
+        taxon_list = self.get_taxa_by_parameters(request)
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(

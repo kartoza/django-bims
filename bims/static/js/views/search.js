@@ -59,6 +59,7 @@ define([
             this.searchResultCollection = new SearchResultCollection(
                 this.searchFinished
             );
+            this.lassoPanel.searchResultCollection = this.searchResultCollection;
             Shared.Dispatcher.on('search:searchCollection', this.search, this);
             Shared.Dispatcher.on('search:doSearch', this.searchClick, this);
             Shared.Dispatcher.on('search:clearSearch', this.clearSearch, this);
@@ -514,6 +515,8 @@ define([
             }
         },
         searchFinished: function () { // Called when the search is complete
+            Shared.Dispatcher.trigger('search:finished', true);
+
             if (filterParameters.hasOwnProperty('siteIdOpen')) {
                 // If the filter contains siteIdOpen,
                 // then fetch the site detail for that id
@@ -555,6 +558,7 @@ define([
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
+            Shared.Dispatcher.trigger('search:finished', false);
             $('#abiotic-data-filter').prop('checked', false);
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
