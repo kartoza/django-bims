@@ -353,6 +353,32 @@
 
 <script type="text/html" id="lasso-control-panel-template">
     {# lasso control container #}
+    <div id="merge-sites-modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Merge Sites</h5>
+                    <button type="button"
+                            class="close close-upload-boundary-modal"
+                            data-dismiss="modal"
+                            aria-label="Close">
+                        <img class="close-icon"
+                             src="/static/img/close_icon.svg">
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">Primary Site</label>
+                        <select class="form-control" id="sites-selection">
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="btn btn-primary" style="width: 100%" id="merge-site-btn">Merge</div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="lasso-control-container map-control-panel-box">
         <div class="row">
             <div class="col-md-12" style="padding-right: 0">
@@ -374,6 +400,9 @@
                 </li>
                 <li class="clear-lasso disabled">
                     <i class="fa fa-eraser" aria-hidden="true"></i> Clear Polygon
+                </li>
+                <li class="merge-sites disabled" style="height: 55px; display: none">
+                    <i class="fa fa-compress" aria-hidden="true"></i> Merge Sites <br/><span class="text-muted" style="font-size: 0.8em; padding-left: 1.4em;">Min Sites = 2, Max Sites = 10</span>
                 </li>
             </ul>
         </div>
@@ -1060,7 +1089,7 @@
 </script>
 
 <script type="text/template" id="search-result-site-template">
-    <div class="result-search" data-search-result-id="">
+    <div class="result-search" data-search-result-id="<%= id %>">
         <p class="group-title"><%= name %></p>
         <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> </a>
     </div>

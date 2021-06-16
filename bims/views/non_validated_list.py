@@ -10,10 +10,9 @@ from bims.permissions.api_permission import (
 
 
 class NonValidatedObjectsView(
-        UserPassesTestMixin,
-        LoginRequiredMixin,
-        ListView):
-
+    UserPassesTestMixin,
+    LoginRequiredMixin,
+    ListView):
     model = BiologicalCollectionRecord
     context_object_name = 'biorecords'
     template_name = 'non_validated_list.html'
@@ -69,7 +68,9 @@ class NonValidatedObjectsView(
                     original_species_name__icontains=filter_name)
             if filter_owner is not None:
                 queryset = queryset.filter(
-                    owner__username__icontains=filter_owner)
+                    owner__last_name__icontains=filter_owner.split(' ')[-1]) | \
+                           queryset.filter(owner__first_name__icontains=filter_owner.split(' ')[-1]) | \
+                           queryset.filter(owner__username__icontains=filter_owner)
             if filter_date_from is not None:
                 queryset = queryset.filter(
                     collection_date__gte=filter_date_from)

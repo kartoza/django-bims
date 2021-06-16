@@ -99,18 +99,26 @@ $sortBtn.click(function (event) {
 })
 
 $downloadCsvButton.click(function (e) {
-    let a = document.createElement("a");
-    let url = urlDownload + '?taxonGroup=' + selectedTaxonGroup;
-    let taxonName = $('#taxon-name-input').val();
-    if (taxonName) {
-        url += '&taxon=' + taxonName;
-    }
-    a.href = url;
-    a.download = 'taxa-list.csv';
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(urlDownload);
-    a.remove();
+    const $target = $(e.target);
+    const targetHtml = $target.html();
+    const targetWidth = $target.width();
+    $target.prop('disabled', true);
+    $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`)
+    fetch(taxaListCurrentUrl.replace('/api/taxa-list/', urlDownload))
+        .then(resp => resp.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'Taxa_list.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            $target.prop('disabled', false);
+            $target.html(targetHtml);
+        })
+        .catch(() => alert('Cannot download the file'));
 });
 
 $removeTaxonFromGroupBtn.click(function (e) {
@@ -295,7 +303,6 @@ const getTaxaList = (url) => {
     taxaListCurrentUrl = url;
     showLoading();
     $('.download-button-container').show();
-    console.log(url)
     $.get(url).then(
         function (response) {
             hideLoading();
@@ -573,6 +580,12 @@ $applyFiltersBtn.click(function () {
         return data['id'];
     })
     urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
+
+    const parent = $('#taxa-auto-complete').select2('data').map(function(data) {
+        return data['id'];
+    })
+    urlParams = insertParam('parent', parent.join(), true, false, urlParams);
+
     document.location.search = urlParams;
 })
 
@@ -583,6 +596,30 @@ $('#collapseFilter').on('shown.bs.collapse', function() {
 $('#collapseFilter').on('hidden.bs.collapse', function() {
     $('#add-filters').find('i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
 })
+
+function formatTaxa (taxa) {
+    if (taxa.loading) {
+        return taxa.text;
+    }
+    var $container = $(
+    "<div class='select2-result-repository clearfix'>" +
+      "<div class='select2-result-repository__meta'>" +
+        "<div class='select2-result-repository__title'></div>" +
+        "<div class='select2-result-repository__description'></div>" +
+      "</div>" +
+    "</div>"
+  );
+  $container.find(".select2-result-repository__title").text(taxa.species);
+  $container.find(".select2-result-repository__description").text(taxa.rank);
+  return $container;
+}
+
+function formatTaxaSelection (taxa) {
+    if (taxa.species) {
+        return `${taxa.species} (${taxa.rank})`
+    }
+    return taxa.text;
+}
 
 $(document).ready(function () {
     const queryString = window.location.search;
@@ -595,6 +632,32 @@ $(document).ready(function () {
         $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
         url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
     }
+
+    $('#taxa-auto-complete').select2({
+        ajax: {
+            url: '/species-autocomplete/',
+            dataType: 'json',
+            data: function (params) {
+                let query = {
+                    term: params.term,
+                    taxonGroupId: urlParams.get('selected')
+                }
+                return query;
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                }
+            },
+            cache: true
+        },
+        placeholder: 'Search for a Taxonomy',
+        minimumInputLength: 3,
+        templateResult: formatTaxa,
+        templateSelection: formatTaxaSelection,
+        theme: "classic"
+    });
+
     if (urlParams.get('taxon')) {
         taxonName = urlParams.get('taxon');
         if (url) {
@@ -646,6 +709,29 @@ $(document).ready(function () {
         filterSelected['cons_status'] = consStatusArray;
         totalAllFilters += consStatusArray.length;
         url += `&cons_status=${urlParams.get('cons_status')}`;
+    }
+    if (urlParams.get('parent')) {
+        const parentArray = urlParams.get('parent').split(',');
+        const taxaAutoComplete = $('#taxa-auto-complete');
+        filterSelected['parent'] = parentArray;
+        $.ajax({
+            type: 'GET',
+            url: `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&id=${urlParams.get('parent')}`,
+        }).then(function (data) {
+            // create the option and append to Select2
+            if (data.length === 0) return false;
+            let result = data[0];
+            let option = new Option(`${result['canonical_name']} (${result['rank']})`, result.id, true, true);
+            taxaAutoComplete.append(option).trigger('change');
+            taxaAutoComplete.trigger({
+                type: 'select2:select',
+                params: {
+                    data: data
+                }
+            });
+        });
+        totalAllFilters += parentArray.length;
+        url += `&parent=${urlParams.get('parent')}`;
     }
     if (Object.keys(filterSelected).length > 0) {
         $clearSearchBtn.show();
