@@ -173,9 +173,9 @@ class CollectionSearch(object):
             # Get all validated and not validated records
             pass
         elif 'validated' in validated_values:
-            additional_filter['validated'] = True
+            additional_filter['survey__validated'] = True
         elif 'non validated' in validated_values:
-            additional_filter['validated'] = False
+            additional_filter['survey__validated'] = False
 
         return additional_filter
 
@@ -251,6 +251,17 @@ class CollectionSearch(object):
     @property
     def collectors(self):
         return self.parse_request_json('collectors')
+
+    @property
+    def in_review(self):
+        _in_review = self.get_request_data('inReview')
+        if _in_review:
+            try:
+                return ast.literal_eval(_in_review)
+            except ValueError:
+                return False
+        else:
+            return False
 
     @property
     def polygon(self):
@@ -410,6 +421,11 @@ class CollectionSearch(object):
         validation_filter = self.validation_filter()
         if validation_filter:
             filters.update(validation_filter)
+
+        if self.in_review:
+            filters.update({
+                'survey__ready_for_validation': True
+            })
 
         source_collection_filters = []
 
