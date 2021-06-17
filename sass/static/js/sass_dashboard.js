@@ -762,6 +762,9 @@ function renderLocationContextTable() {
         tableData['SA Ecoregion Level 2'] = riverEcoregionGroup['eco_region_2'];
         tableData['Sub Water Management Area'] = waterManagementAreaGroup['sub_wmas'];
         tableData['Water Management Area'] = waterManagementAreaGroup['water_management_area'];
+        if (waterManagementAreaGroup['river_management_unit']) {
+            tableData['River Management Unit'] = waterManagementAreaGroup['river_management_unit'];
+        }
     } catch (e) {
     }
 
