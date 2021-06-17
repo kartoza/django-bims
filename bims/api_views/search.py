@@ -253,6 +253,17 @@ class CollectionSearch(object):
         return self.parse_request_json('collectors')
 
     @property
+    def in_review(self):
+        _in_review = self.get_request_data('inReview')
+        if _in_review:
+            try:
+                return ast.literal_eval(_in_review)
+            except ValueError:
+                return False
+        else:
+            return False
+
+    @property
     def polygon(self):
         try:
             polygon_coordinates = self.parse_request_json('polygon')
@@ -410,6 +421,11 @@ class CollectionSearch(object):
         validation_filter = self.validation_filter()
         if validation_filter:
             filters.update(validation_filter)
+
+        if self.in_review:
+            filters.update({
+                'survey__ready_for_validation': True
+            })
 
         source_collection_filters = []
 
