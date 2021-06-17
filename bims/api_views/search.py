@@ -173,9 +173,9 @@ class CollectionSearch(object):
             # Get all validated and not validated records
             pass
         elif 'validated' in validated_values:
-            additional_filter['validated'] = True
+            additional_filter['survey__validated'] = True
         elif 'non validated' in validated_values:
-            additional_filter['validated'] = False
+            additional_filter['survey__validated'] = False
 
         return additional_filter
 

@@ -32,9 +32,6 @@ from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.non_validated_list import NonValidatedObjectsView
 from bims.views.non_validated_user_list import NonValidatedObjectsUserView
-from bims.views.non_validated_user_surveys import (
-    NonValidatedSurveyListView
-)
 from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
 from bims.views.download_csv_taxa_list import (
@@ -210,9 +207,6 @@ urlpatterns = [
     url(r'^contact/success/$', TemplateView.as_view(
         template_name='contactus/contact_success.html'),
         {}, 'contactus-success'),
-    url(r'^nonvalidated-user-surveys/$',
-        NonValidatedSurveyListView.as_view(),
-        name='nonvalidated-user-surveys'),
 ]
 
 # Api urls

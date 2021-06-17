@@ -65,8 +65,7 @@ INSTALLED_APPS += (
     'sorl.thumbnail',
     'ckeditor',
     'celery_inspect',
-    'django_json_widget',
-    'django_tables2'
+    'django_json_widget'
 )
 
 # Wagtail configurations
@@ -435,5 +434,3 @@ THUMBNAIL_PRESERVE_FORMAT = True
 
 # add bims url
 ROOT_URLCONF = 'core.urls'
-
-DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap4.html'
