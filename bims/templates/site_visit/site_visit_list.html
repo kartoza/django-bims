@@ -71,10 +71,9 @@
 
 {% block body_content %}
     {% can_validate_site_visit as validator %}
-    <div class="body-form container">
-        <div class="dashboard-title">
-            <h2>Site visits&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count|intcomma }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
-        </div>
+    <div class="nav-space" style="height: 51px;"></div>
+    <div class="list-form container-fluid">
+
 
         <div class="modal fade" tabindex="-1" role="dialog"
              id="confirmValidateModal" data-id="">
@@ -136,7 +135,11 @@
         </div>
 
         <div class="row">
-            <div class="col-2">
+            <div class="col-2 side-panel">
+                <div class="dashboard-title">
+                    <h2>{{ page_obj.paginator.count|intcomma }} Site visit{% if page_obj.paginator.count > 1 %}s{% endif %}&nbsp;
+                    </h2>
+                </div>
                 <h5>Metrics</h5>
                 <div style="border-top: 1px solid rgba(0,0,0,0.28)">
                     <table style="width: 100%">
@@ -185,7 +188,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-10">
+            <div class="col-10 list-content">
                 {% if messages %}
                     {% for message in messages %}
                         {% if "site_visit_validation" in message.tags %}
@@ -196,12 +199,12 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th scope="col" style="width:200px">Site code <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_code"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_code"></i></th>
-                        <th scope="col" style="width:200px">Site description <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_description"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_description"></i></th>
-                        <th scope="col">Sampling date <br/><i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="date"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-date"></i></th>
+                        <th scope="col" style="width:10em">Site code <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_code"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_code"></i></th>
+                        <th scope="col" style="width:20em">Site description <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_description"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_description"></i></th>
+                        <th scope="col">Sampling date <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="date"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-date"></i></th>
                         <th scope="col">Source collection</th>
                         <th scope="col">Owner</th>
-                        <th scope="col">Total occurrences <br/><i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="total"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-total"></i></th>
+                        <th scope="col">Total occurrences <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="total"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-total"></i></th>
                         <th scope="col">Actions</th>
                     </tr>
                     </thead>
@@ -234,14 +237,12 @@
                                 <a href="/site-visit/detail/{{ site_visit.id }}/"
                                    class="btn btn-primary btn-sm btn-action"><i class="fa fa-eye" aria-hidden="true"></i> </a>
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
-                                    <br/>
                                     <a href="/site-visit/update/{{ site_visit.id }}/"
-                                       class="btn btn-primary btn-sm btn-action" style="margin-top: 5px;"><i class="fa fa-pencil"></i> </a>
+                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;"><i class="fa fa-pencil"></i> </a>
                                 {% endif %}
                                 {% if site_visit.owner == user and not site_visit.ready_for_validation and not site_visit.validated %}
-                                    <br/>
                                     <a href="#" onclick="sendEmailValidation({{ site_visit.pk }}, this)"
-                                       class="btn btn-primary btn-sm btn-action" style="margin-top: 5px;">
+                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;">
                                         <i class="fa fa-send" aria-hidden="true"></i>
                                     </a>
                                 {% endif %}
@@ -249,12 +250,11 @@
                                     <span class="validation-action">
                                         <a href="#" onclick="validateObject({{ site_visit.pk }})"
                                            class="btn btn-success btn-sm btn-action"
-                                           data-toggle="tooltip" style="margin-top: 5px;" title="Validate this data">
+                                           data-toggle="tooltip" style="margin-left: 5px;" title="Validate this data">
                                             <i class="fa fa-check-circle"></i></a>
-                                        <br/>
                                         <a href="#" onclick="rejectObject({{ site_visit.pk }})"
                                            class="btn btn-danger btn-sm btn-action"
-                                           data-toggle="tooltip" style="margin-top: 5px;" title="Reject this data">
+                                           data-toggle="tooltip" style="margin-left: 5px;" title="Reject this data">
                                             <i class="fa fa-times-circle"></i></a>
                                     </span>
                                 {% endif %}
@@ -263,16 +263,16 @@
                     {% endfor %}
                     </tbody>
                 </table>
+
+                {% if is_paginated %}
+                     <div class="paginator-wrapper">
+                        {% include 'paginator_template.html' %}
+                    </div>
+                {% endif %}
             </div>
         </div>
 
-        {% if is_paginated %}
-             <div class="paginator-wrapper">
-                {% include 'paginator_template.html' %}
-            </div>
-        {% endif %}
     </div>
-    {% include 'footer.html' %}
 {% endblock %}
 
 {% block foot %}
