@@ -5,10 +5,11 @@ from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.models import Permission
 from django.conf import settings
+from django.contrib import messages
 from rest_framework.views import APIView
 from rest_framework import status
 from geonode.people.models import Profile
-from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.survey import Survey
 
 
 class SendNotificationValidation(LoginRequiredMixin, APIView):
@@ -38,13 +39,12 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
 
         if pk is not None:
             try:
-                bio_record = BiologicalCollectionRecord.objects.get(pk=pk)
+                site_visit = Survey.objects.get(pk=pk)
 
                 try:
-                    taxon_classname = bio_record.taxonomy.class_name
                     class_permission = Permission.objects.filter(
                         content_type__app_label='bims',
-                        codename='can_validate_%s' % taxon_classname.lower()
+                        codename='can_validate_site_visit'
                     )
                     class_validators = (
                         Profile.objects.filter(
@@ -57,20 +57,28 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                     pass
 
                 validator_emails = filter(None, validator_emails)
-                bio_record.ready_for_validation = True
-                bio_record.save()
+                site_visit.ready_for_validation = True
+                site_visit.save()
+
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    'Validation notification is sent.',
+                    'site_visit_validation'
+                )
+
                 send_mail(
-                    '[BIMS] Object is ready to be validated',
+                    'Site visit is ready to be validated',
                     'Dear Validator,\n\n'
-                    'The following object is ready to be reviewed:\n'
-                    '{}://{}/nonvalidated-list/?pk={}\n\n'
+                    'The following site visit is ready to be reviewed:\n'
+                    '{}://{}/site-visit/detail/{}/\n\n'
                     'Sincerely,\nBIMS Team.'.format(scheme, site, pk),
                     '{}'.format(settings.SERVER_EMAIL),
                     validator_emails,
                     fail_silently=False
                 )
                 return JsonResponse({'status': 'success'})
-            except BiologicalCollectionRecord.DoesNotExist:
+            except Survey.DoesNotExist:
                 return HttpResponse(
                     'Object Does Not Exist',
                     status=status.HTTP_400_BAD_REQUEST
