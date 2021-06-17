@@ -65,7 +65,7 @@ INSTALLED_APPS += (
     'sorl.thumbnail',
     'ckeditor',
     'celery_inspect',
-    'django_json_widget',
+    'django_json_widget'
 )
 
 # Wagtail configurations
@@ -432,5 +432,5 @@ CKEDITOR_CONFIGS = {
 THUMBNAIL_COLORSPACE = None
 THUMBNAIL_PRESERVE_FORMAT = True
 
-# add bims url 
+# add bims url
 ROOT_URLCONF = 'core.urls'

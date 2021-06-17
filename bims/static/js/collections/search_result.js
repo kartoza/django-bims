@@ -229,7 +229,7 @@ define([
                 }
                 Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
                 if (this.extent.length === 4) {
-                    Shared.Dispatcher.trigger('map:zoomToExtent', this.extent);
+                    Shared.Dispatcher.trigger('map:zoomToExtent', this.extent, true, false);
                 }
 
                 $.each(this.recordsData, function (key, data) {

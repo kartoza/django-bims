@@ -638,6 +638,7 @@ define([
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
             html2canvas(element, {
+                height: 1000,
                 onrendered: function (canvas) {
                     var link = document.createElement('a');
                     link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
@@ -1169,9 +1170,9 @@ define([
                 '#8D2641', '#D7CD47',
                 '#18A090', '#A2CE89',
                 '#4E6440', '#525351',
-                '#D7CD47', '#8D2641',
-                '#A2CE89', '#18A090',
-                '#525351', '#4E6440']
+                '#BCD39C', '#B1F8F2',
+                '#004346', '#508991',
+                '#666A86', '#788AA3']
 
             var chartConfig = {
                 type: 'pie',
@@ -1404,6 +1405,7 @@ define([
             return splitStr.join(' ');
         },
         renderChemGraph: function (data) {
+            var self = this;
             var $chemWrapper = $('#species-ssdd-chem-bar-chart');
             $chemWrapper.html('');
             var xLabel = data['chemical_records']['x_label'];
@@ -1490,17 +1492,19 @@ define([
                     data: _data,
                     options: options
                 };
-
+                self.chartConfigs[id_canvas] = chartConfig;
                 new ChartJs(ctx, chartConfig)
             })
         },
         downloadChemGraphs: function () {
             var self = this;
+            let button = $('#chem-graph-export');
+            let titles = button.data('title');
             var elements = $('#species-ssdd-chem-bar-chart .chem-bar-chart');
             for(var i=0; i<elements.length; i++){
-                var title = $(elements[i]).attr('id');
-                var canvas = $(elements[i])[0];
-                self.downloadChart(title, canvas);
+                var title = titles + ' - ' + $(elements[i]).attr('id').split('-')[0];
+                var canvas = $(elements[i]).attr('id')
+                svgChartDownload(self.chartConfigs[canvas], title);
             }
         },
         renderCustomDashboardLayout: function ($wrapper, dashboardConfiguration) {

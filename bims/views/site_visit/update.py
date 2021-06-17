@@ -37,6 +37,8 @@ class SiteVisitUpdateView(
             site_visit = Survey.objects.get(
                 id=self.kwargs['sitevisitid']
             )
+            if not site_visit.validated and site_visit.ready_for_validation:
+                return False
             if (
                     site_visit.owner == self.request.user or
                     site_visit.collector_user == self.request.user

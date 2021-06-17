@@ -1,6 +1,7 @@
 # coding=utf8
+import ast
 from django.http import Http404
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -222,6 +223,113 @@ class TaxaList(LoginRequiredMixin, APIView):
     """Returns list of taxa filtered by taxon group"""
     pagination_class = TaxaPagination
 
+    @staticmethod
+    def get_taxa_by_parameters(request):
+        taxon_group_id = request.GET.get('taxonGroup', '')
+        rank = request.GET.get('rank', '')
+        ranks = request.GET.get('ranks', '').split(',')
+        ranks = list(filter(None, ranks))
+        origins = request.GET.get('origins', '').split(',')
+        origins = list(filter(None, origins))
+        cons_status = request.GET.get('cons_status', '').split(',')
+        cons_status = list(filter(None, cons_status))
+        endemism = request.GET.get('endemism', '').split(',')
+        endemism = list(filter(None, endemism))
+        taxon_name = request.GET.get('taxon', '')
+        is_gbif = request.GET.get('is_gbif', '')
+        is_iucn = request.GET.get('is_iucn', '')
+        order = request.GET.get('o', '')
+        # Filter by parent
+        parent_ids = request.GET.get('parent', '').split(',')
+        parent_ids = list(filter(None, parent_ids))
+        id = request.GET.get('id', '')
+        if id:
+            return Taxonomy.objects.filter(id=id)
+        if not taxon_group_id:
+            raise Http404('Missing taxon group id')
+        try:
+            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+        except TaxonGroup.DoesNotExist:
+            raise Http404('Taxon group does not exist')
+        taxon_list = taxon_group.taxonomies.all()
+        if parent_ids:
+            parents = taxon_list.filter(id__in=parent_ids)
+            if parents.exists():
+                taxon_list = parents[0].get_all_children()
+            else:
+                taxon_list = parents
+        if rank:
+            taxon_list = taxon_list.filter(rank=rank)
+        if len(ranks) > 0:
+            taxon_list = taxon_list.filter(
+                rank__in=ranks
+            )
+        if len(origins) > 0:
+            taxon_list = taxon_list.filter(
+                origin__in=origins
+            )
+        if len(cons_status) > 0:
+            taxon_list = taxon_list.filter(
+                iucn_status__category__in=cons_status
+            )
+        if len(endemism) > 0:
+            taxon_list = taxon_list.filter(
+                endemism__name__in=endemism
+            )
+        if taxon_name:
+            taxon_list = taxon_list.filter(
+                canonical_name__icontains=taxon_name
+            )
+        if is_gbif:
+            try:
+                is_gbif = ast.literal_eval(is_gbif)
+                if is_gbif:
+                    taxon_list = taxon_list.exclude(
+                        gbif_key__isnull=True
+                    )
+                else:
+                    taxon_list = taxon_list.filter(
+                        gbif_key__isnull=True
+                    )
+            except ValueError:
+                pass
+        if is_iucn:
+            try:
+                is_iucn = ast.literal_eval(is_iucn)
+                if is_iucn:
+                    taxon_list = taxon_list.exclude(
+                        iucn_redlist_id__isnull=True
+                    )
+                else:
+                    taxon_list = taxon_list.filter(
+                        iucn_redlist_id__isnull=True
+                    )
+            except ValueError:
+                pass
+        if order:
+            if 'total_records' in order:
+                taxon_list = taxon_list.annotate(
+                    total_records=Count('biologicalcollectionrecord')
+                ).order_by(order)
+            elif 'origin' not in order:
+                taxon_list = taxon_list.order_by(order)
+            else:
+                origin_order = [
+                    'indigenous',
+                    'alien',
+                    'alien-invasive',
+                    'alien-non-invasive',
+                    'unknown',
+                    ''
+                ]
+                if '-' in order:
+                    origin_order.reverse()
+                taxon_list = sorted(
+                    taxon_list,
+                    key=lambda x: origin_order.index(x.origin)
+                )
+        return taxon_list
+
     @property
     def paginator(self):
         if not hasattr(self, '_paginator'):
@@ -247,45 +355,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         return self.paginator.get_paginated_response(data)
 
     def get(self, request, *args):
-        taxon_group_id = request.GET.get('taxonGroup', '')
-        rank = request.GET.get('rank', '')
-        taxon_name = request.GET.get('taxon', '')
-        order = request.GET.get('o', '')
-        if not taxon_group_id:
-            raise Http404('Missing taxon group id')
-        try:
-            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-        except TaxonGroup.DoesNotExist:
-            raise Http404('Taxon group does not exist')
-        taxon_list = taxon_group.taxonomies.all()
-        if rank:
-            taxon_list = taxon_list.filter(rank=rank)
-        if taxon_name:
-            taxon_list = taxon_list.filter(
-                canonical_name__icontains=taxon_name
-            )
-        if order:
-            if 'total_records' in order:
-                taxon_list = taxon_list.annotate(
-                    total_records=Count('biologicalcollectionrecord')
-                ).order_by(order)
-            elif 'origin' not in order:
-                taxon_list = taxon_list.order_by(order)
-            else:
-                origin_order = [
-                    'indigenous',
-                    'alien',
-                    'alien-invasive',
-                    'alien-non-invasive',
-                    'unknown',
-                    ''
-                ]
-                if '-' in order:
-                    origin_order.reverse()
-                taxon_list = sorted(
-                    taxon_list,
-                    key=lambda x: origin_order.index(x.origin)
-                )
+        taxon_list = self.get_taxa_by_parameters(request)
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(

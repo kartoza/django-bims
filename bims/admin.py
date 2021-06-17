@@ -88,6 +88,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
+from bims.utils.gbif import search_exact_match, get_species
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 
@@ -146,7 +147,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'has_location_context')
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
-    raw_id_fields = ('river', )
+    raw_id_fields = ('river',)
     list_display_links = ['name', 'site_code']
 
     actions = [
@@ -216,8 +217,8 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             else:
                 rows_failed += 1
                 error_message += (
-                    'Failed to update site [%s] because [%s]\n') % (
-                    location_site.location_site_identifier, message)
+                                     'Failed to update site [%s] because [%s]\n') % (
+                                     location_site.location_site_identifier, message)
 
         full_message = "%s successfully updated." % ','.join(site_names)
 
@@ -310,6 +311,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         css = {
             'all': ('admin/custom-admin.css',)
         }
+
     # exclude = ['source_reference',]
     list_display = (
         'taxonomy',
@@ -458,6 +460,43 @@ class UserHasEmailFilter(SimpleListFilter):
         return queryset
 
 
+class RoleFilter(SimpleListFilter):
+    title = 'Role'
+    parameter_name = 'role'
+
+    def lookups(self, request, model_admin):
+        return BimsProfile.ROLE_CHOICES
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(bims_profile__role__iexact=self.value())
+        return queryset
+
+
+class SignedUpFilter(SimpleListFilter):
+    title = 'Signed up'
+    parameter_name = 'signed_up'
+
+    def lookups(self, request, model_admin):
+        return [
+            (True, 'Yes'),
+            (False, 'No')
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'False':
+            return queryset.filter(
+                models.Q(email__isnull=True) |
+                models.Q(email='')
+            )
+        elif self.value() == 'True':
+            return queryset.filter(
+                models.Q(last_login__isnull=False) |
+                models.Q(email__isnull=False)
+            ).exclude(email='')
+        return queryset
+
+
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
@@ -485,10 +524,14 @@ class CustomUserAdmin(ProfileAdmin):
         'email',
         'first_name',
         'last_name',
+        'organization',
+        'role',
         'is_staff',
         'is_active',
         'signed_up',
-        'sass_accredited_status'
+        'sass_accredited_status',
+        'date_joined',
+        'last_login'
     )
     list_filter = (
         'is_staff',
@@ -497,10 +540,62 @@ class CustomUserAdmin(ProfileAdmin):
         'groups',
         SassAccreditedStatusFilter,
         UserHasEmailFilter,
+        'organization',
+        SignedUpFilter,
+        RoleFilter
     )
     readonly_fields = ()
 
-    actions = ['merge_users']
+    actions = ['merge_users', 'download_csv']
+
+    def download_csv(self, request, queryset):
+        import csv
+        from django.http import HttpResponse
+        try:
+            from StringIO import StringIO # for Python 2
+        except ImportError:
+            from io import StringIO # for Python 3
+
+        f = StringIO()
+        writer = csv.writer(f)
+        writer.writerow([
+            'Username', 
+            'Email', 
+            'First Name', 
+            'Last Name',
+            'Organization Name',
+            'Role',
+            'Staff status',
+            'Active',
+            'Signed up',
+            'SASS Accredited Status',
+            'Date joined', 
+            'Last login'])
+
+        for s in queryset:
+            sass_accredited_status = (
+                self.sass_accredited_status(s, text_only='True')
+            )
+            writer.writerow([
+                s.username, s.email, 
+                s.first_name, s.last_name, 
+                s.organization,
+                self.role(s),
+                s.is_staff,
+                s.is_active,
+                self.signed_up(s, text_only='True'),
+                sass_accredited_status,
+                s.date_joined,
+                s.last_login])
+
+        f.seek(0)
+        response = HttpResponse(f, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=users.csv'
+        return response
+    
+    download_csv.short_description =(
+        "Download CSV file for selected users"
+    )
 
     def merge_users(self, request, queryset):
         active_user = queryset.filter(is_active=True)
@@ -526,10 +621,24 @@ class CustomUserAdmin(ProfileAdmin):
 
     merge_users.short_description = 'Merge users'
 
-    def sass_accredited_status(self, obj):
-        false_response = format_html(
-            '<img src="/static/admin/img/icon-no.svg" alt="False">')
-        true_response = format_html(
+    def role(self, obj):
+        try:
+            profile = BimsProfile.objects.get(user=obj)
+            role = [(v) for k, v in BimsProfile.ROLE_CHOICES if k == profile.role]
+            return role[0] if len(role) > 0 else '-'
+        except BimsProfile.DoesNotExist:
+            return '-'
+    role.admin_order_field = 'bims_profile__role'
+
+    def sass_accredited_status(self, obj, **kwargs):
+        text_only = kwargs.get('text_only', 'False')
+        if text_only == 'True':
+            false_response = 'False'
+            true_response = 'True'
+        else:
+            false_response = format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">')
+            true_response = format_html(
                 '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         try:
             profile = BimsProfile.objects.get(user=obj)
@@ -544,11 +653,16 @@ class CustomUserAdmin(ProfileAdmin):
         except BimsProfile.DoesNotExist:
             return '-'
 
-    def signed_up(self, obj):
-        false_response = format_html(
-            '<img src="/static/admin/img/icon-no.svg" alt="False">')
-        true_response = format_html(
-            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+    def signed_up(self, obj, **kwargs):
+        text_only = kwargs.get('text_only', 'False')
+        if text_only == 'True':
+            false_response = 'False'
+            true_response = 'True'
+        else:
+            false_response = format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">')
+            true_response = format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         if not obj.email:
             return false_response
         if obj.last_login:
@@ -651,7 +765,6 @@ class VisitorAdmin(admin.ModelAdmin):
 
 
 class SearchProcessAdmin(admin.ModelAdmin):
-
     list_display = (
         'file_path',
         'category',
@@ -665,7 +778,6 @@ class PageviewAdmin(admin.ModelAdmin):
 
 
 class ReferenceLinkAdmin(admin.ModelAdmin):
-
     list_display = (
         'collection_record',
         'reference'
@@ -673,7 +785,6 @@ class ReferenceLinkAdmin(admin.ModelAdmin):
 
 
 class EndemismAdmin(admin.ModelAdmin):
-
     list_display = (
         'name',
         'description',
@@ -755,9 +866,26 @@ class TaxonomyAdmin(admin.ModelAdmin):
         else:
             return '-'
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        if gbif_key is None:
+            extra_context['key'] = None
+            return super().change_view(
+                request, object_id, form_url, extra_context=extra_context,
+            )
+        species = get_species(gbif_key)
+        extra_context['key'] = gbif_key
+        extra_context['taxonomicStatus'] = species['taxonomicStatus']
+        extra_context['authorship'] = species['authorship']
+        extra_context['scientificName'] = species['scientificName']
+        extra_context['canonicalName'] = species['canonicalName']
+        return super().change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
+
 
 class VernacularNameAdmin(admin.ModelAdmin):
-
     search_fields = (
         'name',
     )
@@ -770,7 +898,6 @@ class VernacularNameAdmin(admin.ModelAdmin):
 
 
 class RiverCatchmentAdmin(admin.ModelAdmin):
-
     list_display = (
         'key',
         'value',
@@ -786,7 +913,7 @@ class FbisUUIDAdmin(admin.ModelAdmin):
     list_display = ('uuid', 'content_type', 'content_object')
     list_filter = ('content_type',)
     ordering = ('content_type', 'uuid')
-    search_fields = ('uuid', )
+    search_fields = ('uuid',)
 
 
 class SassBiotopeAdmin(admin.ModelAdmin):
@@ -858,6 +985,7 @@ class SiteImageAdmin(admin.ModelAdmin):
 
     def get_site_code(self, obj):
         return obj.site.location_site_identifier
+
     get_site_code.short_description = 'Site'
     get_site_code.admin_order_field = 'site__site_code'
 
@@ -1044,6 +1172,17 @@ class IngestedDataAdmin(admin.ModelAdmin):
     )
 
 
+class UploadSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        'uploader',
+        'module_group',
+        'uploaded_at',
+        'category',
+        'processed',
+        'canceled'
+    )
+
+
 class LocationContextGroupAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -1132,7 +1271,7 @@ admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
-admin.site.register(UploadSession)
+admin.site.register(UploadSession, UploadSessionAdmin)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
@@ -1158,7 +1297,8 @@ admin.site.register(AlgaeData, AlgaeDataAdmin)
 if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
 
-from bims.custom_admin import * # noqa
+from bims.custom_admin import *  # noqa
 from geonode.themes.models import *  # noqa
+
 admin.site.unregister(GeoNodeThemeCustomization)
 admin.site.unregister(Partner)
