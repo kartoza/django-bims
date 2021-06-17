@@ -368,11 +368,26 @@
                     <div class="vertical-space"></div>
                     <div class="chart-container">
                         <div class="chart-title">SASS charts
-                            <i data-download-title="SASS charts"
-                               data-download-chart="SASS-scores,number-of-taxa,ASPT"
-                               data-toggle="tooltip" data-placement="left"
+                            <div class="btn-group pull-right">
+                                <i data-placement="left" data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false"
                                title="Download charts as svg which you can drag and drop to excel or word"
-                               class="fa fa-download pull-right download-icon download-chart-new"></i>
+                               class="fa fa-download pull-right download-icon" ></i>
+                                <div class="dropdown-menu">
+                                        <a class="download-chart-new btn dropdown-item" data-download-title="SASS charts - SASS Scores"
+                                           data-download-chart="SASS-scores" >
+                                            Download SASS Scores
+                                        </a>
+                                         <a class="download-chart-new btn dropdown-item" data-download-title="SASS charts - Number of Taxa"
+                                           data-download-chart="number-of-taxa" >
+                                            Download Number of Taxa
+                                        </a>
+                                        <a class="download-chart-new btn dropdown-item" data-download-title="SASS charts - ASPT"
+                                           data-download-chart="ASPT" >
+                                            Download ASPT
+                                        </a>
+                                </div>
+                            </div>
                         </div>
                         <canvas id="sass-score-chart"></canvas>
                         <canvas id="taxa-numbers-chart"></canvas>
@@ -433,11 +448,22 @@
                     <div class="vertical-space"></div>
                     <div class="chart-container" id="chem-chart-wrapper">
                         <div class="chart-title">Abiotic Data
-                            <i data-download-title="Abiotic Data"
-                               data-download-chart="chem-graph"
-                               data-toggle="tooltip" data-placement="left"
-                               title="Download chart as svg which you can insert the svg to excel or word"
-                               class="fa fa-download pull-right download-icon download-chart-new"></i>
+                            <div class="btn-group pull-right">
+                                <i data-placement="left" data-toggle="dropdown" aria-haspopup="true"
+                                   aria-expanded="false" title="Download chart as svg which you can insert the svg to excel or word"
+                                   class="fa fa-download pull-right download-icon" ></i>
+                                <div class="dropdown-menu">
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - COND"
+                                               data-download-chart="COND" >Download Conductivity (mS/m)</a>
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - TEMP"
+                                               data-download-chart="TEMP" >Download Temperature (degrees C) </a>
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - pH"
+                                               data-download-chart="PH" >Download pH </a>
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - DO"
+                                       data-download-chart="DO" >Download Oxygen: dissolved (mg/l)</a>
+                                </div>
+
+                            </div>
                         </div>
                         <div class="col-12 species-ssdd-chem-bar-chart" id="chem-bar-chart-wrapper">
                         </div>
