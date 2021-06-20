@@ -5,6 +5,7 @@ from bims.api_views.boundary import (
     BoundaryList,
     BoundaryGeojson
 )
+from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
@@ -243,5 +244,8 @@ urlpatterns = [
         name='remove-occurrences'),
     url(r'^merge-sites/$',
         csrf_exempt(MergeSites.as_view()),
-        name='merge-sites')
+        name='merge-sites'),
+    url(r'^duplicate-records/$',
+        DuplicateRecordsApiView.as_view(),
+        name='duplicate-records')
 ]

@@ -1,6 +1,11 @@
 import json
+import logging
+
 from django.urls import reverse
-from rest_framework.test import APIRequestFactory
+from rest_framework import status
+from rest_framework.test import APIRequestFactory, APIClient
+
+from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     UserF,
@@ -27,6 +32,8 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
 from django.test import TestCase
+
+logger = logging.getLogger('bims')
 
 
 class TestApiView(TestCase):
@@ -147,13 +154,13 @@ class TestApiView(TestCase):
         )
         user = UserF.create()
         content_type = ContentTypeF.create(
-                app_label='bims',
-                model='bims'
+            app_label='bims',
+            model='bims'
         )
         permission = PermissionF.create(
-                name='Can validate Aves',
-                content_type=content_type,
-                codename='can_validate_aves'
+            name='Can validate Aves',
+            content_type=content_type,
+            codename='can_validate_aves'
         )
         group = GroupF.create()
         group.permissions.add(permission)
@@ -230,3 +237,26 @@ class TestApiView(TestCase):
 
         content = json.loads(response.content)
         self.assertTrue(len(content['results']) > 0)
+
+    def test_duplicate_records(self):
+        record_1 = BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 1',
+            site=self.location_site,
+            taxonomy=self.taxonomy_1,
+            collection_date='2015-05-01'
+        )
+        record_2 = BiologicalCollectionRecordF.create(
+            original_species_name=u'Aves collection 2',
+            site=self.location_site,
+            taxonomy=self.taxonomy_1,
+            collection_date='2015-05-01'
+        )
+
+        view = DuplicateRecordsApiView.as_view()
+        api_url = '/api/duplicate-records/'
+        request = self.factory.get(api_url)
+        res = view(request)
+        self.assertTrue(
+            res.status_code == status.HTTP_200_OK
+        )
+        self.assertEqual(len(res.data['records']), 2)
