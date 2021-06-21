@@ -350,3 +350,15 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
                     category='NE'
                 )[0]
             instance.iucn_status = iucn_status
+
+
+class TaxonImage(models.Model):
+
+    taxon_image = models.ImageField(
+        upload_to='taxon_images',
+        null=True,
+        blank=True
+    )
+    taxonomy = models.ForeignKey(
+        Taxonomy, on_delete=models.CASCADE
+    )

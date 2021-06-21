@@ -83,7 +83,8 @@ from bims.models import (
     DownloadRequest,
     BaseMapLayer,
     RequestLog,
-    IngestedData
+    IngestedData,
+    TaxonImage
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -621,6 +622,11 @@ class CustomUserAdmin(ProfileAdmin):
 
     merge_users.short_description = 'Merge users'
 
+    def sass_accredited_status(self, obj):
+        false_response = format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+        true_response = format_html(
+            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
     def role(self, obj):
         try:
             profile = BimsProfile.objects.get(user=obj)
@@ -792,6 +798,10 @@ class EndemismAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonImagesInline(admin.TabularInline):
+    model = TaxonImage
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     formfield_overrides = {
         fields.JSONField: {'widget': JSONEditorWidget},
@@ -832,6 +842,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
     )
 
     actions = ['merge_taxa']
+
+    inlines = [TaxonImagesInline]
 
     def merge_taxa(self, request, queryset):
         verified = queryset.filter(verified=True)
