@@ -972,10 +972,9 @@ function renderChemGraph () {
             data: _data,
             options: options
         };
-
         new Chart(ctx, chartConfig);
-        chartConfigs[yLabel] = chartConfig;
-        listChemChartNames.push(yLabel);
+        chartConfigs[key] = chartConfig;
+        listChemChartNames.push(key);
     });
 }
 
