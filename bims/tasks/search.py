@@ -4,7 +4,7 @@ from celery import shared_task
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='bims.tasks.search_task', queue='update')
+@shared_task(name='bims.tasks.search_task', queue='search')
 def search_task(parameters, search_process_id, background=True):
     from bims.utils.celery import memcache_lock
     from bims.api_views.search import CollectionSearch

@@ -92,6 +92,9 @@ from bims.models.profile import Profile as BimsProfile
 from bims.utils.gbif import search_exact_match, get_species
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
+from bims.tasks.location_site import (
+    update_location_context as update_location_context_task
+)
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -191,12 +194,12 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def update_location_context_in_background(self, request, queryset):
         """Action method to update location context in background"""
-        site_names = []
         for location_site in queryset:
-            location_site.save()
-            site_names.append(location_site.location_site_identifier)
-        full_message = 'Updating location context for {} in background'.format(
-            ','.join(site_names)
+            update_location_context_task.delay(location_site.id)
+        full_message = (
+            'Updating location context for {} sites in background'.format(
+                queryset.count()
+            )
         )
         self.message_user(request, full_message)
 
