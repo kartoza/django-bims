@@ -434,3 +434,8 @@ THUMBNAIL_PRESERVE_FORMAT = True
 
 # add bims url
 ROOT_URLCONF = 'core.urls'
+
+
+CELERY_TASK_QUEUES += (
+    Queue('search', GEONODE_EXCHANGE, routing_key='search'),
+)
