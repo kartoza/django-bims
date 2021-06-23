@@ -1,11 +1,12 @@
 import json
+import logging
 
 from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APIClient
 
-from bims.models import BiologicalCollectionRecord
+from bims.models import LocationSite
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     UserF,
@@ -32,6 +33,9 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
 from django.test import TestCase
+
+
+logger = logging.getLogger('bims')
 
 
 class TestApiView(TestCase):
@@ -247,18 +251,8 @@ class TestApiView(TestCase):
         api_url = '/api/send-email-validation/'
         res = client.get(api_url, {'pk': new_site.pk, 'model': 'Site'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        aves_collection = BiologicalCollectionRecordF.create(
-            original_species_name=u'Aves collection 1',
-            site=self.location_site,
-            validated=True,
-            ready_for_validation=True,
-            taxonomy=self.taxonomy_1
-        )
-        res = client.get(api_url, {'pk': aves_collection.pk})
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        aves_collection = BiologicalCollectionRecord.objects.get(pk=aves_collection.id)
-        self.assertEqual(aves_collection.ready_for_validation, True)
+        new_site = LocationSite.objects.get(pk=new_site.pk)
+        self.assertEqual(new_site.ready_for_validation, True)
         
     def test_get_taxon_images(self):
         taxon = TaxonomyF.create(

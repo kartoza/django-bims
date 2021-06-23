@@ -1,4 +1,6 @@
 # coding=utf-8
+import logging
+
 from braces.views import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Q
@@ -11,6 +13,9 @@ from rest_framework import status
 from geonode.people.models import Profile
 from bims.models import LocationSite
 from bims.models.survey import Survey
+
+
+logger = logging.getLogger('bims')
 
 
 class SendNotificationValidation(LoginRequiredMixin, APIView):
@@ -111,17 +116,25 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                     new_site.save()
 
                     send_mail(
-                        '[BIMS] New site is ready to be validated',
+                        'New site is ready to be validated',
                         'Dear Validator,\n\n'
                         'The following site is ready to be reviewed:\n'
                         '{}://{}/nonvalidated-site/?pk={}\n\n'
                         'Sincerely,\nBIMS Team.'.format(scheme, site, new_site.pk),
+                        '{}'.format(settings.SERVER_EMAIL),
                         validator_emails,
                         fail_silently=False
                     )
+                    return JsonResponse({'status': 'success'})
 
                 except LocationSite.DoesNotExist:
                     return HttpResponse(
                         'Site Does Not Exist',
                         status=status.HTTP_400_BAD_REQUEST
                     )
+        else:
+            return HttpResponse(
+                'Object Does Not Exist',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
