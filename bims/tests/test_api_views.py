@@ -1,6 +1,6 @@
 import json
 import logging
-
+from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APIClient
@@ -14,7 +14,7 @@ from bims.tests.model_factories import (
     GroupF,
     LocationSiteF,
     TaxonomyF,
-    TaxonGroupF
+    TaxonGroupF, TaxonImageF
 )
 from bims.api_views.location_site import (
     LocationSiteDetail,
@@ -260,3 +260,19 @@ class TestApiView(TestCase):
             res.status_code == status.HTTP_200_OK
         )
         self.assertEqual(len(res.data['records']), 2)
+
+    def test_get_taxon_images(self):
+        taxon = TaxonomyF.create(
+            scientific_name=u'Golden fish',
+        )
+        image = TaxonImageF.create(
+            taxon_image='taxon_images/im_U5BfJrC.jpg',
+            taxonomy=taxon
+        )
+        view = TaxonImageList.as_view()
+        request = self.factory.get('/api/taxon-images/' + str(taxon.pk))
+        response = view(request, str(taxon.pk))
+        self.assertEqual(
+            image.taxon_image.url,
+            response.data[0]['url']
+        )

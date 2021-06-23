@@ -55,51 +55,67 @@ define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
             var $thirdPartyData = $('<div>');
             var template = _.template($('#third-party-template').html());
             $thirdPartyData.append(template({}));
-
             var $wrapper = $thirdPartyData.find('.third-party-wrapper');
             var mediaFound = false;
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
-            if (this.gbifId) {
-                $.get({
-                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+this.gbifId+'&limit=4',
+            var $rowWrapper = $('<div id="gbif-images-row" class="row"></div>');
+            var gbif = this.gbifId;
+             $.get({
+                url: '/api/taxon-images/'+ this.taxonId,
                 dataType: 'json',
-                success: function (data) {
-                    var results = data['results'];
-
-                    var $rowWrapper = $('<div id="gbif-images-row" class="row"></div>');
-
-                    var result = {};
-                    for (let result_id in results)
-                    {
-                        var $firstColumnDiv = $('<div class="col-6" "></div>');
-                        result = results[result_id];
-                        if(!result.hasOwnProperty('media')) {
-                            continue;
-                        }
-                        if(result['media'].length === 0) {
-                            continue;
-                        }
-                        var media = result['media'][0];
-                        if(!media.hasOwnProperty('identifier')) {
-                            continue;
-                        }
-                        mediaFound = true;
-                        if(mediaFound) {
+                success: function (data){
+                    if (data.length > 0) {
+                        data.forEach(function (image){
+                            const $firstColumnDiv = $('<div class="col-6" "></div>');
+                            $firstColumnDiv.append('<a target="_blank" href="#">' +
+                                            '<img title="Source" alt="" src="'+image['url']+'" width="100%"/></a>');
+                            $rowWrapper.append($firstColumnDiv);
                             $fetchingInfoDiv.hide();
-                        }
-                        $firstColumnDiv.append('<a target="_blank" href="'+media['references']+'">' +
-                            '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
-                        $rowWrapper.append($firstColumnDiv);
-                    }
-                    $wrapper.append($rowWrapper);
-                    if(!mediaFound) {
-                        $fetchingInfoDiv.html('Media not found');
+                        });
+                        $wrapper.append($rowWrapper);
+
+                    }else {
+                        if (gbif) {
+                            $.get({
+                                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey='+gbif+'&limit=4',
+                                dataType: 'json',
+                                success: function (data) {
+                                    var results = data['results'];
+                                    var result = {};
+                                    for (let result_id in results)
+                                    {
+                                        const $firstColumnDiv = $('<div class="col-6" "></div>');
+                                        result = results[result_id];
+                                        if(!result.hasOwnProperty('media')) {
+                                            continue;
+                                        }
+                                        if(result['media'].length === 0) {
+                                            continue;
+                                        }
+                                        var media = result['media'][0];
+                                        if(!media.hasOwnProperty('identifier')) {
+                                            continue;
+                                        }
+                                        mediaFound = true;
+                                        if(mediaFound) {
+                                            $fetchingInfoDiv.hide();
+                                        }
+                                        $firstColumnDiv.append('<a target="_blank" href="'+media['references']+'">' +
+                                            '<img title="Source: '+media['publisher']+'" alt="'+media['rightsHolder']+'" src="'+media['identifier']+'" width="100%"/></a>');
+                                        $rowWrapper.append($firstColumnDiv);
+                                    }
+                                    $wrapper.append($rowWrapper);
+                                    if(!mediaFound) {
+                                        $fetchingInfoDiv.html('Media not found');
+                                    }
+                                }
+                            });
+                            } else {
+                                $fetchingInfoDiv.html('Media not found');
+                            }
                     }
                 }
-            });
-            } else {
-                $fetchingInfoDiv.html('Media not found');
-            }
+            })
             return $thirdPartyData;
         },
         renderFBISBlocks: function(data, stretch_selection = false) {

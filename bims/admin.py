@@ -4,6 +4,7 @@ from datetime import date
 import json
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
+from preferences import preferences
 
 from django.contrib.admin import SimpleListFilter
 from django import forms
@@ -83,7 +84,8 @@ from bims.models import (
     DownloadRequest,
     BaseMapLayer,
     RequestLog,
-    IngestedData
+    IngestedData,
+    TaxonImage
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -91,6 +93,9 @@ from bims.models.profile import Profile as BimsProfile
 from bims.utils.gbif import search_exact_match, get_species
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
+from bims.tasks.location_site import (
+    update_location_context as update_location_context_task
+)
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -144,7 +149,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'site_code',
         'location_type',
         'get_centroid',
-        'has_location_context')
+        'geocontext_data_percentage')
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
     raw_id_fields = ('river',)
@@ -160,8 +165,28 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         return ['original_geomorphological']
 
-    def has_location_context(self, obj):
-        return LocationContext.objects.filter(site=obj).exists()
+    def geocontext_data_percentage(self, obj):
+        site_setting_group_keys = (
+            preferences.SiteSetting.geocontext_keys.split(',')
+        )
+        groups = LocationContext.objects.filter(
+            site=obj,
+            group__geocontext_group_key__in=site_setting_group_keys
+        ).values(
+            'group__geocontext_group_key'
+        ).distinct('group__geocontext_group_key')
+        percentage = 0
+        if groups.count() > 0:
+            percentage = round(
+                groups.count()/len(site_setting_group_keys) * 100
+            )
+        return format_html(
+            '''
+            <progress value="{0}" max="100"></progress>
+            <span style="font-weight:bold">{0}%</span>
+            ''',
+            percentage
+        )
 
     def update_site_code(self, request, queryset):
         """Action to update site code"""
@@ -190,12 +215,12 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def update_location_context_in_background(self, request, queryset):
         """Action method to update location context in background"""
-        site_names = []
         for location_site in queryset:
-            location_site.save()
-            site_names.append(location_site.location_site_identifier)
-        full_message = 'Updating location context for {} in background'.format(
-            ','.join(site_names)
+            update_location_context_task.delay(location_site.id)
+        full_message = (
+            'Updating location context for {} sites in background'.format(
+                queryset.count()
+            )
         )
         self.message_user(request, full_message)
 
@@ -621,6 +646,11 @@ class CustomUserAdmin(ProfileAdmin):
 
     merge_users.short_description = 'Merge users'
 
+    def sass_accredited_status(self, obj):
+        false_response = format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+        true_response = format_html(
+            '<img src="/static/admin/img/icon-yes.svg" alt="True">')
     def role(self, obj):
         try:
             profile = BimsProfile.objects.get(user=obj)
@@ -792,6 +822,10 @@ class EndemismAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonImagesInline(admin.TabularInline):
+    model = TaxonImage
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     formfield_overrides = {
         fields.JSONField: {'widget': JSONEditorWidget},
@@ -832,6 +866,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
     )
 
     actions = ['merge_taxa']
+
+    inlines = [TaxonImagesInline]
 
     def merge_taxa(self, request, queryset):
         verified = queryset.filter(verified=True)
