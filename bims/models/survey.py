@@ -52,6 +52,9 @@ class Survey(AbstractValidation):
             survey=self.data_name
         )
 
+    class Meta:
+        ordering = ('-date',)
+
 
 class SurveyData(models.Model):
     """Survey data model."""

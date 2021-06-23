@@ -30,8 +30,6 @@ from bims.views.shapefile_upload import (
 )
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
-from bims.views.non_validated_list import NonValidatedObjectsView
-from bims.views.non_validated_user_list import NonValidatedObjectsUserView
 from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.collection_upload import CollectionUploadView
 from bims.views.download_csv_taxa_list import (
@@ -99,12 +97,7 @@ urlpatterns = [
         activate_user, name='activate-user'),
     url(r'^under-development/$',
         UnderDevelopmentView.as_view(), name='under-development'),
-    url(r'^nonvalidated-list/$',
-        NonValidatedObjectsView.as_view(), name='nonvalidated-list'),
-
     url(r'^tracking/$', dashboard, name='tracking-dashboard'),
-    url(r'^nonvalidated-user-list/$',
-        NonValidatedObjectsUserView.as_view(), name='nonvalidated-user-list'),
     url(r'^update/(?P<pk>\d+)/$',
         BioRecordsUpdateView.as_view(), name='update-records'),
     url(r'^upload_collection/$', CollectionUploadView.as_view(),
@@ -167,9 +160,11 @@ urlpatterns = [
         BimsDocumentUpdateView.as_view(),
         name='bims-document-update-view'),
     url(r'^site-visit/update/(?P<sitevisitid>\d+)/$',
-        login_required(SiteVisitUpdateView.as_view())),
+        login_required(SiteVisitUpdateView.as_view()),
+        name='site-visit-update'),
     url(r'^site-visit/list/$',
-        SiteVisitListView.as_view()),
+        SiteVisitListView.as_view(),
+        name='site-visit-list'),
     url(r'^site-visit/detail/(?P<sitevisitid>\d+)/$',
         SiteVisitDetailView.as_view()),
     url(r'^taxa-management/$',

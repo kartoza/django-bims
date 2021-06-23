@@ -46,12 +46,12 @@ class TestCollectionRecordView(TestCase):
                 url=reverse('collection-delete', kwargs={
                     'col_id': col.id
                 }),
-                next=reverse('nonvalidated-user-list')
+                next=reverse('site-visit-list')
             )
         )
         self.assertEqual(
             response.url,
-            reverse('nonvalidated-user-list')
+            reverse('site-visit-list')
         )
         self.assertFalse(
             BiologicalCollectionRecord.objects.filter(id=col.id).exists())

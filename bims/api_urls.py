@@ -33,6 +33,9 @@ from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
 from bims.api_views.validate_object import ValidateObject, ValidateSite
 from bims.api_views.reject_object import RejectCollectionData, RejectSite
+from bims.api_views.taxon_images import TaxonImageList
+from bims.api_views.validate_object import ValidateObject
+from bims.api_views.reject_data import RejectData
 from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords,
@@ -145,8 +148,8 @@ urlpatterns = [
         name='list-non-biodiversity-layer'),
     url(r'^validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
-    url(r'^reject-collection-data/$',
-        RejectCollectionData.as_view(), name='reject-collection-data'),
+    url(r'^reject-data/$',
+        RejectData.as_view(), name='reject-data'),
     url(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-site-code/$',
@@ -245,6 +248,8 @@ urlpatterns = [
         ValidateSite.as_view(), name='validate-location-site'),
     url(r'^reject-location-site/$',
         RejectSite.as_view(), name='reject-location-site'),
+    url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
+        name='taxon-images'),
     url(r'^merge-sites/$',
         csrf_exempt(MergeSites.as_view()),
         name='merge-sites')

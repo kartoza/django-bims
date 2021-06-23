@@ -37,11 +37,13 @@
                     {{ object.site.name }}{% endif %}</h2>
                 <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
             </div>
+            <div style="float: right; font-size: 1.2em; margin-bottom: 10px">{{ object.validation_status | safe }}</div>
             <div class="alert alert-danger" role="alert"
                  style="display: none;">
 
             </div>
             <div id="fish-map"></div>
+            <div style="margin-bottom: 30px"></div>
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-1 col-form-label col-form-label">Latitude</label>

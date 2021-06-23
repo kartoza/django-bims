@@ -1405,6 +1405,7 @@ define([
             return splitStr.join(' ');
         },
         renderChemGraph: function (data) {
+            var self = this;
             var $chemWrapper = $('#species-ssdd-chem-bar-chart');
             $chemWrapper.html('');
             var xLabel = data['chemical_records']['x_label'];
@@ -1491,17 +1492,19 @@ define([
                     data: _data,
                     options: options
                 };
-
+                self.chartConfigs[id_canvas] = chartConfig;
                 new ChartJs(ctx, chartConfig)
             })
         },
         downloadChemGraphs: function () {
             var self = this;
+            let button = $('#chem-graph-export');
+            let titles = button.data('title');
             var elements = $('#species-ssdd-chem-bar-chart .chem-bar-chart');
             for(var i=0; i<elements.length; i++){
-                var title = $(elements[i]).attr('id');
-                var canvas = $(elements[i])[0];
-                self.downloadChart(title, canvas);
+                var title = titles + ' - ' + $(elements[i]).attr('id').split('-')[0];
+                var canvas = $(elements[i]).attr('id')
+                svgChartDownload(self.chartConfigs[canvas], title);
             }
         },
         renderCustomDashboardLayout: function ($wrapper, dashboardConfiguration) {

@@ -392,6 +392,12 @@ class BiologicalCollectionRecord(AbstractValidation):
                     owner=self.owner
                 )[0]
             self.survey = survey
+        if (
+            'gbif' in self.source_collection.lower()
+            and not self.survey.validated
+        ):
+            self.survey.validated = True
+            self.survey.save()
 
         if not self.survey.owner and self.owner:
             self.survey.owner = self.owner

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from bims.tests.model_factories import SurveyF, UserF
+from bims.tests.model_factories import SurveyF, UserF, Survey
 
 
 class TestSiteVisitView(TestCase):
@@ -25,6 +25,44 @@ class TestSiteVisitView(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertIn('login', response.url)
+
+    def test_SiteVisitView_update_ready_for_validation(self):
+        self.survey.ready_for_validation = True
+        self.survey.save()
+        self.client.login(
+            username=self.collector.username,
+            password='password'
+        )
+        response = self.client.get(
+            '/site-visit/update/1/'
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_SiteVisit_validate(self):
+        self.client.login(
+            username=self.superuser.username,
+            password='password'
+        )
+        response = self.client.get(
+            '/api/validate-object/?pk={}'.format(self.survey.id)
+        )
+        self.assertEqual(response.status_code, 200)
+        _survey = Survey.objects.get(id=self.survey.id)
+        self.assertTrue(_survey.validated)
+
+    def test_SiteVisit_reject(self):
+        self.client.login(
+            username=self.superuser.username,
+            password='password'
+        )
+        self.survey.ready_for_validation = True
+        response = self.client.get(
+            '/api/reject-data/?pk={}'.format(self.survey.id)
+        )
+        self.assertEqual(response.status_code, 200)
+        _survey = Survey.objects.get(id=self.survey.id)
+        self.assertFalse(_survey.validated)
+        self.assertFalse(_survey.ready_for_validation)
 
     def test_SiteVisitView_update_collector_access(self):
         self.client.login(
