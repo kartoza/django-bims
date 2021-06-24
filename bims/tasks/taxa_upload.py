@@ -48,7 +48,10 @@ def taxa_upload(taxa_upload_session_id):
 
     checked = False
     try:
-        with open(taxa_upload_session.process_file.path) as csv_file:
+        with open(
+            taxa_upload_session.process_file.path,
+            encoding='utf-8-sig'
+        ) as csv_file:
             checked = check_header(csv_file)
     except UnicodeDecodeError:
         with open(
