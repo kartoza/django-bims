@@ -157,10 +157,6 @@ class SiteVisit(AbstractAdditionalData):
     def __unicode__(self):
         return self.location_site.name
 
-    @property
-    def is_sass_data(self):
-        return False
-
 
 @receiver(post_save, sender=SiteVisit)
 def site_visit_post_save_handler(**kwargs):
