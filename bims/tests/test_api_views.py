@@ -2,10 +2,7 @@ import json
 import logging
 from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIRequestFactory, APIClient
-
-from bims.api_views.duplicate_records import DuplicateRecordsApiView
+from rest_framework.test import APIRequestFactory
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     UserF,
@@ -237,29 +234,6 @@ class TestApiView(TestCase):
 
         content = json.loads(response.content)
         self.assertTrue(len(content['results']) > 0)
-
-    def test_duplicate_records(self):
-        record_1 = BiologicalCollectionRecordF.create(
-            original_species_name=u'Aves collection 1',
-            site=self.location_site,
-            taxonomy=self.taxonomy_1,
-            collection_date='2015-05-01'
-        )
-        record_2 = BiologicalCollectionRecordF.create(
-            original_species_name=u'Aves collection 2',
-            site=self.location_site,
-            taxonomy=self.taxonomy_1,
-            collection_date='2015-05-01'
-        )
-
-        view = DuplicateRecordsApiView.as_view()
-        api_url = '/api/duplicate-records/'
-        request = self.factory.get(api_url)
-        res = view(request)
-        self.assertTrue(
-            res.status_code == status.HTTP_200_OK
-        )
-        self.assertEqual(len(res.data['records']), 2)
 
     def test_get_taxon_images(self):
         taxon = TaxonomyF.create(

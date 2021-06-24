@@ -248,7 +248,7 @@ urlpatterns = [
     url(r'^merge-sites/$',
         csrf_exempt(MergeSites.as_view()),
         name='merge-sites'),
-    url(r'^duplicate-records/$',
+    url(r'^duplicate-records/download/$',
         DuplicateRecordsApiView.as_view(),
-        name='duplicate-records')
+        )
 ]

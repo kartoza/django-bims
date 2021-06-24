@@ -1,7 +1,12 @@
 import logging
-from rest_framework.response import Response
+import os
+import errno
+from django.conf import settings
+from django.db.models import Count, Q
+from django.http import JsonResponse, HttpResponse
 from rest_framework.views import APIView
 from bims.models import BiologicalCollectionRecord
+from bims.tasks.duplicate_records import download_duplicated_records_to_csv
 
 logger = logging.getLogger('bims')
 
@@ -9,29 +14,54 @@ logger = logging.getLogger('bims')
 class DuplicateRecordsApiView(APIView):
     """ Get Duplicate Records"""
 
-    def get(self, *args):
+    def get(self, request, *args):
 
-        duplicated = []
-        sites = BiologicalCollectionRecord.objects.all().values_list(
-            'site_id', flat=True).distinct('site_id')
-        for site in sites:
-            records_site = BiologicalCollectionRecord.objects.filter(site_id=site)
-            if len(records_site) < 2:
-                continue
-            taxon = records_site.values_list(
-                'taxonomy_id', flat=True).distinct('taxonomy_id')
-            for taxonomy in taxon:
-                records_taxonomy = records_site.filter(taxonomy_id=taxonomy)
-                if len(records_taxonomy) < 2:
-                    continue
-                dates = records_taxonomy.values_list(
-                    'collection_date', flat=True).distinct('collection_date')
-                for date in dates:
-                    records = records_taxonomy.filter(collection_date=date)
-                    if len(records) > 1:
-                        for record in records:
-                            duplicated.append(record)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="download.csv"'
 
-        return Response({
-                'records': duplicated,
+        duplicated_values = BiologicalCollectionRecord.objects.values(
+            'site_id', 'taxonomy_id', 'collection_date').annotate(
+            duplicate=Count('*')
+        ).exclude(duplicate=1)
+
+        if not duplicated_values:
+            return JsonResponse({
+                'status': 'failed',
+                'message': 'Data is empty'
+            })
+
+        filename = 'duplicated_records.csv'.encode('utf-8')
+
+        # Check if filename exists
+        folder = settings.PROCESSED_CSV_PATH
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        path_file = os.path.join(path_folder, filename)
+
+        try:
+            os.mkdir(path_folder)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
+
+        if os.path.exists(path_file):
+            return JsonResponse({
+                'status': 'success',
+                'filename': filename
+            })
+
+        if duplicated_values.count() > 1:
+            download_duplicated_records_to_csv(
+                duplicated_values,
+                path_file
+            )
+        else:
+            return JsonResponse({
+                'status': 'failed',
+                'message': 'No duplicated records'
+            })
+
+        return JsonResponse({
+            'status': 'processing',
+            'filename': filename
         })
