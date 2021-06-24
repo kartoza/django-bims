@@ -71,6 +71,7 @@
 
 {% block body_content %}
     {% can_validate_site_visit as validator %}
+    {% unvalidated_site_visits_url as unvalidated_site_visits %}
     <div class="nav-space" style="height: 51px;"></div>
     <div class="list-form container-fluid">
 
@@ -140,6 +141,8 @@
                     <h2>{{ page_obj.paginator.count|intcomma }} Site visit{% if page_obj.paginator.count > 1 %}s{% endif %}&nbsp;
                     </h2>
                 </div>
+
+                <a class="btn btn-primary" style="font-size: 0.7em; margin-bottom: 10px;" href="{{ unvalidated_site_visits }}">See Unvalidated Data</a>
                 <h5>Metrics</h5>
                 <div style="border-top: 1px solid rgba(0,0,0,0.28)">
                     <table style="width: 100%">
@@ -211,6 +214,7 @@
                     <tbody>
                     {% for site_visit in survey_list %}
                         <tr>
+                            {{ site_visit.is_sass_data }}
                             <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}<br>
                                 {{ site_visit.validation_status | safe }}
                             </td>
