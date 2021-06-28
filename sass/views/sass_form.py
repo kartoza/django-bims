@@ -171,7 +171,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         self,
         site_visit,
         post_dictionary,
-        date):
+        date,
+        survey=None):
         biotope_labels = {
             'S': 'SIC/SOOC',
             'Veg': 'MV/AQV',
@@ -236,7 +237,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                             taxonomy=sass_taxon.taxon,
                             original_species_name=
                             sass_taxon.taxon.canonical_name,
-                            validated=True
+                            validated=False,
+                            survey=survey
                         )
                     )
                 except SiteVisitTaxon.MultipleObjectsReturned:
@@ -262,8 +264,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.source_collection = self.source_collection
                 # Set correct owner
                 site_visit_taxon.owner = site_visit.owner
-                site_visit_taxon.survey.owner = site_visit.owner
-                site_visit_taxon.survey.save()
 
                 if created:
                     clear_finished_search_process()
@@ -284,7 +284,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         return updated_site_visit_taxon
 
-    def create_or_get_survey(self, site_visit, site_visit_taxa):
+    def create_or_get_survey(self, site_visit):
         """Get or create a site survey"""
         survey = None
         # Check duplicate data
@@ -302,9 +302,12 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             ).exclude(id=survey.id).delete()
         elif existing_surveys.count() == 1:
             survey = existing_surveys[0]
-        if not survey and site_visit_taxa:
+        if not survey:
             surveys = list(
-                site_visit_taxa.filter(survey__isnull=False).values_list(
+                SiteVisitTaxon.objects.filter(
+                    site_visit=site_visit,
+                    survey__isnull=False
+                ).values_list(
                     'survey', flat=True).distinct('survey')
             )
             if len(surveys) > 0:
@@ -313,15 +316,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             return Survey.objects.get(
                 id=survey.id
             )
-        else:
-            survey = Survey.objects.create(
-                owner=site_visit.owner,
-                date=site_visit.site_visit_date,
-                site=site_visit.location_site
-            )
-            if site_visit_taxa:
-                site_visit_taxa.update(survey=survey)
-            return survey
+        return survey
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -378,6 +373,11 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         new_site_visit = not sass_id and site_id
         if new_site_visit:
+            survey = Survey.objects.create(
+                site_id=site_id,
+                collector_user=self.request.user,
+                validated=False
+            )
             site_visit = SiteVisit.objects.create(
                 collector=self.request.user,
                 location_site_id=site_id
@@ -385,6 +385,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         else:
             site_visit = SiteVisit.objects.get(
                 pk=sass_id
+            )
+            # Get or create a survey
+            survey = self.create_or_get_survey(
+                site_visit
             )
 
         biotope_fractions = self.get_biotope_fractions(self.request.POST)
@@ -395,6 +399,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         site_visit.sass_biotope_fraction.add(*biotope_fractions)
         if isinstance(date, libdatetime):
             date = date.date()
+        survey.owner = owner
+        survey.collection_date = date
         site_visit.site_visit_date = date
         site_visit.time = datetime
         site_visit.owner = owner
@@ -406,6 +412,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         site_visit.other_biota = request.POST.get(
             'other-biota', None
         )
+        survey.save()
         site_visit.save()
 
         # Accredited
@@ -422,7 +429,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         site_visit_taxon_ids = self.update_site_visit_biotope_taxon(
             site_visit,
             self.request.POST,
-            date)
+            date,
+            survey)
 
         # upload site image
         try:
@@ -503,11 +511,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
         )
 
-        # Get or create a survey
-        survey = self.create_or_get_survey(
-            site_visit,
-            SiteVisitTaxon.objects.filter(id__in=site_visit_taxon_ids)
-        )
+
         abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
             base_url=reverse('abiotic-form'),
             survey_id=survey.id,
