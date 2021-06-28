@@ -31,6 +31,7 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
+from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_data import RejectData
 from bims.api_views.get_biorecord import (
@@ -241,6 +242,8 @@ urlpatterns = [
     url(r'^remove-occurrences/$',
         RemoveOccurrencesApiView.as_view(),
         name='remove-occurrences'),
+    url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
+        name='taxon-images'),
     url(r'^merge-sites/$',
         csrf_exempt(MergeSites.as_view()),
         name='merge-sites')

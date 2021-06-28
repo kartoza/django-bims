@@ -71,6 +71,7 @@
 
 {% block body_content %}
     {% can_validate_site_visit as validator %}
+    {% unvalidated_site_visits_url as unvalidated_site_visits %}
     <div class="nav-space" style="height: 51px;"></div>
     <div class="list-form container-fluid">
 
@@ -140,6 +141,8 @@
                     <h2>{{ page_obj.paginator.count|intcomma }} Site visit{% if page_obj.paginator.count > 1 %}s{% endif %}&nbsp;
                     </h2>
                 </div>
+
+                <a class="btn btn-primary" style="font-size: 0.7em; margin-bottom: 10px;" href="{{ unvalidated_site_visits }}">See Unvalidated Data</a>
                 <h5>Metrics</h5>
                 <div style="border-top: 1px solid rgba(0,0,0,0.28)">
                     <table style="width: 100%">
@@ -210,8 +213,10 @@
                     </thead>
                     <tbody>
                     {% for site_visit in survey_list %}
+                        {% with site_visit_sass=site_visit.sass_site_visit %}
                         <tr>
                             <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}<br>
+                                {% if site_visit_sass %}<span class="badge badge-danger">SASS</span>{% endif %}
                                 {{ site_visit.validation_status | safe }}
                             </td>
                             <td>
@@ -234,11 +239,11 @@
                             </td>
                             <td>{{ site_visit.total }}</td>
                             <td>
-                                <a href="/site-visit/detail/{{ site_visit.id }}/"
+                                <a href="{% if site_visit_sass %}/sass/view/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/detail/{{ site_visit.id }}/{% endif %}"
                                    class="btn btn-primary btn-sm btn-action"><i class="fa fa-eye" aria-hidden="true"></i> </a>
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
                                     {% if not site_visit.ready_for_validation  %}
-                                    <a href="/site-visit/update/{{ site_visit.id }}/"
+                                    <a href="{% if site_visit_sass %}/sass/update/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/update/{{ site_visit.id }}/{% endif %}"
                                        class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;"><i class="fa fa-pencil"></i> </a>
                                     {% endif %}
                                 {% endif %}
@@ -262,6 +267,7 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% endwith %}
                     {% endfor %}
                     </tbody>
                 </table>

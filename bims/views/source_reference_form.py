@@ -6,7 +6,6 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import TemplateView
-from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.db.models import Count
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -27,6 +26,7 @@ from bims.views.mixin.session_form.exception import (
     SessionUUIDNotFound
 )
 from bims.serializers.database_record import DatabaseRecordSerializer
+from bims.templatetags.site_visit_extras import get_unvalidated_site_visits_url
 
 logger = logging.getLogger('bims')
 
@@ -201,7 +201,7 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         if biological_records:
             biological_records.update(source_reference=source_reference)
 
-        response_redirect = reverse('nonvalidated-user-list')
+        response_redirect = get_unvalidated_site_visits_url(request.user)
         if request.GET.get('next', None):
             response_redirect = request.GET.get('next')
         return HttpResponseRedirect(response_redirect)

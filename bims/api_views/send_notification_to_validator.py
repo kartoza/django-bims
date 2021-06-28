@@ -67,12 +67,36 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                     'site_visit_validation'
                 )
 
+                if site_visit.sass_site_visit:
+                    site_visit_detail_url = (
+                        '{}://{}/sass/view/{}/'.format(
+                            scheme, site, site_visit.sass_site_visit.id
+                        )
+                    )
+                else:
+                    site_visit_detail_url = (
+                        '{}://{}/site-visit/detail/{}/'.format(
+                            scheme, site, pk
+                        )
+                    )
+
+                site_visit_list_url = (
+                  '{}://{}/site-visit/list/?&inReview=True'.format(
+                      scheme, site
+                  )
+                )
+
                 send_mail(
                     'Site visit is ready to be validated',
                     'Dear Validator,\n\n'
                     'The following site visit is ready to be reviewed:\n'
-                    '{}://{}/site-visit/detail/{}/\n\n'
-                    'Sincerely,\nBIMS Team.'.format(scheme, site, pk),
+                    '{}\n\n'
+                    'Go to the following link to validate the data:\n'
+                    '{}\n\n'
+                    'Sincerely,\nBIMS Team.'.format(
+                        site_visit_detail_url,
+                        site_visit_list_url
+                    ),
                     '{}'.format(settings.SERVER_EMAIL),
                     validator_emails,
                     fail_silently=False
