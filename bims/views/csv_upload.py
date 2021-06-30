@@ -32,6 +32,7 @@ from bims.models.biological_collection_record import (
 )
 from bims.utils.gbif import update_collection_record
 from bims.location_site.river import allocate_site_codes_from_river
+from bims.templatetags.site_visit_extras import get_unvalidated_site_visits_url
 
 
 class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
@@ -413,8 +414,9 @@ class CsvUploadView(UserPassesTestMixin, LoginRequiredMixin, FormView):
                 )
 
         if collection_processed['added']['count'] > 0:
+            verify_url = get_unvalidated_site_visits_url(self.request.user)
             csv_upload_message += 'Verify your records ' \
-                                  '<a href="/nonvalidated-user-list/">' \
+                                  '<a href="' + verify_url + '">' \
                                   'here</a> <br/>'
 
         self.context_data['uploaded'] = csv_upload_message

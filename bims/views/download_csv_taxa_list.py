@@ -173,8 +173,12 @@ def download_csv_taxa_list(request):
     for header in headers:
         if header == 'class_name':
             header = 'class'
+        elif header == 'taxon_rank':
+            header = 'Taxon Rank'
+        elif header == 'common_name':
+            header = 'Common Name'
         header = header.replace('_or_', '/')
-        if not header.isupper():
+        if not header.istitle():
             header = header.replace('_', ' ').capitalize()
         updated_headers.append(header)
     writer.writerow(updated_headers)
