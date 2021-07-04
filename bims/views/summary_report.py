@@ -112,7 +112,8 @@ class SummaryReportGeneralApiView(APIView):
             ).count(),
             'total_records': BiologicalCollectionRecord.objects.all().count(),
             'total_duplicate_records': BiologicalCollectionRecord.objects.values(
-                'site_id', 'taxonomy_id', 'collection_date').annotate(
+                'site_id', 'collection_date', 'biotope_id',
+                'specific_biotope_id', 'substratum_id', 'taxonomy_id').annotate(
                 duplicate=Count('*')
             ).exclude(duplicate=1).count(),
             'total_modules': taxon_modules.count(),

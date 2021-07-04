@@ -24,6 +24,9 @@ def download_duplicated_records_to_csv(queryset, path_file):
         if acquired:
             for value in queryset:
                 query = query | Q(Q(site_id=value['site_id']) &
+                                  Q(biotope_id=value['biotope_id']) &
+                                  Q(specific_biotope_id=value['specific_biotope_id']) &
+                                  Q(substratum_id=value['substratum_id']) &
                                   Q(taxonomy_id=value['taxonomy_id']) &
                                   Q(collection_date=value['collection_date']))
             data = BiologicalCollectionRecord.objects.filter(query)
@@ -42,7 +45,6 @@ def download_duplicated_records_to_csv(queryset, path_file):
                 header = header.replace('_or_', '/')
                 header = header.replace('_', ' ').capitalize()
                 formatted_headers.append(header)
-
             with open(path_file, 'w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
