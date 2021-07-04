@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.mixins import UserPassesTestMixin
 from sass.enums.chem_unit import ChemUnit
 from bims.serializers.survey_serializer import SurveyDataSerializer
+from bims.templatetags.site_visit_extras import get_unvalidated_site_visits_url
 from bims.models import (
     Survey,
     ChemicalRecord,
@@ -120,7 +121,7 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
         survey_id = post_data.get('survey_id', None)
         redirect_path = post_data.get('next', '')
         if not redirect_path:
-            redirect_path = '/nonvalidated-user-list/'
+            redirect_path = get_unvalidated_site_visits_url(request.user)
         survey = None
         if survey_id:
             try:

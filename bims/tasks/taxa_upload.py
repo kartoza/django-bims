@@ -47,13 +47,18 @@ def taxa_upload(taxa_upload_session_id):
         return True
 
     checked = False
+    encoding = 'utf-8-sig'
     try:
-        with open(taxa_upload_session.process_file.path) as csv_file:
-            checked = check_header(csv_file)
-    except UnicodeDecodeError:
         with open(
             taxa_upload_session.process_file.path,
-            encoding='ISO-8859-1'
+            encoding=encoding
+        ) as csv_file:
+            checked = check_header(csv_file)
+    except UnicodeDecodeError:
+        encoding = 'ISO-8859-1'
+        with open(
+            taxa_upload_session.process_file.path,
+            encoding=encoding
         ) as csv_file:
             checked = check_header(csv_file)
 
@@ -64,4 +69,4 @@ def taxa_upload(taxa_upload_session_id):
     taxa_upload_session.save()
     taxa_csv_upload = TaxaCSVUpload()
     taxa_csv_upload.upload_session = taxa_upload_session
-    taxa_csv_upload.start()
+    taxa_csv_upload.start(encoding)

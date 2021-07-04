@@ -1,6 +1,4 @@
 # coding=utf-8
-import logging
-
 from braces.views import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Q
@@ -11,11 +9,9 @@ from django.contrib import messages
 from rest_framework.views import APIView
 from rest_framework import status
 from geonode.people.models import Profile
+
 from bims.models import LocationSite
 from bims.models.survey import Survey
-
-
-logger = logging.getLogger('bims')
 
 
 class SendNotificationValidation(LoginRequiredMixin, APIView):
@@ -64,6 +60,7 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                     except AttributeError:
                         pass
 
+                    validator_emails = filter(None, validator_emails)
                     site_visit.ready_for_validation = True
                     site_visit.save()
 
@@ -74,19 +71,41 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                         'site_visit_validation'
                     )
 
+                    if site_visit.sass_site_visit:
+                        site_visit_detail_url = (
+                            '{}://{}/sass/view/{}/'.format(
+                                scheme, site, site_visit.sass_site_visit.id
+                            )
+                        )
+                    else:
+                        site_visit_detail_url = (
+                            '{}://{}/site-visit/detail/{}/'.format(
+                                scheme, site, pk
+                            )
+                        )
+
+                    site_visit_list_url = (
+                      '{}://{}/site-visit/list/?&inReview=True'.format(
+                          scheme, site
+                      )
+                    )
+
                     send_mail(
                         'Site visit is ready to be validated',
                         'Dear Validator,\n\n'
                         'The following site visit is ready to be reviewed:\n'
-                        '{}://{}/site-visit/detail/{}/\n\n'
-                        'Sincerely,\nBIMS Team.'.format(scheme, site, pk),
+                        '{}\n\n'
+                        'Go to the following link to validate the data:\n'
+                        '{}\n\n'
+                        'Sincerely,\nBIMS Team.'.format(
+                            site_visit_detail_url,
+                            site_visit_list_url
+                        ),
                         '{}'.format(settings.SERVER_EMAIL),
                         validator_emails,
                         fail_silently=False
                     )
-
                     return JsonResponse({'status': 'success'})
-
                 except Survey.DoesNotExist:
                     return HttpResponse(
                         'Object Does Not Exist',
@@ -137,4 +156,3 @@ class SendNotificationValidation(LoginRequiredMixin, APIView):
                 'Object Does Not Exist',
                 status=status.HTTP_400_BAD_REQUEST
             )
-
