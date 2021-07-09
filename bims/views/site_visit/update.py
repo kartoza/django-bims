@@ -113,7 +113,12 @@ class SiteVisitUpdateView(
             site_image.image = site_image_file
             site_image.save()
 
-        self.object.validated = False
+        if (
+            not self.request.user.is_superuser and
+            not self.request.user.is_staff and
+            self.object.validated
+        ):
+            self.object.validated = False
         self.object.owner = self.collection_records[0].owner
         self.object.collector_user = self.collection_records[0].collector_user
 

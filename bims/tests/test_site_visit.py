@@ -1,7 +1,8 @@
 import json
 from django.test import TestCase
 from bims.tests.model_factories import (
-    SurveyF, UserF, Survey, BiologicalCollectionRecordF, BiologicalCollectionRecord
+    SurveyF, UserF, Survey,
+    BiologicalCollectionRecordF, BiologicalCollectionRecord
 )
 
 
@@ -129,6 +130,9 @@ class TestSiteVisitView(TestCase):
 
     def test_SiteVisitView_delete_records(self):
         # Delete records by owner
+        survey = Survey.objects.get(id=self.survey.id)
+        survey.validated = True
+        survey.save()
         self.client.login(
             username=self.owner.username,
             password='password'
@@ -154,12 +158,15 @@ class TestSiteVisitView(TestCase):
         bio = BiologicalCollectionRecord.objects.filter(
             survey=self.survey
         )
+        self.assertFalse(Survey.objects.get(id=self.survey.id).validated)
         self.assertNotEqual(bio.count(), 1)
         self.assertTrue(BiologicalCollectionRecord.objects.filter(
             id=bio_1_id
         ).exists())
 
         # Delete records by superuser
+        survey.validated = True
+        survey.save()
         self.client.login(
             username=self.superuser.username,
             password='password'
@@ -175,3 +182,4 @@ class TestSiteVisitView(TestCase):
         self.assertFalse(BiologicalCollectionRecord.objects.filter(
             id=bio_id
         ).exists())
+        self.assertTrue(Survey.objects.get(id=self.survey.id).validated)
