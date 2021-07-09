@@ -209,9 +209,6 @@
 
         function onDownloadDuplicateCSVClicked(e) {
             let downloadButton = $(e.target);
-            {#let csv_name = getCsvName('Chem data', downloadButton.data('identifier'));#}
-            {#let currentUrl = window.location.href;#}
-            {#let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);#}
             let url = '/api/duplicate-records/download/';
             downloadButton.html("Processing...");
             downloadButton.prop("disabled", true);
