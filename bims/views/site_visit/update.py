@@ -48,6 +48,20 @@ class SiteVisitUpdateView(
             return False
         return False
 
+    def remove_collection_records(self, excluded_collection_list):
+        """
+        Only superuser or staff can delete the existing records
+        :param excluded_collection_list: list of excluded collection ids
+        """
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            collection_to_remove = BiologicalCollectionRecord.objects.filter(
+                survey=self.object
+            ).exclude(
+                id__in=excluded_collection_list
+            )
+            if collection_to_remove.exists():
+                collection_to_remove.delete()
+
     def form_valid(self, form):
         # This method is called when valid form data has been POSTed.
         # It should return an HttpResponse.
@@ -82,6 +96,11 @@ class SiteVisitUpdateView(
             abundance_type=form.data.get('abundance_type', ''),
             owner=form.data.get('owner_id', None),
             collector_user=form.data.get('collector_id', None)
+        )
+
+        # Remove deleted collection records
+        self.remove_collection_records(
+            excluded_collection_list=collection_id_list
         )
 
         # Add site image
