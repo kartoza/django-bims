@@ -4,9 +4,12 @@
 """
 
 import logging
+from abc import ABC
+
 import requests
 import json
 
+from bims.models.validation import AbstractValidation
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.dispatch import receiver
@@ -27,7 +30,7 @@ from bims.utils.decorator import prevent_recursion
 LOGGER = logging.getLogger(__name__)
 
 
-class LocationSite(DocumentLinksMixin):
+class LocationSite(DocumentLinksMixin, AbstractValidation):
     """Location Site model."""
 
     __original_centroid = None
@@ -170,6 +173,10 @@ class LocationSite(DocumentLinksMixin):
         if self.legacy_site_code:
             return self.legacy_site_code
         return self.name
+
+    @property
+    def data_name(self):
+        self.location_site_identifier
 
     def location_context_group_values(self, group_name):
         """

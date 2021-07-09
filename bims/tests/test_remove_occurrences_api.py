@@ -23,7 +23,6 @@ from bims.models import (
 )
 
 
-
 class TestRemoveOccurrencesApi(TestCase):
     """Test Remove Occurrences Api"""
 
