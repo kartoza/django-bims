@@ -32,6 +32,18 @@ class Survey(AbstractValidation):
     )
 
     @property
+    def sass_site_visit(self):
+        try:
+            return (
+                self.biological_collection_record
+                    .first()
+                    .sitevisittaxon
+                    .site_visit
+            )
+        except AttributeError:
+            return None
+
+    @property
     def data_name(self):
         if not self.site:
             return self.id

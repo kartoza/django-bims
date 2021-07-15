@@ -98,7 +98,10 @@ class AbstractValidation(models.Model):
         self.validated = False
         self.rejected = True
         self.ready_for_validation = False
-        if rejection_message:
+        if self.owner is None:
+            self.save()
+            return
+        elif rejection_message:
             self.validation_message = rejection_message
         self.save()
         self._send_rejection_email(**kwargs)

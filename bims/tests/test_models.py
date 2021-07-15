@@ -62,7 +62,6 @@ def mocked_requests_get(*args, **kwargs):
             200
         )
 
-
     return MockResponse(None, 404, 'Not found for %s' % args[0])
 
 

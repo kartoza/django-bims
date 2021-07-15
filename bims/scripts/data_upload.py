@@ -26,7 +26,7 @@ class DataCSVUpload(object):
     def process_ended(self):
         pass
 
-    def start(self):
+    def start(self, encoding='ISO-8859-1'):
         """
         Start processing the csv file from upload session
         """
@@ -38,7 +38,9 @@ class DataCSVUpload(object):
         ) - 1
         self.process_started()
         processed = False
-        with open(self.upload_session.process_file.path) as csv_file:
+        with open(
+                self.upload_session.process_file.path,
+                encoding=encoding) as csv_file:
             try:
                 self.csv_dict_reader = csv.DictReader(csv_file)
                 self.process_csv_dict_reader()
@@ -48,7 +50,7 @@ class DataCSVUpload(object):
         if not processed:
             with open(
                 self.upload_session.process_file.path,
-                encoding='ISO-8859-1'
+                encoding=encoding
             ) as csv_file:
                 try:
                     self.csv_dict_reader = csv.DictReader(csv_file)

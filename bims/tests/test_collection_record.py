@@ -8,7 +8,6 @@ from bims.tests.model_factories import (
 from bims.models import BiologicalCollectionRecord
 
 
-
 class TestCollectionRecordView(TestCase):
 
     def setUp(self):

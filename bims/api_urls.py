@@ -32,6 +32,8 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
+from bims.api_views.validate_object import ValidateObject, ValidateSite
+from bims.api_views.reject_object import RejectCollectionData, RejectSite
 from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_data import RejectData
@@ -243,6 +245,10 @@ urlpatterns = [
     url(r'^remove-occurrences/$',
         RemoveOccurrencesApiView.as_view(),
         name='remove-occurrences'),
+    url(r'^validate-location-site/$',
+        ValidateSite.as_view(), name='validate-location-site'),
+    url(r'^reject-location-site/$',
+        RejectSite.as_view(), name='reject-location-site'),
     url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
         name='taxon-images'),
     url(r'^merge-sites/$',

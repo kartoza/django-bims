@@ -6,7 +6,6 @@ from bims.utils.user import merge_users
 from bims.models import BiologicalCollectionRecord
 
 
-
 class TestUser(TestCase):
     """Test all user functions"""
 
