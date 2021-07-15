@@ -9,8 +9,9 @@ logger = logging.getLogger('bims')
 
 
 @shared_task(name='bims.tasks.download_duplicated_records_to_csv', queue='update')
-def download_duplicated_records_to_csv(queryset, path_file):
+def download_duplicated_records_to_csv(path_file):
     from bims.utils.celery import memcache_lock
+    from bims.helpers.get_duplicates import get_duplicate_records
 
     lock_id = '{0}-lock-{1}'.format(
         download_duplicated_records_to_csv.name,
@@ -18,24 +19,37 @@ def download_duplicated_records_to_csv(queryset, path_file):
     )
 
     oid = '{0}'.format(path_file)
-    query = Q()
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
+            rows = []
+            headers = []
+            queryset = list(get_duplicate_records())
             for value in queryset:
-                query = query | Q(Q(site_id=value['site_id']) &
-                                  Q(biotope_id=value['biotope_id']) &
-                                  Q(specific_biotope_id=value['specific_biotope_id']) &
-                                  Q(substratum_id=value['substratum_id']) &
-                                  Q(taxonomy_id=value['taxonomy_id']) &
-                                  Q(collection_date=value['collection_date']))
-            data = BiologicalCollectionRecord.objects.filter(query)
-            serializer = BioCollectionOneRowSerializer(
-                data,
-                many=True
-            )
-            headers = serializer.data[0].keys()
-            rows = serializer.data
+                survey_date = value['survey__date']
+                if isinstance(survey_date, str):
+                    if 'T' in survey_date:
+                        survey_date = survey_date.split('T')[0]
+                else:
+                    survey_date = str(survey_date)
+                query = Q(Q(site_id=value['site_id']) &
+                          Q(biotope_id=value['biotope_id']) &
+                          Q(specific_biotope_id=value['specific_biotope_id']) &
+                          Q(substratum_id=value['substratum_id']) &
+                          Q(taxonomy_id=value['taxonomy_id']) &
+                          Q(survey__date=survey_date) &
+                          Q(abundance_number=value['abundance_number']))
+                records = BiologicalCollectionRecord.objects.filter(
+                    query
+                )
+                serializer = BioCollectionOneRowSerializer(
+                    records,
+                    many=True,
+                    context={'show_link': True}
+                )
+                if len(serializer.data[0].keys()) > len(headers):
+                    headers = serializer.data[0].keys()
+                rows += list(serializer.data)
 
             formatted_headers = []
             # Rename headers

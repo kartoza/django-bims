@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
+from django.urls import reverse
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.taxon_serializer import (
     TaxonSerializer,
@@ -471,6 +472,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             self.context['chem_records_cached'] = {}
         if 'header' not in self.context:
             self.context['header'] = list(result.keys())
+        if 'show_link' in self.context and self.context['show_link']:
+            self.context['header'] = ['Link'] + self.context['header']
 
         is_algae = False
         if instance.module_group:
@@ -603,6 +606,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 _group_key = _group['key']
                 result[_group_name] = self.spatial_data(instance, _group_key)
 
+        if 'show_link' in self.context and self.context['show_link']:
+            result['Link'] = ''.join(
+                [Site.objects.get_current().domain,
+                 reverse(
+                     'admin:{}_{}_change'.format(
+                         instance._meta.app_label,
+                         instance._meta.model_name
+                     ),
+                     args=[instance.id]
+                 )])
         return result
 
 
@@ -658,3 +671,7 @@ class BioCollectionGeojsonSerializer(GeoFeatureModelSerializer):
         except KeyError:
             pass
         return result
+
+
+class BioCollectionOneRowWithLinkSerialier(BioCollectionOneRowSerializer):
+    pass
