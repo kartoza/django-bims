@@ -4,6 +4,7 @@ from preferences import preferences
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
+from bims.helpers.get_duplicates import get_duplicate_records
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -111,11 +112,7 @@ class SummaryReportGeneralApiView(APIView):
                 count__gt=1
             ).count(),
             'total_records': BiologicalCollectionRecord.objects.all().count(),
-            'total_duplicate_records': BiologicalCollectionRecord.objects.values(
-                'site_id', 'collection_date', 'biotope_id',
-                'specific_biotope_id', 'substratum_id', 'taxonomy_id').annotate(
-                duplicate=Count('*')
-            ).exclude(duplicate=1).count(),
+            'total_duplicate_records': get_duplicate_records().count(),
             'total_modules': taxon_modules.count(),
             'total_species': (
                 Taxonomy.objects.filter(taxongroup__isnull=False).count()
