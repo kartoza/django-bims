@@ -59,6 +59,8 @@ ADD REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt; pip install uwsgi
 RUN npm -g install yuglify
 
+RUN pip install MarkupSafe==1.1.1 && pip install pygbif==0.6.0
+
 # Debian is messed up and aliases node as nodejs
 # So when yuglify is installed it references the wrong node binary...
 # lets fix that here...
