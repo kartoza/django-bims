@@ -43,7 +43,7 @@
                 </div>
                 <div class="col-5" style="display: none">
                     <input type="text"
-                           class="input-options site_code"
+                           class="input-options site_code form-control"
                            name="site_code" style="display: none">
                     <input type="text"
                            class="input-options river_name form-control"
@@ -51,9 +51,15 @@
                     <input type="text" class="input-options owner form-control"
                            name="owner" style="display: none">
                 </div>
-                <div class="col-2">
-                    <input class="btn btn-default" type="button" name="filter_result" value="Go" style="float: left; width: 50px;">
+                <div id="btn-go" class="col-2" style="display: none">
+                    <input class="btn btn-default" type="button" name="filter_result" value="Go"
+                           style="float: left; width: 50px;">
                 </div>
+                <div id="btn-reset" class="col-2" style="display: none">
+                    <input class="btn btn-default" type="button" name="filter_result" value="RESET"
+                           style="color: #fff; float: left; width: 70px; background-color: #18A090; ">
+                </div>
+
             </div>
         </div></div>
     </div>
@@ -86,12 +92,14 @@
                     <span class="reject-action">
                         <a onclick="rejectObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Reject this data"><i class="fa fa-times-circle"></i></a>
                     </span>
+                    <span class="reject-action">
+                        <a href="/nonvalidated-site/detail/{{ obj.pk }}/" class="btn btn-default" data-toggle="tooltip" title="View site detail"><i class="fa fa-eye"></i></a>
+                    </span>
                 </td>
             </tr>
         {% endfor %}
     </table>
     </div>
-    <div id="popup"></div>
     </div>
     </div>
     {% if is_paginated %}
@@ -174,22 +182,6 @@
         </div>
     </div>
 
-     <div class="modal fade" tabindex="-1" role="dialog" id="detailModal" data-id="">
-        <div class="modal-dialog modal-xl" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Detail Collection</h5>
-                    <button type="button" class="close" data-dismiss="modal"
-                            aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
     <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
     <script>
@@ -199,4 +191,5 @@
         var pageUrl = '/nonvalidated-site/';
     </script>
     <script src="{% static 'js/map-review-validation.js' %}"></script>
+
 {% endblock %}

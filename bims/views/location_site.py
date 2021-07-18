@@ -1,7 +1,7 @@
 from rest_framework.test import APIClient
 
 from bims.permissions.api_permission import user_has_permission_to_validate
-from django.views.generic import TemplateView, View, ListView
+from django.views.generic import TemplateView, View, ListView, DetailView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
@@ -443,3 +443,44 @@ class NonValidatedSiteView(
                     river__name__icontains=filter_river_name)
             return queryset
         return self.queryset
+
+
+class SiteLocationDetailView(NonValidatedSiteView):
+    location_site = None
+    template_name = 'location_site_detail.html'
+    model = LocationSite
+
+    @method_decorator(login_required)
+    def get(self, request, locationsiteid, *args, **kwargs):
+        location_site_id = locationsiteid
+        if not location_site_id:
+            raise Http404('Need location site id')
+        try:
+            self.location_site = LocationSite.objects.get(id=location_site_id)
+        except LocationSite.DoesNotExist:
+            raise Http404('Location site does not exist')
+        return super(NonValidatedSiteView, self).get(
+            request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(SiteLocationDetailView, self).get_context_data(**kwargs)
+        context['location_site'] = self.location_site
+        context['geoserver_public_location'] = get_key(
+            'GEOSERVER_PUBLIC_LOCATION')
+        context['site_image'] = SiteImage.objects.filter(
+            site=self.location_site
+        )
+        if self.location_site.owner:
+            context['fullname'] = self.location_site.owner.get_full_name()
+        if (
+                ChemicalRecord.objects.filter(
+                    survey__site=self.location_site
+                ).exists()):
+            context['surveys'] = SurveySerializer(
+                Survey.objects.filter(
+                    site_id=self.location_site,
+                    chemical_collection_record__isnull=False
+                ).distinct().order_by('date'), many=True
+            ).data
+
+        return context

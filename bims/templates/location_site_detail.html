@@ -1,0 +1,288 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% load thumbnail %}
+{% block subtitle %}
+    Location Site Form
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/site_form.css" %}" rel="stylesheet">
+
+    <script type="text/javascript">
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
+        const locationSiteLat = '{{ location_site.latitude }}';
+        const locationSiteLong = '{{ location_site.longitude }}';
+        const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
+        const siteId = '{{ location_site.id }}';
+        const siteCodeGeneratorMethod = '{{ preferences.SiteSetting.site_code_generator }}';
+        const bingKey = '{{ bing_key }}';
+    </script>
+    <style>
+        .carousel {
+            height: 500px
+        }
+        .carousel-inner, .carousel-item {
+            height: 100% !important;
+        }
+
+        .carousel-item img {
+            max-height: 100%;
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+        }
+        .form-control {
+            border: none;
+        }
+        .form-control-sm {
+            line-height: 2;
+        }
+        .form-control:disabled {
+            background-color: #fff;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+
+        <div class="body-form container">
+            {% if messages %}
+                    {% for message in messages %}
+                        {% if message.extra_tags == 'location_site_form' %}
+                            <div class="alert alert-success {{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+            {% endif %}
+            <div class="dashboard-title">
+                <h2>
+                    Site Details {{ location_site }}
+                    <div class="site-form-close">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </div>
+                </h2>
+            </div>
+            <div class="alert alert-danger" role="alert"
+                 style="display: none;">
+            </div>
+            <div id="site-map"></div>
+
+            <div class="alert alert-danger" id="form-alert" role="alert" style="display: none">
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Latitude</label>
+                <div class="col-sm-2">
+                    <input type="text" name="latitude"
+                       class="form-control form-control-sm" style="height: 100%"
+                       value="{{ location_site.latitude }}" disabled>
+                </div>
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label" style="text-align: right">Longitudeol</label>
+                <div class="col-sm-2">
+                    <input type="text" name="longitude"
+                       class="form-control form-control-sm" style="height: 100%"
+                       value="{{ location_site.longitude }}" disabled >
+                </div>
+
+            </div>
+            {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+            <div class="form-group row">
+                <label for="river_name" class="col-sm-2 col-form-label">
+                    River Name
+                </label>
+                <div class="col-sm-6">
+                    <input type="text" name="river_name" id="river_name" class="form-control form-control-sm" value="{{ location_site.river.name }}" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="original_site_code"
+                       class="col-sm-2 col-form-label col-form-label">Original River Name</label>
+                <div class="col-sm-10">
+                    <input type="text" name="original_river_name" id="original_river_name"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{% if location_site.legacy_river_name %}{{ location_site.legacy_river_name }}{% else %}{% endif %}" disabled>
+                </div>
+            </div>
+            {% endif %}
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Site Code</label>
+                <div class="col-sm-6">
+                    <input type="text" name="site_code" id="site_code"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ location_site.site_code }}" disabled>
+                </div>
+
+            </div>
+            <div class="form-group row">
+                <label for="legacy_site_code"
+                       class="col-sm-2 col-form-label col-form-label">Original Site Code</label>
+                <div class="col-sm-10">
+                    <input type="text" name="legacy_site_code" id="legacy_site_code"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{% if legacy_site_code %}{{ legacy_site_code }}{% else %}{% endif %}" disabled>
+                </div>
+            </div>
+            {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>
+                <div class="col-sm-6">
+                    <input type="text" name="geomorphological_zone" id="geomorphological_zone"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ location_site.original_geomorphological }}" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Refined Geomorphological Zone</label>
+                <div class="col-sm-10">
+                    <input name="refined_geomorphological_zone" class="form-control form-control-sm"
+                           value="{{ location_site.refined_geomorphological }}" disabled>
+
+                </div>
+            </div>
+            {% endif %}
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Description</label>
+                <div class="col-sm-10">
+                    <input type="text" name="site_description"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ location_site.site_description }}" disabled>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label">Owner
+                    </label>
+                <div class="col-sm-10">
+                    <input type="text" onClick="this.setSelectionRange(0, this.value.length)"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ fullname }}" id="owner" disabled>
+                    <input type="hidden" name="owner" id="owner_id" value="{{ user_id }}">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_image" class="col-2 col-form-label">
+                    Abiotic Data
+                </label>
+                <div class="col-10">
+                    {% if surveys %}
+                    <ul class="list-group">
+                        {% for survey in surveys %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center survey">
+                            {{ survey.date }}
+                            <span class="badge badge-primary badge-pill">Abiotic records : {{ survey.chemical_record_count }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div style="padding-top: 10px;">-</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_image" class="col-2 col-form-label">
+                    Site Image
+                </label>
+                <div class="col-10">
+
+                    {% if site_image %}
+                    <div id="siteImageCarousel" class="site-image-gallery carousel slide" data-ride="carousel" data-interval="false">
+                        <!-- Indicators -->
+                        <ol class="carousel-indicators">
+                            {% for image in site_image %}
+                                {% if forloop.counter0 == 0 %}
+                                    <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}" class="active"></li>
+                                {% else %}
+                                    <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}"></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                        <div class="carousel-inner">
+                            {% for image in site_image %}
+                                {% if forloop.counter0 == 0 %}
+                                    <div class="carousel-item active" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
+                                {% else %}
+                                    <div class="carousel-item" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
+                                {% endif %}
+                                {% if image.image|is_portrait %}
+                                    {% thumbnail image.image "x500" crop="center" as thumb %}
+                                        <a href="/uploaded/{{ image.image }}"
+                                            target="_blank"><img
+                                            src="{{ thumb.url }}"
+                                            height="{{ thumb.height }}"
+                                            width="{{ thumb.width }}"/>
+                                        </a>
+                                    {% endthumbnail %}
+                                {% else %}
+                                    {% thumbnail image.image "500" crop="center" as thumb %}
+                                        <a href="/uploaded/{{ image.image }}"
+                                            target="_blank"><img
+                                            src="{{ thumb.url }}"
+                                            height="{{ thumb.height }}"
+                                            width="{{ thumb.width }}"/>
+                                        </a>
+                                    {% endthumbnail %}
+                                {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Left and right controls -->
+                        <a class="carousel-control-prev"
+                           href="#siteImageCarousel" role="button"
+                           data-slide="prev">
+                            <span class="carousel-control-prev-icon"
+                                  aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next"
+                           href="#siteImageCarousel" role="button"
+                           data-slide="next">
+                            <span class="carousel-control-next-icon"
+                                  aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                        <div class="image-buttons-wrapper">
+                            <div class="btn btn-success open-image-btn">Open image</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery.validate.min.js" %}"></script>
+    <script src="{% static "js/libs/additional-methods.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/site_form.js" %}"></script>
+    <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
+
+{% endblock %}
