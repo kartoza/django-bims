@@ -64,7 +64,6 @@ INSTALLED_APPS += (
     'preferences',
     'sorl.thumbnail',
     'ckeditor',
-    'celery_inspect',
     'django_json_widget'
 )
 
@@ -74,7 +73,6 @@ INSTALLED_APPS += (
     'taggit',
 )
 INSTALLED_APPS = (
-    'wagtail.contrib.search_promotions',
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
     'wagtail.embeds',
@@ -87,7 +85,6 @@ INSTALLED_APPS = (
     'wagtail.admin',
     'wagtail.core',
     'rest_framework.authtoken',
-    'wagtail.api.v2',
 ) + INSTALLED_APPS
 WAGTAIL_SITE_NAME = 'BIMS Wagtail'
 
@@ -180,7 +177,6 @@ STATICFILES_DIRS = [
 MIDDLEWARE += (
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
-    'wagtail.core.middleware.SiteMiddleware',
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
 
