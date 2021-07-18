@@ -42,6 +42,7 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
 
     <script>
 
@@ -52,10 +53,11 @@
                 'title': 'General Data Report',
                 'url': '/api/summary-general-report/'
             },
-            {
-                'title': BACKGROUND_PROCESS,
-                'url': '/api/v1/celery-inspect/active/'
-            },
+            // Update this
+            // {
+            //    'title': BACKGROUND_PROCESS,
+            //    'url': '/api/v1/celery-inspect/active/'
+            // },
             {
                 'title': 'Location Context Report',
                 'url': '/api/location-context-report/'
@@ -119,7 +121,19 @@
                     tbody.append(tr);
                     tbody.append(objectToTable(value, parent + 1, totalColumn));
                 } else {
-                    tr.append(`<td colspan="${totalColumn - (parent+1)}">${numberWithCommas(value)}</td>`);
+                    if(key==='total_duplicate_records'){
+                        tr.append(`<td colspan="" style="border-right: none">${numberWithCommas(value)}</td>`);
+                        tr.append(`<td colspan="3" style="border-left: none">
+                        <div class="download-container">
+                        </div>
+                          <button class="btn btn-info download-duplicate-as-csv" onclick="onDownloadDuplicateCSVClicked(event)">
+                                Download as CSV
+                            </button>
+                        </td>`)
+                    }
+                    else{
+                        tr.append(`<td colspan="${totalColumn - (parent+1)}">${numberWithCommas(value)}</td>`);
+                    }
                     tbody.append(tr);
                 }
             })
@@ -194,6 +208,13 @@
             }
         });
 
+        function onDownloadDuplicateCSVClicked(e) {
+            let downloadButton = $(e.target);
+            let url = '/api/duplicate-records/download/';
+            downloadButton.html("Processing...");
+            downloadButton.prop("disabled", true);
+            downloadCSV(url, downloadButton);
+        }
     </script>
 
 {% endblock %}

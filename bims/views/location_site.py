@@ -1,7 +1,7 @@
 from rest_framework.test import APIClient
 
 from bims.permissions.api_permission import user_has_permission_to_validate
-from django.views.generic import TemplateView, View, ListView, DetailView
+from django.views.generic import TemplateView, View, ListView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model

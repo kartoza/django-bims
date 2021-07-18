@@ -562,3 +562,11 @@ function renderNewTaxon(taxonId, taxonName) {
     $row.highlight();
     taxonAbundanceInput.change(taxonAbundanceOnChange);
 }
+
+function deleteRecord(recordId) {
+    $(`#${recordId}`).remove();
+    let index = collectionIdList.indexOf(recordId);
+    if (index > -1) {
+        collectionIdList.splice(index, 1);
+    }
+}

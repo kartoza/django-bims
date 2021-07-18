@@ -240,16 +240,16 @@
                             <td>{{ site_visit.total }}</td>
                             <td>
                                 <a href="{% if site_visit_sass %}/sass/view/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/detail/{{ site_visit.id }}/{% endif %}"
-                                   class="btn btn-primary btn-sm btn-action"><i class="fa fa-eye" aria-hidden="true"></i> </a>
+                                   class="btn btn-primary btn-sm btn-action" title="View"><i class="fa fa-eye" aria-hidden="true"></i> </a>
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
                                     {% if not site_visit.ready_for_validation  %}
                                     <a href="{% if site_visit_sass %}/sass/update/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/update/{{ site_visit.id }}/{% endif %}"
-                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;"><i class="fa fa-pencil"></i> </a>
+                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;" title="Update"><i class="fa fa-pencil"></i> </a>
                                     {% endif %}
                                 {% endif %}
                                 {% if site_visit.owner == user and not site_visit.ready_for_validation and not site_visit.validated %}
                                     <a href="#" onclick="sendEmailValidation({{ site_visit.pk }}, this)"
-                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;">
+                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;" title="Send for validation">
                                         <i class="fa fa-send" aria-hidden="true"></i>
                                     </a>
                                 {% endif %}

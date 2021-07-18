@@ -1,6 +1,5 @@
 import json
 import logging
-
 from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
 from rest_framework import status
@@ -33,6 +32,8 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
 from django.test import TestCase
+
+logger = logging.getLogger('bims')
 
 
 logger = logging.getLogger('bims')
