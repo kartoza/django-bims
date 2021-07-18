@@ -168,16 +168,21 @@ function sendEmailValidation(pk) {
 
 function dynamicInputFilter(that) {
     const $inputOptions = $('.input-options');
+    const $btnGo = $('#btn-go');
+    const $btnReset = $('#btn-reset');
+    $btnReset.hide();
     $inputOptions.hide().val('');
     $inputOptions.parent().hide();
     if (that.value) {
         const $input = $('.' + that.value);
         $input.parent().show();
-        $input.show()
+        $input.show();
+        $btnGo.show();
     }
 }
 
 $('input[name=filter_result]').click(function () {
+
     var selected_filter = $('#filter-select').val();
     var url = pageUrl;
     if(selected_filter === 'collection_date'){
@@ -222,3 +227,15 @@ function updateSelectedFilter(customUrl) {
         }
     }
 }
+
+if(window.location.href.split('?')[1]){
+    if(!window.location.href.split('?')[1].includes("page")){
+        const $btnReset = $('#btn-reset');
+        $btnReset.show();
+        $btnReset.click( function (){
+        window.location.href = window.location.href.split('?')[0];
+    });
+    }
+
+}
+

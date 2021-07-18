@@ -28,6 +28,9 @@ function dashboardClose(e) {
         } catch (e) {
             window.location.href = '/map/';
         }
+        finally {
+            window.location.href = '/';
+        }
     } else if (previousUrl.indexOf('source-reference-form') > -1) {
         window.history.go(-7);
     } else {
@@ -37,4 +40,8 @@ function dashboardClose(e) {
 
 $(function () {
    $('.dashboard-close').click(dashboardClose);
+});
+
+$(function () {
+   $('.site-form-close').click(dashboardClose);
 });
