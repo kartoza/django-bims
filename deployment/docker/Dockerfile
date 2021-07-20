@@ -36,7 +36,7 @@ RUN echo "Updating apt-get" && \
     rm -rf ~/.cache/pip
 
 # install shallow clone of geonode master branch
-RUN git clone -b '3.0' --depth=1 git://github.com/GeoNode/geonode.git --branch '3.0' /usr/src/geonode
+RUN git clone -b '3.1' --depth=1 git://github.com/GeoNode/geonode.git --branch '3.1' /usr/src/geonode
 RUN cd /usr/src/geonode/; pip install -r requirements.txt --no-cache-dir; pip install -e .
 
 # Install python dependencies
