@@ -52,7 +52,9 @@ from bims.views.collections_form import (
 from bims.views.location_site import (
     LocationSiteFormView,
     LocationSiteFormUpdateView,
-    LocationSiteFormDeleteView, NonValidatedSiteView
+    LocationSiteFormDeleteView,
+    NonValidatedSiteView,
+    SiteLocationDetailView
 )
 from bims.views.source_reference_form import SourceReferenceView
 from bims.views.bug_report import BugReportView
@@ -202,6 +204,8 @@ urlpatterns = [
         {}, 'contactus-success'),
     url(r'^nonvalidated-site/$',
         NonValidatedSiteView.as_view(), name='nonvalidated-site'),
+    url(r'^nonvalidated-site/detail/(?P<locationsiteid>\d+)/$',
+        SiteLocationDetailView.as_view(), name='nonvalidated-site'),
 ]
 
 # Api urls
