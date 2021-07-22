@@ -9,7 +9,7 @@ from bims.models.boundary import Boundary
 
 logger = logging.getLogger(__name__)
 IN_CELERY_WORKER_PROCESS = (
-    sys.argv and sys.argv[0].endswith('celery') and 'worker' in sys.argv
+        sys.argv and sys.argv[0].endswith('celery') and 'worker' in sys.argv
 )
 
 
@@ -37,7 +37,7 @@ def update_cluster(ids=None):
 
 
 def process_download_data_to_csv(
-    path_file, request, send_email = False, user_id = None
+        path_file, request, send_email=False, user_id=None
 ):
     from django.contrib.auth import get_user_model
     from bims.serializers.bio_collection_serializer import (
@@ -102,13 +102,13 @@ def process_download_data_to_csv(
 
 @shared_task(name='bims.tasks.download_data_to_csv', queue='update')
 def download_data_to_csv(
-        path_file, request, send_email = False, user_id = None):
+        path_file, request, send_email=False, user_id=None):
     from bims.utils.celery import memcache_lock
 
     if IN_CELERY_WORKER_PROCESS:
         lock_id = '{0}-lock-{1}'.format(
-                download_data_to_csv.name,
-                path_file
+            download_data_to_csv.name,
+            path_file
         )
 
         oid = '{0}'.format(path_file)
@@ -126,5 +126,5 @@ def download_data_to_csv(
         )
 
     logger.info(
-            'Csv %s is already being processed by another worker',
-            path_file)
+        'Csv %s is already being processed by another worker',
+        path_file)

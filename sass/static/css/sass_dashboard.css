@@ -9,11 +9,6 @@ body {
     position: relative;
 }
 
-.body-form {
-    padding-top: 100px;
-    padding-bottom: 70px;
-}
-
 #map {
     height: 400px;
     width: 100%;

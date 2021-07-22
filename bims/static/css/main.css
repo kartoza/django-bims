@@ -1,7 +1,8 @@
 .dashboard-title {
     border-bottom: 3px solid var(--main-accent-color);
     margin-bottom: 10px;
-    text-align: center;
+    color: #444444;
+    padding-top: 0.5em;
 }
 
 .dashboard-title h2 {
@@ -99,4 +100,37 @@
 .body-container {
     padding-top: 100px;
     padding-bottom: 50px;
+}
+
+.body-form {
+    padding: 20px;
+    margin-top: 5em;
+    margin-bottom: 3em;
+    border-radius: 0.3em;
+    box-shadow: 3px 2px 8px 0 rgb(122 122 122 / 14%), 0 6px 20px 0 rgb(47 47 47 / 15%);
+}
+
+.list-form {
+    overflow: hidden;
+    height: calc(100% - 51px);
+}
+
+.list-form .row {
+    height: 100%;
+}
+
+.list-form .side-panel {
+    padding: 2em;
+    background-color: #fbfbfb;
+    box-shadow: 1px -3px 4px 0px #9c9c9c;
+}
+
+.list-form .list-content {
+    position: absolute;
+    right: 0;
+    height: calc(100% - 51px);
+    height: -o-calc(100% - 51px); /* opera */
+    height: -webkit-calc(100% - 51px); /* google, safari */
+    height: -moz-calc(100% - 51px); /* firefox */
+    overflow: auto;
 }

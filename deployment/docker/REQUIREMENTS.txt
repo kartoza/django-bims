@@ -17,7 +17,7 @@ django-allauth==0.41.0
 django-easy-audit==1.2.2
 django-grappelli==2.14.1
 
-djangorestframework==3.9.1
+djangorestframework>=3.11.2
 djangorestframework-gis==0.15
 django-colorfield==0.1.15
 pygbif==0.4.0
@@ -57,11 +57,10 @@ sorl-thumbnail==12.6.3
 svglib==1.0.0
 simplejson==3.17.0
 django-extensions==2.2.9
-wagtail==2.9.3
+wagtail==2.12.6
 service-identity==18.1.0
 django-proxy==1.2.1
 geopy==2.0.0
-django-celery-inspect==0.2.1
 python-dwca-reader==0.15.0
 gitpython==3.1.13
 django-json-widget==1.1.1

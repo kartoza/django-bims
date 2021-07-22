@@ -7,3 +7,4 @@ from bims.tasks.source_reference import *  # noqa
 from bims.tasks.taxa_upload import *  # noqa
 from bims.tasks.collections_upload import *  # noqa
 from bims.tasks.harvest_collections import *  # noqa
+from bims.tasks.duplicate_records import *  # noqa

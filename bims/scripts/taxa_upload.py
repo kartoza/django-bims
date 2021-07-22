@@ -337,6 +337,7 @@ class TaxaProcessor(object):
                 # -- Common name
                 common_name = self.common_name(row)
                 if common_name:
+                    taxonomy.vernacular_names.clear()
                     taxonomy.vernacular_names.add(common_name)
 
                 # -- Origin

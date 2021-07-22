@@ -37,11 +37,13 @@
                     {{ object.site.name }}{% endif %}</h2>
                 <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
             </div>
+            <div style="float: right; font-size: 1.2em; margin-bottom: 10px">{{ object.validation_status | safe }}</div>
             <div class="alert alert-danger" role="alert"
                  style="display: none;">
 
             </div>
             <div id="fish-map"></div>
+            <div style="margin-bottom: 30px"></div>
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-1 col-form-label col-form-label">Latitude</label>
@@ -371,6 +373,9 @@
                                 {% endif %}
                             </div>
                         </th>
+                        {% if request.user.is_superuser or request.user.is_staff %}
+                            <th style="width: 10px;"></th>
+                        {% endif %}
                     </tr>
                     </thead>
                     <tbody class="taxon-table-body">
@@ -381,7 +386,7 @@
                         </td>
                     </tr>
                     {% for collection_record in collection_records %}
-                        <tr>
+                        <tr id="{{ collection_record.id }}">
                             <td scope="row"
                                 class="taxon-name">
                                 {{ collection_record.taxonomy.canonical_name }}
@@ -405,6 +410,12 @@
                                        value={% if collection_record.abundance_number %}{{ collection_record.abundance_number }}{% else %}0{% endif %}
                                        placeholder="0">
                             </td>
+                            {% if request.user.is_superuser or request.user.is_staff %}
+                            <td>
+                                <button type="button" class="btn btn-danger" onclick="deleteRecord('{{ collection_record.id }}')"><i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                            {% endif %}
                         </tr>
                     {% endfor %}
                     {% for taxon in taxa %}

@@ -31,7 +31,11 @@ from bims.models import (
     DatabaseRecord,
     LocationContext,
     LocationContextGroup,
-    VernacularName
+    VernacularName,
+    TaxonImage,
+    VernacularName,
+    ChemicalRecord,
+    SiteImage
 )
 
 
@@ -276,6 +280,11 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     validated = True
 
 
+class ChemicalRecordF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ChemicalRecord
+
+
 class BoundaryTypeF(factory.django.DjangoModelFactory):
     """
     Boundary type factory
@@ -363,3 +372,14 @@ class DatabaseRecordF(factory.django.DjangoModelFactory):
 class DocumentF(factory.django.DjangoModelFactory):
     class Meta:
         model = Document
+
+
+class TaxonImageF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = TaxonImage
+    taxonomy = factory.SubFactory(TaxonomyF)
+
+
+class SiteImageF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SiteImage

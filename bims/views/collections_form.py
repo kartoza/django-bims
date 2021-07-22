@@ -26,7 +26,8 @@ from bims.models import (
     BIOTOPE_TYPE_BROAD,
     BIOTOPE_TYPE_SUBSTRATUM,
     Survey,
-    Chem, ChemicalRecord
+    Chem, ChemicalRecord,
+    BaseMapLayer
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
@@ -122,36 +123,13 @@ class CollectionFormView(TemplateView, SessionFormMixin):
 
     def create_or_get_survey(self, collection_date, owner):
         """Create or get a site survey"""
-        surveys = Survey.objects.filter(
+        survey = Survey.objects.create(
             owner=owner,
             date=collection_date,
+            site=self.location_site,
             collector_user=self.request.user,
-            site=self.location_site
+            validated=False
         )
-        if surveys.exists():
-            survey = surveys[0]
-            if surveys.count() > 1:
-                # Merge survey
-                ChemicalRecord.objects.filter(
-                    survey__in=surveys).update(
-                    survey=survey
-                )
-                BiologicalCollectionRecord.objects.filter(
-                    survey__in=surveys).update(
-                    survey=survey
-                )
-                AlgaeData.objects.filter(
-                    survey__in=surveys).update(
-                    survey=survey
-                )
-                surveys.exclude(id=survey.id).delete()
-        else:
-            survey = Survey.objects.create(
-                owner=owner,
-                date=collection_date,
-                site=self.location_site,
-                collector_user=self.request.user
-            )
         return survey
 
     def get_context_data(self, **kwargs):
@@ -165,6 +143,11 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
+
+        try:
+            context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            context['bing_key'] = ''
 
         # -- Taxa list
         taxon_group, created = TaxonGroup.objects.get_or_create(

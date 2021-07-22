@@ -5,9 +5,9 @@ from bims.api_views.boundary import (
     BoundaryList,
     BoundaryGeojson
 )
+from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
-    LocationSiteClusterList,
     LocationSitesSummary,
     LocationSitesCoordinate
 )
@@ -32,8 +32,11 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
+from bims.api_views.validate_object import ValidateObject, ValidateSite
+from bims.api_views.reject_object import RejectCollectionData, RejectSite
+from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
-from bims.api_views.reject_collection_data import RejectCollectionData
+from bims.api_views.reject_data import RejectData
 from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords,
@@ -85,11 +88,11 @@ from bims.api_views.location_site_public import (
     LocationSiteSummaryPublic
 )
 from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
+from bims.api_views.merge_sites import MergeSites
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
         LocationTypeAllowedGeometryDetail.as_view()),
-    url(r'^location-site/cluster/$', LocationSiteClusterList.as_view()),
     url(r'^location-site/$', LocationSiteList.as_view()),
     url(r'^location-site-detail/$',
         SingleLocationSiteOverview.as_view(),
@@ -146,8 +149,8 @@ urlpatterns = [
         name='list-non-biodiversity-layer'),
     url(r'^validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
-    url(r'^reject-collection-data/$',
-        RejectCollectionData.as_view(), name='reject-collection-data'),
+    url(r'^reject-data/$',
+        RejectData.as_view(), name='reject-data'),
     url(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-site-code/$',
@@ -242,4 +245,16 @@ urlpatterns = [
     url(r'^remove-occurrences/$',
         RemoveOccurrencesApiView.as_view(),
         name='remove-occurrences'),
+    url(r'^validate-location-site/$',
+        ValidateSite.as_view(), name='validate-location-site'),
+    url(r'^reject-location-site/$',
+        RejectSite.as_view(), name='reject-location-site'),
+    url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
+        name='taxon-images'),
+    url(r'^merge-sites/$',
+        csrf_exempt(MergeSites.as_view()),
+        name='merge-sites'),
+    url(r'^duplicate-records/download/$',
+        DuplicateRecordsApiView.as_view(),
+        )
 ]

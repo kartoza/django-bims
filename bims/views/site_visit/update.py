@@ -37,6 +37,8 @@ class SiteVisitUpdateView(
             site_visit = Survey.objects.get(
                 id=self.kwargs['sitevisitid']
             )
+            if not site_visit.validated and site_visit.ready_for_validation:
+                return False
             if (
                     site_visit.owner == self.request.user or
                     site_visit.collector_user == self.request.user
@@ -45,6 +47,20 @@ class SiteVisitUpdateView(
         except Survey.DoesNotExist:
             return False
         return False
+
+    def remove_collection_records(self, excluded_collection_list):
+        """
+        Only superuser or staff can delete the existing records
+        :param excluded_collection_list: list of excluded collection ids
+        """
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            collection_to_remove = BiologicalCollectionRecord.objects.filter(
+                survey=self.object
+            ).exclude(
+                id__in=excluded_collection_list
+            )
+            if collection_to_remove.exists():
+                collection_to_remove.delete()
 
     def form_valid(self, form):
         # This method is called when valid form data has been POSTed.
@@ -82,6 +98,11 @@ class SiteVisitUpdateView(
             collector_user=form.data.get('collector_id', None)
         )
 
+        # Remove deleted collection records
+        self.remove_collection_records(
+            excluded_collection_list=collection_id_list
+        )
+
         # Add site image
         site_image_file = self.request.FILES.get('site-image', None)
         if site_image_file:
@@ -92,7 +113,12 @@ class SiteVisitUpdateView(
             site_image.image = site_image_file
             site_image.save()
 
-        self.object.validated = False
+        if (
+            not self.request.user.is_superuser and
+            not self.request.user.is_staff and
+            self.object.validated
+        ):
+            self.object.validated = False
         self.object.owner = self.collection_records[0].owner
         self.object.collector_user = self.collection_records[0].collector_user
 

@@ -174,9 +174,13 @@ def species_autocomplete(request):
     exclude_list = exclude.split(',')
     exclude_list = filter(None, exclude_list)
     taxon_group_request = request.GET.get('taxonGroup', '')
-    taxon_group_species = []
+    taxon_group_id = request.GET.get('taxonGroupId', '')
+    taxon_group_species = None
 
     optional_query = {}
+
+    taxa_list = Taxonomy.objects.all()
+
     if taxon_group_request:
         taxon_group, created = TaxonGroup.objects.get_or_create(
             name=taxon_group_request
@@ -188,36 +192,46 @@ def species_autocomplete(request):
             'id', flat=True
         )
 
+    if taxon_group_id:
+        try:
+            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            taxa_list = taxon_group.taxonomies.all()
+        except TaxonGroup.DoesNotExist:
+            pass
+
+    taxa_list = taxa_list.filter(
+        Q(canonical_name__icontains=q) |
+        Q(scientific_name__icontains=q)
+    )
+
     if rank:
         optional_query['rank__iexact'] = rank
 
     if not request.is_ajax() and len(q) < 2:
         data = 'fail'
     else:
-        search_qs = Taxonomy.objects.filter(
-            Q(canonical_name__icontains=q) |
-            Q(scientific_name__icontains=q),
-            **optional_query
-        ).filter(
-            Q(id__in=taxon_group_species) |
-            Q(parent__in=taxon_group_species) |
-            Q(parent__parent__in=taxon_group_species) |
-            Q(parent__parent__parent__in=taxon_group_species) |
-            Q(parent__parent__parent__parent__in=taxon_group_species) |
-            Q(parent__parent__parent__parent__parent__in=taxon_group_species)
-        ).exclude(
-            id__in=exclude_list
-        ).distinct('canonical_name')
-        if not search_qs.exists():
-            search_qs = Taxonomy.objects.filter(
-                Q(canonical_name__icontains=q) |
-                Q(scientific_name__icontains=q),
+        if taxon_group_species:
+            taxa_list = taxa_list.filter(
+                **optional_query
+            ).filter(
+                Q(id__in=taxon_group_species) |
+                Q(parent__in=taxon_group_species) |
+                Q(parent__parent__in=taxon_group_species) |
+                Q(parent__parent__parent__in=taxon_group_species) |
+                Q(parent__parent__parent__parent__in=taxon_group_species) |
+                Q(parent__parent__parent__parent__parent__in=
+                  taxon_group_species)
+            ).exclude(
+                id__in=exclude_list
+            ).distinct('canonical_name')
+        else:
+            taxa_list = taxa_list.filter(
                 **optional_query
             ).exclude(
                 id__in=exclude_list
             ).distinct('canonical_name')
         results = []
-        for r in search_qs:
+        for r in taxa_list:
             results.append({
                 'id': r.id,
                 'species': r.canonical_name,

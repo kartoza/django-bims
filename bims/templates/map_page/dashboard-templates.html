@@ -472,7 +472,7 @@
                         </button>
                     </div>
                     <div class="card-body card-padding">
-                        <div class="content-body">
+                        <div id="occurrence-data" class="content-body">
                         </div>
 
                     </div>
@@ -708,9 +708,25 @@
                         <div class="card-header-title pull-left d-inbar">
                             Abiotic Data
                         </div>
-                        <button class="ssdd-export btn btn-default pull-right" id="chem-graph-export">
-                            <i class="fa fa-download"></i>
-                        </button>
+                        <div class="btn-group pull-right">
+                            <button type="button"
+                                    class="btn btn-default pull-right dropdown-toggle"
+                                    data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false" style="color: black">
+                                <i class="fa fa-download"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="ssdd-export btn dropdown-item" data-title="Abiotic Data - COND"
+                                   data-chart="COND-chem-chart">Download Conductivity (mS/m)</a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Abiotic Data - TEMP"
+                                   data-chart="TEMP-chem-chart">Download Temperature</a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Abiotic Data - pH"
+                                   data-chart="PH-chem-chart">Download pH</a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Abiotic Data - DO"
+                                   data-chart="DO-chem-chart">Download Oxygen: dissolved (mg/l)
+                                </a>
+                                </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="col-12 species-ssdd-chem-bar-chart" id="species-ssdd-chem-bar-chart">
@@ -732,11 +748,11 @@
                             Metadata Table
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="metadata-table-list">
+                                data-datac="metadata-table-list" data-title="Metadata Table">
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    <div class="card-body card-padding">
+                    <div id= "metadata-table-list" class="card-body card-padding">
                         <table class="table table-hover custom-table content-body">
                         </table>
                     </div>

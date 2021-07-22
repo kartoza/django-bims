@@ -74,6 +74,20 @@ class AbstractValidation(models.Model):
     def data_name(self):
         raise NotImplementedError
 
+    @property
+    def validation_status(self):
+        if self.ready_for_validation:
+            return '<span class="badge badge-warning">In Review</span>'
+        else:
+            if self.validated:
+                return (
+                    '<span class="badge badge-success">Validated</span>'
+                )
+            else:
+                return (
+                    '<span class="badge badge-secondary">Unvalidated</span>'
+                )
+
     def validate(self):
         self.validated = True
         self.rejected = False
@@ -84,7 +98,10 @@ class AbstractValidation(models.Model):
         self.validated = False
         self.rejected = True
         self.ready_for_validation = False
-        if rejection_message:
+        if self.owner is None:
+            self.save()
+            return
+        elif rejection_message:
             self.validation_message = rejection_message
         self.save()
         self._send_rejection_email(**kwargs)
@@ -102,7 +119,7 @@ class AbstractValidation(models.Model):
             self.EMAIL_REJECTION_SUBJECT)
         data_update_url = '%s%s' % (
             site_domain_name,
-            reverse('update-records', args=(self.pk, ))
+            reverse('site-visit-update', args=(self.pk, ))
         )
 
         msg_data = {

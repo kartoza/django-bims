@@ -150,6 +150,17 @@
         .select2-selection__choice, .select2-results__options {
             font-size: 0.8em !important;
         }
+        .select2-results__option {
+            width: 100%;
+        }
+        .taxa-table {
+            max-height: calc(100vh - 400px);
+            max-height: -o-calc(100vh - 400px); /* opera */
+            max-height: -webkit-calc(100vh - 400px); /* google, safari */
+            max-height: -moz-calc(100vh - 400px); /* firefox */
+            overflow-y: auto; /* Trigger vertical scroll    */
+            overflow-x: hidden; /* Hide the horizontal scroll */
+        }
     </style>
     <script>
         const sourceCollection = {{ source_collections | safe }};
@@ -161,8 +172,9 @@
         <img src="/static/img/small-loading.svg" width="150" style="filter: brightness(104%) contrast(97%);"
                              alt="Loading view">
     </div>
-    <div class="body-form container">
-        <div class="dashboard-title">
+    <div class="nav-space" style="height: 51px;"></div>
+    <div class="list-form container">
+        <div class="dashboard-title" style="text-align: center">
             <h2>Taxon Management</h2>
         </div>
         <div class="dashboard-body">
@@ -274,6 +286,12 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="form-group row">
+                                        <label for="parentTaxa" class="col-sm-2 col-form-label">Parent Taxonomy</label>
+                                        <div class="col-sm-10">
+                                            <select id="taxa-auto-complete" class="taxa-auto-complete" style="width: 100%"></select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div>
@@ -299,58 +317,60 @@
                     as csv
                 </button>
             </div>
-            <table class="table table-striped">
-                <thead>
-                <tr>
-                    <th scope="col" style="width: 25%">Taxon Name
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="canonical_name"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i>
-                    </th>
-                    <th scope="col" style="width: 10%">Rank
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="rank"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-rank"></i>
-                    </th>
-                    <th scope="col" style="width: 20%">Cons. Status
-                        <br/>
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="iucn_status__category"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-iucn_status__category"></i>
-                    </th>
-                    <th scope="col" style="width: 20%">Origin
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="origin"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-origin"></i>
-                    </th>
-                    <th scope="col" style="width: 20%">Endemism
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="endemism__name"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-endemism__name"></i>
-                    </th>
-                    <th scope="col" style="width: 20%">Records
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="total_records"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-total_records"></i>
-                    </th>
-                    <th scope="col" style="width: 15%">Import date
-                        <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="import_date"></i>
-                        <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
-                    </th>
-                    <th scope="col">Action</th>
-                </tr>
-                </thead>
-                <tbody id="taxa-list">
-                </tbody>
-            </table>
-            <div class="pagination-centered" style="display:none">
-                <ul class="pagination">
-                    <li class="arrow"><a href="#"
-                                         class="pagination pagination-previous">&laquo;</a>
-                    </li>
-                    <li class="current">
-                        <span id="taxa-current-page"></span> - <span
-                            id="taxa-current-size"></span> / <span
-                            id="taxa-count"></span>
-                    </li>
-                    <li class="arrow"><a href="#"
-                                         class="pagination pagination-next">&raquo;</a>
-                    </li>
-                </ul>
+            <div class="taxa-table">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col" style="width: 25%">Taxon Name
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="canonical_name"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i>
+                        </th>
+                        <th scope="col" style="width: 10%">Rank
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="rank"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-rank"></i>
+                        </th>
+                        <th scope="col" style="width: 20%">Cons. Status
+                            <br/>
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="iucn_status__category"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-iucn_status__category"></i>
+                        </th>
+                        <th scope="col" style="width: 20%">Origin
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="origin"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-origin"></i>
+                        </th>
+                        <th scope="col" style="width: 20%">Endemism
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="endemism__name"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-endemism__name"></i>
+                        </th>
+                        <th scope="col" style="width: 20%">Records
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="total_records"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-total_records"></i>
+                        </th>
+                        <th scope="col" style="width: 15%">Import date
+                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="import_date"></i>
+                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
+                        </th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="taxa-list">
+                    </tbody>
+                </table>
+                <div class="pagination-centered" style="display:none">
+                    <ul class="pagination">
+                        <li class="arrow"><a href="#"
+                                             class="pagination pagination-previous">&laquo;</a>
+                        </li>
+                        <li class="current">
+                            <span id="taxa-current-page"></span> - <span
+                                id="taxa-current-size"></span> / <span
+                                id="taxa-count"></span>
+                        </li>
+                        <li class="arrow"><a href="#"
+                                             class="pagination pagination-next">&raquo;</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
 
         </div>

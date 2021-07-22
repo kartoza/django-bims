@@ -4,6 +4,7 @@ from preferences import preferences
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
+from bims.helpers.get_duplicates import get_duplicate_records
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -111,6 +112,7 @@ class SummaryReportGeneralApiView(APIView):
                 count__gt=1
             ).count(),
             'total_records': BiologicalCollectionRecord.objects.all().count(),
+            'total_duplicate_records': get_duplicate_records().count(),
             'total_modules': taxon_modules.count(),
             'total_species': (
                 Taxonomy.objects.filter(taxongroup__isnull=False).count()
@@ -145,7 +147,7 @@ class SummaryReportLocationContextApiView(APIView):
                 OK_TEMPLATE.format(total_sites_without_location_context)
             )
         elif (
-            total_sites_without_location_context > (location_site_total / 2)
+                total_sites_without_location_context > (location_site_total / 2)
         ):
             total_sites_without_location_context = (
                 DANGER_TEMPLATE.format(
@@ -168,7 +170,7 @@ class SummaryReportLocationContextApiView(APIView):
         )
         incomplete_count = LocationSite.objects.annotate(
             total_group=Count('locationcontext__group')).filter(
-                total_group__lt=location_context_groups.count()
+            total_group__lt=location_context_groups.count()
         ).count()
         if incomplete_count == 0:
             incomplete_count = OK_TEMPLATE.format(incomplete_count)
@@ -180,12 +182,11 @@ class SummaryReportLocationContextApiView(APIView):
             incomplete_count
         )
 
-
         # - Summary per location context group
         groups_summary = {}
         for location_context_group in location_context_groups:
             groups_summary_count = LocationSite.objects.filter(
-                    locationcontext__group_id=location_context_group.id
+                locationcontext__group_id=location_context_group.id
             ).distinct('id').count()
             if groups_summary_count == location_site_total:
                 groups_summary_count = OK_TEMPLATE.format(

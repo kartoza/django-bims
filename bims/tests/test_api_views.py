@@ -1,6 +1,11 @@
 import json
+import logging
+from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
-from rest_framework.test import APIRequestFactory
+from rest_framework import status
+from rest_framework.test import APIRequestFactory, APIClient
+
+from bims.models import LocationSite
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     UserF,
@@ -9,7 +14,7 @@ from bims.tests.model_factories import (
     GroupF,
     LocationSiteF,
     TaxonomyF,
-    TaxonGroupF
+    TaxonGroupF, TaxonImageF
 )
 from bims.api_views.location_site import (
     LocationSiteDetail,
@@ -27,6 +32,11 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
 from django.test import TestCase
+
+logger = logging.getLogger('bims')
+
+
+logger = logging.getLogger('bims')
 
 
 class TestApiView(TestCase):
@@ -147,13 +157,13 @@ class TestApiView(TestCase):
         )
         user = UserF.create()
         content_type = ContentTypeF.create(
-                app_label='bims',
-                model='bims'
+            app_label='bims',
+            model='bims'
         )
         permission = PermissionF.create(
-                name='Can validate Aves',
-                content_type=content_type,
-                codename='can_validate_aves'
+            name='Can validate Aves',
+            content_type=content_type,
+            codename='can_validate_aves'
         )
         group = GroupF.create()
         group.permissions.add(permission)
@@ -230,3 +240,33 @@ class TestApiView(TestCase):
 
         content = json.loads(response.content)
         self.assertTrue(len(content['results']) > 0)
+
+    def test_send_notification_to_validator(self):
+        client = APIClient()
+        user = UserF.create(is_superuser=True)
+        client.login(
+            username=user.username,
+            password='password'
+        )
+        new_site = LocationSiteF.create()
+        api_url = '/api/send-email-validation/'
+        res = client.get(api_url, {'pk': new_site.pk, 'model': 'Site'})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_site = LocationSite.objects.get(pk=new_site.pk)
+        self.assertEqual(new_site.ready_for_validation, True)
+        
+    def test_get_taxon_images(self):
+        taxon = TaxonomyF.create(
+            scientific_name=u'Golden fish',
+        )
+        image = TaxonImageF.create(
+            taxon_image='taxon_images/im_U5BfJrC.jpg',
+            taxonomy=taxon
+        )
+        view = TaxonImageList.as_view()
+        request = self.factory.get('/api/taxon-images/' + str(taxon.pk))
+        response = view(request, str(taxon.pk))
+        self.assertEqual(
+            image.taxon_image.url,
+            response.data[0]['url']
+        )

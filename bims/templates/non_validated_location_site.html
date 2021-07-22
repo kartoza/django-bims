@@ -1,0 +1,195 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block title %}
+    Site Validation
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'js/libs/datepicker/datepicker.css' %}">
+
+    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+{% endblock %}
+
+{% block body_content %}
+<div style="min-height: 100%; height: auto;">
+    <div class="container header-wrapper">
+        Validate Location Site
+        <hr/>
+    </div>
+    <div class="container" style="margin-bottom: 15px">
+        <div class="form-group">
+        <div class="filter"> <span>Filter by</span>
+            <div class="row">
+                <div class="col-5">
+                    <select id="filter-select"
+                            onchange="dynamicInputFilter(this)"
+                            class="form-control">
+                        <option value=""></option>
+                        <option value="site_code">
+                            Site code
+                        </option>
+                        <option value="river_name">
+                            River name
+                        </option>
+                        <option value="owner">
+                            Owner
+                        </option>
+                    </select>
+                </div>
+                <div class="col-5" style="display: none">
+                    <input type="text"
+                           class="input-options site_code form-control"
+                           name="site_code" style="display: none">
+                    <input type="text"
+                           class="input-options river_name form-control"
+                           name="river_name" style="display: none">
+                    <input type="text" class="input-options owner form-control"
+                           name="owner" style="display: none">
+                </div>
+                <div id="btn-go" class="col-2" style="display: none">
+                    <input class="btn btn-default" type="button" name="filter_result" value="Go"
+                           style="float: left; width: 50px;">
+                </div>
+                <div id="btn-reset" class="col-2" style="display: none">
+                    <input class="btn btn-default" type="button" name="filter_result" value="RESET"
+                           style="color: #fff; float: left; width: 70px; background-color: #18A090; ">
+                </div>
+
+            </div>
+        </div></div>
+    </div>
+    <div class="container">
+    <div class="row">
+    <div class="col-lg-12">
+        <div id="map" class="map"></div>
+    </div>
+    </div>
+    <div class="row">
+    <div class="col-lg-12">
+    <table class="table table-striped">
+        <tr>
+            <th>Site code</th>
+            <th>Site description</th>
+            <th>River name</th>
+            <th>Owner</th>
+            <th>Validation Action</th>
+        </tr>
+        {% for obj in location_sites %}
+            <tr>
+                <td><a onclick="zoomToObject({{ obj.geometry_point.x }}, {{ obj.geometry_point.y }})" class="site-link" data-toggle="tooltip" title="Show data in the map">{{ obj.site_code }}</a></td>
+                <td><a>{{ obj.site_description }}</a></td>
+                <td>{{ obj.river.name }}</td>
+                <td>{{ obj.owner.get_full_name }}</td>
+                <td>
+                    <span class="validate-action">
+                        <a onclick="validateObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Validate this data"><i class="fa fa-check-circle"></i></a>
+                    </span>
+                    <span class="reject-action">
+                        <a onclick="rejectObject({{ obj.pk }})" class="btn btn-default" data-toggle="tooltip" title="Reject this data"><i class="fa fa-times-circle"></i></a>
+                    </span>
+                    <span class="reject-action">
+                        <a href="/nonvalidated-site/detail/{{ obj.pk }}/" class="btn btn-default" data-toggle="tooltip" title="View site detail"><i class="fa fa-eye"></i></a>
+                    </span>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+    </div>
+    </div>
+    {% if is_paginated %}
+        <div class="container pagination">
+            <span class="page-links">
+                    <a href="/nonvalidated-site/?page=1{{ custom_url }}">&laquo; first</a>
+                {% if page_obj.has_previous %}
+                    <a href="/nonvalidated-site/?page={{ page_obj.previous_page_number }}{{ custom_url }}">previous</a>
+                {% endif %}
+                {% for page in page_obj.paginator.page_range %}
+                    {% if page == page_obj.number %}
+                        <span class="page-current">
+                            <a href="/nonvalidated-site/?page={{ page_obj.number }}{{ custom_url }}">{{ page_obj.number }}</a>
+                        </span>
+                    {% elif page > page_obj.number|add:'-3' and page < page_obj.number|add:'3' %}
+                        <span>
+                            <a href="/nonvalidated-site/?page={{ page }}{{ custom_url }}">{{ page }}</a>
+                        </span>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <a href="/nonvalidated-site/?page={{ page_obj.next_page_number }}{{ custom_url }}">next</a>
+                {% endif %}
+                    <a href="/nonvalidated-site/?page={{ page_obj.paginator.num_pages }}{{ custom_url }}">last &raquo;</a>
+            </span>
+        </div>
+    {% endif %}
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="confirmValidateModal" data-id="">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Validate Data</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to validate this data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="validateBtn">
+                        Validate
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="confirmRejectModal" data-id="">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Data</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>What is the reason for rejecting this data?</p>
+                    <div class="form-group">
+                        <input class="form-control rejection-message">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="rejectBtn">
+                         Reject
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/libs/datepicker/datepicker.js' %}"></script>
+    <script src="{% static 'js/libs/datepicker/i18n/datepicker.en.js' %}"></script>
+    <script>
+        var validateUrl = '{% url "validate-location-site" %}';
+        var rejectUrl = '{% url "reject-location-site" %}';
+        var customUrl = '{{ custom_url }}';
+        var pageUrl = '/nonvalidated-site/';
+    </script>
+    <script src="{% static 'js/map-review-validation.js' %}"></script>
+
+{% endblock %}

@@ -7,7 +7,6 @@ from bims.models import (
 )
 
 
-
 class LandingPageSummary(APIView):
     def get(self, request, *args):
         taxon_groups = TaxonGroup.objects.filter(
