@@ -3,7 +3,7 @@ from celery import shared_task
 
 
 
-@shared_task(name='bims.tasks.update_location_context', queue='update')
+@shared_task(name='bims.tasks.update_location_context', queue='geocontext')
 def update_location_context(location_site_id, generate_site_code=False):
     from bims.utils.logger import log
     from bims.models import LocationSite

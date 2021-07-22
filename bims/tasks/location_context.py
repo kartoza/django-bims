@@ -112,7 +112,8 @@ LAYER_NAMES = {
 }
 
 
-@shared_task(name='bims.tasks.generate_spatial_scale_filter', queue='update')
+@shared_task(
+    name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter(file_path=None):
     spatial_tree = []
