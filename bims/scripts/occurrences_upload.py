@@ -100,7 +100,7 @@ class OccurrenceProcessor(object):
 
     def finish_process(self):
         if self.site_ids and self.fetch_location_context:
-            update_location_context(
+            update_location_context.delay(
                 location_site_id=','.join(self.site_ids),
                 generate_site_code=True
             )
