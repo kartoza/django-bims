@@ -100,7 +100,7 @@ class OccurrenceProcessor(object):
 
     def finish_process(self):
         if self.site_ids and self.fetch_location_context:
-            update_location_context(
+            update_location_context.delay(
                 location_site_id=','.join(self.site_ids),
                 generate_site_code=True
             )
@@ -127,6 +127,18 @@ class OccurrenceProcessor(object):
         signals.post_save.connect(
             source_reference_post_save_handler,
             sender=SourceReferenceDocument
+        )
+        signals.post_save.connect(
+            location_context_post_save_handler,
+            sender=LocationContextGroup
+        )
+        signals.post_save.connect(
+            location_context_post_save_handler,
+            sender=LocationContextFilter
+        )
+        signals.post_save.connect(
+            location_context_post_save_handler,
+            sender=LocationContextFilterGroupOrder
         )
         generate_spatial_scale_filter()
         # Update source reference filter
@@ -205,6 +217,7 @@ class OccurrenceProcessor(object):
 
     def location_site(self, record):
         """ Process location site data """
+        location_site = None
         location_type, status = LocationType.objects.get_or_create(
             name='PointObservation',
             allowed_geometry='POINT'
@@ -231,23 +244,32 @@ class OccurrenceProcessor(object):
             location_site_name = DataCSVUpload.row_value(record, LOCATION_SITE)
         elif DataCSVUpload.row_value(record, WETLAND_NAME):
             location_site_name = DataCSVUpload.row_value(record, WETLAND_NAME)
-        try:
-            location_site, status = (
-                LocationSite.objects.get_or_create(
-                    location_type=location_type,
-                    geometry_point=record_point,
-                    name=location_site_name,
-                    legacy_site_code=legacy_site_code
-                )
-            )
-        except LocationSite.MultipleObjectsReturned:
+
+        # Find existing location site by FBIS site code
+        fbis_site_code = DataCSVUpload.row_value(record, FBIS_SITE_CODE)
+        if fbis_site_code:
             location_site = LocationSite.objects.filter(
-                location_type=location_type,
-                geometry_point=record_point,
-                name=location_site_name,
-                legacy_site_code=legacy_site_code
-            )[0]
-        if site_description:
+                site_code__iexact=fbis_site_code.strip()
+            ).first()
+
+        if not location_site:
+            try:
+                location_site, status = (
+                    LocationSite.objects.get_or_create(
+                        location_type=location_type,
+                        geometry_point=record_point
+                    )
+                )
+            except LocationSite.MultipleObjectsReturned:
+                location_site = LocationSite.objects.filter(
+                    location_type=location_type,
+                    geometry_point=record_point
+                ).first()
+        if not location_site.name and location_site_name:
+            location_site.name = location_site_name
+        if not location_site.legacy_site_code and legacy_site_code:
+            location_site.legacy_site_code = legacy_site_code
+        if not location_site.site_description and site_description:
             location_site.site_description = site_description
         if refined_geo:
             location_site.refined_geomorphological = refined_geo
@@ -646,6 +668,12 @@ class OccurrenceProcessor(object):
 
 class OccurrencesCSVUpload(DataCSVUpload, OccurrenceProcessor):
     model_name = 'biologicalcollectionrecord'
+
+    def process_started(self):
+        self.start_process()
+
+    def process_ended(self):
+        self.finish_process()
 
     def process_row(self, row):
         self.module_group = self.upload_session.module_group
