@@ -234,9 +234,12 @@ class OccurrenceProcessor(object):
                 message='Missing latitude/longitude'
             )
             return None
+
+        latitude = float(DataCSVUpload.row_value(record, LATITUDE))
+        longitude = float(DataCSVUpload.row_value(record, LONGITUDE))
         record_point = Point(
-            float(DataCSVUpload.row_value(record, LONGITUDE)),
-            float(DataCSVUpload.row_value(record, LATITUDE)))
+            longitude,
+            latitude)
         # Create or get location site
         legacy_site_code = DataCSVUpload.row_value(record, ORIGINAL_SITE_CODE)
         location_site_name = ''
@@ -250,6 +253,13 @@ class OccurrenceProcessor(object):
         if fbis_site_code:
             location_site = LocationSite.objects.filter(
                 site_code__iexact=fbis_site_code.strip()
+            ).first()
+
+        # Find existing location site by lat and lon
+        if len(str(latitude)) > 5 and len(str(longitude)) > 5:
+            location_site = LocationSite.objects.filter(
+                latitude__startswith=latitude,
+                longitude__startswith=longitude
             ).first()
 
         if not location_site:
