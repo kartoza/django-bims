@@ -108,6 +108,7 @@ def download_sass_summary_data_task(
             summary = site_visit_taxa.annotate(
                 date=F('site_visit__site_visit_date'),
             ).values('date').annotate(
+                count=Count('sass_taxon'),
                 sampling_date=F('site_visit__site_visit_date'),
                 full_name=Concat(
                     'survey__owner__first_name',
@@ -115,10 +116,7 @@ def download_sass_summary_data_task(
                     'survey__owner__last_name',
                     output_field=CharField()
                 )
-            ).values('sampling_date', 'full_name').annotate(
-                id=F('id'),
-                survey__id=F('survey__id'),
-                count=Count('sass_taxon'),
+            ).values('count', 'sampling_date', 'full_name').annotate(
                 sass_score=Sum(Case(
                     When(
                         condition=Q(site_visit__sass_version=5,
