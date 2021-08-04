@@ -628,8 +628,10 @@ class OccurrenceProcessor(object):
             'collector_user': collector
         }
         if uuid_value:
+            uuid_without_hyphen = uuid_value.replace('-', '')
             records = BiologicalCollectionRecord.objects.filter(
-                uuid=uuid_value
+                Q(uuid=uuid_value) |
+                Q(uuid=uuid_without_hyphen)
             )
             if records.exists():
                 records.update(**fields)
