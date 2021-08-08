@@ -81,6 +81,7 @@ def download_sass_data_site_task(
 def download_sass_summary_data_task(
         filename, filters, path_file, user_id, send_email = False):
     from bims.utils.celery import memcache_lock
+    from bims.models.source_reference import SourceReference
     import random
 
     user = Profile.objects.get(id=user_id)
@@ -107,15 +108,15 @@ def download_sass_summary_data_task(
             summary = site_visit_taxa.annotate(
                 date=F('site_visit__site_visit_date'),
             ).values('date').annotate(
+                count=Count('sass_taxon'),
                 sampling_date=F('site_visit__site_visit_date'),
                 full_name=Concat(
-                    'site_visit__owner__first_name',
+                    'survey__owner__first_name',
                     Value(' '),
-                    'site_visit__owner__last_name',
+                    'survey__owner__last_name',
                     output_field=CharField()
                 )
-            ).values('sampling_date', 'full_name').annotate(
-                count=Count('sass_taxon'),
+            ).values('count', 'sampling_date', 'full_name').annotate(
                 sass_score=Sum(Case(
                     When(
                         condition=Q(site_visit__sass_version=5,
@@ -150,6 +151,12 @@ def download_sass_summary_data_task(
             ).order_by('sampling_date')
             context['location_contexts'] = LocationContext.objects.filter(
                 site__in=site_visit_taxa.values('site_visit__location_site')
+            )
+            context['default_source_reference'] = (
+                SourceReference.objects.filter(
+                    sourcereferencedatabase__source__name__icontains=
+                    'rivers database'
+                ).first()
             )
 
             serializer = SassSummaryDataSerializer(

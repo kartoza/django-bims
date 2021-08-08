@@ -219,7 +219,7 @@ def process_source_reference(
                         )
                     )
             else:
-                raise ValueError('Peer reviewed should have a DOI')
+                return 'Peer reviewed should have a DOI', None
         elif (
                 reference_category.lower().startswith('published') or
                 'thesis' in reference_category.lower()

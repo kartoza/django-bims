@@ -433,5 +433,8 @@ ROOT_URLCONF = 'core.urls'
 
 
 CELERY_TASK_QUEUES += (
-    Queue('search', GEONODE_EXCHANGE, routing_key='search'),
+    Queue('search',
+          GEONODE_EXCHANGE, routing_key='search', priority=0),
+    Queue('geocontext',
+          GEONODE_EXCHANGE, routing_key='geocontext', priority=0),
 )

@@ -8,8 +8,7 @@ FILE_HEADERS = [
     'Latitude',
     'Longitude',
     'Sampling Date',
-    'Taxon',
-    'Present'
+    'Taxon'
 ]
 
 

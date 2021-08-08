@@ -334,27 +334,35 @@ class SassSummaryDataSerializer(
 
     def get_reference_category(self, obj):
         identifier = ''
+        reference_category = '-'
         if obj['source_reference']:
             identifier = self.get_source_reference(obj)
-        if not identifier:
-            return '-'
-        if self.context['source_reference'][identifier]:
-            return self.context['source_reference'][identifier].reference_type
+        if identifier and self.context['source_reference'][identifier]:
+            reference_category = (
+              self.context['source_reference'][identifier].reference_type
+            )
         else:
-            return '-'
+            if self.context['default_source_reference']:
+                reference_category = (
+                    self.context['default_source_reference'].reference_type
+                )
+        return reference_category
 
     def get_study_reference(self, obj):
         identifier = ''
+        study_reference = '-'
         if obj['source_reference']:
             identifier = self.get_source_reference(obj)
-        if not identifier:
-            return '-'
-        if self.context['source_reference'][identifier]:
-            return str(
+        if identifier and self.context['source_reference'][identifier]:
+            study_reference = str(
                 self.context['source_reference'][identifier].title
             )
         else:
-            return '-'
+            if self.context['default_source_reference']:
+                study_reference = (
+                    self.context['default_source_reference'].title
+                )
+        return study_reference
 
     def get_river_name(self, obj):
         return obj['river_name']
@@ -372,6 +380,8 @@ class SassSummaryDataSerializer(
         return obj['FBIS_site_code']
 
     def get_owner(self, obj):
+        if not obj['full_name'].strip():
+            return '-'
         return obj['full_name']
 
     def get_sass_version(self, obj):
