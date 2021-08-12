@@ -189,6 +189,15 @@
                             <option>All</option>
                         </select>
                     </div>
+                    <div class="filter-title">Module</div>
+                    <div class="filter-value">
+                        <select class="form-control form-control-sm module-select">
+                            <option>All</option>
+                            {% for module in modules %}
+                                <option value="{{ module.id }}" {% if selected_module == module.id %}selected{% endif %}>{{ module.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="col-10 list-content">
@@ -392,6 +401,15 @@
                     })
                 }
             )
+
+            $('.module-select').change(function (event, ui) {
+                let val = $(event.target).val();
+                if (val && val !== 'All') {
+                    insertParam('modules', val);
+                } else {
+                    insertParam('modules', ``);
+                }
+            })
         });
 
         $('.order-button').click(function (event) {
