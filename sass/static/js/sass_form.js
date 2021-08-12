@@ -262,17 +262,35 @@ $(document).ready(function () {
         geometry: new ol.geom.Point(locationSiteCoordinate),
     });
     markerSource.addFeature(iconFeature);
-    let map = new ol.Map({
-        target: 'site-map',
-        layers: [
+    const baseLayer = []
+    if(bingKey){
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.BingMaps({
+                key: bingKey,
+                imagerySet: 'AerialWithLabels'
+            })
+            })
+        )
+    }
+    else {
+        baseLayer.push(
             new ol.layer.Tile({
                 source: new ol.source.OSM()
-            }),
-            new ol.layer.Vector({
-                source: markerSource,
-                style: markerStyle,
-            }),
-        ],
+            })
+        )
+    }
+
+    baseLayer.push(
+        new ol.layer.Vector({
+            source: markerSource,
+            style: markerStyle,
+        }),
+    )
+
+    let map = new ol.Map({
+        target: 'site-map',
+        layers: baseLayer,
         view: new ol.View({
             center: locationSiteCoordinate,
             zoom: 10

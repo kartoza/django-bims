@@ -26,7 +26,8 @@ from bims.models import (
     BIOTOPE_TYPE_BROAD,
     BIOTOPE_TYPE_SUBSTRATUM,
     Survey,
-    Chem, ChemicalRecord
+    Chem, ChemicalRecord,
+    BaseMapLayer
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
@@ -142,6 +143,11 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
+
+        try:
+            context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            context['bing_key'] = ''
 
         # -- Taxa list
         taxon_group, created = TaxonGroup.objects.get_or_create(

@@ -264,18 +264,35 @@ $(function () {
         geometry: new ol.geom.Point(locationSiteCoordinate),
     });
     markerSource.addFeature(iconFeature);
+    const baseLayer = []
+
+    if(bingKey){
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.BingMaps({
+                key: bingKey,
+                imagerySet: 'AerialWithLabels'
+            })
+            })
+        )
+    }
+    else {
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            })
+        )
+    }
+    baseLayer.push(
+        new ol.layer.Vector({
+            source: markerSource,
+            style: markerStyle,
+        }),
+    )
 
     map = new ol.Map({
         target: 'fish-map',
-        layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
-            }),
-            new ol.layer.Vector({
-                source: markerSource,
-                style: markerStyle,
-            }),
-        ],
+        layers: baseLayer,
         view: new ol.View({
             center: locationSiteCoordinate,
             zoom: 10

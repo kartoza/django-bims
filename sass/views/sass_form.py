@@ -21,6 +21,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
 from geonode.people.models import Profile
+
+from bims.models import BaseMapLayer
 from bims.models.location_site import (
     LocationSite,
     location_site_post_save_handler
@@ -723,6 +725,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             except SiteImage.DoesNotExist:
                 pass
             context['sass_version'] = self.site_visit.sass_version
+        try:
+            context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            context['bing_key'] = ''
 
         return context
 
