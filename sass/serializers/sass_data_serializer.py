@@ -380,9 +380,14 @@ class SassSummaryDataSerializer(
         return obj['FBIS_site_code']
 
     def get_owner(self, obj):
-        if not obj['full_name'].strip():
-            return '-'
-        return obj['full_name']
+        site_visit = SiteVisit.objects.get(id=obj['sass_id'])
+        owner = site_visit.owner
+        if owner:
+            return '{} {}'.format(
+                owner.first_name,
+                owner.last_name
+            )
+        return '-'
 
     def get_sass_version(self, obj):
         return obj['sass_version']
