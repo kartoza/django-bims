@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Subquery, OuterRef
 from bims.models.survey import Survey
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
 from bims.api_views.search import CollectionSearch
 
 
@@ -90,6 +91,14 @@ class SiteVisitListView(ListView):
             )
         except SyntaxError:
             context['source_collection'] = []
+
+        # Module
+        context['modules'] = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+        )
+        selected_module = self.request.GET.get('modules', '')
+        if selected_module:
+            context['selected_module'] = int(selected_module)
 
         context['total_sites'] = total_sites
         context['total_records'] = total_records

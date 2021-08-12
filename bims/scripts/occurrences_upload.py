@@ -176,15 +176,17 @@ class OccurrenceProcessor(object):
                 site=location_site,
                 date=sampling_date,
                 collector_user=collector,
-                owner=collector
+                owner=collector,
+                validated=True
             )
         except Survey.MultipleObjectsReturned:
-            self.survey = Survey.objects.get_or_create(
+            self.survey = Survey.objects.filter(
                 site=location_site,
                 date=sampling_date,
                 collector_user=collector,
-                owner=collector
-            )[0]
+                owner=collector,
+                validated=True
+            ).first()
 
         for survey_data_key in SURVEY_DATA:
             if survey_data_key in record and DataCSVUpload.row_value(
@@ -625,7 +627,8 @@ class OccurrenceProcessor(object):
                 row, SPECIES_NAME),
             'collection_date': sampling_date,
             'taxonomy': taxonomy,
-            'collector_user': collector
+            'collector_user': collector,
+            'validated': True
         }
         if uuid_value:
             uuid_without_hyphen = uuid_value.replace('-', '')

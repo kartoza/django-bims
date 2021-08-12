@@ -5,6 +5,7 @@
 
 from django.db import models
 from django.utils import timezone
+from django.dispatch import receiver
 from bims.models import LocationSite
 from bims.models.validation import AbstractValidation
 
