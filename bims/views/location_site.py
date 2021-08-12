@@ -63,7 +63,9 @@ class LocationSiteFormView(TemplateView):
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
         try:
-            context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key
+            context['bing_key'] = (
+                BaseMapLayer.objects.get(source_type='bing').key
+            )
         except BaseMapLayer.DoesNotExist:
             context['bing_key'] = ''
 
