@@ -454,7 +454,7 @@ class BiologicalCollectionRecord(AbstractValidation):
 
 
 @receiver(models.signals.post_save)
-def collection_post_save_handler(sender, instance, **kwargs):
+def collection_post_save_handler(sender, instance, created, **kwargs):
     """
     Fetch taxon from original species name.
     """
@@ -465,6 +465,19 @@ def collection_post_save_handler(sender, instance, **kwargs):
         collection_post_save_handler,
     )
     instance.on_post_save()
+
+    if created:
+        from bims.api_views.send_notification_to_validator import (
+            send_notification_validation
+        )
+        survey = instance.survey
+        if survey and not instance.validated:
+            if not survey.validated and not survey.ready_for_validation:
+                survey.ready_for_validation = True
+                if 'gbif' not in instance.source_collection.lower():
+                    send_notification_validation(survey.pk)
+                survey.save()
+
     models.signals.post_save.connect(
         collection_post_save_handler,
     )
@@ -475,9 +488,3 @@ def collection_post_save_update_cluster(sender, instance, **kwargs):
     if not issubclass(sender, BiologicalCollectionRecord):
         return
 
-
-@receiver(models.signals.post_delete)
-def cluster_post_delete_handler(sender, instance, using, **kwargs):
-    if not issubclass(sender, BiologicalCollectionRecord) and \
-            not issubclass(sender, LocationSite):
-        return
