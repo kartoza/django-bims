@@ -225,26 +225,7 @@
                     <input type="hidden" name="owner" id="owner_id" value="{{ user_id }}">
                 </div>
             </div>
-            <div class="form-group row">
-                <label for="site_image" class="col-2 col-form-label">
-                    Abiotic Data
-                </label>
-                <div class="col-10">
-                    {% if surveys %}
-                    <ul class="list-group">
-                        {% for survey in surveys %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center survey">
-                            {{ survey.date }}
-                            <span class="badge badge-primary badge-pill">Abiotic records : {{ survey.chemical_record_count }}</span>
-                            <span><a href="/abiotic/?survey={{ survey.id }}&next=/location-site-form/update/?id={{ site_id }}"  class="btn btn-success">Update</a></span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <div style="padding-top: 10px;">-</div>
-                    {% endif %}
-                </div>
-            </div>
+
             <div class="form-group row">
                 <label for="site_image" class="col-2 col-form-label">
                     Site Image
