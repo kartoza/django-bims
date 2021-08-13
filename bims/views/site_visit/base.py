@@ -7,6 +7,7 @@ from bims.models.site_image import SiteImage
 from bims.models.algae_data import AlgaeData
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.chem import Chem
+from bims.models.basemap_layer import BaseMapLayer
 
 
 class SiteVisitBaseView(View):
@@ -177,6 +178,12 @@ class SiteVisitBaseView(View):
                 taxon_group=context['taxon_group']
             )
         )
+        try:
+            context['bing_key'] = (
+                BaseMapLayer.objects.get(source_type='bing').key
+            )
+        except BaseMapLayer.DoesNotExist:
+            context['bing_key'] = ''
         try:
             context['site_image'] = SiteImage.objects.get(
                 survey=self.object
