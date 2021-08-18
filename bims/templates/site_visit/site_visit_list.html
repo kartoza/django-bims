@@ -203,7 +203,10 @@
             <div class="col-10 list-content">
                 {% if messages %}
                     {% for message in messages %}
-                        {% if "site_visit_validation" in message.tags %}
+                        {% if "site_visit_validation"  in message.tag %}
+                            <div class="message-bar"><span class="message"></span>{{ message }}<span class="close-bar">✖</span></div>
+                        {% endif %}
+                        {% if "delete_site_visit" in message.tag %}
                             <div class="message-bar"><span class="message"></span>{{ message }}<span class="close-bar">✖</span></div>
                         {% endif %}
                     {% endfor %}
