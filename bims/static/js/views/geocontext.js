@@ -1,7 +1,7 @@
 define(['backbone', 'underscore', 'shared', 'ol', 'jquery'], function (Backbone, _, Shared, ol, $) {
     return Backbone.View.extend({
         geocontextUrl: _.template(
-            "<%= geocontextUrl %>/api/v1/geocontext/value/collection/<%= latitude %>/<%= longitude %>/<%= geocontextCollectionKey %>"),
+            "<%= geocontextUrl %>/api/v2/query?registry=collection&key=<%= geocontextCollectionKey %>&x=<%= longitude %>&y=<%= latitude %>"),
         loadSuccess: function () {
             $('#geocontext-information-container img').hide();
             $('#geocontext-information-container .content').show();
@@ -31,12 +31,12 @@ define(['backbone', 'underscore', 'shared', 'ol', 'jquery'], function (Backbone,
                     geocontext_content = geocontext_content.concat(
                             "<div>Collection: " + data['name'] + "</div>\n");
                     // Iterate data for all context groups
-                    $.each(data["context_group_values"], function (index, group_value) {
+                    $.each(data["groups"], function (index, group_value) {
                         geocontext_content = geocontext_content.concat(
                             "<div> Group: " + group_value['name'] + "</div>\n");
                         geocontext_content = geocontext_content.concat(
                             "<table >\n");
-                        $.each(group_value["service_registry_values"], function (index_csr, csr) {
+                        $.each(group_value["services"], function (index_csr, csr) {
                             geocontext_content = geocontext_content.concat(
                                 "<tr>" +
                                 "<td>" + csr['name'] + "</td>" +
@@ -82,12 +82,12 @@ define(['backbone', 'underscore', 'shared', 'ol', 'jquery'], function (Backbone,
                     geocontext_content = geocontext_content.concat(
                             "<div>Collection: " + data['name'] + "</div>\n");
                     // Iterate data for all context groups
-                    $.each(data["context_group_values"], function (index, group_value) {
+                    $.each(data["groups"], function (index, group_value) {
                         geocontext_content = geocontext_content.concat(
                             "<div> Group: " + group_value['name'] + "</div>\n");
                         geocontext_content = geocontext_content.concat(
                             "<table >\n");
-                        $.each(group_value["service_registry_values"], function (index_csr, csr) {
+                        $.each(group_value["services"], function (index_csr, csr) {
                             geocontext_content = geocontext_content.concat(
                                 "<tr>" +
                                 "<td>" + csr['name'] + "</td>" +

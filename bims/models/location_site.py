@@ -26,7 +26,6 @@ from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup
 from bims.utils.decorator import prevent_recursion
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -34,9 +33,8 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
     """Location Site model."""
 
     __original_centroid = None
-    geocontext_url_format = '{geocontext_url}/api/v1/geocontext/value/' \
-                            'collection/{longitude}/{latitude}/' \
-                            '{geocontext_collection_key}'
+    geocontext_url_format = '{geocontext_url}/api/v2/query?registry=collection&key={geocontext_collection_key}&' \
+                            'x={longitude}&y={latitude}&outformat=json'
 
     name = models.CharField(
         max_length=300,
@@ -191,9 +189,9 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         try:
             return (
                 location_context
-                ['context_group_values']
+                ['groups']
                 [group_name]
-                ['service_registry_values']
+                ['services']
             )
         except KeyError:
             return {}
@@ -253,14 +251,14 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         latitude = self.get_centroid().y
 
         geocontext_group_url_format = (
-            '{geocontext_url}/api/v1/geocontext/value/group/'
-            '{longitude}/{latitude}/{geocontext_group_key}')
+            '{geocontext_url}/v2/query?registry=group&key={geocontext_group_key}&'
+            'x={longitude}&y={latitude}&outformat=json')
         # build url
         url = geocontext_group_url_format.format(
             geocontext_url=geocontext_url,
+            geocontext_group_key=group_key,
             longitude=longitude,
             latitude=latitude,
-            geocontext_group_key=group_key,
         )
         LOGGER.info('Request url : {}'.format(url))
 
@@ -279,7 +277,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         geocontext_data_string = self.get_geocontext_group_data(group_key)
         try:
             geocontext_data = json.loads(geocontext_data_string)
-            for geocontext_value in geocontext_data['service_registry_values']:
+            for geocontext_value in geocontext_data['services']:
                 if not geocontext_value['value']:
                     continue
                 try:
@@ -319,8 +317,8 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
                         group=location_context_group
                     )
                 if (
-                    not location_context_group.name or
-                    location_context_group.name == '-'
+                        not location_context_group.name or
+                        location_context_group.name == '-'
                 ):
                     location_context_group.name = geocontext_value['name']
                 location_context_group.key = geocontext_value['key']
