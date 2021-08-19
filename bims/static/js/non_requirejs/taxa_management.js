@@ -105,18 +105,10 @@ $downloadCsvButton.click(function (e) {
     $target.prop('disabled', true);
     $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`)
     fetch(taxaListCurrentUrl.replace('/api/taxa-list/', urlDownload))
-        .then(resp => resp.blob())
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'Taxa_list.csv';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
+        .then((resp) => {
             $target.prop('disabled', false);
             $target.html(targetHtml);
+            alert(downloadRequestMessage);
         })
         .catch(() => alert('Cannot download the file'));
 });
