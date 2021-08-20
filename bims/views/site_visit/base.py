@@ -70,7 +70,7 @@ class SiteVisitBaseView(View):
             date=self.object.date,
             location_site=self.object.site,
             survey=self.object,
-            chem__in= Chem.objects.filter(
+            chem__in=Chem.objects.filter(
                 chem_code__in=biomass_codes
             )
         )

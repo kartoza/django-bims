@@ -1,15 +1,21 @@
 import json
+import logging
+
 from django.test import TestCase
+from bims.models import LocationSite
 from bims.tests.model_factories import (
     SurveyF, UserF, Survey,
-    BiologicalCollectionRecordF, BiologicalCollectionRecord
+    BiologicalCollectionRecordF, BiologicalCollectionRecord, LocationSiteF
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TestSiteVisitView(TestCase):
     """
     Test site visit view
     """
+
     def setUp(self):
         self.collector = UserF.create()
         self.owner = UserF.create()
@@ -148,7 +154,7 @@ class TestSiteVisitView(TestCase):
         post_data = {
             'collection-id-list': [bio_1.id],
             'site': self.survey.site.id,
-            'date':'2021-07-09'
+            'date': '2021-07-09'
         }
         response = self.client.post(
             '/site-visit/update/1/',
@@ -183,3 +189,43 @@ class TestSiteVisitView(TestCase):
             id=bio_id
         ).exists())
         self.assertTrue(Survey.objects.get(id=self.survey.id).validated)
+
+    def test_SiteVisitView_delete(self):
+        # Delete site visit
+        location_site = LocationSiteF.create()
+
+        survey = SurveyF.create(
+            id=2,
+            collector_user=self.collector,
+            owner=self.owner,
+            site=location_site
+        )
+
+        bio = BiologicalCollectionRecordF.create(
+            survey=survey
+        )
+
+        res = self.client.login(
+            username=self.superuser.username,
+            password='password'
+        )
+        post_data = {}
+        self.client.post(
+            '/site-visit/delete/{}/'.format(
+                survey.id
+            ),
+            post_data,
+            follow=True
+        )
+
+        self.assertFalse(
+            Survey.objects.filter(id=survey.id).exists()
+        )
+
+        self.assertFalse(
+            BiologicalCollectionRecord.objects.filter(id=bio.id).exists()
+        )
+
+        self.assertFalse(
+            LocationSite.objects.filter(id=location_site.id).exists()
+        )

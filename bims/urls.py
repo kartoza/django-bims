@@ -63,7 +63,10 @@ from bims.views.svg_to_pdf import svg_to_pdf
 from bims.api_views.delete_collection_data import CollectionDeleteApiView
 from bims.views.documents import BimsDocumentUpdateView
 from bims.views.site_visit import (
-    SiteVisitUpdateView, SiteVisitListView, SiteVisitDetailView
+    SiteVisitUpdateView,
+    SiteVisitListView,
+    SiteVisitDetailView,
+    SiteVisitDeleteView
 )
 from bims.views.taxa_management import TaxaManagementView
 from bims.views.dashboard_management import DashboardManagementView
@@ -169,6 +172,8 @@ urlpatterns = [
         name='site-visit-list'),
     url(r'^site-visit/detail/(?P<sitevisitid>\d+)/$',
         SiteVisitDetailView.as_view()),
+    url(r'^site-visit/delete/(?P<sitevisitid>\d+)/$',
+        SiteVisitDeleteView.as_view()),
     url(r'^taxa-management/$',
         TaxaManagementView.as_view()),
     url(r'^backups-management/$',
