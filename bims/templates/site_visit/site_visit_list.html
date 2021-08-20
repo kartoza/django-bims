@@ -241,9 +241,6 @@
                             <td>
                                 {% if site_visit.source_collection.upper != 'GBIF' %}
                                     <a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a>
-                                    {% if site_visit.collector_user and site_visit.collector_user.get_full_name != site_visit.owner.get_full_name  %}
-                                        , <a href="/profile/{{ site_visit.collector_user.username }}/">{{ site_visit.collector_user.get_full_name }}</a>
-                                    {% endif %}
                                 {% endif %}
                             </td>
                             <td>{{ site_visit.total }}</td>
