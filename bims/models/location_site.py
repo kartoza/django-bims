@@ -251,7 +251,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         latitude = self.get_centroid().y
 
         geocontext_group_url_format = (
-            '{geocontext_url}/v2/query?registry=group&key={geocontext_group_key}&'
+            '{geocontext_url}/api/v2/query?registry=group&key={geocontext_group_key}&'
             'x={longitude}&y={latitude}&outformat=json')
         # build url
         url = geocontext_group_url_format.format(
