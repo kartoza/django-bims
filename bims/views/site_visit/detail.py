@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from bims.models.location_site import LocationSite
 
@@ -43,6 +44,10 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
             return True
         return Survey.objects.filter(
                 id=site_visit_id, ).exists()
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(SiteVisitDeleteView, self).dispatch(request, *args, **kwargs)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
