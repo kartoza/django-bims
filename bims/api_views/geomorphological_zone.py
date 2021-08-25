@@ -30,8 +30,7 @@ class GetGeomorphologicalZone(LoginRequiredMixin, APIView):
             if response.status_code == 200:
                 geomorphological_group = json.loads(response.content)
                 geomorphological_zone = (
-                    geomorphological_group['services'][1][
-                        'value']
+                    geomorphological_group['services'][1]['value']
                 )
         except (HTTPError, ValueError, KeyError):
             pass
