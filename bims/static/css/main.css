@@ -115,10 +115,6 @@
     height: calc(100% - 51px);
 }
 
-.list-form .row {
-    height: 100%;
-}
-
 .list-form .side-panel {
     padding: 2em;
     background-color: #fbfbfb;
