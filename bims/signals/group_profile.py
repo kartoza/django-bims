@@ -39,7 +39,9 @@ def update_group_profile_members(instance, sender, **kwargs):
                 member.role = GroupMember.MEMBER
                 member.save()
             member_joined.append(member)
-        except GroupProfile.DoesNotExist:
+        except (
+                GroupProfile.DoesNotExist,
+                GroupMember.MultipleObjectsReturned):
             continue
 
     for group_member in GroupMember.objects.filter(user=instance):
