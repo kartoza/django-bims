@@ -402,7 +402,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         if isinstance(date, libdatetime):
             date = date.date()
         survey.owner = owner
-        survey.collection_date = date
+        survey.date = date
         site_visit.site_visit_date = date
         site_visit.time = datetime
         site_visit.owner = owner

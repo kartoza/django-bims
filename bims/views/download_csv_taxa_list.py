@@ -1,12 +1,16 @@
 # coding=utf-8
-import csv
-
-from django.http import HttpResponse
+import datetime
+import os
+from django.http import HttpResponseForbidden, JsonResponse
+from django.conf import settings
 from rest_framework import serializers
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
-from bims.api_views.taxon import TaxaList
+from bims.api_views.csv_download import send_csv_via_email
+from bims.tasks.download_taxa_list import (
+    download_csv_taxa_list as download_csv_taxa_list_task
+)
 
 
 class TaxaCSVSerializer(serializers.ModelSerializer):
@@ -148,42 +152,47 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
 
 
 def download_csv_taxa_list(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden('Not logged in')
+
     taxon_group_id = request.GET.get('taxonGroup')
     taxon_group = TaxonGroup.objects.get(
         id=taxon_group_id
     )
-    taxa_list = TaxaList.get_taxa_by_parameters(request)
 
-    taxa_serializer = TaxaCSVSerializer(
-        taxa_list,
-        many=True
+    current_time = datetime.datetime.now()
+
+    # Check if the file exists in the processed directory
+    filename = (
+        f'{taxon_group}-{current_time.year}-'
+        f'{current_time.month}-{current_time.day}-'
+        f'{current_time.hour}'
+    ).replace(' ', '_')
+    folder = settings.PROCESSED_CSV_PATH
+    path_folder = os.path.join(
+        settings.MEDIA_ROOT,
+        folder
     )
+    path_file = os.path.join(path_folder, filename)
 
-    rows = taxa_serializer.data
-    headers = taxa_serializer.context['headers']
+    if not os.path.exists(path_folder):
+        os.mkdir(path_folder)
 
-    # Create the HttpResponse object with the appropriate CSV header.
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = \
-        'attachment; filename="' + taxon_group.name + '.csv"'
+    if os.path.exists(path_file):
+        send_csv_via_email(
+            user=request.user,
+            csv_file=path_file,
+            file_name=filename
+        )
+    else:
+        download_csv_taxa_list_task.delay(
+            request.GET.dict(),
+            csv_file=path_file,
+            filename=filename,
+            user_id=request.user.id
+        )
 
-    writer = csv.writer(response)
-    updated_headers = []
-
-    for header in headers:
-        if header == 'class_name':
-            header = 'class'
-        elif header == 'taxon_rank':
-            header = 'Taxon Rank'
-        elif header == 'common_name':
-            header = 'Common Name'
-        header = header.replace('_or_', '/')
-        if not header.istitle():
-            header = header.replace('_', ' ').capitalize()
-        updated_headers.append(header)
-    writer.writerow(updated_headers)
-
-    for taxon_row in rows:
-        writer.writerow([value for key, value in taxon_row.items()])
-
-    return response
+    return JsonResponse({
+        'status': 'processing',
+        'filename': filename
+    })
