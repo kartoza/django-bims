@@ -1,0 +1,52 @@
+version: '3.7'
+volumes:
+  static-data:
+  media-data:
+  database:
+services:
+  db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_USER: ${POSTGRES_USER:-docker}
+      POSTGRES_PASS: ${POSTGRES_PASS:-docker}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
+
+  uwsgi:
+    build:
+      context: docker
+    hostname: uwsgi
+    working_dir: /usr/src/geonode
+    entrypoint: [ ]
+    environment:
+      - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+      - DATABASE_USERNAME=${POSTGRES_PASS:-docker}
+      - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+      - DEFAULT_BACKEND_DATASTORE=datastore
+      - GEONODE_DATABASE=${GEONODE_DATABASE:-gis}
+      - GEONODE_DATABASE_PASSWORD=${GEONODE_DATABASE_PASSWORD:-docker}
+      - GEONODE_GEODATABASE=${GEONODE_DATABASE:-geonode_data}
+      - GEONODE_GEODATABASE_PASSWORD=${GEONODE_GEODATABASE_PASSWORD:-docker}
+      - GEONODE_GEODATABASE_USERNAME=${GEONODE_GEODATABASE_USERNAME:-geonode_data}
+      - BROKER_URL=amqp://rabbitmq:5672
+      - DATABASE_URL=postgis://docker:docker@db:5432/gis
+      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - APP_NAME=bims
+    links:
+      - smtp:smtp
+      - db:db
+      - geoserver:geoserver
+      - rabbitmq:rabbitmq
+      - worker:worker
+    restart: unless-stopped
+    user: root
+    extra_hosts:
+      - 'localhost: 192.168.1.197'

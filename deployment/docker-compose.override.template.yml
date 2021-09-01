@@ -1,0 +1,188 @@
+# Specific configuration for development environment
+
+
+# Exactly the same as production but for dev env, we expose the port and uses
+# different port for the web.
+version: '3.7'
+services:
+
+  db:
+    volumes:
+      - ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+      - ./sql:/sql
+
+  
+    ports:
+      - "6543:5432"
+
+  
+  
+  dbbackups:
+    volumes:
+      - ./backups:/backups
+
+  geoserver:
+    environment:
+
+      
+      - GEOSERVER_ADMIN_PASSWORD=admingeoserver
+
+      
+      - SITEURL=http://django-bims.test/
+
+      
+    ports:
+      # for geoserver
+      - "63305:8080"
+
+  uwsgi:
+    build:
+      context: ${PWD}
+      dockerfile: deployment/docker/Dockerfile
+      target: dev
+    # command: python manage.py runserver 0.0.0.0:8080
+    environment:
+
+      
+      - SITE_DOMAIN_NAME=http://django-bims.test
+
+      
+      - GEOCONTEXT_URL=https://geocontext.kartoza.com
+
+      
+      - GEOCONTEXT_COLLECTION_KEY=climate
+
+      
+      - CONTACT_US_EMAIL=dimas@kartoza.com
+
+      
+      - DEBUG=True
+
+      
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+
+      
+      - RABBITMQ_HOST=rabbitmq
+
+      
+      - PYTHONPATH=/usr/src/app:/home/web/django_project
+
+      
+      - ROOT_URLCONF=core.urls
+
+      
+      - DATABASE_NAME=gis
+
+      
+      - DATABASE_PASSWORD=docker
+
+      
+      - DATABASE_USERNAME=docker
+
+      
+      - DATABASE_HOST=db
+
+      
+      - SITEURL=http://django-bims.test/
+
+      
+      - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+
+      
+      
+      - GEONODE_INSTANCE_NAME=geonode
+
+      
+      - DEFAULT_BACKEND_DATASTORE=
+
+      
+      - GEONODE_DATABASE=gis
+
+      
+      - GEONODE_DATABASE_USER=docker
+
+      
+      - GEONODE_DATABASE_PASSWORD=docker
+
+      
+      - GEONODE_GEODATABASE=geonode_data
+
+      - GEONODE_GEODATABASE_USERNAME=docker
+
+      - GEONODE_GEODATABASE_PASSWORD=docker
+
+      
+      - UWSGI_CMD=uwsgi --ini /usr/src/app/uwsgi.ini
+
+      
+      - IS_CELERY=False
+
+      
+      - C_FORCE_ROOT=1
+
+      
+      - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+
+      
+      - GEOSERVER_LOCATION=http://geoserver:8080/geoserver/
+
+      
+      - STATIC_ROOT=/home/web/static/static
+
+      
+      - MEDIA_ROOT=/home/web/media
+
+      
+      - GEOIP_PATH=/home/web/media/geoip.db
+
+      
+      - ALLOWED_HOSTS=['django-bims.test']
+
+      
+      - ADMIN_EMAILS=dimas@kartoza.com
+
+      
+      - GEOSERVER_ADMIN_PASSWORD=admingeoserver
+
+      
+      - ASYNC_SIGNALS_GEONODE=True
+
+      
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./logs:/var/log/
+      - ../.pycharm_helpers:/root/.pycharm_helpers
+      - ./backups:/home/web/backups
+      - /home/dimas/.config/JetBrains/PyCharm2021.2:/home/dimas/.config/JetBrains/PyCharm2021.2
+    ports:
+      # for django test server
+      - "63302:8080"
+      # for ssh
+      - "63303:22"
+      # for karma tests
+      - "63304:9876"
+
+  web:
+    volumes:
+      - ./sites-enabled:/etc/nginx/conf.d:ro
+      # I dont use volumes_from as I want to use the ro modifier
+      - ./static:/home/web/static:ro
+      - ./media:/home/web/media:ro
+      - ./logs:/var/log/nginx
+
+  
+  worker:
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - PYTHONPATH=/usr/src/app:/home/web/django_project
+      - DEFAULT_BACKEND_DATASTORE=
+
+
+  searchworker:
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - PYTHONPATH=/usr/src/app:/home/web/django_project
+      - DEFAULT_BACKEND_DATASTORE=
