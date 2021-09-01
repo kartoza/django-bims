@@ -1,8 +1,13 @@
+import json
+import logging
+
 import requests
 from requests.exceptions import HTTPError
 from bims.utils.get_key import get_key
 from bims.models import LocationSite, LocationContext
 from bims.utils.logger import log
+
+logger = logging.getLogger('bims')
 
 
 def fetch_river_name(latitude, longitude):
@@ -11,12 +16,12 @@ def fetch_river_name(latitude, longitude):
     :param latitude: LocationSite latitude
     :param longitude: LocationSite longitude
     """
-    name = ''
+    river_name = ''
     base_geocontext_url = get_key('GEOCONTEXT_URL')
-    api_url = '/api/v1/geocontext/river-name/'
+    api_url = '/api/v2/query?registry=service&key=river_name&'
     y = latitude
     x = longitude
-    geocontext_url = '{base}{api_url}{x}/{y}/'.format(
+    geocontext_url = '{base}{api_url}x={x}&y={y}&outformat=json'.format(
         base=base_geocontext_url,
         api_url=api_url,
         x=x,
@@ -26,12 +31,12 @@ def fetch_river_name(latitude, longitude):
     try:
         response = requests.get(geocontext_url)
         if response.status_code == 200:
-            name = response.content
-            name = name.decode('utf-8').strip('\"')
+            name = json.loads(response.content)
+            river_name = name['value']
     except HTTPError:
         pass
 
-    return name
+    return river_name
 
 
 def allocate_site_codes_from_river(update_site_code=True, location_id=None):
