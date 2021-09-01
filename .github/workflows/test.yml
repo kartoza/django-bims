@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_IMAGE: kartoza/kbims_uwsgi
-    container: python:3.7
     steps:
       - uses: actions/checkout@v2
       - name: Set up QEMU

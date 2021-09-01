@@ -51,6 +51,7 @@ services:
     image: bims_uwsgi:latest
 
   uwsgi:
+    image: kartoza/kbims_uwsgi
     build:
       context: docker
     hostname: uwsgi
