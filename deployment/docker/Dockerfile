@@ -57,7 +57,10 @@ COPY . /usr/src/app
 
 ADD REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt; pip install uwsgi
-RUN npm -g install yuglify
+RUN npm --quiet -g install yuglify
+
+WORKDIR /home/web/django_project/bims
+RUN npm install --quiet -g webpack@5.50.0 && npm install --quiet -g webpack-cli@4.8.0 && npm install --quiet && webpack --mode development
 
 RUN pip install MarkupSafe==1.1.1 && pip install pygbif==0.6.0
 

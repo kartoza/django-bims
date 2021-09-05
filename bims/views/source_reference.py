@@ -1,5 +1,5 @@
 import json
-from django.views.generic import ListView, UpdateView, View
+from django.views.generic import ListView, UpdateView, View, CreateView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -447,4 +447,31 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                 )['document_source']
             except:  # noqa
                 pass
+        return context
+
+
+class AddSourceReferenceView(UserPassesTestMixin, CreateView):
+    template_name = 'source_references/add_source_reference.html'
+    model = SourceReference
+    fields = '__all__'
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        return self.request.user.has_perm('bims.change_sourcereference')
+
+    def get_context_data(self, **kwargs):
+        context = super(
+            AddSourceReferenceView, self).get_context_data(**kwargs)
+        reference_type = [
+            'Unpublished',
+            'Database',
+            'Published report or thesis',
+            'Peer-reviewed scientific article'
+        ]
+        context['params'] = {
+            'reference_type': json.dumps(reference_type)
+        }.items()
         return context

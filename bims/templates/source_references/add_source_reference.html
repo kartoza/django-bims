@@ -1,0 +1,49 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Add Source Reference
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://unpkg.com/regenerator-runtime@0.13.1/runtime.js"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <style>
+        .container-fluid {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .full-height {
+            height: calc(100vh - 72px);
+            padding-bottom: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    {% load render_bundle from webpack_loader %}
+    {% render_bundle 'main' %}
+	{% render_bundle 'AddSourceReferenceView' attrs='async' %}
+
+     <!-- Page Header -->
+    <div class="body-container container">
+        <div class="dashboard-title">
+            <h2>Add Source Reference</h2>
+            <div class="dashboard-close"
+                 onclick="window.location.href='{% if past_url %}{{ past_url }}{% else %}/source-references/{% endif %}'"><i class="fa fa-times" aria-hidden="true"></i>
+            </div>
+        </div>
+
+        <div id="addsourcereference" data-addsourcereferenceview class="full-height"
+            {% for key, value in params %}
+                data-{{key}}="{{value}}"
+            {% endfor %}
+        ></div>
+
+    </div>
+{% endblock %}
