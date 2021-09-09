@@ -29,15 +29,18 @@ class DOI extends React.Component {
       loading: true
     })
     this.getEntryByDOI(doi).then(data => {
-      console.log(data);
       this.setState({
         entry: data,
         loading: false
       })
+      let publicationDate = data.publication_date;
+      if (publicationDate.length > 4) {
+        publicationDate = publicationDate.substring(0, 4)
+      }
       this.props.updateForm({
         'title': data.title,
         'source': data.journal.name,
-        'year': data.publication_date,
+        'year': publicationDate,
         'authors': data.authors
       })
     }).catch(error =>{
@@ -61,6 +64,7 @@ class DOI extends React.Component {
           <input type="text" className="form-control"
                  id="doi" aria-describedby="emailHelp"
                  placeholder="Enter DOI" />
+          <br/>
           <button className="btn btn-primary" onClick={this.searchByDOI} disabled={this.state.loading}>Search by DOI</button>
           { this.state.entry ? (
               this.state.entry.data_exist ? <p>Data already exists</p> : null

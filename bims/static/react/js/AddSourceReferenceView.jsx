@@ -5,13 +5,14 @@ import Author from "./components/Author";
 
 
 const PEER_REVIEWED = 'Peer-reviewed scientific article'
+const PUBLISHED_REPORT = ''
 
 class AddSourceReferenceView extends React.Component {
   constructor(props){
     super(props);
     this.state = {
       selected_reference_type: PEER_REVIEWED,
-      authors: null
+      authors: []
     };
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -20,7 +21,13 @@ class AddSourceReferenceView extends React.Component {
   }
 
   handleChange(event) {
-    this.setState({selected_reference_type: event.target.value});
+    this.setState({
+      selected_reference_type: event.target.value,
+      title: '',
+      source: '',
+      year: '',
+      authors: []
+    });
   }
 
   handleSubmit(event) {
@@ -31,6 +38,8 @@ class AddSourceReferenceView extends React.Component {
     switch (field) {
       case 'doi':
         return this.state.selected_reference_type === PEER_REVIEWED
+      case 'year' || 'author':
+        return this.state.selected_reference_type === PEER_REVIEWED || this.state.selected_reference_type === PUBLISHED_REPORT
       default:
         return false
     }
@@ -67,14 +76,16 @@ class AddSourceReferenceView extends React.Component {
                  id="source" aria-describedby="sourceHelp"
                  placeholder="Enter Source" value={this.state.source}  />
         </div>
-        <div className="form-group">
-          <label>Year</label>
-          <input type="text" className="form-control"
-                 id="year" aria-describedby="yearHelp"
-                 placeholder="Enter Year"  value={this.state.year}  />
-        </div>
-        { this.state.authors ? <Author authors={this.state.authors}/> : null }
-        <button type="submit" className="btn btn-primary">Submit</button>
+        {this.fieldAllowed('year') ?
+          <div className="form-group">
+            <label>Year</label>
+            <input type="text" className="form-control"
+                   id="year" aria-describedby="yearHelp"
+                   placeholder="Enter Year"  value={this.state.year}  />
+          </div> : null
+        }
+        { this.state.authors.length ? <Author authors={this.state.authors}/> : null }
+        <button type="submit" className="btn btn-primary" disabled>Submit</button>
       </form>
     );
   }
