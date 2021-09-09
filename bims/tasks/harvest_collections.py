@@ -6,6 +6,7 @@ from celery import shared_task
 def harvest_collections(session_id):
     from bims.utils.logger import log
     from bims.models import HarvestSession
+    from django.db.models import Q
     from bims.scripts.import_gbif_occurrences import (
         import_gbif_occurrences
     )
@@ -20,7 +21,9 @@ def harvest_collections(session_id):
     harvest_session.status = 'Processing'
     harvest_session.save()
 
-    taxonomies = harvest_session.module_group.taxonomies.all()
+    taxonomies = harvest_session.module_group.taxonomies.filter(
+        Q(rank='GENUS') | Q(rank='SPECIES') | Q(rank='SUBSPECIES')
+    )
     index = 1
 
     for taxon in taxonomies:
