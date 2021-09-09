@@ -67,7 +67,7 @@ class DOI extends React.Component {
           <br/>
           <button className="btn btn-primary" onClick={this.searchByDOI} disabled={this.state.loading}>Search by DOI</button>
           { this.state.entry ? (
-              this.state.entry.data_exist ? <p>Data already exists</p> : null
+              this.state.entry.data_exist ? <div><span className="badge badge-danger">Data already exists</span></div> : null
           ) : null }
         </div>
     )

@@ -25,6 +25,7 @@ class Author extends React.Component {
     this.mounted = false;
     this.handleChange = this.handleChange.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.addNewAuthor = this.addNewAuthor.bind(this);
   }
 
   updateAuthors() {
@@ -34,10 +35,18 @@ class Author extends React.Component {
       author.full_name = `${author.first_name} ${author.last_name}`
       authors.push(author)
     }
-    console.log(authors);
+    if (authors.length === 0) {
+      authors.push('')
+    }
     this.setState({
       authors: authors
     })
+  }
+
+  addNewAuthor() {
+    this.setState(update(this.state, {
+      authors: {$push: ['']}
+    }))
   }
 
   componentDidMount() {
@@ -123,7 +132,7 @@ class Author extends React.Component {
               value,
               onChange: this.handleChange
             };
-            return <Autosuggest
+            return <div style={{ marginTop: 10 }}><Autosuggest
               suggestions={suggestions}
               onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
               onSuggestionsClearRequested={this.onSuggestionsClearRequested}
@@ -131,9 +140,12 @@ class Author extends React.Component {
               renderSuggestion={(suggestion) => renderSuggestion(suggestion, index)}
               renderInputComponent={renderInputComponent}
               inputProps={inputProps}
-            />
+            /></div>
           }
         )}
+        <br/>
+        <button className="btn btn-default" onClick={this.addNewAuthor}>Add new author
+        </button>
       </div>
 
     )

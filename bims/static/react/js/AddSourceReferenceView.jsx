@@ -5,7 +5,7 @@ import Author from "./components/Author";
 
 
 const PEER_REVIEWED = 'Peer-reviewed scientific article'
-const PUBLISHED_REPORT = ''
+const PUBLISHED_REPORT = 'Published report or thesis'
 
 class AddSourceReferenceView extends React.Component {
   constructor(props){
@@ -18,6 +18,7 @@ class AddSourceReferenceView extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.fieldAllowed = this.fieldAllowed.bind(this);
     this.updateForm = this.updateForm.bind(this);
+    this.handleInputChange = this.handleInputChange.bind(this)
   }
 
   handleChange(event) {
@@ -34,12 +35,25 @@ class AddSourceReferenceView extends React.Component {
     event.preventDefault();
   }
 
+  handleInputChange(field, event) {
+    let { value, maxLength } = event.target;
+    if (maxLength > 0) {
+       value = value.slice(0, maxLength);
+    }
+    this.setState({
+      [field]: value
+    })
+  }
+
   fieldAllowed(field) {
     switch (field) {
       case 'doi':
         return this.state.selected_reference_type === PEER_REVIEWED
-      case 'year' || 'author':
+      case 'author':
+      case 'year':
         return this.state.selected_reference_type === PEER_REVIEWED || this.state.selected_reference_type === PUBLISHED_REPORT
+      case 'file':
+        return this.state.selected_reference_type === PUBLISHED_REPORT
       default:
         return false
     }
@@ -64,27 +78,34 @@ class AddSourceReferenceView extends React.Component {
         {this.fieldAllowed('doi') ?
           <DOI updateForm={this.updateForm} /> : null
         }
+        {this.fieldAllowed('file') ?
+          <div className="form-group">
+            <label>Upload File</label>
+            <input type="file" className="form-control"
+                   id="file" aria-describedby="fileHelp"/>
+          </div> : null
+        }
         <div className="form-group">
           <label>Title</label>
           <input type="text" className="form-control"
                  id="title" aria-describedby="titleHelp"
-                 placeholder="Enter Title" value={this.state.title} />
+                 placeholder="Enter Title" value={this.state.title} onChange={(e) => this.handleInputChange('title', e)}/>
         </div>
         <div className="form-group">
           <label>Source</label>
           <input type="text" className="form-control"
                  id="source" aria-describedby="sourceHelp"
-                 placeholder="Enter Source" value={this.state.source}  />
+                 placeholder="Enter Source" value={this.state.source}  onChange={(e) => this.handleInputChange('source', e)}/>
         </div>
         {this.fieldAllowed('year') ?
           <div className="form-group">
             <label>Year</label>
-            <input type="text" className="form-control"
+            <input type="number" className="form-control" maxLength="4"
                    id="year" aria-describedby="yearHelp"
-                   placeholder="Enter Year"  value={this.state.year}  />
+                   placeholder="Enter Year"  value={this.state.year} onChange={(e) => this.handleInputChange('year', e)} />
           </div> : null
         }
-        { this.state.authors.length ? <Author authors={this.state.authors}/> : null }
+        { this.fieldAllowed('author') ? <Author authors={this.state.authors}/> : null }
         <button type="submit" className="btn btn-primary" disabled>Submit</button>
       </form>
     );
