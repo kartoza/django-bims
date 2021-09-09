@@ -235,8 +235,6 @@ def process_source_reference(
                 )
         elif 'database' in reference_category.lower():
             reference_name = reference
-            if source_year:
-                reference_name += ', ' + source_year
             database_record, dr_created = (
                 DatabaseRecord.objects.get_or_create(
                     name=reference_name
