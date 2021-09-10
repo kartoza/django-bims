@@ -199,7 +199,8 @@ def import_gbif_occurrences(
             collection_record = BiologicalCollectionRecord.objects.create(
                 upstream_id=upstream_id,
                 site=location_site,
-                taxonomy=taxonomy
+                taxonomy=taxonomy,
+                source_collection=source_collection
             )
         if event_date:
             collection_record.collection_date = parse(event_date)
