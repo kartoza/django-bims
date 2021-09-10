@@ -29,6 +29,11 @@ class GetGeomorphologicalZone(LoginRequiredMixin, APIView):
             response = requests.get(url)
             if response.status_code == 200:
                 geomorphological_group = json.loads(response.content)
+                if 'services' in geomorphological_group:
+                    if 'service_registry_values' not in geomorphological_group:
+                        geomorphological_group['service_registry_values'] = (
+                            geomorphological_group['services']
+                        )
                 geomorphological_zone = (
                     geomorphological_group['services'][1]['value']
                 )
