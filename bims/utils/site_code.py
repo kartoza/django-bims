@@ -87,12 +87,16 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
             catchment_code = value[:2].upper()
             break
     if lat and lon:
-        catchment_code += fetch_river_name(lat, lon)[:4].upper()
+        river_name = fetch_river_name(lat, lon)
+        if river_name:
+            catchment_code += river_name[:4].upper()
     elif location_site:
-        catchment_code += fetch_river_name(
+        river_name = fetch_river_name(
             location_site.geometry_point[1],
             location_site.geometry_point[0]
-        )[:4].upper()
+        )
+        if river_name:
+            catchment_code += river_name[:4].upper()
     return catchment_code, catchments_data
 
 
