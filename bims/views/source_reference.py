@@ -589,6 +589,11 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
                 post_data=post_dict,
                 file_data=file_dict
             )
+        else: # Unpublished
+            SourceReference.objects.get_or_create(
+                note=post_dict.get('notes', ''),
+                source_name=post_dict.get('source', '')
+            )
 
         if not processed:
             return self.form_invalid(form)

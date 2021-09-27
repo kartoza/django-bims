@@ -8,6 +8,7 @@ import update from "immutability-helper";
 const PEER_REVIEWED = 'Peer-reviewed scientific article'
 const PUBLISHED_REPORT = 'Published report or thesis'
 const DATABASE = 'Database'
+const UNPUBLISHED = 'Unpublished'
 const REPORT_SOURCE = ['doc_url', 'doc_file']
 
 class AddSourceReferenceView extends React.Component {
@@ -35,6 +36,7 @@ class AddSourceReferenceView extends React.Component {
       description: '',
       url: '',
       year: '',
+      notes: '',
       report_source: REPORT_SOURCE[1],
       authors: []
     });
@@ -44,12 +46,14 @@ class AddSourceReferenceView extends React.Component {
     event.preventDefault();
 
     // Update authors
-    const authorIds = [];
-    for (let i=0; i < this.authorInput.state.authors.length; i++) {
-      const author = this.authorInput.state.authors[i];
-      authorIds.push(author.id)
+    if (this.authorInput) {
+      const authorIds = [];
+      for (let i=0; i < this.authorInput.state.authors.length; i++) {
+        const author = this.authorInput.state.authors[i];
+        authorIds.push(author.id)
+      }
+      document.getElementById('author_ids').value = authorIds.join();
     }
-    document.getElementById('author_ids').value = authorIds.join();
 
     document.getElementById('source_reference_form').submit();
   }
@@ -79,8 +83,9 @@ class AddSourceReferenceView extends React.Component {
         return this.state.selected_reference_type === PEER_REVIEWED || this.state.selected_reference_type === PUBLISHED_REPORT
       case 'file':
       case 'title':
-      case 'source':
         return this.state.selected_reference_type === PUBLISHED_REPORT
+      case 'source':
+        return this.state.selected_reference_type === PUBLISHED_REPORT || this.state.selected_reference_type === UNPUBLISHED
       case 'description':
       case 'url':
       case 'name':
@@ -194,6 +199,14 @@ class AddSourceReferenceView extends React.Component {
                    placeholder="Enter Year"  value={this.state.year} onChange={(e) => this.handleInputChange('year', e)} />
           </div> : null
         }
+
+        <div className="form-group">
+          <label>{ this.state.selected_reference_type === UNPUBLISHED ? "Title" : "Notes" }</label>
+          <input type="text" className="form-control"
+                 name="notes" id="notes" aria-describedby="urlHelp"
+                 placeholder={ this.state.selected_reference_type === UNPUBLISHED ? "Enter Title" : "Enter Notes" }
+                 value={this.state.notes}  onChange={(e) => this.handleInputChange('notes', e)}/>
+        </div>
 
         { this.field('author') ? <Author authors={this.state.authors} ref={(author) => { this.authorInput = author }} /> : null }
         <button type="submit" className="btn btn-primary" onClick={this.handleSubmit}>Submit</button>
