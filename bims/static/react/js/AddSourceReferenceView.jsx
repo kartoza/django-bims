@@ -66,7 +66,7 @@ class AddSourceReferenceView extends React.Component {
       document.getElementById('author_ids').value = authorIds.join();
     }
 
-    if (this.doiInput) {
+    if (this.doiInput && this.doiInput.state.entry) {
       if (this.doiInput.state.entry.data_exist) {
         alert('Data already exists.')
         return;
