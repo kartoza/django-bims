@@ -63,6 +63,7 @@ class DOI extends React.Component {
           <label>DOI</label>
           <input type="text" className="form-control"
                  id="doi" aria-describedby="emailHelp"
+                 name="doi"
                  placeholder="Enter DOI" />
           <br/>
           <button className="btn btn-primary" onClick={this.searchByDOI} disabled={this.state.loading}>Search by DOI</button>

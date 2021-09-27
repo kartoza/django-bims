@@ -19,6 +19,7 @@ class AddSourceReferenceView extends React.Component {
       authors: []
     };
     this.authorInput = null;
+    this.doiInput = null;
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.field = this.field.bind(this);
@@ -42,6 +43,16 @@ class AddSourceReferenceView extends React.Component {
     });
   }
 
+  checkRequiredFields() {
+    switch (this.state.selected_reference_type) {
+      case PUBLISHED_REPORT:
+      case PEER_REVIEWED:
+        return this.state.source && this.state.title && this.state.year
+      default:
+        return true
+    }
+  }
+
   handleSubmit(event) {
     event.preventDefault();
 
@@ -53,6 +64,19 @@ class AddSourceReferenceView extends React.Component {
         authorIds.push(author.id)
       }
       document.getElementById('author_ids').value = authorIds.join();
+    }
+
+    if (this.doiInput) {
+      if (this.doiInput.state.entry.data_exist) {
+        alert('Data already exists.')
+        return;
+      }
+    }
+
+    const valid = this.checkRequiredFields();
+    if (!valid) {
+      alert('Missing required fields.')
+      return;
     }
 
     document.getElementById('source_reference_form').submit();
@@ -80,12 +104,15 @@ class AddSourceReferenceView extends React.Component {
         return this.state.selected_reference_type === PEER_REVIEWED
       case 'author':
       case 'year':
-        return this.state.selected_reference_type === PEER_REVIEWED || this.state.selected_reference_type === PUBLISHED_REPORT
-      case 'file':
       case 'title':
+        return this.state.selected_reference_type === PEER_REVIEWED ||
+            this.state.selected_reference_type === PUBLISHED_REPORT
+      case 'file':
         return this.state.selected_reference_type === PUBLISHED_REPORT
       case 'source':
-        return this.state.selected_reference_type === PUBLISHED_REPORT || this.state.selected_reference_type === UNPUBLISHED
+        return this.state.selected_reference_type === PUBLISHED_REPORT ||
+            this.state.selected_reference_type === UNPUBLISHED ||
+            this.state.selected_reference_type === PEER_REVIEWED
       case 'description':
       case 'url':
       case 'name':
@@ -114,7 +141,7 @@ class AddSourceReferenceView extends React.Component {
         </div>
         {/*DOI*/}
         {this.field('doi') ?
-          <DOI updateForm={this.updateForm} /> : null
+          <DOI updateForm={this.updateForm} ref={(doiInput) => { this.doiInput = doiInput }} /> : null
         }
         {
           this.field('file') ?
@@ -168,7 +195,7 @@ class AddSourceReferenceView extends React.Component {
         </div> : null }
 
         {this.field('source') ?
-        <div className="form-group">
+        <div className="form-group required-input">
           <label>Source</label>
           <input type="text" className="form-control"
                  name="source" id="source" aria-describedby="sourceHelp"
@@ -192,7 +219,7 @@ class AddSourceReferenceView extends React.Component {
         </div> : null }
 
         {this.field('year') ?
-          <div className="form-group">
+          <div className="form-group required-input">
             <label>Year</label>
             <input type="number" className="form-control" maxLength="4"
                    name="year" id="year" aria-describedby="yearHelp"

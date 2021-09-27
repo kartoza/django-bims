@@ -16,7 +16,9 @@ from bims.models.source_reference import (
     SourceReferenceDatabase,
     SourceReferenceDocument, DatabaseRecord
 )
-from td_biblio.models.bibliography import Author, AuthorEntryRank, Journal
+from td_biblio.models.bibliography import (
+    Author, AuthorEntryRank, Journal, Entry
+)
 from bims.models.bims_document import (
     BimsDocument,
     BimsDocumentAuthorship
@@ -466,10 +468,35 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
             return True
         return self.request.user.has_perm('bims.change_sourcereference')
 
+    def handle_peer_reviewed(self, post_data):
+        if (
+                SourceReferenceBibliography.objects.filter(
+                    source__doi=post_data.get('doi')).exists()
+        ):
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                'Entry already exists',
+                extra_tags='source-reference'
+            )
+            return False
+
+        if post_data.get('doi'):
+            try:
+                entry = Entry.objects.get(doi=post_data.get('doi'))
+                SourceReferenceBibliography.objects.create(
+                    source=entry,
+                    note=post_data.get('notes', '')
+                )
+            except Entry.DoesNotExist:
+                pass
+        return True
+
+
     def handle_database_record(self, post_data):
         if (
                 DatabaseRecord.objects.filter(
-                    name__iexact=self.request.POST.get('name')).exists()
+                    name__iexact=post_data.get('name')).exists()
         ):
             messages.add_message(
                 self.request,
@@ -588,6 +615,10 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
             processed = self.handle_published_report(
                 post_data=post_dict,
                 file_data=file_dict
+            )
+        elif 'peer-reviewed' in reference_type.lower():
+            processed = self.handle_peer_reviewed(
+                post_data=post_dict
             )
         else: # Unpublished
             SourceReference.objects.get_or_create(
