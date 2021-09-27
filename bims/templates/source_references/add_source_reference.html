@@ -39,10 +39,20 @@
             </div>
         </div>
 
+        {% if messages %}
+            {% for message in messages %}
+                {% if 'source-reference' in message.tags %}
+                <div class="alert alert-danger {{ message.tags }}"
+                     role="alert">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
         <div id="addsourcereference" data-addsourcereferenceview class="full-height"
             {% for key, value in params %}
                 data-{{key}}="{{value}}"
             {% endfor %}
+            data-csrf-token="{{ csrf_token }}"
         ></div>
 
     </div>

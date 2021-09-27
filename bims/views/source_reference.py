@@ -12,7 +12,7 @@ from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
     SourceReferenceDatabase,
-    SourceReferenceDocument
+    SourceReferenceDocument, DatabaseRecord
 )
 from td_biblio.models.bibliography import Author, AuthorEntryRank, Journal
 from bims.models.bims_document import (
@@ -454,6 +454,7 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
     template_name = 'source_references/add_source_reference.html'
     model = SourceReference
     fields = '__all__'
+    success_url = '/add-source-reference/'
 
     def test_func(self):
         if self.request.user.is_anonymous:
@@ -461,6 +462,29 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
         if self.request.user.is_superuser:
             return True
         return self.request.user.has_perm('bims.change_sourcereference')
+
+    def handle_database_record(self, post_data):
+        if (
+                DatabaseRecord.objects.filter(
+                    name__iexact=self.request.POST.get('name')).exists()
+        ):
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                'Database is already exist',
+                extra_tags='source-reference'
+            )
+            return False
+        else:
+            database_record = DatabaseRecord.objects.create(
+                name=post_data.get('name'),
+                description=post_data.get('description', ''),
+                url=post_data.get('url', '')
+            )
+            SourceReferenceDatabase.objects.create(
+                source=database_record
+            )
+        return True
 
     def get_context_data(self, **kwargs):
         context = super(
@@ -475,3 +499,17 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
             'reference_type': json.dumps(reference_type)
         }.items()
         return context
+
+    def form_valid(self, form):
+        post_dict = self.request.POST.dict()
+        reference_type = self.request.POST.get('reference_type')
+        processed = False
+        if 'database' in reference_type.lower():
+            processed = self.handle_database_record(post_data=post_dict)
+
+        if not processed:
+            return self.form_invalid(form)
+
+        return super(AddSourceReferenceView, self).form_valid(
+            form
+        )
