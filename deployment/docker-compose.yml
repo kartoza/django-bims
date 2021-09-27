@@ -11,6 +11,44 @@ version: '2'
 volumes:
   geodatadir:
   rabbitmq:
+x-common-django:
+  &default-common-django
+  image: bims_uwsgi:latest
+  build:
+    context: docker
+  hostname: uwsgi
+  working_dir: /home/web/django_project
+  entrypoint: [ ]
+  environment:
+    - DATABASE_NAME=gis
+    - DATABASE_USERNAME=docker
+    - DATABASE_PASSWORD=docker
+    - DATABASE_HOST=db
+    - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+    - VIRTUAL_HOST=bims.kartoza.com
+    - VIRTUAL_PORT=8080
+    - RABBITMQ_HOST=rabbitmq
+    - GEOCONTEXT_URL=https://geocontext.kartoza.com
+    - GEOCONTEXT_COLLECTION_KEY=climate
+    - CONTACT_US_EMAIL=dimas@kartoza.com
+    - DEFAULT_BACKEND_UPLOADER=geonode.importer
+    - BROKER_URL=amqp://rabbitmq:5672
+    - DATABASE_URL=postgis://docker:docker@db:5432/gis
+    - GEOSERVER_LOCATION=http://geoserver/geoserver/
+    - APP_NAME=bims
+  links:
+    - smtp:smtp
+    - db:db
+    - geoserver:geoserver
+    - rabbitmq:rabbitmq
+    - worker:worker
+    - searchworker:searchworker
+    - geocontextworker:geocontextworker
+  restart: unless-stopped
+  user: root
+  extra_hosts:
+    - 'localhost: 192.168.1.197'
+
 services:
   smtp:
     image: catatnight/postfix
@@ -46,75 +84,17 @@ services:
 
   bims_uwsgi:
     build:
-      context: docker
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: deployment/docker/Dockerfile
     image: bims_uwsgi:latest
 
   uwsgi:
-    build:
-      context: docker
-    hostname: uwsgi
-    working_dir: /usr/src/geonode
-    entrypoint: []
-    environment:
-      - DATABASE_NAME=gis
-      - DATABASE_USERNAME=docker
-      - DATABASE_PASSWORD=docker
-      - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
-      - VIRTUAL_HOST=bims.kartoza.com
-      - VIRTUAL_PORT=8080
-      - RABBITMQ_HOST=rabbitmq
-      - GEOCONTEXT_URL=https://geocontext.kartoza.com
-      - GEOCONTEXT_COLLECTION_KEY=climate
-      - CONTACT_US_EMAIL=dimas@kartoza.com
-      - DEFAULT_BACKEND_UPLOADER=geonode.importer
-      - BROKER_URL=amqp://rabbitmq:5672
-      - DATABASE_URL=postgis://docker:docker@db:5432/gis
-      - GEOSERVER_LOCATION=http://geoserver/geoserver/
-      - APP_NAME=bims
-    links:
-      - smtp:smtp
-      - db:db
-      - geoserver:geoserver
-      - rabbitmq:rabbitmq
-      - worker:worker
-      - searchworker:searchworker
-      - geocontextworker:geocontextworker
-    restart: unless-stopped
-    user: root
-    extra_hosts:
-      - 'localhost: 192.168.1.197'
+    <<: *default-common-django
 
   worker:
-    build:
-      context: docker
+    <<: *default-common-django
     hostname: worker
-    working_dir: /home/web/django_project
     command: celery worker --app=bims.celery:app -Q update -B -l debug
-    entrypoint: []
-    environment:
-      - DATABASE_NAME=gis
-      - DATABASE_USERNAME=docker
-      - DATABASE_PASSWORD=docker
-      - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - VIRTUAL_HOST=bims.kartoza.com
-      - VIRTUAL_PORT=8080
-      - RABBITMQ_HOST=rabbitmq
-      - GEOCONTEXT_URL=https://geocontext.kartoza.com
-      - CONTACT_US_EMAIL=dimas@kartoza.com
-      - APP_NAME=bims
-      - ASYNC_SIGNALS=True
-      - ASYNC_SIGNALS_GEONODE=True
-      - DEFAULT_BACKEND_UPLOADER=geonode.importer
-      - PYTHONPATH=/home/web/django_project:/usr/src/geonode
-      - DATABASE_URL=postgis://docker:docker@db:5432/gis
-      - GEOSERVER_LOCATION=http://geoserver/geoserver/
-      - C_FORCE_ROOT=True
-      - DEBUG=True
-      - BROKER_URL=amqp://rabbitmq:5672
-      - MEDIA_ROOT=/home/web/media
     links:
       - smtp:smtp
       - db:db
@@ -126,38 +106,11 @@ services:
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./logs:/var/log/
-    restart: unless-stopped
-    user: root
 
   geocontextworker:
-    build:
-      context: docker
+    <<: *default-common-django
     hostname: worker
-    working_dir: /home/web/django_project
     command: celery worker --app=bims.celery:app -Q geocontext -B -l debug
-    entrypoint: [ ]
-    environment:
-      - DATABASE_NAME=gis
-      - DATABASE_USERNAME=docker
-      - DATABASE_PASSWORD=docker
-      - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - VIRTUAL_HOST=bims.kartoza.com
-      - VIRTUAL_PORT=8080
-      - RABBITMQ_HOST=rabbitmq
-      - GEOCONTEXT_URL=https://geocontext.kartoza.com
-      - CONTACT_US_EMAIL=dimas@kartoza.com
-      - APP_NAME=bims
-      - ASYNC_SIGNALS=True
-      - ASYNC_SIGNALS_GEONODE=True
-      - DEFAULT_BACKEND_UPLOADER=geonode.importer
-      - PYTHONPATH=/home/web/django_project:/usr/src/geonode
-      - DATABASE_URL=postgis://docker:docker@db:5432/gis
-      - GEOSERVER_LOCATION=http://geoserver/geoserver/
-      - C_FORCE_ROOT=True
-      - DEBUG=True
-      - BROKER_URL=amqp://rabbitmq:5672
-      - MEDIA_ROOT=/home/web/media
     links:
       - smtp:smtp
       - db:db
@@ -169,38 +122,11 @@ services:
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./logs:/var/log/
-    restart: unless-stopped
-    user: root
 
   searchworker:
-    build:
-      context: docker
+    <<: *default-common-django
     hostname: worker
-    working_dir: /home/web/django_project
     command: celery worker --app=bims.celery:app -Q search -B -l debug
-    entrypoint: [ ]
-    environment:
-      - DATABASE_NAME=gis
-      - DATABASE_USERNAME=docker
-      - DATABASE_PASSWORD=docker
-      - DATABASE_HOST=db
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - VIRTUAL_HOST=bims.kartoza.com
-      - VIRTUAL_PORT=8080
-      - RABBITMQ_HOST=rabbitmq
-      - GEOCONTEXT_URL=https://geocontext.kartoza.com
-      - CONTACT_US_EMAIL=dimas@kartoza.com
-      - APP_NAME=bims
-      - ASYNC_SIGNALS=True
-      - ASYNC_SIGNALS_GEONODE=True
-      - DEFAULT_BACKEND_UPLOADER=geonode.importer
-      - PYTHONPATH=/home/web/django_project:/usr/src/geonode
-      - DATABASE_URL=postgis://docker:docker@db:5432/gis
-      - GEOSERVER_LOCATION=http://geoserver/geoserver/
-      - C_FORCE_ROOT=True
-      - DEBUG=True
-      - BROKER_URL=amqp://rabbitmq:5672
-      - MEDIA_ROOT=/home/web/media
     links:
       - smtp:smtp
       - db:db
@@ -212,8 +138,15 @@ services:
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./logs:/var/log/
-    restart: unless-stopped
-    user: root
+
+  webpack-watcher:
+    <<: *default-common-django
+    command: bash -c 'cd /home/web/django_project/bims/; webpack --mode development && webpack --watch --progress'
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./logs:/var/log/
 
   dbbackups:
     image: kartoza/pg-backup:9.6
