@@ -7,6 +7,8 @@ from django.http import HttpResponseRedirect
 from django.http import Http404
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
+from geonode.base.models import HierarchicalKeyword, TaggedContentItem
+
 from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
     SourceReference,
@@ -19,6 +21,7 @@ from bims.models.bims_document import (
     BimsDocument,
     BimsDocumentAuthorship
 )
+from geonode.documents.models import Document
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
@@ -471,7 +474,7 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
             messages.add_message(
                 self.request,
                 messages.ERROR,
-                'Database is already exist',
+                'Database already exists',
                 extra_tags='source-reference'
             )
             return False
@@ -484,6 +487,80 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
             SourceReferenceDatabase.objects.create(
                 source=database_record
             )
+        return True
+
+    def handle_published_report(self, post_data, file_data):
+        if (
+            SourceReferenceDocument.objects.filter(
+                source__title__iexact=post_data.get('name')
+            ).exists()
+        ):
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                'Published report already exists',
+                extra_tags='source_reference'
+            )
+            return False
+
+        document, _ = Document.objects.get_or_create(
+            owner=self.request.user,
+            is_published=True,
+            abstract=post_data.get('description', ''),
+            title=post_data.get('title', ''),
+            doc_type=post_data.get('doc_type', None),
+            doc_file=file_data.get('report_file', None),
+            doc_url=post_data.get('report_url', None),
+            supplemental_information=json.dumps({
+                'document_source': post_data.get('source')
+            })
+        )
+
+        # tag keyword of document as Bims Source Reference
+        keyword = None
+        try:
+            keyword = HierarchicalKeyword.objects.get(
+                slug='bims_source_reference')
+        except HierarchicalKeyword.DoesNotExist:
+            try:
+                last_keyword = HierarchicalKeyword.objects.filter(
+                    depth=1).order_by('path').last()
+                if not last_keyword:
+                    path = '0000'
+                else:
+                    path = last_keyword.path
+                path = "{:04d}".format(int(path) + 1)
+                keyword, created = HierarchicalKeyword.objects.get_or_create(
+                    slug='bims_source_reference',
+                    name='Bims Source Reference',
+                    depth=1,
+                    path=path)
+            except Exception:  # noqa
+                pass
+        if keyword:
+            TaggedContentItem.objects.get_or_create(
+                content_object=document, tag=keyword)
+
+        bims_document = BimsDocument.objects.create(
+            document=document,
+            year=post_data.get('year', None),
+        )
+
+        # Update authors
+        try:
+            author_ids = post_data.get('author_ids', None)
+            if author_ids:
+                bims_document.authors.clear()
+                author_ids = author_ids.split(',')
+                for author_id in author_ids:
+                    bims_document.authors.add(author_id)
+        except KeyError:
+            pass
+
+        SourceReferenceDocument.objects.create(
+            source=document
+        )
+
         return True
 
     def get_context_data(self, **kwargs):
@@ -502,10 +579,16 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
 
     def form_valid(self, form):
         post_dict = self.request.POST.dict()
+        file_dict = self.request.FILES.dict()
         reference_type = self.request.POST.get('reference_type')
         processed = False
         if 'database' in reference_type.lower():
             processed = self.handle_database_record(post_data=post_dict)
+        elif 'published report' in reference_type.lower():
+            processed = self.handle_published_report(
+                post_data=post_dict,
+                file_data=file_dict
+            )
 
         if not processed:
             return self.form_invalid(form)

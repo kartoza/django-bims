@@ -2,12 +2,13 @@ import React from 'react';
 import '../css/SourceReference.scss';
 import DOI from "./components/DOI";
 import Author from "./components/Author";
+import update from "immutability-helper";
 
 
 const PEER_REVIEWED = 'Peer-reviewed scientific article'
 const PUBLISHED_REPORT = 'Published report or thesis'
 const DATABASE = 'Database'
-const REPORT_SOURCE = ['url', 'file']
+const REPORT_SOURCE = ['doc_url', 'doc_file']
 
 class AddSourceReferenceView extends React.Component {
   constructor(props){
@@ -16,6 +17,7 @@ class AddSourceReferenceView extends React.Component {
       selected_reference_type: DATABASE,
       authors: []
     };
+    this.authorInput = null;
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.field = this.field.bind(this);
@@ -28,6 +30,7 @@ class AddSourceReferenceView extends React.Component {
     this.setState({
       selected_reference_type: event.target.value,
       name: '',
+      title: '',
       source: '',
       description: '',
       url: '',
@@ -39,7 +42,16 @@ class AddSourceReferenceView extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault();
-    event.submit();
+
+    // Update authors
+    const authorIds = [];
+    for (let i=0; i < this.authorInput.state.authors.length; i++) {
+      const author = this.authorInput.state.authors[i];
+      authorIds.push(author.id)
+    }
+    document.getElementById('author_ids').value = authorIds.join();
+
+    document.getElementById('source_reference_form').submit();
   }
 
   handleInputChange(field, event) {
@@ -66,9 +78,12 @@ class AddSourceReferenceView extends React.Component {
       case 'year':
         return this.state.selected_reference_type === PEER_REVIEWED || this.state.selected_reference_type === PUBLISHED_REPORT
       case 'file':
+      case 'title':
+      case 'source':
         return this.state.selected_reference_type === PUBLISHED_REPORT
       case 'description':
       case 'url':
+      case 'name':
         return this.state.selected_reference_type === DATABASE
       default:
         return false
@@ -81,8 +96,9 @@ class AddSourceReferenceView extends React.Component {
 
   render() {
     return (
-      <form encType="multipart/form-data" name="source_reference_form" method="post">
+      <form encType="multipart/form-data" name="source_reference_form" method="post" id="source_reference_form">
         <input type="hidden" name="csrfmiddlewaretoken" value={this.props.csrfToken} />
+        <input type="hidden" name="author_ids" id="author_ids" />
         <div className="form-group">
           <label>Type</label>
           <select name="reference_type" className="form-control" value={this.state.selected_reference_type} onChange={this.handleChange}>
@@ -100,7 +116,7 @@ class AddSourceReferenceView extends React.Component {
             <div>
               <div className="form-check">
                 <input className="form-check-input" type="radio"
-                       name="reportSourceRadios" id="provide-url" value="url" checked={this.state.report_source === 'url'}
+                       name="doc_type" id="provide-url" value="doc_url" checked={this.state.report_source === 'doc_url'}
                        onChange={(e) => this.handleReportSourceChange(e)} />
                   <label className="form-check-label" htmlFor="provide-url">
                     Provide url
@@ -108,7 +124,7 @@ class AddSourceReferenceView extends React.Component {
               </div>
               <div className="form-check">
                 <input className="form-check-input" type="radio"
-                       name="reportSourceRadios" id="upload-file" value="file" checked={this.state.report_source === 'file'}
+                       name="doc_type" id="upload-file" value="doc_file" checked={this.state.report_source === 'doc_file'}
                        onChange={(e) => this.handleReportSourceChange(e)} />
                   <label className="form-check-label" htmlFor="upload-file">
                     Upload a file
@@ -116,9 +132,10 @@ class AddSourceReferenceView extends React.Component {
               </div>
 
               <div className="form-group">
-                {this.state.report_source === 'file' ?
+                {this.state.report_source === 'doc_file' ?
                     <input type="file" className="form-control"
                            accept="application/pdf"
+                           name="report_file"
                            id="report_file" aria-describedby="fileHelp"/>
                    : <input id="document-url" type="text"
                             placeholder="Enter url"
@@ -128,12 +145,23 @@ class AddSourceReferenceView extends React.Component {
             </div>
           : null
         }
+
+        {this.field('name') ?
         <div className="form-group required-input">
           <label>Name</label>
           <input type="text" className="form-control"
-                 name="name" id="title" aria-describedby="titleHelp" required
+                 name="name" id="name" aria-describedby="titleHelp" required
                  placeholder="Enter Name" value={this.state.name} onChange={(e) => this.handleInputChange('name', e)}/>
-        </div>
+        </div> : null }
+
+        {this.field('title') ?
+        <div className="form-group required-input">
+          <label>Title</label>
+          <input type="text" className="form-control"
+                 name="title" id="title" aria-describedby="titleHelp" required
+                 placeholder="Enter Title" value={this.state.title} onChange={(e) => this.handleInputChange('title', e)}/>
+        </div> : null }
+
         {this.field('source') ?
         <div className="form-group">
           <label>Source</label>
@@ -167,8 +195,8 @@ class AddSourceReferenceView extends React.Component {
           </div> : null
         }
 
-        { this.field('author') ? <Author authors={this.state.authors}/> : null }
-        <button type="submit" className="btn btn-primary">Submit</button>
+        { this.field('author') ? <Author authors={this.state.authors} ref={(author) => { this.authorInput = author }} /> : null }
+        <button type="submit" className="btn btn-primary" onClick={this.handleSubmit}>Submit</button>
       </form>
     );
   }

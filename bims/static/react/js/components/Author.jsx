@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // Use your imagination to render suggestions.
 const renderSuggestion = (suggestion, index) => (
-  <div data-action-index={index}>
+  <div data-author-index={index} data-author-id={suggestion.id}>
     {suggestion.first_name} {suggestion.last_name}
   </div>
 );
@@ -43,7 +43,8 @@ class Author extends React.Component {
     })
   }
 
-  addNewAuthor() {
+  addNewAuthor(e) {
+    e.preventDefault();
     this.setState(update(this.state, {
       authors: {$push: ['']}
     }))
@@ -71,8 +72,10 @@ class Author extends React.Component {
 
   handleChange(event, { newValue }) {
     let authorIndex = event.nativeEvent.target.dataset.authorIndex;
+    let authorId = null;
     if (typeof authorIndex === 'undefined') {
-      authorIndex = $(event.nativeEvent.target).data('action-index');
+      authorIndex = $(event.nativeEvent.target).data('author-index');
+      authorId = $(event.nativeEvent.target).data('author-id');
     }
     this.setState(update(this.state, {
       authors: {
@@ -102,7 +105,7 @@ class Author extends React.Component {
   // based on the clicked suggestion. Teach Autosuggest how to calculate the
   // input value for every given suggestion.
   getSuggestionValue = (suggestion, index) => {
-    return suggestion.first_name + ' ' + suggestion.last_name;
+    return suggestion;
   }
 
   render() {
@@ -114,14 +117,14 @@ class Author extends React.Component {
         <label>Author(s)</label>
         {this.state.authors.map((author, index) =>
           {
-            const value = this.state.authors[index].first_name ? this.state.authors[index].first_name + ' ' + this.state.authors[index].last_name : this.state.authors[index];
+            const value = author.first_name ? author.first_name + ' ' + author.last_name : author;
             const renderInputComponent = inputProps => {
               delete inputProps.className;
               return (
                   <div>
                       <input
                           onClick={this.handleClick}
-                          data-author-index={index} className={"form-control"}  {...inputProps}/>
+                          data-author-index={index} data-author-id={author.id} className={"form-control"}  {...inputProps}/>
                   </div>
               );
             }
