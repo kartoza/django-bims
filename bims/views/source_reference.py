@@ -1,5 +1,5 @@
 import json
-from django.views.generic import ListView, UpdateView, View
+from django.views.generic import ListView, UpdateView, View, CreateView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -7,18 +7,23 @@ from django.http import HttpResponseRedirect
 from django.http import Http404
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
+from geonode.base.models import HierarchicalKeyword, TaggedContentItem
+
 from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
     SourceReferenceDatabase,
-    SourceReferenceDocument
+    SourceReferenceDocument, DatabaseRecord
 )
-from td_biblio.models.bibliography import Author, AuthorEntryRank, Journal
+from td_biblio.models.bibliography import (
+    Author, AuthorEntryRank, Journal, Entry
+)
 from bims.models.bims_document import (
     BimsDocument,
     BimsDocumentAuthorship
 )
+from geonode.documents.models import Document
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
@@ -448,3 +453,182 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
             except:  # noqa
                 pass
         return context
+
+
+class AddSourceReferenceView(UserPassesTestMixin, CreateView):
+    template_name = 'source_references/add_source_reference.html'
+    model = SourceReference
+    fields = '__all__'
+    success_url = '/add-source-reference/'
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        return self.request.user.has_perm('bims.change_sourcereference')
+
+    def handle_peer_reviewed(self, post_data):
+        if (
+                SourceReferenceBibliography.objects.filter(
+                    source__doi=post_data.get('doi')).exists()
+        ):
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                'Entry already exists',
+                extra_tags='source-reference'
+            )
+            return False
+
+        if post_data.get('doi'):
+            try:
+                entry = Entry.objects.get(doi=post_data.get('doi'))
+                SourceReferenceBibliography.objects.create(
+                    source=entry,
+                    note=post_data.get('notes', '')
+                )
+            except Entry.DoesNotExist:
+                pass
+        return True
+
+
+    def handle_database_record(self, post_data):
+        if (
+                DatabaseRecord.objects.filter(
+                    name__iexact=post_data.get('name')).exists()
+        ):
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                'Database already exists',
+                extra_tags='source-reference'
+            )
+            return False
+        else:
+            database_record = DatabaseRecord.objects.create(
+                name=post_data.get('name'),
+                description=post_data.get('description', ''),
+                url=post_data.get('url', '')
+            )
+            SourceReferenceDatabase.objects.create(
+                source=database_record
+            )
+        return True
+
+    def handle_published_report(self, post_data, file_data):
+        if (
+            SourceReferenceDocument.objects.filter(
+                source__title__iexact=post_data.get('name')
+            ).exists()
+        ):
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                'Published report already exists',
+                extra_tags='source_reference'
+            )
+            return False
+
+        document, _ = Document.objects.get_or_create(
+            owner=self.request.user,
+            is_published=True,
+            abstract=post_data.get('description', ''),
+            title=post_data.get('title', ''),
+            doc_type=post_data.get('doc_type', None),
+            doc_file=file_data.get('report_file', None),
+            doc_url=post_data.get('report_url', None),
+            supplemental_information=json.dumps({
+                'document_source': post_data.get('source')
+            })
+        )
+
+        # tag keyword of document as Bims Source Reference
+        keyword = None
+        try:
+            keyword = HierarchicalKeyword.objects.get(
+                slug='bims_source_reference')
+        except HierarchicalKeyword.DoesNotExist:
+            try:
+                last_keyword = HierarchicalKeyword.objects.filter(
+                    depth=1).order_by('path').last()
+                if not last_keyword:
+                    path = '0000'
+                else:
+                    path = last_keyword.path
+                path = "{:04d}".format(int(path) + 1)
+                keyword, created = HierarchicalKeyword.objects.get_or_create(
+                    slug='bims_source_reference',
+                    name='Bims Source Reference',
+                    depth=1,
+                    path=path)
+            except Exception:  # noqa
+                pass
+        if keyword:
+            TaggedContentItem.objects.get_or_create(
+                content_object=document, tag=keyword)
+
+        bims_document = BimsDocument.objects.create(
+            document=document,
+            year=post_data.get('year', None),
+        )
+
+        # Update authors
+        try:
+            author_ids = post_data.get('author_ids', None)
+            if author_ids:
+                bims_document.authors.clear()
+                author_ids = author_ids.split(',')
+                for author_id in author_ids:
+                    bims_document.authors.add(author_id)
+        except KeyError:
+            pass
+
+        SourceReferenceDocument.objects.create(
+            source=document
+        )
+
+        return True
+
+    def get_context_data(self, **kwargs):
+        context = super(
+            AddSourceReferenceView, self).get_context_data(**kwargs)
+        reference_type = [
+            'Unpublished',
+            'Database',
+            'Published report or thesis',
+            'Peer-reviewed scientific article'
+        ]
+        context['params'] = {
+            'reference_type': json.dumps(reference_type)
+        }.items()
+        return context
+
+    def form_valid(self, form):
+        post_dict = self.request.POST.dict()
+        file_dict = self.request.FILES.dict()
+        reference_type = self.request.POST.get('reference_type')
+        processed = False
+        if 'database' in reference_type.lower():
+            processed = self.handle_database_record(post_data=post_dict)
+        elif 'published report' in reference_type.lower():
+            processed = self.handle_published_report(
+                post_data=post_dict,
+                file_data=file_dict
+            )
+        elif 'peer-reviewed' in reference_type.lower():
+            processed = self.handle_peer_reviewed(
+                post_data=post_dict
+            )
+        else: # Unpublished
+            SourceReference.objects.get_or_create(
+                note=post_dict.get('notes', ''),
+                source_name=post_dict.get('source', '')
+            )
+
+        if not processed:
+            return self.form_invalid(form)
+
+        return super(AddSourceReferenceView, self).form_valid(
+            form
+        )

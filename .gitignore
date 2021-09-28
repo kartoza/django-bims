@@ -141,3 +141,6 @@ deployment/geoserver_data
 .branch.txt
 .commit.txt
 .tag.txt
+node_modules/
+bundles/
+webpack-stats.json

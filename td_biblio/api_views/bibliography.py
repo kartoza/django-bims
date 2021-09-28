@@ -11,6 +11,8 @@ from td_biblio.utils.loaders import DOILoader
 from td_biblio.utils.format_validator import BibliographyFormatValidator
 from td_biblio.serializer.bibliography import EntrySerializer
 
+from bims.models.source_reference import SourceReferenceBibliography
+
 
 class GetBibliographyByDOI(LoginRequiredMixin, APIView):
     """ Get bibliography by doi.
@@ -46,4 +48,13 @@ class GetBibliographyByDOI(LoginRequiredMixin, APIView):
             except Entry.DoesNotExist:
                 return HttpResponseServerError(
                     '%s can not be created. Please ask administration' % query)
-        return Response(EntrySerializer(entry).data)
+
+        serializer_data = EntrySerializer(entry).data
+
+        source_reference = SourceReferenceBibliography.objects.filter(
+            source=entry
+        )
+
+        serializer_data['data_exist'] = source_reference.exists()
+
+        return Response(serializer_data)

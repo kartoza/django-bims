@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'grappelli',
     'colorfield',
     'polymorphic',
+    'webpack_loader'
 ) + INSTALLED_APPS
 
 # Grapelli settings

@@ -356,3 +356,14 @@ h6 {
     color: white;
     padding-top: 5px;
 }
+
+.btn-primary.disabled, .btn-primary:disabled {
+    color: #fff;
+    background-color: #c1c1c1;
+    border-color: #ffffff;
+}
+
+.btn-primary:disabled:hover, .btn-primary:disabled:focus, .btn-primary:disabled:active {
+    background-color: #c1c1c1 !important;
+    border-color: #ffffff !important;
+}
