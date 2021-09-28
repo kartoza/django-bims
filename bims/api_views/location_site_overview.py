@@ -59,8 +59,12 @@ class LocationSiteOverviewData(object):
             )
 
             if group_records.exists() and not self.is_sass_exist:
-                self.is_sass_exist = SiteVisitTaxon.objects.filter(
-                    id__in=group_records).exists()
+                try:
+                    self.is_sass_exist = group_records.filter(
+                        sitevisittaxon__isnull=False
+                    ).exists()
+                except:  # noqa
+                    self.is_sass_exist = False
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
             group_data[self.GROUP_SITES] = group_records.distinct(
